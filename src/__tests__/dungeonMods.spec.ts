@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
-import { dungeonDepth, dungeonEncounters, findLocation, geography, locationById } from '@/engine/data'
+import { dungeonDepth, dungeonEncounters, enemies, findLocation, geography, locationById } from '@/engine/data'
 import { applyDungeonMod, dungeonUsage, enemyInDungeons, isCustomDungeon, newDungeon, sanitizeDungeonMod, withoutEnemy, type DungeonMod } from '@/engine/dungeonMods'
 import { enterLocation, getArea } from '@/engine/grid'
 import { layerRanks } from '@/engine/materialQuests'
@@ -232,5 +232,67 @@ describe('custom dungeons: partial import and export', () => {
     const id = copied.slice('dungeons:'.length)
     expect(id).toMatch(/^loc_test_cave_[a-z0-9]+$/)
     expect(sanitizeDungeonMod(id, pkg.mods.dungeons![id]!).name).toBe('測試洞窟（2）')
+  })
+})
+
+describe('custom dungeons: travel', () => {
+  it('are never a shortcut between two settlements', () => {
+    const before = shortestPath('rivervale', 'albena')!.days
+    applyContent(normalizeMods({ ...emptyMods(), dungeons: { [ID]: cave({ routes: [{ to: 'rivervale', days: [0.5, 0.5], mode: 'trail' }, { to: 'albena', days: [0.5, 0.5], mode: 'trail' }] }) } }))
+    expect(shortestPath('rivervale', 'albena')!.days).toEqual(before)
+    expect(shortestPath('albena', ID)!.days).toEqual([0.5, 0.5])
+    expect(shortestPath(ID, 'soriel')!.legs[0]!.to).toBe('rivervale')
+  })
+})
+
+describe('custom dungeons: editor preview and quick start', () => {
+  it('show levels, ranks, chest levels and warnings per layer', async () => {
+    const { layerPreview } = await import('@/engine/dungeonPreview')
+    const m = cave({ layers: { ...cave().layers, middle: [], deep: [[['slime', 1]]] } })
+    const p = layerPreview(m)
+    expect(p.map((l) => l.layer)).toEqual(['outskirts', 'shallow', 'middle', 'deep'])
+    expect(p[0]!.rank).toBeUndefined()
+    expect(p[1]!.levels).toEqual([1, 2])
+    expect(p[1]!.rank).toBeTruthy()
+    expect(p[2]!.warnings[0]).toContain('還沒有怪物')
+    expect(p[3]!.warnings).toContain('比上一層弱')
+    expect(p[3]!.boss?.name).toBe(enemies.reef_crab!.name)
+  })
+
+  it('list the guilds within a week that will post quests for it', async () => {
+    const { routePreview } = await import('@/engine/dungeonPreview')
+    const { guilds, neighbors } = routePreview(cave())
+    expect(guilds[0]).toMatchObject({ id: 'rivervale', days: 2 })
+    expect(guilds.every((g) => g.days <= 7)).toBe(true)
+    expect(neighbors).toEqual([locationById('rivervale').name])
+    expect(routePreview({ ...cave(), requires: { flags: ['x'] } }).neighbors).toEqual([])
+  })
+
+  it('copy a built-in dungeon and auto-fill by level', async () => {
+    const { autoFillLayers, copyLayers, layerPreview } = await import('@/engine/dungeonPreview')
+    const copied = copyLayers('snake_creek')
+    expect(copied.layers.shallow).toEqual(dungeonEncounters.snake_creek!.shallow)
+    expect(copied.bosses?.deep?.length).toBeGreaterThan(0)
+    let seed = 1
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647)
+    const filled = autoFillLayers('central', false, {}, random)
+    const m = sanitizeDungeonMod(ID, { ...cave(), ...filled })
+    const p = layerPreview(m)
+    expect(p.every((l) => l.levels)).toBe(true)
+    expect(p.every((l) => !l.warnings.some((w) => w.includes('強很多') || w.includes('弱很多')))).toBe(true)
+    expect(Object.keys(m.bosses ?? {})).toEqual(['shallow', 'middle', 'deep'])
+  })
+})
+
+describe('custom dungeons: the AI sees the description', () => {
+  it('adds the description to the scene of reports inside the dungeon', async () => {
+    const { commitReport } = await import('@/engine/state')
+    applyContent(normalizeMods({ ...emptyMods(), dungeons: { [ID]: cave({ desc: '石灰岩洞，洞口垂著蝙蝠。' }) } }))
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    state.location = ID
+    enterLocation(state)
+    const report = { kind: 'rest', time: { start: state.time, end: state.time }, location: { at: ID, region: 'central' }, party: [], outcome: { result: 'neutral', summary: '' }, changes: {}, narration: {} }
+    const out = commitReport(state, report as never)
+    expect(out.location.scene).toBe('測試洞窟（石灰岩洞，洞口垂著蝙蝠。）')
   })
 })

@@ -71,7 +71,7 @@
 
 ### 3.1 自建的地下城（`dungeons`）
 
-經由旅途到達的地下城，功能和內建的一樣（分層、遭遇、層主、寶箱、公會委託、情報）。世界頁籤還沒有編輯器（[LOCATION_EDITOR_PLAN](../../docs/plan/roadmap/LOCATION_EDITOR_PLAN.md)），先用內容檔：
+經由旅途到達的地下城，功能和內建的一樣（分層、遭遇、層主、寶箱、公會委託、情報）。世界頁籤的「🕳️ 地下城」可以直接編輯（[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.96 節）；內容檔的格式：
 
 ```json
 "dungeons": {
