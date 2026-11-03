@@ -1733,6 +1733,7 @@ export function conditionUsage(id: string, state?: GameState | null): string[] {
   for (const [k, c] of Object.entries(companionRules.conditions)) {
     if (k !== id && !k.startsWith('$') && (c.stacks_to === id || c.replaces?.includes(id))) out.push(`非戰鬥狀態「${c.name}」`)
   }
+  for (const p of Object.values(parasiteRules.parasites)) if (p.tamed?.buff === id) out.push(`寄生物「${p.name}」（主動觸發後得到）`)
   return out
 }
 

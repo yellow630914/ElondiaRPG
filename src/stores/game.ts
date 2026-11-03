@@ -33,6 +33,7 @@ import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
+import { takeParasiteNotice } from '@/engine/parasites'
 import * as grid from '@/engine/grid'
 import * as specialMaps from '@/engine/specialMaps'
 import * as masterHome from '@/engine/masterHome'
@@ -759,13 +760,15 @@ export const useGame = defineStore('game', () => {
     stopWalk()
     const world = useContent().enterWorld(data.state.world, data.content)
     takeLocationNotice()
+    takeParasiteNotice()
     state.value = load(data.state)
     state.value.world = { id: world.id, name: world.name }
     narrations.value = (data.narrations ?? {}) as Record<string, NarrationState>
     usage.value = (data.usage ?? {}) as Record<string, UsageEntry>
     error.value = null
     // 存檔所在的自建地下城已經不在這個世界：送回聚落時說明（pruneLocations.ts）
-    const moved = takeLocationNotice()
+    // 存檔裡的寄生物已經不在這個世界：拿掉時說明（parasites.ts 的 pruneParasites）
+    const moved = [takeLocationNotice(), takeParasiteNotice()].filter(Boolean).join(' ') || null
     const note = [world.note, moved].filter(Boolean).join(' ')
     if (note) flash(note, moved ? 8000 : 2500)
     save()

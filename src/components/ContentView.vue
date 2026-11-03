@@ -800,6 +800,9 @@ function duplicateKey(key: string) {
   } else if (sub.value === 'parasites') {
     const id = newModId('par')
     const src = JSON.parse(JSON.stringify(content.mods.parasites?.[key] ?? currentParasite(key)))
+    // 任務線與旗標前綴不複製：解咒複本時不會中止原本那一種的任務線、清掉它的旗標
+    delete src.stories
+    delete src.flag_prefix
     content.saveParasite(id, { ...src, name: `${src.name}2`.slice(0, 16), custom: true })
     select(id)
   } else if (sub.value === 'statuses' && key.startsWith('c:')) {

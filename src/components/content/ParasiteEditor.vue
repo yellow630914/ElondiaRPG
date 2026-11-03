@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { abilities, actionRules, ATTR_IDS, attrName, companionRules, itemRules, type CheckFilter } from '@/engine/data'
-import { gearRules, SLOTS } from '@/engine/gear'
+import { gearRules, SLOTS, slotsFor } from '@/engine/gear'
 import {
   builtinParasite, currentParasite, PARASITE_CATEGORY_NAME, PARASITE_KIND_NAME, PARASITE_LIMITS, TWO_FACE_KEYS, TWO_FACE_NAME,
   type ParasiteCategory, type ParasiteMod,
@@ -54,8 +54,24 @@ const usage = computed(() => {
 const outbreaks = computed(() => usage.value.filter((u) => u.startsWith('發作事件')))
 const sources = computed(() => usage.value.filter((u) => !u.startsWith('發作事件') && !u.startsWith('目前存檔')))
 
-const gearItems = computed(() => itemRules.items.filter((i) => i.gear).map((i) => i.name).sort())
-const slotName = (s: GearSlot) => (gearRules.slots as Record<string, { name?: string } | undefined>)[s]?.name ?? s
+/** 放得進這個欄位的裝備（沒選欄位時全部）；目前選的就算放不進去也列出來，才看得到 */
+function itemsFor(slot: GearSlot | undefined, keep?: string): string[] {
+  void content.version
+  return itemRules.items.filter((i) => i.gear && (!slot || i.name === keep || slotsFor(i.gear).includes(slot))).map((i) => i.name).sort()
+}
+const gearItems = computed(() => itemsFor(draft.value.slot, draft.value.item))
+const tamedItems = computed(() => itemsFor(draft.value.slot, draft.value.tamed?.item))
+/** 欄位的名稱；同名的（兩個戒指、兩個穿孔飾品）後面加第幾個 */
+const slotName = (s: GearSlot) => {
+  const name = gearRules.slots[s] ?? s
+  const same = SLOTS.filter((x) => gearRules.slots[x] === name)
+  return same.length > 1 ? `${name} ${same.indexOf(s) + 1}` : name
+}
+/** 選的物品放不進鎖住的欄位 */
+const fits = (name: string | undefined) => {
+  const spec = name ? itemRules.items.find((i) => i.name === name)?.gear : undefined
+  return !spec || !draft.value.slot || slotsFor(spec).includes(draft.value.slot)
+}
 const abilityList = computed(() => Object.entries(abilities).map(([id, a]) => ({ id, name: a.name })).sort((a, b) => a.name.localeCompare(b.name)))
 const conditionList = computed(() => Object.entries(companionRules.conditions).filter(([k]) => !k.startsWith('$')).map(([id, c]) => ({ id, name: c.name })))
 const kinds = Object.entries(actionRules.kinds).map(([k, v]) => [k, v.name] as const)
@@ -64,6 +80,8 @@ const problem = computed(() => {
   const d = draft.value
   if (!d.name.trim()) return '要有名稱'
   if (d.kind === 'gear' && (!d.item || !d.slot)) return '寄生裝備要選物品與鎖住的欄位'
+  if (d.kind === 'gear' && !fits(d.item)) return `「${d.item}」放不進${slotName(d.slot!)}`
+  if (d.kind === 'gear' && d.category === 'tameable' && d.tamed?.item && !fits(d.tamed.item)) return `馴服後的「${d.tamed.item}」放不進${slotName(d.slot!)}`
   if (d.category === 'tameable' && d.tamed && (!d.tamed.scene?.trim() || !d.tamed.text?.trim())) return '馴服之後的場景與結果都要寫'
   return ''
 })
@@ -151,11 +169,14 @@ function remove() {
     />
     <p class="small muted">
       id：{{ id }}。寄生物只會寄生在主角身上；侵蝕度 0～100 決定階段（{{ stages.map((s) => `${s.name} ${s.min}+`).join('、') }}）。
-      寄生的方法寫在特殊任務、事件的效果（「寄生物：寄生」），發作事件在「🎲 事件」頁新增（種類選「寄生的發作」）。已經寄生在身上的會照新的設定。
+      寄生的方法寫在特殊任務、事件的效果（「寄生物：寄生」），發作事件在「🎲 事件」頁新增（種類選「寄生的發作」）。已經寄生在身上的會照新的設定（淫紋的名稱與外觀也會跟著改）。
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p v-if="!sources.length" class="small warn-text">⚠️ 沒有任何特殊任務或事件會讓人被寄生：遊戲裡遇不到它。</p>
-    <p v-if="!outbreaks.length" class="small warn-text">⚠️ 沒有發作事件：寄生之後只會照階段給被動效果{{ draft.category === 'short' ? '，也沒有事件把它拿掉（只能解咒）' : '' }}。</p>
+    <p v-if="!outbreaks.length" class="small warn-text">
+      ⚠️ 沒有發作事件：寄生之後不會發作，侵蝕度也不會自己長（「每天自己長」沒有作用），只有任務或事件的效果會改變它；沒有的話一直停在{{ stages[0]?.name }}{{ draft.category === 'short' ? '，也沒有事件把它拿掉（只能解咒）' : '' }}。
+      到「🎲 事件」頁新增事件，「在哪裡」選「寄生物的發作」、選這個寄生物。
+    </p>
 
     <FoldSet>
       <template #legend>基本</template>
@@ -175,14 +196,14 @@ function remove() {
       <label class="block"><span>描述 <Hint text="交給 AI 的樣子與習性（還沒馴服時）。" /></span><textarea v-model="draft.desc" rows="2" :maxlength="L.desc_chars" /></label>
     </FoldSet>
 
-    <FoldSet v-if="draft.kind === 'gear'">
+    <FoldSet v-if="draft.kind === 'gear'" :key="`gear-${id}`" filled>
       <template #legend>寄生裝備</template>
       <div class="grid">
-        <label>物品 <select v-model="draft.item"><option value="">（選一件裝備）</option><option v-for="n in gearItems" :key="n" :value="n">{{ n }}</option></select></label>
         <label>鎖住的欄位 <select v-model="draft.slot"><option v-for="s in SLOTS" :key="s" :value="s">{{ slotName(s) }}</option></select></label>
+        <label><span>物品 <Hint text="只列出放得進鎖住的欄位的裝備。" /></span><select v-model="draft.item"><option value="">（選一件裝備）</option><option v-for="n in gearItems" :key="n" :value="n">{{ n }}</option></select></label>
       </div>
     </FoldSet>
-    <FoldSet v-if="draft.kind === 'mark'">
+    <FoldSet v-if="draft.kind === 'mark'" :key="`mark-${id}`" filled>
       <template #legend>淫紋</template>
       <div class="grid">
         <label>部位 <select v-model="draft.place"><option v-for="p in TATTOO_PLACES" :key="p" :value="p">{{ placeName(p) }}</option></select></label>
@@ -235,11 +256,11 @@ function remove() {
       </div>
     </FoldSet>
 
-    <FoldSet v-if="draft.category === 'tameable'">
+    <FoldSet v-if="draft.category === 'tameable'" :key="`tamed-${id}`" filled>
       <template #legend>馴服之後 <Hint text="特殊任務的結局用「寄生物：馴服」。馴服之後不再發作、侵蝕度歸零，可以主動觸發這裡的場景；寄生裝備換成馴服後的物品，淫紋變成馴服後的印記。" /></template>
       <template v-if="draft.tamed">
         <div class="grid">
-          <label v-if="draft.kind === 'gear'">馴服後的物品 <select v-model="draft.tamed.item"><option :value="undefined">（照原本的物品）</option><option v-for="n in gearItems" :key="n" :value="n">{{ n }}</option></select></label>
+          <label v-if="draft.kind === 'gear'">馴服後的物品 <select v-model="draft.tamed.item"><option :value="undefined">（照原本的物品）</option><option v-for="n in tamedItems" :key="n" :value="n">{{ n }}</option></select></label>
           <label>主動觸發後得到 <select v-model="draft.tamed.buff"><option :value="undefined">（沒有）</option><option v-for="c in conditionList" :key="c.id" :value="c.id">{{ c.name }}</option></select></label>
           <label><span>獸蟲派的技能 <Hint text="修了獸蟲派的人，馴服之後變成這個技能（每次長休一次）。" /></span><select v-model="draft.tamed.ability"><option :value="undefined">（沒有）</option><option v-for="a in abilityList" :key="a.id" :value="a.id">{{ a.name }}</option></select></label>
         </div>

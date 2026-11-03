@@ -21,7 +21,7 @@ import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMo
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { dungeonUsage, enemyInDungeons, sanitizeDungeonMod, withoutEnemy, type DungeonMod } from '@/engine/dungeonMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
-import { pruneParasites } from '@/engine/parasites'
+import { pruneParasites, refreshParasiteMarks, takeParasiteNotice } from '@/engine/parasites'
 import { pruneLocations, takeLocationNotice } from '@/engine/pruneLocations'
 import { pruneRoadEvent } from '@/engine/road'
 import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
@@ -224,7 +224,10 @@ export const useContent = defineStore('content', () => {
       prunePerks(game.state)
       pruneStories(game.state)
       pruneSpecialMaps(game.state)
-      pruneParasites(game.state.party)
+      takeParasiteNotice()
+      if (pruneParasites(game.state.party)) game.flash(takeParasiteNotice() ?? '', 8000)
+      // 身上的淫紋照改過的寄生物更新名稱與外觀
+      refreshParasiteMarks(game.state.party)
       // 拿掉的自建地下城（匯入、全部恢復預設）：人在裡面時送回聚落
       if (pruneLocations(game.state)) {
         enterLocation(game.state)
@@ -490,6 +493,11 @@ export const useContent = defineStore('content', () => {
       if (!m.fixed.length) delete m.fixed
     }
     if (!to) return
+    // 寄生物寄生的物品與馴服後的物品
+    for (const p of Object.values(mods.value.parasites ?? {})) {
+      if (p.item === from) p.item = to
+      if (p.tamed?.item === from) p.tamed.item = to
+    }
     for (const s of Object.values(mods.value.stories)) {
       const lists = [s.rewards, ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).map((o) => o?.effects)]
       for (const list of lists) for (const e of list ?? []) if (e.type === 'item' && e.name === from) e.name = to

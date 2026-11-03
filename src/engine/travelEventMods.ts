@@ -126,7 +126,9 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
     if (layers.length) out.layers = layers
     if (raw.cooldown_days !== undefined && raw.cooldown_days !== null && String(raw.cooldown_days) !== '') out.cooldown_days = Math.round(num(raw.cooldown_days, ...L.cooldown_days, 3))
   } else if (scope === 'parasite') {
-    out.parasite = typeof raw.parasite === 'string' && parasiteDef(raw.parasite) ? raw.parasite : Object.keys(parasiteRules.parasites)[0]!
+    // 找不到的寄生物（被刪掉、寄生物整理失敗）照原樣留著：事件不會發生，編輯畫面標成壞掉；不要換成別的寄生物
+    const pid = typeof raw.parasite === 'string' ? raw.parasite.trim().slice(0, 60) : ''
+    out.parasite = pid || Object.keys(parasiteRules.parasites)[0]!
     const stages = [...new Set((Array.isArray(raw.stages) ? raw.stages : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < parasiteRules.stages.length))].sort()
     if (stages.length && stages.length < parasiteRules.stages.length) out.stages = stages
     const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
@@ -245,6 +247,7 @@ export function currentEventRules(): EventRulesMod {
 export function travelEventWarnings(t: RoadTemplate): string[] {
   const out: string[] = []
   if (!t.text) out.push('沒有描述')
+  if (t.scope === 'parasite' && t.parasite && !parasiteDef(t.parasite)) out.push(`找不到寄生物「${t.parasite}」：這件發作事件不會發生（選一種存在的寄生物）`)
   if (t.tier === 'advanced' && t.kind === 'check' && !t.options?.length) out.push('高階的檢定事件成功後沒有選項')
   return out
 }

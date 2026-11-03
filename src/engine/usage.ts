@@ -8,6 +8,7 @@ import { gearSpecOf } from './gear'
 import { furnitureIn } from './homes'
 import type { Character, GameState, GearSpec } from './types'
 import { contractOf } from './tattoos'
+import { parasiteRules } from './parasites'
 
 /** 一個特殊任務的所有結果（任務點的成功、失敗與各選項） */
 export function storyOutcomes(s: StoryDef): StoryOutcome[] {
@@ -57,6 +58,10 @@ export function itemUsage(name: string, state?: GameState | null): string[] {
   }
   for (const l of Object.values(landmarks)) if (l.scenes?.some((sc) => sc.wear?.includes(name))) out.push(`地標「${l.name}」的場景限定的穿著`)
   for (const t of Object.values(shopRules.types)) if (t.fixed?.some((f) => f.item === name)) out.push(`商店「${t.name}」的固定清單`)
+  for (const p of Object.values(parasiteRules.parasites)) {
+    if (p.item === name) out.push(`寄生物「${p.name}」寄生的物品`)
+    if (p.tamed?.item === name) out.push(`寄生物「${p.name}」馴服後的物品`)
+  }
   for (const it of itemRules.items) {
     if (it.tool?.fuel === name) out.push(`「${it.name}」的燃料`)
     if (it.recipe?.inputs.some((x) => x.name === name)) out.push(`「${it.name}」的配方材料`)

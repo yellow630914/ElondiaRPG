@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { geography, type LocationType, type RouteMode } from '@/engine/data'
 import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
@@ -47,6 +47,8 @@ const parasite = computed(() => draft.value.scope === 'parasite')
 // 發生在主角身上的事件（地下城事件、寄生物的發作）：只有選擇，主角自己擲
 const onPc = computed(() => dungeon.value || parasite.value)
 const parasiteIds = Object.keys(parasiteRules.parasites)
+// 選項裡新增寄生物效果時，預設是這件發作事件自己的寄生物（EffectsEditor）
+provide('eventParasite', computed(() => (parasite.value ? draft.value.parasite : undefined)))
 function setScope(v: string) {
   const scope = (['town', 'dungeon', 'parasite'].includes(v) ? v : undefined) as EventScope | undefined
   draft.value.scope = scope
@@ -199,6 +201,7 @@ function remove() {
       <div class="row small">
         <select v-model="draft.parasite">
           <option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option>
+          <option v-if="draft.parasite && !parasiteIds.includes(draft.parasite)" :value="draft.parasite">{{ draft.parasite }}（不存在）</option>
         </select>
       </div>
       <div class="row small"><b>階段</b>

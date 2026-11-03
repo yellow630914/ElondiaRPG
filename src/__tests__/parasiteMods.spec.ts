@@ -1,9 +1,11 @@
 // 寄生物的自訂內容（engine/parasiteMods.ts）：整理、分類、套用與還原、同一包的任務引用、存檔裡不存在的寄生物
 import { afterEach, describe, expect, it } from 'vitest'
 import { lewdRules } from '@/engine/data'
-import { applyContent, emptyMods, normalizeMods, parasiteUsage } from '@/engine/mods'
+import { applyContent, conditionUsage, emptyMods, normalizeMods, parasiteUsage } from '@/engine/mods'
 import { builtinParasite, currentParasite, parasiteCategory, sanitizeParasiteMod } from '@/engine/parasiteMods'
-import { attachParasite, parasiteDef, parasiteRules, pruneParasites } from '@/engine/parasites'
+import { attachParasite, detachParasite, parasiteDef, parasiteOf, parasiteRules, pruneParasites, refreshParasiteMarks, tameParasite, takeParasiteNotice } from '@/engine/parasites'
+import { sanitizeTravelEvent } from '@/engine/travelEventMods'
+import { itemUsage } from '@/engine/usage'
 import { newGame } from '@/engine/state'
 
 afterEach(() => applyContent(emptyMods()))
@@ -103,5 +105,73 @@ describe('parasite mods', () => {
     expect(used.some((u) => u.startsWith('發作事件'))).toBe(true)
     expect(used.some((u) => u.startsWith('事件'))).toBe(true)
     expect(parasiteUsage('mod_par_nobody')).toEqual([])
+  })
+
+  it('lists parasites where their items and taming buffs are used', () => {
+    expect(itemUsage('渴求的魔導衣').some((u) => u.includes('寄生物「渴求的魔導衣」寄生的物品'))).toBe(true)
+    expect(itemUsage('馴服的魔導衣').some((u) => u.includes('馴服後的物品'))).toBe(true)
+    expect(conditionUsage('parasite_glow').some((u) => u.startsWith('寄生物'))).toBe(true)
+  })
+
+  it('keeps an outbreak event on its own parasite even when that parasite is missing', () => {
+    const t = sanitizeTravelEvent('mod_event_x', { scope: 'parasite', parasite: 'mod_par_gone', title: '不見的', text: '…', kind: 'choice', options: [{ label: '好' }] } as never, true)
+    expect(t.parasite).toBe('mod_par_gone')
+  })
+
+  it('removes and tames by what was attached, even after the definition changed', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3, birthplace: 'soriel' })
+    const pc = state.party[0]!
+    const def = parasiteRules.parasites.hungry_lingerie!
+    const mark = parasiteRules.parasites.succubus_mark!
+    try {
+      // 魔導衣寄生之後改了欄位：解咒照樣拿掉鎖住的那件
+      attachParasite(pc, 'hungry_lingerie', state.time)
+      parasiteRules.parasites.hungry_lingerie = { ...def, slot: 'underwear_bottom' }
+      detachParasite(pc, 'hungry_lingerie')
+      expect(pc.gear?.underwear_top).toBeUndefined()
+      // 契紋寄生之後改成種子：拿掉時印記一起洗掉
+      attachParasite(pc, 'succubus_mark', state.time)
+      parasiteRules.parasites.succubus_mark = { ...mark, kind: 'seed' }
+      detachParasite(pc, 'succubus_mark')
+      expect((pc.tattoos ?? []).some((t) => t.kind === 'curse')).toBe(false)
+      // 馴服也照鎖找：改了欄位仍換成馴服後的物品
+      parasiteRules.parasites.hungry_lingerie = def
+      attachParasite(pc, 'hungry_lingerie', state.time)
+      parasiteRules.parasites.hungry_lingerie = { ...def, slot: 'underwear_bottom' }
+      tameParasite(pc, 'hungry_lingerie')
+      expect(pc.gear?.underwear_top?.name).toBe('馴服的魔導衣')
+      expect(pc.gear?.underwear_top?.locked).toBeUndefined()
+    } finally {
+      parasiteRules.parasites.hungry_lingerie = def
+      parasiteRules.parasites.succubus_mark = mark
+    }
+  })
+
+  it('updates marks already on the body when the parasite is edited', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3, birthplace: 'soriel' })
+    const pc = state.party[0]!
+    const mark = parasiteRules.parasites.succubus_mark!
+    try {
+      attachParasite(pc, 'succubus_mark', state.time)
+      parasiteRules.parasites.succubus_mark = { ...mark, mark: { name: '新的契紋', desc: '改過的樣子' } }
+      refreshParasiteMarks(state.party)
+      expect(pc.tattoos!.find((t) => t.parasite === 'succubus_mark')).toMatchObject({ name: '新的契紋', desc: '改過的樣子' })
+      tameParasite(pc, 'succubus_mark')
+      parasiteRules.parasites.succubus_mark = { ...mark, tamed: { ...mark.tamed!, mark: { ...mark.tamed!.mark!, name: '新的主宰之紋', attrs: { str: 1 } } } }
+      refreshParasiteMarks(state.party)
+      expect(pc.tattoos!.find((t) => t.parasite === 'succubus_mark')).toMatchObject({ name: '新的主宰之紋', attrs: { str: 1 }, tamed: true })
+      expect(parasiteOf(pc, 'succubus_mark')?.tamed).toBe(true)
+    } finally {
+      parasiteRules.parasites.succubus_mark = mark
+    }
+  })
+
+  it('leaves a notice when a save loses parasites', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3, birthplace: 'soriel' })
+    takeParasiteNotice()
+    state.party[0]!.parasites = [{ id: 'mod_par_gone', corruption: 10, since: { ...state.time } }]
+    expect(pruneParasites(state.party)).toBe(1)
+    expect(takeParasiteNotice()).toContain('1 種寄生物')
+    expect(takeParasiteNotice()).toBeNull()
   })
 })
