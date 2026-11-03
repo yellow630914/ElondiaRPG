@@ -2,6 +2,7 @@
 
 > 上層：[ROADMAP](../ROADMAP.md) R15。
 > 2026-11-02 評估、決定要做。這份計畫只寫還沒做的部分；做完的階段寫進對應的系統文件（[WORLD](../../WORLD.md)、[NPC_SYSTEM](../../NPC_SYSTEM.md)……），從這裡刪掉，最後整份刪掉並在[已完成](COMPLETED.md)記一段。
+> **內容清單**（世界書、地區資料、怪物、物品、固定 NPC、地標、特殊地圖、特殊任務、事件、美術）在 [EAST_CONTENT_PLAN](EAST_CONTENT_PLAN.md)。
 > 地區、地點、路線、種族目前**不能用世界包新增**（[worldgen/README](../../../worldgen/README.md) 守則 5），所以東大陸是改內建的 `data/`，不是世界包。
 
 ## 1. 範圍
