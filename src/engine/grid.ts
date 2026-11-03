@@ -13,7 +13,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, contentRevision, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
+  attrName, contentRevision, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
@@ -381,6 +381,8 @@ export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   const o = l.open
   if (o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return true
   if (!l.scenes?.length || l.visit || l.explore || l.work || l.scenes.some((sc) => sceneShown(state, sc))) return false
+  // 有老師（固定 NPC 的 mentor）待在這裡：照常出現，找得到人受訓（docs/LEWD_STATS.md 第 6.1 節）
+  if (namedNpcs.some((n) => n.landmark === l.id && n.mentor?.perks.length)) return false
   // 沒勾的（打工線的委託人所在、完成之後才有場景的地標）：還有接得到或進行中的任務要用到時留著，任務點才走得到
   return !!o?.hidden || !storyNeedsLandmark(state, l.id)
 }

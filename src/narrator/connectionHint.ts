@@ -20,6 +20,21 @@ export function isConnectionError(e: unknown): boolean {
   return CONNECTION_ERRORS.some((re) => re.test(msg.trim()))
 }
 
+/** Base URL 不是 http:// 或 https:// 開頭的完整網址（例如少打了 http://） */
+function badBaseURL(baseURL: string | undefined): boolean {
+  const u = baseURL?.trim()
+  if (!u) return false
+  try {
+    return !/^https?:$/.test(new URL(u).protocol)
+  } catch {
+    return true
+  }
+}
+
+function badBaseURLText(baseURL: string): string {
+  return `Base URL 的格式不對（${baseURL.trim()}）：要寫完整的網址，開頭要有 http:// 或 https://，例如 http://127.0.0.1:3066/v1。`
+}
+
 /** 本機或區域網路的位址 */
 function isLocalHost(host: string): boolean {
   const h = host.replace(/^\[|\]$/g, '').toLowerCase()
@@ -33,12 +48,8 @@ function isLocalHost(host: string): boolean {
 export function connectionHint(provider: ProviderId, config: Pick<ProviderConfig, 'baseURL'>, pageProtocol = typeof location === 'undefined' ? '' : location.protocol): string {
   const name = PROVIDERS.find((p) => p.id === provider)?.name ?? provider
   const F12 = '按 F12 打開 Console 看紅字：寫 CORS policy 是被跨域擋了，寫 ERR_CONNECTION_REFUSED 是服務沒開或 port 不對，寫 private network／local network 是區域網路存取被擋。'
-  let url: URL | undefined
-  try {
-    url = config.baseURL ? new URL(config.baseURL) : undefined
-  } catch {
-    return `Base URL 的格式不對（${config.baseURL}）：要寫完整的網址，例如 http://127.0.0.1:3066/v1。`
-  }
+  if (badBaseURL(config.baseURL)) return badBaseURLText(config.baseURL!)
+  const url = config.baseURL ? new URL(config.baseURL.trim()) : undefined
   if (!url) return `連不上 ${name}：檢查網路連線，以及 VPN、代理的設定；所在地區也可能連不上這個服務。`
   const where = url.host
   if (isLocalHost(url.hostname)) {
@@ -54,6 +65,13 @@ export function connectionHint(provider: ProviderId, config: Pick<ProviderConfig
 
 /** 連不上服務時換成看得懂的錯誤（原本的訊息放在括號裡）；其他錯誤照原樣 */
 export function explainConnection(e: unknown, provider: ProviderId, config: Pick<ProviderConfig, 'baseURL'>, pageProtocol?: string): unknown {
+  // Base URL 少了 http://：SDK 直接丟英文的網址錯誤（Failed to construct 'URL'），或連到奇怪的地方
+  const orig0 = e instanceof Error ? e.message : String(e)
+  if (badBaseURL(config.baseURL) && (isConnectionError(e) || /invalid url|failed to construct 'url'/i.test(orig0))) {
+    const out = new Error(`${badBaseURLText(config.baseURL!)}（原本的錯誤：${orig0.trim()}）`)
+    out.name = 'ConnectionError'
+    return out
+  }
   if (!isConnectionError(e)) return e
   const orig = e instanceof Error ? e.message : String(e)
   const out = new Error(`${connectionHint(provider, config, pageProtocol)}（原本的錯誤：${orig.trim()}）`)

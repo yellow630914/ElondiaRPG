@@ -51,4 +51,18 @@ describe('connection hints', () => {
     const run = async () => { for await (const _ of streamNarration('openai_compatible', config, { system: 's', user: 'u' })) void _ }
     await expect(run()).rejects.toThrow(/連不上 127\.0\.0\.1:3066/)
   }, 30_000)
+
+  it('a Base URL without http:// explains the format instead of an English URL error or an empty host', () => {
+    for (const u of ['127.0.0.1:3066/v1', 'localhost:3066/v1', 'http//127.0.0.1:3066/v1']) {
+      expect(connectionHint('openai_compatible', { baseURL: u }, 'https:'), u).toContain('開頭要有 http:// 或 https://')
+      const e = explainConnection(new TypeError("Failed to construct 'URL': Invalid URL"), 'openai_compatible', { baseURL: u }) as Error
+      expect(e.message, u).toContain('開頭要有 http:// 或 https://')
+      expect(e.message).toContain('原本的錯誤')
+    }
+    // 前後的空白照常可以用
+    expect(connectionHint('openai_compatible', { baseURL: ' http://127.0.0.1:3066/v1' }, 'https:')).toContain('連不上 127.0.0.1:3066')
+    // 網址正確時，服務回的錯誤照原樣
+    const other = new Error('401 Incorrect API key provided')
+    expect(explainConnection(other, 'openai_compatible', { baseURL: 'http://127.0.0.1:3066/v1' })).toBe(other)
+  })
 })
