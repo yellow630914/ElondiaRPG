@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { startCombat } from '@/engine/combat'
-import { itemDef, lewdRules, npcs } from '@/engine/data'
-import { enterLocation, standOn } from '@/engine/grid'
+import { itemDef, landmarkDef, lewdRules, npcs } from '@/engine/data'
+import { enterLocation, landmarkHidden, standOn } from '@/engine/grid'
 import { useItem } from '@/engine/inventory'
 import { sanitizeItem, sanitizeNpc } from '@/engine/mods'
 import { lewdOf, lewdTitles } from '@/engine/lewd'
@@ -67,6 +67,17 @@ describe('S10-1 流派的老師', () => {
       .toEqual({ perks: ['school_bondage'], affinity: 100, price_mult: 3 })
     const tome = itemDef('《結繩圖譜》')!
     expect(sanitizeItem(tome.name, JSON.parse(JSON.stringify(tome)), false)).toMatchObject({ use: tome.use, charm_min: 3, tags: tome.tags })
+  })
+
+  it('老師待的地標一開始就在地圖上（只有場景、場景還沒解鎖的也一樣）', () => {
+    for (const n of npcs.filter((x) => x.mentor)) {
+      const l = landmarkDef(n.landmark!)!
+      const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11, birthplace: l.location })
+      enterLocation(state)
+      expect(landmarkHidden(state, l), n.name).toBe(false)
+      expect(standOn(state, l.id as never), n.name).toBe(true)
+      expect(trainOptions(state).some((o) => o.mentor?.id === n.id), n.name).toBe(true)
+    }
   })
 
   it('老師不在身邊就學不到', () => {

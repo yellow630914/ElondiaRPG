@@ -110,11 +110,12 @@ const lewdItems = computed<StatItem[]>(() => {
       label: '寄生',
       value: pt.active.length ? pt.active.map((a) => `${a.name}（${a.stage}${a.mult !== 1 ? `・×${a.mult}` : ''}）`).join('、') : wild.map((p) => parasiteDef(p.id)?.name ?? p.id).join('、'),
       note: parts.length ? `戰鬥中：${parts.join('・')}` : schools.length ? '還在潛伏：戰鬥中沒有加成' : '沒修流派：只有平常的檢定減值',
+      wide: true,
     })
   }
   // 稱號（第 28 節，只是稱號）
   const titles = lewdTitles(s.value, x)
-  if (titles.length) items.push({ label: '稱號', value: titles.map((t) => t.name).join('、'), note: titles.map((t) => t.desc).join(' ') })
+  if (titles.length) items.push({ label: '稱號', value: titles.map((t) => t.name).join('、'), note: titles.map((t) => t.desc).join(' '), wide: true })
   return items
 })
 
