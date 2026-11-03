@@ -32,7 +32,7 @@
       "name": "貓魅族", "emoji": "🐱", "bonus": { "dex": 2, "cha": 1 }
     },
     "yulin": {
-      "name": "玉璘族", "emoji": "🐉", "bonus": { "cha": 2, "fai": 1 }
+      "name": "玉璘族", "emoji": "🐉", "bonus": { "cha": 2, "fai": 1 }, "image_tags": "fish tail, shark tail"
     }
   }
 }

@@ -704,6 +704,8 @@ export interface RaceDef {
   name: string
   emoji: string
   bonus: Partial<Attrs>
+  /** 生圖時一定要畫出來的種族特徵（英文標籤，例如玉璘族的 fish tail, shark tail） */
+  image_tags?: string
 }
 
 export const attributeRules = attributesJson as unknown as {
@@ -2094,6 +2096,12 @@ export function className(id: string): string {
 
 export function raceName(id: string): string {
   return attributeRules.races[id]?.name ?? id
+}
+
+/** 生圖用的種族：名稱後面括號附上一定要畫出來的特徵（英文標籤），例如「玉璘族 (fish tail, shark tail)」 */
+export function raceImageName(id: string): string {
+  const tags = attributeRules.races[id]?.image_tags?.trim()
+  return tags ? `${raceName(id)} (${tags})` : raceName(id)
 }
 
 export function attrName(id: AttrId): string {

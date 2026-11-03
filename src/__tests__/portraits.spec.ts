@@ -78,6 +78,15 @@ describe('portrait prompts', () => {
     expect(portraitSubject(state, 'pc')!.tattoos).toEqual([expect.stringContaining('荊棘之環（纏繞手臂的黑色荊棘）')])
   })
 
+  it('adds the race traits that must be drawn (yulin tails)', () => {
+    const state = game()
+    state.party[0]!.race = 'yulin'
+    const subject = portraitSubject(state, 'pc')!
+    expect(subject.race).toBe('玉璘族 (fish tail, shark tail)')
+    expect(portraitPrompt(subject, DEFAULT_PORTRAIT_TEMPLATE, 'watercolor')).toContain('女性 玉璘族 (fish tail, shark tail)')
+    expect(DEFAULT_TAG_INSTRUCTIONS).toContain('fish tail, shark tail')
+  })
+
   it('describes a fixed NPC too', () => {
     const state = game()
     expect(portraitSubject(state, 'npc_selene')).toMatchObject({ name: '瑟琳' })
