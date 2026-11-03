@@ -398,31 +398,6 @@ export function enemyPlaceOptions(): { key: string; label: string }[] {
   ]
 }
 
-/** 物品的取得方式 */
-export const ITEM_SOURCE_NAME: Record<string, string> = {
-  'shop:general': '雜貨店', 'shop:temple': '神殿', 'shop:tavern': '酒館', 'shop:smith': '鐵匠鋪', 'shop:tailor': '裁縫店',
-  'shop:jeweler': '珠寶店', 'shop:magic': '魔法物品店', 'shop:info': '情報商',
-  chest: '寶箱', 'gather:wild': '近郊採集', 'gather:dungeon': '地下城採集', drop: '怪物掉落', event: '事件獎勵', forge: '打造材料', none: '沒有取得方式',
-}
-
-/** 每個物品的取得方式（ITEM_SOURCE_NAME 的 key） */
-export function itemSourceIndex(): Map<string, Set<string>> {
-  const drops = new Set(Object.values(enemies).flatMap((e) => (e.loot ?? []).map((l) => l.item)))
-  const chests = new Set(CHEST_LAYERS.flatMap((l) => (gearRules.chests[l]?.items ?? []).map(([n]) => n)))
-  const out = new Map<string, Set<string>>()
-  for (const i of itemRules.items) {
-    const set = new Set<string>(i.tags.map((t) => `shop:${t}`))
-    if (chests.has(i.name)) set.add('chest')
-    for (const g of ['wild', 'dungeon'] as const) if (maps.generation[g].resource_items.includes(i.name)) set.add(`gather:${g}`)
-    if (drops.has(i.name)) set.add('drop')
-    if (i.event) set.add('event')
-    if (i.forge?.materials.length) set.add('forge')
-    if (!set.size) set.add('none')
-    out.set(i.name, set)
-  }
-  return out
-}
-
 // ---- 套用 ----
 
 const strip = <T extends object>(v: T, keys: string[]): T => {
