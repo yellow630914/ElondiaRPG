@@ -5,7 +5,7 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { enemies, geography, itemDef, npcs as namedNpcs, specialMaps, stories } from '@/engine/data'
+import { enemies, geography, itemDef, locationName, npcs as namedNpcs, specialMaps, stories } from '@/engine/data'
 import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
@@ -263,10 +263,11 @@ export const useContent = defineStore('content', () => {
   function importWorld(text: string, fallbackName: string): { id: string; promptSet?: string; dropped: string[] } {
     const file = parseWorldFile(JSON.parse(text))
     const name = file.name || fallbackName || '匯入的世界'
-    const incoming = normalizeMods(file.content)
+    const incoming = normalizeFresh(file.content)
     const dropped = dropBrokenStories(incoming)
+    const notes = locationNotes(emptyMods(), file.content, incoming)
     const id = createWorld(name, undefined, incoming)
-    problems.value = [...problems.value, ...dropped]
+    problems.value = [...problems.value, ...dropped, ...notes]
     if (!file.prompts) return { id, dropped }
     const setId = usePrompts().createSetFrom(worldName(id), file.prompts)
     linkPromptSet(id, setId)
@@ -958,22 +959,55 @@ export const useContent = defineStore('content', () => {
     return JSON.stringify({ type: 'elondia-content', ...mods.value }, null, 2)
   }
 
+  /**
+   * 匯入時（取代全部內容、匯入成新的世界）整理掉的地點引用：不在新內容裡的自建地下城，
+   * 以及所屬地點不存在、被改到別的地點的特殊地圖（docs/CONTENT_DEPENDENCIES.md 第 2 節）。只是提醒：存檔與遊戲都不會壞。
+   */
+  /**
+   * 整理要取代全部內容（或建立新世界）的內容：先還原成原版再整理，舊世界的自建項目（例如被拿掉的地下城）
+   * 才不會被當成還存在。整理失敗時恢復目前的內容。
+   */
+  function normalizeFresh(raw: unknown): ContentMods {
+    applyContent(emptyMods())
+    try {
+      return normalizeMods(JSON.parse(JSON.stringify(raw ?? {})))
+    } catch (e) {
+      apply()
+      throw e
+    }
+  }
+
+  function locationNotes(before: ContentMods, raw: unknown, incoming: ContentMods): string[] {
+    const out: string[] = []
+    for (const d of Object.values(before.dungeons ?? {})) {
+      if (!incoming.dungeons?.[d.id]) out.push(`自建地下城「${d.name}」不在匯入的內容裡，已經拿掉（用到它的特殊任務不匯入、事件與情報物品的引用拿掉；存檔裡人在裡面或在往返的路上時送回聚落）`)
+    }
+    const rawMaps = ((raw ?? {}) as { specialMaps?: Record<string, { name?: string; location?: string } | undefined> }).specialMaps ?? {}
+    for (const [id, m] of Object.entries(rawMaps)) {
+      const now = incoming.specialMaps?.[id]?.location
+      if (m?.location && now && m.location !== now) out.push(`特殊地圖「${m.name ?? id}」原本屬於「${m.location}」（這個世界沒有這個地點），改成屬於「${locationName(now)}」`)
+    }
+    return out
+  }
+
   /** 匯入內容檔：asNew 時建立成新的世界，否則取代目前世界的內容 */
   function importMods(text: string, asNew?: string): string | undefined {
     // 世界包也收：只取內容（提示詞要用「匯入世界包」）
-    const incoming = normalizeMods(parseWorldFile(JSON.parse(text)).content)
+    const raw = parseWorldFile(JSON.parse(text)).content
+    const incoming = normalizeFresh(raw)
     // 有錯誤的特殊任務不匯入（dropBrokenStories 會套用 incoming：之後一定要重新套用）
     const dropped = dropBrokenStories(incoming)
+    const notes = locationNotes(asNew !== undefined ? emptyMods() : mods.value, raw, incoming)
     if (asNew !== undefined) {
       const id = createWorld(asNew || '匯入的世界', undefined, incoming)
-      problems.value = [...problems.value, ...dropped]
+      problems.value = [...problems.value, ...dropped, ...notes]
       return id
     }
     mods.value = incoming
     try {
       save()
     } finally {
-      problems.value = [...problems.value, ...dropped]
+      problems.value = [...problems.value, ...dropped, ...notes]
     }
     return undefined
   }

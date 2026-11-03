@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { BOSS_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, regionById, type BossLayerId, type DungeonLayerId, type EncounterGroup, type StoryCond } from '@/engine/data'
-import { DUNGEON_LIMITS, dungeonLayersOf, dungeonUsage, ROUTE_MODES, routeTargets, type DungeonMod } from '@/engine/dungeonMods'
+import { DUNGEON_IMAGE_MAX_CHARS, DUNGEON_LIMITS, dungeonLayersOf, dungeonUsage, ROUTE_MODES, routeTargets, type DungeonMod } from '@/engine/dungeonMods'
+import { fileToBackground } from './iconUpload'
 import { autoFillLayers, copyableDungeons, copyLayers, layerPreview, regionLayerLevels, regionMonsters, routePreview } from '@/engine/dungeonPreview'
 import { gearRules } from '@/engine/gear'
 import { lightingRules, type Lighting } from '@/engine/light'
@@ -55,6 +56,20 @@ const requires = computed<StoryCond>({
     else delete draft.value.requires
   },
 })
+// 圖片：在這座地下城裡當整頁背景（縮到 1280 以內，存在世界裡）
+const imageInput = ref<HTMLInputElement | null>(null)
+const imageKb = computed(() => (draft.value.image ? Math.round((draft.value.image.length * 3) / 4 / 1024) : 0))
+async function onImage(e: Event) {
+  const input = e.target as HTMLInputElement
+  const f = input.files?.[0]
+  input.value = ''
+  if (!f) return
+  try {
+    draft.value.image = await fileToBackground(f, DUNGEON_IMAGE_MAX_CHARS)
+  } catch (err) {
+    game.error = err instanceof Error ? err.message : String(err)
+  }
+}
 const seriesList = computed(() => [...new Set(Object.values(gearRules.materials).map((m) => m.series).filter((s): s is string => !!s))])
 
 // ---- 路線 ----
@@ -210,6 +225,17 @@ function remove() {
       </div>
       <label class="block"><span>給 AI 的描述 <Hint text="外觀、氣氛、傳說；在這座地下城裡的每一則日誌都會帶上。" /></span><textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
       <RequiresEditor v-model="requires" label="出現條件（成立才找得到、才能前往）" placeholder="可以不填：一直都在" />
+      <div class="image-row small">
+        <span>圖片 <Hint text="在這座地下城裡（含屬於它的特殊地圖）當整頁背景；設定裡關掉背景圖時不顯示。上傳時縮到最長邊 1280 以內、存成 WebP，存在這個世界裡（會佔瀏覽器的容量；世界包匯出時一起帶走）。沒有時用地區的背景圖。" /></span>
+        <img v-if="draft.image" :src="draft.image" alt="地下城的圖片" class="preview" />
+        <span v-else class="muted">（沒有：用地區的背景圖）</span>
+        <span class="row">
+          <button class="small" @click="imageInput?.click()">{{ draft.image ? '換一張' : '上傳圖片' }}</button>
+          <button v-if="draft.image" class="small warn" @click="delete draft.image">移除</button>
+          <span v-if="draft.image" class="muted">約 {{ imageKb }} KB</span>
+        </span>
+        <input ref="imageInput" type="file" accept="image/png,image/webp,image/jpeg" hidden @change="onImage" />
+      </div>
     </FoldSet>
 
     <FoldSet :filled="draft.routes.length > 0">
@@ -288,4 +314,6 @@ function remove() {
 <style scoped>
 .boss { flex-wrap: wrap; align-items: center; gap: 4px 6px; border-top: 1px dashed var(--border); padding-top: 4px; }
 .fill .pair input { width: 3.5em; }
+.image-row { display: grid; gap: 4px; justify-items: start; }
+.preview { max-width: min(100%, 360px); max-height: 200px; border-radius: var(--radius); border: 1px solid var(--border); }
 </style>

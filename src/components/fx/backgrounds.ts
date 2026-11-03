@@ -3,6 +3,7 @@
 
 import { DUNGEON_LAYER_IDS, locationById } from '@/engine/data'
 import { currentArea } from '@/engine/grid'
+import { dungeonImages } from '@/engine/dungeonMods'
 import type { GameState } from '@/engine/types'
 
 const FILES = import.meta.glob<string>('../../assets/backgrounds/*.{webp,png,jpg,jpeg}', { eager: true, query: '?url', import: 'default' })
@@ -25,7 +26,7 @@ export function timeOfDay(hour: number): TimeOfDay {
 /**
  * 依序要找的背景 key（前面的優先）：
  * - 聚落、房子、近郊：<地點>-<時段>、<地點>、region-<地區>-<時段>、region-<地區>
- * - 地下城：<地點>-<層>（outskirts、shallow……）、<地點>、地區
+ * - 地下城：<地點>-<層>（outskirts、shallow……）、<地點>（自建地下城上傳的圖也是這個 key）、地區
  * - 特殊地圖：special-<地圖 id>、所屬地點、地區
  * - 旅途與臨時地圖：地區
  * - 還沒開始遊戲：title、region-central
@@ -59,6 +60,10 @@ export function backgroundKeys(state: GameState | null | undefined): string[] {
 
 /** 現在要顯示的背景圖網址；沒有合適的圖時是 null */
 export function backgroundFor(state: GameState | null | undefined, files: Record<string, string> = BACKGROUNDS): string | null {
-  for (const key of backgroundKeys(state)) if (files[key]) return files[key]!
+  // 自建地下城上傳的圖（key 是地點 id）排在同一個 key 的內建圖之後
+  for (const key of backgroundKeys(state)) {
+    const url = files[key] ?? dungeonImages[key]
+    if (url) return url
+  }
   return null
 }

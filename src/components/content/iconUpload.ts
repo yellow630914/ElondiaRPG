@@ -46,3 +46,30 @@ export async function fileToIcon(file: File): Promise<string> {
   if (!clean) throw new Error('這張圖縮小後還是太大，換一張顏色簡單一點的圖')
   return clean
 }
+
+/**
+ * 把圖片檔變成背景圖的 data URL（自建地下城）：最長邊縮到 1280 以內、存成 WebP；
+ * 還是太大時再縮小、降低品質，最後還是太大就丟出錯誤。
+ */
+export async function fileToBackground(file: File, maxChars: number): Promise<string> {
+  if (!file.type.startsWith('image/')) throw new Error('請選擇圖片檔（PNG、WebP、JPG）')
+  const img = await loadImage(file)
+  const w = img.naturalWidth
+  const h = img.naturalHeight
+  if (!w || !h) throw new Error('讀不了這張圖')
+  for (const [edge, quality] of [[1280, 0.75], [1024, 0.65], [800, 0.6], [640, 0.55]] as const) {
+    const scale = Math.min(1, edge / Math.max(w, h))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(w * scale))
+    canvas.height = Math.max(1, Math.round(h * scale))
+    const ctx = canvas.getContext('2d')
+    if (!ctx) throw new Error('這個瀏覽器不能處理圖片')
+    ctx.imageSmoothingQuality = 'high'
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+    let url = canvas.toDataURL('image/webp', quality)
+    // 不支援 WebP 的瀏覽器會給 PNG：改用 JPEG
+    if (!url.startsWith('data:image/webp')) url = canvas.toDataURL('image/jpeg', quality)
+    if (url.length <= maxChars) return url
+  }
+  throw new Error('這張圖縮小後還是太大，換一張小一點的圖')
+}

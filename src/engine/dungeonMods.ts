@@ -45,12 +45,26 @@ export interface DungeonMod {
   bosses?: Partial<Record<BossLayerId, EncounterGroup>>
   /** 各層的光線（周邊起算）；沒寫的層照共用的預設 */
   lighting?: Lighting[]
+  /** 上傳的圖（data URL）：在這座地下城裡（含屬於它的特殊地圖）當整頁背景 */
+  image?: string
   custom: true
 }
 
 export const DUNGEON_LIMITS = {
   name_chars: 16, desc_chars: 300, routes: 6, days: [0.5, 30], fare: [0, 9999], groups: 12, group_types: 4, group_count: [1, 6], boss_types: 3,
 } as const
+
+/** 上傳的圖最多幾個字（data URL）：世界存在 localStorage，一張約 300 KB */
+export const DUNGEON_IMAGE_MAX_CHARS = 400_000
+const IMAGE_URL = /^data:image\/(png|webp|jpeg);base64,[A-Za-z0-9+/]+={0,2}$/
+
+/** 整理上傳的圖：只收圖片的 data URL，太大的不收 */
+export function sanitizeDungeonImage(v: unknown): string | undefined {
+  return typeof v === 'string' && v.length <= DUNGEON_IMAGE_MAX_CHARS && IMAGE_URL.test(v) ? v : undefined
+}
+
+/** 自建地下城上傳的圖（地點 id → data URL）：背景圖找不到內建的圖時用（components/fx/backgrounds.ts） */
+export const dungeonImages: Record<string, string> = {}
 
 export const ROUTE_MODES: RouteMode[] = ['road', 'trail', 'wild', 'sea', 'dive', 'underground']
 const LIGHTINGS: Lighting[] = ['lit', 'daylight', 'dark']
@@ -159,6 +173,8 @@ export function sanitizeDungeonMod(id: string, raw: Partial<DungeonMod>, knownEn
   if (Object.keys(bosses).length) out.bosses = bosses
   const lights = (Array.isArray(raw.lighting) ? raw.lighting : []).slice(0, dungeonLayersOf(out).length)
   if (lights.length && lights.every((x) => LIGHTINGS.includes(x))) out.lighting = [...lights]
+  const image = sanitizeDungeonImage(raw.image)
+  if (image) out.image = image
   return out
 }
 
@@ -173,6 +189,7 @@ export function restoreDungeons() {
   }
   for (const id of Object.keys(lighting.locations)) if (!builtinLighting.has(id)) delete lighting.locations[id]
   for (const id of Object.keys(dungeonEncounters)) if (!builtinIds.has(id)) delete dungeonEncounters[id]
+  for (const id of Object.keys(dungeonImages)) delete dungeonImages[id]
   reindexLocations()
   rebuildRoutes()
 }
@@ -203,6 +220,7 @@ export function applyDungeonMod(m: DungeonMod) {
   if (m.bosses && Object.keys(m.bosses).length) enc.bosses = clone(m.bosses)
   dungeonEncounters[m.id] = enc
   if (m.lighting?.length) lighting.locations[m.id] = [...m.lighting]
+  if (m.image) dungeonImages[m.id] = m.image
   reindexLocations()
   rebuildRoutes()
 }
@@ -217,6 +235,7 @@ function removeDungeon(id: string) {
   }
   delete dungeonEncounters[id]
   delete lighting.locations[id]
+  delete dungeonImages[id]
 }
 
 // ---- 引用 ----

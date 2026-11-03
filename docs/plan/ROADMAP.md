@@ -20,7 +20,6 @@
 | # | 項目 | 現況 | 細節 |
 |---|---|---|---|
 | R10 | **手機版畫面**：實機測試、已知的小問題 | M1～M4 已完成並合併（2026-10-30，規則見 [MOBILE_UI](../MOBILE_UI.md)）；等實機測試 | [roadmap/MOBILE_UI_PLAN](roadmap/MOBILE_UI_PLAN.md) |
-| R16 | **地點編輯器**：自建地下城完成（2026-11-03，[已完成](roadmap/COMPLETED.md)）；剩下的小項目，以及自建聚落、自建地區要不要做 | 自建地下城的兩個小項目沒做（計畫第 1 節）；自建聚落與自建地區只有盤點、還沒決定（計畫第 3 節） | [roadmap/LOCATION_EDITOR_PLAN](roadmap/LOCATION_EDITOR_PLAN.md) |
 | R11 | **世界編輯器**：局部匯入／匯出（有關聯就一起帶）、特殊任務流程圖、AI 特殊任務生成器 | E5 介面整理、E1 關聯、E2 局部匯入與匯出、E3 流程圖、E4 特殊任務生成器完成（剩小項目） | [roadmap/WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md) |
 
 UI v2 已完成（原 R2）；沒做的模組化像素立繪、地圖格 tileset 移到點子庫 I19、I20。

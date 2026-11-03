@@ -335,3 +335,58 @@ describe('custom dungeons: other content can point at them', () => {
     ].sort())
   })
 })
+
+describe('custom dungeons: replacing all content', () => {
+  it('drops a dungeon that is in use without breaking the game, and lists what changed', async () => {
+    const { editableWorld } = await import('./testWorld')
+    const { useGame } = await import('@/stores/game')
+    const { specialMaps } = await import('@/engine/data')
+    const c = editableWorld()
+    c.saveDungeon(ID, cave())
+    const room = { name: '洞窟深處', location: ID, desc: '', lighting: 'dark', layer: 'deep', grid: ['#####', '#...#', '##E##'], custom: true }
+    c.saveSpecialMap('sm_test_room', room as never)
+    // 進行中的遊戲：人在地下城裡，接了以它為目標的委託
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    state.location = ID
+    enterLocation(state)
+    state.quests.push({ id: 'q1', giver: 'rivervale', target: ID, title: '清剿測試洞窟', status: 'accepted' } as never)
+    useGame().state = state
+
+    // 匯入的內容沒有這座地下城，但特殊地圖還寫著它
+    c.importMods(JSON.stringify({ type: 'elondia-content', specialMaps: { sm_test_room: room } }))
+    expect(findLocation(ID)).toBeUndefined()
+    expect(c.mods.dungeons).toEqual({})
+    expect(specialMaps.sm_test_room!.location).toBe('soriel')
+    expect(state.location).toBe('rivervale')
+    expect(state.position).toBeTruthy()
+    expect(state.expedition).toBeUndefined()
+    expect(state.quests.some((q) => q.id === 'q1')).toBe(false)
+    expect(c.problems.some((p) => p.includes('自建地下城「測試洞窟」不在匯入的內容裡'))).toBe(true)
+    expect(c.problems.some((p) => p.includes('特殊地圖「洞窟深處」原本屬於「loc_test_cave」') && p.includes('索里耶爾'))).toBe(true)
+  })
+})
+
+describe('custom dungeons: uploaded image', () => {
+  const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII='
+
+  it('keeps only image data URLs that are not too big', async () => {
+    const { DUNGEON_IMAGE_MAX_CHARS } = await import('@/engine/dungeonMods')
+    expect(sanitizeDungeonMod(ID, cave({ image: PNG })).image).toBe(PNG)
+    expect(sanitizeDungeonMod(ID, cave({ image: 'https://example.com/a.png' })).image).toBeUndefined()
+    expect(sanitizeDungeonMod(ID, cave({ image: `data:image/png;base64,${'A'.repeat(DUNGEON_IMAGE_MAX_CHARS)}` })).image).toBeUndefined()
+  })
+
+  it('is the background inside the dungeon, and goes away when the dungeon does', async () => {
+    const { backgroundFor } = await import('@/components/fx/backgrounds')
+    applyContent(normalizeMods({ ...emptyMods(), dungeons: { [ID]: cave({ image: PNG }) } }))
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: 'rivervale' })
+    state.location = ID
+    enterLocation(state)
+    expect(backgroundFor(state, {})).toBe(PNG)
+    // 內建的同名圖優先（例如之後放了 <id>-<層> 的圖）
+    expect(backgroundFor(state, { [`${ID}-outskirts`]: 'built-in.webp' })).toBe('built-in.webp')
+    applyContent(emptyMods())
+    const { dungeonImages } = await import('@/engine/dungeonMods')
+    expect(dungeonImages[ID]).toBeUndefined()
+  })
+})

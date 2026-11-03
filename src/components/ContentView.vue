@@ -57,6 +57,7 @@ import { builtinTravelEvent, DUNGEON_TRIGGERS, newTravelEvent } from '@/engine/t
 import { parasiteRules } from '@/engine/parasites'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
+import Hint from './ui/Hint.vue'
 import { confirmDiscard, unsavedEdits } from './content/unsaved'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
@@ -1045,7 +1046,10 @@ function resetAll() {
         <div class="menu" @click="($event.currentTarget as HTMLElement).closest('details')!.open = false">
           <button class="small" @click="showImport = true">📥 從檔案或其他世界帶入幾項…</button>
           <button class="small" :disabled="content.readOnly" @click="exportAll">📤 匯出自訂內容（內容檔）</button>
-          <button class="small" title="會取代這個世界目前所有的自訂內容（原版世界時存成新的世界）" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
+          <span class="row replace-row">
+            <button class="small" title="會取代這個世界目前所有的自訂內容（原版世界時存成新的世界）" @click="fileInput?.click()">📥 匯入內容檔，取代全部內容…</button>
+            <span @click.stop><Hint warn :width="320" text="新的內容裡沒有的自建地下城會一起拿掉：用到它的特殊任務不匯入，地下城事件與情報物品的引用拿掉，屬於它的特殊地圖改到別的地點（匯入後列在頁面上方）。存檔不會壞：人在裡面或在往返路上的，讀檔時送回聚落；以它為目標的委託、情報清掉。" /></span>
+          </span>
           <button class="small danger" :disabled="content.readOnly" @click="resetAll">↩️ 全部恢復預設…</button>
         </div>
       </details>
@@ -1072,6 +1076,8 @@ function resetAll() {
 .pick-bar { padding: 4px 6px; border: 1px dashed var(--gold-lo); border-radius: var(--radius); }
 .world-menu { position: relative; }
 .world-menu summary { cursor: pointer; list-style: none; padding: 2px 8px; border: 1px solid var(--border); border-radius: 6px; }
+.replace-row { flex-wrap: nowrap; gap: 4px; }
+.replace-row > button { flex: 1; }
 .world-menu .menu { position: absolute; right: 0; bottom: calc(100% + 4px); z-index: 5; display: grid; gap: 4px; padding: 6px; min-width: 240px; background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: 0 6px 16px #000a; }
 .spacer { flex: 1; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
