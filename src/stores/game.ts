@@ -32,6 +32,7 @@ import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
+import { takeLocationNotice } from '@/engine/pruneLocations'
 import * as grid from '@/engine/grid'
 import * as specialMaps from '@/engine/specialMaps'
 import * as masterHome from '@/engine/masterHome'
@@ -648,10 +649,10 @@ export const useGame = defineStore('game', () => {
 
   // ---- 存檔欄位 ----
 
-  function flash(text: string) {
+  function flash(text: string, ms = 2500) {
     notice.value = text
     clearTimeout(noticeTimer)
-    noticeTimer = setTimeout(() => (notice.value = null), 2500)
+    noticeTimer = setTimeout(() => (notice.value = null), ms)
   }
 
   /** 目前的遊戲；存檔欄位與匯出的檔案也附上當時的自訂內容（沒有自訂內容時不附；上傳的圖示不附） */
@@ -751,22 +752,28 @@ export const useGame = defineStore('game', () => {
   }
 
   /** 載入一份遊戲：先切到它的世界，再補上新欄位 */
-  function enter(data: SaveData) {
+  /** 載入存檔；回傳跳出來的提示（世界切換、被送回聚落），讀檔的「已讀取存檔」接在後面 */
+  function enter(data: SaveData): string {
     for (const c of controllers.values()) c.abort()
     clearUndo()
     stopWalk()
     const world = useContent().enterWorld(data.state.world, data.content)
+    takeLocationNotice()
     state.value = load(data.state)
     state.value.world = { id: world.id, name: world.name }
     narrations.value = (data.narrations ?? {}) as Record<string, NarrationState>
     usage.value = (data.usage ?? {}) as Record<string, UsageEntry>
     error.value = null
-    if (world.note) flash(world.note)
+    // 存檔所在的自建地下城已經不在這個世界：送回聚落時說明（pruneLocations.ts）
+    const moved = takeLocationNotice()
+    const note = [world.note, moved].filter(Boolean).join(' ')
+    if (note) flash(note, moved ? 8000 : 2500)
     save()
+    return moved ?? ''
   }
 
-  function applySnapshot(data: SaveData) {
-    enter(data)
+  function applySnapshot(data: SaveData): string {
+    return enter(data)
   }
 
   /** 首頁的「繼續」：載入進行中的遊戲 */
@@ -808,8 +815,8 @@ export const useGame = defineStore('game', () => {
       if (!data) throw new Error('找不到這個存檔')
       if (state.value && useSettings().backupBeforeSwitch) await autoSave('讀檔前')
       await backupResume('讀檔前')
-      applySnapshot(data)
-      flash('📂 已讀取存檔')
+      const moved = applySnapshot(data)
+      flash(moved ? `📂 已讀取存檔。${moved}` : '📂 已讀取存檔', moved ? 8000 : 2500)
     } catch (e) {
       error.value = `讀檔失敗：${e instanceof Error ? e.message : String(e)}`
     }

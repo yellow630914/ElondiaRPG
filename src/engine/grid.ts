@@ -666,6 +666,18 @@ export function questRunnableHere(state: GameState, quest: { id: string; area: s
 }
 
 /** 冒險區域的一層：從入口隨機挖出通道，最遠處放下行階梯（深層放層主），入口旁是安全房。 */
+/** 強敵：這一層最強的一組，再多一隻 */
+function strongestPlusOne(table: EncounterGroup[]): EncounterGroup {
+  const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
+  return strongest.map(([id, n], idx) => [id, idx === 0 ? n + 1 : n] as [string, number])
+}
+
+/** 這一層上面幾層的遭遇表（沒有怪物的層算寶箱等級用） */
+function shallowerTables(location: string, layer: number): EncounterGroup[] {
+  const enc = dungeonEncounters[location]
+  return maps.generation.dungeon.layers.slice(0, layer).flatMap((l) => enc?.[l.id as DungeonLayerId] ?? [])
+}
+
 export function generateLayer(state: GameState, loc: Location, layer: number, rng: Rng): Area {
   const g = maps.generation.dungeon
   const spec = g.layers[layer]!
@@ -701,24 +713,24 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   // 最深的一層（有底層時是底層，否則是深層）：最終層主；其他層：層主守著往下的階梯（沒有層主資料時直接是階梯）
   const enc = dungeonEncounters[loc.id]
   const last = layer >= dungeonDepth(loc.id) - 1
-  const bossGroup = enc?.bosses?.[spec.id as BossLayerId] ?? (spec.id === 'deep' ? enc?.boss : undefined)
+  // 遭遇表：沒寫的層用地區的城郊遭遇表；寫了但是空的（自建地下城沒放怪物的層）就不生怪物，可以當作休息或獎勵的樓層
+  const table = enc?.[spec.id] ?? wildEncounters(loc.region)
+  // 沒設層主的層照強敵的規則：這一層最強的一組再多一隻（這一層沒有怪物時沒有層主）
+  const bossGroup = enc?.bosses?.[spec.id as BossLayerId] ?? (spec.id === 'deep' && enc?.boss?.length ? enc.boss : undefined) ?? (table.length ? strongestPlusOne(table) : undefined)
   cells[far] = last
-    ? { kind: 'boss', group: bossGroup ?? [] }
+    ? bossGroup?.length ? { kind: 'boss', group: bossGroup } : { kind: 'floor' }
     : spec.guard && bossGroup?.length
       ? { kind: 'boss', group: bossGroup, then: 'stairs_down' }
       : { kind: 'stairs_down' }
   used.add(far)
 
-  const table = dungeonEncounters[loc.id]?.[spec.id] ?? wildEncounters(loc.region)
-  for (const i of randomCells(rng, area, between(rng, spec.encounters), used)) {
+  for (const i of randomCells(rng, area, table.length ? between(rng, spec.encounters) : 0, used)) {
     cells[i] = { kind: 'encounter', group: rng.pick(table) }
     used.add(i)
   }
-  for (const i of randomCells(rng, area, spec.elites ?? 0, used)) {
+  for (const i of randomCells(rng, area, table.length ? spec.elites ?? 0 : 0, used)) {
     // 強敵：本層最強的一組，再多一隻
-    const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
-    const group = strongest.map(([id, n], idx) => [id, idx === 0 ? n + 1 : n] as [string, number])
-    cells[i] = { kind: 'elite', group }
+    cells[i] = { kind: 'elite', group: strongestPlusOne(table) }
     used.add(i)
   }
   for (const i of randomCells(rng, area, between(rng, spec.traps), used)) {
@@ -729,8 +741,8 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
     cells[i] = { kind: 'resource', item: rng.pick(g.resource_items) }
     used.add(i)
   }
-  // 寶箱：內容依這一層怪物的最高等級
-  const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1))
+  // 寶箱：內容依這一層怪物的最高等級（沒有怪物的層：照上面幾層最強的怪物）
+  const level = Math.max(1, ...(table.length ? table : shallowerTables(loc.id, layer)).flat().map(([id]) => enemies[id]?.level ?? 1))
   const mimic = parkPlaza(loc.id) ? mimicFor(area) : undefined
   for (const i of randomCells(rng, area, spec.chests ? between(rng, spec.chests) : 0, used)) {
     // 園區：有機會是擬態寶箱

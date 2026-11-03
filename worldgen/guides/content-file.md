@@ -95,7 +95,7 @@
 | 欄位 | 說明 |
 |---|---|
 | `name` | 最多 16 字，不能和其他地點同名 |
-| `region` | 現有的地區（`central`、`north`、`south`、`forest`、`east_sea`、`west`）；沒放怪物的層用這個地區的城郊遭遇表 |
+| `region` | 現有的地區（`central`、`north`、`south`、`forest`、`east_sea`、`west`）；地下城事件的地區篩選、背景圖看這裡（空的層不生怪物，見 [dungeons](dungeons.md)） |
 | `routes` | 1～6 條，**只能接內建的聚落**；`days` 是 `[最少, 最多]`（以半天為單位，0.5～30），`mode` 是 `road`、`trail`、`wild`、`sea`、`dive`、`underground`，`fare` 選填（每人的船資）。7 天內的公會會發這座的委託 |
 | `layers` | 周邊、淺層、中層、深層（`abyss: true` 時多一層底層）：每層幾組遭遇，每組 1～4 種怪物、每種 1～6 隻，最多 12 組；要提高某一組的機率就多放幾組 |
 | `bosses` | 淺層、中層、深層（與底層）的層主：第一種是層主，其他是護衛（最多 3 種）；沒寫的層照強敵的規則 |
