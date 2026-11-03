@@ -4,7 +4,7 @@
 import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
-import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey } from './data'
+import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey, type LewdTitleDef } from './data'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules } from './gear'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
@@ -114,6 +114,28 @@ export function exposureAt(state: Pick<GameState, 'exposure'>, id: string, regio
 /** 目前所在地區 */
 export function currentRegion(state: Pick<GameState, 'location'>): string {
   return locationById(state.location).region
+}
+
+// ---- 稱號（docs/LEWD_STATS.md 第 28 節；只顯示，沒有效果） ----
+
+/**
+ * 符合的慾望稱號（lewd.json 的 titles，由上往下最多 max 個）：五項慾望指標（有效值；曝露名聲看所在地區）、
+ * 至少有一個身分標籤、所在地勢力的聲望。目前只顯示在角色詳情，不影響檢定、價格或 AI
+ */
+export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'reputation'>, c: Character): LewdTitleDef[] {
+  const t = lewdRules.titles
+  if (!t) return []
+  const v = lewdOf(c)
+  const exposure = exposureAt(state, c.id, currentRegion(state))
+  const faction = locationById(state.location).faction
+  const rep = faction ? state.reputation?.[faction] ?? 0 : 0
+  const inRange = (x: number, r: { min?: number; max?: number } | undefined) => !r || ((r.min === undefined || x >= r.min) && (r.max === undefined || x <= r.max))
+  return t.list.filter((d) => {
+    const q = d.requires
+    if (q.pc_tags?.length && !c.tags?.some((tag) => q.pc_tags!.includes(tag))) return false
+    if (q.reputation && !inRange(rep, q.reputation)) return false
+    return Object.entries(q.stats ?? {}).every(([k, r]) => inRange(k === 'exposure' ? exposure : v[k as LewdStat], r))
+  }).slice(0, t.max)
 }
 
 // ---- 增減 ----

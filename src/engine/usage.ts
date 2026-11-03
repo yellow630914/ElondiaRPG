@@ -150,6 +150,7 @@ export function storyUsage(id: string, state?: GameState | null): string[] {
 export function perkUsage(id: string, state?: GameState | null): string[] {
   const out: string[] = []
   for (const n of namedNpcs) if (n.perks?.includes(id)) out.push(`固定 NPC「${n.name}」的特質`)
+  for (const n of namedNpcs) if (n.mentor?.perks.includes(id)) out.push(`固定 NPC「${n.name}」會教的特質`)
   for (const s of stories) {
     if (storyEffects(s).some((e) => (e.type === 'perk' && (e.perk === id || e.options?.includes(id))) || (e.type === 'lose_perk' && e.perk === id))) {
       out.push(`特殊任務「${s.title}」的效果`)

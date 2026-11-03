@@ -1,6 +1,6 @@
 # 慾望戰鬥：剩下的事（成人向）
 
-> 上層：[ROADMAP](../ROADMAP.md) R8。S0～S9 已完成並在 v0.4.0 發布（[已完成](COMPLETED.md)）；規則寫在 [COMBAT_SYSTEM](../../COMBAT_SYSTEM.md) 第 8.5 節、[LEWD_STATS](../../LEWD_STATS.md)、[LUST_PARK](../../LUST_PARK.md)、[ADULT_EVENTS](../../ADULT_EVENTS.md)。
+> 上層：[ROADMAP](../ROADMAP.md) R8。S0～S9 已完成並在 v0.4.0 發布、S10（流派的老師與秘法書、寄生類的雙面效應、稱號）2026-11-02 完成（[已完成](COMPLETED.md)）；規則寫在 [COMBAT_SYSTEM](../../COMBAT_SYSTEM.md) 第 8.5 節、[LEWD_STATS](../../LEWD_STATS.md)、[LUST_PARK](../../LUST_PARK.md)、[ADULT_EVENTS](../../ADULT_EVENTS.md)。
 > 這份只留還沒做的部分。做完寫回系統文件，從這裡刪掉。
 > 素材：玩家提供的修仙題材世界書（原文是第三方著作，不放 repo；繁簡兩版在擁有者的私人頁面 <https://claude.ai/artifact/DayFjAbU6wqCTK3JcZ6hWk>）。條目大多已經用在上面的系統裡。
 
@@ -18,12 +18,11 @@
 | 項目 | 說明 |
 |---|---|
 | 神殿的淨化 | 慾望指標的成長來源之一（降淫亂、敏感）；現在只有清心類的消耗品、特質與流派 |
-| 聲望交叉、身分標籤「放蕩的貴族」 | 曝露名聲和勢力聲望互相影響；身分標籤已經有貴族、皇族的曝露名聲倍率（[NPC_SYSTEM](../../NPC_SYSTEM.md) 4.1 節） |
-| 流派的老師、秘法書 | 現在流派特質從受訓、事件、升級拿 |
-| 寄生類的雙面效應 | 寄生物有自己的階段與被動效果，還沒有平常／戰鬥兩面 |
 | 園區規則的編輯器 | 地點的 `park`、`lewd.json` 的 `park` 還要改 JSON；特殊地圖編輯器已經能選「園區」 |
 | 新的園區（例如拘束機關屋） | 每個園區就是一座地下城加一條通道（[LUST_PARK](../../LUST_PARK.md)） |
 | 防具＋拘束具的淫器合煉 | 現在只有武器＋拘束具（展開成什麼還沒定義） |
+
+稱號（S10）目前只顯示、沒有效果；之後要不要讓它影響 NPC 的態度、交給 AI 再決定。稱號清單與寄生類的雙面效應的數值還要改 JSON（`lewd.json` 的 `titles`、`parasite_two_face`）。
 
 ## 3. 要實際遊玩後再調的數值（併入 R1）
 

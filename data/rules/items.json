@@ -1595,6 +1595,14 @@
     { "name": "《行旅手札》", "category": "consumable", "price_cc": 450, "tags": ["general", "tavern"], "use": {"perks": ["pathfinder", "survivor", "watchful", "star_sleeper"]}, "desc": "老行商寫下的旅途心得，讀完有機會學會識途老馬、野外求生、眼觀四方或星夜露宿。"},
     { "name": "《戰技精要》", "category": "consumable", "price_cc": 900, "tags": ["smith"], "use": {"perks": ["brawler", "thick_skin", "nimble", "veteran"]}, "desc": "退役傭兵團長的筆記，讀完有機會學會打架好手、皮糙肉厚、身手矯健或老練冒險者。"},
     { "name": "《聖典抄本》", "category": "consumable", "price_cc": 600, "tags": ["temple"], "use": {"perks": ["devout", "iron_will", "temple_friend", "kind_heart"]}, "desc": "神殿抄寫的經文，讀完有機會學會虔誠、意志堅定、神職人緣或古道熱腸。"},
-    { "name": "《博物志》", "category": "consumable", "price_cc": 700, "tags": ["magic"], "use": {"perks": ["scholar", "artisan", "merchant_eye"]}, "desc": "學者整理的百科全書，讀完有機會學會博學、巧手或生意頭腦。"}
+    { "name": "《博物志》", "category": "consumable", "price_cc": 700, "tags": ["magic"], "use": {"perks": ["scholar", "artisan", "merchant_eye"]}, "desc": "學者整理的百科全書，讀完有機會學會博學、巧手或生意頭腦。"},
+    {"name": "《侍奉之書》", "category": "consumable", "price_cc": 1800, "tags": ["tavern"], "adult": true, "use": {"perks": ["school_servitude", "servitude_vow"]}, "desc": "侍寢見習館流出來的抄本，寫滿怎麼跪、怎麼等、怎麼在命令裡找到自己的位置。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。", "charm_min": 3},
+    {"name": "《鞭痕錄》", "category": "consumable", "price_cc": 1800, "tags": ["magic"], "adult": true, "use": {"perks": ["school_punishment", "trained_body"]}, "desc": "一位退伍刑訊官的筆記：每一種痛的名字、它會在身體裡停多久、怎麼讓它變成別的東西。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。", "charm_min": 3},
+    {"name": "《結繩圖譜》", "category": "consumable", "price_cc": 1800, "tags": ["tailor"], "adult": true, "use": {"perks": ["school_bondage", "rope_strength"]}, "desc": "畫滿繩結與綁法的圖冊，每一頁的邊上都有人用紅筆標了「不會傷到」。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。", "charm_min": 3},
+    {"name": "《魅魔的枕邊書》", "category": "consumable", "price_cc": 2200, "tags": ["magic"], "adult": true, "use": {"perks": ["school_indulgence", "wanton_blaze"]}, "desc": "赤翼宮廷的魅魔寫給人類的入門書，字跡圓滾滾的，插圖一點都不含蓄。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。", "charm_min": 3},
+    {"name": "《肉身鍛鍊法》", "category": "consumable", "price_cc": 1800, "tags": ["general"], "adult": true, "use": {"perks": ["school_flesh", "afterglow_memory"]}, "desc": "一本講怎麼把身體練得耐操的小冊子，前半是體操，後半就不太是了。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。", "charm_min": 3},
+    {"name": "《寄生生物考》", "category": "consumable", "price_cc": 2000, "tags": ["magic"], "adult": true, "use": {"perks": ["school_beast", "hive_bond"]}, "desc": "沼地女巫的研究筆記，記錄各種寄生物的習性，以及怎麼和牠們「談條件」。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。"},
+    {"name": "《清規》", "category": "consumable", "price_cc": 1500, "tags": ["temple"], "adult": true, "use": {"perks": ["school_abstinence", "pure_heart"]}, "desc": "晨曦聖殿苦修士代代相傳的戒律與冥想法，紙頁被翻得發軟。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。"},
+    {"name": "《模特兒守則》", "category": "consumable", "price_cc": 1600, "tags": ["tailor"], "adult": true, "use": {"perks": ["school_exhibition", "center_stage"]}, "desc": "河畔畫室的模特兒們傳抄的守則：怎麼站、怎麼被看、怎麼讓看的人移不開眼睛。讀完（約 4 小時）有機會學會入門特質；已經入門的人，有機會學會進階特質。", "charm_min": 3}
   ]
 }

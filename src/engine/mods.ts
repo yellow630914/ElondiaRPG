@@ -1316,6 +1316,15 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   // 娼婦光顧時會教的色情技能
   const teaches = [...new Set((Array.isArray(raw.teaches) ? raw.teaches : []).filter((id) => typeof id === 'string' && abilities[id]?.classes.includes('lewd')))].slice(0, 12)
   if (teaches.length) out.teaches = teaches
+  // 老師會教的特質（清單裡的、不是種族特質；docs/LEWD_STATS.md 第 6.1 節）
+  if (raw.mentor && typeof raw.mentor === 'object') {
+    const perks = [...new Set((Array.isArray(raw.mentor.perks) ? raw.mentor.perks : []).filter((id) => typeof id === 'string' && isChoosablePerk(id) && !perkDef(id)?.flaw))].slice(0, 8)
+    if (perks.length) {
+      out.mentor = { perks }
+      if (raw.mentor.affinity !== undefined && Number.isFinite(Number(raw.mentor.affinity))) out.mentor.affinity = int(raw.mentor.affinity, 0, 100, 10)
+      if (raw.mentor.price_mult !== undefined && Number.isFinite(Number(raw.mentor.price_mult))) out.mentor.price_mult = Math.round(num(raw.mentor.price_mult, 0, 3, 0.8) * 100) / 100
+    }
+  }
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {

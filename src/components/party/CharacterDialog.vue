@@ -8,7 +8,7 @@ import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
-import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf } from '@/engine/lewd'
+import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
 import { MOD_NAME } from '@/engine/gear'
@@ -30,7 +30,7 @@ import StatGrid, { type StatItem } from '../ui/StatGrid.vue'
 import PaperDoll from './PaperDoll.vue'
 import TattooMap from './TattooMap.vue'
 import ParasitePane from './ParasitePane.vue'
-import { parasitesOf } from '@/engine/parasites'
+import { activeParasites, parasiteDef, parasitesOf, parasiteTwoFace } from '@/engine/parasites'
 import { abilityMeta, affinityText, attrNote, CHAR_TABS, contractFor, groupedAbilities, QUALITY_NAME, signed, slotsText, TYPE_NAME, type CharTab } from './memberInfo'
 import SwipeTabs from '../mobile/SwipeTabs.vue'
 import { isMobile } from '../mobile/mobile'
@@ -100,6 +100,21 @@ const lewdItems = computed<StatItem[]>(() => {
       note: tf.active.length ? `戰鬥中：${twoFaceText(tf)}` : schools.length ? '鎖上之後戰鬥中才有增益' : '沒修流派：只有平常的檢定減值',
     })
   }
+  // 寄生類的雙面效應（第 14.1 節）
+  const wild = activeParasites(x).filter((p) => !p.tamed)
+  if (wild.length) {
+    const pt = parasiteTwoFace(x)
+    const parts = Object.entries(pt.mods).filter(([, n]) => n).map(([k, n]) => `${MOD_NAME[k] ?? k} ${signed(n ?? 0)}`)
+    if (pt.lustBonus) parts.push(`造成的慾望 ${signed(pt.lustBonus)}`)
+    items.push({
+      label: '寄生',
+      value: pt.active.length ? pt.active.map((a) => `${a.name}（${a.stage}${a.mult !== 1 ? `・×${a.mult}` : ''}）`).join('、') : wild.map((p) => parasiteDef(p.id)?.name ?? p.id).join('、'),
+      note: parts.length ? `戰鬥中：${parts.join('・')}` : schools.length ? '還在潛伏：戰鬥中沒有加成' : '沒修流派：只有平常的檢定減值',
+    })
+  }
+  // 稱號（第 28 節，只是稱號）
+  const titles = lewdTitles(s.value, x)
+  if (titles.length) items.push({ label: '稱號', value: titles.map((t) => t.name).join('、'), note: titles.map((t) => t.desc).join(' ') })
   return items
 })
 
