@@ -882,6 +882,9 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   const icon = sanitizeIcon(raw.icon)
   if (icon) out.icon = icon
   if (raw.min_location && LOCATIONS.includes(raw.min_location) && raw.min_location !== 'village') out.min_location = raw.min_location
+  // 只在這些地區賣：內建的地區（內容包新增的地區在套用時才有，這裡也收）
+  const regions = [...new Set((Array.isArray(raw.regions) ? raw.regions : []).filter((r): r is string => typeof r === 'string' && /^[a-z0-9_]{1,40}$/.test(r)))].slice(0, 8)
+  if (regions.length) out.regions = regions
   const use = sanitizeUse(raw.use)
   if (use) out.use = use
   const gear = category === 'equipment' ? sanitizeGearSpecLoose(raw.gear) : undefined

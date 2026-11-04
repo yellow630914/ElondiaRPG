@@ -160,6 +160,14 @@ function toggle<T>(list: T[] | undefined, v: T, on: boolean): T[] {
   else set.delete(v)
   return [...set]
 }
+/** 只在這些地區的商店賣（都不勾時拿掉欄位） */
+function setRegion(id: string, on: boolean) {
+  const set = new Set(draft.value.regions ?? [])
+  if (on) set.add(id)
+  else set.delete(id)
+  if (set.size) draft.value.regions = geography.regions.map((r) => r.id).filter((r) => set.has(r))
+  else delete draft.value.regions
+}
 function setTag(tag: string, on: boolean) {
   draft.value.tags = toggle(draft.value.tags, tag, on)
 }
@@ -380,6 +388,10 @@ function setFuel(v: string) {
             <option v-for="n in [2, 3, 4]" :key="n" :value="n">{{ n }}</option>
           </select>
         </label>
+      </div>
+      <div class="row checks" title="地方的特產：只在這些地區的商店賣；都不勾時哪裡都賣">
+        <span class="small">只在這些地區賣：</span>
+        <label v-for="r in geography.regions" :key="r.id" class="check small"><input type="checkbox" :checked="!!draft.regions?.includes(r.id)" @change="setRegion(r.id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}</label>
       </div>
       <p v-if="draft.category === 'equipment'" class="small muted">裝備在商店是每天隨機上架幾樣，不是每天都有。</p>
       <div class="row checks">

@@ -180,7 +180,9 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const place = shopPlace(state)
   // 淫市的貨：魅氣濃度夠高的聚落才有（驛站沒有）
   const charm = place.waystation ? 0 : charmLevel(place.id)
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank && (!i.charm_min || charm >= i.charm_min))
+  const region = locationById(state.location).region
+  const soldHere = (i: ItemDef) => !i.regions?.length || i.regions.includes(region)
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank && (!i.charm_min || charm >= i.charm_min) && soldHere(i))
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     // 服裝另外挑（shops.json 的 outfits），不擠掉護具與武器
@@ -220,10 +222,10 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
     if (def.random) {
       const r = def.random
       const have = new Set(deals.map((d) => d.title))
-      const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank)
+      const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank && soldHere(i))
       for (const i of pickSome(consumables, r.consumables ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 3)))
       const cap = r.max_material_price?.[Math.min(rank, (r.max_material_price.length ?? 1) - 1)] ?? 300
-      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5)
+      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5 && soldHere(i))
       for (const i of pickSome(materials, r.materials ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 2), r.material_markup ?? 2))
     }
     // 流浪商人：幾件隨機的優良裝備

@@ -40612,6 +40612,7 @@
             "text": "大燁進入了女帝親政的時代：朝廷與胡記得勢，金墨盟的激進派星散，宰相退出朝堂。女帝比以前更強，也更孤單——她在城樓上喝茶的時候，身邊多了一個位子。",
             "set_flags": ["yhpol_monarchy", "yhpol_done"],
             "effects": [
+              { "type": "item", "name": "宣德寶劍", "qty": 1 },
               { "type": "reputation", "faction": "yanye_court", "delta": 8 },
               { "type": "reputation", "faction": "jinmo_league", "delta": -8 },
               { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 15, "reason": "陪她走上親政" },
@@ -40656,6 +40657,7 @@
             "text": "大燁成了共和：公議會在太學的講堂開議，陸青禾當選首席，金墨盟與行會得勢。宰相出逃，朝廷通緝死忠的保守派。燁昭華搬出了皇城，住進貴族坊一間普通的宅子——她說這是她五年來睡得最好的一覺。皇城的門從此向所有人打開。",
             "set_flags": ["yhpol_republic", "palace_permit_longan", "yhpol_done"],
             "effects": [
+              { "type": "item", "name": "公議之印", "qty": 1 },
               { "type": "reputation", "faction": "jinmo_league", "delta": 8 },
               { "type": "reputation", "faction": "yanye_court", "delta": -6 },
               { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 15, "reason": "陪她走上公議" },
@@ -40711,6 +40713,7 @@
             "text": "大燁成了君主立憲：女帝與議會共治，憲章限制皇權也保障各方。朝廷、萍江的官府與農工、瑔州港的胡記與金黃鱗，各有一席——人們叫它「五席」。女帝簽下憲章的時候，回頭看了你一眼。",
             "set_flags": ["yhpol_constitution", "yhpol_done"],
             "effects": [
+              { "type": "item", "name": "憲章玉璽", "qty": 1 },
               { "type": "reputation", "faction": "yanye_court", "delta": 5 },
               { "type": "reputation", "faction": "jinmo_league", "delta": 5 },
               { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 12, "reason": "陪她寫下憲章" },

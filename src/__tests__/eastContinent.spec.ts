@@ -15,6 +15,9 @@ import { storyOffersHere } from '@/engine/story'
 import { stories } from '@/engine/data'
 import { palaceNeedsPersuading } from '@/engine/security'
 import { setFlag } from '@/engine/storyFlags'
+import { shopState } from '@/engine/trade'
+import { sanitizeItem } from '@/engine/mods'
+import { itemDef } from '@/engine/data'
 import namedNpcs from '../../data/world/npcs.json'
 
 // 炎華之地 P1（docs/plan/roadmap/EAST_CONTINENT_PLAN.md）：兩個種族、炎華南域的四座聚落、航線與野外
@@ -164,6 +167,20 @@ describe('炎華之地', () => {
       const d = stories.find((x) => x.id === id)!
       expect(d.nodes[0]!.success!.set_flags, id).toContain('palace_permit_longan')
     }
+  })
+
+  it('sells the east specialties only in 炎華之地 shops (items.regions)', () => {
+    const sold = (loc: string, type: 'general' | 'tavern') => {
+      const s = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 3, birthplace: loc })
+      return shopState(s, type).deals.map((d) => d.title)
+    }
+    expect(sold('longan', 'general')).toEqual(expect.arrayContaining(['指南魚', '狐火燈', '龍團茶餅']))
+    expect(sold('longan', 'tavern')).toContain('燒鵝')
+    expect(sold('soriel', 'general')).not.toContain('指南魚')
+    expect(sold('soriel', 'tavern')).not.toContain('燒鵝')
+    expect(itemDef('鐵朴刀')!.regions).toEqual(['yanhua_south', 'yanhua_north'])
+    // 內容編輯器的整理留著地區
+    expect(sanitizeItem('x', { ...itemDef('燒鵝')!, regions: ['yanhua_south', 'Bad Id!'] }, true).regions).toEqual(['yanhua_south'])
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {

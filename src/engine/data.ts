@@ -1750,6 +1750,8 @@ export interface ItemDef {
   forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
+  /** 只在這些地區的商店賣（地方的特產，例如炎華之地的茶餅、朴刀）；沒有時哪裡都賣 */
+  regions?: string[]
   /** 魅氣濃度至少這麼高的聚落才買得到（淫市的貨，docs/LEWD_STATS.md 第 20 節） */
   charm_min?: number
   /** 事件可能出現：AI 判定主動行動時可以把它當成報酬 */

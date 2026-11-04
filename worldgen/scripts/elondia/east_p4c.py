@@ -9,7 +9,7 @@
 """
 
 from east_story_io import write_stories
-from east_story_kit import COURT, LEAGUE, aff, at_npc, cell, check, fight, mem, node, rep, story, town
+from east_story_kit import COURT, LEAGUE, aff, at_npc, cell, check, fight, item, mem, node, rep, story, town
 
 ZHAOHUA, WEN, RUYU, YUE, SU, LU, JIUNIANG, JIN, TAIYE, HUIYIN, SHEN = (
     'npc_yh_zhaohua', 'npc_yh_wen_shiheng', 'npc_yh_wen_ruyu', 'npc_yh_yue_zhenshan', 'npc_yh_su_huaijin', 'npc_yh_lu_qinghe',
@@ -144,7 +144,7 @@ STORIES = [
              [['yh_radical_firebrand', 1], ['yh_league_musketeer', 1]], '火頭倒下了，宣德樓的火被禁軍撲滅。城下的人群看著城樓，一片死寂。')],
            ('女帝站在燒焦的城樓上，看著龍安府：「從今天起，朕親自看每一份奏摺、每一筆帳。宰相罷相，閉門思過；激進派的頭目下獄。各地的火，朕親手熄。」',
             '大燁進入了女帝親政的時代：朝廷與胡記得勢，金墨盟的激進派星散，宰相退出朝堂。女帝比以前更強，也更孤單——她在城樓上喝茶的時候，身邊多了一個位子。'),
-           'yhpol_monarchy', [rep(COURT, 8), rep(LEAGUE, -8), aff(ZHAOHUA, 15, '陪她走上親政'), aff(LU, -15, '站在朝廷那一邊'),
+           'yhpol_monarchy', [item('宣德寶劍'), rep(COURT, 8), rep(LEAGUE, -8), aff(ZHAOHUA, 15, '陪她走上親政'), aff(LU, -15, '站在朝廷那一邊'),
                                mem('大燁的政體走向君主制：女帝燁昭華親政收權，宰相罷相，金墨盟的激進派星散。', 3)]),
     finale('yhpol_end_republic', '公議',
            '女帝決定退位，讓公議會治國。宰相帶著殿前司三營要「清君側」，在退位詔書頒布之前攻上宣德樓。（政治線上半・終章：共和制）',
@@ -153,7 +153,7 @@ STORIES = [
              [['yh_chancellor_marshal', 1], ['yh_palace_guard', 1]], '禁軍統領跪倒在城樓上。城下，岳鎮山帶著禁軍圍住了相府。')],
            ('女帝親手在退位詔書上蓋了最後一次玉璽，把詔書交給陸青禾：「大燁交給你們了。吵吧，吵出一條路來。」',
             '大燁成了共和：公議會在太學的講堂開議，陸青禾當選首席，金墨盟與行會得勢。宰相出逃，朝廷通緝死忠的保守派。燁昭華搬出了皇城，住進貴族坊一間普通的宅子——她說這是她五年來睡得最好的一覺。皇城的門從此向所有人打開。'),
-           ['yhpol_republic', 'palace_permit_longan'], [rep(LEAGUE, 8), rep(COURT, -6), aff(LU, 15, '陪她走上公議'), aff(ZHAOHUA, 8, '讓她卸下了天下'),
+           ['yhpol_republic', 'palace_permit_longan'], [item('公議之印'), rep(LEAGUE, 8), rep(COURT, -6), aff(LU, 15, '陪她走上公議'), aff(ZHAOHUA, 8, '讓她卸下了天下'),
                                mem('大燁的政體走向共和制：女帝燁昭華退位，公議會治國，陸青禾當選首席，宰相出逃。', 3)]),
     finale('yhpol_end_constitution', '憲章',
            '女帝決定與萬民立憲。宰相與激進派兩邊都不肯，各自帶人攻上宣德樓。（政治線上半・終章：君主立憲制）',
@@ -164,7 +164,7 @@ STORIES = [
              [['yh_radical_firebrand', 1], ['yh_league_musketeer', 1]], '火頭倒下，城樓上只剩下風聲。')],
            ('女帝、蘇懷瑾、陸青禾、胡九娘、金玉棠，五個人圍著一張桌子坐在燒焦的城樓上。憲章寫了一夜：皇權寫在第一條，限制皇權的寫在第二條到第三十條。',
             '大燁成了君主立憲：女帝與議會共治，憲章限制皇權也保障各方。朝廷、萍江的官府與農工、瑔州港的胡記與金黃鱗，各有一席——人們叫它「五席」。女帝簽下憲章的時候，回頭看了你一眼。'),
-           'yhpol_constitution', [rep(COURT, 5), rep(LEAGUE, 5), aff(ZHAOHUA, 12, '陪她寫下憲章'), aff(SU, 8, '五席的憲章'), aff(LU, 8, '五席的憲章'),
+           'yhpol_constitution', [item('憲章玉璽'), rep(COURT, 5), rep(LEAGUE, 5), aff(ZHAOHUA, 12, '陪她寫下憲章'), aff(SU, 8, '五席的憲章'), aff(LU, 8, '五席的憲章'),
                                   aff(JIUNIANG, 8, '五席的憲章'), aff(JIN, 8, '五席的憲章'),
                                   mem('大燁的政體走向君主立憲制：女帝與議會共治，朝廷、萍江的官府與農工、瑔州港的胡記與金黃鱗各有一席，稱為「五席」。', 3)]),
 ]

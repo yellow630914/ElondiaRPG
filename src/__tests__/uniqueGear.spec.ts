@@ -88,8 +88,8 @@ describe('unique gear', () => {
   it('quest gear: every piece is handed out by a special quest, stronger in later level bands', () => {
     const given = storyItems()
     const gear = questGear()
-    // 149 件，加上炎華南域的 5 件（east_p4b.py）
-    expect(gear.length).toBe(154)
+    // 149 件，加上炎華南域的 5 件（east_p4b.py）與政治線終章的 3 件（east_p5_items.py）
+    expect(gear.length).toBe(157)
     for (const i of gear) {
       expect(given.get(i.name)?.length, i.name).toBe(1)
       const sid = given.get(i.name)![0]!
