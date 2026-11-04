@@ -64,6 +64,25 @@ FOES = [
         abilities=['pin_shot', 'thorn_volley', 'trample', 'eternal_frost'], ability_hp_below={'eternal_frost': 40},
         weapon={'dice': '4d8', 'type': 'piercing', 'attr': 'dex'},
         desc='奉命追回海東部的怯薛統領，騎射無雙，冬天也能在雪原上追三天三夜；他說海東青可以飛走，海東部的人不行。')),
+    # 政治線下半「南北交會」（east_p8d.py）：Lv.17 的小怪與 Lv.18 的頭目（兩邊主戰派的大將、怯薛長的先鋒），模板是中央平原政治線的對手
+    ('ns_yanye_soldier', 'rhine_royal_guard', dict(name='北伐的禁軍', level=17, kind='humanoid', armed=True, abilities=['charge', 'battle_roar'],
+        weapon={'dice': '3d10', 'type': 'slashing', 'attr': 'str'},
+        desc='大燁主戰派練出來要北伐的禁軍，朱砂鱗居多，步人甲外罩著防寒的皮氅；他們說，三十年的歲幣，要用一場仗討回來。')),
+    ('ns_tidan_rider', 'rhine_royal_guard', dict(name='南下的怯薛', level=17, kind='humanoid', armed=True, abilities=['charge', 'pin_shot'],
+        weapon={'dice': '3d10', 'type': 'piercing', 'attr': 'str'},
+        desc='媞丹主戰派的怯薛精騎，一人三馬、角弓長矛；他們說，鷹河以南的草，長得比北邊的肥。')),
+    ('ns_yanye_general', 'rhine_guard_marshal', dict(name='大燁的主戰派大將', level=18, kind='humanoid', armed=True, boss=True,
+        abilities=['charge', 'battle_roar', 'fire_breath', 'world_pyre'], ability_hp_below={'world_pyre': 40},
+        weapon={'dice': '4d10', 'type': 'slashing', 'attr': 'str'},
+        desc='大燁主戰派的大將，朱砂鱗的武人世家出身，吐息裡帶著火；他說歲幣是大燁三十年的恥辱，草原的馬該拴在龍安府的城門外。')),
+    ('ns_tidan_general', 'rhine_guard_marshal', dict(name='媞丹的主戰派大將', level=18, kind='humanoid', armed=True, boss=True,
+        abilities=['charge', 'battle_roar', 'trample', 'sky_roar'], ability_hp_below={'sky_roar': 40},
+        weapon={'dice': '4d10', 'type': 'slashing', 'attr': 'str'},
+        desc='媞丹主戰派的大將，北院的老騎兵，馬身上的傷疤比鬃毛還多；他說蒼狼不吃施捨，要吃，就自己去南方咬。')),
+    ('ns_kheshig_vanguard', 'rhine_guard_marshal', dict(name='黑纛的先鋒', level=18, kind='humanoid', armed=True, boss=True,
+        abilities=['pin_shot', 'thorn_volley', 'trample', 'eternal_frost'], ability_hp_below={'eternal_frost': 40},
+        weapon={'dice': '4d10', 'type': 'piercing', 'attr': 'str'},
+        desc='怯薛長鐵牙的先鋒大將，扛著出征的黑纛；鐵牙說過，黑纛到的地方，就是媞丹的草場。')),
 ]
 
 if __name__ == '__main__':

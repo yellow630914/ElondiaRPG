@@ -288,6 +288,32 @@ describe('炎華之地', () => {
     expect(JSON.stringify(stories.find((s) => s.id === 'tdpol_summons'))).toContain('palace_permit_jinzhang')
   })
 
+  it('opens the north-south politics routes from the table in EAST_CONTENT_PLAN 11.11 (P8d)', () => {
+    const council = stories.find((s) => s.id === 'nspol_night_council')!.nodes.at(-1)!.options!
+    const routeOf = (o: (typeof council)[number]) => (o.success!.effects ?? []).find((e) => e.type === 'start_story')?.story?.replace('nspol_end_', '')
+    const expected: Record<string, Record<string, string[]>> = {
+      tdpol_khanate: { yhpol_monarchy: ['war'], yhpol_republic: ['war'], yhpol_constitution: ['alliance', 'war'] },
+      tdpol_south: { yhpol_monarchy: ['alliance'], yhpol_republic: ['alliance', 'war'], yhpol_constitution: ['alliance'] },
+      tdpol_haidong: { yhpol_monarchy: ['alliance', 'sea'], yhpol_republic: ['sea'], yhpol_constitution: ['sea'] },
+    }
+    for (const [td, row] of Object.entries(expected)) {
+      for (const [yh, routes] of Object.entries(row)) {
+        const flags = new Set([td, yh])
+        const open = council.filter((o) => (o.requires?.flags ?? []).every((f) => flags.has(f))).map(routeOf)
+        expect([...new Set(open)].sort(), `${td} × ${yh}`).toEqual(routes)
+      }
+    }
+    // 終章的友軍：大燁三種、媞丹三種政體各有一個選項
+    const war = stories.find((s) => s.id === 'nspol_end_war')!
+    for (const id of ['rally_yh', 'rally_td']) {
+      const reqs = war.nodes.find((n) => n.id === id)!.options!.map((o) => o.requires!.flags![0])
+      expect(reqs.sort(), id).toEqual(id === 'rally_yh' ? ['yhpol_constitution', 'yhpol_monarchy', 'yhpol_republic'] : ['tdpol_haidong', 'tdpol_khanate', 'tdpol_south'])
+    }
+    const gives: Record<string, string> = { nspol_end_alliance: '盟誓的角弓', nspol_end_war: '破陣彎刀', nspol_end_sea: '海東青的盟符' }
+    for (const [id, name] of Object.entries(gives)) expect(JSON.stringify(stories.find((s) => s.id === id)), id).toContain(name)
+    expect(stories.find((s) => s.id === 'nspol_envoys')!.start.requires!.flags).toEqual(['yhpol_done', 'tdpol_done'])
+  })
+
   it('populates 青丘屯 mostly with 靈狐族', () => {
     const s = newGame({ name: '測試者', race: 'linghu', classId: 'cleric', seed: 4, birthplace: 'qingqiu' })
     const races = ensureRoster(s, 'qingqiu')!.members.map((m) => npcRecord(s, m)!.race)

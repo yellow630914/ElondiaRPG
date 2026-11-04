@@ -89,7 +89,7 @@ describe('unique gear', () => {
     const given = storyItems()
     const gear = questGear()
     // 149 件，加上炎華南域的 5 件（east_p4b.py）與政治線終章的 3 件（east_p5_items.py）
-    expect(gear.length).toBe(160)
+    expect(gear.length).toBe(163)
     for (const i of gear) {
       expect(given.get(i.name)?.length, i.name).toBe(1)
       const sid = given.get(i.name)![0]!

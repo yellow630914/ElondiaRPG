@@ -212,7 +212,7 @@ EAST_REGION_LINES = {'渡海引導', '化龍族：點青', '靈狐族：胡家�
 def category(name, sts):
     if name in ('政治史詩', '巨龍史詩'): return '史詩'
     if name in EAST_REGION_LINES: return '地區與勢力'
-    if name.startswith('政治線：大燁'): return '史詩'
+    if name.startswith('政治線：'): return '史詩'
     if name == '多人特殊任務': return '多人特殊任務'
     if name == '入門委託': return '入門委託'
     if name == '沿海洞窟': return '地下城'
