@@ -47840,6 +47840,517 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 200 }]
+    },
+    {
+      "id": "tdpol_summons",
+      "title": "天可汗的召見",
+      "summary": "天可汗烏蘭圖雅召見你這個外人。大燁的歲幣餵不飽她的雄心，南院卻要她定居、築城；她要一個不屬於任何一部的人，替她看清草原。（政治線：媞丹的走向・一）",
+      "rank": "A",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "jinzhang",
+        "min_level": 13,
+        "requires": {
+          "flags_any": [
+            "tdl_end_war",
+            "tdl_end_peace",
+            "tdl_end_haidong",
+            "tds_end_war",
+            "tds_end_peace",
+            "tds_end_haidong",
+            "tdt_end_war",
+            "tdt_end_peace",
+            "tdt_end_haidong",
+            "tdh_end_war",
+            "tdh_end_peace",
+            "tdh_end_haidong"
+          ]
+        },
+        "text": "公會的帳篷裡，一個短髮的年輕人馬族靠在柱子上，栗色的馬身上披著蒼狼部的黑氈。她把一支金箭丟在你面前的桌上：「我是察蘭。母親要見你——不是叫你去領賞，是叫你去回話。」"
+      },
+      "start_flags": ["tdpol_1_started"],
+      "nodes": [
+        {
+          "id": "summon",
+          "title": "在金帳王庭的公會跟察蘭進金帳",
+          "text": "察蘭一路上沒說幾句話，到了金帳前才回頭看你：「母親聽說了你在草原上做的事：替北院說話，也替南院、替海東部說話。她說，這種人不是蠢，就是有意思。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "guild" },
+          "requires": { "flags": ["tdpol_1_started"] },
+          "kind": "story",
+          "allies": ["npc_td_chalan"],
+          "success": { "text": "察蘭領著你穿過兩排一動不動的怯薛，掀開金帳最裡面的那一道氈簾。", "set_flags": ["tdpol_summoned"], "special_map": "sm_td_inner_tent" }
+        },
+        {
+          "id": "audience",
+          "title": "在金帳的內帳見天可汗烏蘭圖雅",
+          "text": "天可汗斜靠在蒙著狼皮的寶座上，金色的馬身盤在氈上，手裡轉著一只銀碗。帳裡掛滿了各部的戰旗。「大燁每年送來二十萬匹絹、十萬斤茶，換我不南下。」她笑了，笑得像在下戰書，「鐵牙說不夠，阿穆爾說太多——他說我該坐下來，築一座城。你說呢，外人？」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdpol_summoned"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya"],
+          "success": {
+            "text": "你還沒開口，她就擺了擺手：「別急著答。去南院看看阿穆爾在寫什麼，去北院聽聽鐵牙在磨什麼刀，再去鷹河看看海東部的人在想什麼。回來告訴我你看見的，不是你以為我想聽的。」",
+            "set_flags": ["tdpol_eyes"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_ulantuya", "delta": 8, "reason": "答應替她看清草原" }]
+          }
+        },
+        {
+          "id": "south",
+          "title": "到金帳王庭的南院大帳聽阿穆爾說話",
+          "text": "南院大帳裡，阿穆爾正在燈下抄一卷大燁的《營造法式》，可敦燁婉寧在屏風後撫琴。「天可汗要的是天下。」他沒有抬頭，「可是天下不是用馬蹄踩出來的，是用城牆、倉廩、律令一磚一瓦砌起來的。草原再大，也存不下一年的糧。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tdpol_eyes"] },
+          "kind": "story",
+          "allies": ["npc_td_amur"],
+          "success": {
+            "text": "他終於放下筆：「北院說我是半個龍人。可是我問你——十年前統一草原的那一仗，打完之後，是誰讓各部的孩子活過了冬天？」",
+            "set_flags": ["tdpol_seen_south"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_amur", "delta": 5, "reason": "聽他說完南院的道理" }]
+          }
+        },
+        {
+          "id": "north",
+          "title": "在金帳王庭找怯薛長鐵牙說話",
+          "text": "鐵牙在那達慕場邊磨刀，身邊圍著一圈北院的騎兵。「坐下來？」他吐了口唾沫，「蒼狼部的祖先是從雪窟裡跑出來的狼，不是蹲在窩裡的狗。大燁的歲幣是什麼？是拴狗的鏈子。」",
+          "at": { "where": "npc", "npc": "npc_td_tieya", "location": "jinzhang" },
+          "requires": { "flags": ["tdpol_seen_south"] },
+          "kind": "story",
+          "success": {
+            "text": "他把磨好的刀插回鞘裡：「你告訴天可汗：怯薛的馬已經餵飽了。她說一聲，三天之內，鷹河以南都是媞丹的草場。」",
+            "set_flags": ["tdpol_seen_north"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_tieya", "delta": 5, "reason": "聽他說完北院的道理" }]
+          }
+        },
+        {
+          "id": "haidong",
+          "title": "到鷹河榷場的鷹房聽海東部的人說話",
+          "text": "鷹房裡，海蘭背對著你餵鷹，一句話也不說。托雅在一旁小聲說：「首領不跟金帳的人說話。」你等了很久，海蘭才開口：「你是天可汗的眼睛。那你看看這些鷹——每一隻都是要送去金帳的。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdpol_seen_north"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "你沒有替天可汗說話，只是聽。過了很久，海蘭說：「海東部不要南下，也不要築城。我們只要不再進貢——要我們的鷹留在我們的天上。」她看著你，「這句話，你敢帶回去嗎？」", "set_flags": ["tdpol_seen_haidong"] },
+          "fail": { "text": "海蘭把最後一塊肉丟給鷹，轉身走進冬營。托雅對你搖搖頭：「改天再來吧。」", "retry": true }
+        },
+        {
+          "id": "report",
+          "title": "回金帳的內帳向天可汗回話",
+          "text": "你把看見的一五一十說了：南院的書、北院的刀、海東部的鷹。天可汗聽完，把銀碗放下，看了你很久：「沒有人敢在我面前替海東部說話。你說了。」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdpol_seen_haidong"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya"],
+          "success": {
+            "text": "她從腰上解下一塊刻著蒼狼的金牌，丟給你：「拿著。以後要進金帳，不用察蘭帶。」她頓了一下，「明年春天開忽里勒台，各部的首領都會來。到時候，你站在我旁邊看。」",
+            "set_flags": ["tdpol_1_done", "palace_permit_jinzhang"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 8, "reason": "替她看清了草原" },
+              { "type": "affinity", "npc": "npc_td_chalan", "delta": 5, "reason": "在母親面前說了真話" },
+              { "type": "memory", "summary": "受天可汗烏蘭圖雅之託，看了南院的書、北院的刀與海東部的鷹，拿到可以進金帳的蒼狼金牌。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 2500 }]
+    },
+    {
+      "id": "tdpol_kurultai",
+      "title": "忽里勒台",
+      "summary": "各部的首領齊聚金帳王庭，開忽里勒台：北院要南下，南院要互市，海東部要減貢。大會還沒開，就有人想讓它開不成。（政治線：媞丹的走向・二）",
+      "rank": "A",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "jinzhang",
+        "min_level": 14,
+        "requires": { "flags": ["tdpol_1_done"] },
+        "text": "王庭外的草場上，一夜之間多了上百頂氈帳：各部的首領帶著自己的旗來了。公會的帳篷裡人人都在說同一件事——「聽說鐵牙在北院放了話：大會上誰說要坐下來，誰就別想騎著馬回去。」"
+      },
+      "start_flags": ["tdpol_2_started"],
+      "nodes": [
+        {
+          "id": "ambush",
+          "title": "晚上在金帳王庭擋下夜襲南院大帳的刺客",
+          "text": "夜裡，南院大帳外傳來一聲短促的哨音。三個蒙著臉的人馬族從帳後衝出來，黑甲上的銀釘在月光下閃著——是怯薛的甲。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tdpol_2_started"] },
+          "kind": "combat",
+          "enemies": [["td_kheshig", 2], ["td_kheshig_captain", 1]],
+          "success": { "text": "刺客倒下了。阿穆爾提著燈出來，掀開帶頭的那人的面巾，臉色變了：「北院的百戶。」他把一枚令箭從那人懷裡抽出來——令箭上刻的不是鐵牙的名字，是一個舊部的圖騰。", "set_flags": ["tdpol_ambushed"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "gather",
+          "title": "到金帳王庭的那達慕場看忽里勒台開議",
+          "text": "那達慕場上插滿了各部的旗。天可汗坐在正中，左邊是南院的阿穆爾，右邊是北院的鐵牙，海東部的海蘭站在最遠的地方。昨夜的刺客還沒說清楚，鐵牙就拍案而起：「南院說我派人殺他？好——那我就當著長生天的面，問問南院收了大燁多少銀子！」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdpol_ambushed"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya"],
+          "success": { "text": "阿穆爾也站了起來，兩個人隔著天可汗吵成一團。各部的首領有的跟著喊，有的按著刀。天可汗一言不發，只是轉頭看你。", "set_flags": ["tdpol_uproar"] }
+        },
+        {
+          "id": "speak",
+          "title": "在那達慕場的忽里勒台上說話",
+          "text": "刀已經出鞘了一半。天可汗終於開口，聲音不大，卻讓整個場子安靜下來：「外人，你在草原上走了一圈。你來說，昨夜的刀是誰的。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdpol_uproar"] },
+          "kind": "choice",
+          "allies": ["npc_td_ulantuya"],
+          "options": [
+            {
+              "label": "說出古戰場上那位可汗的名字",
+              "requires": { "flags": ["tdm_returned"] },
+              "success": {
+                "text": "你說，令箭上的圖騰，是那位被抹去名字的可汗的部族——你在古戰場上把他的名字還給了他。舊部的人愣住了；有幾個老人低下頭，流了淚。刺客不是北院的人，是想讓南北兩院打起來的舊部死士。",
+                "set_flags": ["tdpol_calm", "tdpol_calm_name"]
+              }
+            },
+            {
+              "label": "請國師其其格讀骨",
+              "requires": { "flags": ["tdr_3_done"] },
+              "success": {
+                "text": "其其格把一塊羊肩胛骨丟進火裡。骨頭裂開，裂紋從中間分成三道，誰也沒有壓過誰。「長生天說，」她的聲音很慢，「昨夜的刀，不是南院的，也不是北院的。是想讓草原裂成三塊的人的。」場上安靜了。",
+                "set_flags": ["tdpol_calm", "tdpol_calm_bones"]
+              }
+            },
+            {
+              "label": "拿著令箭說服各部的首領",
+              "check": { "attr": "cha", "dc": 17 },
+              "success": { "text": "你舉起令箭，讓各部的首領一個一個看清上面的圖騰。北院的人認得出那不是怯薛的令；南院的人也認得出。鐵牙與阿穆爾互看一眼，各自坐了回去。", "set_flags": ["tdpol_calm"] },
+              "fail": { "text": "你的話被喊聲淹沒了。天可汗拍了一下寶座，大會散了，明天再議。你得想想別的辦法。", "retry": true }
+            }
+          ]
+        },
+        {
+          "id": "verdict",
+          "title": "在金帳的內帳聽天可汗說大會的結果",
+          "text": "大會開了三天。北院要南下，南院要互市，海東部要減貢，誰也說服不了誰。最後一夜，天可汗把你叫進內帳：「草原上從來沒有一次大會吵得這麼乾淨。刀沒有出鞘，話都說出來了。」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdpol_calm"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya"],
+          "success": {
+            "text": "她把銀碗斟滿，推到你面前：「話說完了，就該比了。草原的規矩，大事在那達慕上定。」她笑了，「你猜，各部會搶著要你替誰出賽？」",
+            "set_flags": ["tdpol_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 10, "reason": "在忽里勒台上壓住了刀" },
+              { "type": "affinity", "npc": "npc_td_tieya", "delta": -5, "reason": "在大會上沒有站在北院這邊" },
+              { "type": "affinity", "npc": "npc_td_amur", "delta": 5, "reason": "在大會上替南院洗清了刺客的事" },
+              { "type": "memory", "summary": "忽里勒台上北院、南院與海東部吵了三天；夜襲南院的刺客是想讓草原分裂的人，刀沒有出鞘。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 2200 }, { "type": "xp", "amount": 2500 }]
+    },
+    {
+      "id": "tdpol_naadam",
+      "title": "那達慕之約",
+      "summary": "天可汗在那達慕上當眾立約：摔跤、賽馬、射箭，你替哪一方出賽，那一方就在大會上多一份聲音。之後，她要問你媞丹該走哪一條路。（政治線：媞丹的走向・三）",
+      "rank": "S",
+      "merit": 25,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_chalan",
+        "min_level": 14,
+        "requires": { "flags": ["tdpol_2_done"] },
+        "text": "察蘭攔住你，臉上難得帶著笑：「母親立約了：今年的那達慕，誰贏，誰就替一方說話。北院、南院、海東部都派人來找你了——你知道母親為什麼這麼做嗎？她想看你選誰。」她頓了一下，「我也想看。」"
+      },
+      "start_flags": ["tdpol_3_started"],
+      "nodes": [
+        {
+          "id": "oath",
+          "title": "在金帳王庭的那達慕場向天可汗立約",
+          "text": "那達慕場上，天可汗當著各部的面舉起一支金箭：「這個外人替誰出賽，誰就在大會上多一份聲音。」鐵牙抱著手臂，阿穆爾捻著鬍子，海蘭站在場邊，肩上的海東青一動不動。所有人都在看你。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdpol_3_started"] },
+          "kind": "choice",
+          "allies": ["npc_td_ulantuya"],
+          "options": [
+            {
+              "label": "替北院出賽",
+              "success": {
+                "text": "你走到鐵牙身邊。北院的騎兵用彎刀敲起盾牌，鐵牙一巴掌拍在你背上：「好！讓那些坐著的人看看什麼叫草原！」",
+                "set_flags": ["tdpol_side_war"],
+                "counters": { "td_war": 1 },
+                "effects": [{ "type": "affinity", "npc": "npc_td_tieya", "delta": 8, "reason": "替北院出賽" }]
+              }
+            },
+            {
+              "label": "替南院出賽",
+              "success": {
+                "text": "你走到阿穆爾身邊。南院的書吏們愣了一下，才想起來要歡呼。阿穆爾向你深深一揖：「南院欠你一份情。」",
+                "set_flags": ["tdpol_side_peace"],
+                "counters": { "td_peace": 1 },
+                "effects": [{ "type": "affinity", "npc": "npc_td_amur", "delta": 8, "reason": "替南院出賽" }]
+              }
+            },
+            {
+              "label": "替海東部出賽",
+              "success": {
+                "text": "你走到海蘭身邊。整個場子安靜了一下，接著是一片嘩然。海蘭沒有笑，只是把肩上的海東青遞給托雅，對你點了點頭。",
+                "set_flags": ["tdpol_side_haidong"],
+                "counters": { "td_haidong": 1 },
+                "effects": [{ "type": "affinity", "npc": "npc_td_hailan", "delta": 8, "reason": "替海東部出賽" }]
+              }
+            }
+          ]
+        },
+        {
+          "id": "wrestle",
+          "title": "在那達慕場和巴特爾摔跤",
+          "text": "第一項是搏克。對手是王庭的摔跤冠軍巴特爾，他拍著大腿、揚著手臂跳著鷹舞入場，四條馬腿穩穩地釘在地上。人馬族摔跤，比的是誰先讓對方的膝蓋著地。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags_any": ["tdpol_side_war", "tdpol_side_peace", "tdpol_side_haidong"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 17 },
+          "success": { "text": "你抓住他的腰帶，用盡全身的力氣一扭——巴特爾的前膝著地了。他坐在地上大笑：「好久沒有人讓我吃土了！」場邊的看客把馬奶酒灑了一地。", "set_flags": ["tdpol_wrestled"] },
+          "fail": { "text": "巴特爾把你摔了出去，場邊一片噓聲。照規矩，輸了的人可以再挑戰一次。", "retry": true },
+          "allies": ["npc_td_batur"]
+        },
+        {
+          "id": "race",
+          "title": "在金帳王庭的近郊賽馬，擋下半路埋伏的人",
+          "text": "第二項是賽馬，從王庭跑到敖包再跑回來。跑到半路，草坡後面衝出幾個人：怯薛的黑甲、南院的弩、舊部的圖騰——不想讓你贏的人，不只一方。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdpol_wrestled"] },
+          "kind": "combat",
+          "enemies": [["td_kheshig_captain", 1], ["td_south_crossbow", 1], ["td_clan_champion", 1]],
+          "success": { "text": "埋伏的人散了。你一路衝回那達慕場，第一個撞過終點的彩旗。場邊有人在喊你的名字，喊得最大聲的是察蘭。", "set_flags": ["tdpol_raced"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "archery",
+          "title": "在那達慕場射最後一箭",
+          "text": "最後一項是射箭。靶子立在兩百步外，比你的拳頭還小。天可汗親自站在箭靶旁邊，金色的馬身一動不動：「射吧。射偏了，就射在我身上。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdpol_raced"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 17 },
+          "success": { "text": "箭從天可汗的耳邊擦過，正中靶心。她沒有眨眼，只是伸手摸了摸耳邊的頭髮，大笑起來：「好！今年的那達慕，是外人贏了！」", "set_flags": ["tdpol_won_naadam"] },
+          "fail": { "text": "箭偏了，插在靶子旁邊的草地上。天可汗挑了挑眉：「再一箭。」", "retry": true },
+          "allies": ["npc_td_ulantuya"]
+        },
+        {
+          "id": "verdict",
+          "title": "在金帳的內帳回答天可汗：媞丹該走哪一條路",
+          "text": "那達慕的篝火燒了一夜。天可汗把你叫進內帳，這一次她沒有拿銀碗：「大法典、南院的帳、茶馬市、海東的貢——你都在場，你看見了草原的每一道裂縫，今天又替一方贏了聲音。我問你：媞丹，該怎麼走？」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdpol_won_naadam"] },
+          "kind": "choice",
+          "allies": ["npc_td_ulantuya"],
+          "options": [
+            {
+              "label": "「長生天的鞭：整軍南下」",
+              "requires": { "counters": { "td_war": { "min": 2 } } },
+              "success": {
+                "text": "天可汗站了起來，金色的馬身在燈下像一團火：「好。我就等這句話。」她把那支金箭折成兩段，「廢南院，整軍。」帳外傳來消息：南院的死忠老將帶著弩手守住了南院大帳，說要收南院的印，先從他的屍首上拿。",
+                "set_flags": ["tdpol_route_khanate", "tdpol_3_done"],
+                "effects": [{ "type": "start_story", "story": "tdpol_end_khanate" }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「長生天的鞭：整軍南下」（那達慕的聲音）",
+              "requires": { "flags": ["tdpol_side_war"], "counters": { "td_war": { "max": 1 }, "td_peace": { "max": 1 }, "td_haidong": { "max": 1 } } },
+              "success": {
+                "text": "天可汗站了起來，金色的馬身在燈下像一團火：「好。我就等這句話。」她把那支金箭折成兩段，「廢南院，整軍。」帳外傳來消息：南院的死忠老將帶著弩手守住了南院大帳，說要收南院的印，先從他的屍首上拿。",
+                "set_flags": ["tdpol_route_khanate", "tdpol_3_done"],
+                "effects": [{ "type": "start_story", "story": "tdpol_end_khanate" }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「南院的印：定居築城」",
+              "requires": { "counters": { "td_peace": { "min": 2 } } },
+              "success": {
+                "text": "天可汗沉默了很久，久到燈芯爆了一聲。「十年前我在馬背上打下草原。」她把馬鞭放在寶座上，「也許是時候下馬了。」帳外傳來消息：怯薛的萬戶帶著北院的騎兵，要在詔令頒布之前「替天可汗清理南院」。",
+                "set_flags": ["tdpol_route_south", "tdpol_3_done"],
+                "effects": [{ "type": "start_story", "story": "tdpol_end_south" }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「南院的印：定居築城」（那達慕的聲音）",
+              "requires": { "flags": ["tdpol_side_peace"], "counters": { "td_war": { "max": 1 }, "td_peace": { "max": 1 }, "td_haidong": { "max": 1 } } },
+              "success": {
+                "text": "天可汗沉默了很久，久到燈芯爆了一聲。「十年前我在馬背上打下草原。」她把馬鞭放在寶座上，「也許是時候下馬了。」帳外傳來消息：怯薛的萬戶帶著北院的騎兵，要在詔令頒布之前「替天可汗清理南院」。",
+                "set_flags": ["tdpol_route_south", "tdpol_3_done"],
+                "effects": [{ "type": "start_story", "story": "tdpol_end_south" }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「海東青飛走了：讓海東部自立」",
+              "requires": { "counters": { "td_haidong": { "min": 2 } } },
+              "success": {
+                "text": "天可汗的手停在半空。「你要我放走東邊的獵場、北珠、海東青。」她看著你，看了很久，最後笑了，笑得很冷，「好。我放。可是鐵牙不會放。」帳外傳來消息：海蘭帶著海東部連夜拔營往上游走，怯薛的統領已經追出去了。",
+                "set_flags": ["tdpol_route_haidong", "tdpol_3_done"],
+                "effects": [{ "type": "start_story", "story": "tdpol_end_haidong" }],
+                "complete": true
+              }
+            },
+            {
+              "label": "「海東青飛走了：讓海東部自立」（那達慕的聲音）",
+              "requires": { "flags": ["tdpol_side_haidong"], "counters": { "td_war": { "max": 1 }, "td_peace": { "max": 1 }, "td_haidong": { "max": 1 } } },
+              "success": {
+                "text": "天可汗的手停在半空。「你要我放走東邊的獵場、北珠、海東青。」她看著你，看了很久，最後笑了，笑得很冷，「好。我放。可是鐵牙不會放。」帳外傳來消息：海蘭帶著海東部連夜拔營往上游走，怯薛的統領已經追出去了。",
+                "set_flags": ["tdpol_route_haidong", "tdpol_3_done"],
+                "effects": [{ "type": "start_story", "story": "tdpol_end_haidong" }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 4000 }]
+    },
+    {
+      "id": "tdpol_end_khanate",
+      "title": "長生天的鞭",
+      "summary": "天可汗決定廢南院、整軍南下。南院的死忠老將帶著弩手守住南院大帳，不肯交出南院的印。（政治線：媞丹的走向・終）",
+      "rank": "S",
+      "merit": 25,
+      "start": { "kind": "manual", "min_level": 15, "text": "南院大帳外豎起了一排大燁樣式的盾牌，盾牌後面是一排上好弦的神臂弩。鐵牙帶著怯薛在外面等著：「外人，你說的路，你先走。」" },
+      "start_flags": ["tdpol_khanate_started"],
+      "nodes": [
+        {
+          "id": "fight",
+          "title": "在南院大帳擊倒南院的死忠老將",
+          "text": "老將站在帳門前，白鬍子在風裡飄：「南院的印是天可汗親手給的。要收，先從我的屍首上拿。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tdpol_khanate_started"] },
+          "kind": "combat",
+          "enemies": [["td_south_marshal", 1], ["td_south_crossbow", 1]],
+          "success": { "text": "老將倒在帳門前，懷裡還抱著南院的大印。阿穆爾從帳裡走出來，接過那顆印，看了很久，然後雙手捧著交給了鐵牙。", "set_flags": ["tdpol_end_khanate_won"] },
+          "fail": { "text": "你們被逼退了。喘口氣——這一仗還沒有打完。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在金帳前看媞丹成為大汗國",
+          "text": "金帳前的九斿白纛換成了出征的黑纛。天可汗騎在最前面，鐵牙與怯薛跟在後面，各部的騎兵一直排到看不見的地方。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_golden_tent" },
+          "requires": { "flags": ["tdpol_end_khanate_won"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya", "npc_td_tieya"],
+          "success": {
+            "text": "天可汗回頭看你：「南院廢了，各部的兵歸怯薛統領。明年秋天，草原的馬要喝到鷹河以南的水。」媞丹成了大汗國：北院得勢，阿穆爾被貶回媞丹部的草場，歲幣使節蘇時雍連夜寫信回龍安府。",
+            "set_flags": ["tdpol_khanate", "tdpol_done"],
+            "effects": [
+              { "type": "reputation", "faction": "tidan_khanate", "delta": 8 },
+              { "type": "reputation", "faction": "yanye_court", "delta": -8 },
+              { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 15, "reason": "陪她走上征服天下的路" },
+              { "type": "affinity", "npc": "npc_td_tieya", "delta": 15, "reason": "和怯薛一起廢了南院" },
+              { "type": "affinity", "npc": "npc_td_amur", "delta": -15, "reason": "廢了南院" },
+              { "type": "affinity", "npc": "npc_td_su_shiyong", "delta": -10, "reason": "讓媞丹整軍南下" },
+              { "type": "memory", "summary": "媞丹的走向是大汗國：天可汗廢南院、整軍，要征服天下；阿穆爾被貶，北院得勢。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 4000 }, { "type": "item", "name": "精金礦石", "qty": 1 }]
+    },
+    {
+      "id": "tdpol_end_south",
+      "title": "南院的印",
+      "summary": "天可汗決定定居築城、照律令治國。怯薛的萬戶帶著北院的騎兵，要在詔令頒布之前「清理南院」。（政治線：媞丹的走向・終）",
+      "rank": "S",
+      "merit": 25,
+      "start": { "kind": "manual", "min_level": 15, "text": "金帳前的草場上，北院的騎兵排成一列，馬蹄刨著地。怯薛的萬戶提著長刀，一步一步走向金帳：「天可汗老了。草原，該由還騎得動馬的人說話。」" },
+      "start_flags": ["tdpol_south_started"],
+      "nodes": [
+        {
+          "id": "fight",
+          "title": "在金帳前擊倒怯薛的萬戶",
+          "text": "萬戶的長刀指著金帳的帳門：「讓開，外人。草原坐下來的那一天，就是蒼狼死的那一天。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_golden_tent" },
+          "requires": { "flags": ["tdpol_south_started"] },
+          "kind": "combat",
+          "enemies": [["td_kheshig_marshal", 1], ["td_kheshig_captain", 1]],
+          "success": { "text": "萬戶倒在金帳前，北院的騎兵一個一個下了馬。鐵牙從人群裡走出來，把自己的刀放在天可汗的馬蹄前，一句話也沒說。", "set_flags": ["tdpol_end_south_won"] },
+          "fail": { "text": "你們被逼退了。喘口氣——這一仗還沒有打完。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在南院大帳看媞丹照律令治國",
+          "text": "南院大帳裡，阿穆爾把一卷新寫的詔令攤在書案上：築城、設倉、立斷事官、榷場照律收稅。天可汗親手在詔令上蓋了蒼狼的金印。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tdpol_end_south_won"] },
+          "kind": "story",
+          "allies": ["npc_td_amur", "npc_td_ulantuya"],
+          "success": {
+            "text": "「十年前我在馬背上打下草原，」天可汗說，「現在換你們替我守住它。」媞丹走向南院治：王庭開始築第一道城牆，南院得勢，鐵牙交出怯薛的兵符，被派去守北邊的牧場。可敦燁婉寧在屏風後彈了一夜的琴。",
+            "set_flags": ["tdpol_south", "tdpol_done"],
+            "effects": [
+              { "type": "reputation", "faction": "tidan_khanate", "delta": 5 },
+              { "type": "reputation", "faction": "yanye_court", "delta": 6 },
+              { "type": "affinity", "npc": "npc_td_amur", "delta": 15, "reason": "陪他寫下南院的詔令" },
+              { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 10, "reason": "讓她下了馬" },
+              { "type": "affinity", "npc": "npc_td_tieya", "delta": -15, "reason": "擋下了北院的刀" },
+              { "type": "affinity", "npc": "npc_td_su_shiyong", "delta": 8, "reason": "讓媞丹照律令治國" },
+              { "type": "memory", "summary": "媞丹的走向是南院治：天可汗定居築城、照律令治國；鐵牙交出兵符，南院得勢。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 4000 }, { "type": "item", "name": "精金礦石", "qty": 1 }]
+    },
+    {
+      "id": "tdpol_end_haidong",
+      "title": "海東青飛走了",
+      "summary": "海東部要脫離媞丹自立。海蘭帶著族人連夜往鷹河上游走，怯薛的統領帶著騎兵追了上來。（政治線：媞丹的走向・終）",
+      "rank": "S",
+      "merit": 25,
+      "start": { "kind": "manual", "min_level": 15, "text": "鷹河上游的雪原上，海東部的隊伍拖著氈車與鷹架往東走。身後的地平線上揚起一長條雪塵——怯薛追上來了。海蘭勒住馬，對你說：「你帶我們走到這裡。剩下的路，你陪不陪？」" },
+      "start_flags": ["tdpol_haidong_started"],
+      "nodes": [
+        {
+          "id": "fight",
+          "title": "在鷹河榷場的近郊擋住追擊的怯薛統領",
+          "text": "怯薛的統領在百步外勒馬，角弓已經拉滿：「海東青可以飛走，海東部的人不行。」",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdpol_haidong_started"] },
+          "kind": "combat",
+          "enemies": [["td_pursuit_captain", 1], ["td_kheshig_captain", 1]],
+          "success": { "text": "統領的馬倒在雪地裡，他自己摔下來，再也沒有站起來。剩下的怯薛調轉馬頭，往金帳王庭的方向跑了。", "set_flags": ["tdpol_end_haidong_won"] },
+          "fail": { "text": "你們被逼退了。喘口氣——這一仗還沒有打完。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在海東部的冬營看海東部自立",
+          "text": "冬營的篝火燒得比任何一夜都旺。海蘭站在火邊，把鷹房裡所有的海東青都放了出去。鷹在火光上盤旋了三圈，往東邊的天上飛走了。",
+          "at": { "where": "special", "special_map": "sm_td_haidong_camp", "x": 4, "y": 2 },
+          "requires": { "flags": ["tdpol_end_haidong_won"] },
+          "kind": "story",
+          "allies": ["npc_td_hailan", "npc_td_toya"],
+          "success": {
+            "text": "「從今天起，海東部的鷹留在海東部的天上。」海蘭說。媞丹裂成兩半：天可汗失去了東邊的獵場與北珠，海東部在鷹河上游自立；大燁的使節第一次越過榷場，來到了海東部的冬營。托雅抱著她最好的那一隻海東青，哭了。",
+            "set_flags": ["tdpol_haidong", "tdpol_done"],
+            "effects": [
+              { "type": "reputation", "faction": "tidan_khanate", "delta": -10 },
+              { "type": "reputation", "faction": "yanye_court", "delta": 3 },
+              { "type": "affinity", "npc": "npc_td_hailan", "delta": 15, "reason": "陪海東部走到自立" },
+              { "type": "affinity", "npc": "npc_td_toya", "delta": 10, "reason": "讓海東青留在海東的天上" },
+              { "type": "affinity", "npc": "npc_td_ulantuya", "delta": -10, "reason": "讓海東部走了" },
+              { "type": "affinity", "npc": "npc_td_tieya", "delta": -10, "reason": "殺了追擊的怯薛統領" },
+              { "type": "memory", "summary": "媞丹的走向是海東自立：海東部脫離媞丹，在鷹河上游自立；天可汗失去東邊的獵場與北珠。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 4000 }, { "type": "item", "name": "精金礦石", "qty": 1 }]
     }
   ]
 }

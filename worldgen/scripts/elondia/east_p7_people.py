@@ -148,6 +148,41 @@ INTRO = {
 }
 
 
+# 北原的前期政治線的結局（east_p8c.py）：tdpol_khanate／tdpol_south／tdpol_haidong 換掉幾位的身分與出沒
+POLITICS = {
+    'npc_td_ulantuya': [
+        {'requires': {'flags': ['tdpol_khanate']}, 'location': 'jinzhang',
+         'background': '大汗國的天可汗。她廢了南院、把各部的兵都交給怯薛，金帳前的白纛換成了出征的黑纛；她說草原的馬要喝到鷹河以南的水。夜裡她還是會一個人轉著那只銀碗，看著帳裡那面沒有名字的戰旗。'},
+        {'requires': {'flags': ['tdpol_south']}, 'location': 'jinzhang',
+         'background': '下了馬的天可汗。她讓南院照律令治國，王庭築起了第一道城牆；她說自己老了，其實是第一次想看看自己打下來的草原能活多久。她的彎刀還掛在腰上，只是很久沒有拔出來了。'},
+        {'requires': {'flags': ['tdpol_haidong']}, 'location': 'jinzhang',
+         'background': '失去東邊獵場的天可汗。海東部自立之後，她沒有再派兵去追，只是把那面海東部的戰旗從金帳裡取了下來。有人說她老了，她說：「放走一隻鷹，比抓住一隻鷹難。」'},
+    ],
+    'npc_td_amur': [
+        {'requires': {'flags': ['tdpol_khanate']}, 'location': 'jinzhang',
+         'background': '被廢的南院大王。南院的印交給了北院，他被貶回媞丹部的草場，只留著南院大帳裡的幾卷書。他每天還是照大燁的規矩寫字，寫的都是同一句：「天下不是用馬蹄踩出來的。」'},
+        {'requires': {'flags': ['tdpol_south']}, 'location': 'jinzhang',
+         'background': '媞丹真正掌政的南院大王。他照大燁的禮制定了築城、設倉、斷事官與榷場的稅則，天可汗在每一份詔令上蓋印；北院的人不再罵他「半個龍人」——他們不敢了。'},
+    ],
+    'npc_td_tieya': [
+        {'requires': {'flags': ['tdpol_khanate']}, 'location': 'jinzhang',
+         'haunts': [{'location': 'jinzhang', 'zone': 'palace', 'weight': 1}, {'location': 'jinzhang', 'zone': 'noble', 'weight': 0.6}],
+         'background': '大汗國的怯薛長，統領各部所有的兵。南院廢了之後，他每天在那達慕場上練兵，笑聲比以前更像打雷；他說明年秋天，要在鷹河以南的草場上烤全羊。'},
+        {'requires': {'flags': ['tdpol_south']}, 'location': 'jinzhang', 'haunts': town('jinzhang', 1, outskirts=0.8),
+         'background': '交出兵符的前怯薛長。萬戶在金帳前倒下之後，他把刀放在天可汗的馬蹄前，被派去守北邊的牧場；他常常一個人騎到王庭外的草坡上，看著那道還沒築完的城牆，一句話也不說。'},
+    ],
+    'npc_td_hailan': [
+        {'requires': {'flags': ['tdpol_haidong']}, 'location': 'yinghe',
+         'background': '自立的海東部的首領。她把鷹房裡的海東青都放回了天上，在鷹河上游的冬營裡接見大燁的使節；她還是不愛笑，可是族人說，她現在睡覺的時候不再握著刀了。'},
+        {'requires': {'flags_any': ['tdpol_khanate', 'tdpol_south']}, 'location': 'yinghe',
+         'background': '海東部的首領。媞丹定了走向之後，海東部的貢一隻也沒少；她還是每年把最好的海東青送去金帳，送完之後，一個人在鷹房裡坐一夜。'},
+    ],
+}
+for _n in NPCS:
+    if _n['id'] in POLITICS:
+        _n['stages'] = POLITICS[_n['id']] + _n.get('stages', [])
+
+
 def cond(c, add=True):
     return {'type': 'condition', 'target': 'pc', 'condition': c, 'add': add}
 

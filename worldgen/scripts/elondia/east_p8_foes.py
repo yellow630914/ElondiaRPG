@@ -45,6 +45,25 @@ FOES = [
     ('td_clan_champion', 'yh_deathsworn', dict(name='舊部的勇士', level=11, kind='humanoid', armed=True, abilities=['charge', 'dirty_trick'],
         weapon={'dice': '2d12', 'type': 'slashing', 'attr': 'str'},
         desc='不服大法典的舊部勇士，臉上還畫著被天可汗砍倒的部族圖騰；他們說，草原的規矩是祖先定的，不是寫在紙上的。')),
+    # 北原的前期政治線（east_p8c.py）：Lv.14 的小怪與 Lv.15 的頭目（終章的替身），模板是南域政治線上半的對手
+    ('td_kheshig_captain', 'yh_palace_guard', dict(name='怯薛的百戶', level=14, kind='humanoid', armed=True, abilities=['charge', 'battle_roar'],
+        weapon={'dice': '3d8', 'type': 'slashing', 'attr': 'str'},
+        desc='怯薛裡管一百騎的百戶，黑甲上釘著銀釘，馬身披著鐵葉；鐵牙一手帶出來的人，只認天可汗的金牌與鐵牙的令箭。')),
+    ('td_south_crossbow', 'yh_league_musketeer', dict(name='南院的弩手', level=14, kind='humanoid', armed=True, abilities=['thorn_volley', 'pin_shot'],
+        weapon={'dice': '3d8', 'type': 'piercing', 'attr': 'dex'},
+        desc='南院照大燁的兵制練出來的弩手，用的是榷場換來的神臂弩；北院的人笑他們「下了馬的人馬」，他們不理，只管上弦。')),
+    ('td_south_marshal', 'yh_radical_firebrand', dict(name='南院的死忠老將', level=15, kind='humanoid', armed=True, boss=True,
+        abilities=['charge', 'battle_roar', 'thorn_volley', 'earthshatter'], ability_hp_below={'earthshatter': 40},
+        weapon={'dice': '4d8', 'type': 'piercing', 'attr': 'dex'},
+        desc='跟著南院大王打過統一戰爭的老將，鬍子白了，弩還拉得開；他說南院的印是天可汗親手給的，要收，先從他的屍首上拿。')),
+    ('td_kheshig_marshal', 'yh_chancellor_marshal', dict(name='怯薛的萬戶', level=15, kind='humanoid', armed=True, boss=True,
+        abilities=['charge', 'battle_roar', 'trample', 'sky_roar'], ability_hp_below={'sky_roar': 40},
+        weapon={'dice': '4d10', 'type': 'slashing', 'attr': 'str'},
+        desc='怯薛長鐵牙麾下的萬戶，北院主戰派的刀；他說草原坐下來的那一天，就是蒼狼死的那一天。')),
+    ('td_pursuit_captain', 'yh_radical_firebrand', dict(name='追擊的怯薛統領', level=15, kind='humanoid', armed=True, boss=True,
+        abilities=['pin_shot', 'thorn_volley', 'trample', 'eternal_frost'], ability_hp_below={'eternal_frost': 40},
+        weapon={'dice': '4d8', 'type': 'piercing', 'attr': 'dex'},
+        desc='奉命追回海東部的怯薛統領，騎射無雙，冬天也能在雪原上追三天三夜；他說海東青可以飛走，海東部的人不行。')),
 ]
 
 if __name__ == '__main__':

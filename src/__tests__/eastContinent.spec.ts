@@ -256,6 +256,38 @@ describe('炎華之地', () => {
     expect(JSON.stringify(khan)).toContain('tdm_name')
   })
 
+  it('lets the northern politics line always reach at least one ending (P8c)', () => {
+    const ids = ['tdpol_summons', 'tdpol_kurultai', 'tdpol_naadam', 'tdpol_end_khanate', 'tdpol_end_south', 'tdpol_end_haidong']
+    for (const id of ids) expect(stories.find((s) => s.id === id), id).toBeTruthy()
+    const naadam = stories.find((s) => s.id === 'tdpol_naadam')!
+    const sides = naadam.nodes.find((n) => n.id === 'oath')!.options!
+    const verdict = naadam.nodes.at(-1)!.options!
+    type Range = { min?: number; max?: number }
+    const ok = (req: { flags?: string[]; counters?: Record<string, Range> } | undefined, flags: Set<string>, c: Record<string, number>) =>
+      (req?.flags ?? []).every((f) => flags.has(f)) &&
+      Object.entries(req?.counters ?? {}).every(([k, r]) => (r.min === undefined || c[k]! >= r.min) && (r.max === undefined || c[k]! <= r.max))
+    const keys = ['td_war', 'td_peace', 'td_haidong']
+    // 四條地方線的結局：沒走（-1）或三選一；至少走完一條才會被召見
+    let combos = 0
+    for (let code = 0; code < 4 ** 4; code++) {
+      const picks = [0, 1, 2, 3].map((i) => Math.floor(code / 4 ** i) % 4 - 1)
+      if (picks.every((p) => p < 0)) continue
+      for (const side of sides) {
+        const c: Record<string, number> = { td_war: 0, td_peace: 0, td_haidong: 0 }
+        for (const p of picks) if (p >= 0) c[keys[p]!]! += 1
+        for (const [k, v] of Object.entries(side.success!.counters ?? {})) c[k]! += v
+        const flags = new Set(side.success!.set_flags)
+        const open = verdict.filter((o) => ok(o.requires as never, flags, c))
+        expect(open.length, JSON.stringify({ picks, side: side.label })).toBeGreaterThan(0)
+        combos++
+      }
+    }
+    expect(combos).toBe((4 ** 4 - 1) * 3)
+    const starts = new Set(verdict.map((o) => (o.success!.effects ?? []).find((e) => e.type === 'start_story')?.story))
+    expect([...starts].sort()).toEqual(['tdpol_end_haidong', 'tdpol_end_khanate', 'tdpol_end_south'])
+    expect(JSON.stringify(stories.find((s) => s.id === 'tdpol_summons'))).toContain('palace_permit_jinzhang')
+  })
+
   it('populates 青丘屯 mostly with 靈狐族', () => {
     const s = newGame({ name: '測試者', race: 'linghu', classId: 'cleric', seed: 4, birthplace: 'qingqiu' })
     const races = ensureRoster(s, 'qingqiu')!.members.map((m) => npcRecord(s, m)!.race)
