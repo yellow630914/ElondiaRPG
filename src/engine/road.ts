@@ -12,7 +12,7 @@ import { startCombat } from './combat'
 import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type CheckContext, type LocationType, type RouteMode, type StoryCheck, type StoryCond, type StoryOutcome } from './data'
 import { affordable, applyEffects } from './effects'
 import {
-  assertNoStandoff, clearAreas, currentArea, ensureQuestTargets, findKind, generateSide, placeAt, position, reveal, storeArea, substituteGroup,
+  assertNoStandoff, clearAreas, currentArea, ensureQuestTargets, findKind, generateSide, layerEncounters, placeAt, position, reveal, storeArea, substituteGroup,
   type Area, type Cell, type SideMapDef, type StepResult,
 } from './grid'
 import { isBound, pcOf } from './party'
@@ -547,10 +547,13 @@ export function enterSide(state: GameState, template: string, story?: string): A
   const back = { ...position(state) }
   const here = currentArea(state)
   const region = locationById(state.road?.to ?? here.location).region
-  const table = wildEncounters(region)
+  // 從地下城裡帶進來的（地下城事件）：怪物、寶箱與陷阱照那一層；這一層沒有怪物時用地區的城郊遭遇表
+  const inDungeon = !state.road && here.kind === 'dungeon' && here.layer !== undefined
+  const layerTable = inDungeon ? layerEncounters(locationById(here.location), here.layer!) : []
+  const table = layerTable.length ? layerTable : wildEncounters(region)
   const key = `side/${template}`
   const area = withRng(state, (rng) => {
-    const a = generateSide(state, key, template, def, here.location, table, rng)
+    const a = generateSide(state, key, template, def, here.location, table, rng, inDungeon ? here.layer : undefined)
     ensureQuestTargets(state, a, rng, table)
     ensureStoryMarkers(state, a, rng)
     return a

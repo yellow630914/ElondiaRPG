@@ -28,7 +28,7 @@ import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from 
 import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
-import { maybeDungeonEvent, offerTrapLure } from './dungeonEvents'
+import { maybeDungeonEvent, offerTrapLure, pendingDungeonEvent } from './dungeonEvents'
 import { enterPark, mimicFor, parkOfLink, parkRules, parkTrap, returnToPlaza, stepParkLust } from './park'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
@@ -678,6 +678,12 @@ function shallowerTables(location: string, layer: number): EncounterGroup[] {
   return maps.generation.dungeon.layers.slice(0, layer).flatMap((l) => enc?.[l.id as DungeonLayerId] ?? [])
 }
 
+/** 地下城這一層的遭遇表：沒寫的層用地區的城郊遭遇表；寫了但是空的（自建地下城沒放怪物的層）就不生怪物，可以當作休息或獎勵的樓層 */
+export function layerEncounters(loc: Location, layer: number): EncounterGroup[] {
+  const spec = maps.generation.dungeon.layers[layer]
+  return (spec && dungeonEncounters[loc.id]?.[spec.id as keyof (typeof dungeonEncounters)[string]] as EncounterGroup[] | undefined) ?? wildEncounters(loc.region)
+}
+
 export function generateLayer(state: GameState, loc: Location, layer: number, rng: Rng): Area {
   const g = maps.generation.dungeon
   const spec = g.layers[layer]!
@@ -713,8 +719,7 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   // 最深的一層（有底層時是底層，否則是深層）：最終層主；其他層：層主守著往下的階梯（沒有層主資料時直接是階梯）
   const enc = dungeonEncounters[loc.id]
   const last = layer >= dungeonDepth(loc.id) - 1
-  // 遭遇表：沒寫的層用地區的城郊遭遇表；寫了但是空的（自建地下城沒放怪物的層）就不生怪物，可以當作休息或獎勵的樓層
-  const table = enc?.[spec.id] ?? wildEncounters(loc.region)
+  const table = layerEncounters(loc, layer)
   // 沒設層主的層照強敵的規則：這一層最強的一組再多一隻（這一層沒有怪物時沒有層主）
   const bossGroup = enc?.bosses?.[spec.id as BossLayerId] ?? (spec.id === 'deep' && enc?.boss?.length ? enc.boss : undefined) ?? (table.length ? strongestPlusOne(table) : undefined)
   cells[far] = last
@@ -781,14 +786,15 @@ export interface SideMapDef {
  * 生成臨時地圖：固定地圖照著畫；洞窟、遺跡從出口隨機挖出通道，放遭遇（用 table，強一點）、陷阱、資源與寶箱。
  * location 是這張地圖算在哪個地點（地名、地區、店家）。
  */
-export function generateSide(state: GameState, key: string, template: string, def: SideMapDef, location: string, table: EncounterGroup[], rng: Rng): Area {
+export function generateSide(state: GameState, key: string, template: string, def: SideMapDef, location: string, table: EncounterGroup[], rng: Rng, dungeonLayer?: number): Area {
   if (def.grid) {
     const width = def.grid[0]!.length
     const cells = def.grid.join('').split('').map((ch) => ({ kind: def.legend?.[ch] ?? 'floor' }) as Cell)
     return { key, location, name: def.name, kind: 'side', template, width, height: def.grid.length, cells, revealed: [], lighting: def.lighting ?? 'lit' }
   }
   const [width, height] = def.size ?? [7, 7]
-  const layer = Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.chest_layer ?? 'outskirts')))
+  // 從地下城裡帶進來的：寶箱與陷阱照那一層
+  const layer = dungeonLayer ?? Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.chest_layer ?? 'outskirts')))
   const cells: Cell[] = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
   const area: Area = { key, location, name: def.name, kind: 'side', template, layer, width, height, cells, revealed: [], lighting: def.lighting ?? 'dark' }
   let x = Math.floor(width / 2)
@@ -1267,8 +1273,8 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       cell.done = true
       // 情報的藏寶處：結束這則情報
       if (cell.intel) finishIntel(state, cell.intel)
-      // 擬態寶箱（地下城事件）：寶箱本身不打開，裡面的東西看回應
-      if (!cell.intel && maybeDungeonEvent(state, 'chest')) return {}
+      // 寶箱的地下城事件：成人向的（擬態寶箱）取代寶箱，裡面的東西看回應；普通的在寶箱照常打開之後發生
+      if (!cell.intel && maybeDungeonEvent(state, 'chest') && pendingDungeonEvent(state)?.tags?.includes('adult')) return {}
       return { report: openChest(state, area, cell.level ?? 1) }
     }
     default:
