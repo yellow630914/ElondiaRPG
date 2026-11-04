@@ -98,29 +98,75 @@ export function dungeonEventWeight(state: GameState, id: string): number {
  */
 export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger): boolean {
   const rules = travelEvents.dungeon
-  if (!rules || state.dungeonEvent || state.parasiteEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent) return false
+  if (!rules || busy(state)) return false
   const area = currentArea(state)
-  const now = hoursOf(state.time)
   const last = state.dungeonEvents?.last
-  if (last !== undefined && now - last < rules.cooldown_hours) return false
+  if (last !== undefined && hoursOf(state.time) - last < rules.cooldown_hours) return false
   const list = dungeonCandidates(state, area, trigger)
   if (!list.length) return false
-  // 採集、長休可以抽的事件少時機率照比例調低；抽的時候最近出現過的權重比較低
+  const fresh = list.map((t) => dungeonEventWeight(state, t.id))
+  const weights = list.map((t, i) => fresh[i]! * adultBoost(state, t))
+  // 採集、長休可以抽的事件少時機率照比例調低；成人向的比重（存檔規則）拉高的那一份也算進機率
   const pool = trigger === 'gather' || trigger === 'rest' ? Math.min(1, list.length / FULL_POOL) : 1
-  const chance = Math.min(1, (rules.chance[trigger] ?? 0) * gameRule(state, 'dungeonEventMult') * pool)
-  const pick = withRng(state, (rng) => {
-    if (!rng.chance(chance)) return undefined
-    const weights = list.map((t) => dungeonEventWeight(state, t.id))
-    let r = rng.next() * weights.reduce((a, b) => a + b, 0)
-    for (let i = 0; i < list.length; i++) if ((r -= weights[i]!) < 0) return list[i]
-    return list[list.length - 1]
-  })
+  const boost = sum(weights) / sum(fresh)
+  const chance = Math.min(1, (rules.chance[trigger] ?? 0) * gameRule(state, 'dungeonEventMult') * pool * boost)
+  const pick = withRng(state, (rng) => (rng.chance(chance) ? weightedPick(rng.next(), list, weights) : undefined))
   if (!pick) return false
-  const log = (state.dungeonEvents ??= { seen: {} })
-  log.last = now
-  log.seen[pick.id] = state.time.day
-  state.dungeonEvent = { template: pick.id, trigger }
+  startDungeonEvent(state, pick, trigger)
   return true
+}
+
+/** 有別的事情等著回應時不發生 */
+function busy(state: GameState): boolean {
+  return !!(state.dungeonEvent || state.parasiteEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent || state.trapLure)
+}
+
+const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+
+/** 成人向的事件照存檔規則「成人地下城事件的比重」加權 */
+function adultBoost(state: GameState, t: RoadTemplate): number {
+  return t.tags?.includes('adult') ? gameRule(state, 'adultDungeonMult') : 1
+}
+
+/** 照權重抽一件（r 是 0～1 的亂數） */
+function weightedPick<T>(r: number, list: T[], weights: number[]): T {
+  let left = r * sum(weights)
+  for (let i = 0; i < list.length; i++) if ((left -= weights[i]!) < 0) return list[i]!
+  return list[list.length - 1]!
+}
+
+function startDungeonEvent(state: GameState, t: RoadTemplate, trigger: DungeonTrigger) {
+  const log = (state.dungeonEvents ??= { seen: {} })
+  log.last = hoursOf(state.time)
+  log.seen[t.id] = state.time.day
+  state.dungeonEvent = { template: t.id, trigger }
+}
+
+// ---- 主動觸發察覺到的陷阱（存檔規則 trapLure） ----
+
+/** 察覺了陷阱：存檔規則開著、這裡有陷阱的事件可以遇到時，問主角要不要主動觸發 */
+export function offerTrapLure(state: GameState): boolean {
+  if (!state.options?.trapLure || busy(state)) return false
+  const area = currentArea(state)
+  if (!dungeonCandidates(state, area, 'trap').length) return false
+  state.trapLure = { area: area.key }
+  return true
+}
+
+/** 主動觸發：照權重抽一件陷阱的事件（不看機率與事件之間的冷卻；同一件事的不重複天數照舊） */
+export function acceptTrapLure(state: GameState): boolean {
+  if (!state.trapLure) throw new Error('沒有察覺到的陷阱')
+  delete state.trapLure
+  const list = dungeonCandidates(state, currentArea(state), 'trap')
+  if (!list.length || busy(state)) return false
+  const weights = list.map((t) => dungeonEventWeight(state, t.id) * adultBoost(state, t))
+  startDungeonEvent(state, withRng(state, (rng) => weightedPick(rng.next(), list, weights)), 'trap')
+  return true
+}
+
+/** 繞過察覺到的陷阱 */
+export function declineTrapLure(state: GameState) {
+  delete state.trapLure
 }
 
 /** 等待回應的地下城事件 */
@@ -132,6 +178,8 @@ export function pendingDungeonEvent(state: GameState): RoadTemplate | undefined 
 /** 自訂內容拿掉的事件：等待中的地下城事件作廢（讀檔時，以及自訂內容改變之後） */
 export function pruneDungeonEvent(state: GameState) {
   if (state.dungeonEvent && !pendingDungeonEvent(state)) delete state.dungeonEvent
+  // 察覺到的陷阱：已經不在那一區、或規則關掉了就不問了
+  if (state.trapLure && (!state.options?.trapLure || state.position?.area !== state.trapLure.area)) delete state.trapLure
 }
 
 /** 發生在主角身上的事件的報告（地下城事件、寄生物發作） */

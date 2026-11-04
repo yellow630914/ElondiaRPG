@@ -28,7 +28,7 @@ import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from 
 import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
-import { maybeDungeonEvent } from './dungeonEvents'
+import { maybeDungeonEvent, offerTrapLure } from './dungeonEvents'
 import { enterPark, mimicFor, parkOfLink, parkRules, parkTrap, returnToPlaza, stepParkLust } from './park'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
@@ -1308,8 +1308,9 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const dc = spec.trap_dc + (dark ? lightingRules.dark.trap_dc : 0)
   const success = r.total >= dc
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
-  // 沒察覺：可能是色情陷阱（地下城事件），事件取代陷阱的傷害
+  // 沒察覺：可能遇到陷阱的地下城事件，事件取代陷阱的傷害；察覺了：存檔規則開著時問要不要主動觸發
   const event = !success && maybeDungeonEvent(state, 'trap')
+  const lure = success && offerTrapLure(state)
   // 園區：沒察覺的陷阱是媚藥機關，不扣生命、魅氣大增（下一場戰鬥帶著慾望開場）
   const lewdTrap = !success && !event && parkPlaza(area.location) ? parkTrap(state, scout.id) : 0
   if (!success && !event && !lewdTrap) {
@@ -1325,7 +1326,7 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
   report.outcome = {
     result: success ? 'success' : 'failure',
-    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。`
+    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。${lure ? '要不要主動觸發它？' : ''}` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。`
       : lewdTrap ? `${scout.name}觸發了${area.name}的媚藥機關，甜膩的霧噴了一身（魅氣 +${Math.round(lewdTrap * 100)}%）。` : `${scout.name}觸發了${area.name}的陷阱。`,
     tags: ['陷阱', ...(dark ? ['黑暗'] : [])],
   }
@@ -1465,6 +1466,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
   if (state.dungeonEvent || state.parasiteEvent) throw new Error('先應付眼前的處境')
+  if (state.trapLure) throw new Error('先決定要不要觸發察覺到的陷阱')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
   if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')
   if (state.pendingJoins?.length) throw new Error('先決定要不要讓想入隊的人加入（騰出位子或放棄）')

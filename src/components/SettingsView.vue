@@ -253,6 +253,8 @@ function doReset() {
         </label>
         <label class="check"><input type="checkbox" :checked="!!game.state.options?.tagChange" @change="game.setTagChange(($event.target as HTMLInputElement).checked)" />
           允許在遊戲中更換身分標籤 <Hint text="勾選時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個）。皇族可以直接進出王城。" /></label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.trapLure" @change="game.setTrapLure(($event.target as HTMLInputElement).checked)" />
+          察覺陷阱時可以主動觸發 <Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。" /></label>
         <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
       </div>
     </section>

@@ -64,6 +64,8 @@ const look = ref<Record<string, string>>({})
 const pcTags = ref<string[]>([])
 /** 這個存檔的規則：允許在遊戲中更換身分標籤 */
 const tagChange = ref(false)
+/** 察覺陷阱時可以主動觸發 */
+const trapLure = ref(false)
 // 特質：清單裡的任選，也可以自訂
 const perks = ref<string[]>([])
 const customPerks = ref<PerkDef[]>([])
@@ -212,7 +214,7 @@ function start() {
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
     // 難度和其他規則一樣：和預設一樣的不存
-    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...sanitizeRules(rules.value) },
+    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
@@ -475,6 +477,10 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         <tr>
           <th>身分標籤 <Hint text="勾選時，遊戲中可以在角色詳情裡更換主角的身分標籤；之後可以在「設定」裡改。" /></th>
           <td><label class="check"><input v-model="tagChange" type="checkbox" /> 允許在遊戲中更換身分標籤</label></td>
+        </tr>
+        <tr>
+          <th>察覺陷阱時 <Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。之後可以在「設定」裡改。" /></th>
+          <td><label class="check"><input v-model="trapLure" type="checkbox" /> 可以主動觸發</label></td>
         </tr>
         </tbody>
       </table>

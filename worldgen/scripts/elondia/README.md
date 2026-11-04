@@ -11,6 +11,7 @@
 | `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch31`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）、`lust_skills_s6.place_skills`（打工線的獨特技能，接在結局的獎勵物品後面），最後接上 `lust_park_s7.PARK_STORIES`（緋夢樂園的集章任務）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次 |
 | `uniq23.py` | `data/rules/items.json` | 任務的獨特裝備 149 件 |
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
+| `dungeon_events33.py` | `data/rules/travel_events.json` | 普通（非成人向）的地下城與近郊事件 54 件：採集 19、陷阱 13、寶箱 11、安全房長休 11（接在成人向的「遺落的春宮書」後面）。可以重跑 |
 | `parasites25.py` | `data/rules/parasites.json`、`items.json`、`companions.json`、`travel_events.json` | 寄生物的規則、物品、發作事件 |
 | `work26.py` | `data/rules/items.json`、`data/world/npcs.json`、`landmarks.json` | 打工任務線（成人向）的獨特色情裝備、委託人與地標：自己的五條線，加上 `story_batch27.py`、`story_batch28.py` 匯出的 `ITEMS27`～`30`、`NPCS27`～`30`、`LANDMARKS27`～`30`（任務本身在 `story_batch26`～`30`；制服的表在 `story_batch26.py` 的 `DRESS` 與 `DRESS29`、`DRESS30`） |
 | `town_events26.py` | `data/rules/travel_events.json` | 城鎮的成人向事件（搜身盤查、被下藥的酒、賭局的代價、被搭訕、被偷摸） |

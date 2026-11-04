@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useGame } from '@/stores/game'
+import GameIcon from '../ui/GameIcon.vue'
 import AppDialog from '../AppDialog.vue'
 import Hint from '../ui/Hint.vue'
 import DefeatEventPanel from '../DefeatEventPanel.vue'
@@ -77,6 +78,14 @@ function openParty(member?: string) {
       <RoadEventPanel v-else-if="current.kind === 'road'" />
       <RoadEventPanel v-else-if="current.kind === 'town'" town />
       <RoadEventPanel v-else-if="current.kind === 'dungeon'" dungeon />
+      <section v-else-if="current.kind === 'lure'" class="panel lure">
+        <h3 class="title"><GameIcon name="warning" :size="16" />察覺到的陷阱</h3>
+        <p class="small">你們及時發現了機關。要主動踩上去，看看會發生什麼事嗎？</p>
+        <div class="row">
+          <button class="small" @click="game.acceptTrapLure()">主動觸發</button>
+          <button class="small" @click="game.declineTrapLure()">繞過去</button>
+        </div>
+      </section>
       <RoadEventPanel v-else-if="current.kind === 'parasite'" parasite />
       <StoryNodeCard v-else-if="current.kind === 'story' && storyNode" :n="storyNode" prompt />
       <JoinPanel v-else-if="current.kind === 'join'" :id="current.ref!" />
@@ -98,6 +107,10 @@ function openParty(member?: string) {
 
 <style scoped>
 .event-center { display: grid; gap: 10px; }
+.lure { display: grid; gap: 6px; border-color: var(--accent); }
+.lure h3, .lure p { margin: 0; }
+.lure .title { display: flex; align-items: center; gap: 6px; }
+.lure .row { display: flex; flex-wrap: wrap; gap: 6px; }
 .event-center p { margin: 0; }
 .foot { gap: 8px; align-items: center; flex-wrap: wrap; }
 </style>

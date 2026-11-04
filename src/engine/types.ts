@@ -778,6 +778,10 @@ export interface GameOptions {
   masterEventMult?: number
   parasiteMult?: number
   dungeonEventMult?: number
+  /** 成人向地下城事件的比重（1～8 倍；普通的地下城事件不變） */
+  adultDungeonMult?: number
+  /** 察覺陷阱時可以選擇主動觸發（遇到陷阱的地下城事件） */
+  trapLure?: boolean
   /** 娼館打工事件的機率倍率（docs/LEWD_STATS.md 第 10 節） */
   brothelEventMult?: number
   eventDc?: number
@@ -929,6 +933,8 @@ export interface GameState {
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 地下城與近郊等待回應的事件（dungeonEvents.ts）：模板與觸發點 */
   dungeonEvent?: { template: string; trigger: string }
+  /** 察覺了陷阱、等主角決定要不要主動觸發（存檔規則 trapLure；dungeonEvents.ts 的 offerTrapLure） */
+  trapLure?: { area: string }
   /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */
   dungeonEvents?: { last?: number; seen: Record<string, number> }
   /** 寄生物等待回應的發作事件（parasiteEvents.ts）：模板與寄生物 */

@@ -116,20 +116,22 @@
 
 ## 7. 存檔規則
 
-每個存檔自己的規則存在 `state.options`，開新遊戲時選（難度、戰敗掉落與身分標籤在「存檔規則」，其他在「更多存檔規則」），之後可以在設定的「遊戲規則 → 這個存檔的規則」改。數值類的規則寫在 `engine/gameRules.ts` 的 `RULE_DEFS`：讀的時候一律夾在範圍內，和預設一樣的不存，所以舊存檔不用轉換。難度、戰敗掉落與身分標籤不是數值，各自有自己的選單或勾選（`DIFFICULTY_DEFS`、`DEFEAT_LOOT_NAME`、`tagChange`）。
+每個存檔自己的規則存在 `state.options`，開新遊戲時選（難度、戰敗掉落與身分標籤在「存檔規則」，其他在「更多存檔規則」），之後可以在設定的「遊戲規則 → 這個存檔的規則」改。數值類的規則寫在 `engine/gameRules.ts` 的 `RULE_DEFS`：讀的時候一律夾在範圍內，和預設一樣的不存，所以舊存檔不用轉換。難度、戰敗掉落、身分標籤與主動觸發陷阱不是數值，各自有自己的選單或勾選（`DIFFICULTY_DEFS`、`DEFEAT_LOOT_NAME`、`tagChange`、`trapLure`）。
 
 | 規則 | 欄位 | 預設 | 範圍 | 影響 |
 |---|---|---|---|---|
 | 難度 | `difficulty` | 普通 | 故事／簡單／普通／困難／史詩 | 怪物的最大生命與造成的傷害各乘一個係數（`combat.json` 的 `difficulty`，普通 = 1；頭目一組、小怪依區域各一組）；開戰時記進 `CombatState.difficulty`，改了只影響之後開打的戰鬥。經驗值與戰利品不變，敵對的 NPC 也不受影響。曲線見 [COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 6 節 |
 | 戰敗掉落 | `defeatLoot` | 失去一半 | 保留／失去一半／全部失去 | 在地下城戰敗時，這趟撿到、還沒帶出去的東西（`expedition.ts`） |
 | 更換身分標籤 | `tagChange` | 不允許 | 允許／不允許 | 允許時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個，`engine/pcTags.ts`） |
+| 察覺陷阱時可以主動觸發 | `trapLure` | 不允許 | 允許／不允許 | 允許時，察覺到陷阱之後可以選擇主動踩上去，遇到一件陷阱的地下城事件（[ADULT_EVENTS](ADULT_EVENTS.md) 第 1 節） |
 | 經驗值倍率 | `xpMult` | 1 | 0.25～5 | 所有經驗值（`commitReport` 加經驗前乘上，報告裡記實際的量） |
 | 報酬與戰利品的錢 | `moneyMult` | 1 | 0.25～5 | 委託報酬、事件與任務給的錢（`money` 效果）、戰鬥與寶箱、撿到的古錢；賣東西、打工、物價不變 |
 | 休息時被襲擊的機率 | `ambushMult` | 1 | 0～3 | 野外、地下城、旅途上休息的襲擊機率（最高 100%）；0 = 不會被襲擊 |
 | 旅途事件的頻率 | `travelEventMult` | 1 | 0～3 | 出發時擲旅途事件的機率（最高 100%）；0 = 一路平安 |
 | 主人事件的機率 | `masterEventMult` | 1 | 0～3 | 主人的突發事件（走動時）與旅途上的主人格子；0 = 不會發生 |
 | 寄生發作的機率 | `parasiteMult` | 1 | 0～3 | 寄生物的發作（[ADULT_EVENTS](ADULT_EVENTS.md) 第 6.2 節）；0 = 不會發作 |
-| 地下城事件的機率 | `dungeonEventMult` | 1 | 0～3 | 地下城與近郊的色情事件；0 = 不會發生 |
+| 地下城事件的機率 | `dungeonEventMult` | 1 | 0～3 | 地下城與近郊的事件（普通與成人向）；0 = 不會發生 |
+| 成人地下城事件的比重 | `adultDungeonMult` | 1 | 1～8 | 成人向地下城事件抽到的權重與機率（[ADULT_EVENTS](ADULT_EVENTS.md) 第 1 節） |
 | 娼館事件的機率 | `brothelEventMult` | 1 | 0～3 | 娼館打工結束時的事件（[LEWD_STATS](LEWD_STATS.md) 第 10 節）；0 = 不會發生。成人向 |
 | 事件檢定的難度 | `eventDc` | 0 | −10～+10 | 地下城事件與寄生物發作的檢定 DC 加減（[ADULT_EVENTS](ADULT_EVENTS.md) 第 7 節） |
 | 委託的期限 | `deadlineMult` | 1 | 0～5 | 之後接的公會委託的天數（至少 1 天）；0 = 不限期限；特殊任務不變 |

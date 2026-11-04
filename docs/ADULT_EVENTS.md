@@ -1,8 +1,8 @@
-# 地下城的色情事件
+# 地下城的事件（普通與成人向）
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[TRAVEL_EVENTS](TRAVEL_EVENTS.md)（事件模板的格式與事件設定）、[EVENTS](EVENTS.md)（事件視窗）、[DUNGEON_DESIGN](DUNGEON_DESIGN.md)（陷阱、寶箱、資源格、安全房）、[STORY_QUESTS](STORY_QUESTS.md) 1.2 節（內容標籤）。
 > 設計稿：`worldgen/design/adult-events.md`（第一批：清單裡的非自願類事件，M1；第二批：寄生裝備、淫紋與寄生種子，M2，見第 6 節）。
-> 資料：`data/rules/travel_events.json` 的 `templates`（`scope: dungeon`）與 `dungeon`；非戰鬥狀態在 `data/rules/companions.json` 的 `conditions`。程式：`src/engine/dungeonEvents.ts`。內容產生腳本：scratchpad 的 `dungeon_events24.py`。
+> 資料：`data/rules/travel_events.json` 的 `templates`（`scope: dungeon`）與 `dungeon`；非戰鬥狀態在 `data/rules/companions.json` 的 `conditions`。程式：`src/engine/dungeonEvents.ts`。內容產生腳本：`worldgen/scripts/elondia/dungeon_events24.py`、`lust_s9.py`（成人向）與 `dungeon_events33.py`（普通的 54 件）。
 
 ## 1. 什麼時候發生
 
@@ -18,7 +18,10 @@
 - 兩次事件之間至少隔 6 小時（`cooldown_hours`）；同一個事件 3 天內不重複（`repeat_days`，事件可以用 `cooldown_days` 另訂；不限地下城、採集時常抽到的「淫泉」「遺落的春宮書」是 10 天）。
 - **採集、長休**時可以抽的事件少於 4 件（`dungeonEvents.ts` 的 `FULL_POOL`），觸發機率照比例調低（例如只有 2 件可抽時是一半）；陷阱與寶箱不調。抽的時候最近出現過的權重比較低：沒出現過 1，出現過的照隔了幾天，14 天（`FRESH_DAYS`）恢復成 1，最低 0.2。都在 `travel_events.json` 的 `dungeon`，內容編輯器的「⚙️ 事件設定」可以改。
 - 事件的條件：觸發點（`triggers`）、地點（`dungeons`：地下城的 id，近郊寫那座聚落）、地區（`regions`）、層（`layers`：0 周邊與近郊、1 淺層、2 中層、3 深層、4 底層）、劇情旗標（`requires`）、**內容標籤**（`tags`）、**主角的體型**（`pc_body`）。
-- 內建的事件都是**成人向**（`adult`），只給**女性形象與中性**的主角（`pc_body: ["fem", "andro"]`）；非自願的另外標**主角非自願**（`pc_unwilling`）。所以「設定 → 內容篩選」關掉主角非自願時，非自願的事件不會發生（沒標的自願事件仍可能發生）；有幾件另外標**男性對象**（`male_partner`），關掉那個篩選時也不會發生；男性形象的主角不會遇到（除非打開下面「陽剛體型」的設定）。
+- **普通的事件** 54 件（`dn_` 開頭，和成人向的一樣多：採集 19、陷阱 13、寶箱 11、安全房長休 11）：沒有內容標籤、不限體型，關掉成人內容或陽剛體型的主角也會遇到。內容是藥草叢、礦脈、冒險者的遺骸與舊營地、落穴、毒鏢、流沙、生鏽的鎖、補給箱、夜裡的歌聲、迷路的冒險者……；有幾件會帶進臨時地圖（岩壁的裂縫 → 神秘洞窟、坍塌的舊坑道 → 遺跡廢墟）。結果只有物品、錢、經驗、生命（受傷不會倒下）、非戰鬥狀態（祝福、放鬆、磨利、驚魂未定、恍惚、虛脫……）與時間。沒寫層的也會出現在近郊。
+- **成人地下城事件的比重**（存檔規則 `adultDungeonMult`，1～8 倍，預設 1）：抽事件時成人向的權重乘上這個倍率，遇到事件的機率也照比例拉高（機率 × 這次能抽的事件的平均倍率，最高 100%）。例如 4 倍、能抽的普通與成人向各半時，機率變成 2.5 倍，抽到的事件八成是成人向。
+- **察覺陷阱時可以主動觸發**（存檔規則 `trapLure`，預設關）：察覺到陷阱之後，這裡有陷阱的事件可以遇到時，事件視窗問要不要主動踩上去（`state.trapLure`，回答之前不能移動、休息）。踩了就照權重抽一件陷阱的事件（不看機率與兩次之間的冷卻；同一件事的不重複天數照舊），不踩就像平常一樣繞過去。
+- 內建的**成人向**事件（`adult`）只給**女性形象與中性**的主角（`pc_body: ["fem", "andro"]`）；非自願的另外標**主角非自願**（`pc_unwilling`）。所以「設定 → 內容篩選」關掉主角非自願時，非自願的事件不會發生（沒標的自願事件仍可能發生）；有幾件另外標**男性對象**（`male_partner`），關掉那個篩選時也不會發生；男性形象的主角不會遇到（除非打開下面「陽剛體型」的設定）。
 
 **陽剛體型**：「設定 → 敘事與判定」的「陽剛體型也能遇到『只給陰柔、中性』的成人內容」（預設關，`content.ts` 的 `setMascBodyContent`、`pcBodyAllowed`）打開時，限定陰柔、中性體型（`pc_body` 不含 `masc`）的內容也給陽剛體型的主角：53 個特殊任務（17 條打工、儀式線）、地下城事件（全部 54 個）、城鎮事件 22 個、旅途事件 6 個、地標的場景 23 個；連帶饑渴的內衣、魅魔印記兩種寄生物（只能從這些地方得到）與它們的事件、特殊任務。這些內容是照陰柔、中性的主角寫的，所以：
 

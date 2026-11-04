@@ -557,7 +557,7 @@ export const useGame = defineStore('game', () => {
 
   /** 走完這一步之後有要先處理的事（戰鬥、事件、等待判定、擋路的任務點……）：停下來 */
   function mustStop(s: GameState): boolean {
-    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || story.blockingNode(s))
+    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.trapLure || story.blockingNode(s))
   }
 
   function walkTo(x: number, y: number) {
@@ -1298,6 +1298,9 @@ export const useGame = defineStore('game', () => {
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
     answerTownEvent: (i: number) => run((s) => townEvents.answerTownEvent(s, i)),
     answerDungeonEvent: (i: number) => run((s) => dungeonEvents.answerDungeonEvent(s, i)),
+    /** 察覺到的陷阱：主動觸發或繞過（存檔規則 trapLure） */
+    acceptTrapLure: () => run((s) => dungeonEvents.acceptTrapLure(s)),
+    declineTrapLure: () => run((s) => dungeonEvents.declineTrapLure(s)),
     answerParasiteEvent: (i: number) => run((s) => parasiteEvents.answerParasiteEvent(s, i)),
     triggerParasite: (id: string) => run((s) => parasiteEvents.triggerTamed(s, id)),
     cureParasite: (id: string) => run((s) => parasiteEvents.cureParasite(s, id)),
@@ -1455,6 +1458,14 @@ export const useGame = defineStore('game', () => {
       if (!state.value) return
       const { tagChange: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
       state.value.options = { ...rest, ...(on ? { tagChange: true } : {}) }
+      save()
+    },
+    /** 這個存檔察覺陷阱時能不能主動觸發（遇到陷阱的地下城事件） */
+    setTrapLure: (on: boolean) => {
+      if (!state.value) return
+      const { trapLure: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
+      state.value.options = { ...rest, ...(on ? { trapLure: true } : {}) }
+      if (!on) delete state.value.trapLure
       save()
     },
     /** 更換主角的身分標籤（存檔規則要允許，見 pcTags.ts） */
