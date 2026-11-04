@@ -235,7 +235,7 @@ describe('炎華之地', () => {
   })
 
   it('ends every northern region line with a war, peace or 海東 choice (P8a)', () => {
-    const td = stories.filter((s) => s.id.startsWith('td'))
+    const td = stories.filter((s) => /^td[nrlsth]_/.test(s.id))
     expect(td.length).toBe(15)
     for (const id of ['tdl_the_code', 'tds_missing_tribute', 'tdt_tea_horse', 'tdh_tribute_day']) {
       const s = td.find((x) => x.id === id)!
@@ -245,6 +245,15 @@ describe('炎華之地', () => {
       for (const o of opts) expect(o.success!.complete, id).toBe(true)
     }
     for (const c of ['td_war', 'td_peace', 'td_haidong']) expect(storyCounters[c]?.initial, c).toBe(0)
+  })
+
+  it('adds the 古戰場 and 雪窟 dungeon lines, the fiddle quest and two small ones (P8b)', () => {
+    const ids = ['tdm_named_arrow', 'tdm_iron_pagoda', 'tdm_nameless_khan', 'tdw_coming_of_age', 'tdw_ice_queen', 'tdw_blue_wolf', 'tdu_broken_fiddle', 'tdx_post_letter', 'tdx_lost_foal']
+    for (const id of ids) expect(stories.find((s) => s.id === id), id).toBeTruthy()
+    const gearBy: Record<string, string> = { tdm_nameless_khan: '無名可汗的戰旗', tdw_blue_wolf: '蒼狼的牙', tdu_broken_fiddle: '老馬倌的馬頭琴' }
+    for (const [id, name] of Object.entries(gearBy)) expect(JSON.stringify(stories.find((s) => s.id === id)), id).toContain(name)
+    const khan = stories.find((s) => s.id === 'tdm_nameless_khan')!
+    expect(JSON.stringify(khan)).toContain('tdm_name')
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {
