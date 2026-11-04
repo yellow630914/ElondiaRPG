@@ -33,6 +33,7 @@ import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
+import { swapNpcGender } from '@/engine/genderSwap'
 import { takeParasiteNotice } from '@/engine/parasites'
 import * as grid from '@/engine/grid'
 import * as specialMaps from '@/engine/specialMaps'
@@ -1495,6 +1496,8 @@ export const useGame = defineStore('game', () => {
     rejectSuggestion: (id: string) => run((s) => social.rejectSuggestion(s, id)),
     // 人際關係與共同記憶
     editRelationship: (id: string, patch: social.RelationshipPatch) => run((s) => social.editRelationship(s, id, patch)),
+    /** 歡愉的惡作劇：改隨機 NPC 的性別（寫成一則日誌） */
+    swapNpcGender: (id: string, gender: string) => run((s) => swapNpcGender(s, id, gender)),
     addMemory: (m: Omit<social.Memory, 'id'>) => run((s) => social.addMemory(s, m)),
     editMemory: (id: string, patch: social.MemoryPatch) => run((s) => social.editMemory(s, id, patch)),
     deleteMemory: (id: string) => run((s) => social.deleteMemory(s, id)),

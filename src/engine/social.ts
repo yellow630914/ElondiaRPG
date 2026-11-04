@@ -175,7 +175,7 @@ function eventImportance(report: Report): Memory['importance'] | null {
     case 'progress':
       return dramatic || report.changes.affinity?.length ? 2 : 1
   }
-  if (report.narration?.mode === 'defeat_event' || tags.includes('主人') || tags.includes('高階事件')) return 2
+  if (report.narration?.mode === 'defeat_event' || tags.includes('主人') || tags.includes('高階事件') || tags.includes('歡愉的惡作劇')) return 2
   return dramatic ? 2 : 1
 }
 
@@ -394,7 +394,9 @@ function identityOf(state: GameState, id: string): string {
 
 function genderOf(state: GameState, id: string): string {
   const g = state.npcs?.[id]?.gender ?? npcs.find((n) => n.id === id)?.gender
-  return g ? genderName(g) : ''
+  if (!g) return ''
+  // 歡愉的惡作劇改過性別：以前的記憶照新的性別理解
+  return state.npcs?.[id]?.genderSwap ? `${genderName(g)}；性別因為歡愉的惡作劇改過，以前的記憶以這個為準` : genderName(g)
 }
 
 /** 上次見面之後的近況（npcLife.ts，最近兩則；重逢時 AI 會知道他這段時間做了什麼） */

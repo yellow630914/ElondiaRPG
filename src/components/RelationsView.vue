@@ -15,6 +15,8 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import { canLive, isFollowed, livingNpcs, newsOf, newsText } from '@/engine/npcLife'
 import { useSettings } from '@/stores/settings'
+import { genderSwapBlock } from '@/engine/genderSwap'
+import { genderName, GENDER_IDS } from '@/engine/data'
 
 const game = useGame()
 const content = useContent()
@@ -65,6 +67,23 @@ const pcName = computed(() => s.value.party.find((m) => m.isPlayer)?.name ?? '�
 
 function nameOf(id: string): string {
   return npcName(s.value, id)
+}
+
+// ---- 歡愉的惡作劇：改隨機 NPC 的性別（固定 NPC 不開放，見 engine/genderSwap.ts） ----
+const swapping = ref<string | null>(null)
+const swapTo = ref('')
+const swappable = (id: string) => !!game.state && !genderSwapBlock(game.state, id)
+const genderOfNpc = (id: string) => (game.state ? npcRecord(game.state, id)?.gender ?? '' : '')
+const swappedNpc = (id: string) => !!game.state?.npcs?.[id]?.genderSwap
+function startSwap(id: string) {
+  swapping.value = id
+  swapTo.value = GENDER_IDS.find((g) => g !== genderOfNpc(id)) ?? ''
+}
+function doSwap(id: string, name: string) {
+  if (!swapTo.value) return
+  if (!confirm(`歡愉的惡作劇：把「${name}」變成${genderName(swapTo.value)}？\n外貌會照新的性別重新寫一份（之後可以再編輯）；以前的日誌與記憶不會改，交給 AI 時會說明性別改過了。`)) return
+  game.swapNpcGender(id, swapTo.value)
+  swapping.value = null
 }
 
 // ---- 人際關係編輯 ----
@@ -207,6 +226,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 
         <template v-if="editing !== r.id">
           <dl class="small">
+            <template v-if="genderOfNpc(r.id)"><dt>性別</dt><dd>{{ genderName(genderOfNpc(r.id)) }}<span v-if="swappedNpc(r.id)" class="muted">（歡愉的惡作劇改過）</span></dd></template>
             <dt>外貌</dt><dd>{{ r.appearance || '—' }}</dd>
             <dt>與{{ pcName }}</dt><dd>{{ r.toPlayer || '—' }}</dd>
             <template v-if="Object.keys(r.toOthers).length">
@@ -237,6 +257,15 @@ const suggestionDraft = reactive<Record<string, string>>({})
               :title="(content.readOnly ? `${VANILLA_NAME}不能直接修改：會自動建立自己的世界，這場遊戲也改用它。` : '') + '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
               @click="promote(r.id, r.name)"
             ><GameIcon name="bookmark" :size="13" /> 存成固定 NPC</button>
+            <button v-if="swappable(r.id) && swapping !== r.id" class="small" title="歡愉的惡作劇：改變這個人的性別（只有隨機產生的人可以；固定 NPC 的劇情照原本的性別寫）" @click="startSwap(r.id)">🎭 歡愉的惡作劇</button>
+          </div>
+          <div v-if="swapping === r.id" class="row small swap">
+            把{{ r.name }}變成
+            <select v-model="swapTo">
+              <option v-for="g in GENDER_IDS" :key="g" :value="g" :disabled="g === genderOfNpc(r.id)">{{ genderName(g) }}</option>
+            </select>
+            <button class="small primary" :disabled="!swapTo" @click="doSwap(r.id, r.name)">施展</button>
+            <button class="small ghost" @click="swapping = null">取消</button>
           </div>
         </template>
 

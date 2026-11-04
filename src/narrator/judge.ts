@@ -41,6 +41,7 @@ import {
 } from './prompt'
 import type { Continuity } from './continuity'
 import type { PromptEntry } from './promptConfig'
+import { genderSwapNote } from '@/engine/genderSwap'
 import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
 
 /** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
@@ -65,7 +66,8 @@ export function partyLines(state: GameState): string {
     const conds = m.status.map(conditionName).join('、')
     const c = contractOf(m)
     const mark = c && !m.isPlayer ? `｜印記：${contractTerms(c).name}（${contractTerms(c).mark}）` : ''
-    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+    const swap = m.isPlayer ? '' : genderSwapNote(state.npcs?.[m.id])
+    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${swap ? `；${swap}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
 
@@ -161,7 +163,7 @@ function npcDetail(state: GameState, id: string, label: string, fallback?: strin
   const rel = state.relationships?.[id]
   if (!rec) return `${label}：${fallback ?? id}`
   const lines = [
-    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderPrompt(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderPrompt(rec.gender)}` : ''}${genderSwapNote(rec) ? `；${genderSwapNote(rec)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
     `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
     appearanceOf(rec.id, rec.appearance) ? `外貌：${appearanceOf(rec.id, rec.appearance)}` : '',

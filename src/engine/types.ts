@@ -435,6 +435,8 @@ export interface MarkTerms {
 /** 遊戲中登場的 NPC（含程式生成的）；不在隊伍時保存角色資料，再次入隊時沿用 */
 export interface NpcRecord extends NpcDef {
   generated?: boolean
+  /** 歡愉的惡作劇改過性別（genderSwap.ts）：原本的性別與哪一天；交給 AI 時附上說明 */
+  genderSwap?: { from: string; day: number }
   /** 程式生成的文字已經請 AI 潤飾過（名單的潤飾，每個人一次） */
   flavored?: boolean
   background?: string
