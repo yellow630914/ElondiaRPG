@@ -1,6 +1,7 @@
 // 地區的線索池（P1；規劃見 docs/TRAVEL_EVENTS.md 第 5 節「線索池」）：
 // - 每個地區（geography.json 的地區）一個池子，玩家走進那個地區的近郊或地下城時才擲；過了「線索池更新的天數」（設定）再擲一批。
 // - 每批 LEAD_SLOTS 格，每格照權重抽一種線索，也可能空著。線索是一個事件點：盤踞的強敵、藏寶處、流浪商人、冒險者的遺物。
+// - 線索事件（event）：一件有登場角色的事（leadEvents.ts），走到那一格時發生；沒有合適的模板時改成盤踞的強敵。
 // - 一部分分給情報商（買得到），其他隱藏（情報物品解讀時揭露；之後的酒館打聽也會用到）。
 // - 不管有沒有人知道，進入那一區時都放上地圖（intel.ts 的 ensureIntelPoints）；沒人知道的走過去就觸發，同時記進冒險筆記。
 // - 線索的 id 就是事件點的 id：知道之後記進 state.intel（同一個 id），完成、過期照情報的規則。
@@ -12,6 +13,7 @@ import { pcOf } from './party'
 import type { Rng } from './rng'
 import { withRng } from './state'
 import { locationOpen } from './storyFlags'
+import { castWords, fillCast, leadExpired, leadTemplatesFor, pickCast } from './leadEvents'
 import type { GameState, Intel, Lead } from './types'
 
 export type { Lead }
@@ -23,7 +25,8 @@ export const LEAD_EMPTY = 0.3
 /** 分給情報商的機率（其他隱藏） */
 export const LEAD_INFORMANT = 0.4
 /** 各種線索的權重 */
-export const LEAD_WEIGHTS: Record<PointEvent, number> = { combat: 3, chest: 2, merchant: 1, relic: 2 }
+export const LEAD_WEIGHTS: Record<LeadEvent, number> = { combat: 3, chest: 2, merchant: 1, relic: 2, event: 3 }
+export type LeadEvent = PointEvent | 'event'
 /** 太深的地方不放：那一層最強的怪物比主角高這麼多級以上 */
 const LEVEL_SLACK = 4
 
@@ -70,24 +73,48 @@ function rollPool(state: GameState, region: string) {
   const day = state.time.day
   const pools = (state.leadPools ??= {})
   const old = pools[region]?.leads ?? []
-  for (const l of old) if (l.status === 'active' && !l.known) l.status = 'expired'
+  for (const l of old) {
+    if (l.status === 'active' && !l.known) {
+      l.status = 'expired'
+      leadExpired(state, l)
+    }
+  }
   const keep = old.filter((l) => l.status === 'active' && l.known && (l.until ?? day) >= day)
   const places = regionPlaces(state, region)
   const leads: Lead[] = withRng(state, (rng) => {
     const out: Lead[] = []
     const used = new Set(keep.map((l) => `${l.location}:${l.layer ?? ''}`))
+    const usedTemplates = new Set(keep.map((l) => l.template).filter(Boolean))
     for (let i = 0; i < LEAD_SLOTS; i++) {
       if (rng.chance(LEAD_EMPTY)) continue
       const free = places.filter((p) => !used.has(`${p.location}:${p.layer ?? ''}`))
       if (!free.length) break
       const p = rng.pick(free)
       used.add(`${p.location}:${p.layer ?? ''}`)
-      const event = pick(rng, LEAD_WEIGHTS)
+      const id = `lead-${region}-${day}-${i}`
+      const visibility = rng.chance(LEAD_INFORMANT) ? 'informant' as const : 'hidden' as const
+      let event = pick(rng, LEAD_WEIGHTS)
+      if (event === 'event') {
+        // 線索事件：這個地方能放的模板（這一批還沒用過的優先），擲登場角色
+        const all = leadTemplatesFor(state, p, region)
+        const fresh = all.filter((t) => !usedTemplates.has(t.id))
+        const t = (fresh.length ? fresh : all).length ? rng.pick(fresh.length ? fresh : all) : undefined
+        if (t) {
+          usedTemplates.add(t.id)
+          const cast = pickCast(state, rng, Math.max(0, Math.min(2, t.cast ?? 0)), region)
+          const words = castWords(state, cast)
+          const base = makePoint(state, p, 'chest', poolDays)
+          out.push({
+            title: fillCast(t.title, words), text: fillCast(t.text, words).slice(0, 160),
+            location: p.location, ...(p.layer ? { layer: p.layer } : {}), level: base.level, until: day + poolDays,
+            id, region, tier: p.tier, event: 'event', template: t.id, ...(cast.length ? { cast } : {}), visibility, status: 'active',
+          })
+          continue
+        }
+        event = 'combat'
+      }
       const point = makePoint(state, p, event, poolDays)
-      out.push({
-        ...point, id: `lead-${region}-${day}-${i}`, region, tier: p.tier, event,
-        visibility: rng.chance(LEAD_INFORMANT) ? 'informant' : 'hidden', status: 'active',
-      })
+      out.push({ ...point, id, region, tier: p.tier, event, visibility, status: 'active' })
     }
     return out
   })
@@ -104,7 +131,12 @@ export function ensureLeadPool(state: GameState, region: string) {
 /** 過期的線索 */
 function expireLeads(state: GameState) {
   for (const pool of Object.values(state.leadPools ?? {})) {
-    for (const l of pool.leads) if (l.status === 'active' && l.until !== undefined && state.time.day > l.until) l.status = 'expired'
+    for (const l of pool.leads) {
+      if (l.status === 'active' && l.until !== undefined && state.time.day > l.until) {
+        l.status = 'expired'
+        leadExpired(state, l)
+      }
+    }
   }
 }
 

@@ -102,7 +102,9 @@ export function ensureIntelPoints(state: GameState, area: Area, rng: Rng) {
       ? { kind: 'elite', group: it.group ?? [], intel: it.id }
       : it.event === 'chest' || it.event === 'relic'
         ? { kind: 'chest', level: it.level ?? 1, intel: it.id }
-        : { kind: 'merchant', intel: it.id }
+        : it.event === 'event'
+          ? { kind: 'event', intel: it.id }
+          : { kind: 'merchant', intel: it.id }
   }
 }
 

@@ -74,6 +74,8 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
 const parasiteIds = Object.keys(parasiteRules.parasites)
 // 寄生物的發作事件裡新增的寄生物效果：預設是這件事件自己的寄生物（TravelEventEditor 提供）
 const eventParasite = inject<Ref<string | undefined> | undefined>('eventParasite', undefined)
+// 線索事件的登場角色（TravelEventEditor）：好感、入隊可以指定甲（$a）、乙（$b）
+const eventCast = inject<Ref<number> | undefined>('eventCast', undefined)
 function defaultParasite(): string {
   const own = eventParasite?.value
   return own && parasiteIds.includes(own) ? own : parasiteIds[0]!
@@ -194,6 +196,8 @@ function setBase(r: Row, base: string) {
       <template v-else-if="r.type === 'affinity' || r.type === 'companion'">
         <select v-model="r.npc">
           <option v-if="master && r.type === 'affinity'" value="master">主人</option>
+          <option v-if="(eventCast ?? 0) >= 1 || r.npc === '$a'" value="$a">登場角色甲</option>
+          <option v-if="(eventCast ?? 0) >= 2 || r.npc === '$b'" value="$b">登場角色乙</option>
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
         </select>
         <input v-if="r.type === 'affinity'" v-model.number="r.delta" type="number" class="num" />

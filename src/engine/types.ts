@@ -494,7 +494,10 @@ export interface Intel {
   /** point：哪個地點、哪一層（沒有時是近郊）、什麼事件 */
   location?: string
   layer?: DungeonLayerId
-  event?: 'combat' | 'chest' | 'merchant' | 'relic'
+  event?: 'combat' | 'chest' | 'merchant' | 'relic' | 'event'
+  /** event：線索事件的模板（travel_events.json 的 scope lead）與登場角色（NPC id，甲、乙） */
+  template?: string
+  cast?: string[]
   /** combat：要打的怪物；chest、combat：寶物的等級 */
   group?: [string, number][]
   level?: number
@@ -945,6 +948,8 @@ export interface GameState {
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 地下城與近郊等待回應的事件（dungeonEvents.ts）：模板與觸發點 */
   dungeonEvent?: { template: string; trigger: string }
+  /** 走到線索事件的格子、等主角回應（leadEvents.ts）：哪一則線索、在哪一格 */
+  leadEvent?: { lead: string; area: string; x: number; y: number }
   /** 各地區的線索池（leads.ts）：哪一天擲的、有哪些線索 */
   leadPools?: Record<string, { day: number; leads: Lead[] }>
   /** 察覺了陷阱、等主角決定要不要主動觸發（存檔規則 trapLure；dungeonEvents.ts 的 offerTrapLure） */

@@ -30,6 +30,7 @@ import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
 import { maybeDungeonEvent, offerTrapLure, pendingDungeonEvent } from './dungeonEvents'
+import { startLeadEvent } from './leadEvents'
 import { enterPark, mimicFor, parkOfLink, parkRules, parkTrap, returnToPlaza, stepParkLust } from './park'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
@@ -1280,6 +1281,11 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       if (!cell.intel && maybeDungeonEvent(state, 'chest') && pendingDungeonEvent(state)?.tags?.includes('adult')) return {}
       return { report: openChest(state, area, cell.level ?? 1) }
     }
+    case 'event': {
+      // 線索事件（leadEvents.ts）：等主角回應；旅途上的事件格在 road.ts
+      if (area.kind !== 'road') startLeadEvent(state, area, x, y, cell)
+      return {}
+    }
     default:
       return {}
   }
@@ -1474,7 +1480,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
-  if (state.dungeonEvent || state.parasiteEvent) throw new Error('先應付眼前的處境')
+  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent) throw new Error('先應付眼前的處境')
   if (state.trapLure) throw new Error('先決定要不要觸發察覺到的陷阱')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
   if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')

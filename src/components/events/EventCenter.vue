@@ -78,6 +78,7 @@ function openParty(member?: string) {
       <RoadEventPanel v-else-if="current.kind === 'road'" />
       <RoadEventPanel v-else-if="current.kind === 'town'" town />
       <RoadEventPanel v-else-if="current.kind === 'dungeon'" dungeon />
+      <RoadEventPanel v-else-if="current.kind === 'lead'" lead />
       <section v-else-if="current.kind === 'lure'" class="panel lure">
         <h3 class="title"><GameIcon name="warning" :size="16" />察覺到的陷阱</h3>
         <p class="small">你們及時發現了機關。要主動踩上去，看看會發生什麼事嗎？</p>

@@ -43,8 +43,8 @@ export interface RoadOption {
   /** 成人向：這個選項進入親密場景（模板的 scene）：always 一定、success / fail 檢定成功或失敗時 */
   adult_scene?: 'always' | 'success' | 'fail'
 }
-/** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts）、地下城與近郊（dungeonEvents.ts），或寄生物的發作（parasiteEvents.ts） */
-export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite'
+/** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts）、地下城與近郊（dungeonEvents.ts）、寄生物的發作（parasiteEvents.ts），或線索池的事件點（leadEvents.ts） */
+export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite' | 'lead'
 /** 地下城事件的觸發點：觸發陷阱、打開寶箱、採集、在安全房長休之後 */
 export type DungeonTrigger = 'trap' | 'chest' | 'gather' | 'rest'
 export interface RoadTemplate {
@@ -68,12 +68,16 @@ export interface RoadTemplate {
   cooldown_days?: number
   /** 地下城：哪些觸發點 */
   triggers?: DungeonTrigger[]
-  /** 地下城：只在這些地點（地下城的 id；近郊是那座聚落的 id；沒有時任何地點） */
+  /** 地下城、線索：只在這些地點（地下城的 id；近郊是那座聚落的 id；沒有時任何地點） */
   dungeons?: string[]
   /** 地下城：只在這些地區；旅途：這一段路要去的地區（沒有時任何地區） */
   regions?: string[]
-  /** 地下城：哪幾層（0 近郊、1 淺層、2 中層、3 深層、4 底層；沒有時任何一層） */
+  /** 地下城、線索：哪幾層（0 近郊、1 淺層、2 中層、3 深層、4 底層；沒有時任何一層） */
   layers?: number[]
+  /** 線索：登場的角色有幾位（0～2；文字裡的 {a}、{b}，效果的 NPC 寫 $a、$b） */
+  cast?: number
+  /** 線索：沒人去處理、過期時，登場角色的近況（NPC 近況；{a}、{b} 換成名字） */
+  offscreen?: string
   /** 寄生物：哪一種（parasites.json 的 id） */
   parasite?: string
   /** 寄生物：哪些階段（0 潛伏、1 發作、2 共生、3 支配；沒有時任何階段） */

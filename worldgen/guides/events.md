@@ -8,7 +8,8 @@
 
 - **旅途事件**（`scope: "road"`，預設）：出發時依路段的機率擲好，放在旅途單行道的某一天（❔ 普通、✨ 高階）。高階事件可以把隊伍帶進臨時地圖（洞窟、遺跡、驛站）。
 - **城鎮事件**（`scope: "town"`）：在聚落裡走上設施（旅店、酒館、神殿……）時，冷卻過了就有機率遇到。
-- 同一個區塊還有**地下城事件**（`scope: "dungeon"`）與**寄生物的發作**（`scope: "parasite"`），兩種都只能是 `choice`，欄位見 [ADULT_EVENTS](../../docs/ADULT_EVENTS.md) 與 [TRAVEL_EVENTS](../../docs/TRAVEL_EVENTS.md) 第 6 節；這份指南只講旅途與城鎮。
+- 同一個區塊還有**地下城事件**（`scope: "dungeon"`）、**線索事件**（`scope: "lead"`）與**寄生物的發作**（`scope: "parasite"`），三種都只能是 `choice`，欄位見 [ADULT_EVENTS](../../docs/ADULT_EVENTS.md) 與 [TRAVEL_EVENTS](../../docs/TRAVEL_EVENTS.md) 第 5.1、6 節；這份指南只講旅途與城鎮。
+- 線索事件另有 `cast`（登場角色 0～2 位，文字寫 `{a}`、`{b}`（名字）與 `{a他}`、`{b他}`（照性別換成他或她），效果 `affinity`、`companion` 的 `npc` 寫 `"$a"`、`"$b"`）與 `offscreen`（沒人去處理、過期時登場角色的近況）；地點用 `layers`（0 近郊與地下城的周邊、1 淺層 … 4 底層）、`regions`、`dungeons`（近郊寫聚落 id）。
 - 旅途與城鎮事件都有兩個 `kind`：
   - `check`：檢定，擲骰直接揭曉，成功與失敗各有結果（旅途事件的骰子出發時就擲好）。
   - `choice`：選擇，玩家選一個選項，選項可以有自己的檢定。
@@ -34,7 +35,7 @@
 
 | 欄位 | 型別 | 範圍 | 說明 |
 |---|---|---|---|
-| `scope` | `"road"`／`"town"`（另有 `"dungeon"`、`"parasite"`，見第 1 節） | | 旅途或城鎮。不寫＝旅途 |
+| `scope` | `"road"`／`"town"`（另有 `"dungeon"`、`"lead"`、`"parasite"`，見第 1 節） | | 旅途或城鎮。不寫＝旅途 |
 | `tier` | `"normal"`／`"advanced"` | 高階只有旅途 | 不寫＝普通 |
 | `kind` | `"check"`／`"choice"` | | 檢定或選擇。其他值變成 `choice` |
 | `title` | 字串 | **最多 20 字** | 標題 |

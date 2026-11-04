@@ -1,6 +1,6 @@
 // 地區的線索池（engine/leads.ts）：走進地區才擲、分給情報商與隱藏、不知道也會遇到、情報物品揭露、到期換一批
 import { afterEach, describe, expect, it } from 'vitest'
-import { currentArea, enterLocation, goOutskirts, moveTo, standOn } from '@/engine/grid'
+import { currentArea, enterLocation, goOutskirts, move, moveTo, standOn } from '@/engine/grid'
 import { reachableFloors } from '@/engine/intel'
 import { readIntelItem } from '@/engine/inventory'
 import { activeLeads, ensureLeadPool, LEAD_SLOTS, leadById, setLeadPool } from '@/engine/leads'
@@ -10,7 +10,13 @@ import { ASK_COST, askAround, askAroundBlock } from '@/engine/askAround'
 import { applyEffects } from '@/engine/effects'
 import { rumorFrom } from '@/engine/intel'
 import { worldFacts } from '@/narrator/worldFacts'
-import type { GameState } from '@/engine/types'
+import { answerLeadEvent, pendingLeadEvent, pickCast, castTemplate, leadTemplate } from '@/engine/leadEvents'
+import { sanitizeTravelEvent, travelEventWarnings } from '@/engine/travelEventMods'
+import { npcRecord } from '@/engine/npcs'
+import { Rng } from '@/engine/rng'
+import { restEventBlock } from '@/engine/rest'
+
+import type { GameState, Lead } from '@/engine/types'
 
 afterEach(() => setLeadPool({ days: 7 }))
 
@@ -56,7 +62,7 @@ describe('regional lead pool', () => {
     expect(pool!.leads.length).toBeLessThanOrEqual(LEAD_SLOTS)
     for (const l of pool!.leads) {
       expect(l.region).toBe(region)
-      expect(['combat', 'chest', 'merchant', 'relic']).toContain(l.event)
+      expect(['combat', 'chest', 'merchant', 'relic', 'event']).toContain(l.event)
       expect(['informant', 'hidden']).toContain(l.visibility)
     }
     expect(new Set(pool!.leads.map((l) => l.id)).size).toBe(pool!.leads.length)
@@ -171,5 +177,112 @@ describe('regional lead pool', () => {
       return
     }
     throw new Error('no hidden lead')
+  })
+})
+
+/** 在索里耳近郊放一件線索事件（登場角色是新生成的冒險者） */
+function plantLead(state: GameState, template: string, cast: string[]): Lead {
+  ensureLeadPool(state, 'central')
+  const t = leadTemplate(template)!
+  const lead: Lead = {
+    id: 'lead-test', region: 'central', tier: 0, location: 'soriel', event: 'event', template, cast,
+    title: t.title, text: t.text, level: 1, until: state.time.day + 7, visibility: 'hidden', status: 'active',
+  }
+  state.leadPools!.central!.leads.push(lead)
+  return lead
+}
+
+function walkToLead(state: GameState, id: string) {
+  standOn(state, 'gate')
+  goOutskirts(state)
+  const area = currentArea(state)
+  const i = area.cells.findIndex((c) => c.intel === id)
+  expect(area.cells[i]?.kind).toBe('event')
+  stepOnto(state, i)
+}
+
+describe('lead events', () => {
+  it('rolls lead events with a template and cast into the pool', () => {
+    for (let seed = 1; seed < 80; seed++) {
+      const state = game(seed)
+      ensureLeadPool(state, 'central')
+      const ev = activeLeads(state, 'central').find((l) => l.event === 'event' && l.cast?.length)
+      if (!ev) continue
+      const t = leadTemplate(ev.template)!
+      expect(t.scope).toBe('lead')
+      expect(ev.cast!.length).toBe(t.cast)
+      const name = npcRecord(state, ev.cast![0]!)!.name
+      expect(ev.title + ev.text).toContain(name)
+      expect(ev.text).not.toContain('{a}')
+      return
+    }
+    throw new Error('no lead event')
+  })
+
+  it('starts the event on its cell, blocks moving, and the answer touches the cast and closes the lead', () => {
+    const state = game()
+    const [a] = pickCast(state, new Rng(3), 1, 'central')
+    const lead = plantLead(state, 'ld_campfire_peer', [a!])
+    walkToLead(state, lead.id)
+    expect(state.leadEvent?.lead).toBe(lead.id)
+    const t = pendingLeadEvent(state)!
+    const name = npcRecord(state, a!)!.name
+    expect(t.text).toContain(name)
+    expect(restEventBlock(state)).toBeTruthy()
+    expect(() => move(state, 1, 0)).toThrow()
+    answerLeadEvent(state, 0)
+    expect(state.leadEvent).toBeUndefined()
+    expect(state.relationships?.[a!]?.affinity).toBeGreaterThan(0)
+    expect(lead.status).toBe('done')
+    const area = currentArea(state)
+    expect(area.cells.find((c) => c.intel === lead.id)?.done).toBe(true)
+    expect(state.reports.at(-1)!.narration?.focus?.join('')).toContain(name)
+  })
+
+  it('takes the party into a side map from a lead event', () => {
+    const state = game()
+    const lead = plantLead(state, 'ld_hidden_cave', [])
+    walkToLead(state, lead.id)
+    answerLeadEvent(state, 0)
+    expect(state.side?.area).toBe('side/cave')
+    expect(currentArea(state).kind).not.toBe('settlement')
+  })
+
+  it('picks known adventurers of the region as cast', () => {
+    const state = game()
+    const [a] = pickCast(state, new Rng(5), 1, 'central')
+    applyEffects(state, { changes: {} } as never, [{ type: 'affinity', npc: a!, delta: 5 }])
+    const always = { chance: () => true, int: (lo: number) => lo, pick: <T>(xs: T[]) => xs[0]!, next: () => 0 } as unknown as Rng
+    expect(pickCast(state, always, 1, 'central', new Set())).toEqual([a])
+    // 已經在別的線索裡的人不會再登場
+    expect(pickCast(state, always, 1, 'central', new Set([a!]))).not.toEqual([a])
+  })
+
+  it('writes news for known cast when a lead expires, and drops cast nobody met', () => {
+    const state = game()
+    const [a, b] = pickCast(state, new Rng(7), 2, 'central')
+    applyEffects(state, { changes: {} } as never, [{ type: 'affinity', npc: a!, delta: 5 }])
+    plantLead(state, 'ld_duel_witness', [a!, b!])
+    state.time = { ...state.time, day: state.time.day + 9 }
+    activeLeads(state, 'central')
+    expect(state.npcLife?.news[a!]?.at(-1)?.text).toContain(npcRecord(state, a!)!.name)
+    expect(state.npcs?.[b!]).toBeUndefined()
+  })
+
+  it('fills $a and $b in effects and keeps lead fields through the editor', () => {
+    const state = game()
+    const [a, b] = pickCast(state, new Rng(9), 2, 'central')
+    const t = castTemplate(state, leadTemplate('ld_split_loot')!, [a!, b!])
+    expect(JSON.stringify(t)).not.toMatch(/\$a|\$b|\{[ab]他?\}/)
+    expect(JSON.stringify(t.options)).toContain(`"npc":"${a}"`)
+    // 代名詞照性別
+    npcRecord(state, a!)!.gender = 'female'
+    expect(castTemplate(state, leadTemplate('ld_wounded_rival')!, [a!]).text).toContain('她握緊了武器')
+    npcRecord(state, a!)!.gender = 'male'
+    expect(castTemplate(state, leadTemplate('ld_wounded_rival')!, [a!]).text).toContain('他握緊了武器')
+    const m = sanitizeTravelEvent('x', { ...leadTemplate('ld_split_loot')!, layers: [0, 9] }, true)
+    expect(m).toMatchObject({ scope: 'lead', cast: 2, kind: 'choice', layers: [0] })
+    expect(m.offscreen).toBeTruthy()
+    expect(travelEventWarnings({ ...m, cast: 1 }).join('')).toContain('乙')
   })
 })

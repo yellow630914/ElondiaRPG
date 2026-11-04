@@ -12,6 +12,7 @@ import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
 import { setPcTags } from '@/engine/pcTags'
 import * as dungeonEvents from '@/engine/dungeonEvents'
+import * as leadEvents from '@/engine/leadEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
@@ -201,6 +202,7 @@ function load(s: GameState): GameState {
   townEvents.pruneTownEvent(s)
   dungeonEvents.pruneDungeonEvent(s)
   parasiteEvents.pruneParasiteEvent(s)
+  leadEvents.pruneLeadEvent(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
   // 主人的家：先對齊格局（舊格局的樓層、超出範圍的座標改到一樓出口），再檢查位置
@@ -558,7 +560,7 @@ export const useGame = defineStore('game', () => {
 
   /** 走完這一步之後有要先處理的事（戰鬥、事件、等待判定、擋路的任務點……）：停下來 */
   function mustStop(s: GameState): boolean {
-    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.trapLure || story.blockingNode(s))
+    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || story.blockingNode(s))
   }
 
   function walkTo(x: number, y: number) {
@@ -1301,6 +1303,7 @@ export const useGame = defineStore('game', () => {
     answerRoadEvent: (i: number) => run((s) => road.answerRoadEvent(s, i)),
     answerTownEvent: (i: number) => run((s) => townEvents.answerTownEvent(s, i)),
     answerDungeonEvent: (i: number) => run((s) => dungeonEvents.answerDungeonEvent(s, i)),
+    answerLeadEvent: (i: number) => run((s) => leadEvents.answerLeadEvent(s, i)),
     /** 察覺到的陷阱：主動觸發或繞過（存檔規則 trapLure） */
     acceptTrapLure: () => run((s) => dungeonEvents.acceptTrapLure(s)),
     declineTrapLure: () => run((s) => dungeonEvents.declineTrapLure(s)),

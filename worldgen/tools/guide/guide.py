@@ -4,7 +4,7 @@
 #     python3 worldgen/tools/guide/guide.py           產生 docs/guide/
 #     python3 worldgen/tools/guide/guide.py --check   只檢查 docs/guide/ 是不是最新的（測試 src/__tests__/guide.spec.ts 會跑）
 # 內建內容（data/）改過之後重跑一次。特殊任務與地下城、寄生物、城鎮的成人向事件沿用 flowdoc.py 整理好的資料。
-import collections, pathlib, re, sys
+import collections, json, pathlib, re, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / 'flowdoc'))
@@ -213,6 +213,19 @@ def events_page():
             places = '、'.join(F.loc(d) for d in t.get('dungeons', [])) or '任何地下城與近郊'
             layers = '、'.join(layer[i] for i in t.get('layers', [])) or '任何一層'
             event_md(t, f"{'、'.join(trig[x] for x in t.get('triggers', []))}・{places}（{layers}）", out)
+    # 線索事件（線索池的事件點；登場角色寫成甲、乙）
+    ld = [t for t in TE['templates'] if t.get('scope') == 'lead' and 'adult' not in t.get('tags', [])]
+    if ld:
+        layer = ['近郊與周邊', '淺層', '中層', '深層', '底層']
+        out.append('## 線索事件')
+        out.append('')
+        out.append('地區的線索池有時是一件「事」：在近郊或地下城的某一格（❔），走到那裡時發生。登場的人一半是這一帶你認識的冒險者，一半是新面孔（下面寫成甲、乙）；情報商、酒館打聽、情報物品都可能告訴你在哪裡。沒人去處理的事，過一陣子會變成你認識的人的近況。')
+        out.append('')
+        for t in ld:
+            shown = json.loads(json.dumps(t, ensure_ascii=False).replace('{a他}', '他').replace('{b他}', '他').replace('{a}', '甲').replace('{b}', '乙').replace('"$a"', '"甲"').replace('"$b"', '"乙"'))
+            places = '、'.join(F.loc(d) for d in t.get('dungeons', [])) or '任何近郊與地下城'
+            layers = '、'.join(layer[i] for i in t.get('layers', [])) or '任何一層'
+            event_md(shown, f"{places}（{layers}）・登場 {t.get('cast', 0)} 人", out)
     return '\n'.join(out)
 
 

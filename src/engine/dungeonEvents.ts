@@ -25,9 +25,9 @@ const hoursOf = (t: GameTime) => t.day * 24 + (t.hour ?? 0) + (t.minute ?? 0) / 
 export const EVENT_DC_REF = 14
 export const DEFAULT_LAYER_DC = [11, 13, 14, 16, 18]
 
-/** 這件事普通難度的 DC：地下城事件依層，寄生物的發作依主角等級與階段；其他事件就是 14 */
+/** 這件事普通難度的 DC：地下城事件、線索事件依層，寄生物的發作依主角等級與階段；其他事件就是 14 */
 export function eventBaseDc(state: GameState, t: Pick<RoadTemplate, 'scope' | 'parasite'>): number {
-  if (t.scope === 'dungeon') {
+  if (t.scope === 'dungeon' || t.scope === 'lead') {
     const area = currentArea(state)
     const layer = layerOf(area) ?? 0
     const table = travelEvents.dungeon?.dc ?? DEFAULT_LAYER_DC
@@ -44,7 +44,7 @@ export function eventBaseDc(state: GameState, t: Pick<RoadTemplate, 'scope' | 'p
 
 /** 選項實際的 DC：這件事的普通難度 +（寫的 DC − 14）+ 存檔規則「事件檢定的難度」（只算發生在主角身上的事件） */
 export function eventDc(state: GameState, t: Pick<RoadTemplate, 'scope' | 'parasite'>, dc: number): number {
-  if (t.scope !== 'dungeon' && t.scope !== 'parasite') return dc
+  if (t.scope !== 'dungeon' && t.scope !== 'parasite' && t.scope !== 'lead') return dc
   return Math.max(5, Math.min(30, eventBaseDc(state, t) + (dc - EVENT_DC_REF) + gameRule(state, 'eventDc')))
 }
 
@@ -118,7 +118,7 @@ export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger): bo
 
 /** 有別的事情等著回應時不發生 */
 function busy(state: GameState): boolean {
-  return !!(state.dungeonEvent || state.parasiteEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent || state.trapLure)
+  return !!(state.dungeonEvent || state.parasiteEvent || state.leadEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent || state.trapLure)
 }
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)

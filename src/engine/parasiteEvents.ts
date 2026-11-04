@@ -65,7 +65,7 @@ export function flaresOn(state: GameState, p: ParasiteState): boolean {
 
 /** 有別的事情等著處理的時候不發作 */
 function busy(state: GameState): boolean {
-  return !!(state.parasiteEvent || state.dungeonEvent || state.trapLure || state.townEvent || state.roadEvent || state.combat || state.standoff
+  return !!(state.parasiteEvent || state.dungeonEvent || state.leadEvent || state.trapLure || state.townEvent || state.roadEvent || state.combat || state.standoff
     || state.pendingMasterEvent || state.pendingAction || state.pendingMark)
 }
 

@@ -438,7 +438,7 @@ function hoursOf(t: GameTime): number {
 
 /** 移動或旅行之後：被主人帶著時，可能發生主人的突發事件（等待主角回應） */
 export function maybeMasterEvent(state: GameState, chance: number): PendingMasterEvent | undefined {
-  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent || state.parasiteEvent) return undefined
+  if (!isBound(state) || state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent || state.parasiteEvent || state.leadEvent) return undefined
   // 主人不在身邊（戰敗時逃開了）時沒有突發事件
   const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
   if (!master || master.status.includes('away')) return undefined
