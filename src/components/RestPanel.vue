@@ -4,7 +4,7 @@ import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
 import { gameRule } from '@/engine/gameRules'
-import { ambushChance, autoHitDice, canCampHere, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, slaveRoomCost, slaveRoomOpen, waitText, type RestPlace } from '@/engine/rest'
+import { ambushChance, autoHitDice, canCampHere, shortRestPreview, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, slaveRoomCost, slaveRoomOpen, waitText, type RestPlace } from '@/engine/rest'
 import { bestTool } from '@/engine/tools'
 import { useGame } from '@/stores/game'
 import JudgeToggle from './JudgeToggle.vue'
@@ -66,7 +66,7 @@ async function doLongRest(where: RestPlace) {
       ><GameIcon name="heart" :size="12" />{{ m.name }} d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}</span>
     </div>
     <div class="btns">
-      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>{{ shortHours }} 小時{{ ambush ? `・襲擊 ${Math.round(ambush * 100)}%` : '' }}</small></button>
+      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>{{ shortHours }} 小時・{{ shortRestPreview(s).note }}{{ ambush ? `・襲擊 ${Math.round(ambush * 100)}%` : '' }}</small></button>
       <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" />長休 <small>{{ formatMoney(innCost(s)) }}</small></button>
       <button
         v-if="place === 'inn' && slaveRoomOpen(s)" :disabled="!!blocked || s.money_cc < slaveRoomCost(s)"

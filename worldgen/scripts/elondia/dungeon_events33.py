@@ -543,8 +543,8 @@ def main():
                         assert x['condition'] in conditions and x['condition'] not in adult_conditions, x
     counts = {k: sum(1 for e in NORMAL_EVENTS if e['triggers'][0] == k) for k in ('gather', 'trap', 'chest', 'rest')}
     assert counts == {'gather': 19, 'trap': 13, 'chest': 11, 'rest': 11}, counts
-    adult = [x for x in d['templates'] if x.get('scope') == 'dungeon' and 'adult' in (x.get('tags') or [])]
-    assert len(NORMAL_EVENTS) == len(adult) == 54, (len(NORMAL_EVENTS), len(adult))
+    # 寫的時候和成人向的一樣多（54 件）；之後成人向的採集事件另外補了 12 件（lust_gather34.py）
+    assert len(NORMAL_EVENTS) == 54, len(NORMAL_EVENTS)
     assert len({x['id'] for x in d['templates']}) == len(d['templates'])
     open(p, 'w').write(t)
     print('normal dungeon events', len(NORMAL_EVENTS), counts)
