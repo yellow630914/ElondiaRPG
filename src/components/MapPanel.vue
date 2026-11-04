@@ -11,6 +11,7 @@ import AreaMap from './AreaMap.vue'
 import ExpeditionBar from './ExpeditionBar.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import WorldOverviewMap from './WorldOverviewMap.vue'
 
 const game = useGame()
 const s = computed(() => game.state!)
@@ -25,6 +26,12 @@ const layerRankHere = computed(() => {
   return id ? layerRank(a.location, id) : undefined
 })
 const showWorldMap = ref(false)
+/** 世界地圖的兩張圖：世界總覽（兩塊大陸與東海，標出聚落）、埃隆迪亞大陸（西大陸的細節） */
+const mapTab = ref<'overview' | 'continent'>('overview')
+function openWorldMap() {
+  mapTab.value = here.value.region.startsWith('yanhua') || here.value.region === 'east_sea' ? 'overview' : mapTab.value
+  showWorldMap.value = true
+}
 </script>
 
 <template>
@@ -41,21 +48,28 @@ const showWorldMap = ref(false)
       </div>
       <div class="row tools">
         <Hint text="點擊相鄰的格子移動，或使用方向鍵 / WASD。走到建築上就能使用它的功能。" />
-        <button class="small" aria-label="世界地圖" @click="showWorldMap = true"><GameIcon name="map" :size="14" /><span class="wm"> 世界地圖</span></button>
+        <button class="small" aria-label="世界地圖" @click="openWorldMap"><GameIcon name="map" :size="14" /><span class="wm"> 世界地圖</span></button>
       </div>
     </div>
     <ExpeditionBar />
     <AreaMap />
   </section>
 
-  <AppDialog :open="showWorldMap" title="埃隆迪亞大陸" icon="map" width="1100px" @close="showWorldMap = false">
-    <img :src="mapUrl" alt="埃隆迪亞大陸地圖" class="world-map" />
+  <AppDialog :open="showWorldMap" title="世界地圖" icon="map" width="1100px" @close="showWorldMap = false">
+    <nav class="map-tabs" role="tablist">
+      <button role="tab" :aria-selected="mapTab === 'overview'" :class="{ on: mapTab === 'overview' }" @click="mapTab = 'overview'">世界總覽</button>
+      <button role="tab" :aria-selected="mapTab === 'continent'" :class="{ on: mapTab === 'continent' }" @click="mapTab = 'continent'">埃隆迪亞大陸</button>
+    </nav>
+    <WorldOverviewMap v-if="mapTab === 'overview'" :here="here.id" />
+    <img v-else :src="mapUrl" alt="埃隆迪亞大陸地圖" class="world-map" />
     <p class="small muted">目前位置：{{ here.name }}（{{ geography.regions.find((r) => r.id === here.region)?.name }}）</p>
   </AppDialog>
 </template>
 
 <style scoped>
 .world-map { width: 100%; border-radius: var(--radius); }
+.map-tabs { display: flex; gap: 4px; margin-bottom: 8px; }
+.map-tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .title { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .title :deep(.game-icon) { color: var(--accent); }
 .tools { gap: 6px; flex-wrap: nowrap; }
