@@ -6,6 +6,10 @@ import { readIntelItem } from '@/engine/inventory'
 import { activeLeads, ensureLeadPool, LEAD_SLOTS, leadById, setLeadPool } from '@/engine/leads'
 import { addItem, newGame } from '@/engine/state'
 import { buyDeal, shopState } from '@/engine/trade'
+import { ASK_COST, askAround, askAroundBlock } from '@/engine/askAround'
+import { applyEffects } from '@/engine/effects'
+import { rumorFrom } from '@/engine/intel'
+import { worldFacts } from '@/narrator/worldFacts'
 import type { GameState } from '@/engine/types'
 
 afterEach(() => setLeadPool({ days: 7 }))
@@ -131,5 +135,41 @@ describe('regional lead pool', () => {
     standOn(state, 'gate')
     goOutskirts(state)
     expect(state.leadPools).toBeUndefined()
+  })
+
+  it('asks around at the tavern: costs a round, reveals hidden leads on a good roll, once a day', () => {
+    for (let seed = 1; seed < 80; seed++) {
+      const state = game(seed)
+      standOn(state, 'tavern')
+      if (askAroundBlock(state)) continue
+      state.party[0]!.attrs.cha = 30
+      const money = state.money_cc
+      const r = askAround(state)
+      expect(state.money_cc).toBe(money - ASK_COST)
+      expect(r.timeline?.[0]?.roll?.dc).toBe(13)
+      if (r.outcome.result === 'success') expect(state.intel?.some((it) => it.source?.includes('酒館'))).toBe(true)
+      expect(askAroundBlock(state)).toBe('今天已經在這裡打聽過了')
+      return
+    }
+    throw new Error('no tavern to ask in')
+  })
+
+  it('lets the AI reveal a hidden lead it was shown in the world facts', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const state = game(seed)
+      ensureLeadPool(state, 'central')
+      const hidden = activeLeads(state, 'central').find((l) => l.visibility === 'hidden')
+      if (!hidden) continue
+      expect(worldFacts(state)).toContain(`[${hidden.id}]`)
+      // 失敗時不算
+      expect(rumorFrom(state, { title: 'x', text: 'y', lead: hidden.id }, 'fail')).not.toHaveProperty('lead')
+      const rumor = rumorFrom(state, { title: '', text: '', lead: hidden.id }, 'success', '酒保')!
+      const report = { changes: {} } as never
+      applyEffects(state, report, [rumor])
+      expect(state.intel!.find((it) => it.id === hidden.id)).toMatchObject({ npc: '酒保', status: 'active' })
+      expect(hidden.known).toBe(true)
+      return
+    }
+    throw new Error('no hidden lead')
   })
 })

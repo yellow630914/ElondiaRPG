@@ -33,6 +33,7 @@ import { classes, shopRules, slaveryRules, type ShopType } from '@/engine/data'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
+import { askAround } from '@/engine/askAround'
 import { swapNpcGender } from '@/engine/genderSwap'
 import { takeParasiteNotice } from '@/engine/parasites'
 import * as grid from '@/engine/grid'
@@ -1270,6 +1271,8 @@ export const useGame = defineStore('game', () => {
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
     readIntel: (name: string) => run((s) => inventory.readIntelItem(s, name)),
     eatMeal: (id: string) => run((s) => meals.eatMeal(s, id)),
+    /** 在酒館打聽（線索池的隱藏線索） */
+    askAround: () => run((s) => askAround(s)),
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
     // 拘束具的鎖（雙面效應）

@@ -275,7 +275,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
     gear: gearDoc(state, p),
     join: joinDoc(state, p),
-    rumor: `{"type":"rumor","title":"<≤20 字>","text":"<≤160 字，傳聞的內容>","location":"<地點 id，可以不填>","layer":"<地下城的層 id，可以不填>","monster":"<怪物 id，可以不填>"}（主角這次聽到、值得記下的消息，最多一則：記在冒險筆記的情報頁；提到怪物時點亮怪物圖鑑。地點與怪物只能用 <world_facts> 的 id，沒有 <world_facts> 時不要填 location、layer、monster。degree 為 success 以上、而且那種怪物真的在那個地點出沒時，地圖上會出現牠們盤踞的事件點）`,
+    rumor: `{"type":"rumor","title":"<≤20 字>","text":"<≤160 字，傳聞的內容>","location":"<地點 id，可以不填>","layer":"<地下城的層 id，可以不填>","monster":"<怪物 id，可以不填>","lead":"<<world_facts> 裡傳聞的 id，可以不填>"}（主角這次聽到、值得記下的消息，最多一則：記在冒險筆記的情報頁；提到怪物時點亮怪物圖鑑。地點與怪物只能用 <world_facts> 的 id，沒有 <world_facts> 時不要填 location、layer、monster。degree 為 success 以上、而且那種怪物真的在那個地點出沒時，地圖上會出現牠們盤踞的事件點）`,
     lewd: `{"type":"lewd","target":"pc 或隊友 id","stat":"lewdness（淫亂）／sensitivity（敏感）／endurance（忍耐）／submission（順從）／exposure（曝露名聲）","delta":<±${caps.lewd}>}（慾望指標：只在經過明顯改變了這個人時，例如屈服讓順從上升、在眾人面前被看光讓曝露名聲上升；每項一次）`,
   }
   // 主角不是奴隸時，不提供和契約有關的效果；入隊只在對象是認識、還不在隊伍裡的人時提供

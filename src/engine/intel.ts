@@ -260,6 +260,11 @@ const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(
 export function rumorFrom(state: GameState, x: Record<string, unknown>, degree: Degree, npc?: string): RewardEffect | undefined {
   const title = clip(x.title, 20)
   const text = clip(x.text, 160)
+  // 線索池裡隱藏的線索（<world_facts> 列出的 id）：成功以上才算真的打聽到
+  const lead = typeof x.lead === 'string' ? leadById(state, x.lead) : undefined
+  if (lead && lead.status === 'active' && !lead.known && lead.region === locationById(state.location).region && (degree === 'success' || degree === 'critical')) {
+    return { type: 'rumor', title: lead.title, text: text || lead.text, lead: lead.id, ...(npc ? { npc } : {}) }
+  }
   if (!title && !text) return undefined
   const location = typeof x.location === 'string' && geography.locations.some((l) => l.id === x.location) ? x.location : undefined
   const monster = typeof x.monster === 'string' && enemies[x.monster] ? x.monster : undefined
