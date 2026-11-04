@@ -205,11 +205,19 @@ function newNpcId(state: GameState, prefix: string): string {
 /** 生成一位 NPC 並登錄。spec 沒指定的欄位隨機決定；普通人沒有職業。 */
 /** 有性別的職業稱呼依性別換成對應的（公主／王子、修女／修士……；npc_tags.json 的 gendered_occupations） */
 export function occupationFor(occupation: string, gender: string | undefined): string {
-  const row = npcTags.gendered_occupations?.find((r) => r.female === occupation || r.male === occupation || r.neutral === occupation)
-  if (!row) return occupation
-  if (gender === 'female' || gender === 'ts' || gender === 'futa') return row.female
-  if (gender === 'male' || gender === 'femboy') return row.male
-  return row.neutral
+  const rows = npcTags.gendered_occupations ?? []
+  const pick = (r: { female: string; male: string; neutral: string }) =>
+    gender === 'female' || gender === 'ts' || gender === 'futa' ? r.female : gender === 'male' || gender === 'femboy' ? r.male : r.neutral
+  const row = rows.find((r) => r.female === occupation || r.male === occupation || r.neutral === occupation)
+  if (row) return pick(row)
+  // 結尾是清單裡的稱呼（主人家的「某某的妻子」、「見習女僕」）：換掉結尾，比對最長的那個
+  let best: { row: (typeof rows)[number]; end: string } | undefined
+  for (const r of rows) {
+    for (const end of [r.female, r.male, r.neutral]) {
+      if (end && occupation.length > end.length && occupation.endsWith(end) && (!best || end.length > best.end.length)) best = { row: r, end }
+    }
+  }
+  return best ? occupation.slice(0, -best.end.length) + pick(best.row) : occupation
 }
 
 export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, prefix = 'gen'): NpcRecord {

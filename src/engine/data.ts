@@ -1424,6 +1424,8 @@ export const slaveryRules = slaveryJson as unknown as {
       patterns: Record<HomeDistrict, HouseholdPattern[]>
       spouse_same_race: number
       spouse_inherits: string[]
+      /** 依主人的性別限定伴侶的性別（沒寫的不限定） */
+      spouse_genders?: Record<string, string[]>
       servant_jobs: string[]
       slave_jobs: string[]
     }

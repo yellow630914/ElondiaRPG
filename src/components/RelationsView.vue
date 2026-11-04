@@ -81,7 +81,7 @@ function startSwap(id: string) {
 }
 function doSwap(id: string, name: string) {
   if (!swapTo.value) return
-  if (!confirm(`歡愉的惡作劇：把「${name}」變成${genderName(swapTo.value)}？\n外貌會照新的性別重新寫一份（之後可以再編輯）；以前的日誌與記憶不會改，交給 AI 時會說明性別改過了。`)) return
+  if (!confirm(`歡愉的惡作劇：把「${name}」變成${genderName(swapTo.value)}？\n外貌會照新的性別重新寫一份（之後可以再編輯），預設的內衣跟著換，身上其他的衣服不會換；目前的形象圖會退成舊版。以前的日誌與記憶不會改，交給 AI 時會說明性別改過了。`)) return
   game.swapNpcGender(id, swapTo.value)
   swapping.value = null
 }

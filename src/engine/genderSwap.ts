@@ -13,9 +13,10 @@ import type { Character, GameState, NpcRecord, Report } from './types'
 
 /** 這個人能不能改性別：不能時回傳原因 */
 export function genderSwapBlock(state: GameState, id: string): string | null {
-  if (namedNpcById(id)) return '固定 NPC 不能改性別（劇情與設定都照原本的性別寫）'
+  if (namedNpcById(id)) return '固定 NPC 不能用惡作劇改性別（固定 NPC 的性別在世界編輯器改）'
   if (state.party.some((m) => m.id === id && m.isPlayer)) return '主角的性別在建角時決定'
   if (!state.npcs?.[id]) return '找不到這個人'
+  if (state.npcs[id]!.dead) return '已經過世的人不能改'
   if (!state.relationships?.[id]) return '只能改認識的人'
   return null
 }

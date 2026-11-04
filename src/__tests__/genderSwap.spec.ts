@@ -1,7 +1,7 @@
 // 歡愉的惡作劇：改隨機 NPC 的性別（engine/genderSwap.ts）
 import { describe, expect, it } from 'vitest'
 import { genderSwapBlock, genderSwapNote, swapNpcGender } from '@/engine/genderSwap'
-import { generateNpc } from '@/engine/npcs'
+import { generateNpc, occupationFor } from '@/engine/npcs'
 import { joinParty } from '@/engine/party'
 import { Rng } from '@/engine/rng'
 import { ensureRelationship } from '@/engine/social'
@@ -52,5 +52,26 @@ describe('gender swap prank', () => {
     expect(genderSwapBlock(state, stranger.id)).toContain('認識')
     expect(() => swapNpcGender(state, rec.id, 'male')).toThrow('已經是')
     expect(() => swapNpcGender(state, rec.id, 'dragon')).toThrow('沒有這種性別')
+  })
+
+  it('refuses the dead', () => {
+    const { state, rec } = setup()
+    rec.dead = true
+    expect(genderSwapBlock(state, rec.id)).toContain('過世')
+    expect(() => swapNpcGender(state, rec.id, 'female')).toThrow('過世')
+  })
+
+  it('renames household titles and maids by the end of the occupation', () => {
+    expect(occupationFor('維克多的妻子', 'male')).toBe('維克多的丈夫')
+    expect(occupationFor('維克多的兒子', 'futa')).toBe('維克多的女兒')
+    expect(occupationFor('維克多的女兒', 'unknown')).toBe('維克多的孩子')
+    expect(occupationFor('女僕', 'male')).toBe('男僕')
+    expect(occupationFor('廚娘', 'femboy')).toBe('廚子')
+    expect(occupationFor('男爵家的孩子', 'female')).toBe('男爵家的千金')
+    expect(occupationFor('鐵匠學徒', 'female')).toBe('鐵匠學徒')
+    const { state, rec } = setup()
+    rec.occupation = '維克多的丈夫'
+    swapNpcGender(state, rec.id, 'female')
+    expect(rec.occupation).toBe('維克多的妻子')
   })
 })

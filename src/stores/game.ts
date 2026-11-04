@@ -1497,7 +1497,12 @@ export const useGame = defineStore('game', () => {
     // 人際關係與共同記憶
     editRelationship: (id: string, patch: social.RelationshipPatch) => run((s) => social.editRelationship(s, id, patch)),
     /** 歡愉的惡作劇：改隨機 NPC 的性別（寫成一則日誌） */
-    swapNpcGender: (id: string, gender: string) => run((s) => swapNpcGender(s, id, gender)),
+    swapNpcGender: (id: string, gender: string) => {
+      const report = run((s) => swapNpcGender(s, id, gender))
+      // 形象圖是舊性別的：退成舊版、清掉記住的描述（開了自動畫時重畫一張）
+      if (report && state.value) void usePortraits().retire(state.value, id).catch(() => undefined)
+      return report
+    },
     addMemory: (m: Omit<social.Memory, 'id'>) => run((s) => social.addMemory(s, m)),
     editMemory: (id: string, patch: social.MemoryPatch) => run((s) => social.editMemory(s, id, patch)),
     deleteMemory: (id: string) => run((s) => social.deleteMemory(s, id)),
