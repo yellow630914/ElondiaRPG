@@ -144,6 +144,17 @@ describe('NPC 自己的日子：近況與 AI', () => {
     applyNewsStories(state, [{ id: rec.id, day: newsOf(state, rec.id)[0]!.day, story: '寫好的近況' }])
     expect(newsOf(state, rec.id)[0]!.story).toBe('寫好的近況')
   })
+
+  it('writes one story per person and drops the earlier entries it covers', () => {
+    setNpcLife({ days: 1 })
+    const state = game()
+    const rec = friend(state, 50)
+    state.npcLife = { ...(state.npcLife ?? { news: {} }), news: { [rec.id]: [{ day: 3, text: '甲' }, { day: 6, text: '乙' }, { day: 9, text: '丙' }] } } as never
+    const prompt = buildNewsPrompt(state, [{ id: rec.id, news: newsOf(state, rec.id) }])!
+    expect(prompt.system).toContain('每個人一則')
+    applyNewsStories(state, [{ id: rec.id, day: 9, story: '甲乙丙寫成一段' }])
+    expect(newsOf(state, rec.id)).toEqual([{ day: 9, text: '丙', story: '甲乙丙寫成一段' }])
+  })
 })
 
 describe('NPC 自己的日子：交給 AI 寫（store）', () => {

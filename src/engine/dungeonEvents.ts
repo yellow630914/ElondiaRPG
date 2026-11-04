@@ -1,7 +1,7 @@
 // 地下城與近郊的事件（docs/ADULT_EVENTS.md）：觸發陷阱、打開寶箱、採集、在安全房長休之後，依機率遇到一件事。
 // - 模板和旅途、城鎮事件共用（travel_events.json 的 templates，scope: dungeon），依觸發點、地點、地區、層數、內容標籤、主角體型篩選。
 // - 機率與冷卻在 travel_events.json 的 dungeon；同一個事件隔 repeat_days 天（或 cooldown_days）才會再出現。
-// - 目前的內建模板都是成人向（色情陷阱、擬態寶箱、花粉、觸手植物、夜襲……），內容篩選關掉「主角非自願」時，非自願的事件不會發生。
+// - 內建模板有成人向的（色情陷阱、擬態寶箱、花粉、觸手植物、夜襲……，內容篩選關掉「主角非自願」時非自願的不會發生）與普通的（dn_ 開頭，每個主角都會遇到）。
 // - 事件發生在主角身上：選項的檢定由主角自己擲（不是隊伍裡最擅長的人）。
 
 import { gameRule } from './gameRules'
@@ -94,7 +94,7 @@ export function dungeonEventWeight(state: GameState, id: string): number {
 
 /**
  * 觸發點發生之後（陷阱沒察覺、打開寶箱、採集、安全房長休）：冷卻過了、機率中了，就遇到一件事，等主角回應。
- * 回傳有沒有開始事件（寶箱：有事件時寶箱本身不打開）。
+ * 回傳有沒有開始事件（寶箱：成人向的事件取代寶箱，普通的事件在寶箱打開之後發生，見 grid.ts）。
  */
 export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger): boolean {
   const rules = travelEvents.dungeon

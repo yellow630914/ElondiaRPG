@@ -287,12 +287,20 @@ export function newsText(n: NpcNews): string {
   return n.story ?? n.text
 }
 
-/** 寫進 AI 潤飾的近況（id → 第幾天 → 文字）；找不到的略過 */
-export function applyNewsStories(state: GameState, stories: { id: string; day: number; story: string }[]) {
+/**
+ * 寫進 AI 潤飾的近況：每人一段，寫在那一天（找不到就寫在最後一則還沒寫的）；
+ * 這個人在那之前還沒寫的近況已經寫進這一段，拿掉（不然畫面上會重複）。找不到人的略過。
+ */
+export function applyNewsStories(state: GameState, stories: { id: string; day?: number; story: string }[]) {
   for (const s of stories) {
-    const n = state.npcLife?.news[s.id]?.find((x) => x.day === s.day)
-    const text = typeof s.story === 'string' ? s.story.trim().slice(0, 400) : ''
-    if (n && text) n.story = text
+    const list = state.npcLife?.news[s?.id]
+    const open = (list ?? []).filter((x) => !x.story)
+    const text = typeof s?.story === 'string' ? s.story.trim().slice(0, 400) : ''
+    const n = open.find((x) => x.day === s.day) ?? open[open.length - 1]
+    if (!list || !n || !text) continue
+    n.story = text
+    const merged = new Set(open.filter((x) => x !== n && x.day <= n.day))
+    if (merged.size) state.npcLife!.news[s.id] = list.filter((x) => !merged.has(x))
   }
 }
 

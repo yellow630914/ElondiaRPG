@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { setContentFilters } from '@/engine/content'
-import { companionRules } from '@/engine/data'
+import { companionRules, locationById } from '@/engine/data'
 import { acceptTrapLure, answerDungeonEvent, declineTrapLure, DEFAULT_LAYER_DC, dungeonCandidates, dungeonEventWeight, eventBaseDc, FRESH_DAYS, FULL_POOL, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
-import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, move } from '@/engine/grid'
+import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, findKind, generateLayer, layerEncounters, move, placeAt, storeArea } from '@/engine/grid'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { longRestBlocked } from '@/engine/rest'
-import { travelEvents } from '@/engine/road'
-import { newGame } from '@/engine/state'
+import { leaveSide, travelEvents } from '@/engine/road'
+import { newGame, withRng } from '@/engine/state'
 import { arriveAt } from './helpers/travel'
 import { builtinEventRules, sanitizeTravelEvent } from '@/engine/travelEventMods'
 import type { GameState } from '@/engine/types'
@@ -223,6 +223,37 @@ describe('dungeon adult events', () => {
     answerDungeonEvent(state, i)
     if (gain) expect(state.money_cc).toBeGreaterThan(money)
     else expect(state.money_cc).toBe(money)
+  })
+
+  it('opens the chest as usual before a normal chest event', () => {
+    always(true)
+    const state = inDungeon('masc')
+    currentArea(state).layer = 1
+    const [dx, dy] = besides(state, { kind: 'chest', level: 1 })
+    const step = move(state, dx, dy)
+    const t = pendingDungeonEvent(state)!
+    expect(t.tags ?? []).not.toContain('adult')
+    expect(step.report?.outcome.tags).toContain('寶箱')
+  })
+
+  it('fills a side map entered from a dungeon layer with that layer\'s monsters', () => {
+    always(true)
+    const state = inDungeon('masc')
+    const area = withRng(state, (rng) => generateLayer(state, locationById('snake_creek'), 3, rng))
+    storeArea(state, area)
+    const start = findKind(area, 'stairs_up')!
+    placeAt(state, area, start.x, start.y)
+    const layerIds = new Set(layerEncounters(locationById('snake_creek'), 3).flat().map(([id]) => id))
+    state.dungeonEvent = { template: 'dn_hidden_crack', trigger: 'gather' }
+    answerDungeonEvent(state, 0)
+    const side = currentArea(state)
+    expect(side.kind).toBe('side')
+    expect(side.layer).toBe(3)
+    const ids = side.cells.flatMap((c) => c.group ?? []).map(([id]) => id)
+    expect(ids.length).toBeGreaterThan(0)
+    expect(ids.every((id) => layerIds.has(id))).toBe(true)
+    leaveSide(state)
+    expect(state.position?.area).toBe(area.key)
   })
 
   it('waits out the cooldown and does not repeat the same event within a few days', () => {
