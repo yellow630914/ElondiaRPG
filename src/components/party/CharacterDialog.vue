@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
+  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, combatBonuses, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, genderName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
@@ -52,6 +52,8 @@ watch([tabs, () => props.tab, () => props.open], () => {
   if (props.open && !tabs.value.some((t) => t.id === props.tab)) emit('update:tab', 'stats')
 }, { immediate: true })
 
+const b = computed(() => combatBonuses(m.value))
+const sources = (parts: { src: string; v: number }[]) => parts.map((p) => `${p.src} ${signed(p.v)}`).join('・')
 const combat = computed<StatItem[]>(() => {
   const x = m.value
   const w = weaponFor(x)
@@ -61,9 +63,14 @@ const combat = computed<StatItem[]>(() => {
     { label: '法術環', value: slotsText(x) },
     ...(classDef(x.class).caster !== 'none' ? [{ label: '施法屬性', value: attrName(castingAttr(x.class)), note: `熟練 +${proficiency(x.level)}` }] : []),
     { label: '幸運一擊', value: `自然骰 ${luckyThreshold(attrsOf(x), gearAffinities(x).mods.crit ?? 0)} 以上`, hint: '擲出這個數字以上的自然骰時，傷害加倍' },
-    { label: '迴避骰下限', value: evadeFloor(attrsOf(x)) },
     { label: '武器', value: w.name, note: `${w.dice} ${damageTypeName(w.type)}・${attrName(w.attr)}` },
     { label: '防具', value: a.name, note: `迴避 ${signed(a.evade)}・物理減傷 ${a.dr}` },
+    // 命中、迴避……的加值與來源（裝備、特質、非戰鬥狀態都算在這裡；戰鬥中的狀態另外算）
+    { label: '命中', value: `d20 ${signed(b.value.hit.total)}`, note: sources(b.value.hit.parts), hint: '攻擊擲 d20 加上這些，達到對方的迴避就命中。' },
+    { label: '迴避', value: `d20 ${signed(b.value.evade.total)}`, note: `骰子最低 ${evadeFloor(attrsOf(x))}${b.value.evade.parts.length ? `・${sources(b.value.evade.parts)}` : ''}`, hint: '被攻擊時擲 d20（低於下限時算下限）加上這些，就是對方要達到的數字。' },
+    ...(b.value.damage.total ? [{ label: '傷害加成', value: signed(b.value.damage.total), note: sources(b.value.damage.parts) }] : []),
+    { label: '減傷', value: b.value.dr.total, note: sources(b.value.dr.parts), hint: '防具與裝備的減傷只擋物理傷害；特質與狀態的擋所有傷害。' },
+    ...(b.value.save.total ? [{ label: '豁免加成', value: signed(b.value.save.total), note: sources(b.value.save.parts) }] : []),
     { label: '傷害倍率', value: affinityText(x) },
   ]
 })

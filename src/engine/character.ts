@@ -5,7 +5,7 @@ import { pcTagSummary } from './pcTags'
 import { parasiteSummary, parasitesOf } from './parasites'
 import { levelUpPerkOffer, npcPerksOf, perkCombat, perksOf } from './perks'
 import {
-  abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, classes, combatRules, genderPrompt, progression, weaponDef,
+  abilities as abilityTable, ATTR_IDS, armorDef, attributeRules, classAbilities, classDef, classes, combatRules, companionRules, genderPrompt, progression, weaponDef,
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
   mulResist,
 } from './data'
@@ -175,6 +175,39 @@ export function luckyThreshold(attrs: Attrs, critBonus = 0): number {
 }
 
 /** 迴避骰的下限：1 + max(0, mod(靈巧)) */
+/** 一項戰鬥加值的來源（角色詳情：命中、迴避……的加值寫出從哪裡來） */
+export interface BonusPart { src: string; v: number }
+export type BonusKey = 'hit' | 'evade' | 'damage' | 'dr' | 'save'
+
+/**
+ * 戰鬥加值與來源（和 combat.ts 開戰時一樣的算法；戰鬥中的狀態另外算）：
+ * 命中 = 熟練 + 武器屬性的調整值 + 裝備 + 特質 + 非戰鬥狀態；迴避 = d20（有下限）+ 靈巧調整值的一半 + 防具 + 裝備 + 特質 + 狀態；
+ * 傷害、豁免 = 裝備 + 特質 + 狀態；減傷 = 防具 + 裝備（只擋物理）+ 特質 + 狀態
+ */
+export function combatBonuses(c: Character): Record<BonusKey, { total: number; parts: BonusPart[] }> {
+  const attrs = attrsOf(c)
+  const armor = armorDef(c.armor)
+  const weapon = weaponFor(c)
+  const gear = gearBonuses(c).mods
+  const perks = perkCombat(c).mods
+  const cond: Mods = {}
+  for (const s of c.status ?? []) {
+    for (const [k, v] of Object.entries(companionRules.conditions[s]?.combat_mods ?? {})) cond[k as keyof Mods] = (cond[k as keyof Mods] ?? 0) + (v ?? 0)
+  }
+  const shared = (k: keyof Mods): BonusPart[] => [{ src: '裝備', v: gear[k] ?? 0 }, { src: '特質', v: perks[k] ?? 0 }, { src: '狀態', v: cond[k] ?? 0 }]
+  const out = (parts: BonusPart[]) => {
+    const kept = parts.filter((p) => p.v)
+    return { total: kept.reduce((s, p) => s + p.v, 0), parts: kept }
+  }
+  return {
+    hit: out([{ src: '熟練', v: proficiency(c.level) }, { src: attributeRules.attributes.find((a) => a.id === weapon.attr)?.name ?? weapon.attr, v: mod(attrs[weapon.attr]) }, ...shared('hit')]),
+    evade: out([{ src: '靈巧', v: Math.floor(mod(attrs.dex) / 2) }, { src: '防具', v: armor.evade }, ...shared('evade')]),
+    damage: out(shared('damage')),
+    dr: out([{ src: '防具', v: armor.dr }, ...shared('dr')]),
+    save: out(shared('save')),
+  }
+}
+
 export function evadeFloor(attrs: Attrs): number {
   return combatRules.hit.evade_floor_base + Math.max(0, mod(attrs.dex))
 }

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { gearAffinities, weaponFor } from '@/engine/character'
+import { weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotName, slotsFor } from '@/engine/gear'
+import { gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotName, slotsFor } from '@/engine/gear'
+import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
 import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
@@ -106,13 +107,13 @@ function equip(name: string, slots: GearSlot[]) {
 }
 
 const totals = computed(() => {
-  const g = gearAffinities(m.value)
   const w = weaponFor(m.value)
   const a = armorDef(m.value.armor)
   return [
     `${w.name} ${w.dice} ${damageTypeName(w.type)}`,
     `${a.name}：迴避 ${signed(a.evade)}、減傷 ${a.dr}`,
-    ...Object.entries(g.mods).filter(([, v]) => v).map(([k, v]) => `其他加成 ${MOD_NAME[k] ?? k} ${signed(v!)}`),
+    ...Object.entries(gearBonuses(m.value).mods).filter(([, v]) => v).map(([k, v]) => `裝備加成 ${MOD_NAME[k] ?? k} ${signed(v!)}`),
+    ...Object.entries(perkCombat(m.value).mods).filter(([, v]) => v).map(([k, v]) => `特質加成 ${MOD_NAME[k] ?? k} ${signed(v!)}`),
   ]
 })
 </script>
