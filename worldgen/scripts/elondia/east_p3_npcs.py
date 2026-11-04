@@ -240,6 +240,63 @@ NPCS = [
         background='屯裡的年輕獵戶，名字是爹取的，說要他大膽。去年冬天他在山裡被黃皮子攔路討封，問他「你看我像人還是像仙」，他老實說「像黃鼠狼」，從此倒霉到現在：弓斷了三把，陷阱裡全是自己的腳。'),
 ]
 
+# 政治線上半的結局（east_p4c.py）：yhpol_monarchy／yhpol_republic／yhpol_constitution 換掉幾位的身分與出沒
+def _palace(x, y):
+    return {'area': 'longan/palace', 'x': x, 'y': y}
+
+
+POLITICS = {
+    'npc_yh_zhaohua': [
+        {'requires': {'flags': ['yhpol_republic']}, 'location': 'longan', 'haunts': [{'location': 'longan', 'zone': 'noble', 'weight': 1}, {'location': 'longan', 'zone': 'town', 'weight': 0.4}],
+         'background': '大燁的前女帝。她在宣德樓上親手蓋了退位詔書，把天下交給公議會，搬進貴族坊一間普通的宅子。她說這是五年來睡得最好的一覺——可是每天早上，她還是會去看公議會貼出來的告示。'},
+        {'requires': {'flags': ['yhpol_monarchy']}, 'location': 'longan', 'fixed': _palace(5, 2),
+         'background': '親政的女帝。宰相罷相、激進派下獄之後，她親自看每一份奏摺、每一筆帳，比以前更強，也更孤單。宣德樓頂的茶，她現在會多倒一杯。'},
+        {'requires': {'flags': ['yhpol_constitution']}, 'location': 'longan', 'fixed': _palace(5, 2),
+         'background': '立憲之後的女帝，和「五席」共治大燁：皇權寫在憲章第一條，限制皇權的寫在第二條到第三十條。她說這樣比較累，可是睡得比較安心。'},
+    ],
+    'npc_yh_wen_shiheng': [
+        {'requires': {'flags': ['yhpol_monarchy']}, 'location': 'longan', 'haunts': [{'location': 'longan', 'zone': 'noble', 'weight': 1}],
+         'background': '罷相之後閉門思過的前宰相。溫家的門前冷落了，他每天在書房裡抄經，抄的都是開國那一年的祭文。'},
+        {'requires': {'flags': ['yhpol_constitution']}, 'location': 'longan', 'haunts': [{'location': 'longan', 'zone': 'palace', 'weight': 1}, {'location': 'longan', 'zone': 'noble', 'weight': 0.8}],
+         'background': '立憲之後，他成了議會裡保守派的領袖，在每一條新法上逐字爭辯。輸了的時候，他會說「祖制」；贏了的時候，他什麼都不說。'},
+    ],
+    'npc_yh_lu_qinghe': [
+        {'requires': {'flags': ['yhpol_republic']}, 'location': 'longan', 'haunts': [{'location': 'longan', 'zone': 'town', 'weight': 1}, {'location': 'longan', 'zone': 'noble', 'weight': 0.6}],
+         'background': '公議會的首席。萍江的織工把她送進了龍安府，她在太學的講堂上開議，手上的織繭還在。她說當首席比罷織累多了，因為吵架的對象變成了自己人。'},
+        {'requires': {'flags': ['yhpol_constitution']}, 'location': 'pingjiang', 'haunts': [{'location': 'pingjiang', 'zone': 'town', 'weight': 1}, {'location': 'longan', 'zone': 'town', 'weight': 0.4}],
+         'background': '憲章「五席」裡的農工席。她說立憲不是她要的共和，可是至少織工在議會裡有了一張椅子——她打算一直坐在上面吵。'},
+        {'requires': {'flags': ['yhpol_monarchy']}, 'location': 'pingjiang', 'haunts': [{'location': 'pingjiang', 'zone': 'town', 'weight': 1}],
+         'background': '女帝親政之後，激進派星散，行會被勒令解散。她回到織機前，夜裡還是帶著織工唱工歌，只是聲音小了一點。'},
+    ],
+    'npc_yh_su_huaijin': [
+        {'requires': {'flags': ['yhpol_monarchy']}, 'location': 'pingjiang', 'haunts': [{'location': 'pingjiang', 'zone': 'noble', 'weight': 1}, {'location': 'pingjiang', 'zone': 'town', 'weight': 0.5}],
+         'background': '女帝親政之後最信任的地方官，萍江府的知府加封江南轉運使。她辦事比以前更快，也更少笑了。'},
+        {'requires': {'flags': ['yhpol_republic']}, 'location': 'pingjiang', 'haunts': [{'location': 'pingjiang', 'zone': 'noble', 'weight': 1}, {'location': 'pingjiang', 'zone': 'town', 'weight': 0.5}],
+         'background': '共和之後，萍江的人把她選成了公議會的萍江代表——織工們說，她是唯一一個肯在工約上蓋印的官。'},
+        {'requires': {'flags': ['yhpol_constitution']}, 'location': 'pingjiang', 'haunts': [{'location': 'pingjiang', 'zone': 'noble', 'weight': 1}, {'location': 'longan', 'zone': 'palace', 'weight': 0.3}],
+         'background': '憲章「五席」裡萍江的官府席。她和陸青禾在議會裡常常吵到深夜，吵完一起去吃宵夜。'},
+    ],
+    'npc_yh_hu_jiuniang': [
+        {'requires': {'flags': ['yhpol_republic']}, 'location': 'quanzhou', 'fixed': {'area': 'quanzhou/fanfang', 'x': 7, 'y': 1},
+         'background': '共和之後，胡記的皇商特許被公議會廢了。她沒有哭，只是把胡記的招牌從「皇商」改成「胡記」，第二天照常開門，價錢比金玉行便宜一成。'},
+        {'requires': {'flags_any': ['yhpol_monarchy', 'yhpol_constitution']}, 'location': 'quanzhou', 'fixed': {'area': 'quanzhou/fanfang', 'x': 7, 'y': 1},
+         'background': '胡記商幫的當家。新政之後皇商特許還在，只是多了議會的查帳；她說查就查，胡記的帳比市舶司乾淨。'},
+    ],
+    'npc_yh_jin_yutang': [
+        {'requires': {'flags_any': ['yhpol_republic', 'yhpol_constitution']}, 'location': 'quanzhou', 'fixed': {'area': 'quanzhou/shibo', 'x': 5, 'y': 1},
+         'background': '金墨盟的盟主，議會裡金黃鱗的那一席。三十艘船的海貨照跑，她說現在最大的生意，是讓大燁的法比船跑得還快。'},
+        {'requires': {'flags': ['yhpol_monarchy']}, 'location': 'quanzhou', 'fixed': {'area': 'quanzhou/shibo', 'x': 5, 'y': 1},
+         'background': '女帝親政之後，金墨盟被勒令改組。她把盟裡的激進派送走，自己留下來跟朝廷談生意——她說，船總要開的。'},
+    ],
+}
+for _n in NPCS:
+    if _n['id'] in POLITICS:
+        _n['stages'] = POLITICS[_n['id']] + _n.get('stages', [])
+# 共和之後宰相出逃：不再出現
+for _n in NPCS:
+    if _n['id'] == 'npc_yh_wen_shiheng':
+        _n['requires'] = {'flags_none': ['yhpol_republic']}
+
 # 特殊任務用到的人（開頭、任務點、友方、同行）不能被偷襲（builtinStories.spec）：從 stories.json 找出來
 def _story_npcs():
     out = set()

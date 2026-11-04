@@ -211,6 +211,7 @@ EAST_REGION_LINES = {'渡海引導', '化龍族：點青', '靈狐族：胡家�
 def category(name, sts):
     if name in ('政治史詩', '巨龍史詩'): return '史詩'
     if name in EAST_REGION_LINES: return '地區與勢力'
+    if name.startswith('政治線：大燁'): return '史詩'
     if name == '多人特殊任務': return '多人特殊任務'
     if name == '入門委託': return '入門委託'
     if name == '沿海洞窟': return '地下城'
@@ -246,9 +247,11 @@ FLOW = {
              ('路線：開戰・魔族方', ['pol_war_d_ashport', 'pol_war_d_rivervale', 'pol_war_d_rhineburg']),
              ('軍需（Lv.16 起；和平線兩個都能接，開戰只能接自己這一方的）', ['gear_church_supply', 'gear_redwing_supply']), ('終章', ['pol_acheron_gaze'])],
     '巨龍史詩': [('四條龍，順序自由', ['drg_kagni', 'drg_sinor', 'drg_sorian', 'drg_babelin']), ('終章', ['drg_acheron'])],
+    '政治線：大燁的政體': [('上半', ['yhpol_new_policy', 'yhpol_backlash', 'yhpol_petition']),
+                   ('終章（依計數器能選的政體，三選一）', ['yhpol_end_monarchy', 'yhpol_end_republic', 'yhpol_end_constitution'])],
 }
 for l in out:
-    if l['name'] in FLOW: l['flow'] = [{'label': lb, 'ids': ids, 'seq': not lb.startswith(('四條龍', '軍需'))} for lb, ids in FLOW[l['name']]]
+    if l['name'] in FLOW: l['flow'] = [{'label': lb, 'ids': ids, 'seq': not lb.startswith(('四條龍', '軍需', '終章（依計數器'))} for lb, ids in FLOW[l['name']]]
     elif l['name'] in ('多人特殊任務', '入門委託'): l['flow'] = [{'label': '各自獨立', 'ids': [q['id'] for q in l['quests']], 'seq': False}]
 
 # 事件的 DC：選項寫的 DC 以 14 為「普通」，實際 DC 依層（地下城事件）或主角等級與階段（寄生物）調整

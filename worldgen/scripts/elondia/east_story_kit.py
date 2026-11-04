@@ -8,9 +8,12 @@ REWARD = {
     'D': [{'type': 'money', 'amount': 300}, {'type': 'xp', 'amount': 450}],
     'C': [{'type': 'money', 'amount': 600}, {'type': 'xp', 'amount': 900}],
     'B': [{'type': 'money', 'amount': 1500}, {'type': 'xp', 'amount': 2000}],
+    # 政治線（照內建的 pol_*、gear_* 的 A、S 級）
+    'A': [{'type': 'money', 'amount': 2200}, {'type': 'xp', 'amount': 2500}],
+    'S': [{'type': 'money', 'amount': 3500}, {'type': 'xp', 'amount': 4000}],
 }
-MERIT = {'E': 5, 'D': 8, 'C': 10, 'B': 15}
-LEVEL = {'E': 3, 'D': 5, 'C': 8, 'B': 11}
+MERIT = {'E': 5, 'D': 8, 'C': 10, 'B': 15, 'A': 15, 'S': 25}
+LEVEL = {'E': 3, 'D': 5, 'C': 8, 'B': 11, 'A': 12, 'S': 14}
 
 
 def aff(npc, delta, reason):

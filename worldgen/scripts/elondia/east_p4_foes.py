@@ -43,6 +43,21 @@ FOES = [
     ('yh_imperial_guard', 'zealot_templar', dict(name='禁軍的精兵', level=11, kind='humanoid', armed=True, abilities=['charge', 'battle_roar'],
         weapon={'dice': '2d12', 'type': 'slashing', 'attr': 'str'},
         desc='殿前司的禁軍精兵，朱砂鱗居多，朱漆的步人甲、長柄的朴刀；聽命於上頭的人——不一定是女帝。')),
+    # 政治線上半（east_p4c.py）：Lv.14 的小怪與 Lv.15 的頭目（終章的替身）
+    ('yh_palace_guard', 'echo_legionnaire', dict(name='殿前司的甲士', level=14, kind='humanoid', armed=True, abilities=['charge', 'battle_roar'],
+        weapon={'dice': '3d8', 'type': 'slashing', 'attr': 'str'},
+        desc='殿前司最精銳的甲士，朱漆的步人甲、金邊的頭盔；宰相掌兵符的那幾營，只聽相府的令。')),
+    ('yh_league_musketeer', 'echo_legionnaire', dict(name='金墨盟的火槍手', level=14, kind='humanoid', armed=True, abilities=['thorn_volley', 'pin_shot'],
+        weapon={'dice': '3d8', 'type': 'piercing', 'attr': 'dex'},
+        desc='金墨盟激進派用火藥坊的火銃武裝起來的行會子弟，墨鐵鱗居多；他們說，議會的席位要用火藥換。')),
+    ('yh_radical_firebrand', 'rhine_guard_marshal', dict(name='激進派的火頭', level=15, kind='humanoid', armed=True, boss=True,
+        abilities=['fire_breath', 'battle_roar', 'thorn_volley', 'world_pyre'], ability_hp_below={'world_pyre': 40},
+        weapon={'dice': '4d8', 'type': 'fire', 'attr': 'dex'},
+        desc='金墨盟激進派的領頭人，一身火藥坊的皮甲，腰上掛滿了霹靂火球；他說女帝收權的那一天，宣德樓就該燒掉。')),
+    ('yh_chancellor_marshal', 'rhine_guard_marshal', dict(name='宰相的禁軍統領', level=15, kind='humanoid', armed=True, boss=True,
+        abilities=['charge', 'battle_roar', 'trample', 'earthshatter'], ability_hp_below={'earthshatter': 40},
+        weapon={'dice': '4d10', 'type': 'slashing', 'attr': 'str'},
+        desc='宰相溫世衡的心腹，掌著殿前司三營的兵符；天青鱗世家出身，卻穿著朱砂鱗武人的甲。他說，大燁不能交給商人和織工。')),
 ]
 
 
@@ -75,6 +90,8 @@ def write_foes():
         old = en.get(fid)
         e = {'id': fid, 'name': kw['name'], 'level': kw['level'], 'attrs': t['attrs'], 'hp': (old or t)['hp'], 'ap': t['ap'],
              'weapon': kw['weapon'], 'evade': t['evade'], 'dr': t['dr'], 'abilities': kw['abilities']}
+        if kw.get('ability_hp_below'):
+            e['ability_hp_below'] = kw['ability_hp_below']
         if kw.get('resist'):
             e['resist'] = kw['resist']
         e['offense'] = dict((old or t)['offense'])
@@ -82,6 +99,8 @@ def write_foes():
         e['habitats'] = H
         if kw['kind'] == 'humanoid':
             e['money_cc'] = t.get('money_cc', [20, 80])
+        if kw.get('boss'):
+            e['loot'] = [{'item': '秘銀礦石', 'chance': 1}, {'item': '精金礦石', 'chance': 0.8}]
         e['desc'] = kw['desc']
         e['kind'] = kw['kind']
         if kw.get('armed'):
