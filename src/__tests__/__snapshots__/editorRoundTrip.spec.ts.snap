@@ -203,7 +203,7 @@ exports[`world editor round trip > materials: opening and saving without changes
 
 exports[`world editor round trip > perks: opening and saving without changes keeps the data 1`] = `
 {
-  "artisan": "4222efbc0aba",
+  "artisan": "05e6877fcd89",
   "battle_lust": "daab92f34bbc",
   "born_leader": "11e76f132078",
   "escape_artist": "8289d9d82dc6",
@@ -216,13 +216,13 @@ exports[`world editor round trip > perks: opening and saving without changes kee
   "flaw_sickly": "8efd9f6fb487",
   "hive_bond": "e07ac4850479",
   "menacing": "1c88cb653105",
-  "merchant_eye": "32eaebe2266b",
+  "merchant_eye": "aaa87aa7501d",
   "obedient": "71904200e651",
   "pathfinder": "525dd5be9c20",
   "race_catfolk": "917e71b7b8a4",
   "race_elf": "7a6b096fc6d5",
   "race_hualong": "500e3fc0c396",
-  "scholar": "90bf8d177a68",
+  "scholar": "e35e3df0eb7d",
   "school_abstinence": "c01371147730",
   "school_indulgence": "788a9a92f9b3",
   "school_punishment": "46cbd0197e32",
@@ -230,7 +230,7 @@ exports[`world editor round trip > perks: opening and saving without changes kee
   "silver_tongue": "4c3b6b607b1a",
   "streetwise": "d319d509f5a9",
   "thick_skin": "38ddc569be2d",
-  "trap_sense": "a6f3f9298fbf",
+  "trap_sense": "2ef2bc137bce",
   "wanton_blaze": "afa355e3a048",
   "watchful": "624bc342a0a5",
 }

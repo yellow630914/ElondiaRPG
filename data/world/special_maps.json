@@ -357,6 +357,150 @@
         {"at": {"x": 9, "y": 6}, "to": {"area": "dungeon/pleasure_palace", "x": 0, "y": 0}, "requires": {"flags": ["lpe_done"]}}
       ],
       "shops": [{"shop": "general", "x": 1, "y": 3}, {"shop": "tailor", "x": 9, "y": 3}]
+    },
+    "sm_yh_longan_canal": {
+      "name": "龍安府的御溝",
+      "location": "longan",
+      "desc": "龍安府地底的舊排水溝，從皇城一路通到市坊。石砌的拱頂滲著水，運河的水在溝渠裡緩緩流動；私鹽販子、野狗與更糟的東西在這裡出沒，據說還有人從這裡摸進皇城。",
+      "lighting": "dark",
+      "refresh": true,
+      "layer": "shallow",
+      "grid": [
+        "###########",
+        ".M....T...#",
+        "#.~~~~~~~.#",
+        "#..R.#..M.#",
+        "#.~~~~~~~.#",
+        "#C....X..S#",
+        "###########"
+      ],
+      "table": [
+        [
+          [
+            "jianjing_robber",
+            2
+          ]
+        ],
+        [
+          [
+            "salt_smuggler",
+            1
+          ],
+          [
+            "jianjing_robber",
+            1
+          ]
+        ],
+        [
+          [
+            "canal_ghost",
+            1
+          ]
+        ],
+        [
+          [
+            "stray_dog_pack",
+            2
+          ]
+        ]
+      ],
+      "resources": [
+        1,
+        1
+      ],
+      "resource_items": [
+        "私鹽",
+        "藥草"
+      ],
+      "entry": {
+        "x": 0,
+        "y": 1
+      },
+      "connections": [
+        {
+          "at": {
+            "x": 0,
+            "y": 1
+          },
+          "to": {
+            "area": "longan/shifang",
+            "x": 0,
+            "y": 4
+          }
+        }
+      ]
+    },
+    "sm_yh_xuande_tower": {
+      "name": "宣德樓的城樓",
+      "location": "longan",
+      "desc": "皇城正門宣德樓的頂層：重簷下是寬闊的迴廊，四面望得到整座龍安府；天青琉璃瓦在月光下泛青，風大得吹得燈籠直晃。",
+      "lighting": "lit",
+      "peaceful": true,
+      "grid": [
+        "###########",
+        "#...#.#...#",
+        "#.........#",
+        "#..#...#..#",
+        "#.........#",
+        "#####E#####"
+      ]
+    },
+    "sm_yh_chihuan_hold": {
+      "name": "赤鬟的走私船艙",
+      "location": "quanzhou",
+      "desc": "泊在港外的一艘大海船，底艙被走私女王赤鬟改成賭場與黑市：賭桌上賭的是錢，也是人；艙壁後面關著等著賣的貨。",
+      "lighting": "lit",
+      "peaceful": true,
+      "grid": [
+        "~~~~~~~~~~~",
+        "~#########~",
+        "~#.......#~",
+        "~#.##.##.#~",
+        "~#.......#~",
+        "~####E####~",
+        "~~~~~~~~~~~"
+      ],
+      "shops": [
+        {
+          "shop": "tavern",
+          "x": 2,
+          "y": 3
+        },
+        {
+          "shop": "general",
+          "x": 8,
+          "y": 3
+        }
+      ]
+    },
+    "sm_yh_cangci": {
+      "name": "萍園的藏瓷閣",
+      "location": "pingjiang",
+      "desc": "萍園裡兩層樓的藏瓷閣，一排排博古架上擺著天青瓷：盞、瓶、洗、爐，每一件都有謝青梧手寫的籤條；最裡面的架子上鎖著，說是千窯谷最早的一窯。",
+      "lighting": "lit",
+      "peaceful": true,
+      "grid": [
+        "#########",
+        "#.#.#.#.#",
+        "#.......#",
+        "#.#.#.#.#",
+        "#.......#",
+        "####E####"
+      ]
+    },
+    "sm_yh_xiantang_inner": {
+      "name": "仙堂的內堂",
+      "location": "qingqiu",
+      "desc": "仙堂後面的內堂，是弟馬胡三娘自己的堂口：供桌上擺著胡家仙的牌位與一面文王鼓，炕上鋪著狐皮，牆角掛著一串串乾辣椒與山參。",
+      "lighting": "lit",
+      "peaceful": true,
+      "grid": [
+        "#######",
+        "#.....#",
+        "#.#.#.#",
+        "#.....#",
+        "###E###"
+      ]
     }
   }
 }

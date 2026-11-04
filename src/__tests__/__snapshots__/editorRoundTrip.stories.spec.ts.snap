@@ -13,5 +13,6 @@ exports[`world editor round trip > stories: opening and saving without changes k
   "smuggler_ledger": "bb75e6e46228",
   "spirit_drowned": "1cc434359e81",
   "vsec_after_hours": "fc474aa94146",
+  "yh_storyteller": "3e65009358c0",
 }
 `;
