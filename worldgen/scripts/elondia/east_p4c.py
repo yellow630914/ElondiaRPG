@@ -40,7 +40,7 @@ def finale(id, title, summary, start_text, start_flag, fights, end_text, end_fla
                            '你們被逼退到城樓的角落。喘口氣——宣德樓還沒有失守。', win_flags=[flag]))
         req = flag
     nodes.append(node('end', '在宣德樓的城樓上看大燁的新局', end_text[0], tower(), req, allies=[ZHAOHUA],
-                      success={'text': end_text[1], 'set_flags': [end_flag, 'yhpol_done'], 'effects': effects, 'complete': True}))
+                      success={'text': end_text[1], 'set_flags': ([end_flag] if isinstance(end_flag, str) else list(end_flag)) + ['yhpol_done'], 'effects': effects, 'complete': True}))
     return story(id, 'S', title, summary, {'kind': 'manual', 'min_level': 15, 'text': start_text}, start_flag, nodes,
                  extra_rewards=[{'type': 'item', 'name': '精金礦石', 'qty': 1}])
 
@@ -152,8 +152,8 @@ STORIES = [
            [('擋住宰相的禁軍統領', '禁軍統領站在城樓口，長刀指著女帝：「陛下累了。退位詔書，由相府代擬。」',
              [['yh_chancellor_marshal', 1], ['yh_palace_guard', 1]], '禁軍統領跪倒在城樓上。城下，岳鎮山帶著禁軍圍住了相府。')],
            ('女帝親手在退位詔書上蓋了最後一次玉璽，把詔書交給陸青禾：「大燁交給你們了。吵吧，吵出一條路來。」',
-            '大燁成了共和：公議會在太學的講堂開議，陸青禾當選首席，金墨盟與行會得勢。宰相出逃，朝廷通緝死忠的保守派。燁昭華搬出了皇城，住進貴族坊一間普通的宅子——她說這是她五年來睡得最好的一覺。'),
-           'yhpol_republic', [rep(LEAGUE, 8), rep(COURT, -6), aff(LU, 15, '陪她走上公議'), aff(ZHAOHUA, 8, '讓她卸下了天下'),
+            '大燁成了共和：公議會在太學的講堂開議，陸青禾當選首席，金墨盟與行會得勢。宰相出逃，朝廷通緝死忠的保守派。燁昭華搬出了皇城，住進貴族坊一間普通的宅子——她說這是她五年來睡得最好的一覺。皇城的門從此向所有人打開。'),
+           ['yhpol_republic', 'palace_permit_longan'], [rep(LEAGUE, 8), rep(COURT, -6), aff(LU, 15, '陪她走上公議'), aff(ZHAOHUA, 8, '讓她卸下了天下'),
                                mem('大燁的政體走向共和制：女帝燁昭華退位，公議會治國，陸青禾當選首席，宰相出逃。', 3)]),
     finale('yhpol_end_constitution', '憲章',
            '女帝決定與萬民立憲。宰相與激進派兩邊都不肯，各自帶人攻上宣德樓。（政治線上半・終章：君主立憲制）',

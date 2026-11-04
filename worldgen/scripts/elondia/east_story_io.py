@@ -1,6 +1,6 @@
 """炎華之地的特殊任務腳本共用：把一批任務寫進 data/rules/stories.json。
 
-照原本檔案的排版（小的物件與陣列放一行）；同 id 的任務先拿掉再加在檔尾，所以每支腳本都可以重跑。
+照原本檔案的排版（小的物件與陣列放一行）；同 id 的任務就地換掉、新的加在檔尾，所以每支腳本都可以重跑。
 """
 
 import json
@@ -41,13 +41,30 @@ def remove_story(src, sid):
     return before.rstrip().rstrip(',') + src[end:]
 
 
+def replace_story(src, s):
+    """已經有同 id 的任務時就地換掉（保持檔案裡的順序），回傳 (新的內容, 有沒有換)"""
+    head = '\n    {\n      "id": "%s"' % s['id']
+    start = src.find(head)
+    if start < 0:
+        return src, False
+    nxt = src.find('\n    {\n      "id": "', start + len(head))
+    end = nxt if nxt >= 0 else src.rfind('\n  ]')
+    block = src[start:end]
+    tail = ',' if block.rstrip().endswith(',') else ''
+    return src[:start] + '\n    ' + fmt(s, 4) + tail + src[end:], True
+
+
 def write_stories(stories, path=PATH):
+    """同 id 的任務就地換掉，新的任務加在檔尾"""
     src = open(path, encoding='utf-8').read()
+    new = []
     for s in stories:
-        src = remove_story(src, s['id'])
+        src, done = replace_story(src, s)
+        if not done:
+            new.append(s)
     json.loads(src)
     end = src.rstrip().rfind('\n  ]')
-    body = ''.join(',\n    ' + fmt(s, 4) for s in stories)
+    body = ''.join(',\n    ' + fmt(s, 4) for s in new)
     out = src.rstrip()[:end] + body + src.rstrip()[end:] + '\n'
     data = json.loads(out)
     ids = [s['id'] for s in data['stories']]

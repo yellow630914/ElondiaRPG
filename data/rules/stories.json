@@ -40653,8 +40653,8 @@
           "kind": "story",
           "allies": ["npc_yh_zhaohua"],
           "success": {
-            "text": "大燁成了共和：公議會在太學的講堂開議，陸青禾當選首席，金墨盟與行會得勢。宰相出逃，朝廷通緝死忠的保守派。燁昭華搬出了皇城，住進貴族坊一間普通的宅子——她說這是她五年來睡得最好的一覺。",
-            "set_flags": ["yhpol_republic", "yhpol_done"],
+            "text": "大燁成了共和：公議會在太學的講堂開議，陸青禾當選首席，金墨盟與行會得勢。宰相出逃，朝廷通緝死忠的保守派。燁昭華搬出了皇城，住進貴族坊一間普通的宅子——她說這是她五年來睡得最好的一覺。皇城的門從此向所有人打開。",
+            "set_flags": ["yhpol_republic", "palace_permit_longan", "yhpol_done"],
             "effects": [
               { "type": "reputation", "faction": "jinmo_league", "delta": 8 },
               { "type": "reputation", "faction": "yanye_court", "delta": -6 },
