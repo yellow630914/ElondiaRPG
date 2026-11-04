@@ -36,14 +36,17 @@ describe('monster data', () => {
       const own: string[] = []
       for (const layer of ['outskirts', 'shallow', 'middle', 'deep'] as const) {
         const ids = new Set(t[layer].flat().map(([id]) => id))
-        // 每層的遭遇只用到這一層與上一層的怪物；這一層自己的兩種一定都會出現
-        own.push(...[...ids].filter((id) => !own.includes(id)))
+        // 每層的遭遇只用到這一層與上一層的怪物；這一層自己的至少兩種（炎華南域的地下城有幾層多一種魔物娘）
+        const fresh = [...ids].filter((id) => !own.includes(id))
+        // 主題地下城的園區沒有周邊
+        if (!(d.park && layer === 'outskirts')) expect(fresh.length, `${d.id} ${layer}`).toBeGreaterThanOrEqual(2)
+        own.push(...fresh)
       }
       const bosses = (['shallow', 'middle', 'deep'] as const).map((l) => t.bosses![l]![0]![0])
       expect(new Set(bosses).size, d.id).toBe(3)
       const all = [...own, ...bosses]
-      // 主題地下城的園區沒有周邊：淺層、中層、深層各兩種，加三隻層主
-      expect(all.length, d.id).toBe(d.park ? 9 : 11)
+      // 內建的照舊是每層兩種加三隻層主（園區沒有周邊）
+      if (d.region !== 'yanhua_south') expect(all.length, d.id).toBe(d.park ? 9 : 11)
       for (const id of all) {
         expect(seen.has(id), `${id} 出現在兩座地下城`).toBe(false)
         seen.add(id)

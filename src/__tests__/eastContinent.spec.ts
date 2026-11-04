@@ -6,6 +6,9 @@ import { perksOf, racePerks } from '@/engine/perks'
 import { DEFAULT_BIRTHPLACE, newGame } from '@/engine/state'
 import { lineageJobs } from '@/engine/traits'
 import { shortestPath } from '@/engine/world'
+import { dungeonEncounters } from '@/engine/data'
+import { layerRanks } from '@/engine/materialQuests'
+import { QUEST_RANGE_DAYS } from '@/engine/town'
 import { npcTags } from '@/engine/data'
 
 // 炎華之地 P1（docs/plan/roadmap/EAST_CONTINENT_PLAN.md）：兩個種族、炎華南域的四座聚落、航線與野外
@@ -68,6 +71,28 @@ describe('炎華之地', () => {
     expect(fit / dragons.length).toBeGreaterThan(0.8)
     // 用到的身分標籤都存在
     for (const r of dragons) for (const t of r.tags ?? []) expect(npcTags.tags[t], t).toBeDefined()
+  })
+
+  it('opens three dungeons near the southern cities, out of range of the western guilds', () => {
+    const near: Record<string, string> = { yongzhao_tomb: 'longan', qianyao_valley: 'pingjiang', gunpowder_ruins: 'quanzhou' }
+    for (const [d, town] of Object.entries(near)) {
+      expect(locationById(d).region).toBe('yanhua_south')
+      expect(shortestPath(town, d)!.days[1]).toBeLessThanOrEqual(1)
+      // 潮汐港的公會不會發東大陸的委託（海路 10 天）
+      expect(shortestPath('tidehaven', d)!.days[1]).toBeGreaterThan(QUEST_RANGE_DAYS)
+      const enc = dungeonEncounters[d]!
+      for (const layer of ['outskirts', 'shallow', 'middle', 'deep', 'abyss'] as const) expect(enc[layer]?.length, `${d} ${layer}`).toBeGreaterThan(0)
+      // 等級照中央平原：周邊 1 級、底層 11～12 級，層主 3／6／7／13 級
+      const lv = (layer: 'outskirts' | 'abyss') => enc[layer]!.flat().map(([id]) => enemies[id]!.level)
+      expect(Math.max(...lv('outskirts'))).toBe(1)
+      expect(Math.max(...lv('abyss'))).toBeGreaterThanOrEqual(11)
+      expect((['shallow', 'middle', 'deep', 'abyss'] as const).map((l) => enemies[enc.bosses![l]![0]![0]]!.level)).toEqual([3, 6, 7, 13])
+      // 公會階級一層比一層高
+      const ranks = layerRanks(d).map((r) => r.rank)
+      expect(ranks.length).toBe(4)
+      const order = 'FEDCBAS'
+      for (let i = 1; i < ranks.length; i++) expect(order.indexOf(ranks[i]!), `${d} ${ranks.join('')}`).toBeGreaterThanOrEqual(order.indexOf(ranks[i - 1]!))
+    }
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {

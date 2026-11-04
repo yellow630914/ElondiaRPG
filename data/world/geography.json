@@ -88,7 +88,10 @@
     { "id": "longan", "name": "龍安府", "region": "yanhua_south", "type": "capital", "races": { "hualong": 78, "linghu": 8, "human": 7, "yulin": 4, "catfolk": 1, "elf": 1, "dwarf": 1 }, "faction": "yanye_court", "note": "大燁的王都：御街、瓦舍勾欄、太學與貢院" },
     { "id": "pingjiang", "name": "萍江府", "region": "yanhua_south", "type": "city", "races": { "hualong": 85, "linghu": 5, "human": 5, "yulin": 2, "catfolk": 1, "elf": 1, "dwarf": 1 }, "faction": "yanye_court", "note": "運河上的手工業城市：絲織、刺繡、瓷器" },
     { "id": "quanzhou", "name": "瑔州港", "region": "yanhua_south", "type": "port", "races": { "hualong": 55, "human": 18, "linghu": 15, "yulin": 9, "catfolk": 1, "elf": 1, "dwarf": 1 }, "faction": "yanye_court", "note": "海外貿易的大港：蕃坊、市舶司、火藥坊" },
-    { "id": "qingqiu", "name": "青丘屯", "region": "yanhua_south", "type": "village", "races": { "linghu": 80, "hualong": 18, "human": 2 }, "faction": "yanye_court", "note": "大燁西北山林的靈狐族村子，還保有出馬的文化" }
+    { "id": "qingqiu", "name": "青丘屯", "region": "yanhua_south", "type": "village", "races": { "linghu": 80, "hualong": 18, "human": 2 }, "faction": "yanye_court", "note": "大燁西北山林的靈狐族村子，還保有出馬的文化" },
+    { "id": "yongzhao_tomb", "name": "永昭陵", "region": "yanhua_south", "type": "dungeon" },
+    { "id": "qianyao_valley", "name": "千窯谷", "region": "yanhua_south", "type": "dungeon" },
+    { "id": "gunpowder_ruins", "name": "火藥坊遺址", "region": "yanhua_south", "type": "dungeon" }
   ],
   "routes": [
     { "a": "soriel", "b": "rhineburg", "days": [5, 5], "mode": "road" },
@@ -152,6 +155,9 @@
     { "a": "quanzhou", "b": "pingjiang", "days": [3, 3], "mode": "road", "note": "沿運河" },
     { "a": "pingjiang", "b": "longan", "days": [2, 2], "mode": "road" },
     { "a": "quanzhou", "b": "longan", "days": [4, 4], "mode": "road", "note": "沿海" },
-    { "a": "longan", "b": "qingqiu", "days": [3, 3], "mode": "trail", "note": "往西北的山道" }
+    { "a": "longan", "b": "qingqiu", "days": [3, 3], "mode": "trail", "note": "往西北的山道" },
+    { "a": "longan", "b": "yongzhao_tomb", "days": [1, 1], "mode": "trail" },
+    { "a": "pingjiang", "b": "qianyao_valley", "days": [1, 1], "mode": "trail" },
+    { "a": "quanzhou", "b": "gunpowder_ruins", "days": [0.5, 0.5], "mode": "wild" }
   ]
 }

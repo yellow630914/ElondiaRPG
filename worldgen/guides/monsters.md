@@ -89,11 +89,11 @@
 
 | `table` | 例 | 說明 |
 |---|---|---|
-| `wild:<地區>` | `wild:central` | 城郊（城鎮近郊）。地區：`central`、`north`、`south`、`forest`、`east_sea`、`west` |
+| `wild:<地區>` | `wild:central` | 城郊（城鎮近郊）。地區：`central`、`north`、`south`、`forest`、`east_sea`、`west`、`yanhua_south`（炎華南域）、`yanhua_north`（炎華北原，還沒有地點） |
 | `dungeon:<地下城>:<層>` | `dungeon:snake_creek:outskirts` | 地下城的一般遭遇。層：`outskirts` 周邊、`shallow` 淺層、`middle` 中層、`deep` 深層、`abyss` 底層 |
 | `boss:<地下城>:<層>` | `boss:ember_rift:shallow` | **取代**那一層的層主。層：`shallow`、`middle`、`deep`、`abyss` |
 
-地下城 id（`data/world/geography.json`，16 座都有底層）：中央平原 `whisper_crypt`、`snake_creek`、`mist_abbey`；北境群山 `redemption_pit`、`echo_rift`、`giants_spine`；南境枯萎荒原 `ember_rift`、`bloodrock_cave`、`hell_greenhouse`；古樹森林 `moonshadow_roots`、`thorn_corridor`、`verdant_hollow`；東海群島 `tidefall_cave`、`skull_isle`；西部荒野 `echo_canyon`、`quicksand_temple`。
+地下城 id（`data/world/geography.json`，19 座都有底層）：中央平原 `whisper_crypt`、`snake_creek`、`mist_abbey`；北境群山 `redemption_pit`、`echo_rift`、`giants_spine`；南境枯萎荒原 `ember_rift`、`bloodrock_cave`、`hell_greenhouse`；古樹森林 `moonshadow_roots`、`thorn_corridor`、`verdant_hollow`；東海群島 `tidefall_cave`、`skull_isle`；西部荒野 `echo_canyon`、`quicksand_temple`；炎華南域 `yongzhao_tomb`（永昭陵）、`qianyao_valley`（千窯谷）、`gunpowder_ruins`（火藥坊遺址）。
 
 ```json
 "spawns": [
