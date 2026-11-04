@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BIND_KINDS, lewdRules, stories, storyCounters, type AfterCond, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
+import { attributeRules, BIND_KINDS, lewdRules, stories, storyCounters, type AfterCond, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
 import { charmRules } from '@/engine/charm'
 import { LEWD_KEYS, lewdName } from '@/engine/lewd'
 import { pcTagChoices } from '@/engine/pcTags'
@@ -28,6 +28,8 @@ function put(next: Partial<StoryCond>) {
   if (!out.charm || (out.charm.min === undefined && out.charm.max === undefined)) delete out.charm
   if (!out.wearing || !Object.keys(out.wearing).length) delete out.wearing
   if (!out.pc_tags?.length) delete out.pc_tags
+  if (!out.pc_races?.length) delete out.pc_races
+  if (!out.pc_races_none?.length) delete out.pc_races_none
   if (!out.after) delete out.after
   cond.value = out
 }
@@ -109,6 +111,14 @@ function togglePcTag(id: string, on: boolean) {
   else next.delete(id)
   put({ pc_tags: [...next] })
 }
+// 主角的種族：勾的裡面其中一個
+const raceList = Object.entries(attributeRules.races)
+function togglePcRace(key: 'pc_races' | 'pc_races_none', id: string, on: boolean) {
+  const next = new Set(cond.value[key] ?? [])
+  if (on) next.add(id)
+  else next.delete(id)
+  put({ [key]: [...next] })
+}
 // 某個特殊任務（或任務點）結束後至少幾天：「三天後來取件」「三天後在餘燼裂隙」
 const storyList = computed(() => {
   void content.version
@@ -181,6 +191,14 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
   <div class="row small">
     主角的身分標籤（至少一個）
     <label v-for="[id, t] in pcTagList" :key="id" class="check"><input type="checkbox" :checked="cond.pc_tags?.includes(id)" @change="togglePcTag(id, ($event.target as HTMLInputElement).checked)" /> {{ t.name }}</label>
+  </div>
+  <div class="row small">
+    主角的種族（其中一個）
+    <label v-for="[id, r] in raceList" :key="id" class="check"><input type="checkbox" :checked="cond.pc_races?.includes(id)" @change="togglePcRace('pc_races', id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}</label>
+  </div>
+  <div class="row small">
+    主角不是這些種族
+    <label v-for="[id, r] in raceList" :key="'n' + id" class="check"><input type="checkbox" :checked="cond.pc_races_none?.includes(id)" @change="togglePcRace('pc_races_none', id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}</label>
   </div>
   <details class="small" :open="!!(cond.stats || cond.charm || cond.wearing)">
     <summary>成人向的條件（慾望指標、魅氣濃度、戴著什麼）</summary>

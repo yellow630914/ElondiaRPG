@@ -4359,6 +4359,41 @@
        "add": true
       }
      ]
+    },
+    {
+     "title": "金帳的三人",
+     "desc": "冬獵之後，天可汗又把察蘭和其其格留在了內帳。",
+     "scene": "金帳的內帳裡，{cast}又一起留了下來：天可汗豪邁、察蘭不服輸、其其格慢條斯理，三人輪流又一起和主角糾纏在狼皮上，母女倆照樣較勁，國師搖著銅鈴說骨紋又亂了。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "tdg3_done"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_td_ulantuya"
+      },
+      {
+       "npc": "npc_td_chalan"
+      },
+      {
+       "npc": "npc_td_qiqige"
+      }
+     ],
+     "hours": 4,
+     "affinity": 2,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
     }
    ]
   },
@@ -4512,7 +4547,37 @@
       "importance": 1
      }
     ]
-   }
+   },
+   "scenes": [
+    {
+     "title": "可敦的寢帳",
+     "desc": "燁婉寧在屏風後面彈琴，等你進她的寢帳。",
+     "scene": "南院大帳的屏風後面，{cast}放下古琴，紅著臉牽著主角走進寢帳：端莊的可敦害羞又貪心地確認她想了三年的人馬族身體，最後伏在主角的馬背上輕輕撥著琴弦。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "tdwn_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_td_wanning"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_td_tea_horse",
@@ -4638,7 +4703,166 @@
       "amount": 30
      }
     ]
-   }
+   },
+   "scenes": [
+    {
+     "title": "馴馬師的遊戲",
+     "desc": "烏日娜又在驛站的後院等你，手上拿著那條舊韁繩。",
+     "scene": "驛站後院的馬廄裡，{cast}叼著草根等著，又要和主角比誰騎誰：有時她把主角按在乾草上，有時讓主角牽著那條舊韁繩，總要比到兩人都撐不住才肯認輸。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "tdur_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_td_urina"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    },
+    {
+     "title": "春牧",
+     "desc": "薩日朗在驛站的氈房裡等你，尾巴翹得高高的。",
+     "scene": "驛站後面的氈房裡，{cast}紅著臉把主角拉進去：不管是不是春天，熱情的牧女都要得又直接又貪心，栗色的牝馬身一次次迎上來，最後滿足地抱著主角說起馬群的事。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "tdsr_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_td_sarilang"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lm_td_wild_horse",
+   "name": "野馬帳",
+   "emoji": "🐎",
+   "location": "yinghe",
+   "at": {
+    "area": "yinghe/yingfang",
+    "x": 8,
+    "y": 5
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "鷹河榷場外、只收熟客的一頂大帳：雄性的人馬族在這裡挑選、享用來客。燁婉寧帶你來過一次，帳門的老人馬族記住了你的臉。",
+   "scene": "帳裡燻著草原的香，地上鋪滿了毛氈，一群高大的雄性人馬族圍坐在火邊喝酒，看見有人掀簾進來，一齊轉過頭。",
+   "open": {
+    "hours": "night",
+    "flags": [
+     "tdwn_club"
+    ],
+    "hidden": true,
+    "adult": true
+   },
+   "interior": "sm_td_wild_horse",
+   "scenes": [
+    {
+     "title": "看燁婉寧和人馬族們",
+     "desc": "在角落的毛氈上看著燁婉寧被雄性的人馬族們享用。",
+     "scene": "主角在野馬帳角落的毛氈上，看著{cast}被一群高大的雄性人馬族輪流享用：嬌小的可敦一邊沉溺其中，一邊回頭看著主角；結束後她裹著斗篷爬回主角身邊，把一切都說給主角聽。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "tdwn_club"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_td_wanning"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 8,
+      "y": 1
+     },
+     "spot_name": "角落的毛氈"
+    },
+    {
+     "title": "和燁婉寧一起侍奉人馬族們",
+     "desc": "和燁婉寧一起侍奉雄性的人馬族們（陰柔、中性體型的主角）。",
+     "scene": "主角和{cast}一起跪在野馬帳那群高大的雄性人馬族中間，兩個人一起侍奉他們，燁婉寧握著主角的手不放。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "tdwn_club"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_td_wanning"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 4,
+      "y": 1
+     },
+     "spot_name": "火塘邊",
+     "pc_body": [
+      "fem",
+      "andro"
+     ]
+    }
+   ]
   }
  ]
 }

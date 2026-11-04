@@ -190,6 +190,10 @@ export interface StoryCond {
   wearing?: WearingCond
   /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
   pc_tags?: string[]
+  /** 主角是其中一個種族（races 的 id；例如燁婉寧的線看主角是不是人馬族，EAST_CONTENT_PLAN 11.12 節） */
+  pc_races?: string[]
+  /** 主角不是其中任何一個種族（例如燁婉寧的 NTR 線只給不是人馬族的主角） */
+  pc_races_none?: string[]
   /**
    * 某個特殊任務（或它的某個任務點）結束之後至少過了幾天（docs/STORY_QUESTS.md「幾天之後」）：
    * 「三天後來取件」「三天後在餘燼裂隙」——時間照常走，玩家這幾天可以做別的事。那個任務還沒結束時不成立

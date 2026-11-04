@@ -14,7 +14,7 @@ import { standOn } from '@/engine/grid'
 import { storyOffersHere } from '@/engine/story'
 import { stories, storyCounters } from '@/engine/data'
 import { palaceNeedsPersuading } from '@/engine/security'
-import { setFlag } from '@/engine/storyFlags'
+import { condMet, setFlag } from '@/engine/storyFlags'
 import { shopState } from '@/engine/trade'
 import { sanitizeItem } from '@/engine/mods'
 import { itemDef } from '@/engine/data'
@@ -219,8 +219,11 @@ describe('炎華之地', () => {
       for (const id of ids) expect(enemies[id]!.habitats, id).toEqual(['yanhua_north'])
     }
     const lms = Object.values(landmarks).filter((l) => l.id.startsWith('lm_td_'))
-    expect(lms.length).toBe(7)
+    // 7 個加上燁婉寧的 NTR 線開放的野馬帳（P8f）
+    expect(lms.length).toBe(8)
     const s = newGame({ name: '測試者', race: 'centaur', classId: 'fighter', seed: 2, birthplace: 'jinzhang' })
+    // 野馬帳是藏起來的地標：燁婉寧的 NTR 線走完才出現
+    setFlag(s, 'tdwn_club')
     for (const l of lms) {
       s.location = l.location
       expect(standOn(s, l.id as never), l.id).toBe(true)
@@ -328,6 +331,36 @@ describe('炎華之地', () => {
     expect(twin.tags).toContain('adult')
     const tent = landmarks['lm_td_golden_tent']!
     expect(tent.scenes?.[0]?.requires).toEqual({ flags: ['tdgse_done'] })
+  })
+
+  it('branches 燁婉寧 by the player’s race and opens 野馬帳 only after the NTR line (P8f)', () => {
+    const by = (id: string) => stories.find((s) => s.id === id)!
+    const centaur = newGame({ name: '測試者', race: 'centaur', classId: 'fighter', seed: 2, birthplace: 'jinzhang' })
+    const human = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 2 })
+    // ① 兩個版本：人馬族的主角是純愛的版本，其他主角是標 ntr 的版本（設定關掉 NTR 時看不到）
+    expect(condMet(centaur, by('tdwn_secret').start.requires)).toBe(true)
+    expect(condMet(human, by('tdwn_secret').start.requires)).toBe(false)
+    expect(condMet(centaur, by('tdwn_secret_other').start.requires)).toBe(false)
+    expect(condMet(human, by('tdwn_secret_other').start.requires)).toBe(true)
+    expect(by('tdwn_secret').tags).toEqual(['adult'])
+    expect(by('tdwn_secret_other').tags).toContain('ntr')
+    // ② 的分岔：純愛只給人馬族、NTR 標在選項上
+    const want = by('tdwn_after_naadam').nodes.find((n) => n.id === 'want')!.options!
+    expect(want[0]!.requires).toEqual({ pc_races: ['centaur'] })
+    expect(want[1]!.tags).toEqual(['ntr'])
+    // ③ 純愛只給人馬族；野馬帳標 ntr，完成時開放地標
+    expect(by('tdwn_choice').start.requires!.pc_races).toEqual(['centaur'])
+    expect(by('tdwn_wild_horse').tags).toContain('ntr')
+    expect(JSON.stringify(by('tdwn_wild_horse'))).toContain('tdwn_club')
+    expect(JSON.stringify(by('tdwn_choice'))).not.toContain('tdwn_club')
+    const wild = landmarks['lm_td_wild_horse']!
+    expect(wild.open).toMatchObject({ flags: ['tdwn_club'], hidden: true, adult: true, hours: 'night' })
+    expect(wild.scenes!.every((sc) => sc.tags!.includes('ntr'))).toBe(true)
+    expect(specialMaps[wild.interior!]?.location).toBe('yinghe')
+    // 烏日娜、薩日朗各 3 條成人向；金帳的三人要三條角色線的第四個任務都走完
+    for (const p of ['tdur_', 'tdsr_']) expect(stories.filter((s) => s.id.startsWith(p)).map((s) => s.tags?.includes('adult')), p).toEqual([true, true, true])
+    expect(by('tdg_golden_three').start.requires!.flags).toEqual(['tdcu_x_done', 'tdcc_x_done', 'tdcq_x_done'])
+    expect(by('tdg_golden_three').summary.startsWith('內容警示')).toBe(true)
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {

@@ -38,6 +38,8 @@
 | `stats` | 主角的慾望指標（有效值；曝露名聲看目前的地區）：`{ "lewdness": { "min": 40 }, "exposure": { "max": 20 } }`（含邊界；見 [LEWD_STATS](LEWD_STATS.md)） |
 | `charm` | 所在地的魅氣濃度（1～4）：`{ "min": 3 }`（含邊界；見 [LEWD_STATS](LEWD_STATS.md) 第 12、27 節） |
 | `pc_tags` | 主角至少有其中一個身分標籤：`["noble", "royal"]`（`npc_tags.json` 的 id；見 [NPC_SYSTEM](NPC_SYSTEM.md) 4.1 節） |
+| `pc_races` | 主角是其中一個種族：`["centaur"]`（`attributes.json` 的 races；例如燁婉寧的純愛線只給人馬族的主角） |
+| `pc_races_none` | 主角不是其中任何一個種族：`["centaur"]`（例如燁婉寧的 NTR 線只給不是人馬族的主角） |
 | `wearing` | 主角身上戴著什麼：`bind`（任何拘束具）、`locked`（別人鎖上的）、`adult_outfit`（成人向服裝）、`mark`（奴隸印記）寫 `true` 要有、`false` 要沒有；`bind_kind` 要戴著這一種拘束具（見 [LEWD_STATS](LEWD_STATS.md) 第 27 節） |
 | `after` | 某個特殊任務（或它的某個任務點）結束之後至少過了幾天：`{ "story": "gear_new_design", "node": "pick", "days": 3 }`（`node` 不寫＝整個任務結束；1～60 天）。那個任務、任務點還沒結束時不成立。見下面的「幾天之後」 |
 

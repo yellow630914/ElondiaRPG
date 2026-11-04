@@ -171,6 +171,11 @@ POLITICS = {
         {'requires': {'flags': ['tdpol_south']}, 'location': 'jinzhang', 'haunts': town('jinzhang', 1, outskirts=0.8),
          'background': '交出兵符的前怯薛長。萬戶在金帳前倒下之後，他把刀放在天可汗的馬蹄前，被派去守北邊的牧場；他常常一個人騎到王庭外的草坡上，看著那道還沒築完的城牆，一句話也不說。'},
     ],
+    # 燁婉寧的 NTR 線走完（east_p8f.py）：夜裡在野馬帳
+    'npc_td_wanning': [
+        {'requires': {'flags': ['tdwn_club']}, 'hours': 'night', 'location': 'yinghe', 'fixed': {'area': 'sm/sm_td_wild_horse', 'x': 4, 'y': 2},
+         'background': '南院的可敦，女帝燁昭華的遠房妹妹。白天她在南院大帳裡端端正正地彈琴，夜裡卻常常出現在鷹河榷場外的野馬帳：她不再偷看了。每一次，她都會先回頭找那個帶她走到這一步的人。'},
+    ],
     'npc_td_hailan': [
         {'requires': {'flags': ['tdpol_haidong']}, 'location': 'yinghe',
          'background': '自立的海東部的首領。她把鷹房裡的海東青都放回了天上，在鷹河上游的冬營裡接見大燁的使節；她還是不愛笑，可是族人說，她現在睡覺的時候不再握著刀了。'},
@@ -242,6 +247,13 @@ LANDMARKS = [
      'explore': {'title': '跟驛站老闆打聽消息', 'desc': '請老闆喝一碗，聽他說說最近經過的人。', 'attr': 'cha', 'dc': 13, 'hours': 2,
                  'effects': [{'type': 'xp', 'amount': 25}, memory('在鷹河榷場的驛站聽老闆講了不少草原上的消息。')],
                  'critical': [{'type': 'money', 'amount': 30}]}},
+    # 燁婉寧的 NTR 線（east_p8f.py 的「野馬帳」）完成之後才出現，只在夜裡開；照中央平原的「黑檀之夜」
+    {'id': 'lm_td_wild_horse', 'name': '野馬帳', 'emoji': '🐎', 'location': 'yinghe',
+     'at': {'area': 'yinghe/yingfang', 'x': 8, 'y': 5}, 'types': ['market'],
+     'desc': '鷹河榷場外、只收熟客的一頂大帳：雄性的人馬族在這裡挑選、享用來客。燁婉寧帶你來過一次，帳門的老人馬族記住了你的臉。',
+     'scene': '帳裡燻著草原的香，地上鋪滿了毛氈，一群高大的雄性人馬族圍坐在火邊喝酒，看見有人掀簾進來，一齊轉過頭。',
+     'open': {'hours': 'night', 'flags': ['tdwn_club'], 'hidden': True, 'adult': True},
+     'interior': 'sm_td_wild_horse'},
 ]
 
 SPECIAL_MAPS = {
@@ -255,6 +267,19 @@ SPECIAL_MAPS = {
             '#.##...##.#',
             '#.........#',
             '#..#...#..#',
+            '#.........#',
+            '#####E#####',
+        ],
+    },
+    'sm_td_wild_horse': {
+        'name': '野馬帳', 'location': 'yinghe',
+        'desc': '鷹河榷場外的大帳：地上鋪滿了毛氈，火塘邊圍坐著高大的雄性人馬族；角落有一塊看得見整頂帳的毛氈，是燁婉寧留給你的位子。',
+        'lighting': 'lit', 'refresh': False, 'peaceful': True,
+        'grid': [
+            '###########',
+            '#.........#',
+            '#.........#',
+            '#.###.###.#',
             '#.........#',
             '#####E#####',
         ],

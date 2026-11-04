@@ -21,6 +21,7 @@ ATTR = {a['id']: a['name'] for a in ld('data/rules/attributes.json')['attributes
 PERK = {p['id']: p['name'] for p in ld('data/rules/perks.json')['perks']}
 CNT = {k: v['name'] for k, v in ld('data/rules/counters.json')['counters'].items()}
 PARN = {k: v['name'] for k, v in ld('data/rules/parasites.json')['parasites'].items()}
+RACEN = {k: v['name'] for k, v in ld('data/rules/attributes.json')['races'].items()}
 COND = {k: v['name'] for k, v in ld('data/rules/companions.json')['conditions'].items() if isinstance(v, dict)}
 CELL = {'inn': '旅店', 'guild': '冒險者公會', 'tavern': '酒館', 'shop': '雜貨店', 'temple': '神殿', 'gate': '城門', 'brothel': '娼館',
         'smithy': '鐵匠鋪', 'tailor': '裁縫店', 'jeweler': '珠寶店', 'magic': '魔法物品店', 'informant': '情報商'}
@@ -92,6 +93,8 @@ def cond(req, st, local):
         if 'max' in v: rng.append(f"侵蝕度 ≤ {v['max']}")
         if 'tamed' in v: rng.append('已馴服' if v['tamed'] else '還沒馴服')
         out.append(('need', f"身上有{PARN.get(k, k)}" + (f"（{'、'.join(rng)}）" if rng else '')))
+    if req.get('pc_races'): out.append(('need', '主角是' + '或'.join(RACEN.get(r, r) for r in req['pc_races'])))
+    if req.get('pc_races_none'): out.append(('none', '主角不是' + '、'.join(RACEN.get(r, r) for r in req['pc_races_none'])))
     return out
 
 

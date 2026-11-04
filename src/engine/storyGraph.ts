@@ -102,6 +102,7 @@ export function storyGraph(def: StoryDef, others: StoryDef[] = stories, extra: R
     for (const [id, v] of Object.entries(r.counters ?? {})) conds.push(`${storyCounters[id]?.name ?? id}${v.min !== undefined ? ` ≥ ${v.min}` : ''}${v.max !== undefined ? ` ≤ ${v.max}` : ''}`)
     if (r.parasites) conds.push('寄生物')
     if (r.pc_tags?.length) conds.push('主角的身分')
+    if (r.pc_races?.length || r.pc_races_none?.length) conds.push('主角的種族')
     if (r.stats || r.charm || r.wearing) conds.push('成人向條件')
     if (n.wear?.length) conds.push(`限定穿著 ${n.wear.join('、')}`)
     const ports: GraphPort[] = portsOf(n).map((p, i) => {

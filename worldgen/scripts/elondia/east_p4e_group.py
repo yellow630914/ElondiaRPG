@@ -207,6 +207,25 @@ SCENES = {
 SCENES['lm_td_golden_tent'] = [
     scene('雙帝的夜宴', '昭華又微服來了金帳，說是來談互市的帳。', '金帳的內帳裡，{cast}又把怯薛都趕到一百步外：一個像批摺子一樣一道一道下令，一個像在雪原上追獵物一樣又急又重；兩人比著比著又配合起來，把主角夾在狼皮中間，天亮前才各自整好衣冠。',
           ['npc_yh_zhaohua', 'npc_td_ulantuya'], ['tdgse_done'], tags=NV, hours=4, affinity=2),
+    scene('金帳的三人', '冬獵之後，天可汗又把察蘭和其其格留在了內帳。', '金帳的內帳裡，{cast}又一起留了下來：天可汗豪邁、察蘭不服輸、其其格慢條斯理，三人輪流又一起和主角糾纏在狼皮上，母女倆照樣較勁，國師搖著銅鈴說骨紋又亂了。',
+          ['npc_td_ulantuya', 'npc_td_chalan', 'npc_td_qiqige'], ['tdg3_done'], tags=NV, hours=4, affinity=2),
+]
+# 北原的成人向角色（east_p8f.py）
+SCENES['lm_td_post_station'] = [
+    scene('馴馬師的遊戲', '烏日娜又在驛站的後院等你，手上拿著那條舊韁繩。', '驛站後院的馬廄裡，{cast}叼著草根等著，又要和主角比誰騎誰：有時她把主角按在乾草上，有時讓主角牽著那條舊韁繩，總要比到兩人都撐不住才肯認輸。',
+          ['npc_td_urina'], ['tdur_lover'], hours=3),
+    scene('春牧', '薩日朗在驛站的氈房裡等你，尾巴翹得高高的。', '驛站後面的氈房裡，{cast}紅著臉把主角拉進去：不管是不是春天，熱情的牧女都要得又直接又貪心，栗色的牝馬身一次次迎上來，最後滿足地抱著主角說起馬群的事。',
+          ['npc_td_sarilang'], ['tdsr_lover'], hours=3),
+]
+SCENES['lm_td_south_court'] = [
+    scene('可敦的寢帳', '燁婉寧在屏風後面彈琴，等你進她的寢帳。', '南院大帳的屏風後面，{cast}放下古琴，紅著臉牽著主角走進寢帳：端莊的可敦害羞又貪心地確認她想了三年的人馬族身體，最後伏在主角的馬背上輕輕撥著琴弦。',
+          ['npc_td_wanning'], ['tdwn_lover']),
+]
+SCENES['lm_td_wild_horse'] = [
+    {**scene('看燁婉寧和人馬族們', '在角落的毛氈上看著燁婉寧被雄性的人馬族們享用。', '主角在野馬帳角落的毛氈上，看著{cast}被一群高大的雄性人馬族輪流享用：嬌小的可敦一邊沉溺其中，一邊回頭看著主角；結束後她裹著斗篷爬回主角身邊，把一切都說給主角聽。',
+             ['npc_td_wanning'], ['tdwn_club'], tags=('adult', 'ntr', 'non_virgin'), hours=3, spot={'x': 8, 'y': 1}, spot_name='角落的毛氈')},
+    {**scene('和燁婉寧一起侍奉人馬族們', '和燁婉寧一起侍奉雄性的人馬族們（陰柔、中性體型的主角）。', '主角和{cast}一起跪在野馬帳那群高大的雄性人馬族中間，兩個人一起侍奉他們，燁婉寧握著主角的手不放。',
+             ['npc_td_wanning'], ['tdwn_club'], tags=('adult', 'ntr', 'non_virgin'), hours=3, spot={'x': 4, 'y': 1}, spot_name='火塘邊'), 'pc_body': ['fem', 'andro']},
 ]
 
 

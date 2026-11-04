@@ -53,6 +53,8 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
     && (!cond.charm || inRange(charmLevel(state.location), cond.charm))
     && wearingMet(state, cond.wearing)
     && (!cond.pc_tags?.length || !!state.party.find((m) => m.isPlayer)?.tags?.some((t) => cond.pc_tags!.includes(t)))
+    && (!cond.pc_races?.length || cond.pc_races.includes(state.party.find((m) => m.isPlayer)?.race ?? ''))
+    && (!cond.pc_races_none?.length || !cond.pc_races_none.includes(state.party.find((m) => m.isPlayer)?.race ?? ''))
     && afterMet(state, cond.after)
 }
 

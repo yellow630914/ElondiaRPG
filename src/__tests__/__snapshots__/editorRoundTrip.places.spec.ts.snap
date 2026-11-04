@@ -38,30 +38,30 @@ exports[`world editor round trip > events: opening and saving without changes ke
 exports[`world editor round trip > landmarks: opening and saving without changes keeps the data 1`] = `
 {
   "lm_abyss_exchange": "44acf72e3ed8",
-  "lm_bone_king_hall": "44acf72e3ed8",
-  "lm_crimson_throne": "44acf72e3ed8",
+  "lm_blood_oath_valley": "44acf72e3ed8",
+  "lm_blood_trial_ground": "44acf72e3ed8",
   "lm_ferry_lighthouse": "44acf72e3ed8",
+  "lm_four_seasons_gallery": "44acf72e3ed8",
   "lm_golem_arena": "44acf72e3ed8",
   "lm_healers_academy": "44acf72e3ed8",
   "lm_heartfire_forge": "44acf72e3ed8",
-  "lm_holy_ring_cathedral": "44acf72e3ed8",
-  "lm_idol_backstage": "44acf72e3ed8",
-  "lm_ironforge_onsen": "44acf72e3ed8",
+  "lm_honor_hole": "44acf72e3ed8",
+  "lm_judgment_cloister": "44acf72e3ed8",
   "lm_knight_academy": "44acf72e3ed8",
+  "lm_lower_massage": "44acf72e3ed8",
   "lm_lust_park": "44acf72e3ed8",
   "lm_maid_cafe": "44acf72e3ed8",
-  "lm_mire_herb_beds": "44acf72e3ed8",
   "lm_odd_tower": "44acf72e3ed8",
   "lm_redmane_council": "44acf72e3ed8",
-  "lm_spring_of_life": "44acf72e3ed8",
+  "lm_seven_tides_hall": "44acf72e3ed8",
   "lm_td_golden_tent": "44acf72e3ed8",
-  "lm_td_south_court": "44acf72e3ed8",
-  "lm_tide_mirror": "44acf72e3ed8",
-  "lm_yh_bamboo_lake": "44acf72e3ed8",
+  "lm_td_tea_horse": "44acf72e3ed8",
+  "lm_whispering_ring": "44acf72e3ed8",
   "lm_yh_fanfang": "44acf72e3ed8",
-  "lm_yh_goulan": "44acf72e3ed8",
+  "lm_yh_gunpowder_works": "44acf72e3ed8",
   "lm_yh_shangqin": "44acf72e3ed8",
-  "lm_yh_shibosi": "44acf72e3ed8",
+  "lm_yh_taixue": "44acf72e3ed8",
+  "lm_yh_weaving_bureau": "44acf72e3ed8",
 }
 `;
 
@@ -141,15 +141,15 @@ exports[`world editor round trip > shops: opening and saving without changes kee
 
 exports[`world editor round trip > specialMaps: opening and saving without changes keeps the data 1`] = `
 {
+  "sm_babelin_spire": "44acf72e3ed8",
   "sm_bloodplume_stairs": "44acf72e3ed8",
-  "sm_honor_hole": "44acf72e3ed8",
+  "sm_bone_arena": "44acf72e3ed8",
   "sm_kagni_heart": "44acf72e3ed8",
   "sm_lust_park": "44acf72e3ed8",
   "sm_rhineburg_sewer": "44acf72e3ed8",
-  "sm_sorian_dream": "44acf72e3ed8",
   "sm_succubus_banquet": "44acf72e3ed8",
+  "sm_td_inner_tent": "44acf72e3ed8",
   "sm_wives_salon": "44acf72e3ed8",
-  "sm_yh_xiantang_inner": "44acf72e3ed8",
-  "sm_yh_xuande_tower": "44acf72e3ed8",
+  "sm_yh_chihuan_hold": "44acf72e3ed8",
 }
 `;
