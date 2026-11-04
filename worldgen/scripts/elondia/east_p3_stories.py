@@ -6,9 +6,9 @@
 """
 
 import json
-import re
 
-PATH = 'data/rules/stories.json'
+from east_story_io import write_stories
+
 SHEN, XIAO, QIAN = 'npc_yh_shen_zhilan', 'npc_yh_xiao_fengyi', 'npc_yh_qian'
 XIAOZHU, HASTINGS = 'npc_yh_xiaozhu', 'npc_yh_hastings'
 DADAN, SANNIANG = 'npc_yh_huang_dadan', 'npc_yh_hu_sanniang'
@@ -337,43 +337,8 @@ STORIES = [
 ]
 
 
-# ---------- 寫檔（照 stories.json 原本的排版：小的物件與陣列放一行） ----------
-def inline(v):
-    if isinstance(v, dict):
-        return '{ ' + ', '.join(json.dumps(k, ensure_ascii=False) + ': ' + inline(x) for k, x in v.items()) + ' }' if v else '{}'
-    if isinstance(v, list):
-        return '[' + ', '.join(inline(x) for x in v) + ']'
-    return json.dumps(v, ensure_ascii=False)
-
-
-def fmt(v, indent):
-    flat = json.dumps(v, ensure_ascii=False)
-    pad = ' ' * indent
-    if not isinstance(v, (dict, list)) or len(flat) + indent <= 150 or not v:
-        return inline(v)
-    inner = ' ' * (indent + 2)
-    if isinstance(v, list):
-        return '[\n' + ',\n'.join(inner + fmt(x, indent + 2) for x in v) + '\n' + pad + ']'
-    return '{\n' + ',\n'.join(inner + json.dumps(k, ensure_ascii=False) + ': ' + fmt(x, indent + 2) for k, x in v.items()) + '\n' + pad + '}'
-
-
 def main():
-    src = open(PATH, encoding='utf-8').read()
-    data = json.loads(src)
-    ids = {s['id'] for s in STORIES}
-    existing = [s['id'] for s in data['stories']]
-    # 重跑：拿掉這支腳本加的（它們都在最後）
-    if any(i in ids for i in existing):
-        keep = [s for s in data['stories'] if s['id'] not in ids]
-        assert [s['id'] for s in keep] == existing[:len(keep)], '腳本加的任務不在檔尾'
-        cut = src.index('\n    {\n      "id": "%s"' % next(i for i in existing if i in ids))
-        src = src[:cut].rstrip().rstrip(',') + '\n  ]\n}\n'
-    end = src.rstrip().rfind('\n  ]')
-    body = ''.join(',\n    ' + fmt(s, 4) for s in STORIES)
-    out = src.rstrip()[:end] + body + src.rstrip()[end:] + '\n'
-    json.loads(out)
-    open(PATH, 'w', encoding='utf-8').write(out)
-    print(f'特殊任務 {len(STORIES)} 條')
+    write_stories(STORIES)
 
 
 if __name__ == '__main__':

@@ -240,9 +240,23 @@ NPCS = [
         background='屯裡的年輕獵戶，名字是爹取的，說要他大膽。去年冬天他在山裡被黃皮子攔路討封，問他「你看我像人還是像仙」，他老實說「像黃鼠狼」，從此倒霉到現在：弓斷了三把，陷阱裡全是自己的腳。'),
 ]
 
-# 特殊任務用到的人（開頭、任務點、友方、同行）不能被偷襲（builtinStories.spec）
-STORY_NPCS = {'npc_yh_shen_zhilan', 'npc_yh_xiao_fengyi', 'npc_yh_qian', 'npc_yh_xiaozhu', 'npc_yh_hastings',
-              'npc_yh_huang_dadan', 'npc_yh_hu_sanniang', 'npc_yh_apao', 'npc_yh_qin_yan'}
+# 特殊任務用到的人（開頭、任務點、友方、同行）不能被偷襲（builtinStories.spec）：從 stories.json 找出來
+def _story_npcs():
+    out = set()
+    for st in json.load(open('data/rules/stories.json', encoding='utf-8'))['stories']:
+        if st['start'].get('npc'):
+            out.add(st['start']['npc'])
+        for n in st['nodes']:
+            if n.get('at', {}).get('npc'):
+                out.add(n['at']['npc'])
+            out.update(n.get('allies', []))
+            for o in [n.get('success'), n.get('fail')] + [x for opt in n.get('options', []) for x in (opt.get('success'), opt.get('fail'))]:
+                if o and o.get('join'):
+                    out.add(o['join'])
+    return out
+
+
+STORY_NPCS = _story_npcs()
 for _n in NPCS:
     if _n['id'] in STORY_NPCS:
         _n['no_attack'] = True

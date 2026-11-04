@@ -41,7 +41,7 @@
 | `wearing` | 主角身上戴著什麼：`bind`（任何拘束具）、`locked`（別人鎖上的）、`adult_outfit`（成人向服裝）、`mark`（奴隸印記）寫 `true` 要有、`false` 要沒有；`bind_kind` 要戴著這一種拘束具（見 [LEWD_STATS](LEWD_STATS.md) 第 27 節） |
 | `after` | 某個特殊任務（或它的某個任務點）結束之後至少過了幾天：`{ "story": "gear_new_design", "node": "pick", "days": 3 }`（`node` 不寫＝整個任務結束；1～60 天）。那個任務、任務點還沒結束時不成立。見下面的「幾天之後」 |
 
-**劇情計數器**（`data/rules/counters.json`，內容頁籤「⭐ 特殊任務 → 🔢 劇情計數器」新增與修改，跟著世界匯出匯入）：結果的 `counters`（`{ "human_stance": 1 }`）加減數值，條件的 `counters` 要求範圍。計數器有名稱、說明、初始值與上下限；存檔裡存在 `flags` 的 `count:<id>`。內建兩個：`human_stance`（人類世界的走向）、`demon_stance`（魔族世界的走向），政治故事線主和 +1、主戰 -1，史詩線看正負決定走和平或開戰。任務用到不存在的計數器是錯誤；被用到的自建計數器不能刪除。
+**劇情計數器**（`data/rules/counters.json`，內容頁籤「⭐ 特殊任務 → 🔢 劇情計數器」新增與修改，跟著世界匯出匯入）：結果的 `counters`（`{ "human_stance": 1 }`）加減數值，條件的 `counters` 要求範圍。計數器有名稱、說明、初始值與上下限；存檔裡存在 `flags` 的 `count:<id>`。內建四個：`human_stance`（人類世界的走向）、`demon_stance`（魔族世界的走向），政治故事線主和 +1、主戰 -1，史詩線看正負決定走和平或開戰；炎華南域的 `yh_reform`（大燁的走向：各地故事線的結局幫朝廷、官府、胡記、改祀那一邊 -1，幫改革、農工、金黃鱗、自治那一邊 +1）與 `yh_balance`（選了平衡的結局 +1），之後的政治線上半看它們決定大燁的政體（[plan/roadmap/EAST_CONTENT_PLAN](plan/roadmap/EAST_CONTENT_PLAN.md) 8.3 節）。任務用到不存在的計數器是錯誤；被用到的自建計數器不能刪除。
 
 ### 1.2 內容標籤
 

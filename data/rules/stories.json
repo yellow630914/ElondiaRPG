@@ -37760,6 +37760,1725 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 100 }, { "type": "xp", "amount": 150 }]
+    },
+    {
+      "id": "yhf_east_ship",
+      "title": "東方來的船",
+      "summary": "潮汐港的碼頭來了一艘從東方來的船，船身被風暴打得半毀，船上是頭生龍角的化龍族水手。他們要找人把一封信送回十天航程外的瑔州港。（渡海引導・一）",
+      "rank": "E",
+      "start": {
+        "kind": "guild",
+        "location": "tidehaven",
+        "text": "公會的告示板上貼著一張從沒見過的委託：紙是薄薄的竹紙，字是工整的楷書——「尋可信之人，送家書一封至瑔州港蕃坊哈斯丁處。船資由敝船負擔。」落款是一艘停在碼頭的東方大船。",
+        "min_level": 3
+      },
+      "start_flags": ["yhf_1_started"],
+      "nodes": [
+        {
+          "id": "docks",
+          "title": "到潮汐港的酒館找東方來的水手",
+          "text": "酒館角落坐著一群頭生龍角、頸側覆鱗的水手，正用你聽不太懂的口音跟老闆比手畫腳。帶頭的老水手看見你手上的委託，站起來拱了拱手：「我們從炎華的瑔州港來，遇上風暴，船要修一個月。東家在等這封信。」",
+          "at": { "where": "cell", "location": "tidehaven", "cell": "tavern" },
+          "requires": { "flags": ["yhf_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 10 },
+          "success": {
+            "text": "你和他們比劃了半天，總算弄懂了：信要交給瑔州港蕃坊的商人哈斯丁——一個跑東方航線的潮汐港人。老水手把信和一塊刻著船名的木牌交給你：「拿著這個，去找深潮席的人搭船，十天就到。」",
+            "set_flags": ["yhf_letter"],
+            "effects": [{ "type": "memory", "summary": "在潮汐港的酒館認識了一群從東方炎華之地來的化龍族水手，答應替他們把信送到瑔州港。", "importance": 1 }]
+          },
+          "fail": { "text": "你們雞同鴨講了半天，老水手搖頭笑了笑，請你喝了一碗他們帶來的黃酒。明天再來試試吧。", "retry": true }
+        },
+        {
+          "id": "deliver",
+          "title": "搭船到瑔州港，把信交給蕃坊的哈斯丁",
+          "text": "十天的海路之後，瑔州港的燈塔從海平面上升起來。蕃坊碼頭上，紅鬍子的潮汐港商人哈斯丁接過信，看完大笑：「好消息！我的貨船沒沉，只是被風暴吹到你們那邊去了。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["yhf_letter"] },
+          "kind": "story",
+          "allies": ["npc_yh_hastings"],
+          "success": {
+            "text": "哈斯丁硬塞給你一杯大燁的茶：「歡迎來到炎華之地。這裡的人有龍角、講禮數、愛算帳——跟我們潮汐港人一樣愛算帳。有空來蕃坊找我，我有生意給你。」",
+            "set_flags": ["yhf_1_done"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_hastings", "delta": 8, "reason": "從潮汐港送來貨船的消息" }],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 200 }]
+    },
+    {
+      "id": "yhf_fanfang",
+      "title": "瑔州港的蕃坊",
+      "summary": "蕃商哈斯丁在潮汐港有一筆貨款被扣住了，扣住它的是「黑帆」卡洛斯的人。他想請人渡海回潮汐港把錢要回來。（渡海引導・二）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hastings",
+        "text": "哈斯丁把一張發黃的貨單拍在桌上：「三船瓷器的錢，潮汐港那邊的人一直說還沒收到——收到的人是黑帆卡洛斯。我回不去，船上的人都在等我。你替我跑一趟潮汐港，好嗎？」",
+        "min_level": 5
+      },
+      "start_flags": ["yhf_2_started"],
+      "nodes": [
+        {
+          "id": "sail",
+          "title": "回潮汐港找「黑帆」卡洛斯",
+          "text": "潮汐港的碼頭依舊熱鬧。「黑帆」卡洛斯靠在一堆木箱上，看完貨單，笑了：「哈斯丁那個紅鬍子？錢在我這裡，沒錯。可是他的瓷器在我的倉庫裡放了三個月，倉租呢？」",
+          "at": { "where": "npc", "npc": "npc_carlos_blacksail", "location": "tidehaven" },
+          "requires": { "flags": ["yhf_2_started"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "跟他講道理",
+              "check": { "attr": "cha", "dc": 14 },
+              "success": {
+                "text": "你一筆一筆跟他算：倉租扣掉，錢還有七成。卡洛斯盯著你看了很久，大笑著把錢袋丟過來：「哈斯丁找了個好幫手。告訴他，下次的貨直接走我的船。」",
+                "set_flags": ["yhf_paid"],
+                "effects": [{ "type": "affinity", "npc": "npc_carlos_blacksail", "delta": 3, "reason": "算帳算贏了他" }]
+              },
+              "fail": { "text": "卡洛斯聽完只是聳肩：「說得真好聽。」他轉身走了。換個時候再來，或者換個辦法。", "retry": true }
+            },
+            { "label": "動手要回來", "success": { "text": "卡洛斯吹了聲口哨，兩個碼頭的打手從貨堆後面走出來。", "set_flags": ["yhf_brawl"] } },
+            {
+              "label": "自己貼倉租（150 白鸛）",
+              "success": { "text": "你把倉租數給他，卡洛斯痛快地交出錢袋：「爽快。這種人在潮汐港活得久。」", "set_flags": ["yhf_paid"], "effects": [{ "type": "money", "amount": -150 }] }
+            }
+          ]
+        },
+        {
+          "id": "brawl",
+          "title": "在潮汐港的碼頭打退卡洛斯的打手",
+          "text": "兩個打手捲起袖子，把你堵在木箱之間。",
+          "at": { "where": "settlement", "location": "tidehaven" },
+          "requires": { "flags": ["yhf_brawl"] },
+          "kind": "combat",
+          "enemies": [["dock_enforcer", 2]],
+          "success": { "text": "打手躺在地上呻吟。卡洛斯拍拍手：「好，好。錢拿去——下次別在我的碼頭打架。」", "set_flags": ["yhf_paid"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "back",
+          "title": "回瑔州港把錢交給哈斯丁",
+          "text": "哈斯丁在蕃坊的貨棧裡數著錢，數到一半抬起頭：「你一個人走完了一趟來回？二十天的海路？」他把三成的錢推回給你。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["yhf_paid"] },
+          "kind": "story",
+          "allies": ["npc_yh_hastings"],
+          "success": {
+            "text": "「東西兩邊都有你這樣的人，這條航線才走得下去。」哈斯丁說，蕃坊的商人以後都會認得你的臉。",
+            "set_flags": ["yhf_2_done"],
+            "effects": [
+              { "type": "money", "amount": 200 },
+              { "type": "affinity", "npc": "npc_yh_hastings", "delta": 10, "reason": "從潮汐港要回了貨款" },
+              { "type": "memory", "summary": "替蕃商哈斯丁渡海回潮汐港，從黑帆卡洛斯手上要回了貨款。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhl_ancestor_rite",
+      "title": "祖龍的祭文",
+      "summary": "太廟的女祭司慧音在一卷殘破的祭文裡讀到一段缺漏：大燁開國那年的祖龍祭，祭典之後，燭龍君去了哪裡？（化龍族：點青・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huiyin",
+        "text": "慧音抱著一卷發黃的祭文，聲音壓得很低：「開國那一年的祭文，前半寫『告天』，後半被人刮掉了。刮掉的地方，在永昭陵的神道碑上也刻過一份——可是我是祭司，不能私自去陵裡。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhl_1_started"],
+      "nodes": [
+        {
+          "id": "temple",
+          "title": "到龍安府的太廟看慧音的祭文",
+          "text": "祭文的後半被人用刀一行一行刮掉，只剩邊角幾個字：「……燭……飲……殉……」慧音把一張拓紙與一塊墨交給你：「神道碑在永昭陵外圍。老陵戶認得路。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["yhl_1_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_huiyin"],
+          "success": { "text": "你收下拓紙。慧音猶豫了一下，又說：「如果碑上寫的和史書不一樣……拓回來就好，不要告訴別人。」", "set_flags": ["yhl_rubbing"] }
+        },
+        {
+          "id": "stele",
+          "title": "到永昭陵的周邊拓下神道碑",
+          "text": "神道碑立在荒草裡，碑面被人鑿過，旁邊還丟著幾把新的鑿子。兩個蒙面的打手從碑後站起來：「誰派你來的？」",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "outskirts" },
+          "requires": { "flags": ["yhl_rubbing"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手逃走前丟下一句「相府不會放過你」。碑面被鑿了一半，剩下的字還拓得下來：「……燭龍君飲祭酒，崩於壇前；朱砂諸將，殉於陵中……」", "set_flags": ["yhl_rubbed"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "report",
+          "title": "把拓本帶回龍安府的太廟給慧音",
+          "text": "慧音把拓本攤在祭壇上，手指順著一個個字移過去，臉色越來越白：「『飲祭酒，崩於壇前』……史書寫的是燭龍君『天命已盡，禪位於燁』。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["yhl_rubbed"] },
+          "kind": "story",
+          "allies": ["npc_yh_huiyin"],
+          "success": {
+            "text": "她把拓本捲起來，鎖進祭壇下的暗格：「謝謝你。我要再查下去——點青禮用的釉，聽說也是從那個時候開始的。太學的葉主考也許知道。」",
+            "set_flags": ["yhl_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 12, "reason": "拓回了永昭陵的神道碑" },
+              { "type": "memory", "summary": "在永昭陵外圍拓下神道碑：燭龍君「飲祭酒，崩於壇前」，朱砂鱗的將軍們「殉於陵中」——和大燁的史書不一樣。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhl_glazed_scale",
+      "title": "點出來的青",
+      "summary": "太學的主考官葉孤鴻是點青出身的狀元。他的學生在點青禮後被天青鱗世家的子弟刮掉了封鱗的釉，他想知道點青的釉到底從哪裡來。（化龍族：點青・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_ye_guhong",
+        "requires": { "flags": ["yhl_1_done"] },
+        "text": "葉孤鴻臉色鐵青：「我的學生，點青禮才過三天，就被一群天青鱗的公子哥按在地上，用瓷片把頸上的釉刮了，說他『點出來的青不是青』。」他摸著自己頸側的封鱗，「慧音說你查過開國的事。點青的釉，是誰燒的？」",
+        "min_level": 8
+      },
+      "start_flags": ["yhl_2_started"],
+      "nodes": [
+        {
+          "id": "ask",
+          "title": "到萍江府找老窯工窯伯問點青的釉",
+          "text": "窯伯捏起一片天青的瓷，對著光看了很久：「點青禮用的釉，就是千窯谷燒天青瓷的釉。開國那一年，朝廷把谷裡最好的窯工叫進京，叫他們調一種能封在鱗上的釉——燒釉的是我們墨鐵鱗的祖宗。」",
+          "at": { "where": "npc", "npc": "npc_yh_yao_bo", "location": "pingjiang" },
+          "requires": { "flags": ["yhl_2_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 14 },
+          "success": { "text": "他從懷裡掏出一本被窯火燻黑的冊子：「這是我師父的師父的師父留下的配方。點青的釉、天青的瓷，都在這裡。天青鱗世家想要這本冊子很久了。」", "set_flags": ["yhl_recipe"] },
+          "fail": { "text": "老人說到一半就不說了，搖著頭去看他的瓷。也許改天他心情好一點再問。", "retry": true }
+        },
+        {
+          "id": "night",
+          "title": "晚上在萍江府的近郊護送窯伯的配方",
+          "text": "回城的路上，幾個黑衣刀客從運河邊的柳樹後跳出來：「把冊子交出來，老頭子可以活。」",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yhl_recipe"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客逃進夜色裡。窯伯把冊子緊緊抱在懷裡，嘆了口氣：「三百年了，他們還在怕這本冊子。」", "set_flags": ["yhl_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "truth",
+          "title": "回龍安府的太學把配方的事告訴葉孤鴻",
+          "text": "葉孤鴻翻著窯伯的冊子，翻到點青釉的那一頁，手停住了：「原來點青的釉，和天青的瓷，出自同一雙手。天生的天青鱗看不起點出來的青——可是讓他們『天青』的那個顏色，本來就是墨鐵鱗燒出來的。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taixue" },
+          "requires": { "flags": ["yhl_saved"] },
+          "kind": "choice",
+          "allies": ["npc_yh_ye_guhong"],
+          "options": [
+            {
+              "label": "請他在太學講出來",
+              "success": {
+                "text": "葉孤鴻在下一堂講經時，把冊子擺在講台上。堂下的天青鱗子弟臉色難看，墨鐵鱗的士子卻聽得眼睛發亮。第二天，宰相府的人來了太學。",
+                "set_flags": ["yhl_2_done", "yhl_spoken"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_ye_guhong", "delta": 12, "reason": "查出了點青釉的來歷" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "請他先收著",
+              "success": {
+                "text": "葉孤鴻把冊子鎖進書箱：「你說得對。說出來，我的學生會更危險。可是總有一天……」他沒有說完。",
+                "set_flags": ["yhl_2_done"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_ye_guhong", "delta": 10, "reason": "查出了點青釉的來歷" }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhl_heatwave_song",
+      "title": "熱浪的歌謠",
+      "summary": "瑔州港的玉璘族使節瑤汀聽說了太廟的祭文，說玉璘族的古歌謠裡有一模一樣的句子。化龍族與玉璘族，也許來自同一片熱浪。（化龍族：點青・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yaoting",
+        "requires": { "flags": ["yhl_2_done"] },
+        "text": "瑤汀難得沒有喝酒，抱著月琴撥了幾個音：「慧音祭司唸給我聽的那段祭文——『熱浪過，萬物化，有角者生』——我們夏瀾殿的古歌也有。只是我們的歌後面多了一句：『海水來，熱浪冷，有鱗者游』。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhl_3_started"],
+      "nodes": [
+        {
+          "id": "canglue",
+          "title": "到滄月闕的四時迴廊找古歌的原本",
+          "text": "四時迴廊的貝殼牆上刻著歷代潮主的詩篇。最古老的那一面牆上，用和太廟祭文一樣的古字刻著一段歌：熱浪掃過大陸，有的人生出了角，往陸地去；有的人生出了鱗，往海裡去。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_four_seasons_gallery" },
+          "requires": { "flags": ["yhl_3_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 16 },
+          "success": { "text": "你把兩段古字對在一起：太廟的祭文是前半，四時迴廊的歌是後半。化龍族與玉璘族，是同一片熱浪裡活下來的兩支。", "set_flags": ["yhl_both"] },
+          "fail": { "text": "古字太難認，你看得頭昏眼花。秋珊苑的學者說，明天潮水退了，牆上的字會清楚一點。", "retry": true }
+        },
+        {
+          "id": "voyage",
+          "title": "在回炎華的海路上擊退劫船的人",
+          "text": "回程的船走到一半，一艘沒有旗號的快船貼了上來。船頭站著幾個蒙面的黑衣人——相府不想讓這兩段古字湊在一起。",
+          "at": { "where": "road" },
+          "requires": { "flags": ["yhl_both"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 3]],
+          "success": { "text": "黑衣人一個接一個跳海逃走。船長抹著汗說，那艘快船掛的是市舶司放行的牌子。", "set_flags": ["yhl_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "rite",
+          "title": "到龍安府的太廟把兩段古歌合在一起",
+          "text": "慧音與瑤汀站在祖龍像前，一個唸祭文，一個唱古歌。合在一起的那一刻，大殿裡的長明燈晃了一下——也許只是風。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["yhl_safe"] },
+          "kind": "choice",
+          "allies": ["npc_yh_huiyin", "npc_yh_yaoting"],
+          "options": [
+            {
+              "label": "把合起來的歌寫進祭文",
+              "success": {
+                "text": "慧音把兩段古歌合抄成一卷，供在祖龍像前：「化龍族與玉璘族同源。這件事，不該只有祭司知道。」瑤汀笑著說，她要把這首歌唱給整個滄月闕聽。",
+                "set_flags": ["yhl_3_done", "yhl_public"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 15, "reason": "把兩段古歌合在一起" },
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 15, "reason": "把兩段古歌合在一起" },
+                  { "type": "reputation", "faction": "four_seasons", "delta": 3 },
+                  { "type": "memory", "summary": "在太廟把化龍族的祭文與玉璘族的古歌合在一起：兩族都是熱量之龍的熱浪裡活下來的人，一支往陸地，一支往海。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "只留給兩位知道",
+              "success": {
+                "text": "慧音把合抄的歌鎖進暗格，瑤汀把它記在心裡。「總有一天，」瑤汀說，「我們會在挑潮祭上唱出來。」",
+                "set_flags": ["yhl_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 12, "reason": "把兩段古歌合在一起" },
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 12, "reason": "把兩段古歌合在一起" }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }, { "type": "item", "name": "秘銀礦石", "qty": 1 }]
+    },
+    {
+      "id": "yhh_lost_tongue",
+      "title": "不會說狐語的孩子",
+      "summary": "城裡胡記的一個孩子被送回青丘屯住一個夏天，他不會說狐語，被屯裡的孩子嘲笑，跑進了山裡。（靈狐族：胡家的名冊・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_taiye",
+        "text": "胡太爺把旱菸袋往石墩上一磕：「城裡送來的小崽子，叫胡小滿，九娘家的遠親。不會說狐語，屯裡的孩子笑他是『化龍族的狐狸』，他一氣之下跑進林子，到現在還沒回來。林子裡有老黃皮子。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhh_1_started"],
+      "nodes": [
+        {
+          "id": "woods",
+          "title": "到青丘屯的近郊找走失的孩子",
+          "text": "白樺林深處傳來孩子的哭聲。兩隻比人還高的黃皮子老精圍著一棵樹打轉，樹上抱著一個頂著狐耳的小男孩。",
+          "at": { "where": "outskirts", "location": "qingqiu" },
+          "requires": { "flags": ["yhh_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_old_weasel", 2]],
+          "success": { "text": "老黃皮子夾著尾巴逃了。小男孩從樹上爬下來，一頭撞進你懷裡，哭著說了一串大燁的官話——一個狐語的字都沒有。", "set_flags": ["yhh_found"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "back",
+          "title": "把孩子帶回青丘屯的仙堂",
+          "text": "胡三娘蹲下來，用狐語問他名字。小滿聽不懂，又快哭了。三娘笑了，改用官話說：「沒關係。仙家的話，不是用嘴學的。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhh_found"] },
+          "kind": "story",
+          "allies": ["npc_yh_hu_sanniang", "npc_yh_hu_taiye"],
+          "success": {
+            "text": "那一晚，白小蕎敲著文王鼓，三娘教小滿唱第一句神調。胡太爺在門口看著，嘟囔了一句「城裡的狐也是狐」，轉身走了。三娘說，名冊上的名字，可不是這樣想的。",
+            "set_flags": ["yhh_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": 12, "reason": "找回了走失的孩子" },
+              { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 5, "reason": "找回了走失的孩子" },
+              { "type": "memory", "summary": "在青丘屯近郊找回了胡記的孩子胡小滿；城裡的狐不會說狐語，屯裡的狐看不起他們。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhh_spirit_roster",
+      "title": "仙家的名冊",
+      "summary": "仙堂的名冊上記著每一位回到胡家仙堂的祖靈。胡三娘發現，三百年前之後，城裡的靈狐族一個都沒有回來過——他們的名字全都不見了。（靈狐族：胡家的名冊・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_sanniang",
+        "requires": { "flags": ["yhh_1_done"] },
+        "text": "胡三娘把一本用狐皮包著的名冊攤在炕上：「胡家仙的名冊，從青丘第一代記到現在。你看——三百年前，大燁開國那年之後，城裡的狐，一個名字都沒有了。不是他們沒死，是他們沒回來。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhh_2_started"],
+      "nodes": [
+        {
+          "id": "huji",
+          "title": "到瑔州港的胡記商號找胡九娘問城裡的族譜",
+          "text": "胡九娘聽完，笑容收了起來。她從櫃子最深處拿出一本燙金的族譜：胡記每一代當家的名字，都是化龍族的雙名——「胡」只是姓，狐名一個都沒有。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["yhh_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "「歸附那年，朝廷要城裡的狐改用大燁的名字，舊名一律燒掉，」九娘說，「燒掉了，仙堂的名冊就找不到他們。我們的祖宗不是不想回家——是回家的路被燒了。」她把族譜交給你：「拿去給三娘。」",
+            "set_flags": ["yhh_book"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 8, "reason": "問起胡記的族譜" }]
+          },
+          "fail": { "text": "胡九娘笑著把話題轉到茶葉的價錢上。看來得換個時候、換個說法。", "retry": true }
+        },
+        {
+          "id": "road",
+          "title": "在青丘屯的近郊護送族譜",
+          "text": "回屯的山路上，幾個黑衣刀客攔住去路，領頭的亮出一塊禮部的腰牌：「胡記的族譜，朝廷要收回。」",
+          "at": { "where": "outskirts", "location": "qingqiu" },
+          "requires": { "flags": ["yhh_book"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客們丟下腰牌逃了。腰牌背面刻著「禮部・祀典司」——想把仙堂改成祖龍祠的，就是這個衙門。", "set_flags": ["yhh_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "roster",
+          "title": "到青丘屯的仙堂把族譜交給胡三娘",
+          "text": "三娘點起香，二神白小蕎敲起鼓。三娘一個名字一個名字地唸族譜上的雙名，唸到第三個，聲音變了——是胡三太奶的聲音：「這個孩子……我記得他小時候的狐名。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhh_safe"] },
+          "kind": "story",
+          "allies": ["npc_yh_hu_sanniang", "npc_yh_bai_xiaoqiao"],
+          "success": {
+            "text": "那一夜，胡三太奶附在三娘身上，憑著記憶把三百年來城裡的狐名一個一個補回名冊上，補到天亮還沒補完。三娘醒來時累得說不出話，只是笑：「回家的路，接上一半了。」",
+            "set_flags": ["yhh_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 12, "reason": "替仙堂找回城裡的狐名" },
+              { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 8, "reason": "替仙堂找回城裡的狐名" },
+              { "type": "memory", "summary": "把胡記的族譜帶回青丘屯：歸附那年，朝廷燒掉了城裡靈狐族的狐名，胡三太奶憑記憶補回仙堂的名冊。", "importance": 3 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhh_nine_tails",
+      "title": "九尾的傳說",
+      "summary": "靈狐族說九尾只在傳說裡。可是龍安府的情報商說，太廟的檔庫裡有一卷《靈狐歸附錄》，記著最後一位九尾的事——和史書寫的不一樣。（靈狐族：胡家的名冊・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "informant",
+        "location": "longan",
+        "price": 300,
+        "requires": { "flags": ["yhh_2_done"] },
+        "text": "情報商壓低聲音：「太廟的檔庫，最裡面那一格，有一卷《靈狐歸附錄》。史書說靈狐族『慕化來歸』，那一卷寫的是另一回事。檔庫夜裡有禁軍守，我只能告訴你怎麼進去。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhh_3_started"],
+      "nodes": [
+        {
+          "id": "archive",
+          "title": "晚上潛進龍安府太廟的檔庫",
+          "text": "太廟的檔庫在祭殿後面，一排排木格子裡堆滿了竹簡與卷軸。月光從高窗照進來，最裡面那一格貼著封條。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["yhh_3_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 16 },
+          "success": {
+            "text": "你揭開封條，抽出那一卷：《靈狐歸附錄》。上面寫著：三百年前，最後一位九尾狐王胡青丘，為了保住族人，獨自走進龍安府，跪在大燁開國皇帝的面前，換來靈狐族不被屠戮。代價是：所有城裡的狐改名，九尾的血脈斷絕。",
+            "set_flags": ["yhh_scroll"]
+          },
+          "fail": { "text": "你碰倒了一卷竹簡，巡夜的腳步聲朝這裡來了。先退出去，換一夜再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "guards",
+          "title": "在太廟擺脫巡夜的禁軍",
+          "text": "你剛把卷軸塞進懷裡，檔庫的門被一腳踹開，兩個禁軍精兵舉著火把衝進來。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["yhh_scroll"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "你撞開禁軍衝出太廟，消失在御街的夜市人潮裡。懷裡的卷軸還在。", "set_flags": ["yhh_out"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "elm",
+          "title": "把《靈狐歸附錄》帶回青丘屯的老榆樹下",
+          "text": "胡太爺讀完卷軸，沉默了很久，旱菸袋在手裡轉來轉去：「九尾……我們都以為那只是故事。原來祖宗不是『慕化來歸』，是拿自己的尾巴換了我們的命。」三娘、小蕎、屯裡的老人都圍了過來。",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_old_elm" },
+          "requires": { "flags": ["yhh_out"] },
+          "kind": "choice",
+          "allies": ["npc_yh_hu_taiye", "npc_yh_hu_sanniang"],
+          "options": [
+            {
+              "label": "把真相告訴所有的靈狐族",
+              "success": {
+                "text": "胡太爺讓人把卷軸抄了三份：一份供在仙堂，一份送去瑔州港給胡九娘，一份送進宮給太妃。城裡的狐與屯裡的狐，第一次為同一件事哭了一場。朝廷那邊，從此多了一筆說不清的舊帳。",
+                "set_flags": ["yhh_3_done", "yhh_public"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": 15, "reason": "帶回了九尾的真相" },
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 10, "reason": "帶回了九尾的真相" },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 8, "reason": "靈狐族的舊帳" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": -3 },
+                  { "type": "memory", "summary": "從太廟的檔庫帶回《靈狐歸附錄》：最後的九尾狐王用自己換了族人的命，靈狐族並不是「慕化來歸」。真相傳遍了靈狐族。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "只供在仙堂",
+              "success": {
+                "text": "胡太爺把卷軸供在仙堂最高的牌位旁：「讓祖宗知道我們記得就好。外面的事，外面的人去吵。」三娘點了一炷香，香煙筆直地往上飄。",
+                "set_flags": ["yhh_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": 12, "reason": "帶回了九尾的真相" },
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 8, "reason": "帶回了九尾的真相" },
+                  { "type": "memory", "summary": "從太廟的檔庫帶回《靈狐歸附錄》，供在青丘屯的仙堂。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }, { "type": "item", "name": "秘銀礦石", "qty": 1 }]
+    },
+    {
+      "id": "yhk_exam_marks",
+      "title": "考卷的暗記",
+      "summary": "太學主考葉孤鴻發現，今年貢院收上來的考卷裡，有幾份在卷角畫了極小的暗記。畫暗記的考生，名次都高得出奇。（科舉舞弊・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_ye_guhong",
+        "text": "葉孤鴻把一疊考卷攤開，指著卷角一個芝麻大的墨點：「你看。三十份卷子，十一份有這個點。有這個點的，全是天青鱗世家的子弟。我一個人查不了，貢院裡的書吏都認得我。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhk_1_started"],
+      "nodes": [
+        {
+          "id": "informant",
+          "title": "到龍安府市坊的情報商打聽暗記",
+          "text": "情報商把墨點湊到燈下看了看，笑了：「這是貢院書吏的手法。考生在卷角點墨，書吏謄錄時就知道是誰的卷子——給錢的，名次往前挪。」",
+          "at": { "where": "cell", "location": "longan", "cell": "informant" },
+          "requires": { "flags": ["yhk_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": { "text": "他收下錢，給了你一個名字：貢院的書吏范九，每天傍晚都去瓦舍的賭坊。", "set_flags": ["yhk_clerk"] },
+          "fail": { "text": "情報商只是笑，不肯說是誰。也許該帶多一點錢，或換個說法再來。", "retry": true }
+        },
+        {
+          "id": "washe",
+          "title": "晚上在龍安府的瓦舍堵住書吏范九",
+          "text": "范九剛從賭坊出來，身邊跟著兩個相府號衣的護院。他一看見你，轉身就跑，護院抄起棍子擋在你面前。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yhk_clerk"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "護院倒地，范九被你堵在勾欄後面的巷子裡。他嚇得跪下來，從懷裡掏出一本小冊子：「都、都記在這裡！誰家給了多少錢，點的是什麼記號……是相府管家叫我記的，我只是照辦！」", "set_flags": ["yhk_ledger"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "report",
+          "title": "把書吏的冊子交給太學的葉孤鴻",
+          "text": "葉孤鴻一頁一頁翻著冊子，翻到最後，手在發抖：「宰相府……我早就猜到了，可是看到白紙黑字，還是……」他把冊子收進懷裡。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taixue" },
+          "requires": { "flags": ["yhk_ledger"] },
+          "kind": "story",
+          "allies": ["npc_yh_ye_guhong"],
+          "success": {
+            "text": "「放榜還有一個月。他們一定會在放榜之前動手腳。到時候，我需要你。」葉孤鴻說。",
+            "set_flags": ["yhk_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_ye_guhong", "delta": 10, "reason": "查出了考卷的暗記" },
+              { "type": "memory", "summary": "在瓦舍堵住貢院書吏范九，拿到記著宰相府買賣考卷的冊子，交給太學主考葉孤鴻。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhk_results_night",
+      "title": "放榜之夜",
+      "summary": "放榜那一夜，寒門的士子在貢院外等到天亮——榜上幾乎沒有墨鐵鱗的名字。太學生們要去相府討說法，宰相的人在等他們。（科舉舞弊・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_shen_zhilan",
+        "requires": { "flags": ["yhk_1_done"] },
+        "text": "沈知瀾氣喘吁吁地跑來：「放榜了！葉主考批過的高分卷子，全都落榜了——卷子被換了！太學生們要去相府門口跪請，可是我在茶坊聽到，相府雇了一批刀客。今晚會出事。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhk_2_started"],
+      "nodes": [
+        {
+          "id": "night",
+          "title": "晚上在龍安府的太學外護住太學生",
+          "text": "太學門外聚了上百個士子，舉著火把要往相府去。巷口忽然衝出一群黑衣刀客，見人就砍。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taixue" },
+          "requires": { "flags": ["yhk_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客退走了，地上躺著幾個受傷的士子。葉孤鴻抱著一個學生，抬頭對你說：「范九今晚也在貢院——他們要殺人滅口。」", "set_flags": ["yhk_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "witness",
+          "title": "晚上到龍安府的瓦舍找到躲起來的書吏范九",
+          "text": "范九沒有回貢院，他躲進了瓦舍勾欄的戲箱裡——蕭鳳儀的人把他藏起來了。勾欄後台一片漆黑，外面有人在找他。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yhk_saved"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": { "text": "你趕在相府的人之前找到戲箱，把范九從後門帶出來。他抖得說不出話，只會說：「我作證，我作證，別讓他們殺我……」", "set_flags": ["yhk_2_done_pre"] },
+          "fail": { "text": "你在漆黑的後台撞翻了道具，差點驚動外面的人。先退出來，換一夜再找。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "hide",
+          "title": "把范九交給葉孤鴻藏好",
+          "text": "葉孤鴻把范九藏進太學的書庫：「殿試的時候，女帝會親自閱卷。只要范九能活到那一天，在殿上說出來……」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taixue" },
+          "requires": { "flags": ["yhk_2_done_pre"] },
+          "kind": "story",
+          "allies": ["npc_yh_ye_guhong", "npc_yh_shen_zhilan"],
+          "success": {
+            "text": "沈知瀾把一疊抄本塞進你手裡：「萬一我們都出事了，這是范九的口供，我抄了五份。」",
+            "set_flags": ["yhk_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_ye_guhong", "delta": 10, "reason": "放榜之夜護住了太學生" },
+              { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 8, "reason": "放榜之夜護住了太學生" }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhk_palace_witness",
+      "title": "殿試的證人",
+      "summary": "殿試那天，書吏范九要在女帝面前作證。從太學到宣德樓只有一條御街，相府的死士埋伏在路上。（科舉舞弊・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_ye_guhong",
+        "requires": { "flags": ["yhk_2_done"] },
+        "text": "葉孤鴻換上了朝服：「今天殿試，女帝親臨宣德樓。我帶范九上殿——可是從太學到宣德樓這條路，宰相不會讓我們走完。我需要你。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhk_3_started"],
+      "nodes": [
+        {
+          "id": "avenue",
+          "title": "護送證人走過龍安府的御街",
+          "text": "走到御街中段，夜市的攤子還沒收，攤棚後面忽然閃出三個蒙面的黑衣人，刀上泛著青光——直取范九。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yhk_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 3]],
+          "success": { "text": "最後一個死士咬破了牙裡的毒丸，倒在地上。范九臉色慘白，但還活著。宣德樓的鐘聲響了。", "set_flags": ["yhk_arrived"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "verdict",
+          "title": "在龍安府的宣德樓決定怎麼處置科舉的弊案",
+          "text": "女帝燁昭華聽完范九的口供，看完沈知瀾抄的冊子，一言不發。宰相溫世衡站在殿下，神色如常。女帝忽然轉頭看你：「你是外人，不屬於任何一派。你說，這件事該怎麼辦？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_xuande" },
+          "requires": { "flags": ["yhk_arrived"] },
+          "kind": "choice",
+          "allies": ["npc_yh_zhaohua", "npc_yh_ye_guhong"],
+          "options": [
+            {
+              "label": "交給女帝密辦",
+              "success": {
+                "text": "女帝點頭：「朕會辦。」三天後，宰相府的管家與十幾個書吏下獄，宰相上表請罪、閉門思過。科舉的制度照舊，只是換了一批人看卷子。葉孤鴻嘆了口氣：「病根還在。」",
+                "set_flags": ["yhk_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 8, "reason": "把科舉弊案交給她密辦" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 4 }
+                ]
+              }
+            },
+            {
+              "label": "在御街張榜揭發",
+              "success": {
+                "text": "沈知瀾連夜把口供抄成大字，貼滿了御街。太學生們在宣德樓下跪了三天三夜，天青鱗世家的體面掃地，宰相府門口被扔滿了爛菜葉。女帝不得不當眾處置——可是她看你的眼神冷了幾分。",
+                "set_flags": ["yhk_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 12, "reason": "把科舉弊案公諸於世" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": -4, "reason": "把事情鬧大了" }
+                ]
+              }
+            },
+            {
+              "label": "請女帝開「糊名謄錄」新制",
+              "success": {
+                "text": "你建議：考卷糊上名字，由另一批書吏重新謄錄，御史與太學生一起監看。女帝沉吟良久，在殿上宣布新制。宰相臉色難看，卻挑不出毛病。葉孤鴻在殿外對你深深一揖。",
+                "set_flags": ["yhk_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 6, "reason": "提出糊名謄錄的新制" },
+                  { "type": "affinity", "npc": "npc_yh_ye_guhong", "delta": 10, "reason": "提出糊名謄錄的新制" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yhj_unpaid",
+      "title": "欠了三個月的餉",
+      "summary": "禁軍的小隊長趙虎欠了賭坊一大筆錢，討債的人找上門。他說，要不是軍餉欠了三個月，他也不會去賭。（禁軍的軍餉・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_zhao_hu", "text": "趙虎被兩個打手堵在巷子裡，看見你像看見救星：「兄弟！幫個忙！」打手冷笑：「趙小隊長，三十兩，連本帶利，今天不還就拿你的刀抵。」", "min_level": 5 },
+      "start_flags": ["yhj_1_started"],
+      "nodes": [
+        {
+          "id": "alley",
+          "title": "在龍安府的巷子裡打退討債的打手",
+          "text": "打手們抄起棍棒，把你和趙虎一起堵在牆角。",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["yhj_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手們爬起來跑了。趙虎拍拍身上的土，苦笑：「錢還是要還的……可是兄弟，你知道我們禁軍的餉去哪了嗎？」", "set_flags": ["yhj_beaten"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "ledger",
+          "title": "到龍安府市坊的情報商查禁軍的餉銀",
+          "text": "情報商翻著一本帳：「禁軍的餉銀從戶部撥出來，經過三道手：戶部、殿前司、各營的糧官。這個月，第二道手就少了一半。」",
+          "at": { "where": "cell", "location": "longan", "cell": "informant" },
+          "requires": { "flags": ["yhj_beaten"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": { "text": "帳上寫得很清楚：殿前司的一個糧官，每個月把一半的餉銀撥給「相府修繕」。岳鎮山的部下在挨餓，宰相府在蓋新的園子。", "set_flags": ["yhj_found"] },
+          "fail": { "text": "數字太亂，你看得頭都暈了。改天帶清醒一點的腦袋再來。", "retry": true }
+        },
+        {
+          "id": "tell",
+          "title": "把餉銀的去向告訴趙虎",
+          "text": "趙虎聽完，一拳砸在牆上：「相府……弟兄們的老婆孩子在挨餓，他們拿去蓋園子？」",
+          "at": { "where": "npc", "npc": "npc_yh_zhao_hu", "location": "longan" },
+          "requires": { "flags": ["yhj_found"] },
+          "kind": "story",
+          "success": {
+            "text": "「我要告訴都指揮使。」趙虎說，「可是營裡的弟兄要是知道了，會出事的。」他把刀插回鞘裡，「兄弟，到時候你得在場。」",
+            "set_flags": ["yhj_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_zhao_hu", "delta": 12, "reason": "查出了禁軍餉銀的去向" },
+              { "type": "memory", "summary": "查出禁軍欠餉的原因：殿前司的糧官把一半的餉銀撥給了宰相府。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhj_barracks_riot",
+      "title": "營裡的鼓譟",
+      "summary": "餉銀被宰相府挪用的消息傳遍了禁軍營。弟兄們砸了糧官的帳房，要殺進相府。殿前都指揮使岳鎮山請你幫他穩住軍營。（禁軍的軍餉・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yue_zhenshan",
+        "requires": { "flags": ["yhj_1_done"] },
+        "text": "岳鎮山的臉上第一次露出慌亂：「營裡反了。他們綁了糧官，說要殺進相府。禁軍殺宰相——那是造反，整營的人都要掉腦袋。趙虎說你是他的兄弟，你幫我。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhj_2_started"],
+      "nodes": [
+        {
+          "id": "camp",
+          "title": "在龍安府的禁軍營擋住鼓譟的兵丁",
+          "text": "營門口，幾十個禁軍舉著火把、拿著兵器往外衝。帶頭的幾個紅了眼，誰擋就砍誰。",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["yhj_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 2]],
+          "success": { "text": "帶頭的被你打倒在地，其他人停了下來，火把在風裡晃。趙虎站到兩邊中間：「弟兄們，聽都指揮使說句話。」", "set_flags": ["yhj_stopped"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "decide",
+          "title": "在龍安府的禁軍營決定怎麼平息鼓譟",
+          "text": "岳鎮山站在營門前，看著跪了一地的部下，又看看你：「我效忠女帝。可是這些人跟了我十年，他們沒有錯。你是外人，你說。」",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["yhj_stopped"] },
+          "kind": "choice",
+          "allies": ["npc_yh_yue_zhenshan", "npc_yh_zhao_hu"],
+          "options": [
+            {
+              "label": "鎮壓帶頭的",
+              "success": {
+                "text": "岳鎮山咬著牙，把帶頭的十個人綁了交給刑部。軍營安靜下來，宰相府送來一筆「慰勞」，正好補上欠餉。趙虎不再跟你說話。",
+                "set_flags": ["yhj_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yue_zhenshan", "delta": 5, "reason": "幫他鎮住軍營" },
+                  { "type": "affinity", "npc": "npc_yh_zhao_hu", "delta": -10, "reason": "鎮壓了弟兄們" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 3 }
+                ]
+              }
+            },
+            {
+              "label": "讓禁軍上萬言書",
+              "success": {
+                "text": "岳鎮山帶著三千禁軍在宣德樓下跪呈萬言書，請女帝查辦挪用軍餉的宰相府。滿城轟動。女帝收下了萬言書——禁軍從此有了自己的聲音，朝中的人看他們的眼神也變了。",
+                "set_flags": ["yhj_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhao_hu", "delta": 12, "reason": "讓弟兄們上萬言書" },
+                  { "type": "affinity", "npc": "npc_yh_yue_zhenshan", "delta": 8, "reason": "讓禁軍上萬言書" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 2 }
+                ]
+              }
+            },
+            {
+              "label": "說服金墨盟借餉",
+              "success": {
+                "text": "你連夜跑去找金墨盟的商人：借禁軍三個月的餉，條件是禁軍立誓不干政、不入相府。金墨盟答應了。軍營的火熄了，宰相失去了拉攏禁軍的機會，金墨盟多了一個說得上話的朋友。",
+                "set_flags": ["yhj_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yue_zhenshan", "delta": 10, "reason": "借來了軍餉" },
+                  { "type": "affinity", "npc": "npc_yh_zhao_hu", "delta": 10, "reason": "借來了軍餉" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhs_canal_stone",
+      "title": "運河上的奇石",
+      "summary": "押送花石綱的龐押司在萍江的園林裡到處貼黃封，看上的奇石拆牆也要搬走。一戶老園丁的石頭被搶，他找上了女知府。（花石綱・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_su_huaijin", "text": "蘇懷瑾揉著眉心：「花石綱是宮裡的旨意，我攔不住。可是龐押司把一個老園丁的腿打斷了，只為了一塊石頭。我要知道他的人到底怎麼辦事——我的衙役都怕他。」", "min_level": 5 },
+      "start_flags": ["yhs_1_started"],
+      "nodes": [
+        {
+          "id": "bridge",
+          "title": "到萍江府的虹橋看押綱的船",
+          "text": "虹橋下停著三艘大船，船上堆滿了用綢緞裹著的奇石。押綱的衙役正在拆一戶人家的院牆，老婦人跪在地上哭。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yhs_1_started"] },
+          "kind": "story",
+          "success": { "text": "一個衙役看見你在記，舉著水火棍走過來：「看什麼看？花石綱，皇上要的！」他身後又來了一個。", "set_flags": ["yhs_seen"] }
+        },
+        {
+          "id": "runners",
+          "title": "在萍江府的近郊趕走拆牆的衙役",
+          "text": "兩個押綱的衙役把你圍在拆了一半的院牆邊。",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yhs_seen"] },
+          "kind": "combat",
+          "enemies": [["yh_yamen_runner", 2]],
+          "success": { "text": "衙役們跑了。老婦人告訴你：搬走的石頭，一半上了押綱船，一半在夜裡被運進了城東龐押司自己的園子。", "set_flags": ["yhs_half"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "report",
+          "title": "回萍江府告訴蘇懷瑾",
+          "text": "蘇懷瑾聽完，沉默了很久：「一半進了他自己的園子……那就不是花石綱，是盜竊。可是要辦他，得有他的帳。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin", "location": "pingjiang" },
+          "requires": { "flags": ["yhs_half"] },
+          "kind": "story",
+          "success": {
+            "text": "「謝謝你。」她難得笑了一下，很淡，「萍江的人都說我是朝廷的狗。也許是吧——可是狗也會咬偷東西的人。」",
+            "set_flags": ["yhs_1_done"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "查出花石綱的奇石被私吞" }],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhs_ledger",
+      "title": "押司的帳",
+      "summary": "龐押司私吞花石綱的奇石，蘇懷瑾需要他的帳本。帳本藏在他城東的園子裡，園子夜裡有刀客守著。（花石綱・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_huaijin",
+        "requires": { "flags": ["yhs_1_done"] },
+        "text": "蘇懷瑾把一張園子的草圖推給你：「這是城東龐家園子。帳房在假山後面。我是知府，不能私闖——可是你不是。」她頓了一下，「我什麼都沒說。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhs_2_started"],
+      "nodes": [
+        {
+          "id": "garden",
+          "title": "晚上潛進萍江府城東龐押司的園子",
+          "text": "龐家的園子裡堆滿了奇石——太湖石、靈璧石，每一塊上都貼著「花石綱」的黃封。帳房的燈還亮著。",
+          "at": { "where": "settlement", "location": "pingjiang" },
+          "requires": { "flags": ["yhs_2_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": { "text": "你從窗縫摸進帳房，找到了一本藏在硯台底下的帳：每一塊奇石，一半報給朝廷，一半記在「自用」。最後一頁還記著——三個月後，有一船最大的太湖石要運進京。", "set_flags": ["yhs_book"] },
+          "fail": { "text": "你差點被巡夜的狗發現，只好先翻牆出去。換一夜再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "guards",
+          "title": "在萍江府甩開龐押司的刀客",
+          "text": "你剛翻出牆，兩個刀客已經等在巷口：「押司說了，偷帳的，扔進運河。」",
+          "at": { "where": "settlement", "location": "pingjiang" },
+          "requires": { "flags": ["yhs_book"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒在巷子裡。你把帳本揣進懷裡，跑回了知府衙門。", "set_flags": ["yhs_out"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "give",
+          "title": "把帳本交給蘇懷瑾",
+          "text": "蘇懷瑾翻著帳本，一頁比一頁冷：「三個月後那一船，是送進宮的『鎮園之石』。他們要在運河上動手腳。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin", "location": "pingjiang" },
+          "requires": { "flags": ["yhs_out"] },
+          "kind": "story",
+          "success": {
+            "text": "她把帳本鎖進官印的匣子：「龐押司背後有宮裡的人。這本帳，要等那一船石頭上了運河，才能一起翻出來。」",
+            "set_flags": ["yhs_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "拿到了龐押司的帳" },
+              { "type": "memory", "summary": "從萍江府龐押司的園子偷出帳本：花石綱的奇石一半被他私吞。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhs_sunken_stone",
+      "title": "沉船的太湖石",
+      "summary": "花石綱最大的一船「鎮園之石」在運河上沉了，押綱的人說是天意。蘇懷瑾知道，船是被人鑿沉的——為了把石頭和帳一起沉進河底。（花石綱・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_huaijin",
+        "requires": { "flags": ["yhs_2_done"] },
+        "text": "蘇懷瑾第一次在你面前慌了：「船沉了。沉在虹橋下游三里，押綱的兵把那一段河封了，說要撈石頭——我派去的衙役一個都沒回來。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhs_3_started"],
+      "nodes": [
+        {
+          "id": "river",
+          "title": "到萍江府的近郊衝破押綱兵的封鎖",
+          "text": "運河邊豎著柵欄，押綱的禁軍精兵守著，河面上漂著幾具衙役的屍體。龐押司在柵欄後面喊：「知府的狗也敢來？」",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yhs_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 3]],
+          "success": { "text": "禁軍倒下了，龐押司跳上一條小船逃走。河底那艘沉船裡，太湖石旁邊還綁著一口鐵箱——是龐押司和宮裡往來的書信。", "set_flags": ["yhs_found"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "在萍江府的虹橋決定花石綱的去向",
+          "text": "蘇懷瑾讀完鐵箱裡的書信，手在發抖：花石綱的旨意，是宰相替宮裡擬的；石頭進了京，大半進了宰相的園子。陸青禾帶著一群織工、農夫站在橋頭，看著你們。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yhs_found"] },
+          "kind": "choice",
+          "allies": ["npc_yh_su_huaijin", "npc_yh_lu_qinghe"],
+          "options": [
+            {
+              "label": "護送奇石進京",
+              "success": {
+                "text": "你們把太湖石撈上來，連同書信一起護送進京。女帝看完書信，把龐押司斬首示眾，對蘇懷瑾大加讚賞。花石綱照辦，萍江的人在背後罵她，她一聲不吭。",
+                "set_flags": ["yhs_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 8, "reason": "護送奇石進京" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": -6, "reason": "花石綱照辦" }
+                ]
+              }
+            },
+            {
+              "label": "劫綱分給沿岸",
+              "success": {
+                "text": "陸青禾帶著人把船上的奇石、綢緞、銀子分給了被拆牆的人家。蘇懷瑾沒有攔，只是轉身走了——第二天，她上了一道請罪的摺子。萍江的人第一次叫她「蘇青天」。",
+                "set_flags": ["yhs_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 12, "reason": "劫了花石綱" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 4, "reason": "劫了花石綱" }
+                ]
+              }
+            },
+            {
+              "label": "說服女帝停綱",
+              "success": {
+                "text": "你建議蘇懷瑾把書信呈給女帝，請求停辦花石綱，已經搬走的奇石折算成萍江農工的稅。女帝准了。陸青禾在橋頭對蘇懷瑾拱了拱手——這是兩個人第一次站在同一邊。",
+                "set_flags": ["yhs_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 12, "reason": "說服女帝停綱" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 8, "reason": "說服女帝停綱" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yhw_seamstress",
+      "title": "繡娘的手",
+      "summary": "織造局的一個繡娘為了趕宮裡的雲錦，三天三夜沒睡，手指被梭子穿透了。織工行會的陸青禾要為她討說法。（罷織・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_lu_qinghe",
+        "text": "陸青禾把一雙纏滿布條的手舉給你看：「這是阿蓮的手，十九歲，繡娘。織造局說趕工期是皇命，傷了是她自己不小心。」她把布條一摔，「我要阮掌事的工單——寫著誰定的工期、誰剋扣的工錢。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhw_1_started"],
+      "nodes": [
+        {
+          "id": "bureau",
+          "title": "到萍江府的織造局找工單",
+          "text": "織造局裡梭聲如雨，阮掌事在帳房裡打著算盤。工單就鎖在他身後的櫃子裡。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yhw_1_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": { "text": "你借口送絲線混進帳房，趁阮掌事去罵監工時翻出了工單：宮裡要的雲錦數量，三年翻了一倍；撥下來的工錢，三年少了一半。差的那一半，簽字的是織造局上頭的人。", "set_flags": ["yhw_slip"] },
+          "fail": { "text": "阮掌事一直守在帳房裡，你找不到機會。改天再來。", "retry": true }
+        },
+        {
+          "id": "foremen",
+          "title": "在萍江府的近郊擋住追來的監工",
+          "text": "你剛走出織造局，兩個監工的打手追了上來：「偷工單的，給我站住！」",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yhw_slip"] },
+          "kind": "combat",
+          "enemies": [["yh_yamen_runner", 2]],
+          "success": { "text": "打手們跑了。你把工單揣好，回去找陸青禾。", "set_flags": ["yhw_got"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "give",
+          "title": "把工單交給陸青禾",
+          "text": "陸青禾看完工單，冷笑一聲：「工期翻一倍、工錢少一半，阿蓮的手是被這張紙穿透的。」",
+          "at": { "where": "npc", "npc": "npc_yh_lu_qinghe", "location": "pingjiang" },
+          "requires": { "flags": ["yhw_got"] },
+          "kind": "story",
+          "success": {
+            "text": "「行會要開會了。」她說，「要嘛織造局簽工約，要嘛我們停機。」她看著你，「到時候，你站哪一邊？」",
+            "set_flags": ["yhw_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "拿到了織造局的工單" },
+              { "type": "memory", "summary": "替萍江織工行會的陸青禾從織造局拿到工單：工期翻倍、工錢減半。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhw_bureau_gate",
+      "title": "織造局的門",
+      "summary": "萍江的織工停機了。上千張織機不動，宮裡的雲錦斷了貨。知府派了兵丁守在織造局門口，行會的人圍在門外。（罷織・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_lu_qinghe",
+        "requires": { "flags": ["yhw_1_done"] },
+        "text": "陸青禾站在一口倒扣的木箱上，身後是黑壓壓的織工：「官府派兵來了。他們說，三天不開機，就抓帶頭的。」她跳下木箱，「我就是帶頭的。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhw_2_started"],
+      "nodes": [
+        {
+          "id": "gate",
+          "title": "在萍江府的織造局門口擋住衝進人群的兵丁",
+          "text": "兵丁們舉著長槍往人群裡推，有人被擠倒在地。兩個兵丁朝陸青禾衝過去。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yhw_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 2]],
+          "success": { "text": "兵丁被你擋了回去。蘇懷瑾騎著馬趕到，喝令兵丁退下。阮掌事從織造局裡探出頭，臉色發白。", "set_flags": ["yhw_standoff"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在萍江府的織造局門口決定罷織怎麼收場",
+          "text": "一邊是蘇懷瑾和阮掌事，一邊是陸青禾和上千個織工。蘇懷瑾說：「宮裡的雲錦不能斷。」陸青禾說：「阿蓮的手也不能白廢。」兩個人都看向你。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yhw_standoff"] },
+          "kind": "choice",
+          "allies": ["npc_yh_su_huaijin", "npc_yh_lu_qinghe", "npc_yh_ruan"],
+          "options": [
+            {
+              "label": "讓官府抓帶頭的",
+              "success": {
+                "text": "你勸陸青禾先讓一步。蘇懷瑾把她和幾個行會的頭關進大牢，織機重新轉了起來。三個月後她被放出來，瘦了一圈，看你的眼神像在看陌生人。",
+                "set_flags": ["yhw_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 6, "reason": "平息了罷織" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": -12, "reason": "讓官府抓了她" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 3 }
+                ]
+              }
+            },
+            {
+              "label": "讓行會接管織造局",
+              "success": {
+                "text": "你站到陸青禾身邊。織工們推開兵丁，衝進織造局，把阮掌事請了出去。從此織造局由行會的人管工期與工錢。蘇懷瑾沒有下令開槍——她只是脫下官帽，說：「我會向朝廷交代。」",
+                "set_flags": ["yhw_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 12, "reason": "讓行會接管了織造局" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": -4, "reason": "讓行會接管了織造局" }
+                ]
+              }
+            },
+            {
+              "label": "讓官府與行會立工約",
+              "success": {
+                "text": "你提議：官府與行會當場立一份工約，寫明工期的上限、工錢的下限，阿蓮的手由織造局出錢醫治。蘇懷瑾想了很久，拿出了自己的官印；陸青禾按下了手印。織機在當天傍晚重新轉了起來。",
+                "set_flags": ["yhw_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "立下了工約" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "立下了工約" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhx_two_notices",
+      "title": "碼頭的兩張告示",
+      "summary": "瑔州港的碼頭上同時貼了兩張告示：胡記說香料只能由皇商經手，金玉行說海貨可以自由買賣。夾在中間的，是一批來路不明的假香料。（香料行的地盤・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "guild", "location": "quanzhou", "text": "公會的告示板上釘著兩張互相打架的告示——胡記的與金玉行的——下面還有一張小委託：「有人在碼頭賣摻了木屑的假香料，兩家都說是對方幹的。查清楚。」", "min_level": 5 },
+      "start_flags": ["yhx_1_started"],
+      "nodes": [
+        {
+          "id": "huji",
+          "title": "到瑔州港的胡記商號問胡九娘",
+          "text": "胡九娘捏起一撮假香料聞了聞，笑得甜：「這種貨色？金玉行的人才做得出來。皇商的東西，一粒沙子都不會有。」她的眼睛卻一直盯著你手上的布包。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["yhx_1_started"] },
+          "kind": "story",
+          "success": {
+            "text": "她塞給你一袋茶葉當謝禮：「查到了，先告訴我。」",
+            "set_flags": ["yhx_asked_hu"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 3, "reason": "拿假香料來問她" }]
+          }
+        },
+        {
+          "id": "jinyu",
+          "title": "到瑔州港的金玉行問金玉棠",
+          "text": "金玉棠把假香料往桌上一倒：「我的船從南洋直接運香料，用得著摻木屑？」她拍拍你的肩，「倒是胡記的皇商特許，一年比一年貴，總有人想便宜一點。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["yhx_asked_hu"] },
+          "kind": "story",
+          "success": {
+            "text": "「碼頭西邊有個廢倉庫，最近夜裡常有人進出。」她說，「我不方便去——你方便。」",
+            "set_flags": ["yhx_lead"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 3, "reason": "拿假香料來問她" }]
+          }
+        },
+        {
+          "id": "warehouse",
+          "title": "到瑔州港的近郊抓賣假香料的人",
+          "text": "廢倉庫裡堆滿了麻袋，幾個人正在往香料裡摻木屑。看見你，他們抄起棍子衝過來。",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["yhx_lead"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": {
+            "text": "打手們被你打趴下。領頭的招了：他們誰的人都不是——是市舶司的一個胥吏雇的，故意兩邊的貨都摻，讓兩家打起來，市舶司好從中抽成。",
+            "set_flags": ["yhx_fake_found"],
+            "effects": [{ "type": "memory", "summary": "在瑔州港查出假香料的來源：市舶司的胥吏故意讓胡記與金玉行互相猜忌。", "importance": 2 }]
+          },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把查到的事告訴公會",
+          "text": "公會的掌櫃聽完，嘆了口氣：「市舶司……這種事，胡記和金玉行聽了只會更恨對方，誰也不會去找市舶司算帳。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "guild" },
+          "requires": { "flags": ["yhx_fake_found"] },
+          "kind": "story",
+          "success": { "text": "果然，第二天碼頭上兩家的夥計就打了起來。", "set_flags": ["yhx_1_done"], "complete": true }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhx_brawl",
+      "title": "胡記與金玉行的火併",
+      "summary": "胡記與金玉行的夥計在蕃坊碼頭火併，已經傷了十幾個人。這一次有人動了刀，背後有人在煽風點火。（香料行的地盤・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "informant",
+        "location": "quanzhou",
+        "price": 150,
+        "requires": { "flags": ["yhx_1_done"] },
+        "text": "情報商壓低聲音：「今晚蕃坊碼頭會出大事。兩家都雇了刀客，雇刀客的錢——是從同一個錢莊出來的。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhx_2_started"],
+      "nodes": [
+        {
+          "id": "docks",
+          "title": "晚上在瑔州港的蕃坊碼頭擋住刀客",
+          "text": "碼頭上兩邊的夥計舉著火把對峙，人群裡混著幾個蒙面的刀客，正朝雙方的人揮刀。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["yhx_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客被你打倒，從他們身上搜出兩家的號衣——胡記的、金玉行的都有。兩邊的夥計面面相覷。", "set_flags": ["yhx_caught"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "shibosi",
+          "title": "到瑔州港的市舶司查刀客的錢從哪裡來",
+          "text": "市舶司提舉程硯的帳房裡，有一本給錢莊的匯票簿。程硯不在，只有一個打瞌睡的胥吏。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["yhx_caught"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你唬住了胥吏，翻出匯票簿：雇刀客的錢，出自市舶司的「公使錢」。程硯兩邊收錢、兩邊挑撥，碼頭越亂，抽成越多。",
+            "set_flags": ["yhx_paper"],
+            "effects": [{ "type": "memory", "summary": "查出瑔州港胡記與金玉行火併的幕後：市舶司提舉程硯用公使錢雇刀客兩邊挑撥。", "importance": 2 }]
+          },
+          "fail": { "text": "胥吏醒了，叫來了衙役。你只好先離開，改天再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把匯票的事告訴胡九娘和金玉棠",
+          "text": "你把匯票簿的抄本分別拿給兩個人。胡九娘笑容僵住，金玉棠一拳砸在桌上。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["yhx_paper"] },
+          "kind": "story",
+          "allies": ["npc_yh_jin_yutang"],
+          "success": {
+            "text": "金玉棠冷靜下來：「市舶司要重新抽籤分碼頭了。程硯想在抽籤上再撈一筆。到那一天，我們跟胡記，總得有個了斷。」",
+            "set_flags": ["yhx_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 6, "reason": "查出了火併的幕後" },
+              { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 6, "reason": "查出了火併的幕後" }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhx_lottery",
+      "title": "市舶司的抽籤",
+      "summary": "市舶司要重新抽籤分配瑔州港的碼頭。籤筒被動了手腳，走私女王赤鬟也想分一杯羹。這一次抽完，瑔州港的地盤就定了。（香料行的地盤・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_cheng_yan",
+        "requires": { "flags": ["yhx_2_done"] },
+        "text": "程硯臉色發青，壓低聲音：「我知道你查過我的匯票。我認。可是今天的抽籤，赤鬟的人已經把籤筒換了——她要搶整個東碼頭。我兩邊收錢，可我不想讓走私船佔了港口。幫我，我什麼都說。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhx_3_started"],
+      "nodes": [
+        {
+          "id": "hall",
+          "title": "在瑔州港的市舶司擋住赤鬟的人",
+          "text": "抽籤的大堂上擠滿了兩家的人，赤鬟的手下混在人群裡，籤筒前站著三個膀大腰圓的亡命之徒。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["yhx_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 3]],
+          "success": { "text": "赤鬟的人倒了一地。程硯從籤筒底下摸出一疊預先寫好的籤，每一張都寫著「東碼頭・赤鬟」。大堂裡鴉雀無聲。", "set_flags": ["yhx_rigged"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在瑔州港的市舶司決定碼頭的地盤",
+          "text": "籤筒已經不能用了。胡九娘、金玉棠、程硯都看著你——碼頭的地盤，現在要靠一句話。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["yhx_rigged"] },
+          "kind": "choice",
+          "allies": ["npc_yh_hu_jiuniang", "npc_yh_jin_yutang", "npc_yh_cheng_yan"],
+          "options": [
+            {
+              "label": "幫胡記",
+              "success": {
+                "text": "你說：皇商特許是朝廷給的，碼頭的香料該由胡記經手，朝廷照例抽成。程硯點頭如搗蒜。胡九娘笑得很甜，金玉棠甩袖而去——金墨盟從此把胡記當成朝廷的爪牙。",
+                "set_flags": ["yhx_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 12, "reason": "幫胡記拿下碼頭" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 3 },
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": -8, "reason": "幫胡記拿下碼頭" }
+                ]
+              }
+            },
+            {
+              "label": "幫金黃鱗",
+              "success": {
+                "text": "你說：海貨自由買賣，碼頭按船數分，誰的船多誰的碼頭就多。金玉棠的船隊拿下了大半個港口，自由的牙行在蕃坊一間接一間開張。胡九娘臉上還在笑，眼睛裡沒有。",
+                "set_flags": ["yhx_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 12, "reason": "幫金黃鱗拿下碼頭" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": -8, "reason": "幫金黃鱗拿下碼頭" }
+                ]
+              }
+            },
+            {
+              "label": "分地盤，合辦海貿會館",
+              "success": {
+                "text": "你提議：東碼頭給胡記的皇商貨，西碼頭給金黃鱗的海貨，兩家合辦一間海貿會館，帳目公開，市舶司的抽成照會館的帳收。胡九娘與金玉棠對看了很久，同時伸出手。程硯擦了擦汗。",
+                "set_flags": ["yhx_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 8, "reason": "合辦海貿會館" },
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 8, "reason": "合辦海貿會館" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yhg_new_formula",
+      "title": "秦焰的新配方",
+      "summary": "火藥總匠師秦焰調出了一種更穩、更猛的新火藥。配方還沒寫完，就有人在火藥坊外面探頭探腦。（火藥的訂單・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_qin_yan",
+        "text": "秦焰把一張畫滿符號的紙塞進懷裡：「新配方，比舊的穩三倍、猛兩倍。可是最後一味藥還差一點——火藥坊遺址的硝石礦道裡，有一種結晶最純的硝石。這兩天坊外老有生面孔，你替我去拿，順便看看是誰在盯我。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhg_1_started"],
+      "nodes": [
+        {
+          "id": "mine",
+          "title": "到火藥坊遺址的淺層採最純的硝石",
+          "text": "硝石礦道的牆上結著一層雪白的晶體。你剛刮下一包，兩個戴斗笠的人從礦道另一頭走過來，手按在刀上。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "shallow" },
+          "requires": { "flags": ["yhg_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "斗笠人被你打倒，懷裡掉出一張圖——畫的是城裡的火藥坊，標著秦焰住的那一間。", "set_flags": ["yhg_spied"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "test",
+          "title": "回瑔州港的火藥坊試新配方",
+          "text": "秦焰把純硝石磨成粉，加進新配方。院子裡的人全都退到牆邊，只有阿炮探著頭。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["yhg_spied"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "「轟」的一聲，試靶的木樁整根飛上了天，硝煙卻比舊火藥淡得多。秦焰看著你帶回來的那張圖，臉沉了下來：「有人想要這個配方。」",
+            "set_flags": ["yhg_tested"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 10, "reason": "幫他試成了新配方" },
+              { "type": "memory", "summary": "幫瑔州港的火藥總匠師秦焰試成了更穩、更猛的新火藥；有人在盯這個配方。", "importance": 2 }
+            ]
+          },
+          "fail": { "text": "火藥只冒了一陣煙。秦焰皺著眉調了一下比例：「明天再試。」", "retry": true },
+          "allies": ["npc_yh_qin_yan", "npc_yh_apao"]
+        },
+        {
+          "id": "close",
+          "title": "和秦焰談談是誰在盯配方",
+          "text": "秦焰把圖燒了：「不管是誰，新配方一出來，訂單就會來。到時候，賣給誰，比怎麼做還難。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["yhg_tested"] },
+          "kind": "story",
+          "allies": ["npc_yh_qin_yan"],
+          "success": { "text": "阿炮在旁邊小聲說：「師父，要是只做煙火呢？」秦焰瞪了她一眼，沒說話。", "set_flags": ["yhg_1_done"], "complete": true }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhg_two_orders",
+      "title": "兩張訂單",
+      "summary": "新火藥的消息傳開了。朝廷的軍器監與金墨盟的商船同時下了訂單，兩邊都說只能賣給自己——還有人想用搶的。（火藥的訂單・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_qin_yan",
+        "requires": { "flags": ["yhg_1_done"] },
+        "text": "秦焰把兩張訂單攤在桌上：一張蓋著軍器監的大印，要五千斤，造霹靂砲；一張是金玉棠的船隊，要三千斤，裝在商船上防海盜。「四年前的爆炸，就是因為朝廷要收回火藥。」他的手在抖，「這次，我不想再死人了。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhg_2_started"],
+      "nodes": [
+        {
+          "id": "raid",
+          "title": "晚上在瑔州港的火藥坊擋住來搶配方的兵丁",
+          "text": "夜裡，一隊沒有打旗號的兵丁翻牆進了火藥坊，直奔秦焰的屋子。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["yhg_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 2]],
+          "success": { "text": "兵丁被你打退了，領頭的身上有一塊軍器監的腰牌。秦焰看著腰牌，臉色鐵青——和四年前那一夜一樣。", "set_flags": ["yhg_raided"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在瑔州港的火藥坊決定新火藥賣給誰",
+          "text": "秦焰、阿炮和火藥坊的工匠們都看著你。桌上兩張訂單，一塊軍器監的腰牌。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["yhg_raided"] },
+          "kind": "choice",
+          "allies": ["npc_yh_qin_yan", "npc_yh_apao"],
+          "options": [
+            {
+              "label": "交給朝廷的軍器監",
+              "success": {
+                "text": "你勸秦焰把配方交給軍器監——與其被搶，不如交出去換個保障。朝廷給了火藥坊一塊「御用」的匾，也派了一隊兵丁常駐。秦焰從此不再自己試火藥。",
+                "set_flags": ["yhg_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 4, "reason": "把配方交給朝廷" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": -6, "reason": "把配方交給朝廷" }
+                ]
+              }
+            },
+            {
+              "label": "交給金墨盟的商船",
+              "success": {
+                "text": "你勸秦焰把火藥賣給金墨盟：商船有了火藥，不怕海盜，也不怕朝廷的水師。金玉棠的船隊從此掛上了火砲。朝廷那邊，從此把火藥坊當成金墨盟的軍火庫。",
+                "set_flags": ["yhg_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 8, "reason": "把火藥賣給金墨盟" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 6, "reason": "把火藥賣給金墨盟" }
+                ]
+              }
+            },
+            {
+              "label": "只賣煙火、不賣火器",
+              "success": {
+                "text": "你想起阿炮的話：新火藥最穩，最適合做煙火。秦焰愣了很久，大笑起來，把兩張訂單都撕了：「只做煙火！誰要火器，自己去炸！」阿炮跳起來抱住了你。",
+                "set_flags": ["yhg_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 10, "reason": "只做煙火" },
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 15, "reason": "照她的提議只做煙火" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhq_rites_notice",
+      "title": "禮部的告示",
+      "summary": "龍安府的禮部在青丘屯的屯口貼了告示：仙家是「淫祀」，限一個月內把仙堂改成祭祖龍的祠。衙役已經在路上了。（堂口的香火・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_taiye",
+        "text": "胡太爺把告示揉成一團扔在地上：「淫祀？胡家仙在青丘待了一千年，祖龍才幾歲？」他的手在抖，「衙役明天就到，說要先把牌位搬走。屯裡的年輕人要跟他們拚命——不能讓他們拚。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhq_1_started"],
+      "nodes": [
+        {
+          "id": "runners",
+          "title": "在青丘屯的仙堂擋住來搬牌位的衙役",
+          "text": "兩個衙役推開白小蕎，伸手就去拿供桌上的牌位。屯裡的年輕人抄起柴刀圍了上來。",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhq_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_yamen_runner", 2]],
+          "success": { "text": "衙役被你打退，丟下一句「禮部不會放過你們」就跑了。牌位一個都沒少。", "set_flags": ["yhq_held"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "allies": ["npc_yh_bai_xiaoqiao"]
+        },
+        {
+          "id": "talk",
+          "title": "在青丘屯的老榆樹下和胡太爺商量",
+          "text": "胡太爺坐在老榆樹下抽著旱菸：「打得了衙役，打不了禮部；打得了禮部，打不了朝廷。小子，你說怎麼辦？」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_old_elm" },
+          "requires": { "flags": ["yhq_held"] },
+          "kind": "story",
+          "allies": ["npc_yh_hu_taiye"],
+          "success": {
+            "text": "你們商量了一夜，決定先拖：寫一份陳情，說仙堂供的是祖靈，不是淫祀。胡太爺說，三娘最近請仙請不下來，仙家好像也不安寧。",
+            "set_flags": ["yhq_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": 10, "reason": "擋下了禮部的衙役" },
+              { "type": "memory", "summary": "在青丘屯擋下了禮部來搬仙堂牌位的衙役；禮部要把仙堂改成祖龍祠。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhq_unruly_spirits",
+      "title": "鬧仙",
+      "summary": "禮部的告示貼出去之後，青丘屯開始鬧仙：屯裡的人一個接一個被沒有堂口的野仙附身，砸東西、說胡話。禮部說，這就是淫祀的下場。（堂口的香火・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_sanniang",
+        "requires": { "flags": ["yhq_1_done"] },
+        "text": "胡三娘眼睛紅腫，像是好幾天沒睡：「不是我們胡家的仙——是外面的野仙，沒有堂口供奉的那種。有人在夜裡把它們引進屯子。我送不走那麼多，你得先替我打散幾個。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhq_2_started"],
+      "nodes": [
+        {
+          "id": "night",
+          "title": "晚上在青丘屯的近郊打散作亂的野仙",
+          "text": "屯外的白樺林裡飄著幾團青綠的鬼火，被附身的獵戶眼睛翻白，嘴裡唱著不是神調的調子，朝你撲過來。",
+          "at": { "where": "outskirts", "location": "qingqiu" },
+          "requires": { "flags": ["yhq_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_rampant_spirit", 2]],
+          "success": { "text": "野仙被打散，獵戶倒在雪地裡打鼾。林子裡丟著一個香爐——香灰裡混著禮部祀典司常用的引魂香。", "set_flags": ["yhq_cleared"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "send",
+          "title": "到青丘屯的仙堂和胡三娘一起送仙",
+          "text": "三娘把引魂香丟進火盆，白小蕎敲起文王鼓。三娘的聲音變成了胡三太奶：「外面的孩子們，回去吧——這裡不是你們的家。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhq_cleared"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 14 },
+          "success": {
+            "text": "你跟著鼓聲唸送仙的詞，屯子上空的鬼火一團一團熄滅。三娘醒來，第一句話是：「禮部的人引野仙進來，好讓我們看起來像淫祀。」",
+            "set_flags": ["yhq_sent"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 12, "reason": "一起送走了野仙" },
+              { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 8, "reason": "一起送走了野仙" },
+              { "type": "memory", "summary": "在青丘屯打散並送走了被禮部用引魂香引進來的野仙。", "importance": 2 }
+            ]
+          },
+          "fail": { "text": "鼓聲亂了，三娘吐了一口血，送仙沒有成。她擦擦嘴：「明晚再來。」", "retry": true },
+          "allies": ["npc_yh_hu_sanniang", "npc_yh_bai_xiaoqiao"]
+        },
+        {
+          "id": "close",
+          "title": "在青丘屯的仙堂和胡三娘談下一步",
+          "text": "三娘靠在炕上，聲音沙啞：「禮部的大官下個月要親自來，帶著禁軍。到時候在老榆樹下議，議不成，就拆。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhq_sent"] },
+          "kind": "story",
+          "allies": ["npc_yh_hu_sanniang"],
+          "success": { "text": "「太爺說，議的時候你一定要在。」三娘說，「你是外人，他們會聽外人說話。」", "set_flags": ["yhq_2_done"], "complete": true }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhq_elm_council",
+      "title": "老榆樹下的議",
+      "summary": "禮部的侍郎帶著禁軍來到青丘屯，要在老榆樹下和屯裡議定仙堂的去留。議不成，禁軍就拆堂口。（堂口的香火・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_taiye",
+        "requires": { "flags": ["yhq_2_done"] },
+        "text": "胡太爺穿上了壓箱底的羊皮襖，手裡拄著一根老榆木杖：「禮部的侍郎到了，帶了三隊禁軍，先拆了屯口的牌坊。議之前，得讓他們知道，青丘的狐狸不是嚇大的。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhq_3_started"],
+      "nodes": [
+        {
+          "id": "gate",
+          "title": "在青丘屯擋住拆牌坊的禁軍",
+          "text": "屯口的牌坊已經被拉倒了一半，三個禁軍精兵舉著朴刀，往仙堂的方向走。",
+          "at": { "where": "settlement", "location": "qingqiu" },
+          "requires": { "flags": ["yhq_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 3]],
+          "success": { "text": "禁軍退到屯外。禮部的侍郎從轎子裡探出頭，臉色難看：「好，好。那就議。」", "set_flags": ["yhq_council"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在青丘屯的老榆樹下議定仙堂的去留",
+          "text": "老榆樹下擺了一張桌子：一邊是禮部的侍郎，一邊是胡太爺、胡三娘與屯裡的老人。侍郎說：「仙堂改祀，靈狐族入太廟，從此與化龍族同祭祖龍，這是恩典。」胡太爺說：「我們有自己的祖宗。」所有人都看向你。",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_old_elm" },
+          "requires": { "flags": ["yhq_council"] },
+          "kind": "choice",
+          "allies": ["npc_yh_hu_taiye", "npc_yh_hu_sanniang"],
+          "options": [
+            {
+              "label": "改祀入太廟",
+              "success": {
+                "text": "你勸胡太爺接受：靈狐族的祖靈入太廟，和化龍族同祭，從此不再是「淫祀」。仙堂改成了祖龍祠，牌位搬進了龍安府。屯裡的老人哭了一夜；城裡的胡記，第一次在太廟有了位子。",
+                "set_flags": ["yhq_end_court"],
+                "complete": true,
+                "counters": { "yh_reform": -1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": -10, "reason": "勸屯裡改祀" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": 4 },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 6, "reason": "靈狐族入太廟" }
+                ]
+              }
+            },
+            {
+              "label": "堂口自治",
+              "success": {
+                "text": "你對侍郎說：仙家是靈狐族的祖靈，不歸禮部管。胡太爺把族裡的老人都叫來，在老榆樹下立誓：青丘的堂口自己管，朝廷的祀典裡沒有，也不必有。侍郎拂袖而去，屯裡的人放了一夜的爆竹。",
+                "set_flags": ["yhq_end_people"],
+                "complete": true,
+                "counters": { "yh_reform": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": 12, "reason": "保住了堂口的自治" },
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 8, "reason": "保住了堂口的自治" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": -3 }
+                ]
+              }
+            },
+            {
+              "label": "堂口保留，編進官方的祀典",
+              "success": {
+                "text": "你提議：仙堂保留，胡家仙照舊供奉，但編進大燁的祀典，列為「青丘祖靈」，由禮部登記、屯裡自管。侍郎想了想，覺得這樣既有面子又省事；胡太爺吸了一口旱菸，點了頭。",
+                "set_flags": ["yhq_end_balance"],
+                "complete": true,
+                "counters": { "yh_balance": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_taiye", "delta": 10, "reason": "保住了堂口" },
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 10, "reason": "保住了堂口" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

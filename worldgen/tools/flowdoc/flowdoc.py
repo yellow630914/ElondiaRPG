@@ -204,8 +204,13 @@ WORK_LINES = {'銀鱗旅店的看板娘', '怪人魔導師的研究', '黃金骰
               '教堂懺悔室的各國巡禮', '豐饒祭的巫女', '求偶祭', '潮汐祭'}
 
 
+# 炎華南域的地區故事線（east_p4a_*.py）：同一個人開頭也不是角色線
+EAST_REGION_LINES = {'渡海引導', '化龍族：點青', '靈狐族：胡家的名冊', '科舉舞弊', '禁軍的軍餉', '花石綱', '罷織', '香料行的地盤', '火藥的訂單', '堂口的香火'}
+
+
 def category(name, sts):
     if name in ('政治史詩', '巨龍史詩'): return '史詩'
+    if name in EAST_REGION_LINES: return '地區與勢力'
     if name == '多人特殊任務': return '多人特殊任務'
     if name == '入門委託': return '入門委託'
     if name == '沿海洞窟': return '地下城'
