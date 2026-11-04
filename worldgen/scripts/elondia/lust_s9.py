@@ -267,9 +267,10 @@ def opt(label, success, check=None, fail=None, scene=None):
     return o
 
 
-def ev(id, title, text, triggers, options, layers=None, dungeons=None, tags=UNWILLING, scene=None, tier='normal', requires=None):
+def ev(id, title, text, triggers, options, layers=None, dungeons=None, tags=UNWILLING, scene=None, tier='normal', requires=None, cooldown_days=None):
     return {"id": id, "scope": "dungeon", "tier": tier, "kind": "choice", "triggers": triggers, **({"layers": layers} if layers else {}),
-            **({"dungeons": dungeons} if dungeons else {}), **({"requires": requires} if requires else {}), "tags": tags, "pc_body": BODY,
+            **({"dungeons": dungeons} if dungeons else {}), **({"requires": requires} if requires else {}),
+            **({"cooldown_days": cooldown_days} if cooldown_days else {}), "tags": tags, "pc_body": BODY,
             "title": title, "text": text, **({"scene": scene} if scene else {}), "options": options}
 
 
@@ -523,7 +524,7 @@ DUNGEON_EVENTS = [
            opt('裝一瓶帶走', out('你小心地裝了一瓶，泉水在瓶子裡還冒著泡。', give('媚香精油')),
                ('int', 12), out('你裝水時手一滑，整隻手臂泡了進去——熱得你差點叫出聲。', give('媚香精油'), cond('aroused'))),
            opt('只泡腳', out('你坐在泉邊泡了一會兒腳，疲勞一掃而空。', heal(0.3))),
-       ], layers=[1, 2, 3, 4], tags=WILLING,
+       ], layers=[1, 2, 3, 4], tags=WILLING, cooldown_days=10,
        scene='主角泡進粉紅色的淫泉，泉水滲進全身，痛變成酥麻、酥麻變成快感，主角在泉水裡獨自喘息'),
     ev('dg_erotic_book', '遺落的春宮書',
        '地上有一本被翻爛的書，封面畫著兩個糾纏在一起的人。書頁之間夾著不少筆記，看得出前一個主人讀得很認真。',
@@ -532,7 +533,7 @@ DUNGEON_EVENTS = [
                ('int', 13), out('你練著練著就忘了在練習。', cond('afterglow'), lewd('lewdness', 1)), scene='fail'),
            opt('收起來帶走', out('你把書收進行囊，回城可以賣個好價錢——或者自己留著。', give('《媚術入門》'))),
            opt('燒掉它', out('你把書扔進火堆。火燒得特別旺，你也莫名覺得心裡清淨了些。', xp(15), lewd('lewdness', -1))),
-       ], layers=[1, 2, 3, 4], tags=WILLING,
+       ], layers=[1, 2, 3, 4], tags=WILLING, cooldown_days=10,
        scene='主角一個人在地下城的角落照著春宮書的圖練習，練著練著就忘了自己在練習'),
 ]
 

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { setContentFilters } from '@/engine/content'
 import { companionRules } from '@/engine/data'
-import { answerDungeonEvent, DEFAULT_LAYER_DC, dungeonCandidates, eventBaseDc, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
+import { answerDungeonEvent, DEFAULT_LAYER_DC, dungeonCandidates, dungeonEventWeight, eventBaseDc, FRESH_DAYS, FULL_POOL, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, move } from '@/engine/grid'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { longRestBlocked } from '@/engine/rest'
@@ -152,6 +152,38 @@ describe('dungeon adult events', () => {
     state.time = { ...state.time, hour: state.time.hour + 7 }
     const area = currentArea(state)
     expect(dungeonCandidates(state, area, 'rest').some((t) => t.id === first)).toBe(false)
+  })
+
+  it('keeps the spring and the book from showing up every time you gather', () => {
+    const spring = travelEvents.templates.find((t) => t.id === 'dg_lewd_spring')!
+    const book = travelEvents.templates.find((t) => t.id === 'dg_erotic_book')!
+    expect(spring.cooldown_days).toBe(10)
+    expect(book.cooldown_days).toBe(10)
+    // 剛出現過的權重低，隔得越久越高
+    const state = inDungeon('fem')
+    expect(dungeonEventWeight(state, 'dg_lewd_spring')).toBe(1)
+    state.dungeonEvents = { seen: { dg_lewd_spring: state.time.day } }
+    expect(dungeonEventWeight(state, 'dg_lewd_spring')).toBeCloseTo(0.2)
+    state.time = { ...state.time, day: state.time.day + FRESH_DAYS }
+    expect(dungeonEventWeight(state, 'dg_lewd_spring')).toBe(1)
+    // 採集可抽的事件少時機率照比例調低：只有一件可抽時，機率 1 也大約只有 1/FULL_POOL 會發生
+    const mods = emptyMods()
+    const r = builtinEventRules()
+    mods.eventRules.rules = { ...r, dungeon: { ...r.dungeon, chance: { trap: 1, chest: 1, gather: 1, rest: 1 }, cooldown_hours: 0, repeat_days: 0 } }
+    // 只留淫泉可以在採集時抽（這裡是周邊：拿掉層數的限制）
+    mods.travelEvents = Object.fromEntries(dungeonTemplates().map((t) => [t.id, t.id === 'dg_lewd_spring' ? { ...t, layers: undefined } : { ...t, triggers: ['trap'] }])) as never
+    applyContent(mods)
+    const area = currentArea(state)
+    const only = dungeonCandidates(state, area, 'gather')
+    expect(only.map((t) => t.id)).toEqual(['dg_lewd_spring'])
+    let hits = 0
+    for (let i = 0; i < 200; i++) {
+      if (maybeDungeonEvent(state, 'gather')) hits++
+      delete state.dungeonEvent
+      state.dungeonEvents = { seen: {} }
+    }
+    expect(hits).toBeGreaterThan(200 / FULL_POOL / 2)
+    expect(hits).toBeLessThan(200 / FULL_POOL * 1.6)
   })
 
   it('drops a pending event whose template the content no longer has', () => {

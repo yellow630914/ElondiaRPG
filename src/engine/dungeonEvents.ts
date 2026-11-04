@@ -79,6 +79,19 @@ export function dungeonCandidates(state: GameState, area: Area, trigger: Dungeon
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }
 
+/** 採集、長休時可以抽的事件少於這麼多件，觸發的機率照比例調低（一般地下城採集時只有兩三件可抽，不要一直遇到同一件）；陷阱與寶箱不調（事件取代陷阱的傷害、寶箱的擬態） */
+export const FULL_POOL = 4
+/** 最近出現過的事件權重比較低：沒出現過 1，出現過的照隔了幾天（到 FRESH_DAYS 天恢復成 1，最低 MIN_WEIGHT） */
+export const FRESH_DAYS = 14
+const MIN_WEIGHT = 0.2
+
+/** 這件事被抽到的權重：越久沒出現越高 */
+export function dungeonEventWeight(state: GameState, id: string): number {
+  const seen = state.dungeonEvents?.seen?.[id]
+  if (seen === undefined) return 1
+  return Math.max(MIN_WEIGHT, Math.min(1, (state.time.day - seen) / FRESH_DAYS))
+}
+
 /**
  * 觸發點發生之後（陷阱沒察覺、打開寶箱、採集、安全房長休）：冷卻過了、機率中了，就遇到一件事，等主角回應。
  * 回傳有沒有開始事件（寶箱：有事件時寶箱本身不打開）。
@@ -92,8 +105,16 @@ export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger): bo
   if (last !== undefined && now - last < rules.cooldown_hours) return false
   const list = dungeonCandidates(state, area, trigger)
   if (!list.length) return false
-  const chance = Math.min(1, (rules.chance[trigger] ?? 0) * gameRule(state, 'dungeonEventMult'))
-  const pick = withRng(state, (rng) => (rng.chance(chance) ? rng.pick(list) : undefined))
+  // 採集、長休可以抽的事件少時機率照比例調低；抽的時候最近出現過的權重比較低
+  const pool = trigger === 'gather' || trigger === 'rest' ? Math.min(1, list.length / FULL_POOL) : 1
+  const chance = Math.min(1, (rules.chance[trigger] ?? 0) * gameRule(state, 'dungeonEventMult') * pool)
+  const pick = withRng(state, (rng) => {
+    if (!rng.chance(chance)) return undefined
+    const weights = list.map((t) => dungeonEventWeight(state, t.id))
+    let r = rng.next() * weights.reduce((a, b) => a + b, 0)
+    for (let i = 0; i < list.length; i++) if ((r -= weights[i]!) < 0) return list[i]
+    return list[list.length - 1]
+  })
   if (!pick) return false
   const log = (state.dungeonEvents ??= { seen: {} })
   log.last = now
