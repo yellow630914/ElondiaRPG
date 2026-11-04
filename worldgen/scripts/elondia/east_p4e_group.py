@@ -203,6 +203,11 @@ SCENES = {
               [JIN, LU], ['ygjm_done'], hours=3),
     ],
 }
+# 北原（east_p8e.py 的雙帝的會盟）：金帳在 east_p7_people.py 寫地標時一起帶上
+SCENES['lm_td_golden_tent'] = [
+    scene('雙帝的夜宴', '昭華又微服來了金帳，說是來談互市的帳。', '金帳的內帳裡，{cast}又把怯薛都趕到一百步外：一個像批摺子一樣一道一道下令，一個像在雪原上追獵物一樣又急又重；兩人比著比著又配合起來，把主角夾在狼皮中間，天亮前才各自整好衣冠。',
+          ['npc_yh_zhaohua', 'npc_td_ulantuya'], ['tdgse_done'], tags=NV, hours=4, affinity=2),
+]
 
 
 def write_scenes():

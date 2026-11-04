@@ -49043,6 +49043,1586 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 4000 }, { "type": "item", "name": "精金礦石", "qty": 2 }]
+    },
+    {
+      "id": "tdcu_winter_hunt",
+      "title": "冬獵的勢子",
+      "summary": "天可汗每年冬天在王庭外圍獵，要上百個勢子把獸群趕進圍場。今年缺人，怯薛到公會來招外人。（烏蘭圖雅・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "guild", "location": "jinzhang", "text": "公會的帳篷外插著一支怯薛的令箭：「天可汗冬獵，招勢子三十人，管飯，賞羊一隻。」底下有人用炭補了一句：「跑得慢的別來，天可汗的箭不長眼。」", "min_level": 5 },
+      "start_flags": ["tdcu_1_started"],
+      "nodes": [
+        {
+          "id": "drive",
+          "title": "到金帳王庭的近郊替冬獵當勢子",
+          "text": "雪原上拉開了一道幾里長的人牆，勢子們敲著銅鑼、揮著火把，把黃羊、狐狸與狼一點一點趕向圍場。你負責的那一段，有一群黃羊掉頭往回衝。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcu_1_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 12 },
+          "success": { "text": "你搶在羊群前面揮著火把，硬是把牠們逼回了圍場。遠處的山坡上，一個灰褐色馬身的身影勒住了馬，看了你一眼。", "set_flags": ["tdcu_drove"] },
+          "fail": { "text": "羊群從你身邊衝了過去，怯薛的百戶罵了一句。再來一次，這一回別讓牠們跑了。", "retry": true }
+        },
+        {
+          "id": "thieves",
+          "title": "在金帳王庭的近郊擋下趁亂偷馬的馬賊",
+          "text": "圍獵正熱鬧的時候，幾個馬賊摸到了後面的馬群邊，割斷了韁繩。你離得最近。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcu_drove"] },
+          "kind": "combat",
+          "enemies": [["td_horse_raider", 2]],
+          "success": { "text": "馬賊丟下馬跑了。你牽著被割斷韁繩的馬回來，發現圍場的出口站著一個人——灰白的長辮、臉上一道箭疤，手裡的角弓還沒放下。", "set_flags": ["tdcu_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "在金帳王庭的近郊見騎馬過來的天可汗",
+          "text": "天可汗打量你：「勢子都往圍場裡跑，你往馬群跑。」她笑了，笑得像在下戰書，「你不怕我的箭？」怯薛們都低著頭，沒人敢出聲。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcu_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「怕。可是馬比較要緊」",
+              "success": {
+                "text": "她大笑起來，笑聲在雪原上傳得很遠：「好！明年冬獵，你還來。」她把一隻剛射下的狐狸丟給你，「賞你的，不是賞勢子的。」",
+                "set_flags": ["tdcu_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "在冬獵當勢子，替天可汗烏蘭圖雅擋下偷馬的馬賊；她說明年冬獵還要你來。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳的箭沒有射偏過吧」",
+              "success": {
+                "text": "她挑起眉毛，盯著你看了好一會兒：「沒有。」她轉身上馬，又回頭，「所以下次站穩一點，別讓我有理由射偏。」",
+                "set_flags": ["tdcu_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "冬獵時問天可汗烏蘭圖雅：妳的箭沒有射偏過吧？她說沒有，要你下次站穩一點。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_ulantuya"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdcu_night_hunt",
+      "title": "夜獵",
+      "summary": "天可汗要一場夜獵：她的獵物是怯薛裡最好的兩個騎手，獵人是你。她想看看，你到底有幾分本事。（烏蘭圖雅・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "guild",
+        "location": "jinzhang",
+        "text": "怯薛把一支金箭放在公會的桌上：「天可汗召你。」他頓了一下，臉色很古怪，「她說今晚要夜獵，獵物已經準備好了——是我們怯薛的人。」",
+        "requires": { "affinity": { "npc_td_ulantuya": 20 }, "flags": ["tdcu_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["tdcu_2_started"],
+      "nodes": [
+        {
+          "id": "go",
+          "title": "在金帳王庭的公會跟怯薛進金帳",
+          "text": "怯薛一路上都沒說話，到了金帳前才低聲說：「天可汗很少召外人兩次。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "guild" },
+          "requires": { "flags": ["tdcu_2_started"] },
+          "kind": "story",
+          "success": { "text": "一個怯薛領著你穿過兩排一動不動的黑甲，掀開金帳最裡面的那一道氈簾。", "set_flags": ["tdcu_in"], "special_map": "sm_td_inner_tent" }
+        },
+        {
+          "id": "rules",
+          "title": "在金帳的內帳聽天可汗說夜獵的規矩",
+          "text": "天可汗斜靠在狼皮寶座上，轉著銀碗：「草原上的規矩：獵人不問獵物是誰。今晚有兩個怯薛在王庭外的雪原上跑，天亮之前你把他們追上、打下馬，我就承認你配得上草原。追不上——」她笑了，「那你就是勢子。」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdcu_in"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya"],
+          "success": {
+            "text": "她把一張角弓丟給你：「別殺了他們。怯薛很貴。」",
+            "set_flags": ["tdcu_rules"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_ulantuya", "delta": 3, "reason": "接下夜獵" }]
+          }
+        },
+        {
+          "id": "chase",
+          "title": "晚上在金帳王庭的近郊追上當獵物的怯薛",
+          "text": "月光下的雪原上，兩個北院的騎手一前一後地跑，馬蹄揚起的雪粉在月光裡閃。他們發現你追上來，回身就是兩箭。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcu_rules"] },
+          "kind": "combat",
+          "enemies": [["td_north_rider", 2]],
+          "success": { "text": "兩個騎手先後被你打下了馬，躺在雪地裡大口喘氣，其中一個笑著說：「天可汗說得對，你真的追上來了。」", "set_flags": ["tdcu_caught"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "close",
+          "title": "回金帳的內帳向天可汗交差",
+          "text": "天快亮了。天可汗沒有睡，一直坐在寶座上等。看見你進來，她把銀碗斟滿，推到你面前：「怯薛說，你追了他們半夜，一句抱怨都沒有。」她看著你，「十年來，所有人都怕我。你也該怕我——你為什麼不怕？」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdcu_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「因為妳說話算話」",
+              "success": {
+                "text": "她沉默了一會兒，然後一口喝乾了自己的那碗：「說話算話的人，在草原上都死得早。」她看著空碗，「……我還活著。」",
+                "set_flags": ["tdcu_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "天可汗烏蘭圖雅的夜獵：追上了兩個當獵物的怯薛；她問你為什麼不怕她，你說因為她說話算話。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「怕。可是我更想知道妳在想什麼」",
+              "success": {
+                "text": "她愣住了，然後大笑起來，笑到眼角都濕了：「我在想什麼？」她又斟了一碗，「我在想，下一場冬獵，要你站在我旁邊。」",
+                "set_flags": ["tdcu_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "天可汗烏蘭圖雅的夜獵：你說你怕她，可是更想知道她在想什麼；她說下一場冬獵要你站在她旁邊。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_ulantuya"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdcu_not_afraid",
+      "title": "不怕她的人",
+      "summary": "最後一場冬獵，你站在天可汗的旁邊。舊部的人也來了——他們要的獵物，是天可汗。（烏蘭圖雅・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "jinzhang",
+        "text": "怯薛又來了，這次手上不是令箭，是天可汗自己的那張角弓：「天可汗說，今年最後一場冬獵，你站在她旁邊。」他壓低聲音，「北院說舊部的人最近在雪原上走動。天可汗說——你在就好。」",
+        "requires": { "affinity": { "npc_td_ulantuya": 30 }, "flags": ["tdcu_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdcu_3_started"],
+      "nodes": [
+        {
+          "id": "beside",
+          "title": "在金帳王庭的近郊跟天可汗一起冬獵",
+          "text": "雪原上的圍場收到了最後一圈。天可汗騎在最前面，你在她旁邊，怯薛在後面排成一道弧。她一箭射倒一頭狼，回頭對你說：「十年前，我就是在這片雪原上把最後一個部族的首領射下馬的。」",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcu_3_started"] },
+          "kind": "story",
+          "allies": ["npc_td_ulantuya"],
+          "success": { "text": "話還沒說完，圍場另一頭的雪坡後面揚起了雪塵。怯薛們拔刀的聲音連成一片。", "set_flags": ["tdcu_ambush"] }
+        },
+        {
+          "id": "old_clans",
+          "title": "在金帳王庭的近郊擋下衝向天可汗的舊部勇士",
+          "text": "三個臉上畫著舊部圖騰的勇士從雪坡上衝下來，沒有理會怯薛，直直衝向天可汗：「替被你抹掉名字的人討債！」",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcu_ambush"] },
+          "kind": "combat",
+          "enemies": [["td_clan_champion", 3]],
+          "success": { "text": "最後一個勇士倒在天可汗的馬蹄前。她低頭看著那人臉上的圖騰，很久沒有說話，手裡的角弓一直沒有拉開。", "set_flags": ["tdcu_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在金帳的內帳陪天可汗",
+          "text": "回到金帳，天可汗屏退了所有人。她坐在寶座上，看著帳裡那面沒有名字的戰旗：「我統一了草原，抹掉了他們的名字。他們恨我，是應該的。」她轉頭看你，「你剛才擋在我前面。沒有人擋在我前面過——他們都站在我後面。」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdcu_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "走過去，握住她的手",
+              "success": {
+                "text": "她的手很大、很粗，掌心全是弓繭。她沒有抽回去，只是低聲說：「我征服了天下所有的東西，就是沒想過要一個不怕我的人。」她把你拉近，「現在我想要了。」",
+                "set_flags": ["tdcu_lover", "tdcu_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "最後一場冬獵，你擋在天可汗烏蘭圖雅的前面；她說她征服了一切，就是沒想過要一個不怕她的人——現在她想要了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下一次，我還站在妳前面」",
+              "success": {
+                "text": "她笑了，這一次不像下戰書，像個年輕人：「你知道你在說什麼嗎？」你點頭。她把那張角弓放在你手裡：「那就站著。別讓我有理由射偏。」",
+                "set_flags": ["tdcu_lover", "tdcu_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你對天可汗烏蘭圖雅說下一次還站在她前面；她把自己的角弓放在你手裡。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_ulantuya"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdcu_x",
+      "title": "狼皮上",
+      "summary": "天可汗說，今晚的金帳裡沒有天可汗。（烏蘭圖雅・四）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "guild",
+        "location": "jinzhang",
+        "text": "怯薛把一只銀碗放在公會的桌上，碗底刻著蒼狼：「天可汗說，今晚帶著這只碗來。」他頓了一下，耳朵有點紅，「……她說不用帶弓。」",
+        "requires": { "affinity": { "npc_td_ulantuya": 40 }, "flags_any": ["tdcu_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdcu_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上帶著銀碗到金帳王庭的公會找怯薛",
+          "text": "怯薛領著你進了金帳，沒有走向內帳，而是繞到後面的一頂小氈帳。帳外沒有守衛。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "guild" },
+          "requires": { "flags": ["tdcu_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "他在帳門前停下：「從這裡開始，我就不跟了。」",
+            "set_flags": ["tdcu_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_ulantuya", "delta": 5, "reason": "一起度過的時光" }],
+            "special_map": "sm_td_inner_tent"
+          }
+        },
+        {
+          "id": "night",
+          "title": "在金帳的內帳和烏蘭圖雅度過那一夜",
+          "text": "內帳的地上鋪著那張蒙在寶座上的狼皮。她解開了粗辮，灰白的長髮披到馬背上；織金的皮袍掛在一旁，只穿著一件單衣。她斟滿兩碗馬奶酒：「十年來，我只對人下令。」她把碗遞給你，「今晚，我不知道該下什麼令。」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdcu_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她像打獵一樣",
+              "success": {
+                "text": "「那就照妳的方式。」她的眼神一下子亮了，像在雪原上看見獵物。她把你按在狼皮上，又重又急，強壯的馬身把燈影整個遮住；她要什麼就拿什麼，一聲比一聲大，像是要讓整個王庭都聽見。最後她喘著氣伏在你身上，長髮蓋住了兩個人：「……這是我第一次，在獵場上輸了。」",
+                "set_flags": ["tdcu_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，烏蘭圖雅用天可汗的方式要了你，像在雪原上追獵物；最後她說，這是她第一次在獵場上輸了。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就照妳的方式。」她的眼神一下子亮了，像在雪原上看見獵物。她把你按在狼皮上，又重又急，強壯的馬身把燈影整個遮住；她要什麼就拿什麼，一聲比一聲大，像是要讓整個王庭都聽見。最後她喘著氣伏在你身上，長髮蓋住了兩個人：「……這是我第一次，在獵場上輸了。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她什麼令都不下",
+              "success": {
+                "text": "「今晚不用下令。」你接過她的碗放下，慢慢解開她的單衣。她一開始很僵，像不知道手該放哪裡；你吻她臉上那道箭疤，她閉上了眼睛。後來她不再撐著，任你帶著她，低聲一遍一遍叫你的名字，最後蜷在狼皮上，像一匹終於肯躺下來的馬，抱著你睡到天亮。",
+                "set_flags": ["tdcu_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜沒有天可汗，只有烏蘭圖雅：她第一次什麼令都沒下，抱著你在狼皮上睡到天亮。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「今晚不用下令。」你接過她的碗放下，慢慢解開她的單衣。她一開始很僵，像不知道手該放哪裡；你吻她臉上那道箭疤，她閉上了眼睛。後來她不再撐著，任你帶著她，低聲一遍一遍叫你的名字，最後蜷在狼皮上，像一匹終於肯躺下來的馬，抱著你睡到天亮。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "tdcc_false_name",
+      "title": "假名字",
+      "summary": "察蘭用假名報名了那達慕的賽馬。她要一個不認得她的人陪她練馬——偏偏她的馬被偷了。（察蘭・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_chalan",
+        "text": "察蘭把一塊寫著「阿勒泰」的木牌塞給你看：「我用這個名字報了賽馬。沒有人知道是我。」她咬了咬嘴唇，「可是我要練馬，要一個不會把我當成少主的人陪我。你不認得我——對吧？」",
+        "min_level": 5
+      },
+      "start_flags": ["tdcc_1_started"],
+      "nodes": [
+        {
+          "id": "train",
+          "title": "在金帳王庭的那達慕場陪察蘭練馬",
+          "text": "天還沒亮，那達慕場上只有你們兩個。察蘭的馬身在晨霧裡像一道灰色的影子，一圈一圈地跑；她要你騎在旁邊，喊出每一圈的時間，「不准放水」。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcc_1_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 12 },
+          "success": { "text": "你跟上了她，有一圈還差點超過她。察蘭停下來，喘著氣瞪你：「你剛才是不是想贏我？」你說是。她愣了一下，笑了出來：「好。終於有人想贏我了。」", "set_flags": ["tdcc_trained"] },
+          "fail": { "text": "你被她甩了半圈，她回頭喊：「你在放水嗎？」再跑一次。", "retry": true },
+          "allies": ["npc_td_chalan"]
+        },
+        {
+          "id": "stolen",
+          "title": "在金帳王庭的近郊追回察蘭的馬",
+          "text": "第二天一早，察蘭衝進公會：「我的備用馬被偷了！賽馬要換三次馬，沒有牠我跑不完。」雪地上的蹄印一路往城外去，盡頭是兩個馬賊。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcc_trained"] },
+          "kind": "combat",
+          "enemies": [["td_horse_raider", 2]],
+          "success": { "text": "馬賊被你打跑了，備用馬好好的。察蘭撲上去抱住牠的脖子，又轉頭對你說：「……謝了。這次不是少主謝你，是阿勒泰。」", "set_flags": ["tdcc_horse"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "在金帳王庭的近郊陪察蘭牽馬回去",
+          "text": "回王庭的路上，察蘭一直牽著馬走，沒有騎。走到營門口，她忽然停下來：「你知道我是誰，對吧？從一開始就知道。」",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcc_horse"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「知道。可是我陪的是阿勒泰」",
+              "success": {
+                "text": "她看了你很久，把那塊木牌塞進你手裡：「那你替我收著。等我用真名贏的那一天，再還給我。」",
+                "set_flags": ["tdcc_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪用假名「阿勒泰」報賽馬的察蘭練馬、追回她的備用馬；她把木牌交給你保管。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳是察蘭，跑得比我快的人」",
+              "success": {
+                "text": "她的臉紅了，又兇巴巴地瞪你：「廢話。」走了幾步，她小聲補了一句，「……謝謝你沒說『天可汗的女兒』。」",
+                "set_flags": ["tdcc_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對察蘭說她是跑得比你快的人；她謝謝你沒說「天可汗的女兒」。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_chalan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdcc_fixed_race",
+      "title": "放水的人",
+      "summary": "察蘭的預賽贏得太輕鬆了。她發現其他騎手都在放水——有人收了錢，要讓「少主」贏。（察蘭・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_chalan",
+        "text": "察蘭把馬鞭摔在地上：「我贏了預賽。贏得太容易了。」她眼睛紅紅的，「每個人都在最後一段慢下來。有人付錢讓他們輸給我。我要知道是誰。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["tdcc_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["tdcc_2_started"],
+      "nodes": [
+        {
+          "id": "ask",
+          "title": "在金帳王庭的那達慕場打聽是誰付了錢",
+          "text": "那達慕場邊的騎手們看見察蘭就散開了。你一個人留下來，請一個輸了預賽的年輕騎手喝了一碗馬奶酒。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcc_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": { "text": "年輕騎手喝了三碗才開口：「是北院的人。他們說，少主贏了那達慕，天可汗會高興，北院就有好處。」他低下頭，「……可是我們也想贏啊。」", "set_flags": ["tdcc_who"] },
+          "fail": { "text": "騎手們都說不知道。換個人問問，或者換個時候。", "retry": true }
+        },
+        {
+          "id": "payers",
+          "title": "在金帳王庭的近郊找付錢的人說清楚",
+          "text": "付錢的人在王庭外的草坡上等著下一批騎手：一個黑鬃手下的悍匪和一個走私的護衛，北院雇來辦髒事的。看見你和察蘭，他們把錢袋一丟，拔出了刀。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcc_who"] },
+          "kind": "combat",
+          "enemies": [["td_raider_veteran", 1], ["td_smuggler_guard", 1]],
+          "success": { "text": "悍匪們跑了，錢袋散了一地。察蘭撿起一枚銀幣，上面打著北院的印。她握著那枚銀幣，手在發抖。", "set_flags": ["tdcc_caught"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "在金帳王庭的那達慕場陪察蘭決定怎麼辦",
+          "text": "察蘭坐在空蕩蕩的那達慕場邊：「我可以去找母親，讓她罰北院。」她把銀幣丟在地上，「可是那樣，我還是靠她。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcc_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「把錢還給騎手，請他們真的跑」",
+              "success": {
+                "text": "她跑遍了所有騎手的帳篷，一個一個把錢還回去：「決賽不准讓我。誰讓我，我就跟誰打。」騎手們都笑了。她回來的時候，臉上全是汗，卻笑得很開心。",
+                "set_flags": ["tdcc_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "察蘭發現有人收錢讓她贏；她把錢還給每一個騎手，要他們決賽真的跑。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「告訴天可汗，可是讓妳自己說」",
+              "success": {
+                "text": "她想了很久，點點頭：「好。我自己去說。」第二天，北院的那個百戶被罰去守北邊的牧場。察蘭回來對你說：「母親第一次聽我把話說完。」",
+                "set_flags": ["tdcc_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "察蘭自己去天可汗面前揭發了收買騎手的北院百戶；她說母親第一次聽她把話說完。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_chalan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdcc_true_name",
+      "title": "用真名贏",
+      "summary": "那達慕的決賽，察蘭要用真名出賽。全王庭的人都在看——有人不想讓她贏，也有人不想讓她輸。（察蘭・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_chalan",
+        "text": "察蘭來找你的時候，手上拿著一塊新的木牌，上面寫著「察蘭」：「決賽，我用真名跑。不是阿勒泰，也不是少主。」她把木牌在你面前晃了晃，「替我在終點等著。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["tdcc_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdcc_3_started"],
+      "nodes": [
+        {
+          "id": "off",
+          "title": "在金帳王庭的那達慕場看察蘭的決賽起跑",
+          "text": "那達慕場上擠滿了人。天可汗坐在最高的看台上，鐵牙在她身邊。報名的木牌一面一面掛出來，掛到「察蘭」的時候，場上安靜了一下，接著是一片嘩然。察蘭沒有看看台，只是對你點了點頭，衝了出去。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcc_3_started"] },
+          "kind": "story",
+          "allies": ["npc_td_chalan"],
+          "success": { "text": "賽道一路從王庭跑到敖包再跑回來。跑到半路，你看見賽道邊的草坡後面有人影在動。", "set_flags": ["tdcc_running"] }
+        },
+        {
+          "id": "saboteurs",
+          "title": "在金帳王庭的近郊擋下埋伏在賽道邊的人",
+          "text": "草坡後面埋伏著幾個人：有不想讓少主贏的舊部勇士，也有收了錢、不想讓少主輸的怯薛。兩邊都看見了你，也都看見了賽道上越來越近的灰色馬身。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdcc_running"] },
+          "kind": "combat",
+          "enemies": [["td_clan_champion", 2], ["td_kheshig", 1]],
+          "success": { "text": "埋伏的人倒了一地。察蘭從你身邊衝過去，頭也不回地喊了一聲：「謝了！」你看著她的背影跑向終點。", "set_flags": ["tdcc_clear"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在金帳王庭的那達慕場等察蘭衝過終點",
+          "text": "察蘭第一個衝過終點的彩旗。場上的人喊的不是「少主」，是「察蘭」。天可汗站了起來，鼓掌。察蘭沒有去看台，而是直直跑到你面前，渾身是汗，大口喘著氣：「我贏了。用我自己的名字。」她看著你，「……你一直在終點。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcc_clear"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳跑得真好，察蘭」",
+              "success": {
+                "text": "她把寫著「察蘭」的木牌塞進你手裡：「你收著。阿勒泰是你認得的我，察蘭是大家認得的我——現在兩個都是你的。」她踮起前蹄，在你臉上親了一下。",
+                "set_flags": ["tdcc_lover", "tdcc_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "察蘭用真名贏了那達慕，把寫著自己名字的木牌給了你：阿勒泰和察蘭，兩個都是你的。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下次，我想贏妳」",
+              "success": {
+                "text": "她愣了一下，然後大笑起來，一把抱住你：「好啊！你一輩子都別想贏我——所以你一輩子都得陪我跑。」",
+                "set_flags": ["tdcc_lover", "tdcc_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "察蘭用真名贏了那達慕；你說下次想贏她，她說那你一輩子都得陪她跑。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_chalan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdcc_x",
+      "title": "賽道的盡頭",
+      "summary": "察蘭說，今晚跑一圈只有兩個人的賽道。（察蘭・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_chalan",
+        "text": "察蘭把一條藍色的哈達繫在你的手腕上：「草原的規矩，賽馬的冠軍可以選一個人，一起跑最後一圈。」她的耳朵紅了，「今晚。只有我們兩個。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["tdcc_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdcc_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上和察蘭在金帳王庭的那達慕場跑最後一圈",
+          "text": "月亮升起來的時候，那達慕場上沒有別人。察蘭不用馬鞭，也不計時，只是陪著你慢慢地跑，一圈又一圈。跑到敖包的時候，她停下來，在石堆上添了一塊石頭。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcc_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「許了什麼？」你問。「不告訴你。」她說，臉在月光下紅得很明顯。",
+            "set_flags": ["tdcc_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_chalan", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在金帳王庭和察蘭度過那一夜",
+          "text": "她的氈帳很小，牆上掛著角弓與一排獎牌，地上鋪著一張還沒鞣好的狼皮。她背對著你解開皮甲，短髮貼在汗濕的頸後；轉過來的時候，她雙手抱胸，又放了下來：「我、我沒做過這個。」她的聲音難得發虛，「可是我不會輸的。」",
+          "at": { "where": "npc", "npc": "npc_td_chalan", "location": "jinzhang" },
+          "requires": { "flags": ["tdcc_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她「贏」",
+              "success": {
+                "text": "「那就讓妳贏。」她咬著嘴唇把你推倒，笨手笨腳又不肯認輸，每一個動作都像在比賽；她的灰色馬身緊張得一直踏著地，被你碰到的時候又整個軟下來。最後她伏在你身上，喘著氣問：「我……贏了嗎？」你說贏了。她把臉埋進你的頸窩裡，笑了很久。",
+                "set_flags": ["tdcc_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，察蘭不肯認輸，笨手笨腳地要贏你；最後她問「我贏了嗎」，你說贏了。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就讓妳贏。」她咬著嘴唇把你推倒，笨手笨腳又不肯認輸，每一個動作都像在比賽；她的灰色馬身緊張得一直踏著地，被你碰到的時候又整個軟下來。最後她伏在你身上，喘著氣問：「我……贏了嗎？」你說贏了。她把臉埋進你的頸窩裡，笑了很久。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "慢慢來",
+              "success": {
+                "text": "「這不是比賽。」你握住她的手，她愣了一下，慢慢放鬆下來。你吻她汗濕的頸後、手腕上那圈母親給的狼毛，她一開始緊張得發抖，後來抱緊了你，一聲一聲地叫你的名字，像在賽道上喊時間。天亮時，她蜷在你懷裡，小聲說：「……這一圈，跑得好慢。我喜歡。」",
+                "set_flags": ["tdcc_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_chalan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，你對察蘭說這不是比賽；她說這一圈跑得好慢，她喜歡。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「這不是比賽。」你握住她的手，她愣了一下，慢慢放鬆下來。你吻她汗濕的頸後、手腕上那圈母親給的狼毛，她一開始緊張得發抖，後來抱緊了你，一聲一聲地叫你的名字，像在賽道上喊時間。天亮時，她蜷在你懷裡，小聲說：「……這一圈，跑得好慢。我喜歡。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "tdcq_war_horse_bone",
+      "title": "戰馬的骨",
+      "summary": "其其格的羊骨一燒就碎，讀不出紋。她說要一塊統一戰爭時死在古戰場上的戰馬的肩胛骨——死過的東西，才看得見將來的死。（其其格・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "text": "其其格把一盤燒碎的羊骨倒在你面前：「骨頭不肯說話了。」她的聲音慢得像在讀紋，「鳴鏑古戰場的外面埋著十年前的戰馬。我要一塊牠們的骨。拾骨人不讓人碰——你去。」",
+        "min_level": 5
+      },
+      "start_flags": ["tdcq_1_started"],
+      "nodes": [
+        {
+          "id": "pickers",
+          "title": "到鳴鏑古戰場的周邊從拾骨人手上拿回戰馬的骨",
+          "text": "古戰場外的荒地上，拾骨人蹲在一堆白骨邊挑挑揀揀，看見你走過來，抄起骨頭做的棍子：「這裡的骨頭是我們的。」",
+          "at": { "where": "dungeon", "location": "mingdi_field", "layer": "outskirts" },
+          "requires": { "flags": ["tdcq_1_started"] },
+          "kind": "combat",
+          "enemies": [["bone_picker", 2]],
+          "success": { "text": "拾骨人跑了。你在白骨堆裡找到一塊完整的馬肩胛骨，上面還有一道箭痕。", "set_flags": ["tdcq_bone"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "read",
+          "title": "回金帳王庭的敖包把骨頭交給其其格",
+          "text": "其其格把馬骨丟進火裡。骨頭裂開的聲音很響，像一聲馬嘶。她盯著裂紋看了很久，臉色一點一點變白：「……南方。又是南方。四次了。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_bone"] },
+          "kind": "story",
+          "allies": ["npc_td_qiqige"],
+          "success": { "text": "她把燒好的骨頭收進懷裡，沒有讓你看：「骨頭說的事，天可汗不愛聽。」", "set_flags": ["tdcq_read"] }
+        },
+        {
+          "id": "close",
+          "title": "在金帳王庭的敖包陪其其格坐一會兒",
+          "text": "其其格坐在敖包的石堆邊，銅鈴與骨片在風裡叮噹作響：「渥都干只說看見的。看見了，就要說。」她轉頭看你，「你會想知道你自己的骨紋嗎？」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_read"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「想」",
+              "success": {
+                "text": "她拿起一塊小羊骨，在你手心裡燒了一下——不燙。她看著裂紋，很久才說：「你的紋很亂。」她頓了一下，嘴角有一點點笑，「亂的紋，很少見。我喜歡看。」",
+                "set_flags": ["tdcq_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替國師其其格從古戰場拿回戰馬的骨，她從骨紋裡又看見了南方；她說你的骨紋很亂，她喜歡看。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「不想。我想知道妳看見了什麼」",
+              "success": {
+                "text": "她看著你，好像這是她第一次被人這樣問：「……沒有人問過我看見了什麼。他們只問，要不要出征。」她把懷裡的骨頭握緊了一點，「下次，我告訴你。」",
+                "set_flags": ["tdcq_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替國師其其格從古戰場拿回戰馬的骨；你問她看見了什麼，她說下次告訴你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_qiqige"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdcq_night_reading",
+      "title": "夜裡的占卜",
+      "summary": "其其格要在月黑的夜裡讀一塊最大的骨。這一夜，草原上的遊魂都會圍到敖包來——她要一個人替她守著火。（其其格・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "text": "其其格把一塊比手掌還大的肩胛骨抱在懷裡：「月黑的夜裡，骨頭說得最清楚。」她看著你，「也是遊魂最多的夜裡。我讀骨的時候不能停。你替我守著火——不管看見什麼。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["tdcq_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["tdcq_2_started"],
+      "nodes": [
+        {
+          "id": "fire",
+          "title": "晚上在金帳王庭的敖包替其其格點火",
+          "text": "敖包前的火燒得很旺。其其格跪坐在火邊，閉著眼睛搖著銅鈴，嘴裡念著你聽不懂的話。火光外的黑暗裡，慢慢浮起一張一張蒼白的臉。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_2_started"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_td_qiqige"],
+          "success": { "text": "其其格沒有睜眼，只是說：「別讓它們碰到火。」", "set_flags": ["tdcq_ghosts"] }
+        },
+        {
+          "id": "spirits",
+          "title": "晚上在金帳王庭的敖包擋下圍過來的遊魂",
+          "text": "遊魂們越靠越近，它們的嘴裡哼著統一戰爭時的戰歌，伸手要去抓那塊在火裡的骨。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_ghosts"] },
+          "kind": "combat",
+          "enemies": [["td_steppe_spirit", 2]],
+          "success": { "text": "遊魂散了。火裡的骨頭啪地一聲裂開，其其格睜開眼睛，臉白得像她的馬身。", "set_flags": ["tdcq_done_reading"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "晚上在金帳王庭的敖包聽其其格說她看見的",
+          "text": "其其格把裂開的骨頭給你看：「這一道是鷹河。這一道是龍安府。中間這一道……是一場很大的仗，大到草原上會少一半的人。」她的手在發抖，「我答應過你，看見了就告訴你。我只告訴了你。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_done_reading"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "握住她發抖的手",
+              "success": {
+                "text": "她的手很冰。她沒有抽回去，只是靜靜地讓你握著，直到不再發抖：「渥都干不應該怕。」她低聲說，「可是今晚，我怕。」",
+                "set_flags": ["tdcq_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "月黑的夜裡替其其格守火；她從骨紋裡看見一場會讓草原少一半人的大仗，只告訴了你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「那就讓它不要發生」",
+              "success": {
+                "text": "她看著你，好像你說了一句很奇怪的話：「骨紋是將來。」你說將來還沒有來。她沉默了很久：「……也許，你說得對。」",
+                "set_flags": ["tdcq_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "其其格從骨紋裡看見了一場大仗；你說那就讓它不要發生，她說也許你說得對。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_qiqige"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdcq_unwelcome",
+      "title": "不受歡迎的預言",
+      "summary": "其其格要把骨紋裡的戰爭說給天可汗聽。天可汗不想聽，怨魂卻想讓她永遠說不出口。（其其格・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "text": "其其格穿上了最正式的巫袍，臉上的藍紋重新畫過：「我要去金帳，把骨紋說給天可汗聽。」她看著你，「上一個說天可汗不愛聽的話的渥都干，被趕出了王庭。陪我去。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["tdcq_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdcq_3_started"],
+      "nodes": [
+        {
+          "id": "ghosts",
+          "title": "晚上在金帳王庭的敖包擋下來找其其格的怨魂",
+          "text": "出發前的那一夜，敖包的經幡忽然全部倒向一邊。被抹去名字的怨魂從黑暗裡走出來，怨氣重得連火都壓低了：「渥都干——別說——讓她打——讓她死——」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_3_started"] },
+          "kind": "combat",
+          "enemies": [["td_wrathful_ghost", 3]],
+          "success": { "text": "怨魂散了，經幡慢慢立了回來。其其格靠在石堆上，臉色蒼白：「它們想要那場仗。死人想要更多的死人。」", "set_flags": ["tdcq_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "tell",
+          "title": "在金帳王庭的那達慕場等其其格從金帳回來",
+          "text": "其其格一個人進了金帳，你在那達慕場邊等。等了很久，金帳的方向傳來天可汗的聲音，越來越大，最後是一聲銀碗摔在地上的聲音。其其格走出來，臉上的藍紋被汗沖花了一半，可是她在笑——你第一次看見她笑。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdcq_safe"] },
+          "kind": "story",
+          "allies": ["npc_td_qiqige"],
+          "success": { "text": "「她摔了碗。」其其格說，「可是她聽完了。」", "set_flags": ["tdcq_told"] }
+        },
+        {
+          "id": "confess",
+          "title": "在金帳王庭的敖包陪其其格",
+          "text": "回到敖包，其其格在石堆上添了一塊石頭。她轉過身，慢慢地說——比平常還慢：「十二歲那年，我第一次讀骨，讀到的是我自己的將來：一個人，守著敖包，到老。」她看著你，「最近幾次，我的骨紋裡多了一道。很亂的一道。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_told"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那一道是我」",
+              "success": {
+                "text": "她看了你很久，伸手輕輕碰了碰你的手心，像在讀一塊骨頭：「我知道。我讀了很多次，每一次都是你。」她靠過來，額頭抵著你的額頭，銅鈴輕輕響了一聲。",
+                "set_flags": ["tdcq_lover", "tdcq_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "其其格把骨紋裡的戰爭說給天可汗聽，天可汗摔了碗，卻聽完了；她說她的骨紋裡多了一道很亂的紋，那一道是你。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「不用讀骨，我告訴妳將來」",
+              "success": {
+                "text": "她愣住了。你說，將來是有人陪她守著敖包。她的眼睛慢慢濕了，嘴角卻翹了起來：「……渥都干不應該哭。」她把臉埋進你的肩上，「今天不算。」",
+                "set_flags": ["tdcq_lover", "tdcq_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你對其其格說將來是有人陪她守敖包；她說渥都干不應該哭，今天不算。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_qiqige"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdcq_x",
+      "title": "不讀骨的夜",
+      "summary": "其其格說，今晚她不讀骨，只想看你。（其其格・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "text": "其其格把銅鈴一個一個從頭髮上摘下來，放在敖包的石堆上：「今晚，我不讀骨。」她看著你，說得很慢，「我只想看你。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["tdcq_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdcq_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上和其其格在金帳王庭的敖包看星星",
+          "text": "其其格指著天上的星星，一顆一顆告訴你牠們的名字：哪一顆是長生天的眼睛，哪一顆是蒼狼，哪一顆是白鹿。說到最後一顆，她停下來：「那一顆沒有名字。今晚給它一個。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她說了一個名字——是你的名字。",
+            "set_flags": ["tdcq_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_qiqige", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "晚上在金帳王庭的敖包和其其格度過那一夜",
+          "text": "敖包後面的小氈帳裡點著一盞油燈。她解開巫袍，雪白的馬身在燈下像月光，藍色的紋從臉頰一路畫到鎖骨、畫到腰下——她說那是只給長生天看的紋。「現在，」她說，「給你看。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdcq_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她讀你",
+              "success": {
+                "text": "「那妳也讀我。」她的手指從你的額頭開始，慢慢往下，像在讀一塊骨頭上的每一道紋；讀到哪裡，就吻到哪裡。她一直很安靜，直到最後才失了分寸，咬著你的肩，銅鈴般的聲音一聲比一聲高。之後她伏在你胸口，小聲說：「讀完了。你的紋……只剩一道了。」",
+                "set_flags": ["tdcq_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，其其格用手指一道一道讀你身上的紋，讀到哪裡吻到哪裡；最後她說你的紋只剩一道了。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那妳也讀我。」她的手指從你的額頭開始，慢慢往下，像在讀一塊骨頭上的每一道紋；讀到哪裡，就吻到哪裡。她一直很安靜，直到最後才失了分寸，咬著你的肩，銅鈴般的聲音一聲比一聲高。之後她伏在你胸口，小聲說：「讀完了。你的紋……只剩一道了。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "沿著她的紋",
+              "success": {
+                "text": "你沿著那些藍色的紋，從她的臉頰吻到鎖骨，再一路往下。她閉著眼睛，呼吸越來越亂，平常慢得像讀紋的聲音碎成一段一段的。最後她抱緊你，雪白的馬身在燈下輕輕發抖：「長生天……看見了。」她笑了，「我不在乎。」",
+                "set_flags": ["tdcq_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，你沿著其其格只給長生天看的藍紋吻遍了她；她說長生天看見了，她不在乎。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你沿著那些藍色的紋，從她的臉頰吻到鎖骨，再一路往下。她閉著眼睛，呼吸越來越亂，平常慢得像讀紋的聲音碎成一段一段的。最後她抱緊你，雪白的馬身在燈下輕輕發抖：「長生天……看見了。」她笑了，「我不在乎。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "tdch_lost_messenger",
+      "title": "沒換馬的信差",
+      "summary": "海蘭的信差從不在驛站換馬。這一次，他沒有回來。海蘭不跟外人說話，卻在鷹房外等你。（海蘭・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hailan",
+        "text": "海蘭站在鷹房外，肩上的白海東青盯著你。她說的第一句話是：「你不是媞丹的官。」第二句話是：「我的信差三天沒回來。他走的是不換馬的路。」她沒有說第三句——只是看著你，等你自己開口。",
+        "min_level": 5
+      },
+      "start_flags": ["tdch_1_started"],
+      "nodes": [
+        {
+          "id": "trail",
+          "title": "到鷹河榷場的驛站打聽信差的下落",
+          "text": "驛站的老闆擦著銅牌：「海東部的信差？他們從不在這裡換馬。」他壓低聲音，「可是三天前，有兩個斡勒雇的人在這裡問過同一件事。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_post_station" },
+          "requires": { "flags": ["tdch_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "老闆收了你一碗酒錢，指了指鷹河下游：「那兩個人往河灣去了。帶著一匹海東部的馬。」", "set_flags": ["tdch_trail"] },
+          "fail": { "text": "老闆只是笑：「消息也要錢的。」也許請他喝一碗再問。", "retry": true },
+          "allies": ["npc_td_post_keeper"]
+        },
+        {
+          "id": "thugs",
+          "title": "到鷹河榷場的近郊從打手手上救回信差",
+          "text": "河灣邊的蘆葦裡，信差被綁在一棵枯樹上，兩個打手正在翻他的行囊。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdch_trail"] },
+          "kind": "combat",
+          "enemies": [["td_smuggler_guard", 2]],
+          "success": { "text": "打手跑了。信差的嘴裡塞著布，手腳都是凍傷，懷裡的信卻還在——他用身體壓著，一直沒讓人拿走。", "set_flags": ["tdch_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "回鷹河榷場的鷹房把信差交給海蘭",
+          "text": "海蘭接過信差，一句話也沒說，只是把他抱進鷹房裡。過了很久她才出來，手上拿著那封還沒拆的信：「你沒有看。」那不是問句。",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdch_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那是妳的信」",
+              "success": {
+                "text": "她看著你，第一次多說了幾個字：「媞丹的官會看。大燁的人也會看。」她把信收進懷裡，「你不看。我記住了。」肩上的海東青歪著頭看你。",
+                "set_flags": ["tdch_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替海東部的首領海蘭救回被截的信差，沒有看那封信；她說她記住了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳想讓我看嗎？」",
+              "success": {
+                "text": "她沉默了很久：「……還不想。」她轉身走進鷹房，在門口停了一下，「下次。」",
+                "set_flags": ["tdch_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替海蘭救回被截的信差；你問她想不想讓你看那封信，她說還不想，下次。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_hailan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdch_night_ride",
+      "title": "夜裡的路",
+      "summary": "海蘭要親自送一封信去鷹河下游，見一個大燁的人。她只帶你一個人——北院的騎兵已經在路上等著了。（海蘭・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hailan",
+        "text": "海蘭把一件海東部的舊皮袍丟給你：「今晚穿這個。」她肩上的海東青換了一隻灰色的，不那麼顯眼，「我要去鷹河下游見一個人。大燁的人。」她看著你，「你可以不來。來了，就不能說出去。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["tdch_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["tdch_2_started"],
+      "nodes": [
+        {
+          "id": "riders",
+          "title": "晚上在鷹河榷場的近郊擋下攔路的北院騎兵",
+          "text": "鷹河下游的路上，兩個北院的騎兵從坡後衝出來，長矛指著海蘭：「海東部的首領，半夜往大燁那邊去？」海蘭的手按在角弓上，看了你一眼。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdch_2_started"] },
+          "kind": "combat",
+          "enemies": [["td_north_rider", 2]],
+          "success": { "text": "騎兵倒在雪地裡。海蘭下馬，把他們的馬牽走，一句話也沒說——可是她回頭看你的時候，眼神不一樣了。", "set_flags": ["tdch_through"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "meet",
+          "title": "晚上在鷹河榷場的茶馬市見那個大燁的人",
+          "text": "茶馬市打烊後的帳篷裡，等著你們的是陳茶商的一個夥計，手上拿著一封蓋著大燁宮印的回信。海蘭讀完，把信丟進火裡，看著它燒完：「大燁說，再等等。」她冷笑了一聲，「大燁總是說再等等。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "requires": { "flags": ["tdch_through"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_td_hailan"],
+          "success": { "text": "回去的路上，海蘭一直沒說話。快到鷹房的時候，她才開口：「你都看見了。」", "set_flags": ["tdch_seen"] }
+        },
+        {
+          "id": "close",
+          "title": "晚上在鷹河榷場的鷹房回答海蘭",
+          "text": "鷹房裡，海蘭把灰色的海東青放回鷹架上，背對著你：「你可以去金帳告訴天可汗。你會得到很多賞賜。」她轉過身，「你會嗎？」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdch_seen"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不會」",
+              "success": {
+                "text": "她看了你很久，然後點點頭，把肩上那隻白色的海東青遞過來，讓牠停在你的手臂上：「牠叫阿爾斯蘭。牠只停在我信得過的人身上。」海東青在你手臂上收起了翅膀。",
+                "set_flags": ["tdch_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪海蘭夜裡去見大燁的人，什麼都沒說出去；她讓她的白海東青阿爾斯蘭停在你的手臂上。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我不會說，可是我不贊成」",
+              "success": {
+                "text": "她挑起眉毛——你第一次看見她臉上有表情：「不贊成什麼？」你說，大燁不會替海東部打仗。她沉默了很久：「……我知道。」她低聲說，「可是我沒有別的路。」",
+                "set_flags": ["tdch_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪海蘭去見大燁的人；你說你不會說出去，可是不贊成。她說她知道，可是她沒有別的路。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_hailan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdch_traitor",
+      "title": "冬營的叛徒",
+      "summary": "北院知道了海蘭的信。冬營裡有人把她賣了——海蘭不知道該信誰，只知道該信你。（海蘭・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hailan",
+        "text": "托雅跑來找你，辮子都散了：「首領被北院叫去金帳問話了！他們手上有首領的信——有人從冬營裡偷出去的。」她抓著你的袖子，「首領說，冬營裡她只信一個外人。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["tdch_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdch_3_started"],
+      "nodes": [
+        {
+          "id": "find",
+          "title": "到鷹河榷場的鷹房找出偷信的人",
+          "text": "冬營裡亂成一團，每個人都在互相看。托雅說，能進首領氈房的人只有三個：兩個老鷹獵手，還有她自己。",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdch_3_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": { "text": "你在一個老鷹獵手的鷹架下面，找到了一枚北院的銀幣，還有一截燒剩的信封。他看見你手上的東西，臉色變了，轉身就往冬營外跑。", "set_flags": ["tdch_found"] },
+          "fail": { "text": "你問了一圈，每個人都說不是自己。也許該去看看他們的鷹架。", "retry": true },
+          "allies": ["npc_td_toya"]
+        },
+        {
+          "id": "traitors",
+          "title": "到鷹河榷場的近郊攔住逃走的叛徒",
+          "text": "叛徒在雪原上會合了他的同夥：另一個收了北院的錢的老鷹獵手。他們拉開角弓：「海東部完了。跟著海蘭，只有死路。」",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdch_found"] },
+          "kind": "combat",
+          "enemies": [["td_haidong_elite", 2]],
+          "success": { "text": "叛徒倒在雪地裡。你從他懷裡找到了北院給他的那封信——上面寫著，他供出海蘭之後，可以當新的首領。", "set_flags": ["tdch_proof"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在鷹河榷場的鷹房等海蘭回來",
+          "text": "海蘭從金帳回來的時候已經是半夜。北院拿不出證人，叛徒的信在你手上——天可汗放她回來了。她走進鷹房，看見你，停了下來。肩上的阿爾斯蘭飛過來，停在你的肩上。「牠先選了。」海蘭說，聲音有點啞，「我……也想選。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdch_proof"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那就選」",
+              "success": {
+                "text": "她走過來，第一次在你面前把背挺直的那一股勁卸了下來，額頭抵著你的肩：「我一直以為，我這一輩子只能信鷹。」她低聲說，「……原來還有你。」",
+                "set_flags": ["tdch_lover", "tdch_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "冬營裡有人把海蘭賣給北院，你替她找出了叛徒；她說她一直以為一輩子只能信鷹，原來還有你。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "抱住她",
+              "success": {
+                "text": "她僵了一下，然後慢慢回抱住你，抱得很緊，像怕你飛走。很久之後她才說：「海東部的人不說喜歡。」她把臉埋在你的肩上，「我們只是不放手。」",
+                "set_flags": ["tdch_lover", "tdch_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你在鷹房裡抱住從金帳回來的海蘭；她說海東部的人不說喜歡，只是不放手。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_hailan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdch_x",
+      "title": "冬營的火",
+      "summary": "海蘭說，今晚冬營的篝火只為兩個人燒。（海蘭・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hailan",
+        "text": "海蘭把阿爾斯蘭交給托雅照顧，一句話也沒解釋。她走到你面前：「今晚來冬營。」她頓了一下，耳根紅了，「……我的氈房。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["tdch_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdch_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上和海蘭在鷹河榷場的鷹房放鷹",
+          "text": "月光下的鷹河邊，海蘭放出了阿爾斯蘭。白色的海東青在月亮前面盤旋，她吹了一聲口哨，牠就落回她的手臂上。「我十歲那年，第一次放鷹。」她說，「那天我發誓，這一輩子，海東部的鷹只停在海東部的人手上。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdch_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她把阿爾斯蘭放到你的手臂上：「你是例外。」",
+            "set_flags": ["tdch_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_hailan", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "晚上在鷹河榷場的鷹房和海蘭度過那一夜",
+          "text": "冬營最大的那頂氈房裡，篝火燒得很旺。海蘭解開舊皮袍，領口那顆北珠滾到了地上；她精瘦的身上全是舊傷，青灰色的馬身在火光裡像河上的冰。「我不會說話。」她說，「也不會……這個。」她看著你，「你教我。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdch_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她自己來",
+              "success": {
+                "text": "「妳想怎樣都可以。」她想了很久，然後像在雪原上追獵物一樣，又安靜又準確地靠過來；她不出聲，只有呼吸越來越重，最後咬著你的肩膀，整個人緊緊纏住你。天亮的時候，她還是沒有放手，只是低聲說：「……原來是這樣。」",
+                "set_flags": ["tdch_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，海蘭像在雪原上追獵物一樣，安靜又準確地要了你；天亮時她還是沒有放手。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「妳想怎樣都可以。」她想了很久，然後像在雪原上追獵物一樣，又安靜又準確地靠過來；她不出聲，只有呼吸越來越重，最後咬著你的肩膀，整個人緊緊纏住你。天亮的時候，她還是沒有放手，只是低聲說：「……原來是這樣。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "一點一點教她",
+              "success": {
+                "text": "你吻她身上的每一道舊傷，告訴她哪裡會痛、哪裡會熱。她一開始全身繃緊，像一隻剛捉來的鷹；你很慢，她就一點一點地放鬆下來，最後在你懷裡發出一聲她自己都沒聽過的聲音，然後把臉埋進你的胸口，很久都不肯抬起來。",
+                "set_flags": ["tdch_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，你吻遍海蘭身上的舊傷，一點一點教她；她像一隻剛捉來的鷹，慢慢在你懷裡放鬆下來。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你吻她身上的每一道舊傷，告訴她哪裡會痛、哪裡會熱。她一開始全身繃緊，像一隻剛捉來的鷹；你很慢，她就一點一點地放鬆下來，最後在你懷裡發出一聲她自己都沒聽過的聲音，然後把臉埋進你的胸口，很久都不肯抬起來。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "tdct_snow",
+      "title": "雪",
+      "summary": "托雅養出了一隻全白的海東青，取名叫「雪」。雪掙斷了腳繩飛走了——離進貢的日子只剩十天。（托雅・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_toya",
+        "text": "托雅哭得眼睛都腫了，手上還握著一截斷掉的腳繩：「雪飛走了。牠還沒學會自己打獵，在外面會餓死的。」她抓著你的袖子，「我不能讓族裡知道。十天後，北院就要來點貢了。」",
+        "min_level": 5
+      },
+      "start_flags": ["tdct_1_started"],
+      "nodes": [
+        {
+          "id": "track",
+          "title": "到鷹河榷場的近郊找雪的蹤跡",
+          "text": "雪原上什麼都是白的，一隻白色的海東青更難找。托雅說，雪餓了會去追雪兔，追不到就會停在高處。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdct_1_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 12 },
+          "success": { "text": "你在一片岩坡上看見一道白影一閃——雪停在最高的那塊石頭上，羽毛都炸開了。牠的下面，兩隻雪豹正盯著牠。", "set_flags": ["tdct_found"] },
+          "fail": { "text": "你找了半天，只找到幾根白色的羽毛。也許換一條路找。", "retry": true },
+          "allies": ["npc_td_toya"]
+        },
+        {
+          "id": "leopards",
+          "title": "到鷹河榷場的近郊趕走盯著雪的雪豹",
+          "text": "兩隻雪豹轉過頭來，看見你，弓起了背。岩坡上的雪尖叫了一聲。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdct_found"] },
+          "kind": "combat",
+          "enemies": [["snow_leopard", 2]],
+          "success": { "text": "雪豹跑了。托雅吹了一聲口哨，雪猶豫了很久，終於飛下來，停在她的皮護手上。她抱著牠，哭得比剛才還兇。", "set_flags": ["tdct_back"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "回鷹河榷場的鷹房陪托雅",
+          "text": "回到鷹房，托雅把雪放回鷹架上，換了一條新的腳繩。她坐在鷹架下面，抱著膝蓋：「十天後，牠就要去金帳了。我寧願牠剛才飛走。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdct_back"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "陪她坐著",
+              "success": {
+                "text": "你在她旁邊坐下，什麼都沒說。過了很久，她把頭靠在你的肩上：「……謝謝你。不是謝你找到雪。是謝你坐在這裡。」",
+                "set_flags": ["tdct_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替馴鷹人托雅找回飛走的海東青「雪」；你陪她在鷹架下坐了很久。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「還有十天」",
+              "success": {
+                "text": "她抬起頭，愣愣地看著你：「十天……可以做什麼？」你說，十天可以想很多辦法。她擦掉眼淚，第一次笑了：「你好奇怪。」",
+                "set_flags": ["tdct_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替托雅找回海東青「雪」；你說還有十天，可以想很多辦法。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_toya"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdct_hidden",
+      "title": "藏起來的鷹",
+      "summary": "托雅把雪藏進了白狼雪窟，換一隻灰色的海東青去進貢。她要你陪她去雪窟裡看雪——北院點貢的人已經到了。（托雅・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_toya",
+        "text": "托雅壓低聲音，把你拉到鷹房後面：「我把雪藏起來了。白狼雪窟的中層有一個冰洞，沒有人會去。」她咬著嘴唇，「我換了一隻灰色的去進貢……如果被發現，族裡會被罰。可是我每天都要去餵牠。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["tdct_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["tdct_2_started"],
+      "nodes": [
+        {
+          "id": "inspect",
+          "title": "在鷹河榷場的鷹房陪托雅應付點貢的人",
+          "text": "北院點貢的官騎著馬進了鷹房，一隻一隻地看鷹架上的海東青。走到那隻灰色的面前，他皺起眉頭：「今年最好的那一隻，就這樣？」托雅的手在發抖。",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdct_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": { "text": "你說灰色的海東青在草原上最稀罕，白色的反而招眼、獵不到東西。點貢的官將信將疑，最後還是把灰色的那一隻帶走了。托雅一直到他走遠了才敢呼吸。", "set_flags": ["tdct_passed"] },
+          "fail": { "text": "點貢的官冷笑一聲：「我明天再來。」托雅的臉白得像雪。明天得想個更好的說法。", "retry": true },
+          "allies": ["npc_td_toya"]
+        },
+        {
+          "id": "cave",
+          "title": "到白狼雪窟的中層去冰洞看雪",
+          "text": "雪窟中層的冰洞外，一個雪原野人正抓著冰壁往洞裡探，冰晶精在牠身邊打轉。洞裡傳來雪尖銳的叫聲。",
+          "at": { "where": "dungeon", "location": "whitewolf_cave", "layer": "middle" },
+          "requires": { "flags": ["tdct_passed"] },
+          "kind": "combat",
+          "enemies": [["snow_wildman", 1], ["ice_crystal_sprite", 1]],
+          "success": { "text": "野人退回了雪窟深處。托雅衝進冰洞，雪撲到她懷裡——牠瘦了一點，可是還好好的。", "set_flags": ["tdct_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "在白狼雪窟的冰洞裡陪托雅餵雪",
+          "text": "托雅一邊餵雪，一邊小聲說：「我知道這樣不對。可是牠是我養大的，我不想讓牠去金帳的籠子裡。」她看著你，「你會覺得我很自私嗎？」",
+          "at": { "where": "dungeon", "location": "whitewolf_cave", "layer": "middle" },
+          "requires": { "flags": ["tdct_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「不會。妳只是捨不得」",
+              "success": {
+                "text": "她的眼淚掉了下來，掉在雪的羽毛上：「捨不得……」她重複了一遍，然後笑了，「對，我只是捨不得。」她把你的手拉過去，讓雪在你的手背上蹭了蹭。",
+                "set_flags": ["tdct_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "托雅把最好的海東青「雪」藏進白狼雪窟，換一隻灰色的去進貢；你說她只是捨不得。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我陪妳一起自私」",
+              "success": {
+                "text": "她愣住了，然後臉一下子紅到耳根：「你、你說什麼……」她低下頭，把臉埋進雪的羽毛裡，好久都不肯抬起來。",
+                "set_flags": ["tdct_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "托雅把「雪」藏進了白狼雪窟；你說你陪她一起自私，她的臉紅到耳根。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_toya"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdct_let_go",
+      "title": "放手",
+      "summary": "北院發現了灰色的海東青是假的，要帶人搜白狼雪窟。托雅要在他們找到雪之前做一個決定。（托雅・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_toya",
+        "text": "托雅跑來的時候，臉上全是淚：「北院發現了！他們說要搜雪窟，找到雪就要罰整個海東部。」她抓著你的手，抓得很緊，「我不知道該怎麼辦。我只知道要先找到你。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["tdct_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdct_3_started"],
+      "nodes": [
+        {
+          "id": "searchers",
+          "title": "到白狼雪窟的中層擋住來搜雪的人",
+          "text": "冰洞外站著北院派來的人：兩個收了錢替北院辦事的老鷹獵手。他們看見托雅，冷笑起來：「小丫頭，鷹在哪裡？」",
+          "at": { "where": "dungeon", "location": "whitewolf_cave", "layer": "middle" },
+          "requires": { "flags": ["tdct_3_started"] },
+          "kind": "combat",
+          "enemies": [["td_haidong_elite", 2]],
+          "success": { "text": "搜雪窟的人倒下了。冰洞裡的雪不安地拍著翅膀。托雅站在洞口，看著雪，又看著你。", "set_flags": ["tdct_held"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "choose",
+          "title": "在白狼雪窟的冰洞裡陪托雅決定雪的去向",
+          "text": "托雅把雪抱出冰洞，走到雪窟的出口。外面是一整片白色的天。「如果我把牠交出去，族裡就不會被罰。」她說，「如果我放牠走，牠可能會餓死，也可能……活得很好。」她的手在發抖，「我養了牠三年。」",
+          "at": { "where": "dungeon", "location": "whitewolf_cave", "layer": "shallow" },
+          "requires": { "flags": ["tdct_held"] },
+          "kind": "story",
+          "allies": ["npc_td_toya"],
+          "success": { "text": "她把雪舉起來。雪看著她，又看著天。托雅閉上眼睛，鬆開了手——雪飛了起來，在雪窟外盤旋了三圈，往東邊的天上飛走了。她沒有哭，只是一直看著，直到再也看不見。", "set_flags": ["tdct_free"] }
+        },
+        {
+          "id": "confess",
+          "title": "在白狼雪窟的出口陪著托雅",
+          "text": "雪飛走了很久，托雅才轉過身來。她的眼睛紅紅的，卻在笑：「我以為我會哭一整夜。」她走到你面前，「可是你在這裡，我好像……沒那麼難過。」她低下頭，聲音小得像蚊子，「你可以……不要飛走嗎？」",
+          "at": { "where": "dungeon", "location": "whitewolf_cave", "layer": "shallow" },
+          "requires": { "flags": ["tdct_free"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我不會飛走」",
+              "success": {
+                "text": "她撲進你懷裡，哭了出來——不是難過的哭。她一邊哭一邊笑：「你保證？」你說保證。她把你抱得很緊：「那……那我要把你養在鷹房裡。每天都要餵。」",
+                "set_flags": ["tdct_lover", "tdct_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "托雅放走了她養了三年的海東青「雪」；她問你可不可以不要飛走，你說不會。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "牽起她的手",
+              "success": {
+                "text": "你沒有說話，只是牽起她戴著皮護手的那隻手。她愣了一下，慢慢把護手脫下來，讓你牽著她真正的手：「這隻手，只牽過鷹。」她臉紅紅地說，「你是第一個人。」",
+                "set_flags": ["tdct_lover", "tdct_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "托雅放走了「雪」之後，脫下皮護手讓你牽她的手；她說這隻手只牽過鷹，你是第一個人。從那天起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_td_toya"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdct_x",
+      "title": "鷹房的閣樓",
+      "summary": "托雅說，鷹房的閣樓上可以看見雪飛走的那片天。（托雅・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_toya",
+        "text": "托雅把一盞小油燈塞進你手裡，臉紅得像熟透的果子：「鷹房的閣樓……晚上沒有人。」她低著頭，辮子在手指上繞了又繞，「從那裡可以看見雪飛走的那片天。你……要不要一起看？」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["tdct_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["tdct_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上和托雅在鷹河榷場的鷹房餵鷹",
+          "text": "托雅一隻一隻地餵鷹架上的海東青，跟每一隻說晚安。輪到最後一個空的鷹架，她停了一下，輕輕摸了摸架子上的那截舊腳繩。",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdct_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她轉過來，把你的手拉過去，放在自己的手心裡：「走吧。去閣樓。」",
+            "set_flags": ["tdct_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_td_toya", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "晚上在鷹河榷場的鷹房閣樓和托雅度過那一夜",
+          "text": "閣樓很小，屋頂有一扇小窗，看得見東邊的星星。托雅把辮子解開，長髮散在白色帶淺斑的馬背上；她解開衣服的手一直在抖，最後乾脆鑽進你懷裡，把臉藏起來：「不、不要看我……可是也不要走。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdct_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "很溫柔地",
+              "success": {
+                "text": "你一直沒有放開她的手。你吻她臉上的雀斑、她發燙的耳朵，她一開始緊張得一直道歉，後來慢慢不說話了，只是小聲地、斷斷續續地喘，抱著你像抱著一隻怕飛走的鷹。最後她在你懷裡哭了一下，又笑了：「原來……被人捨不得，是這種感覺。」",
+                "set_flags": ["tdct_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，托雅在鷹房的閣樓上抱著你像抱著一隻怕飛走的鷹；她說原來被人捨不得是這種感覺。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你一直沒有放開她的手。你吻她臉上的雀斑、她發燙的耳朵，她一開始緊張得一直道歉，後來慢慢不說話了，只是小聲地、斷斷續續地喘，抱著你像抱著一隻怕飛走的鷹。最後她在你懷裡哭了一下，又笑了：「原來……被人捨不得，是這種感覺。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她決定什麼時候",
+              "success": {
+                "text": "「妳準備好了再說。」她愣了很久，然後慢慢從你懷裡抬起頭，第一次主動吻了你——笨拙、輕輕的。她一點一點地試，每一步都先看你的臉；你點頭，她就再往前一點。天亮時，她趴在你身上，看著小窗外的天：「雪看見了，一定會笑我。」",
+                "set_flags": ["tdct_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_toya", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，托雅一點一點地試，每一步都先看你的臉；天亮時她說，雪看見了一定會笑她。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「妳準備好了再說。」她愣了很久，然後慢慢從你懷裡抬起頭，第一次主動吻了你——笨拙、輕輕的。她一點一點地試，每一步都先看你的臉；你點頭，她就再往前一點。天亮時，她趴在你身上，看著小窗外的天：「雪看見了，一定會笑我。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "tdg_twin_empresses",
+      "title": "雙帝的會盟",
+      "summary": "大燁與媞丹立盟之後的那一夜，女帝燁昭華與天可汗烏蘭圖雅在金帳裡設宴。兩位統治者喝了一夜的酒，發現她們除了天下，還有一樣東西想分。（多人特殊任務）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "guild",
+        "location": "jinzhang",
+        "min_level": 18,
+        "requires": { "flags": ["nspol_alliance", "yczh_lover", "tdcu_lover"] },
+        "text": "蘇時雍在公會等你，手上的信封蓋著兩個印：一個是大燁的龍紋玉璽，一個是媞丹的蒼狼金印。他的表情很微妙：「兩位陛下說，今晚在金帳設宴慶祝立盟。」他頓了一下，「賓客名單上只有一個名字。是你。」"
+      },
+      "start_flags": ["tdgse_started"],
+      "nodes": [
+        {
+          "id": "invite",
+          "title": "在金帳王庭的公會跟蘇時雍進金帳",
+          "text": "蘇時雍領著你走向金帳，一路上欲言又止，最後只說了一句：「女帝陛下是微服來的，天可汗陛下讓怯薛都退到一百步外。」他在帳門前停下，「我……就送到這裡。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "guild" },
+          "requires": { "flags": ["tdgse_started"] },
+          "kind": "story",
+          "allies": ["npc_td_su_shiyong"],
+          "success": { "text": "蘇時雍掀開金帳最裡面的那一道氈簾，迅速退了出去。", "set_flags": ["tdgse_in"], "special_map": "sm_td_inner_tent" }
+        },
+        {
+          "id": "toast",
+          "title": "晚上在金帳的內帳陪兩位陛下喝酒",
+          "text": "內帳的狼皮寶座旁擺著兩張矮桌：一張上面是大燁的茶與燒鵝，一張上面是草原的馬奶酒與手把肉。昭華一身素衣，烏蘭圖雅解了粗辮。兩人隔著你互相敬酒——敬著敬著，就變成了比賽。「朕的酒量，」昭華說，「是在朝會上練出來的。」「我的，」烏蘭圖雅笑了，「是在戰場上。」",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdgse_in"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 18 },
+          "success": { "text": "你一手接過一碗，把茶倒進馬奶酒裡，一口喝乾：「兩國立盟了，酒也該立盟。」兩人愣了一下，同時笑了出來。昭華笑得用袖子遮著臉；烏蘭圖雅拍著寶座，笑得金鈴都在響。", "set_flags": ["tdgse_toasted"] },
+          "fail": { "text": "你被兩邊灌得暈頭轉向，兩位陛下都說對方作弊。等酒醒一點再說。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_zhaohua", "npc_td_ulantuya"]
+        },
+        {
+          "id": "night",
+          "title": "晚上在金帳的內帳和兩位陛下「立盟」",
+          "text": "燈快燒完了。昭華放下茶盞，看了烏蘭圖雅一眼；烏蘭圖雅放下銀碗，也看了昭華一眼。兩人什麼都沒說，卻好像已經談完了一整卷國書。「兩國的盟約，」昭華輕聲說，「第一條是什麼來著？」「有什麼，就一起分。」烏蘭圖雅說，伸手把你拉了過去。",
+          "at": { "where": "special", "special_map": "sm_td_inner_tent", "x": 5, "y": 3 },
+          "requires": { "flags": ["tdgse_toasted"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_yh_zhaohua", "npc_td_ulantuya"],
+          "options": [
+            {
+              "label": "「那就照盟約來」",
+              "success": {
+                "text": "那一夜之後，兩國的國書上多了一條誰也看不懂的密約，只有兩位陛下和你知道寫的是什麼。昭華回龍安府之前，在你耳邊說：「明年換朕作東。」烏蘭圖雅在帳外送她，兩個人互相瞪了一眼，又一起笑了。",
+                "set_flags": ["tdgse_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "雙帝的會盟" },
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 10, "reason": "雙帝的會盟" },
+                  { "type": "memory", "summary": "大燁與媞丹立盟的那一夜，女帝燁昭華與天可汗烏蘭圖雅在金帳的內帳裡和你一起「立盟」，照的是盟約的第一條：有什麼，就一起分。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "金帳的內帳裡，端莊的昭華與豪邁的烏蘭圖雅在狼皮上一起和主角親密：一個像批摺子一樣一道一道下令，一個像在雪原上追獵物一樣又急又重；兩人連在床上也要比，比著比著卻配合起來，把主角夾在中間，天亮時三人裹在同一張狼皮裡。"
+              }
+            },
+            {
+              "label": "「兩位陛下先分出勝負」",
+              "success": {
+                "text": "「好啊。」烏蘭圖雅挑眉。「求之不得。」昭華放下茶盞。那一夜的勝負沒有分出來，兩人都說自己贏了。天亮時她們還在較勁：誰先醒、誰先穿好衣服、誰先跟你說早安——最後是同時說的。",
+                "set_flags": ["tdgse_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 8, "reason": "雙帝的會盟" },
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 8, "reason": "雙帝的會盟" },
+                  { "type": "memory", "summary": "大燁與媞丹立盟的那一夜，女帝燁昭華與天可汗烏蘭圖雅在金帳的內帳裡比了一夜，誰也沒分出勝負，兩人都說自己贏了。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "兩位統治者把主角當成兩國交鋒的戰場：昭華用宮裡學來的耐心，烏蘭圖雅用草原上的力氣，輪流讓主角失控，比誰讓主角先投降；一整夜誰也不肯認輸，最後三人累倒在狼皮上，兩人還在互瞪。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

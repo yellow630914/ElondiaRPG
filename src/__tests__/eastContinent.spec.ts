@@ -314,6 +314,22 @@ describe('炎華之地', () => {
     expect(stories.find((s) => s.id === 'nspol_envoys')!.start.requires!.flags).toEqual(['yhpol_done', 'tdpol_done'])
   })
 
+  it('gives five northern characters a four-quest line and the two empresses a group quest (P8e)', () => {
+    const lines: Record<string, string> = { tdcu: 'npc_td_ulantuya', tdcc: 'npc_td_chalan', tdcq: 'npc_td_qiqige', tdch: 'npc_td_hailan', tdct: 'npc_td_toya' }
+    for (const [prefix, npc] of Object.entries(lines)) {
+      const qs = stories.filter((s) => s.id.startsWith(prefix + '_'))
+      expect(qs.map((s) => s.rank), prefix).toEqual(['D', 'C', 'B', 'B'])
+      expect(JSON.stringify(qs[2]), prefix).toContain(`${prefix}_lover`)
+      expect(qs[3]!.tags, prefix).toContain('adult')
+      expect(JSON.stringify(qs), prefix).toContain(npc)
+    }
+    const twin = stories.find((s) => s.id === 'tdg_twin_empresses')!
+    expect(twin.start.requires!.flags).toEqual(['nspol_alliance', 'yczh_lover', 'tdcu_lover'])
+    expect(twin.tags).toContain('adult')
+    const tent = landmarks['lm_td_golden_tent']!
+    expect(tent.scenes?.[0]?.requires).toEqual({ flags: ['tdgse_done'] })
+  })
+
   it('populates 青丘屯 mostly with 靈狐族', () => {
     const s = newGame({ name: '測試者', race: 'linghu', classId: 'cleric', seed: 4, birthplace: 'qingqiu' })
     const races = ensureRoster(s, 'qingqiu')!.members.map((m) => npcRecord(s, m)!.race)

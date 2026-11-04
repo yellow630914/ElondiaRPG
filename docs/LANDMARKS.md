@@ -109,6 +109,6 @@
 | 星屑三重奏的後台 | 河谷鎮・河岸區 | `group_idols_done` | 演出後替三人「充電」 |
 | 地下酒館的榮譽洞 | 阿爾貝納・聯邦市集 | `wl_1_done`（伊蓮娜線的第一個任務） | 當服務的一方／當被服務的一方 |
 
-**炎華之地的場景**（成人向角色與多人任務完成之後；地標本身一直都在，場景在條件成立時才出現，資料在 `worldgen/scripts/elondia/east_p4e_group.py` 的 `SCENES`）：瓦舍勾欄「蕭鳳儀的後台」（`yaxf_lover`）、尚寢局「尚寢局的夜課」（`yawr_lover`）、太妃宮「太后的長夜」「太妃的尾巴」「兩代同堂」（`yawy_lover`、`yayx_lover`、`yg2g_done`）、竹湖「抱著青蘿曬太陽」（`yaql_lover`）、靈虛觀「雙修」（`yaxs_lover`）、仙堂的內堂「內堂的炕」「胡家的團圓」（`yasn_lover`、`yghu_done`）、金玉行「金玉行的頂樓」（`ygjm_done`）。尚寢局與太妃宮在王城裡：宮裡的人在第一個任務給的腰牌（劇情旗標 `palace_permit_longan`）讓主角不用再說服衛兵。
+**炎華之地的場景**（成人向角色與多人任務完成之後；地標本身一直都在，場景在條件成立時才出現，資料在 `worldgen/scripts/elondia/east_p4e_group.py` 的 `SCENES`）：瓦舍勾欄「蕭鳳儀的後台」（`yaxf_lover`）、尚寢局「尚寢局的夜課」（`yawr_lover`）、太妃宮「太后的長夜」「太妃的尾巴」「兩代同堂」（`yawy_lover`、`yayx_lover`、`yg2g_done`）、竹湖「抱著青蘿曬太陽」（`yaql_lover`）、靈虛觀「雙修」（`yaxs_lover`）、仙堂的內堂「內堂的炕」「胡家的團圓」（`yasn_lover`、`yghu_done`）、金玉行「金玉行的頂樓」（`ygjm_done`）；炎華北原的金帳「雙帝的夜宴」（`tdgse_done`，多人任務「雙帝的會盟」）。尚寢局與太妃宮在王城裡：宮裡的人在第一個任務給的腰牌（劇情旗標 `palace_permit_longan`）讓主角不用再說服衛兵。
 
 **打工線的場景**：十二條打工線（祭品儀式除外）完成之後，委託人所在的地標多一到兩個可以重複的場景，回去上工賺錢（預設每 3 天一次，見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 8 節）。這些地標沒有勾「條件成立前不顯示」，線還沒完成、而且主角接得到或正在做那條線時照樣在地圖上（任務點在那裡）；接不到的主角（男性形象而且沒打開「陽剛體型也能遇到」的設定、關掉男性對象、等級或公會階級不夠）看不到。資料在 `worldgen/scripts/elondia/work26.py` 的 `SCENES`。

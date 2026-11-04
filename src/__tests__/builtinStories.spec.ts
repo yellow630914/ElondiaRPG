@@ -414,9 +414,9 @@ describe('quests inside a temporary map', () => {
     const fourth = stories.filter((s) => /・四）$/.test(s.summary) && s.nodes.some((n) => n.id === 'night'))
     // 礁光柱維修沒有：主角是螺鈿婆婆，櫻汐已經有自己的故事線；炎華之地 12 條（燁昭華住在宮裡，從公會開頭）
     const partner = (s: (typeof fourth)[number]) => s.start.npc ?? Object.keys(s.start.requires?.affinity ?? {})[0]!
-    expect(fourth.length).toBe(35)
+    expect(fourth.length).toBe(40)
     expect(fourth.filter((s) => s.id.startsWith('yc')).length).toBe(12)
-    expect(new Set(fourth.map(partner)).size).toBe(35)
+    expect(new Set(fourth.map(partner)).size).toBe(40)
     expect(fourth.some((s) => s.summary.includes('礁光柱維修'))).toBe(false)
     for (const s of fourth) {
       expect(s.tags?.[0], s.id).toBe('adult')
