@@ -39479,6 +39479,814 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yhy_keeper_key",
+      "title": "陵戶的鑰匙",
+      "summary": "守陵的老陵戶說，永昭陵地宮裡又傳出敲石門的聲音了，和開國那年一樣。他把祖上傳下來的地宮鑰匙交給你。（永昭陵・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_old_tomb_keeper",
+        "text": "老陵戶從懷裡掏出一把生鏽的銅鑰匙，手在發抖：「祖上傳下來的，地宮中殿的門。三百年了，裡面又在敲了——咚、咚、咚，三下一停，跟爺爺說的一模一樣。我老了，下不去。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhy_1_started"],
+      "nodes": [
+        {
+          "id": "middle",
+          "title": "帶著鑰匙到永昭陵的中層",
+          "text": "中殿的石門前，鎮墓獸與機關弩守著門，像是三百年來一直在等誰。",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "middle" },
+          "requires": { "flags": ["yhy_1_started"] },
+          "kind": "combat",
+          "enemies": [["tomb_beast", 1], ["crossbow_trap", 1]],
+          "success": { "text": "鎮墓獸倒下了。你把銅鑰匙插進石門，門後是一道往下的甬道——門的內側，佈滿了朱砂色的手印，一個疊一個，都是從裡面拍的。", "set_flags": ["yhy_door"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "report",
+          "title": "回龍安府告訴老陵戶門後的事",
+          "text": "老陵戶聽你說到那些朱砂色的手印，臉色一下子白了：「朱砂……那是朱砂鱗的將軍們。爺爺說，他們是活著被關進去的。」",
+          "at": { "where": "npc", "npc": "npc_yh_old_tomb_keeper", "location": "longan" },
+          "requires": { "flags": ["yhy_door"] },
+          "kind": "story",
+          "success": {
+            "text": "老人把鑰匙推回給你：「你拿著。再往下，是陪葬的將軍們。他們敲了三百年的門，總該有人去聽聽他們要說什麼。」",
+            "set_flags": ["yhy_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_old_tomb_keeper", "delta": 12, "reason": "打開了地宮的中殿" },
+              { "type": "memory", "summary": "用老陵戶的鑰匙打開永昭陵地宮的中殿，門內側全是朱砂色的手印。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhy_buried_generals",
+      "title": "陪葬的將軍",
+      "summary": "永昭陵深層埋著燭龍朝的朱砂鱗將軍們。情報商說，深層的陪葬將軍在歷史之龍的重演裡，每一夜都會說同一段話。（永昭陵・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "informant",
+        "location": "longan",
+        "price": 200,
+        "requires": { "flags": ["yhy_1_done"] },
+        "text": "情報商壓低聲音：「盜墓的人說，永昭陵深層的將軍們，每到子時就會停下來，對著墓頂說同一段話——說完又開始打。沒有人聽完過，因為聽的人都死了。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhy_2_started"],
+      "nodes": [
+        {
+          "id": "deep",
+          "title": "到永昭陵的深層找陪葬的將軍們",
+          "text": "深層的墓室裡，兩個活埋的朱砂將軍舉起鏽蝕的長刀，眼窩裡燃著暗紅的火。",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "deep" },
+          "requires": { "flags": ["yhy_2_started"] },
+          "kind": "combat",
+          "enemies": [["buried_general", 2]],
+          "success": { "text": "將軍們跪倒在地，卻沒有散去。子時到了。", "set_flags": ["yhy_midnight"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "words",
+          "title": "在永昭陵的深層聽將軍們說話",
+          "text": "最年長的將軍抬起頭，聲音像風吹過破甲：「祭酒是溫家的人敬的。君上喝了第一杯，就倒在祖龍的壇前。我們拔刀，刀還沒出鞘，陵門就落下了。」他看著你：「告訴外面——我們不是亂臣，我們是被埋的。」",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "deep" },
+          "requires": { "flags": ["yhy_midnight"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "答應替他們說出去",
+              "success": {
+                "text": "將軍們的火一盞一盞熄了下去，像是終於能睡了。墓室的地上，留下一面朱砂鱗的護心鏡。",
+                "set_flags": ["yhy_2_done", "yhy_promise"],
+                "effects": [
+                  { "type": "item", "name": "朱砂鱗的殘鎧", "qty": 1 },
+                  { "type": "memory", "summary": "在永昭陵深層聽陪葬的朱砂將軍說：開國祭典上敬毒酒的是溫家的人。答應替他們說出去。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "請他們安息",
+              "success": {
+                "text": "你說：真相會有人知道的，你們先睡吧。將軍們靜靜地看著你，火光慢慢暗了——但沒有完全熄滅。",
+                "set_flags": ["yhy_2_done"],
+                "effects": [{ "type": "memory", "summary": "在永昭陵深層聽陪葬的朱砂將軍說：開國祭典上敬毒酒的是溫家的人。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhy_poisoned_rite",
+      "title": "毒酒與祭典",
+      "summary": "永昭陵的最深處，被毒殺的燭龍君每一夜都在祭壇前重演三百年前的祭典。打倒他，才看得到祭典的最後一幕。（永昭陵・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "requires": { "flags": ["yhy_2_done"] },
+        "text": "公會的委託單上沒有委託人的名字，只有一行字：「永昭陵底層，祭壇前的燭火三百年不熄。請熄之。」字跡清秀，像是太廟的人寫的。",
+        "min_level": 11
+      },
+      "start_flags": ["yhy_3_started"],
+      "nodes": [
+        {
+          "id": "guards",
+          "title": "到永昭陵的底層擊倒燭龍衛",
+          "text": "底層的大殿裡，燭龍衛排成兩列，眼窩裡的燭火一齊轉向你。",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "abyss" },
+          "requires": { "flags": ["yhy_3_started"] },
+          "kind": "combat",
+          "enemies": [["zhulong_guard", 2]],
+          "success": { "text": "燭龍衛倒下，大殿盡頭的祭壇亮了起來。", "set_flags": ["yhy_altar"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "lord",
+          "title": "在永昭陵的底層擊倒被毒殺的燭龍君",
+          "text": "祭壇前，燭龍君舉起一只空了的酒杯，口中念著三百年前的祭文。念到「飲」字，他的身上燃起了火。",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "abyss" },
+          "requires": { "flags": ["yhy_altar"] },
+          "kind": "combat",
+          "enemies": [["poisoned_zhulong_lord", 1], ["zhulong_guard", 1]],
+          "success": { "text": "燭龍君倒在祭壇前，像三百年前一樣。這一次，重演停在最後一幕：祭壇下壓著一卷沒有燒盡的帛書——敬酒的人親筆寫下的祭文原稿，落款是溫氏的先祖。", "set_flags": ["yhy_scroll"] },
+          "fail": { "text": "燭龍君的火把你們逼退了。打倒他之前，祭典不會結束。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "在永昭陵的底層決定帛書的去向",
+          "text": "帛書上寫得清清楚楚：燭龍朝不是「天命已盡」，是被天青鱗的文臣用一杯毒酒終結的；寫祭文的人，是當今宰相溫世衡的先祖。",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "abyss" },
+          "requires": { "flags": ["yhy_scroll"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "把帛書帶出去公開",
+              "success": {
+                "text": "你把帛書交給太廟的慧音，由她抄錄、送進宮裡、貼上御街。「以文制武」的大燁，第一次被人問起它是怎麼開始的。天青鱗世家的臉色很難看；朱砂鱗的武人們在酒館裡哭了一夜。",
+                "set_flags": ["yhy_3_done", "yhy_public"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 10, "reason": "帶回了開國祭典的真相" },
+                  { "type": "reputation", "faction": "yanye_court", "delta": -4 },
+                  { "type": "memory", "summary": "在永昭陵底層打倒被毒殺的燭龍君，帶出溫氏先祖寫的祭文原稿並公開：大燁開國是一杯毒酒換來的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把帛書封存起來",
+              "success": {
+                "text": "你把帛書收進懷裡，沒有交給任何人。這件事，也許有一天會用得上——在對的時候、對的人面前。",
+                "set_flags": ["yhy_3_done", "yhy_sealed"],
+                "effects": [{ "type": "memory", "summary": "在永昭陵底層打倒被毒殺的燭龍君，拿到溫氏先祖寫的祭文原稿，封存起來。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }, { "type": "item", "name": "燭龍君的玉圭", "qty": 1 }]
+    },
+    {
+      "id": "yhc_last_kiln",
+      "title": "窯伯的最後一窯",
+      "summary": "千窯谷最後一位老窯工窯伯，想在死之前回谷裡再燒一窯天青。谷裡的窯早就被瓷俑與窯火佔了。（千窯谷・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yao_bo",
+        "text": "窯伯把一包釉藥塞進你手裡：「我這輩子最後一個願望，就是回谷裡再燒一窯。中層那口龍窯是我師父的，還燒得動。可是谷裡現在全是會走路的瓷——我這把老骨頭，走不到那裡。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhc_1_started"],
+      "nodes": [
+        {
+          "id": "clear",
+          "title": "到千窯谷的中層清出師父的龍窯",
+          "text": "中層的老龍窯前，青瓷俑守著窯口，窯膛裡竄出一個窯焰妖，笑著朝你撲來。",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "middle" },
+          "requires": { "flags": ["yhc_1_started"] },
+          "kind": "combat",
+          "enemies": [["celadon_figurine", 1], ["kiln_flame_yao", 1]],
+          "success": { "text": "窯口清出來了。窯膛裡還留著上一窯的灰，摸起來是溫的。", "set_flags": ["yhc_clear"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "fire",
+          "title": "在千窯谷的中層照窯伯的配方燒一窯",
+          "text": "你照著窯伯教的，把釉藥上在素坯上，封窯、點火、看火色。龍窯一節一節地燒紅了。",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "middle" },
+          "requires": { "flags": ["yhc_clear"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 13 },
+          "success": { "text": "開窯的時候，一窯雨過天青的盞整整齊齊地排在窯床上，開片細得像頭髮。你挑了最好的一只帶回去。", "set_flags": ["yhc_fired"] },
+          "fail": { "text": "火候沒看準，一窯全裂了。再燒一次。", "retry": true }
+        },
+        {
+          "id": "back",
+          "title": "把燒好的盞帶回萍江府給窯伯",
+          "text": "窯伯捧著那只盞，對著光看了很久很久，眼淚掉進盞裡：「是師父的顏色……是我們的顏色。」",
+          "at": { "where": "npc", "npc": "npc_yh_yao_bo", "location": "pingjiang" },
+          "requires": { "flags": ["yhc_fired"] },
+          "kind": "story",
+          "success": {
+            "text": "「這顏色叫天青，」他說，「可是書上寫的，是別人的名字。萍園那個瓷癡，他的閣子裡有一只最老的盞。你去看看盞底。」",
+            "set_flags": ["yhc_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_yao_bo", "delta": 15, "reason": "替他燒了最後一窯" },
+              { "type": "item", "name": "天青釉的殘片", "qty": 2 },
+              { "type": "memory", "summary": "在千窯谷中層替老窯工窯伯燒了最後一窯天青。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhc_who_fired",
+      "title": "天青是誰燒的",
+      "summary": "萍園藏瓷閣最裡面鎖著一只千窯谷最早的天青盞。盞底的款，不是任何一個天青鱗世家的名字。（千窯谷・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xie_qingwu",
+        "requires": { "flags": ["yhc_1_done"] },
+        "text": "謝青梧打開藏瓷閣最裡面的鎖：「窯伯說你燒過一窯。那你看看這個。」他把一只盞翻過來，盞底刻著兩個字：「墨秋」。「我查遍了族譜，天青鱗沒有姓墨的。千窯谷深處有一座窯工的墳，也許有答案。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhc_2_started"],
+      "nodes": [
+        {
+          "id": "deep",
+          "title": "到千窯谷的深層找窯工的墳",
+          "text": "深層的山坳裡，素胎巨俑守著一座小小的石墳，白瓷美人瓶在墳邊低聲唱著歌。",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "deep" },
+          "requires": { "flags": ["yhc_2_started"] },
+          "kind": "combat",
+          "enemies": [["bisque_giant", 1], ["porcelain_beauty_vase", 1]],
+          "success": { "text": "石墳的碑上刻著：「窯工墨秋之墓。始燒天青，名為他人所奪，投窯以明志。」", "set_flags": ["yhc_grave"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "回萍江府的萍園告訴謝青梧墳上的字",
+          "text": "謝青梧讀完你拓回來的碑文，沉默了很久：「天青鱗的『天青』，是從一個墨鐵鱗窯工那裡奪來的名字。我家的祖上……也在那份奪名的名單上。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["yhc_grave"] },
+          "kind": "choice",
+          "allies": ["npc_yh_xie_qingwu", "npc_yh_yao_bo"],
+          "options": [
+            {
+              "label": "請他把墨秋的名字刻上",
+              "success": {
+                "text": "謝青梧親手在藏瓷閣的每一只天青盞的籤條上，加了一行字：「始燒者，墨鐵鱗窯工墨秋。」窯伯看著那一行字，笑得像個孩子。天青鱗世家的人來萍園，臉色都很難看。",
+                "set_flags": ["yhc_2_done", "yhc_named"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 12, "reason": "查出天青釉的來歷" },
+                  { "type": "affinity", "npc": "npc_yh_yao_bo", "delta": 12, "reason": "替師祖找回了名字" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "先只告訴窯伯",
+              "success": {
+                "text": "你們把碑文拓本交給窯伯。老人把它供在家裡的灶台上，每天早上擦一次。「知道的人知道就好，」他說，「窯神知道。」",
+                "set_flags": ["yhc_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 8, "reason": "查出天青釉的來歷" },
+                  { "type": "affinity", "npc": "npc_yh_yao_bo", "delta": 12, "reason": "替師祖找回了名字" }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhc_kiln_god",
+      "title": "窯神",
+      "summary": "千窯谷的谷底，失控的窯神在窯膛裡燒了三百年。窯工們說，天青的名字被奪走那天，窯神的火就失了控。（千窯谷・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "pingjiang",
+        "requires": { "flags": ["yhc_2_done"] },
+        "text": "公會的委託單上蓋著窯市行會的印：「千窯谷底的窯火又竄高了，谷口的窯市整夜被照得通紅，再燒下去要燒到萍江。懸賞能熄火、或能讓窯神安息的人。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhc_3_started"],
+      "nodes": [
+        {
+          "id": "spirits",
+          "title": "到千窯谷的底層擊倒窯變之靈",
+          "text": "底層的窯膛熱得讓空氣扭曲，兩團窯變之靈在火裡翻湧，釉色一刻一變。",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "abyss" },
+          "requires": { "flags": ["yhc_3_started"] },
+          "kind": "combat",
+          "enemies": [["kiln_transmutation_spirit", 2]],
+          "success": { "text": "窯變之靈散成一片彩色的光。最深處的窯膛裡，窯神睜開了眼睛。", "set_flags": ["yhc_core"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "god",
+          "title": "在千窯谷的底層擊倒失控的窯神",
+          "text": "窯神從火裡站起來，一身天青與赤紅交織的窯火，朝你伸出燒得發白的手。",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "abyss" },
+          "requires": { "flags": ["yhc_core"] },
+          "kind": "combat",
+          "enemies": [["kiln_god_rampant", 1], ["kiln_transmutation_spirit", 1]],
+          "success": { "text": "窯神的火暗了下來，她低頭看著自己的手，像是第一次看見它們。", "set_flags": ["yhc_calm"] },
+          "fail": { "text": "窯神的火把你們逼出了窯膛。火不熄，谷就不會安靜。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "在千窯谷的底層讓窯神安息",
+          "text": "窯神的火只剩一盞燈那麼大，她開口了，聲音像窯裡的風：「他們說天青是誰的？」",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "abyss" },
+          "requires": { "flags": ["yhc_calm"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "告訴她：是墨秋的",
+              "success": {
+                "text": "「墨秋……」窯神笑了，火光一下子變成了雨過天青的顏色，安安靜靜地沉進窯膛。她留下一只盞，盞底寫著兩個字。谷口的窯市，那一夜第一次是黑的。",
+                "set_flags": ["yhc_3_done", "yhc_rest"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yao_bo", "delta": 10, "reason": "讓窯神安息" },
+                  { "type": "memory", "summary": "在千窯谷底層讓失控的窯神安息：告訴她天青釉是窯工墨秋燒出來的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "把窯火熄了",
+              "success": {
+                "text": "你們把窯膛封死，最後一點火在磚縫裡熄了。千窯谷從此再也燒不出天青。窯伯聽說之後，什麼都沒說，只是把家裡的灶也熄了一天。",
+                "set_flags": ["yhc_3_done"],
+                "effects": [{ "type": "memory", "summary": "在千窯谷底層打倒失控的窯神，封死了谷底的窯火。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }, { "type": "item", "name": "窯神的天青盞", "qty": 1 }]
+    },
+    {
+      "id": "yhb_scavenger_find",
+      "title": "拾荒人撿到的東西",
+      "summary": "在火藥坊遺址撿東西的拾荒頭目老鼠刀說，他的人在廢墟中層撿到半本燒焦的帳——可是那一層的東西太兇，他的人進不去。（火藥坊遺址・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_rat_knife",
+        "text": "老鼠刀把一頁燒得只剩一半的紙攤在你面前：「我的人在中層撿到的，上面有軍器監的印。剩下的半本還在裡面，被一個走火的猛火油櫃壓著。你去拿，拿出來我們再談價錢。」",
+        "min_level": 5
+      },
+      "start_flags": ["yhb_1_started"],
+      "nodes": [
+        {
+          "id": "middle",
+          "title": "到火藥坊遺址的中層找那半本帳",
+          "text": "中層的庫房裡，猛火油櫃還在噴火，一個爆炎精繞著它跳來跳去，地上散著燒焦的紙。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "middle" },
+          "requires": { "flags": ["yhb_1_started"] },
+          "kind": "combat",
+          "enemies": [["greek_fire_cabinet", 1], ["blast_sprite", 1]],
+          "success": { "text": "火熄了。你從油櫃底下拖出半本燒焦的帳，最後一頁寫著：「某月某日，奉監命，於庫房外埋引線三道。」", "set_flags": ["yhb_ledger"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "deal",
+          "title": "拿著那半本帳回瑔州港找老鼠刀",
+          "text": "老鼠刀一看那一頁，臉色變了：「埋引線……是有人故意炸的。」他搓著手，「這東西值錢。秦焰會出大價錢，相府——相府會出更多。」",
+          "at": { "where": "npc", "npc": "npc_yh_rat_knife", "location": "quanzhou" },
+          "requires": { "flags": ["yhb_ledger"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "交給秦焰",
+              "success": {
+                "text": "你把帳本交給秦焰。老總匠師讀完那一頁，坐在地上，很久都沒有站起來。老鼠刀在旁邊嘆了口氣，沒有開價：「那天，我老婆也在坊裡。」",
+                "set_flags": ["yhb_1_done", "yhb_to_qin"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 12, "reason": "帶回了爆炸那天的帳" },
+                  { "type": "affinity", "npc": "npc_yh_rat_knife", "delta": 6, "reason": "沒有把帳賣掉" }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓老鼠刀去賣（分一半）",
+              "success": {
+                "text": "老鼠刀把帳本賣給了一個戴斗笠的人，分給你一袋銀子。三天後，你在秦焰的火藥坊外看見那個戴斗笠的人——他在打聽秦焰住哪一間。",
+                "set_flags": ["yhb_1_done", "yhb_sold"],
+                "effects": [{ "type": "money", "amount": 300 }, { "type": "affinity", "npc": "npc_yh_rat_knife", "delta": 10, "reason": "幫他把帳賣了好價錢" }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yhb_four_years",
+      "title": "四年前的爆炸",
+      "summary": "秦焰想親眼看看爆炸的起點。那一天的引線，從庫房外一路埋到了礦道深處。（火藥坊遺址・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_qin_yan",
+        "requires": { "flags": ["yhb_1_done"] },
+        "text": "秦焰把舊的火藥坊圖紙攤開：「三道引線，從庫房外埋到礦道。我要知道是從哪裡點的、誰點的。我自己下不去——深層全是硝石蜈蚣與當年留下的傀儡。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhb_2_started"],
+      "nodes": [
+        {
+          "id": "deep",
+          "title": "到火藥坊遺址的深層找引線的起點",
+          "text": "深層的礦道裡，霹靂砲傀儡還在照試砲的口令開火，一隻硝石蜈蚣從岩縫裡鑽出來。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "deep" },
+          "requires": { "flags": ["yhb_2_started"] },
+          "kind": "combat",
+          "enemies": [["thunder_cannon_puppet", 1], ["saltpeter_centipede", 1]],
+          "success": { "text": "傀儡倒下，礦道安靜了。地上有三道燒焦的痕跡，一路通往礦道盡頭。", "set_flags": ["yhb_traces"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "trace",
+          "title": "在火藥坊遺址的深層追查引線的起點",
+          "text": "你沿著燒焦的痕跡走到礦道盡頭，那裡有一塊被炸裂的石壁，石壁上刻著一些記號。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "deep" },
+          "requires": { "flags": ["yhb_traces"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": { "text": "記號是軍器監的工匠標記，旁邊刻著一行小字：「監令：坊中人不得撤。」——上頭叫走了工頭，卻下令坊裡的人不准走。", "set_flags": ["yhb_order"] },
+          "fail": { "text": "痕跡太亂，你看不出頭緒。換個時候再來看。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "回瑔州港把引線的事告訴秦焰",
+          "text": "秦焰聽完，把那張舊圖紙撕成兩半：「『坊中人不得撤』。他們要的不是火藥，是要我們死，好讓火藥歸朝廷。」阿炮站在門口，眼睛紅紅的。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["yhb_order"] },
+          "kind": "choice",
+          "allies": ["npc_yh_qin_yan", "npc_yh_apao"],
+          "options": [
+            {
+              "label": "把證據交給金墨盟",
+              "success": {
+                "text": "秦焰把證據交給了金玉棠。金墨盟在瑔州港的會館裡，把那一行字貼在牆上，下面寫著三百個名字。朝廷的人來撕，撕了又貼，貼了又撕。",
+                "set_flags": ["yhb_2_done", "yhb_league"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 12, "reason": "查出了爆炸的真相" },
+                  { "type": "reputation", "faction": "jinmo_league", "delta": 3 },
+                  { "type": "reputation", "faction": "yanye_court", "delta": -2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "先收著，等對的時候",
+              "success": {
+                "text": "秦焰把證據鎖進火藥坊最深的櫃子：「這東西放出去，瑔州港會流血。等一個能讓說話的人不被殺的時候。」",
+                "set_flags": ["yhb_2_done"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 10, "reason": "查出了爆炸的真相" }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yhb_thunder_king",
+      "title": "霹靂王",
+      "summary": "火藥坊遺址的最深處，四年前那一聲巨響化成了「霹靂王」。墨鐵鱗的火藥工說，她每一夜都在重演那一場爆炸。（火藥坊遺址・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "quanzhou",
+        "requires": { "flags": ["yhb_2_done"] },
+        "text": "公會的委託單上簽著十一個名字——火藥坊爆炸的十一個倖存者：「遺址底層的雷火每一夜都在炸，炸得整個瑔州港睡不著。我們要她停下來。」",
+        "min_level": 11
+      },
+      "start_flags": ["yhb_3_started"],
+      "nodes": [
+        {
+          "id": "spirits",
+          "title": "到火藥坊遺址的底層擊倒地火之靈",
+          "text": "底層的礦道熱得像熔爐，兩團地火之靈從岩縫裡湧出來。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "abyss" },
+          "requires": { "flags": ["yhb_3_started"] },
+          "kind": "combat",
+          "enemies": [["earthfire_spirit", 2]],
+          "success": { "text": "地火退回岩縫。最深處，雷光一閃——霹靂王醒了。", "set_flags": ["yhb_core"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "king",
+          "title": "在火藥坊遺址的底層擊倒霹靂王",
+          "text": "霹靂王在礦道盡頭站起來，一身雷光與火焰，四年前的那一聲巨響在她身上不停地重演。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "abyss" },
+          "requires": { "flags": ["yhb_core"] },
+          "kind": "combat",
+          "enemies": [["thunderbolt_king", 1], ["earthfire_spirit", 1]],
+          "success": { "text": "霹靂王的雷光一道一道熄滅。在她倒下的地方，留著一把燒得發黑的火銃——爆炸前最後一把試造的。", "set_flags": ["yhb_down"] },
+          "fail": { "text": "雷火把你們炸了出來。她不停，爆炸就不會停。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "在火藥坊遺址的底層讓霹靂王停下來",
+          "text": "霹靂王的最後一點雷光懸在半空，像在等什麼。秦焰說過，那一天坊裡有三百個人。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "abyss" },
+          "requires": { "flags": ["yhb_down"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "唸出三百個名字",
+              "success": {
+                "text": "你照著秦焰抄給你的名冊，一個一個唸出那天死在坊裡的人。唸到最後一個，雷光輕輕地炸成一朵金色的煙花，散了。瑔州港那一夜，第一次沒有雷聲。",
+                "set_flags": ["yhb_3_done", "yhb_named"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qin_yan", "delta": 12, "reason": "讓霹靂王停了下來" },
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 8, "reason": "讓霹靂王停了下來" },
+                  { "type": "memory", "summary": "在火藥坊遺址底層讓霹靂王停下來：唸出爆炸那天死去的三百個名字。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿走火銃，讓雷光散去",
+              "success": {
+                "text": "你撿起那把火銃，雷光跟著你的手晃了一下，散進了礦道的黑暗裡。也許她還會再醒——但至少今夜，瑔州港睡得著了。",
+                "set_flags": ["yhb_3_done"],
+                "effects": [{ "type": "memory", "summary": "在火藥坊遺址底層打倒霹靂王，拿走了爆炸前最後一把火銃。", "importance": 3 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }, { "type": "item", "name": "霹靂王的火銃", "qty": 1 }]
+    },
+    {
+      "id": "yhu_missing_piece",
+      "title": "萍園缺的那一件",
+      "summary": "謝青梧的藏瓷閣有一套十二件的天青瓷，只缺一枚瓷佩。他打聽到瓷佩在瑔州港的胡記商號，胡九娘不肯賣。（萍園缺的那一件・一）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xie_qingwu",
+        "text": "謝青梧把空著的那一格錦盒打開給你看：「十二件，缺一件，像一首詩少了最後一個字。那枚瓷佩在胡九娘手上，她說不賣——她說要換。」他苦笑，「我不知道她要換什麼。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhu_1_started"],
+      "nodes": [
+        {
+          "id": "huji",
+          "title": "到瑔州港的胡記商號找胡九娘談瓷佩",
+          "text": "胡九娘把玩著那枚雨過天青的瓷佩：「謝家的么子要這個？可以——拿謝家的一幅畫來換。不是隨便一幅，是他畫的那幅『美人圖』，畫裡的美人是誰，他心裡清楚。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["yhu_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": { "text": "你跟她周旋了一個下午，最後她笑著讓了一步：「好吧，不要美人圖了。下次胡記的貨要經過萍江，讓萍園替我們收一晚——就這樣。」她把瓷佩放進你手裡。", "set_flags": ["yhu_got"] },
+          "fail": { "text": "胡九娘笑盈盈地聽完你的話，然後把瓷佩收了回去：「再想想吧。」", "retry": true }
+        },
+        {
+          "id": "return",
+          "title": "回萍江府的萍園把瓷佩交給謝青梧",
+          "text": "謝青梧把瓷佩放進錦盒的最後一格，十二件天青排成一排，在藏瓷閣的燈下像一場雨剛停。他看了很久，才想起你還在旁邊。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["yhu_got"] },
+          "kind": "story",
+          "allies": ["npc_yh_xie_qingwu"],
+          "success": {
+            "text": "「這一套，」他說，「我想送一件給你。」他取出的正是那枚瓷佩：「它在你身上，比在盒子裡好看。」",
+            "set_flags": ["yhu_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 15, "reason": "湊齊了天青瓷的十二件" },
+              { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 3, "reason": "談成了瓷佩的交換" }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }, { "type": "item", "name": "雨過天青瓷佩", "qty": 1 }]
+    },
+    {
+      "id": "yhu_drum",
+      "title": "胡三太奶的鼓",
+      "summary": "仙堂代代相傳的文王鼓，鼓面被老黃皮子偷偷咬破了。胡三娘說，新的鼓面要用白狍皮，還要請胡三太奶親自開光。（胡三太奶的鼓・一）",
+      "rank": "C",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_sanniang",
+        "text": "胡三娘捧著一面破了的鼓，難得沒有笑：「這是太奶傳下來的鼓，鼓面昨夜被咬了一個洞——是山裡那群老黃皮子，牠們記恨我送走了牠們的野仙朋友。新鼓面要白狍皮，白狍在黃皮子的地盤裡。」",
+        "min_level": 8
+      },
+      "start_flags": ["yhu_2_started"],
+      "nodes": [
+        {
+          "id": "woods",
+          "title": "到青丘屯的近郊從黃皮子手上搶回白狍皮",
+          "text": "白樺林深處，兩隻老黃皮子正在分一張雪白的狍皮，看見你，齜牙咧嘴地撲過來。",
+          "at": { "where": "outskirts", "location": "qingqiu" },
+          "requires": { "flags": ["yhu_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_old_weasel", 2]],
+          "success": { "text": "老黃皮子丟下狍皮逃了。皮子雪白、完整，像是牠們本來就打算拿來換什麼。", "set_flags": ["yhu_hide"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "bless",
+          "title": "在青丘屯的仙堂請胡三太奶替新鼓開光",
+          "text": "新鼓面繃好了。三娘點起香，白小蕎用新鼓敲起請仙的調子。鼓聲一響，三娘的聲音變成了胡三太奶：「這面鼓，要一個外人的心意，才響得長久。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhu_hide"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 14 },
+          "success": { "text": "你閉上眼睛，跟著鼓聲把心裡想對仙家說的話說了。鼓聲忽然變得又深又長，連屋外的風都停了。胡三太奶笑了：「好鼓。拿去吧，孩子——這面鼓，跟你走。」", "set_flags": ["yhu_blessed"] },
+          "fail": { "text": "鼓聲斷了一下，太奶搖頭：「心不靜。明天再來。」", "retry": true },
+          "allies": ["npc_yh_hu_sanniang", "npc_yh_bai_xiaoqiao"]
+        },
+        {
+          "id": "end",
+          "title": "在青丘屯的仙堂收下文王鼓",
+          "text": "三娘醒過來，看著鼓在你手上，愣了一下，然後大笑：「太奶把鼓給了你？她老人家八十年沒把鼓給過外人。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yhu_blessed"] },
+          "kind": "story",
+          "allies": ["npc_yh_hu_sanniang"],
+          "success": {
+            "text": "「拿著吧。」三娘說，「仙堂另外做一面就好。鼓在你身上，太奶就跟著你——往後在外面，遇到不乾淨的東西，敲一下。」",
+            "set_flags": ["yhu_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 12, "reason": "替仙堂找回了鼓面" },
+              { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 8, "reason": "替仙堂找回了鼓面" }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }, { "type": "item", "name": "胡三太奶的文王鼓", "qty": 1 }]
+    },
+    {
+      "id": "yht_new_tea",
+      "title": "錢掌櫃的新茶",
+      "summary": "御街夜市的錢掌櫃想在鬥茶會上贏過對街的茶坊，他需要一餅胡記的龍團茶，還需要一個會說話的人替他吆喝。",
+      "rank": "E",
+      "start": { "kind": "npc", "npc": "npc_yh_qian", "text": "錢掌櫃搓著手：「下個月的鬥茶會，對街的『清和樓』請了宮裡退下來的茶博士。我要贏他，得有胡記的龍團茶——還得有個嘴甜的人替我在夜市吆喝。」", "min_level": 3 },
+      "start_flags": ["yht_tea_started"],
+      "nodes": [
+        {
+          "id": "buy",
+          "title": "到瑔州港的胡記商號買一餅龍團茶",
+          "text": "胡記的夥計從櫃子最上層拿下一餅用黃絹包著的茶：「龍團，貢茶的邊料，一餅一百白鸛，不講價。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["yht_tea_started"] },
+          "kind": "story",
+          "success": { "text": "你付了錢，把茶餅揣好。", "set_flags": ["yht_tea_bought"], "effects": [{ "type": "money", "amount": -100 }] }
+        },
+        {
+          "id": "contest",
+          "title": "晚上在龍安府的御街夜市替錢掌櫃吆喝鬥茶",
+          "text": "鬥茶會擠滿了人。對街的老茶博士手法漂亮，茶湯雪白；錢掌櫃這邊，就靠你一張嘴了。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yht_tea_bought"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "你把龍團茶的來歷講得天花亂墜，看客們一窩蜂擠到錢掌櫃的攤前。最後一碗茶湯出來，錢掌櫃的湯花咬盞不散——贏了。", "set_flags": ["yht_tea_won"] },
+          "fail": { "text": "看客們對你的吆喝沒什麼反應。錢掌櫃擦著汗說：明晚還有一場。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_qian"]
+        },
+        {
+          "id": "end",
+          "title": "在龍安府的御街夜市和錢掌櫃分紅",
+          "text": "錢掌櫃樂得合不攏嘴，硬是把贏來的彩頭分了你一半。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yht_tea_won"] },
+          "kind": "story",
+          "allies": ["npc_yh_qian"],
+          "success": {
+            "text": "「以後二樓雅座，你的位子我天天留著。」錢掌櫃說，「想聽什麼消息，問我。」",
+            "effects": [{ "type": "money", "amount": 250 }, { "type": "affinity", "npc": "npc_yh_qian", "delta": 15, "reason": "替他贏了鬥茶會" }],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 200 }]
+    },
+    {
+      "id": "yht_dragon_boat",
+      "title": "虹橋下的龍舟",
+      "summary": "萍江的龍舟節，織工行會與船夫幫的龍舟要在虹橋下一決勝負。織工的舟少了一個划槳的人。",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "guild", "location": "pingjiang", "text": "公會的告示板上貼著一張紅紙：「龍舟節，織工行會的『青禾號』缺一名划手。力氣大、不怕水者優先。賞錢另議，輸了請喝酒。」", "min_level": 5 },
+      "start_flags": ["yht_boat_started"],
+      "nodes": [
+        {
+          "id": "join",
+          "title": "到萍江府的虹橋報名划龍舟",
+          "text": "虹橋兩岸擠滿了人，鼓聲震天。織工行會的龍舟上，二十個繡娘與織工捲著袖子，朝你招手。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yht_boat_started"] },
+          "kind": "story",
+          "success": { "text": "你坐上最後一個位子，鼓手是陸青禾。「划不贏沒關係，」她咧嘴一笑，「划輸了船夫幫，我請全萍江喝酒。」", "set_flags": ["yht_boat_on"] }
+        },
+        {
+          "id": "race",
+          "title": "在萍江府的虹橋下划龍舟",
+          "text": "鼓聲一響，兩條龍舟箭一樣衝出去。船夫幫的舟一開始就領先半個船身。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yht_boat_on"] },
+          "kind": "check",
+          "check": { "attr": "str", "dc": 13 },
+          "success": { "text": "最後二十槳，你跟著陸青禾的鼓聲拚了命地划，織工的舟在虹橋下硬是追平、超前——龍頭先過了終點的紅繩。兩岸的織工哭成一片。", "set_flags": ["yht_boat_won"] },
+          "fail": { "text": "你們差了一個船身。陸青禾拍拍你的背：「明年再來！」——不過龍舟節有三天，明天還有一場。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "在萍江府的虹橋下領彩頭",
+          "text": "彩頭是一匹雲錦與一壇黃酒。陸青禾把雲錦塞給你，自己抱著酒壇跳進了運河。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yht_boat_won"] },
+          "kind": "story",
+          "success": {
+            "text": "那一夜，整個水巷都在唱織工的歌。",
+            "effects": [{ "type": "money", "amount": 200 }, { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 8, "reason": "一起划贏了龍舟" }],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yht_canal_rats",
+      "title": "御溝的老鼠",
+      "summary": "龍安府市坊的居民說，御溝裡的東西越來越多，夜裡從排水口爬上來咬人。公會懸賞清理御溝。",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "guild", "location": "longan", "text": "公會的委託單上蓋著市坊坊正的印：「御溝積穢，夜有怪物出沒，咬傷坊民。懸賞清剿。入口在市坊西牆。」", "min_level": 5 },
+      "start_flags": ["yht_canal_started"],
+      "nodes": [
+        {
+          "id": "canal",
+          "title": "從市坊的西牆進龍安府的御溝清剿",
+          "text": "御溝深處傳來水聲與低吼。最裡面的溝渠邊，幾個私鹽販子正把一袋袋鹽從暗門搬進來，看見你，抄起扁擔。",
+          "at": { "where": "special", "special_map": "sm_yh_longan_canal", "x": 6, "y": 5 },
+          "requires": { "flags": ["yht_canal_started"] },
+          "kind": "combat",
+          "enemies": [["salt_smuggler", 2], ["jianjing_robber", 1]],
+          "success": { "text": "私鹽販子們丟下鹽袋逃了。暗門的另一邊，隱約看得見一條往皇城方向的通道——被一道新的鐵柵擋著。", "set_flags": ["yht_canal_clear"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "report",
+          "title": "回龍安府的公會交差",
+          "text": "公會的掌櫃聽你說完，皺起眉：「私鹽……還有往皇城的暗道。這種事，公會只管清老鼠。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yht_canal_clear"] },
+          "kind": "story",
+          "success": {
+            "text": "他把賞錢推給你，壓低聲音：「那道鐵柵是新的。有人不想讓人從御溝走進皇城——或是想讓某些人走。」",
+            "set_flags": ["yht_canal_done"],
+            "effects": [{ "type": "memory", "summary": "清剿龍安府的御溝時，發現私鹽販子的暗門與一條通往皇城、被新鐵柵擋住的通道。", "importance": 2 }],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
     }
   ]
 }

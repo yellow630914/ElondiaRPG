@@ -25,9 +25,10 @@
 
 ## 3. 目前有的圖
 
-64 張（webp，1536×864，共約 10.8 MB）：
+73 張（webp，1536×864，共約 13 MB）：
 
 - 48 張基本版：6 個地區、26 個城鎮、16 座地下城（約 8.5 MB）。
+- 炎華之地 9 張：地區 `region-yanhua_south`、`region-yanhua_north`，聚落 `longan`、`pingjiang`、`quanzhou`、`qingqiu`，地下城 `yongzhao_tomb`、`qianyao_valley`、`gunpowder_ruins`（提示詞見 [plan/roadmap/EAST_CONTENT_PLAN](plan/roadmap/EAST_CONTENT_PLAN.md) 第 10 節）。
 - 緋夢樂園（[LUST_PARK](LUST_PARK.md)）16 張：入口廣場 `special-sm_lust_park`，五個園區的淺層、中層、深層（`park_beast-shallow` 這類；園區沒有周邊，也沒有不分層的版本）。
 
 時段版（`-dawn`、`-day`、`-dusk`、`-night`）與一般地下城的分層版目前沒有圖，放進來就會自動用上。其他特殊地圖用所屬地點的圖。

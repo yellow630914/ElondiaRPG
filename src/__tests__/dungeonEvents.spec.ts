@@ -55,7 +55,8 @@ function besides(state: GameState, cell: object): [number, number] {
 
 describe('dungeon adult events', () => {
   it('are all adult, for feminine and androgynous heroes, with a way out and a scene', () => {
-    const list = dungeonTemplates()
+    // 炎華南域的地下城事件（yhe_ 開頭，east_p4b.py）不是成人向：下一個測試另外檢查
+    const list = dungeonTemplates().filter((t) => !t.id.startsWith('yhe_'))
     expect(list.length).toBeGreaterThanOrEqual(25)
     for (const t of list) {
       expect(t.tags, t.id).toContain('adult')
@@ -77,6 +78,22 @@ describe('dungeon adult events', () => {
       expect(clean.tags).toEqual(t.tags)
       expect(clean.pc_body).toEqual(t.pc_body)
       expect(clean.options!.map((o) => o.adult_scene)).toEqual(t.options!.map((o) => o.adult_scene))
+    }
+  })
+
+  it('has six non-adult events for the dungeons of 炎華南域, each with a way out', () => {
+    const list = dungeonTemplates().filter((t) => t.id.startsWith('yhe_'))
+    expect(list.length).toBe(6)
+    for (const t of list) {
+      expect(t.tags ?? [], t.id).not.toContain('adult')
+      expect(t.triggers?.length, t.id).toBeGreaterThan(0)
+      expect(t.dungeons?.every((d) => ['yongzhao_tomb', 'qianyao_valley', 'gunpowder_ruins'].includes(d)), t.id).toBe(true)
+      expect(t.options!.some((o) => o.check && o.fail), t.id).toBe(true)
+      for (const o of t.options!) {
+        for (const e of [...(o.success?.effects ?? []), ...(o.fail?.effects ?? [])]) {
+          if (e.type === 'condition') expect(companionRules.conditions[e.condition], `${t.id} ${e.condition}`).toBeTruthy()
+        }
+      }
     }
   })
 
