@@ -10,7 +10,8 @@ import { combatClasses, geography, landmarkDef, landmarkTypes, locationById, npc
 import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
-import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
+import { generateNpc, hashString, npcKind, npcRecord, npcSpot, occupationFor, registerNpc, weightedPick } from './npcs'
+import { lineageJobs } from './traits'
 import { Rng } from './rng'
 import { condMet } from './storyFlags'
 import { allyPlacement } from './story'
@@ -123,7 +124,7 @@ export function generateResident(state: GameState, rng: Rng, loc: Location, kind
   // 地點自己的職業（渡口的水手……）：只在有設定的地點多擲一次骰
   const local = kind === 'commoner' ? population.local_occupations?.[loc.id] : undefined
   const occupation = kind !== 'commoner' ? undefined : local?.list.length && rng.next() < local.chance ? rng.pick(local.list) : occupations.length ? rng.pick(occupations) : undefined
-  return generateNpc(state, rng, {
+  const rec = generateNpc(state, rng, {
     kind,
     ...(cls ? { class: cls } : {}),
     tags,
@@ -133,6 +134,32 @@ export function generateResident(state: GameState, rng: Rng, loc: Location, kind
     ...(kind === 'commoner' && occupation ? { occupation } : {}),
     ...(loc.faction && kind === 'commoner' ? { faction: loc.faction } : {}),
   }, prefix ?? (kind === 'adventurer' ? 'adv' : 'cmn'))
+  applyLineageJobs(rng, rec, loc)
+  return rec
+}
+
+/**
+ * 血統決定職業（化龍族的鱗色：天青多半是文官、朱砂多半是軍人……，npc_traits.json 的 lineages[].jobs）：
+ * 照 chance 的機率換掉冒險者的職業，或普通人的身分標籤與職業稱呼；換了標籤就重新決定出沒的地方。
+ * 沒有設定的種族不多擲骰（其他種族生成的結果不變）。
+ */
+function applyLineageJobs(rng: Rng, rec: NpcRecord, loc: Location) {
+  const jobs = lineageJobs(rec.race, rec.lineage)
+  if (!jobs || rng.next() >= jobs.chance) return
+  if (rec.kind === 'adventurer') {
+    const classes = (jobs.classes ?? []).filter((c) => combatClasses[c])
+    if (classes.length) rec.class = rng.pick(classes)
+    return
+  }
+  const usable = (jobs.tags ?? []).filter((t) => {
+    const def = npcTags.tags[t]
+    return def && def.kinds.includes('commoner') && (!def.location_types || def.location_types.includes(loc.type)) && (!def.requires_zone || zonesOf(loc).includes(def.requires_zone as Zone))
+  })
+  if (usable.length) {
+    rec.tags = [rng.pick(usable)]
+    rec.haunts = buildHaunts(rng, 'commoner', rec.tags, loc)
+  }
+  if (jobs.occupations?.length) rec.occupation = occupationFor(rng.pick(jobs.occupations), rec.gender)
 }
 
 /** 地點的名單人數：地點類型的人數，個別地點可以另外指定（npc_population.json 的 roster_by_location） */

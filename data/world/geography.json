@@ -7,7 +7,9 @@
     { "id": "south", "name": "南境枯萎荒原", "climate": "灰燼、硫磺、岩漿", "dominant": "demon_council", "danger": 4 },
     { "id": "forest", "name": "古樹森林", "climate": "常綠、自然魔力濃郁", "dominant": "elf_court", "danger": 2 },
     { "id": "east_sea", "name": "東海群島", "climate": "潮汐洶湧的淺海", "dominant": "seven_tides", "danger": 2 },
-    { "id": "west", "name": "西部荒野", "climate": "乾燥戈壁與沙漠", "dominant": "wild_tribes", "danger": 3 }
+    { "id": "west", "name": "西部荒野", "climate": "乾燥戈壁與沙漠", "dominant": "wild_tribes", "danger": 3 },
+    { "id": "yanhua_south", "name": "炎華南域", "climate": "溫暖濕潤、運河交織；西北山林冬天下雪", "dominant": "yanye_court", "danger": 1 },
+    { "id": "yanhua_north", "name": "炎華北原", "climate": "乾燥寒冷的草原", "dominant": "tidan_khanate", "danger": 2 }
   ],
   "factions": [
     { "id": "human_alliance", "name": "人類諸國聯盟" },
@@ -21,7 +23,10 @@
     { "id": "guild", "name": "冒險者公會" },
     { "id": "wild_tribes", "name": "荒野部落聯盟" },
     { "id": "four_seasons", "name": "玉璘四時殿", "capital": "canglue" },
-    { "id": "seven_tides", "name": "七潮議會", "capital": "tidehaven" }
+    { "id": "seven_tides", "name": "七潮議會", "capital": "tidehaven" },
+    { "id": "yanye_court", "name": "大燁朝廷", "capital": "longan" },
+    { "id": "jinmo_league", "name": "金墨盟" },
+    { "id": "tidan_khanate", "name": "媞丹汗國" }
   ],
   "locations": [
     { "id": "soriel", "name": "索里耶爾", "region": "central", "type": "capital", "races": { "human": 65, "dwarf": 9, "catfolk": 9, "elf": 6, "yulin": 6, "demon": 5 }, "faction": "holy_ring", "note": "平原正中心，四條聖河環繞；本資料的路程基準點" },
@@ -79,7 +84,11 @@
     { "id": "history_rift", "name": "歷史裂縫", "region": "central", "type": "dungeon", "requires": {"flags": ["pol_start"]}, "note": "河谷鎮附近；政治史詩開始時出現（阿契隆睜眼之前的徵兆）" },
     { "id": "history_corridor", "name": "歷史迴廊", "region": "central", "type": "dungeon", "requires": {"flags": ["pol_done"]}, "note": "河谷鎮附近；政治史詩完成時出現（阿契隆第一次睜眼之後的遺跡）" },
     { "id": "forbidden_garden", "name": "禁果庭園", "region": "south", "type": "dungeon", "park": "sm_lust_park", "material_series": "pleasure" },
-    { "id": "pleasure_palace", "name": "歡愉秘宮", "region": "south", "type": "dungeon", "park": "sm_lust_park", "material_series": "pleasure" }
+    { "id": "pleasure_palace", "name": "歡愉秘宮", "region": "south", "type": "dungeon", "park": "sm_lust_park", "material_series": "pleasure" },
+    { "id": "longan", "name": "龍安府", "region": "yanhua_south", "type": "capital", "races": { "hualong": 78, "linghu": 8, "human": 7, "yulin": 4, "catfolk": 1, "elf": 1, "dwarf": 1 }, "faction": "yanye_court", "note": "大燁的王都：御街、瓦舍勾欄、太學與貢院" },
+    { "id": "pingjiang", "name": "萍江府", "region": "yanhua_south", "type": "city", "races": { "hualong": 85, "linghu": 5, "human": 5, "yulin": 2, "catfolk": 1, "elf": 1, "dwarf": 1 }, "faction": "yanye_court", "note": "運河上的手工業城市：絲織、刺繡、瓷器" },
+    { "id": "quanzhou", "name": "瑔州港", "region": "yanhua_south", "type": "port", "races": { "hualong": 55, "human": 18, "linghu": 15, "yulin": 9, "catfolk": 1, "elf": 1, "dwarf": 1 }, "faction": "yanye_court", "note": "海外貿易的大港：蕃坊、市舶司、火藥坊" },
+    { "id": "qingqiu", "name": "青丘屯", "region": "yanhua_south", "type": "village", "races": { "linghu": 80, "hualong": 18, "human": 2 }, "faction": "yanye_court", "note": "大燁西北山林的靈狐族村子，還保有出馬的文化" }
   ],
   "routes": [
     { "a": "soriel", "b": "rhineburg", "days": [5, 5], "mode": "road" },
@@ -138,6 +147,11 @@
     { "a": "sandcastle", "b": "echo_canyon", "days": [2, 2], "mode": "wild", "estimated": true },
     { "a": "sandcastle", "b": "quicksand_temple", "days": [2, 2], "mode": "wild" },
     { "a": "rivervale", "b": "history_rift", "days": [1, 1], "mode": "trail" },
-    { "a": "rivervale", "b": "history_corridor", "days": [1, 1], "mode": "trail" }
+    { "a": "rivervale", "b": "history_corridor", "days": [1, 1], "mode": "trail" },
+    { "a": "tidehaven", "b": "quanzhou", "days": [10, 10], "mode": "sea", "fare": 150, "note": "遠洋航線：只有潮汐港有船" },
+    { "a": "quanzhou", "b": "pingjiang", "days": [3, 3], "mode": "road", "note": "沿運河" },
+    { "a": "pingjiang", "b": "longan", "days": [2, 2], "mode": "road" },
+    { "a": "quanzhou", "b": "longan", "days": [4, 4], "mode": "road", "note": "沿海" },
+    { "a": "longan", "b": "qingqiu", "days": [3, 3], "mode": "trail", "note": "往西北的山道" }
   ]
 }

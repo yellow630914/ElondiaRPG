@@ -24,11 +24,25 @@ interface PersonalityOption extends OptionDef {
   axis: string
 }
 
+/** 血統決定的職業（化龍族的鱗色）：chance 的機率照這裡挑，其他照一般規則（population.ts 的 generateResident） */
+export interface LineageJobs {
+  chance: number
+  /** 普通人的身分標籤（挑一個；那個聚落不能有的標籤就不換） */
+  tags?: string[]
+  /** 普通人的職業稱呼 */
+  occupations?: string[]
+  /** 冒險者的職業 */
+  classes?: string[]
+}
+
 interface LineageDef {
   id: string
   name: string
   weight: number
   home?: string[]
+  /** 在故鄉（home）的權重倍率，沒寫時 4 */
+  home_mult?: number
+  jobs?: LineageJobs
   surname?: string
   features?: Option[]
   parts?: Record<string, Option[]>
@@ -41,6 +55,8 @@ interface RaceTraits {
   names: { m: string[]; f: string[] }
   surnames?: string[]
   surname_chance?: number
+  /** 姓在前、不加「・」（化龍族、靈狐族：沈知瀾） */
+  surname_first?: boolean
   body?: Body
   exclude?: string[]
   features?: Option[]
@@ -156,6 +172,12 @@ export function bodyOf(race: string, gender: string | undefined): Body {
   return raceOf(race).body ?? (gender ? npcTraits.body_by_gender[gender] : undefined) ?? 'andro'
 }
 
+/** 血統決定的職業（沒有設定時 undefined） */
+export function lineageJobs(race: string, lineage: string | undefined): LineageJobs | undefined {
+  if (!lineage) return undefined
+  return npcTraits.races[race]?.lineages?.find((l) => l.name === lineage)?.jobs
+}
+
 function raceOf(race: string): RaceTraits {
   return npcTraits.races[race] ?? npcTraits.races.human!
 }
@@ -163,7 +185,7 @@ function raceOf(race: string): RaceTraits {
 function pickLineage(rng: Rng, race: RaceTraits, location: string): LineageDef | undefined {
   const list = race.lineages ?? []
   if (!list.length) return undefined
-  const weights = list.map((l) => l.weight * (l.home?.includes(location) ? 4 : 1))
+  const weights = list.map((l) => l.weight * (l.home?.includes(location) ? l.home_mult ?? 4 : 1))
   let r = rng.next() * weights.reduce((s, w) => s + w, 0)
   for (let i = 0; i < list.length; i++) {
     r -= weights[i]!
@@ -178,7 +200,7 @@ function pickName(rng: Rng, race: RaceTraits, lineage: LineageDef | undefined, g
     : body === 'masc' || gender === 'femboy' ? race.names.m : race.names.f
   const surname = lineage?.surname
     ?? (race.surnames?.length && rng.next() < (race.surname_chance ?? 0) ? rng.pick(race.surnames) : undefined)
-  const full = (given: string) => (surname ? `${given}・${surname}` : given)
+  const full = (given: string) => (surname ? (race.surname_first ? `${surname}${given}` : `${given}・${surname}`) : given)
   const free = pool.filter((n) => !used.has(full(n)))
   if (free.length) return full(rng.pick(free))
   const base = full(rng.pick(pool))

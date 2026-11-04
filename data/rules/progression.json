@@ -91,7 +91,9 @@
     { "id": "dwarf", "name": "矮人", "home": "north" },
     { "id": "demon", "name": "魔族", "home": "south" },
     { "id": "catfolk", "name": "貓魅族", "home": "west" },
-    { "id": "yulin", "name": "玉璘族", "home": "east_sea" }
+    { "id": "yulin", "name": "玉璘族", "home": "east_sea" },
+    { "id": "hualong", "name": "化龍族", "home": "yanhua_south" },
+    { "id": "linghu", "name": "靈狐族", "home": "yanhua_south" }
   ],
   "ability_rerolls": 3,
   "$comment_ability_rerolls": "升級時的能力三選一，每組可以重抽的次數。",

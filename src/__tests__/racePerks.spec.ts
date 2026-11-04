@@ -27,7 +27,8 @@ describe('race talents as race perks', () => {
 
   it('keeps resistances, evasion, lucky hits and threat exactly as before', () => {
     let n = 0
-    for (const race of Object.keys(attributeRules.races)) {
+    // 快照是改成種族特質之前存的：之後才加的種族（化龍族、靈狐族）沒有「之前」，不比
+    for (const race of Object.keys(attributeRules.races).filter((r) => Object.keys(snapshot).some((k) => k.startsWith(`${r}/`)))) {
       for (const cls of Object.keys(classes)) {
         const s = newGame({ name: 'x', race, classId: cls, seed: 1, birthplace: 'soriel' })
         const c = s.party[0]!

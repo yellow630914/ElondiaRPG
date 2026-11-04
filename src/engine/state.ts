@@ -54,6 +54,7 @@ export interface NewGameOptions {
 /** 各種族的預設出生地 */
 export const DEFAULT_BIRTHPLACE: Record<string, string> = {
   human: 'soriel', elf: 'silvermoon', dwarf: 'ironforge', demon: 'bloodplume', catfolk: 'sandcastle', yulin: 'canglue',
+  hualong: 'longan', linghu: 'qingqiu',
 }
 
 export function newGame(opts: NewGameOptions): GameState {
@@ -86,7 +87,8 @@ export function newGame(opts: NewGameOptions): GameState {
   if (background) pc.background = background
   // 特質：清單裡的照選，自訂的整理過才收
   // 缺陷最多兩個、每個換一個一般特質的名額（perks.json 的 creation），多的從後面拿掉
-  const listed = [...new Set(opts.perks ?? [])].filter(isChoosablePerk).map((id) => perkDef(id)!)
+  // 種族限定的特質（requires.races，例如化龍族的「蛇相」）別的種族帶不進來
+  const listed = [...new Set(opts.perks ?? [])].filter(isChoosablePerk).map((id) => perkDef(id)!).filter((p) => !p.requires?.races?.length || p.requires.races.includes(opts.race))
   const created = (opts.customPerks ?? []).map((raw, i) => sanitizePerk(raw, `c-start-${i + 1}`, undefined, true)).filter((p): p is PerkDef => !!p)
   const fitted = fitCreationPerks([...listed, ...created])
   const picked = listed.filter((p) => fitted.includes(p)).map((p) => p.id)

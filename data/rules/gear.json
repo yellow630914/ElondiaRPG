@@ -304,7 +304,7 @@
   "races": {
     "$comment": "種族的裝備模板：目前所有種族都使用同一套 16 個欄位；blocked 可以封住某些欄位（例如將來加入無法穿鞋的種族）。",
     "human": { "blocked": [] }, "elf": { "blocked": [] }, "dwarf": { "blocked": [] },
-    "demon": { "blocked": [] }, "catfolk": { "blocked": [] }, "yulin": { "blocked": [] }
+    "demon": { "blocked": [] }, "catfolk": { "blocked": [] }, "yulin": { "blocked": [] }, "hualong": { "blocked": [] }, "linghu": { "blocked": [] }
   },
 
   "craft": {

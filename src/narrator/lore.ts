@@ -69,8 +69,9 @@ const EXCLUDED = new Set([1, 2, 3, 4, 8, 10, 11, 29, 30, 31])
 // 成人向條目：只在成人場景注入；其中 38、39 是敘事法則，成人場景時常駐
 const ADULT = new Set([16, 17, 18, 38, 39, 54])
 const ADULT_CONSTANT = new Set([38, 39])
-// 巨龍條目沒有關鍵字，以「龍」觸發
+// 巨龍條目沒有關鍵字，以指巨龍的詞觸發（只寫「龍」的話，炎華之地的化龍族、龍安府會一直帶進來）
 const DRAGON = 45
+const DRAGON_KEYS = ['巨龍', '巨龙', '真龍', '真龙', '之龍', '之龙', '龍災', '龙灾', '龍種', '龙种', '祖龍', '祖龙', '高維', '高维', '阿契隆', '索利安', '卡格尼', '巴別林', '巴别林', '莉薇婭', '莉薇娅', '希諾爾', '希诺尔', '歐瑟拉', '欧瑟拉']
 /** 玩家新增的條目 uid 從這裡開始，避免和世界書檔案衝突 */
 export const CUSTOM_LORE_UID = 100000
 
@@ -92,7 +93,7 @@ export function defaultLoreItem(e: WorldbookEntry): LoreItem {
   if (TRAVEL_ONLY.includes(e.uid)) return { ...base, mode: 'travel', note: '只在旅行報告注入' }
   if (EXCLUDED.has(e.uid)) return { ...base, mode: 'off', note: '規則已由遊戲引擎實作，或是聊天用的格式指示' }
   if (ADULT_CONSTANT.has(e.uid)) return { ...base, mode: 'constant', note: '成人向：成人場景時常駐' }
-  if (e.uid === DRAGON) return { ...base, mode: 'keyword', keys: ['龍', '龙'], note: '原本沒有關鍵字，以「龍」觸發' }
+  if (e.uid === DRAGON) return { ...base, mode: 'keyword', keys: DRAGON_KEYS, note: '原本沒有關鍵字，以指巨龍的詞觸發' }
   return { ...base, mode: 'keyword' }
 }
 

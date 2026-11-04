@@ -32,10 +32,12 @@ const keepCreation = { ...perkRules.creation }
 afterEach(() => Object.assign(perkRules.creation, keepCreation))
 
 describe('flaw data', () => {
-  it('has 10–12 flaws, each roughly offsetting one ordinary perk', () => {
+  it('has 10–12 flaws for every race (plus race-only ones), each roughly offsetting one ordinary perk', () => {
     const list = flaws()
-    expect(list.length).toBeGreaterThanOrEqual(10)
-    expect(list.length).toBeLessThanOrEqual(12)
+    // 只有某些種族能選的缺陷（化龍族的蛇相）另外算
+    const everyone = list.filter((p) => !p.requires?.races?.length)
+    expect(everyone.length).toBeGreaterThanOrEqual(10)
+    expect(everyone.length).toBeLessThanOrEqual(12)
     const normal = choosablePerks().filter((p) => !p.flaw).map(perkPower).sort((a, b) => a - b)
     const median = normal[Math.floor(normal.length / 2)]!
     for (const p of list) {
