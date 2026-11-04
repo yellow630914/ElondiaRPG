@@ -3416,7 +3416,38 @@
     "dc": 13,
     "rate_cc": 5,
     "desc": "在勾欄說書、唱曲或跑龍套，賺一點賞錢。"
-   }
+   },
+   "scenes": [
+    {
+     "title": "蕭鳳儀的後台",
+     "desc": "散戲之後，第十三座勾欄的主人可以進蕭鳳儀的房間。",
+     "scene": "散戲之後，{cast}把主角叫進後台自己的房間，關上門，用團扇遮著燈；勾欄之主慢條斯理地卸妝、解衣，照著她心情決定今晚誰主導。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yaxf_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_xiao_fengyi"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_taixue",
@@ -3533,7 +3564,52 @@
    "scene": "層層紗帳後點著安神的香，女官們低聲細語，捧著疊好的錦被穿過長廊。",
    "open": {
     "official": true
-   }
+   },
+   "visit": {
+    "title": "討一包安神香",
+    "desc": "向值夜的女官討一包宮裡的安神香，回去好睡。",
+    "money_cc": 10,
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "relaxed",
+      "add": true
+     }
+    ],
+    "cooldown_days": 3
+   },
+   "scenes": [
+    {
+     "title": "尚寢局的夜課",
+     "desc": "溫如玉的課，只上給一個人。",
+     "scene": "尚寢局只點一盞燈，{cast}解開高髻，說今晚的課由兩個人一起上：她照著宮規一條條來，總在第十二條之後忘了下一條，最後拋開規矩抱緊主角。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "yawr_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_wen_ruyu"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_taifei",
@@ -3552,7 +3628,115 @@
    "scene": "海棠開滿了庭院，兩座殿閣隔著一道月洞門，各自的宮女都裝作沒看見對方。",
    "open": {
     "official": true
-   }
+   },
+   "visit": {
+    "title": "在海棠樹下歇腳",
+    "desc": "在庭院的海棠樹下坐一會兒，聽兩邊的宮女隔著月洞門鬥嘴。",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   },
+   "scenes": [
+    {
+     "title": "太后的長夜",
+     "desc": "替太后讀詩，然後陪她把長夜過完。",
+     "scene": "主角在燈下替{cast}讀完一卷詩，太后摘下鳳冠、散開長髮，端莊地要主角留下；寡居多年的身子在主角手下一寸寸發燙，壓抑的聲音直到天亮才敢放開。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yawy_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_wen_yi"
+      }
+     ],
+     "hours": 4,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    },
+    {
+     "title": "太妃的尾巴",
+     "desc": "胡玉綃說，今天又想迷惑一個人。",
+     "scene": "{cast}屏退宮女，三條白尾纏住主角的腰把主角拉上榻；嫵媚的太妃一邊說笑一邊慢條斯理地享用主角，總在最要緊的時候停下來問「還要不要」。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yayx_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_hu_yuxiao"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    },
+    {
+     "title": "兩代同堂",
+     "desc": "太妃又把太后與女帝和你關進了同一間寢殿。",
+     "scene": "{cast}：太妃又把三個人推進寢殿上了鎖，自己在門外聽；太后與女帝這對母女一邊維持體面、一邊輪流又一起和主角親密，門外的太妃不時起鬨。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yg2g_done"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_wen_yi"
+      },
+      {
+       "npc": "npc_yh_zhaohua"
+      },
+      {
+       "npc": "npc_yh_hu_yuxiao"
+      }
+     ],
+     "hours": 4,
+     "affinity": 2,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_rainbow_bridge",
@@ -3635,7 +3819,37 @@
       "amount": 20
      }
     ]
-   }
+   },
+   "scenes": [
+    {
+     "title": "抱著青蘿曬太陽",
+     "desc": "竹湖邊的石頭上，青蘿在等你。",
+     "scene": "{cast}坐在湖邊曬得暖暖的石頭上，看見主角就把尾巴纏過來；她照著話本學了新的東西要試，冰涼滑膩的身子被主角一點點暖熱，最後纏著主角不肯放。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "yaql_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_qingluo"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_weaving_bureau",
@@ -3719,7 +3933,37 @@
       "add": true
      }
     ]
-   }
+   },
+   "scenes": [
+    {
+     "title": "雙修",
+     "desc": "和玄霜從第一層修到第九層。",
+     "scene": "靈虛觀的靜室裡，{cast}解開道袍的絛帶與主角赤身對坐，引著彼此的氣一層層往上修；清冷的觀主到了最後幾層總會失神，把心法念成主角的名字。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "yaxs_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_xuanshuang"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_fanfang",
@@ -3818,7 +4062,40 @@
     "dc": 12,
     "rate_cc": 4,
     "desc": "替金玉行搬運海貨、看守貨倉。"
-   }
+   },
+   "scenes": [
+    {
+     "title": "金玉行的頂樓",
+     "desc": "金玉棠與陸青禾又吵完了一輪路線。",
+     "scene": "金玉行的頂樓上，{cast}吵完了今天的路線，一起把主角拉上床；兩人連在床上也要爭誰主導，爭著爭著又配合起來，一個慢一個急地把主角夾在中間。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "ygjm_done"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_jin_yutang"
+      },
+      {
+       "npc": "npc_yh_lu_qinghe"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_shibosi",
@@ -3909,7 +4186,83 @@
      }
     ]
    },
-   "interior": "sm_yh_xiantang_inner"
+   "interior": "sm_yh_xiantang_inner",
+   "scenes": [
+    {
+     "title": "內堂的炕",
+     "desc": "三娘把腰鈴掛在門上——或者沒掛。",
+     "scene": "仙堂的內堂裡，{cast}灌了一口燒刀子撲上來；有時腰鈴掛在門上只有三娘自己，有時太奶也下來湊熱鬧，兩個人格輪流要主角，叫聲整個屯子都聽得見。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yasn_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_hu_sanniang"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 3,
+      "y": 1
+     },
+     "spot_name": "內堂的炕"
+    },
+    {
+     "title": "胡家的團圓",
+     "desc": "三隻狐又回到青丘屯，擠在同一床被裡。",
+     "scene": "{cast}又一起回到青丘屯，在內堂的暖閣裡把主角圍在中間：三條、一條、兩條尾巴纏成一團，宮裡的狐、城裡的狐、屯裡的狐比著看誰最能讓主角失控。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yghu_done"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_hu_yuxiao"
+      },
+      {
+       "npc": "npc_yh_hu_jiuniang"
+      },
+      {
+       "npc": "npc_yh_hu_sanniang"
+      }
+     ],
+     "hours": 4,
+     "affinity": 2,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 1,
+      "y": 3
+     },
+     "spot_name": "供桌後的暖閣"
+    }
+   ]
   },
   {
    "id": "lm_yh_old_elm",

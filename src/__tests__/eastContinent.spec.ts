@@ -12,6 +12,9 @@ import { QUEST_RANGE_DAYS } from '@/engine/town'
 import { npcTags, landmarks, specialMaps } from '@/engine/data'
 import { standOn } from '@/engine/grid'
 import { storyOffersHere } from '@/engine/story'
+import { stories } from '@/engine/data'
+import { palaceNeedsPersuading } from '@/engine/security'
+import { setFlag } from '@/engine/storyFlags'
 import namedNpcs from '../../data/world/npcs.json'
 
 // 炎華之地 P1（docs/plan/roadmap/EAST_CONTINENT_PLAN.md）：兩個種族、炎華南域的四座聚落、航線與野外
@@ -118,6 +121,49 @@ describe('炎華之地', () => {
     const g = newGame({ name: '測試者', race: 'hualong', classId: 'fighter', seed: 2, birthplace: 'longan' })
     expect(standOn(g, 'guild')).toBe(true)
     expect(storyOffersHere(g).map((d) => d.id)).toContain('yh_banned_manuscript')
+  })
+
+  it('gives the eight adult characters three adult quests each, and the four group quests their partners', () => {
+    const lines = ['蕭鳳儀', '溫如玉', '玄霜', '青蘿', '胡三娘', '赤鬟', '溫懿', '胡玉綃']
+    const ya = stories.filter((s) => s.id.startsWith('ya'))
+    expect(ya.length).toBe(24)
+    for (const name of lines) {
+      const l = ya.filter((s) => s.summary.includes(`（${name}・`))
+      expect(l.map((s) => s.rank), name).toEqual(['D', 'C', 'B'])
+      for (const s of l) expect(s.tags?.[0], s.id).toBe('adult')
+      // 三的最後一步讓兩人在一起
+      const ends = l[2]!.nodes.at(-1)!.options!.map((o) => o.success!)
+      for (const o of ends) expect(o.set_flags!.some((f) => f.endsWith('_lover')) && !!o.scene, l[2]!.id).toBe(true)
+    }
+    // 多人任務：條件是各自的線
+    const group = Object.fromEntries(stories.filter((s) => s.id.startsWith('yg_')).map((s) => [s.id, s]))
+    expect(Object.keys(group).sort()).toEqual(['yg_five_seats', 'yg_gold_ink', 'yg_hu_reunion', 'yg_two_generations'])
+    expect(group.yg_five_seats!.start.requires!.flags).toEqual(['yhpol_constitution', 'yczh_lover', 'ycsh_lover', 'yclq_lover', 'ychj_lover', 'ycjy_lover'])
+    expect(group.yg_five_seats!.tags).toBeUndefined()
+    expect(group.yg_two_generations!.start.requires!.flags).toEqual(['yawy_lover', 'yczh_x_done'])
+    expect(group.yg_two_generations!.summary).toMatch(/^內容警示/)
+    expect(group.yg_hu_reunion!.start.requires!.flags).toEqual(['yayx_lover', 'yasn_lover', 'ychj_x_done'])
+    expect(group.yg_gold_ink!.start.requires!.flags).toEqual(['ycjy_x_done', 'yclq_x_done'])
+    // 地標的場景：旗標由這些任務設定
+    const sets = new Set(stories.flatMap((s) => s.nodes.flatMap((n) => [n.success, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).flatMap((o) => o?.set_flags ?? [])))
+    const scenes = Object.values(landmarks).filter((l) => l.id.startsWith('lm_yh_')).flatMap((l) => l.scenes ?? [])
+    expect(scenes.length).toBe(10)
+    for (const sc of scenes) {
+      expect(sc.tags, sc.title).toContain('adult')
+      for (const f of sc.requires!.flags!) expect(sets.has(f), `${sc.title} ${f}`).toBe(true)
+    }
+  })
+
+  it('lets a quest flag stand in for the palace permit (宮裡的腰牌)', () => {
+    const s = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 2, birthplace: 'longan' })
+    expect(palaceNeedsPersuading(s)).toBe(true)
+    setFlag(s, 'palace_permit_longan')
+    expect(palaceNeedsPersuading(s)).toBe(false)
+    // 皇城裡的三位：第一個任務就給腰牌
+    for (const id of ['yawr_lesson', 'yawy_errand', 'yayx_rumor']) {
+      const d = stories.find((x) => x.id === id)!
+      expect(d.nodes[0]!.success!.set_flags, id).toContain('palace_permit_longan')
+    }
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {

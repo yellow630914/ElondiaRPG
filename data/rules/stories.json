@@ -44193,6 +44193,2136 @@
         }
       ],
       "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "yaxf_poached",
+      "title": "挖角",
+      "summary": "對面的春風棚挖走了蕭鳳儀的三個角兒，還派打手在她的棚子外面堵客人。她要一個能打、又不多嘴的人。（蕭鳳儀・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xiao_fengyi",
+        "text": "蕭鳳儀搖著泥金團扇，上上下下打量你：「春風棚的班主挖了我三個角兒，還派人在我的棚子外面堵客人。」扇子一收，點在你胸口，「我要一個能打、又不多嘴的人。你看起來兩樣都行。」",
+        "min_level": 5
+      },
+      "start_flags": ["yaxf_1_started"],
+      "nodes": [
+        {
+          "id": "thugs",
+          "title": "晚上在龍安府的瓦舍勾欄外面趕走春風棚的打手",
+          "text": "散戲的時候，幾個打手堵在勾欄門口，對出來的看客推推搡搡：「明天去春風棚看，這裡的戲不好看。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yaxf_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手們抱著頭跑了。棚子裡傳來蕭鳳儀的笑聲：「打得好看。比今晚的戲好看。」", "set_flags": ["yaxf_cleared"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "actress",
+          "title": "到龍安府的酒館勸回被挖走的旦角小桃紅",
+          "text": "小桃紅一個人坐在酒館的角落喝悶酒。春風棚答應給她雙倍的包銀，可是三天了，一場戲都沒讓她上。",
+          "at": { "where": "cell", "location": "longan", "cell": "tavern" },
+          "requires": { "flags": ["yaxf_cleared"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "「蕭夫人說，台口那個位子還空著，只給妳留。」小桃紅哭了出來，把春風棚的契約撕成兩半。", "set_flags": ["yaxf_back"] },
+          "fail": { "text": "小桃紅搖搖頭，又倒了一杯。也許換個說法再試一次。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "回龍安府的瓦舍勾欄向蕭鳳儀交差",
+          "text": "小桃紅回來了，另外兩個角兒聽說了，也連夜收拾包袱回來。蕭鳳儀在後台的妝鏡前卸妝，從鏡子裡看你：「說吧，要什麼？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yaxf_back"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「工錢就好」",
+              "success": {
+                "text": "她挑了挑眉，把一袋錢丟給你：「不多嘴，也不多要。好，我記住你了。」",
+                "set_flags": ["yaxf_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xiao_fengyi", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替蕭鳳儀趕走了春風棚的打手，勸回了被挖走的旦角。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「陪我喝一杯」",
+              "success": {
+                "text": "她笑了，倒了兩杯酒，一杯遞給你，一杯自己喝了一半，又把剩下的半杯湊到你嘴邊。後台的燈被她用扇子扇滅了一盞。",
+                "set_flags": ["yaxf_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xiao_fengyi", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替蕭鳳儀辦完事，她在後台的妝鏡前陪你喝了一杯——還有酒以外的。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "後台的妝鏡前，蕭鳳儀用團扇遮著兩人，跨坐在主角腿上慢慢地吻；她的手很熟練，只用手就讓主角在她懷裡繳械，自己卻衣衫整齊。「今天只是訂金。」她舔了舔指尖。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yaxf_stolen_play",
+      "title": "搶戲",
+      "summary": "蕭鳳儀的新戲還沒首演，戲本就被偷了；春風棚打算同一晚搶先演出。（蕭鳳儀・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xiao_fengyi",
+        "requires": { "flags": ["yaxf_1_done"] },
+        "text": "蕭鳳儀把一疊空白的紙摔在桌上，臉上還在笑，眼睛沒有：「我的新戲，『昭陵夜雨』。寫戲的人被抓了，戲本是她留下的唯一一份——昨晚被偷了。」她用扇子敲著手心，「春風棚貼出告示，後天首演『昭陵夜雨』。同一晚，同一齣。」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yaxf_2_started"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "到龍安府的情報商打聽春風棚的戲本",
+          "text": "情報商說，春風棚的班主最近花大錢雇了兩個亡命的刀客，晚上睡在城南的旅店，不敢回自己的棚子。",
+          "at": { "where": "cell", "location": "longan", "cell": "informant" },
+          "requires": { "flags": ["yaxf_2_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 14 },
+          "success": { "text": "你問出了班主住的房間，還有他把戲本鎖在哪一個箱子裡。", "set_flags": ["yaxf_traced"] },
+          "fail": { "text": "情報商只肯說「城南」。再多問幾句，或是多付一點。", "retry": true }
+        },
+        {
+          "id": "inn",
+          "title": "晚上到龍安府的旅店堵春風棚的班主",
+          "text": "城南旅店的二樓，兩個纏著黑布的刀客守在門口。房間裡傳來班主的聲音：「誰？」",
+          "at": { "where": "cell", "location": "longan", "cell": "inn" },
+          "requires": { "flags": ["yaxf_traced"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下了。班主抱著箱子縮在床角，把戲本雙手奉上，求你別告訴蕭鳳儀是他。", "set_flags": ["yaxf_script"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "done",
+          "title": "在龍安府的瓦舍勾欄看蕭鳳儀的首演",
+          "text": "「昭陵夜雨」首演，滿堂喝采，對面的春風棚只來了三個看客。散戲之後，蕭鳳儀把你叫進她自己的房間，關上門，慢慢地解開褙子的帶子：「這一回，不是訂金了。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yaxf_script"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她主導",
+              "success": {
+                "text": "她把你推倒在榻上，一件一件教你她在戲台上教旦角的東西。天亮之前，她靠在你肩上說：「入幕之賓。這四個字，我這輩子只給過一個人——現在是兩個。」",
+                "set_flags": ["yaxf_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xiao_fengyi", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "「昭陵夜雨」首演的那一夜，蕭鳳儀讓你成了她的入幕之賓。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "蕭鳳儀把主角推倒在榻上，像在戲台上排戲一樣主導一切：什麼時候慢、什麼時候快、什麼時候讓主角看著她；她的金鱗在燈下發亮，高潮時也不忘指點，事後才承認自己也被弄得腿軟。"
+              }
+            },
+            {
+              "label": "反過來主導她",
+              "success": {
+                "text": "她愣了一下，然後笑了：「好，今晚我當看客。」可是到後來，她再也笑不出聲，只能咬著扇骨。天亮時她說：「……二十座勾欄，沒有一個人敢這樣對我。」",
+                "set_flags": ["yaxf_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xiao_fengyi", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "「昭陵夜雨」首演的那一夜，你反過來主導了勾欄之主蕭鳳儀。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "主角把蕭鳳儀壓在妝台前，從身後抱住她，讓她看著鏡子裡的自己；習慣主導的勾欄之主第一次被人掌控，金鱗泛起紅暈，咬著扇骨也壓不住聲音，一次比一次更失態。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yaxf_fire",
+      "title": "火",
+      "summary": "有人在蕭鳳儀的勾欄放火。放火的人不是春風棚的——是有人想警告她，消息不要兩邊賣。（蕭鳳儀・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xiao_fengyi",
+        "requires": { "flags": ["yaxf_2_done"] },
+        "text": "瓦舍那頭的天燒紅了。蕭鳳儀披頭散髮地站在街上，手裡還握著團扇，看著自己最大的那座勾欄冒煙。「火是從後台點的，」她的聲音很平，「春風棚沒這個膽子。」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yaxf_3_started"],
+      "nodes": [
+        {
+          "id": "fire",
+          "title": "晚上在龍安府的瓦舍勾欄抓住放火的人",
+          "text": "濃煙裡，兩個蒙面黑衣的人正往戲台的布景上潑油。他們看見你，拔出了淬毒的刀。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yaxf_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士倒下了，牙裡的毒丸還沒咬破。戲班的人提著水桶衝進來，火很快被撲滅了。死士的腰牌上，是相府的印。", "set_flags": ["yaxf_caught"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "lover",
+          "title": "天亮後回瓦舍勾欄找蕭鳳儀",
+          "text": "蕭鳳儀看著相府的腰牌，笑了：「宰相嫌我替陛下打聽的消息太多。」她把腰牌收進袖子裡，「他忘了，我替他打聽的也不少。」她從腰間解下一把鑰匙放進你手心：「瓦舍的第十三座勾欄。燒過的這座，修好了歸你管。」她看著你，「我不需要誰救——可是我需要一個管勾欄的人。今晚留下來。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yaxf_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我留下來」",
+              "success": {
+                "text": "你們在燒焦的戲台後面、她自己的房間裡過了一夜。天亮時，她替你繫上衣帶：「第十三座勾欄的主人，起來排戲了。」",
+                "set_flags": ["yaxf_lover", "yaxf_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xiao_fengyi", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "蕭鳳儀的勾欄被相府放火之後，她把瓦舍的第十三座勾欄交給你管，你成了她的人。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "火災後的那一夜，蕭鳳儀第一次不演戲：沒有團扇、沒有教學，只是緊緊抱著主角，要了一次又一次；她說她怕的從來不是火，是失去她栽培過的人，而主角是她最捨不得的那一個。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「勾欄我不要，我要妳」",
+              "success": {
+                "text": "她看了你很久，把鑰匙塞回你手裡：「兩樣都給你。我蕭鳳儀從來不做賠本的生意。」那一夜，她的房門上掛了一塊牌子：今晚不見客。",
+                "set_flags": ["yaxf_lover", "yaxf_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xiao_fengyi", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你說勾欄不要，只要蕭鳳儀；她兩樣都給了你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "蕭鳳儀在門上掛了「今晚不見客」的牌子，拉著主角倒進錦被裡；她一邊笑一邊罵主角不會做生意，一邊把自己整個交出去，最後趴在主角胸口數心跳，說這是她看過最好的一場戲。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yawr_lesson",
+      "title": "尚寢局的課",
+      "summary": "陛下身邊多了一個新人，尚寢局的司寢女官溫如玉奉命「考校」——宮裡的規矩，從她教起。（溫如玉・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "requires": { "flags": ["yczh_1_done"] },
+        "text": "公會的掌櫃遞給你一張淡青的箋子，字寫得一絲不苟：「陛下身邊的人，需懂宮中之禮。明日申時，尚寢局。溫如玉。」箋子底下壓著一塊玉製的腰牌。",
+        "min_level": 5
+      },
+      "start_flags": ["yawr_1_started"],
+      "nodes": [
+        {
+          "id": "badge",
+          "title": "在龍安府的公會收下尚寢局的腰牌",
+          "text": "腰牌上刻著「尚寢局」三個字。有了它，王城的衛兵不會再攔你。",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yawr_1_started"] },
+          "kind": "story",
+          "success": { "text": "你把腰牌繫在腰上。", "set_flags": ["yawr_badge", "palace_permit_longan"] }
+        },
+        {
+          "id": "rules",
+          "title": "到龍安府的尚寢局背宮規",
+          "text": "溫如玉把一本厚厚的宮規放在你面前：「第一課：背。」她坐在對面，腰背挺得筆直，一個字一個字地考。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_shangqin" },
+          "requires": { "flags": ["yawr_badge"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 12 },
+          "success": { "text": "你背完了最後一條。她點點頭，嘴角好像動了一下：「及格。」", "set_flags": ["yawr_passed"] },
+          "fail": { "text": "你背錯了第三十七條。她面不改色：「明天重背。」", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "在龍安府的尚寢局上溫如玉的第二課",
+          "text": "溫如玉解開宮裝的領口，背對著你坐下，露出後頸一路往下的天青色細鱗：「第二課：數。陛下的鱗，侍寢的人要知道有幾片。我的和陛下的差不多——數吧，用手。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_shangqin" },
+          "requires": { "flags": ["yawr_passed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "認真地數",
+              "success": {
+                "text": "你一片一片地數，數到腰窩的時候，她的背輕輕抖了一下，聲音還是很平：「……一百零八片。及格。今天到這裡。」她拉好衣領的手，有一點不穩。",
+                "set_flags": ["yawr_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_ruyu", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "尚寢局的溫如玉讓你數她背上的鱗，一百零八片。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "主角的手指沿著溫如玉的脊背一片片數過天青色的細鱗，越往下她呼吸越亂；數到腰窩時她輕輕顫了一下，端莊的聲音第一次走了調。"
+              }
+            },
+            {
+              "label": "故意數錯",
+              "success": {
+                "text": "「一百……一百十二？」她回過頭來，看著你的眼睛，看了很久：「你是故意的。」她轉回去，「重數。」這一次她數得比你還慢。",
+                "set_flags": ["yawr_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_ruyu", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "你故意數錯了溫如玉背上的鱗，她要你重數了一遍又一遍。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "主角故意數錯，溫如玉一次次要主角重數；指尖從後頸滑到腰窩、又滑回來，她咬著唇維持端莊的坐姿，背上的鱗被摸得微微發燙。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yawr_uncle",
+      "title": "宰相的姪女",
+      "summary": "宰相溫世衡要他的姪女溫如玉回報：陛下的新人是誰、從哪裡來、想要什麼。她要回報些什麼？（溫如玉・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_wen_ruyu",
+        "requires": { "flags": ["yawr_1_done"] },
+        "text": "溫如玉把一封信放在你面前，信封上是宰相府的印：「伯父要我回報你的事。」她的聲音很輕，「他已經派人跟著你了。」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yawr_2_started"],
+      "nodes": [
+        {
+          "id": "tail",
+          "title": "在龍安府的城門甩掉相府的眼線",
+          "text": "城門口兩個刀客從你出宮開始就一直跟著。你在城門下停住，他們也停住了。",
+          "at": { "where": "cell", "location": "longan", "cell": "gate" },
+          "requires": { "flags": ["yawr_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下了，懷裡有一張紙，上面寫著你這幾天去過的每一個地方。", "set_flags": ["yawr_shaken"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "晚上在龍安府的尚寢局和溫如玉商量怎麼回報",
+          "text": "尚寢局只點了一盞燈。溫如玉看著那張紙，很久沒說話：「我十五歲入宮，是伯父送進來的。他以為我是他的眼睛。」她把紙放到燈上燒了，「……今晚的課，教你怎麼讓女人說真話。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_shangqin" },
+          "requires": { "flags": ["yawr_shaken"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我替妳寫一份給他」",
+              "success": {
+                "text": "你們一起寫了一份回報：主角是個貪財的冒險者，陛下只是一時新鮮。她邊寫邊笑，笑得肩膀發抖。寫完之後，第三課開始了。",
+                "set_flags": ["yawr_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_ruyu", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "你和溫如玉一起替宰相寫了一份假的回報，然後她教了你第三課。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "寫完假回報後，溫如玉教了第三課：她讓主角用手和唇讓她說真話，自己卻始終不讓主角進到最後；她的宮裝一層層散開，聲音從端正的講解變成斷續的喘息，說出口的真話是「我想要你」。"
+              }
+            },
+            {
+              "label": "「妳想怎麼回報？」",
+              "success": {
+                "text": "她愣住了，好像從沒有人問過她想要什麼：「……我想說，陛下五年來第一次睡得好。」她把臉埋進你的肩膀，「這是真話，也是伯父最不想聽的話。」",
+                "set_flags": ["yawr_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_ruyu", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "溫如玉說她想回報宰相：陛下五年來第一次睡得好。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "溫如玉第一次放下尺寸，靠在主角懷裡讓主角慢慢解開她的高髻與宮裝；她教了十三年的東西，這一晚是主角在她身上一樣一樣做給她看，她在燈下紅透了臉，卻還是在最後一步前按住了主角的手。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yawr_two_faces",
+      "title": "兩面",
+      "summary": "宰相交給溫如玉一包藥，要她放進陛下的茶裡。她不肯，相府的死士就來了。（溫如玉・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_wen_ruyu",
+        "requires": { "flags": ["yawr_2_done"] },
+        "text": "溫如玉把一個小紙包放在你手心，手很冷：「伯父說，這是安神的藥。放進陛下的茶裡，陛下就會病一陣子，政事由他代理。」她看著你，「我不放。所以他今晚會派人來。」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yawr_3_started"],
+      "nodes": [
+        {
+          "id": "assassins",
+          "title": "晚上在龍安府的尚寢局擋下相府的死士",
+          "text": "三更，尚寢局的窗紙被刀劃開。蒙面的死士翻進來，刀直直地往溫如玉刺去。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_shangqin" },
+          "requires": { "flags": ["yawr_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士倒在地上。溫如玉握著被劃破的袖子，一動也不動，然後慢慢地跪坐下來，第一次在你面前哭了。", "set_flags": ["yawr_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "lover",
+          "title": "在龍安府的尚寢局陪溫如玉",
+          "text": "她把藥包交給了陛下，也把十三年來伯父要她回報的每一件事都寫了下來。做完這些，天快亮了。她解開高髻，長髮披下來：「我教了十三年的閨房之禮，」她的聲音很輕，「自己一次也沒有。最後一課，我想跟你一起上。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_shangqin" },
+          "requires": { "flags": ["yawr_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「這一課，換我教妳」",
+              "success": {
+                "text": "天亮的時候，她躺在你懷裡，數著你的心跳：「……一百零八下。」她笑了，「我也會數錯。」",
+                "set_flags": ["yawr_lover", "yawr_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_ruyu", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "溫如玉擋下了宰相的藥，選了陛下，也選了你。她教了十三年的閨房之禮，最後一課是和你一起上的。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "教了十三年的司寢女官第一次被人教：主角慢慢地、一步一步地帶她，她的端莊在第一次被進入時碎成細碎的喘息；她緊緊抱著主角，背上的鱗一片片泛紅，事後枕著主角數心跳。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「照妳教的來」",
+              "success": {
+                "text": "她真的照著宮規一條一條地來，認真得讓你想笑，直到第十二條她自己忘了接下來是什麼。後來的事，宮規上都沒有寫。",
+                "set_flags": ["yawr_lover", "yawr_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_ruyu", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "溫如玉照著自己教了十三年的宮規和你過了第一夜——到第十二條她就忘了。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "溫如玉照著自己教了十三年的步驟一條條來，連姿勢都像量過尺寸；第一次的疼讓她停了一下，之後的快感讓她再也想不起下一條，最後拋開所有規矩抱緊主角，叫著主角的名字。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yaxs_destined",
+      "title": "有緣人",
+      "summary": "靈虛觀的觀主玄霜修的是雙修之道，等了十年的「有緣人」。她說你身上有一點緣分——要試試才知道。（玄霜・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xuanshuang",
+        "text": "玄霜赤著腳站在石階上，拂塵一擺，看著你的眼神像在看一面湖：「你身上的氣，和別人不一樣。」她說得很坦然，「我修雙修之道，等一個有緣人等了十年。陪我坐一炷香，看看是不是你。」",
+        "min_level": 5
+      },
+      "start_flags": ["yaxs_1_started"],
+      "nodes": [
+        {
+          "id": "sit",
+          "title": "在萍江府的靈虛觀陪玄霜打坐",
+          "text": "一炷香。玄霜坐在你對面，膝蓋碰著膝蓋，掌心貼著掌心。她說：「心無雜念。」可是她的手很燙。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_lingxu" },
+          "requires": { "flags": ["yaxs_1_started"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 12 },
+          "success": { "text": "一炷香燒完的時候，你感覺到一股暖流從她的掌心流進來，又流回去。玄霜睜開眼睛：「……有一點。」", "set_flags": ["yaxs_flow"] },
+          "fail": { "text": "你分心了。玄霜睜開一隻眼：「雜念太多。明天再來。」", "retry": true }
+        },
+        {
+          "id": "dew",
+          "title": "到萍江府的近郊採松針上的晨露",
+          "text": "玄霜說，下一次打坐要用松林裡的晨露煮茶。天剛亮，松林裡霧很濃；你遠遠看見幾個穿著天青色衣服的人在觀外張望。",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yaxs_flow"] },
+          "kind": "story",
+          "success": { "text": "你採了一壺晨露。那幾個人看見你，轉身走了。", "set_flags": ["yaxs_dew"] }
+        },
+        {
+          "id": "done",
+          "title": "回萍江府的靈虛觀和玄霜喝晨露茶",
+          "text": "玄霜煮了茶，聽你說了松林裡的那幾個人，手停了一下：「天青鱗的衣服。是我家的人。」她喝了一口茶，「我二十歲拒了婚約出家，家裡只當我死了。現在……他們大概是聽說我找到有緣人了。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_lingxu" },
+          "requires": { "flags": ["yaxs_dew"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我是有緣人嗎？」",
+              "success": {
+                "text": "她看著你，第一次笑了：「是。」她說得很肯定，「十年了，第一次。」",
+                "set_flags": ["yaxs_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xuanshuang", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "靈虛觀的玄霜說你是她等了十年的有緣人。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳家的人想做什麼？」",
+              "success": {
+                "text": "「帶我回去嫁人。」她淡淡地說，拂塵一擺，「不過，現在晚了。」",
+                "set_flags": ["yaxs_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xuanshuang", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "玄霜的家人在靈虛觀外出現，大概是想帶她回去嫁人。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yaxs_family",
+      "title": "天青鱗的家",
+      "summary": "玄霜的家人雇了刀客，要把她從靈虛觀「接」回家。（玄霜・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xuanshuang",
+        "requires": { "flags": ["yaxs_1_done"] },
+        "text": "玄霜的拂塵斷了一截，素白的道袍上有泥：「昨晚有人想從後山把我帶走。」她說得很平靜，「我父親的人。他們說，雙修是邪道，天青鱗的嫡女不能當淫婦。」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yaxs_2_started"],
+      "nodes": [
+        {
+          "id": "pines",
+          "title": "在萍江府的近郊松林擋下來帶走玄霜的刀客",
+          "text": "松林裡，兩個刀客拿著繩索和麻袋，旁邊站著一個天青鱗的管家：「我們是來接大小姐回家的。」",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yaxs_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下了，管家跑了，丟下一封信：家主病重，要玄霜回去見最後一面。信是假的——字跡是她父親自己的。", "set_flags": ["yaxs_letter"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "晚上在萍江府的靈虛觀和玄霜修第一層",
+          "text": "玄霜把父親的信放進香爐裡燒了：「他寫字的手很穩。病重的人寫不出這樣的字。」她解開道袍的絛帶，「雙修有九層。第一層不用到最後——只要讓氣走一圈。脫吧，有緣人。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_lingxu" },
+          "requires": { "flags": ["yaxs_letter"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "照她說的修",
+              "success": {
+                "text": "你們赤身對坐，掌心相貼，她引著你的氣在兩個人身上走了一圈又一圈。天亮時她說：「第一層成了。」她的聲音還在抖。",
+                "set_flags": ["yaxs_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xuanshuang", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和玄霜在靈虛觀修了雙修的第一層。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "玄霜與主角赤身對坐，她引導主角的手撫過她冷白的肌膚、沿著經絡一路往下，自己的手也在主角身上做一樣的事；不到最後，只是一次次把彼此推到邊緣再停下，直到兩人都在顫抖中洩了身。"
+              }
+            },
+            {
+              "label": "「心無雜念我做不到」",
+              "success": {
+                "text": "她看著你，嘴角動了一下：「我也做不到。」那一晚，第一層修得亂七八糟。",
+                "set_flags": ["yaxs_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xuanshuang", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和玄霜修雙修的第一層，兩個人都做不到心無雜念。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "說好只是運氣，卻一次次失控：玄霜清冷的臉漲紅，尾巴緊緊纏住主角的腿，嘴上念著心法，手卻一直往主角身上探；最後兩人亂成一團，她笑著說這一層修得亂七八糟。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yaxs_shrine",
+      "title": "淫祠",
+      "summary": "萍江府的衙門接到狀子：靈虛觀是淫祠，要封觀。告狀的人姓玄霜的本姓。（玄霜・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xuanshuang",
+        "requires": { "flags": ["yaxs_2_done"] },
+        "text": "靈虛觀的山門上貼了封條，玄霜站在封條前，赤著的腳凍得發紅：「我父親告我。說靈虛觀是淫祠，我是妖道。」她看著你，「知府明天升堂。你願意替我作證嗎？」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yaxs_3_started"],
+      "nodes": [
+        {
+          "id": "seal",
+          "title": "在萍江府的靈虛觀擋下來封觀的兵丁",
+          "text": "天還沒亮，一隊兵丁就來了，要把觀裡的經書、香爐全部搬走燒掉。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_lingxu" },
+          "requires": { "flags": ["yaxs_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 3]],
+          "success": { "text": "兵丁被你擋了回去。帶頭的說：「等知府判了，我們還會再來。」", "set_flags": ["yaxs_held"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "testify",
+          "title": "在萍江府的知府衙門替玄霜作證",
+          "text": "公堂上，蘇懷瑾端坐案後。玄霜的父親站在堂下，指著她說：「雙修是邪道，靈虛觀是淫祠！」蘇懷瑾看向你：「證人，你說。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin", "location": "pingjiang" },
+          "requires": { "flags": ["yaxs_held"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "你說了靈虛觀的晨露茶、玄霜十年的打坐、那封字跡太穩的假信。蘇懷瑾翻開大燁律：「律無明文禁雙修。駁回。」她看了玄霜的父親一眼，「偽造病書，另案處理。」", "set_flags": ["yaxs_cleared"] },
+          "fail": { "text": "你說得不夠清楚，蘇懷瑾說擇日再審。玄霜在堂下輕輕點頭：明天再來。", "retry": true }
+        },
+        {
+          "id": "lover",
+          "title": "晚上在萍江府的靈虛觀和玄霜修最後一層",
+          "text": "封條撕掉了。玄霜在觀裡點了一爐香，回過頭來，眼神清得像冬天的湖：「十年。我等的不是第九層，」她說，「是可以一起修到第九層的人。今晚，一口氣修完。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_lingxu" },
+          "requires": { "flags": ["yaxs_cleared"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「一層一層來」",
+              "success": {
+                "text": "你們從第一層修到第九層，從入夜修到天亮。最後她靠在你懷裡：「……原來第九層是這樣。」",
+                "set_flags": ["yaxs_lover", "yaxs_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xuanshuang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "靈虛觀的冤案洗清之後，你和玄霜從第一層一口氣修到了第九層。她等了十年的有緣人是你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "玄霜等了十年的第一次：她引著主角一層層深入，從相對而坐到完全結合，清冷的道姑在最後幾層徹底失神，修行的心法變成主角的名字；天亮時她靠在主角懷裡，說原來第九層是這樣。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「先跳到第九層」",
+              "success": {
+                "text": "她愣了一下，第一次笑出了聲：「……不合規矩。」可是她沒有拒絕。後來那八層，是倒著修回去的。",
+                "set_flags": ["yaxs_lover", "yaxs_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xuanshuang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你和玄霜先修了第九層，再倒著修回去——她說不合規矩，卻沒有拒絕。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "主角直接把玄霜拉進懷裡，她嘴上說不合規矩，身體卻比誰都誠實；第一次的結合急切而熱烈，她冷白的肌膚泛起潮紅，尾巴纏著主角不放，之後才一層層慢慢地「補修」回去。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yaql_storybook",
+      "title": "話本裡的戀愛",
+      "summary": "竹湖邊的青蘿撿到一本話本，看了一百遍，想知道書裡的人為什麼要為了另一個人哭。她想照著話本試一次。（青蘿・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_qingluo", "text": "青蘿抱著一本被翻爛的話本，豎瞳盯著你：「書上說，才子和佳人是在橋上遇見的。」她舌尖分岔的舌頭輕輕吐了一下，「你……你可以當才子嗎？我想試一次。」", "min_level": 5 },
+      "start_flags": ["yaql_1_started"],
+      "nodes": [
+        {
+          "id": "bridge",
+          "title": "帶青蘿到萍江府的虹橋上「相遇」",
+          "text": "虹橋上人來人往。青蘿照著話本，「不小心」把手帕掉在你腳邊——然後尾巴從裙底露了出來。旁邊的人尖叫：「蛇妖！」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yaql_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "你撿起手帕，大聲說：「這是我家娘子，化龍族的，鱗長得細了一點。」人群散了。青蘿躲在你背後，尾巴纏著你的腳，抖個不停。", "set_flags": ["yaql_met"] },
+          "fail": { "text": "人越聚越多。你拉著青蘿先躲到橋下，等人散了再來一次。", "retry": true }
+        },
+        {
+          "id": "gift",
+          "title": "在萍江府的近郊陪青蘿撿石頭",
+          "text": "話本上說，才子會送佳人東西。青蘿想了很久，說她想要一顆曬過太陽、暖暖的石頭。",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yaql_met"] },
+          "kind": "story",
+          "success": { "text": "你找到一顆被太陽曬得很暖的圓石頭。青蘿把它貼在臉上，眼睛瞇了起來。", "set_flags": ["yaql_stone"] }
+        },
+        {
+          "id": "done",
+          "title": "回萍江府的竹湖邊和青蘿讀話本",
+          "text": "青蘿抱著那顆石頭，翻到話本的下一頁：「接下來，才子要牽佳人的手。」她把冰涼的手伸給你，「……你的手好暖。比石頭暖。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_bamboo_lake" },
+          "requires": { "flags": ["yaql_stone"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "牽著她的手",
+              "success": {
+                "text": "你牽著她的手，一直坐到太陽下山。她的尾巴不知不覺纏上了你的腰，纏得越來越緊。",
+                "set_flags": ["yaql_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qingluo", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "照著話本，在竹湖邊牽了青蘿的手；她的尾巴纏上了你的腰。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「話本下一頁寫什麼？」",
+              "success": {
+                "text": "她翻到下一頁，臉一下子紅了，把話本藏到背後：「……還、還不能看。」",
+                "set_flags": ["yaql_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qingluo", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "青蘿說話本的下一頁還不能看。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yaql_winter",
+      "title": "冬天",
+      "summary": "入冬了，青蘿冷得動不了；鄰村的人卻趁這個時候，雇了刀客來「除蛇妖」。（青蘿・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_qingluo",
+        "requires": { "flags": ["yaql_1_done"] },
+        "text": "竹湖結了一層薄冰。青蘿縮在小屋的角落，動作慢得像一條冬眠的蛇：「冷……」她抓著你的袖子，「外面……有人拿著刀……」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yaql_2_started"],
+      "nodes": [
+        {
+          "id": "hunters",
+          "title": "在萍江府的竹湖邊趕走來除蛇妖的刀客",
+          "text": "湖邊站著兩個刀客，後面跟著一群拿著火把的村民：「蛇妖冬天動不了，現在除了最好！」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_bamboo_lake" },
+          "requires": { "flags": ["yaql_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下了。村民們看著你擋在小屋門口，一個個放下火把走了。", "set_flags": ["yaql_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "晚上在萍江府的竹湖邊抱著青蘿取暖",
+          "text": "小屋裡很冷。青蘿冷得說不出話，只是往你懷裡鑽：「書上說……戀人會抱著睡……」她的身子冰涼，鱗片滑得像絲，「……可以嗎？」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_bamboo_lake" },
+          "requires": { "flags": ["yaql_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "抱著她睡",
+              "success": {
+                "text": "你抱著她，用體溫一點一點地暖她。半夜，她暖過來了，在你懷裡翻了個身，舌尖輕輕舔了一下你的脖子：「……話本的下一頁，是這個嗎？」",
+                "set_flags": ["yaql_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qingluo", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "冬天的竹湖小屋裡，你抱著青蘿睡了一夜；暖過來的她問你，話本的下一頁是不是這個。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "主角用體溫暖著冰涼的青蘿，暖過來的她開始好奇地探索：用分岔的舌尖舔、用尾巴纏、照著話本模糊的描寫笨拙地模仿，被主角帶著第一次嚐到快感時驚訝得睜大豎瞳，接著就再也不肯放開。"
+              }
+            },
+            {
+              "label": "生火，再抱著她",
+              "success": {
+                "text": "你先把爐火燒旺，再抱著她。她在火邊暖得快，卻還是不肯離開你的懷抱：「書上沒寫……這麼舒服。」",
+                "set_flags": ["yaql_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qingluo", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "冬天的竹湖小屋裡，你生了火抱著青蘿；她說書上沒寫這麼舒服。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "爐火邊，暖過來的青蘿褪下舊布衣，冰涼滑膩的身子貼著主角取暖；主角的手一碰到她腿根的細鱗她就輕輕發抖，最後在火光裡被主角溫柔地愛撫到高潮，尾巴一圈圈纏住主角的腰。"
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yaql_shedding",
+      "title": "蛻皮",
+      "summary": "青蘿要蛻皮了。話本上說，戀人不能看見醜的樣子——可是萍江府的兵丁也來了，說要抓竹湖的蛇妖。（青蘿・三）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_qingluo",
+        "requires": { "flags": ["yaql_2_done"] },
+        "text": "青蘿用頭巾把臉包得緊緊的，鱗片變得灰白：「要、要蛻皮了。你不要看。」她的聲音很小，「書上的佳人……不會蛻皮。」遠遠地，竹林外傳來兵丁的鑼聲。",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yaql_3_started"],
+      "nodes": [
+        {
+          "id": "soldiers",
+          "title": "在萍江府的近郊攔下來抓蛇妖的兵丁",
+          "text": "竹林外，一隊兵丁拿著鐵叉和網：「知府有令，竹湖有蛇妖傷人，就地拿下！」——可是蘇懷瑾從沒下過這種令。",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["yaql_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 3]],
+          "success": { "text": "兵丁散了，丟下的公文上蓋的是假印。青蘿蛻皮的時候，不會有人來打擾了。", "set_flags": ["yaql_alone"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "lover",
+          "title": "晚上在萍江府的竹湖邊陪青蘿蛻皮",
+          "text": "月光下，青蘿縮在湖邊的石頭上，舊皮從尾巴尖一點一點地裂開。她背對著你，肩膀在抖：「你……你還是走吧。很醜。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_bamboo_lake" },
+          "requires": { "flags": ["yaql_alone"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我幫妳」",
+              "success": {
+                "text": "你幫她把舊皮從肩膀上輕輕剝下來。新的鱗片在月光下是濕潤的翠綠，比以前都亮。她轉過身來，哭了：「……原來書上的人是為了這個哭。」",
+                "set_flags": ["yaql_lover", "yaql_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qingluo", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你陪青蘿在竹湖邊蛻完一次皮；她說她終於懂了，話本裡的人為什麼要為了另一個人哭。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "蛻完皮的青蘿全身新鱗敏感得碰一下就發顫，她第一次主動纏上主角，要主角摸遍每一片新的鱗；兩人在湖邊的月光下結合，她的尾巴緊緊捲著主角，一邊哭一邊笑，說這比話本裡寫的都好。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「我不走」",
+              "success": {
+                "text": "你在她身邊坐下，看著她一點一點地蛻完。天亮的時候，她把那張完整的舊皮折好，送給你：「話本上說，定情要送東西。這是……我的。」",
+                "set_flags": ["yaql_lover", "yaql_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_qingluo", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "青蘿蛻完皮，把那張完整的舊皮送給你當定情物。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "主角守著青蘿蛻完皮，天亮前她帶著一身新鱗鑽進主角懷裡；冰涼的身子漸漸被主角暖熱，這一次她不再照著話本，只照著自己想要的方式慢慢地、一次又一次地和主角纏在一起。"
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yasn_chosen",
+      "title": "老仙看上的人",
+      "summary": "白小蕎去城裡唱曲了，胡三娘缺一個幫手請仙。胡三太奶下來的時候，看了你一眼，說了一句話。（胡三娘・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_hu_sanniang", "text": "胡三娘灌了一口燒刀子：「小蕎去龍安府了，沒人幫我敲鼓。你來湊個數——不用會，太奶下來的時候，你跪著別說話就行。」", "min_level": 5 },
+      "start_flags": ["yasn_1_started"],
+      "nodes": [
+        {
+          "id": "call",
+          "title": "晚上在青丘屯的仙堂幫胡三娘請仙",
+          "text": "鼓聲一響，胡三娘的眼神變了，聲音蒼老得像井底：「……你。過來。」胡三太奶用三娘的手捏著你的下巴，左看右看，「好，好。這個我要了。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yasn_1_started"] },
+          "kind": "choice",
+          "hours": "night",
+          "options": [
+            {
+              "label": "「見過太奶」",
+              "success": {
+                "text": "太奶笑了，用三娘的嘴在你臉上親了一口，然後一陣風過去，三娘倒在你懷裡。",
+                "set_flags": ["yasn_kissed"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 5, "reason": "太奶看上了你" }]
+              }
+            },
+            {
+              "label": "「我是來幫三娘的」",
+              "success": {
+                "text": "「幫她？」太奶笑得更大聲，「那就更好了。」一陣風過去，三娘倒在你懷裡。",
+                "set_flags": ["yasn_kissed"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 8, "reason": "說是來幫她的" }]
+              }
+            }
+          ]
+        },
+        {
+          "id": "weasels",
+          "title": "到青丘屯的近郊搶回被黃皮子叼走的供品",
+          "text": "太奶走之前說要一隻山雞當供品。你們在山裡找到一隻，卻被兩隻黃皮子老精搶走了。",
+          "at": { "where": "outskirts", "location": "qingqiu" },
+          "requires": { "flags": ["yasn_kissed"] },
+          "kind": "combat",
+          "enemies": [["yh_old_weasel", 2]],
+          "success": { "text": "黃皮子老精逃回了山裡，山雞還在。", "set_flags": ["yasn_offering"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "回青丘屯的仙堂告訴胡三娘太奶說了什麼",
+          "text": "胡三娘醒來什麼都不記得。你一五一十地說了，她的臉從耳根紅到脖子：「她、她親了你？用我的嘴？」她抓起燒刀子灌了半壺，「……老不正經的！」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yasn_offering"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「其實我不介意」",
+              "success": {
+                "text": "三娘嗆了一口酒，咳了半天，狐耳抖個不停：「你、你閉嘴！」可是她的尾巴在身後搖得很歡。",
+                "set_flags": ["yasn_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "胡三太奶附在三娘身上親了你；三娘醒來氣得灌了半壺酒，尾巴卻搖得很歡。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「太奶說她要我」",
+              "success": {
+                "text": "「她要你？」三娘把酒壺重重一放，「這是我的身子！要也是我要——」話說到一半，她自己愣住了。",
+                "set_flags": ["yasn_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "胡三太奶說她要你；三娘說要也是她要，然後自己愣住了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yasn_two_hearts",
+      "title": "兩個人搶",
+      "summary": "太奶開始每天晚上自己下來，附在三娘身上找你。醒著的三娘又羞又氣——兩個人格搶著要你。（胡三娘・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_sanniang",
+        "requires": { "flags": ["yasn_1_done"] },
+        "text": "胡三娘把燒刀子往桌上一擱，瞪著你：「這幾天晚上我都睡不好，早上醒來腰痠背痛、嘴唇腫的。」她的狐耳壓得很低，「……是不是太奶又下來找你了？」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yasn_2_started"],
+      "nodes": [
+        {
+          "id": "night",
+          "title": "晚上在青丘屯的仙堂等太奶下來",
+          "text": "半夜，三娘的眼神又變了。太奶慢條斯理地解開棉襖的釦子：「這丫頭的身子，比我當年的還好。」她勾著你的手指，「來。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yasn_2_started"] },
+          "kind": "choice",
+          "hours": "night",
+          "options": [
+            {
+              "label": "「等三娘醒來再說」",
+              "success": {
+                "text": "太奶眯起眼睛看了你很久，哼了一聲：「死心眼。跟那丫頭一樣。」一陣風過去，三娘靠在你肩上睡著了。",
+                "set_flags": ["yasn_waited"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 10, "reason": "等她醒來" }]
+              }
+            },
+            {
+              "label": "陪太奶一晚",
+              "success": {
+                "text": "太奶的手法老練得嚇人。天快亮時，她用三娘的聲音嘆了一口氣：「三百年了……」然後一陣風過去，三娘在你懷裡醒來，看見自己的樣子，尖叫了一聲。",
+                "set_flags": ["yasn_waited"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 5, "reason": "陪了太奶一晚" }],
+                "scene": "附身的胡三太奶用三娘豐滿的身子主動得嚇人，手法老練又放肆，一次次把主角榨乾；天亮前她嘆著「三百年了」離開，三娘醒來發現自己赤身壓在主角身上，羞得尖叫。"
+              }
+            }
+          ]
+        },
+        {
+          "id": "talk",
+          "title": "在青丘屯的仙堂和醒著的胡三娘喝酒",
+          "text": "三娘一杯接一杯地喝，越喝越委屈：「她用我的身子，什麼都做了。我自己……什麼都沒有。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yasn_waited"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": { "text": "你陪她喝到半壺，聽她說完十八歲被選中、十四年沒人敢靠近的事。她把頭靠在你肩上：「……我也想要。不是太奶要，是我要。」", "set_flags": ["yasn_honest"] },
+          "fail": { "text": "你說錯了一句話，她把酒壺搶回去：「你走，我自己喝。」明天再來陪她。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "晚上在青丘屯的仙堂和胡三娘過一夜",
+          "text": "三娘把腰鈴解下來，掛在仙堂的門上：「這樣太奶就不會下來了。」她轉過身，耳朵紅透了，「今晚是我。只有我。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yasn_honest"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「只有妳」",
+              "success": {
+                "text": "她大笑著撲上來，笑聲大得整個屯子都聽得見——後來就變成了別的聲音。",
+                "set_flags": ["yasn_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "胡三娘把腰鈴掛在仙堂門上，那一夜只有她自己。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "醒著的胡三娘和附身時完全不同：她大笑著撲上來，豪爽又笨拙，一點都不藏地叫出聲；豐滿溫熱的身子緊貼著主角，兩條狐尾亂搖，最後滿足地趴在主角身上說「這次我記得」。"
+              }
+            },
+            {
+              "label": "「太奶教的我也會」",
+              "success": {
+                "text": "她瞪了你一眼：「不准拿她跟我比！」然後非要證明她比太奶厲害，折騰到雞叫。",
+                "set_flags": ["yasn_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "胡三娘非要證明她比太奶厲害，折騰到雞叫。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "三娘非要證明自己比太奶厲害，一整夜不服輸地主動，花樣比太奶還野，卻常常在關鍵時刻自己先軟了腰；狐尾纏著主角，叫聲大得整個屯子都聽得見。"
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yasn_old_debt",
+      "title": "情債",
+      "summary": "太奶說了實話：三百年前，她愛過一個凡人弟馬。那筆情債沒還完，她不肯走——偏偏這時，有人要拆她的堂口。（胡三娘・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_sanniang",
+        "requires": { "flags": ["yasn_2_done"] },
+        "text": "腰鈴自己響了。三娘的眼神變得蒼老，可是這一次，太奶的聲音很輕：「三百年前，我的弟馬是個凡人。他走的那天，我說下輩子還要找他。」她看著你，「我看上的不是你的臉。是你的氣，和他一模一樣。」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yasn_3_started"],
+      "nodes": [
+        {
+          "id": "spirits",
+          "title": "在青丘屯的仙堂趕走來鬧堂口的野仙",
+          "text": "仙堂外來了一群沒有堂口供奉的野仙，附在幾個屯民身上砸門：「胡家的堂口占了這座山三百年，該換人了！」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["yasn_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_rampant_spirit", 3]],
+          "success": { "text": "野仙散了，被附身的屯民倒在地上睡著了。太奶在三娘的身體裡，輕輕說了一聲：「……謝謝。」", "set_flags": ["yasn_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "lover",
+          "title": "晚上在青丘屯的仙堂內堂了結太奶的情債",
+          "text": "內堂的供桌上，太奶的牌位前點著一盞油燈。三娘的身體裡，兩個聲音輪流說話：「三百年的債，今晚還。」「……是我的身子，我說了算。」「丫頭，就這一次。」三娘紅著臉看你：「你……你選。」",
+          "at": { "where": "special", "special_map": "sm_yh_xiantang_inner", "x": 3, "y": 1 },
+          "requires": { "flags": ["yasn_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「兩個都要」",
+              "success": {
+                "text": "那一夜，太奶與三娘輪流醒著。天亮的時候，太奶最後一次開口：「債還完了。這丫頭，交給你了。」從那天起，腰鈴再也沒有在半夜自己響過。",
+                "set_flags": ["yasn_lover", "yasn_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你了結了胡三太奶三百年的情債，也和胡三娘在一起了。太奶說：這丫頭，交給你了。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "太奶與三娘輪流在同一個身子裡醒來：一個老練放肆、一個熱情笨拙，交替著要主角，主角分不清下一刻抱著的是誰；最後兩個聲音一起在高潮中叫出主角的名字，太奶滿足地離開。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「我要的是三娘」",
+              "success": {
+                "text": "太奶沉默了很久，笑了：「好。這才像他。」一陣風過去，只剩下三娘紅著眼睛看你。「……傻子。」她撲進你懷裡。",
+                "set_flags": ["yasn_lover", "yasn_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你對胡三太奶說你要的是三娘；太奶笑著說這才像他，把三娘交給了你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "太奶離開後，只剩下三娘自己：她哭著笑著把主角拉進內堂的被褥，第一次清醒地、完整地把自己交給主角；她要主角看著她，說這一次每一下她都會記得。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yach_first_hand",
+      "title": "第一局",
+      "summary": "瑔州港的走私女王赤鬟，賭桌上賭的是錢也是人。她說你看起來值點錢。（赤鬟・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_chihuan", "text": "赤鬟的尾巴一甩，金鈴叮噹響：「你。」她用短刀指著你，笑得很野，「看起來值點錢。上我的船賭一局？輸了，你留下；贏了——我留下。」", "min_level": 5 },
+      "start_flags": ["yach_1_started"],
+      "nodes": [
+        {
+          "id": "board",
+          "title": "到瑔州港的蕃坊搭小船上赤鬟的走私船",
+          "text": "一艘小船在碼頭邊等著，把你載到港外那艘大船邊。底艙裡燈火通明，賭桌邊坐滿了人。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["yach_1_started"] },
+          "kind": "story",
+          "success": { "text": "你順著繩梯爬上去。", "set_flags": ["yach_aboard"], "special_map": "sm_yh_chihuan_hold" }
+        },
+        {
+          "id": "bet",
+          "title": "在赤鬟的走私船艙裡和她賭第一局",
+          "text": "赤鬟把骰盅往桌上一扣：「押什麼？」",
+          "at": { "where": "special", "special_map": "sm_yh_chihuan_hold", "x": 5, "y": 2 },
+          "requires": { "flags": ["yach_aboard"] },
+          "kind": "choice",
+          "allies": ["npc_yh_chihuan"],
+          "options": [
+            {
+              "label": "押一百白鸛",
+              "check": { "attr": "dex", "dc": 13 },
+              "success": {
+                "text": "你贏了。赤鬟把兩百白鸛推過來，眼睛發亮：「手很穩。下次押大一點。」",
+                "set_flags": ["yach_1_done"],
+                "effects": [{ "type": "money", "amount": 100 }, { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 10, "reason": "贏了她一局" }],
+                "complete": true
+              },
+              "fail": {
+                "text": "你輸了。赤鬟把錢收走，舔了舔嘴唇：「下次押大一點，我讓你贏回去。」",
+                "set_flags": ["yach_1_done"],
+                "effects": [{ "type": "money", "amount": -100 }, { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 8, "reason": "輸給她一局" }],
+                "complete": true
+              }
+            },
+            {
+              "label": "押我自己",
+              "check": { "attr": "dex", "dc": 15 },
+              "success": {
+                "text": "你贏了。整個底艙安靜下來。赤鬟大笑著站起來，把背心一脫：「願賭服輸。今晚我是你的。」",
+                "set_flags": ["yach_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 15, "reason": "贏了她" },
+                  { "type": "memory", "summary": "在赤鬟的走私船上押了自己，贏了；她願賭服輸，那一晚是你的。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "願賭服輸的赤鬟在賭桌後的艙房裡任主角擺布：她嘴上不服輸、身體卻很誠實，金鈴隨著動作響個不停；最後她喘著氣說「下一局我要贏回來」。"
+              },
+              "fail": {
+                "text": "你輸了。赤鬟慢慢站起來，用短刀挑開你的衣帶：「願賭服輸。今晚你是我的。」",
+                "set_flags": ["yach_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 12, "reason": "輸給了她" },
+                  { "type": "memory", "summary": "在赤鬟的走私船上押了自己，輸了；那一晚你是她的。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "贏了的赤鬟把主角拖進艙房，像清點戰利品一樣慢慢享用：騎在主角身上決定節奏，不許主角先到，金黃的尾巴纏著主角的腿，金鈴響了一整夜。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yach_bigger_stake",
+      "title": "更大的賭注",
+      "summary": "胡記的打手上了赤鬟的船討債。她押上整艘船，賭你打得贏。（赤鬟・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_chihuan",
+        "requires": { "flags": ["yach_1_done"] },
+        "text": "赤鬟的船艙裡砸爛了兩張賭桌。她坐在一地碎木頭裡擦刀：「胡記說我欠他們一船鹽的錢。今晚他們還會再來。」她抬頭看你，「我押整艘船，賭你打得贏。你押什麼？」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yach_2_started"],
+      "nodes": [
+        {
+          "id": "board",
+          "title": "到瑔州港的蕃坊搭小船回赤鬟的船",
+          "text": "小船在碼頭邊等你。船夫說，女王今晚把所有的賭客都趕下船了。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["yach_2_started"] },
+          "kind": "story",
+          "success": { "text": "你爬上大船，底艙裡只剩下赤鬟一個人。", "set_flags": ["yach_back"], "special_map": "sm_yh_chihuan_hold" }
+        },
+        {
+          "id": "collectors",
+          "title": "晚上在赤鬟的走私船艙擋下胡記的打手",
+          "text": "半夜，兩個拿朴刀的刀客從繩梯上爬下來：「胡記討債！」",
+          "at": { "where": "special", "special_map": "sm_yh_chihuan_hold", "x": 5, "y": 4 },
+          "requires": { "flags": ["yach_back"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客被你丟下了海。赤鬟收起短刀，吹了一聲口哨：「我就知道我押對了。」", "set_flags": ["yach_won"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_chihuan"]
+        },
+        {
+          "id": "done",
+          "title": "在赤鬟的走私船艙和她賭最後一把",
+          "text": "赤鬟把骰盅推到你面前：「我押的贏了。你押的呢？」她靠過來，鼻尖幾乎碰到你，「這樣吧，最後一把——賭誰先求饒。」",
+          "at": { "where": "special", "special_map": "sm_yh_chihuan_hold", "x": 5, "y": 2 },
+          "requires": { "flags": ["yach_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我押妳先求饒」",
+              "success": {
+                "text": "那一把賭了一整夜。天亮時，赤鬟趴在床上，嗓子都啞了：「……算你贏。下一局我要加倍。」",
+                "set_flags": ["yach_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和赤鬟賭誰先求饒，你贏了。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "主角和赤鬟賭誰先求饒：主角不疾不徐地折磨她，用手和唇一次次把她推到邊緣又停下，狂放的走私女王最後嗓子都啞了，抓著床單求主角讓她去。"
+              }
+            },
+            {
+              "label": "「我押我先」",
+              "success": {
+                "text": "「認輸這麼快？」她不屑地哼了一聲，然後花了整整一夜讓你真的求饒。天亮時她得意地叼著菸桿：「我就說你值錢。」",
+                "set_flags": ["yach_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和赤鬟賭誰先求饒，你故意輸了；她花了整夜讓你真的求饒。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "赤鬟把主角壓在賭桌上，用盡手段讓主角求饒：一次次停在最要緊的時候、用尾巴和金鈴捉弄，直到主角真的開口求她；她得意地騎上來，自己也在主角身上失了神。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yach_last_hand",
+      "title": "最後一把",
+      "summary": "赤鬟的船艙裡關著一個不該賣的人。買主是相府——他們今晚要來帶人。（赤鬟・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_chihuan",
+        "requires": { "flags": ["yach_2_done"] },
+        "text": "赤鬟帶你走到底艙最深處，打開一扇上了鎖的門。裡面坐著一個天青鱗的年輕書生，手腳都上了鐐：「相府要買他。他抄了宰相的帳。」她把門鎖上，「我收了錢，可是我不賣。」她笑了，笑得一點都不好看，「我這輩子第一次反悔。」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yach_3_started"],
+      "nodes": [
+        {
+          "id": "board",
+          "title": "到瑔州港的蕃坊搭小船上赤鬟的船",
+          "text": "天剛黑，小船在碼頭邊等你。港外的海上，有一艘沒掛燈的船正往這邊靠。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["yach_3_started"] },
+          "kind": "story",
+          "success": { "text": "你爬上大船。", "set_flags": ["yach_night"], "special_map": "sm_yh_chihuan_hold" }
+        },
+        {
+          "id": "deathsworn",
+          "title": "晚上在赤鬟的走私船艙擋下相府的死士",
+          "text": "沒掛燈的船靠上來了。蒙面的死士翻過船舷，直撲底艙：「人交出來，錢照算！」",
+          "at": { "where": "special", "special_map": "sm_yh_chihuan_hold", "x": 5, "y": 4 },
+          "requires": { "flags": ["yach_night"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士倒下了。赤鬟打開鐐銬，把書生塞進一艘小船：「往南划，別回頭。」", "set_flags": ["yach_freed"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true,
+          "allies": ["npc_yh_chihuan"]
+        },
+        {
+          "id": "lover",
+          "title": "在赤鬟的走私船艙陪她喝酒",
+          "text": "相府的錢退回去了，還多賠了一倍。赤鬟坐在賭桌上，一口一口地喝酒：「我這輩子賭錢、賭人，從來沒輸過。」她把骰盅推給你，「最後一把。我賭你會留下來。你賭什麼？」",
+          "at": { "where": "special", "special_map": "sm_yh_chihuan_hold", "x": 5, "y": 2 },
+          "requires": { "flags": ["yach_freed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我也賭我會留下來」",
+              "success": {
+                "text": "「那就沒得賭了。」她把骰盅一推，整個人撲進你懷裡，「兩個人押同一邊——莊家通殺。」",
+                "set_flags": ["yach_lover", "yach_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "赤鬟放走了相府要買的書生，把最後一把賭在你會留下來；你也押了同一邊。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "這一次沒有賭注：赤鬟脫掉背心、摘下尾巴上的金鈴，第一次安安靜靜地讓主角抱著；狂放的走私女王溫柔得出奇，在主角身下一遍遍確認「你不會走」，直到天亮。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「我賭妳不會讓我走」",
+              "success": {
+                "text": "她愣了一下，然後大笑：「你贏了。」她把尾巴上的金鈴摘下來，繫在你的手腕上，「這樣你走到哪裡，我都聽得見。」",
+                "set_flags": ["yach_lover", "yach_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_chihuan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "赤鬟把尾巴上的金鈴繫在你手腕上：你走到哪裡，她都聽得見。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "赤鬟把金鈴繫在主角手腕上，每一次主角動作鈴就響一聲；她聽著鈴聲笑、聽著鈴聲叫，最後要主角把手按在她的心口，說這是她押上的全部身家。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yawy_errand",
+      "title": "太妃宮的差事",
+      "summary": "女帝派你去太妃宮當差——其實是要你盯著太后與宰相的往來。太后很快就察覺了。（溫懿・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "requires": { "flags": ["yczh_1_done"] },
+        "text": "溫如玉在公會等你，交給你一塊太妃宮的腰牌：「陛下要你去太妃宮當差，替太后讀書、跑腿。」她頓了一下，聲音壓得很低，「太后是宰相的妹妹。陛下想知道，他們之間說了什麼。」",
+        "min_level": 5
+      },
+      "start_flags": ["yawy_1_started"],
+      "nodes": [
+        {
+          "id": "badge",
+          "title": "在龍安府的公會收下太妃宮的腰牌",
+          "text": "腰牌是太妃宮的，背面刻著一個小小的「懿」字。",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yawy_1_started"] },
+          "kind": "story",
+          "success": { "text": "有了它，王城的衛兵不會再攔你。", "set_flags": ["yawy_badge", "palace_permit_longan"] }
+        },
+        {
+          "id": "read",
+          "title": "晚上在龍安府的太妃宮替太后讀書",
+          "text": "太后坐在燈下，腰背挺得筆直，要你讀一卷前朝的詩。讀到一半，她說：「慢一點。這一首，先帝以前常讀給我聽。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yawy_badge"] },
+          "kind": "story",
+          "hours": "night",
+          "success": {
+            "text": "你讀完了整卷。太后閉著眼睛聽，很久都沒有說話。最後她說：「明晚再來。」",
+            "set_flags": ["yawy_read"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 8, "reason": "替她讀了一夜的詩" }]
+          }
+        },
+        {
+          "id": "done",
+          "title": "在龍安府的太妃宮向太后告退",
+          "text": "第三個晚上，太后讓你讀完詩，忽然說：「你的腰牌，是尚寢局刻的。」她看著你，眼神和女帝有七分像，「是昭華派你來的吧。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yawy_read"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「是陛下派我來的」",
+              "success": {
+                "text": "太后沉默了很久，然後輕輕笑了：「那孩子……肯派人來看我，總比不派好。」她把詩卷遞給你，「明晚還是你來讀。」",
+                "set_flags": ["yawy_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太后溫懿看穿了你是女帝派來的人，卻沒有揭穿，反而要你每晚去替她讀詩。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「我只是來當差的」",
+              "success": {
+                "text": "「是嗎。」太后沒有追問，只是把燈芯挑亮了一點，「那就當差吧。明晚還是你來。」她轉過頭去的時候，嘴角好像有一點笑意。",
+                "set_flags": ["yawy_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太后溫懿看出你的腰牌是尚寢局刻的，卻沒有揭穿，要你明晚再來讀詩。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yawy_letters",
+      "title": "宰相的信",
+      "summary": "太后的信被人拆過。她要你查清楚，是誰在替哥哥盯著她。（溫懿・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_wen_yi",
+        "requires": { "flags": ["yawy_1_done"] },
+        "text": "太后把一疊信放在桌上，封口的蠟有被燙過又重新封上的痕跡：「我寫給哥哥的信，寫給昭華的信，都有人先看過。」她的聲音很平，手卻在抖，「我在這宮裡住了二十年，第一次覺得冷。」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yawy_2_started"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "到龍安府的情報商打聽拆太后信的人",
+          "text": "情報商收了錢，說太妃宮有個管信的宮女，每隔五天就出宮一次，去城門外見一個人。",
+          "at": { "where": "cell", "location": "longan", "cell": "informant" },
+          "requires": { "flags": ["yawy_2_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 14 },
+          "success": { "text": "你問出了那個宮女見的人：相府的管事。宰相不只要妹妹替他說話，也要知道妹妹心裡在想什麼。", "set_flags": ["yawy_traced"] },
+          "fail": { "text": "情報商說還要再查查。明天再來。", "retry": true }
+        },
+        {
+          "id": "gate",
+          "title": "晚上在龍安府的城門攔下相府來取信的人",
+          "text": "城門外的柳樹下，宮女把一疊信交給一個管事，旁邊站著兩個刀客。",
+          "at": { "where": "cell", "location": "longan", "cell": "gate" },
+          "requires": { "flags": ["yawy_traced"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下了，管事跑了。宮女跪在地上哭著說，是宰相拿她家人逼她的。", "set_flags": ["yawy_letters_back"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "done",
+          "title": "晚上把信帶回龍安府的太妃宮",
+          "text": "太后看著那疊信，一封一封地丟進炭盆：「我替他說了二十年的話。他連我心裡想什麼都要看。」火光照著她的臉，「你今晚……不要走。陪我坐一下。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yawy_letters_back"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "留下來陪她",
+              "success": {
+                "text": "你在她身邊坐下。她靠在你肩上，很久很久，才輕聲說：「……多少年了，沒有人這樣讓我靠。」那一晚，太妃宮的燈一直沒有熄。",
+                "set_flags": ["yawy_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太后溫懿燒掉了宰相拆過的信，那一晚要你不要走。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "寡居多年的太后第一次讓人碰她：她端莊地坐著讓主角一層層解開翟衣，碰到腰窩時就輕輕發抖；她不許主角吹燈，要看著主角，壓抑的聲音一點點變得不再端莊。"
+              }
+            },
+            {
+              "label": "握住她的手",
+              "success": {
+                "text": "她的手很冷。你握著，一直握到炭盆裡的火熄了。她說：「明晚……還是你來讀詩。」聲音裡有一點東西，像是哭過，又像是笑。",
+                "set_flags": ["yawy_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太后溫懿燒掉了宰相拆過的信；你握著她的手，一直到炭火熄了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yawy_long_night",
+      "title": "長夜",
+      "summary": "宰相發現妹妹不再替他說話，派禁軍來太妃宮「保護」太后。（溫懿・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_wen_yi",
+        "requires": { "flags": ["yawy_2_done"] },
+        "text": "太妃宮的門口站滿了禁軍。太后站在殿前，腰背挺得筆直：「哥哥說宮裡不太平，派人來保護我。」她看著你，第一次在別人面前露出疲憊，「他是要把我關起來。」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yawy_3_started"],
+      "nodes": [
+        {
+          "id": "guards",
+          "title": "在龍安府的太妃宮趕走宰相派來的禁軍",
+          "text": "禁軍的隊正擋在殿門口：「宰相有令，太后不見外人。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yawy_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "禁軍退了。隊正臨走前說：「宰相不會就這樣算了。」太后說：「我知道。」", "set_flags": ["yawy_free"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "lover",
+          "title": "晚上在龍安府的太妃宮陪太后過完長夜",
+          "text": "那天晚上，太后寫了一封信給女帝：從今以後，她不再替哥哥說話。寫完，她摘下鳳冠，長髮散下來，看起來年輕了十歲：「我要的不是情報，」她說，「是有人陪我把長夜過完。今晚，可以嗎？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yawy_free"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「每一夜都可以」",
+              "success": {
+                "text": "天亮的時候，她枕在你的手臂上，聽著窗外的鳥叫：「先帝走了以後，我第一次聽見鳥叫。」",
+                "set_flags": ["yawy_lover", "yawy_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "太后溫懿不再替宰相說話；她說她要的不是情報，是有人陪她把長夜過完。你答應每一夜都可以。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "太后摘下鳳冠、散開長髮，第一次完全放下矜持：她熟練又生疏，一開始還維持著端莊，被主角溫柔地進入之後就再也撐不住，把多年的寂寞都哭了出來，一次又一次地要。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「今晚，和以後」",
+              "success": {
+                "text": "她笑了，那個笑和女帝一模一樣：「你這個人，說話跟昭華一樣狡猾。」那一夜的長，她說是她這輩子最短的一夜。",
+                "set_flags": ["yawy_lover", "yawy_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "太后溫懿把長夜交給了你；她說那一夜是她這輩子最短的一夜。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "太后在燈下主動解開翟衣，豐潤的身子在主角手下一寸寸發燙；她要主角慢慢來，要把二十年的長夜一次補回來，最後在主角懷裡失聲叫出來，羞得把臉埋進主角胸口。"
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yayx_rumor",
+      "title": "狐狸精的流言",
+      "summary": "宮裡又傳太妃胡玉綃「迷惑先帝、害死先帝」的流言。胡九娘要你去查流言的來源——順便替她送一箱胭脂進宮。（胡玉綃・一）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_jiuniang",
+        "text": "胡九娘把一塊胡記的腰牌和一箱胭脂推給你，笑得眼睛都瞇起來了：「我姑母在宮裡被人說閒話。說她是狐狸精，害死了先帝。」她用扇子掩著嘴，「我不方便進宮。你替我送胭脂進去，順便看看是誰在嚼舌根。」",
+        "min_level": 5
+      },
+      "start_flags": ["yayx_1_started"],
+      "nodes": [
+        {
+          "id": "badge",
+          "title": "在瑔州港收下胡記的腰牌",
+          "text": "腰牌是胡記皇商的，進宮送貨用的。",
+          "at": { "where": "npc", "npc": "npc_yh_hu_jiuniang", "location": "quanzhou" },
+          "requires": { "flags": ["yayx_1_started"] },
+          "kind": "story",
+          "success": { "text": "有了它，王城的衛兵不會再攔你。", "set_flags": ["yayx_badge", "palace_permit_longan"] }
+        },
+        {
+          "id": "trace",
+          "title": "到龍安府的情報商打聽狐狸精的流言",
+          "text": "情報商說，流言是從瓦舍的說書場傳出來的：有個說書人最近專講「狐妃亂宮」，場場爆滿。",
+          "at": { "where": "cell", "location": "longan", "cell": "informant" },
+          "requires": { "flags": ["yayx_badge"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 12 },
+          "success": { "text": "你問到了那個說書人的名字，還有他最近突然闊起來的事。", "set_flags": ["yayx_traced"] },
+          "fail": { "text": "情報商只說「瓦舍」。再問一次。", "retry": true }
+        },
+        {
+          "id": "done",
+          "title": "到龍安府的太妃宮把胭脂交給太妃",
+          "text": "太妃胡玉綃斜倚在榻上，三條白尾慢慢地掃著，打開胭脂聞了聞：「九娘挑的顏色，還是這麼俗。」她抬眼看你，眼角的淚痣一挑，「你就是她派來查流言的？過來，讓我看看。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yayx_traced"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "走過去",
+              "success": {
+                "text": "她用尾巴尖勾著你的下巴，左看右看，笑了：「長得不錯。流言的事慢慢查——每查到一點，就來說給我聽。」",
+                "set_flags": ["yayx_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太妃胡玉綃用尾巴尖勾著你的下巴，要你每查到一點流言就去說給她聽。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「流言是從瓦舍傳出來的」",
+              "success": {
+                "text": "「瓦舍？」她挑了挑眉，「有意思。」她把一盒胭脂丟給你，「賞你的。下次來，多說一點。」",
+                "set_flags": ["yayx_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "你告訴太妃胡玉綃，狐狸精的流言是從瓦舍傳出來的。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yayx_storyteller",
+      "title": "說書的人",
+      "summary": "瓦舍的說書人天天講「狐妃亂宮」，背後有人付錢。太妃要你去聽一場，再把付錢的人揪出來。（胡玉綃・二）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_yuxiao",
+        "requires": { "flags": ["yayx_1_done"] },
+        "text": "胡玉綃把一顆剝好的荔枝塞進你嘴裡：「那個說書的，昨天講到我用尾巴勒死先帝。」她笑得花枝亂顫，「講得不好。我要你去聽一場，然後讓他再也講不下去。」",
+        "min_affinity": 20,
+        "min_level": 8
+      },
+      "start_flags": ["yayx_2_started"],
+      "nodes": [
+        {
+          "id": "goulan",
+          "title": "晚上到龍安府的瓦舍勾欄抓「狐妃亂宮」的說書人",
+          "text": "散場後，說書人被兩個刀客護著從後門出來，懷裡揣著一包銀子。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yayx_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下了。說書人跪在地上，把銀子雙手奉上：「是、是相府的管事給的！他說胡記的特許是太妃求來的，太妃倒了，胡記就倒了！」", "set_flags": ["yayx_caught"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "done",
+          "title": "晚上回龍安府的太妃宮向太妃覆命",
+          "text": "胡玉綃聽完，把說書人的銀子倒進池塘餵魚：「宰相啊。」她伸了個懶腰，薄透的緋色宮裝從肩上滑下來，「辦得好。我要賞你——你想要什麼賞？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yayx_caught"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「太妃看著賞」",
+              "success": {
+                "text": "她笑了，三條尾巴一齊纏上你的腰，把你拉上了榻：「那我就看著賞了。」",
+                "set_flags": ["yayx_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 15, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太妃胡玉綃的賞，是用三條尾巴把你拉上了榻。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "胡玉綃的三條白尾纏住主角的腰把主角拉上榻，她一邊說笑一邊慢條斯理地享用主角：嫵媚、熟練、愛捉弄，總在主角快到時停下來問「還要不要賞」，最後自己也笑不出來了。"
+              }
+            },
+            {
+              "label": "「想聽先帝的事」",
+              "success": {
+                "text": "她的笑停了一下，然後更媚了：「先帝的事？那要躺著聽。」她說了一夜，一半是先帝，一半是別的。",
+                "set_flags": ["yayx_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "太妃胡玉綃說要躺著才講先帝的事，講了一夜，一半是先帝，一半是別的。", "importance": 2 }
+                ],
+                "complete": true,
+                "scene": "胡玉綃讓主角躺在她懷裡聽先帝的事，講著講著手就不規矩了；她說先帝最喜歡她的尾巴，然後用尾巴一點點示範先帝為什麼喜歡，講到天亮也沒講完。"
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yayx_last_words",
+      "title": "先帝的最後一句話",
+      "summary": "宰相拿出一份「先帝遺詔」，說要把太妃送去城外的道觀清修。遺詔是假的——太妃知道先帝真正的最後一句話。（胡玉綃・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_yuxiao",
+        "requires": { "flags": ["yayx_2_done"] },
+        "text": "胡玉綃坐在一地被翻亂的箱籠裡，難得沒有笑：「宰相說先帝有遺詔，要我去城外的道觀清修，今晚就走。」她的尾巴垂在地上，「我在這宮裡迷惑了先帝十五年，他們終於等到了。」",
+        "min_affinity": 30,
+        "min_level": 11
+      },
+      "start_flags": ["yayx_3_started"],
+      "nodes": [
+        {
+          "id": "guards",
+          "title": "在龍安府的太妃宮擋下押送太妃的禁軍",
+          "text": "禁軍抬著一頂小轎停在殿前：「奉遺詔，請太妃上轎。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yayx_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "禁軍退了。隔壁殿的太后溫懿站在月洞門邊，看了很久，最後說：「那份遺詔是假的。先帝的字，我認得。」", "set_flags": ["yayx_stays"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "lover",
+          "title": "晚上在龍安府的太妃宮聽太妃說先帝的最後一句話",
+          "text": "那晚，胡玉綃屏退了所有宮女，把殿裡的燈一盞一盞吹熄，只留一盞：「先帝臨終前跟我說了一句話。我誰都沒告訴，連九娘也沒有。」她靠過來，在你耳邊說：「他說，『朕這輩子，只有在妳這裡睡得著。』」她笑了，「所以，是的，我確實迷惑過先帝。而且——我很樂意再迷惑一個。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yayx_stays"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那就迷惑我吧」",
+              "success": {
+                "text": "天亮的時候，她的三條尾巴蓋在你身上，比錦被還暖：「睡得著嗎？」你說睡得著。她笑了，「那就好。」",
+                "set_flags": ["yayx_lover", "yayx_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "太妃胡玉綃告訴你先帝的最後一句話，然後說她很樂意再迷惑一個人——那個人是你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "胡玉綃把所有的手段都用在主角身上：狐尾、媚眼、耳邊的軟語，一層層把主角迷得神魂顛倒；可是到最後，是她自己先在主角懷裡失了神，三條尾巴緊緊裹著兩人睡到天亮。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「這次換我迷惑妳」",
+              "success": {
+                "text": "「你？」她笑得花枝亂顫，可是到後半夜，她再也笑不出來了。天亮時她說：「……先帝都沒讓我這樣過。」",
+                "set_flags": ["yayx_lover", "yayx_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "你說這次換你迷惑太妃胡玉綃；天亮時她說，先帝都沒讓她這樣過。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "主角把習慣迷惑人的狐狸精壓在榻上，耐心地挑弄她的尾巴根與狐耳；嫵媚的太妃從笑到喘、從喘到求，最後三條尾巴無力地垂下，第一次被人迷得說不出話。"
+              }
+            }
+          ],
+          "hours": "night"
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yg_five_seats",
+      "title": "五席的夜宴",
+      "summary": "大燁立憲之後的第一次五席會議：朝廷、萍江的官府與農工、瑔州港的胡記與金黃鱗各一席。會議之後的夜宴只有五個人——她們發現，聊的是同一個人。（多人特殊任務）",
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "min_level": 11,
+        "requires": { "flags": ["yhpol_constitution", "yczh_lover", "ycsh_lover", "yclq_lover", "ychj_lover", "ycjy_lover"] },
+        "text": "溫如玉在公會等你，手上是一封蓋了五個印的信：龍紋的玉璽、萍江府的官印、織工行會的梭子印、胡記的狐印、金墨盟的金秤印。「陛下親手交給我的，」她說，「要我當面給你。」信上只有一句話：「五席會議，請證人出席。會後設宴，只有五席——和你。」"
+      },
+      "start_flags": ["ygfs_started"],
+      "nodes": [
+        {
+          "id": "up",
+          "title": "到龍安府的公會跟溫如玉進宮",
+          "text": "溫如玉帶著你從皇城的側門進去：「宣德樓的偏殿。五位都到了。」她看了你一眼，「……我先說，陛下今天一早就在挑衣服。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["ygfs_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_wen_ruyu"],
+          "success": { "text": "你們登上宣德樓。偏殿的門開著，五張椅子圍著一張圓桌，第六張椅子空著。", "set_flags": ["ygfs_in"], "special_map": "sm_yh_xuande_tower" }
+        },
+        {
+          "id": "witness",
+          "title": "在宣德樓的偏殿為五席會議作證",
+          "text": "憲章的第一條念完了，五個人輪流簽名。輪到證人發言的時候，五雙眼睛同時看向你：女帝、蘇懷瑾、陸青禾、胡九娘、金玉棠。",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 2 },
+          "requires": { "flags": ["ygfs_in"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 17 },
+          "success": { "text": "你說了萍江的織機、瑔州港的船、龍安府的科舉、青丘屯的堂口，說到最後，五個人都沒有說話。女帝第一個在憲章上蓋了玉璽：「這個人走過的大燁，就是五席要守住的大燁。」", "set_flags": ["ygfs_signed"] },
+          "fail": { "text": "你講得結結巴巴，可是每講到一個地方，就有一個人輕輕點頭——那是她的地方。最後陸青禾拍桌大笑：「夠了，簽！」五個印蓋在同一張憲章上。", "retry": true }
+        },
+        {
+          "id": "remnant",
+          "title": "晚上在龍安府的近郊擋下宰相舊部的殘黨",
+          "text": "憲章簽完的當晚，宰相舊部的死士埋伏在城外的官道上，等著胡九娘與金玉棠回瑔州港的馬車。",
+          "at": { "where": "outskirts", "location": "longan" },
+          "requires": { "flags": ["ygfs_signed"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 3]],
+          "success": { "text": "死士倒下了。兩輛馬車的車門同時打開，胡九娘和金玉棠一起走下來，看著擋在路中間的你。胡九娘用扇子掩著嘴：「哎呀，又擋在前面。」金玉棠看了她一眼：「……妳也是？」", "set_flags": ["ygfs_saved"] },
+          "fail": { "text": "死士把你逼到了路邊——然後一支火銃在暗處響了，胡記的護衛和金玉行的水手一起衝了出來。胡九娘收起扇子：「我的人。」金玉棠：「我的人。」兩人對看了一眼，又一起看著你。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "banquet",
+          "title": "在宣德樓的偏殿參加五席的夜宴",
+          "text": "偏殿的圓桌上擺好了酒菜，五個人都換了便服。女帝放下酒杯：「我們剛才發現了一件事。」蘇懷瑾翻開一本冊子：「五個人的證詞，指向同一個人。」陸青禾翹著腳：「所以我們要開一場會。」胡九娘笑得很甜：「議題只有一個。」金玉棠把酒壺推到你面前：「坐。今晚的會，很長。」",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 2 },
+          "requires": { "flags": ["ygfs_saved"] },
+          "kind": "choice",
+          "hours": "night",
+          "options": [
+            {
+              "label": "坐下，「請五席裁決」",
+              "success": {
+                "text": "五個人互看了一眼，然後一起笑了出來。那一場會從入夜開到天亮，議題是：你。每個人輪流說一件你做過的蠢事，再說一件你做過的好事。最後五席一致通過了一條不寫進憲章的條文。條文的第一個字是：輪。",
+                "set_flags": ["ygfs_done", "ygfs_rota"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "memory", "summary": "大燁立憲之後，五席在宣德樓的夜宴上發現她們聊的是同一個人。那一場會開到天亮，最後五席一致通過了一條不寫進憲章的條文。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "「我能先喝一杯嗎？」",
+              "success": {
+                "text": "陸青禾第一個笑出了聲，接著是胡九娘，然後是所有人。蘇懷瑾嘆了口氣，親手替你斟滿：「……准。」女帝把下巴擱在手上看著你：「喝慢一點。今晚很長。」那一夜的宣德樓，偏殿的燈一直亮著。",
+                "set_flags": ["ygfs_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 10, "reason": "出席了五席的夜宴" },
+                  { "type": "memory", "summary": "大燁立憲之後，五席在宣德樓的夜宴上發現她們聊的是同一個人。你先喝了一杯——那一夜，偏殿的燈一直亮著。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" }
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yg_two_generations",
+      "title": "太妃宮的兩代同堂",
+      "summary": "內容警示：母女同時和主角親密。太后溫懿與女帝燁昭華這對母女，在太妃宮同時發現了你是彼此的人；隔壁的太妃胡玉綃看熱鬧看得很開心。（多人特殊任務）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_wen_yi",
+        "min_level": 11,
+        "requires": { "flags": ["yawy_lover", "yczh_x_done"] },
+        "text": "太后今晚沒有要你讀詩。她坐在燈下，手裡的念珠一顆一顆地撥：「昭華今晚要來太妃宮用膳。她說，有事要問我。」她抬起頭，「……我想，我也有事要問她。」"
+      },
+      "start_flags": ["yg2g_started"],
+      "nodes": [
+        {
+          "id": "dinner",
+          "title": "晚上在龍安府的太妃宮陪太后和女帝用膳",
+          "text": "女帝來了。母女倆隔著一桌菜，誰也沒動筷子。女帝先開口：「母后，我的人最近常來太妃宮。」太后放下念珠：「陛下的人，最近常在我這裡過夜。」兩人同時看向你。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yg2g_started"] },
+          "kind": "choice",
+          "hours": "night",
+          "options": [
+            {
+              "label": "「我都是認真的」",
+              "success": { "text": "殿裡安靜得能聽見燭芯爆開的聲音。然後月洞門那頭傳來一陣笑聲，太妃胡玉綃倚在門邊，三條尾巴搖得很歡：「哎呀，終於撞見了。我等這一天等好久了。」", "set_flags": ["yg2g_caught"] }
+            },
+            { "label": "「……我先告退」", "success": { "text": "你剛站起來，月洞門那頭就傳來一陣笑聲。太妃胡玉綃倚在門邊，尾巴擋住了出口：「走什麼？好戲才要開場。」", "set_flags": ["yg2g_caught"] } }
+          ]
+        },
+        {
+          "id": "calm",
+          "title": "在龍安府的太妃宮勸住要吵起來的母女",
+          "text": "女帝站了起來：「母后在政事上向著舅舅，現在連——」太后也站了起來：「陛下五年不來看我，現在倒是——」胡玉綃嗑著瓜子：「繼續、繼續。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yg2g_caught"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "你說了城樓頂的冷茶，也說了太妃宮的長夜：兩個人都一樣寂寞，一樣不肯先開口。母女倆看著對方，很久都沒有說話。最後太后先伸出手，女帝握住了。胡玉綃把瓜子一丟：「好了，哭完了，該做正事了。」", "set_flags": ["yg2g_calm"] },
+          "fail": { "text": "你一開口，兩個人一起瞪著你：「你閉嘴。」胡玉綃笑得從椅子上滑下來。等她們吵累了，再試一次。", "retry": true }
+        },
+        {
+          "id": "night",
+          "title": "晚上在龍安府的太妃宮被太妃關進同一間寢殿",
+          "text": "胡玉綃把三個人推進她的寢殿，門一關，在外面上了鎖：「天亮之前，誰都別想出來。」隔著門，她的聲音笑得很壞，「我就在外面聽。」燈下，母女倆看著彼此，又看著你。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yg2g_calm"] },
+          "kind": "choice",
+          "hours": "night",
+          "options": [
+            {
+              "label": "「和解吧」",
+              "success": {
+                "text": "那一夜，母女倆第一次說了五年來沒說的話——說到後來，就不只是說話了。天亮時太后對女帝說：「從今以後，我不替哥哥說話了。」女帝靠在母親肩上：「……我知道。」門外的胡玉綃打了個哈欠：「終於。」",
+                "set_flags": ["yg2g_done", "yg2g_reconciled"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 10, "reason": "兩代同堂" },
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "兩代同堂" },
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 5, "reason": "看了一夜的熱鬧" },
+                  { "type": "memory", "summary": "在太妃宮被太妃胡玉綃和太后、女帝母女關在同一間寢殿裡過了一夜；母女倆和解了，太后不再替宰相說話。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "寢殿裡，矜持的太后與強勢的女帝起初各守一邊，在主角的引導下才慢慢靠近：兩人輪流、又一起和主角親密，彼此看見對方從未示人的樣子；門外的太妃不時起鬨，天亮前母女倆相擁和解。"
+              }
+            },
+            {
+              "label": "「各自的秘密就留著吧」",
+              "success": {
+                "text": "那一夜，三個人都很有默契地什麼都不提。天亮時，女帝先整好衣冠走了，太后在窗邊看著她的背影：「那孩子……還是像我。」門外的胡玉綃嘆了口氣：「沒意思。下次再關。」",
+                "set_flags": ["yg2g_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_wen_yi", "delta": 8, "reason": "兩代同堂" },
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 8, "reason": "兩代同堂" },
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 5, "reason": "看了一夜的熱鬧" },
+                  { "type": "memory", "summary": "在太妃宮被太妃胡玉綃和太后、女帝母女關在同一間寢殿裡過了一夜；三個人都很有默契地什麼都不提。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "寢殿裡三人默契地不說破：母女倆輪流和主角親密，像在比賽誰更讓主角失控，又在對方面前努力維持體面；門外的太妃聽得直笑，天亮前兩人各自整好衣冠，誰也不提這一夜。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yg_hu_reunion",
+      "title": "胡家的團圓宴",
+      "summary": "胡三太奶附在三娘身上，說胡家三百年沒有團圓過，硬是把宮裡的狐、城裡的狐、屯裡的狐叫回青丘屯的仙堂吃團圓飯。三人發現，你是她們每個人的人。（多人特殊任務）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_sanniang",
+        "min_level": 11,
+        "requires": { "flags": ["yayx_lover", "yasn_lover", "ychj_x_done"] },
+        "text": "腰鈴自己響了。三娘的眼神變得蒼老，太奶用她的手敲了敲桌子：「胡家三百年沒團圓過了。宮裡那個、瑔州港那個、加上這丫頭——你去把她們叫回來，我要吃一頓團圓飯。」她瞇起眼睛，「你跟她們每一個都很熟，不是嗎？」"
+      },
+      "start_flags": ["yghu_started"],
+      "nodes": [
+        {
+          "id": "jiu",
+          "title": "到瑔州港請胡九娘回青丘屯",
+          "text": "胡九娘聽說太奶要吃團圓飯，扇子停在半空：「我十二歲離開青丘，就沒回去過。」她看著你，「……你也去？」",
+          "at": { "where": "npc", "npc": "npc_yh_hu_jiuniang", "location": "quanzhou" },
+          "requires": { "flags": ["yghu_started"] },
+          "kind": "story",
+          "success": { "text": "「好吧。」她把扇子一收，「總要回去一次。」", "set_flags": ["yghu_jiu"] }
+        },
+        {
+          "id": "yuxiao",
+          "title": "到龍安府的太妃宮請太妃出宮",
+          "text": "胡玉綃懶洋洋地躺在榻上：「太妃不能隨便出宮。再說，我回青丘做什麼？讓那些老狐狸指著我說我是狐狸精？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taifei" },
+          "requires": { "flags": ["yghu_jiu"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "你說九娘答應了，太奶也想她。她的尾巴停了一下，然後坐起來：「……備車。說是去城外的道觀上香。」", "set_flags": ["yghu_all"] },
+          "fail": { "text": "她翻了個身：「不去。」也許換個說法再試一次。", "retry": true }
+        },
+        {
+          "id": "feast",
+          "title": "晚上在青丘屯的仙堂內堂吃團圓飯",
+          "text": "內堂的炕桌上擺滿了菜。太奶坐在三娘的身體裡居中，九娘和胡玉綃一左一右，你坐在對面。酒過三巡，九娘說了一句「我的人最近很忙」，胡玉綃說「我的人也是」，三娘自己醒過來一下，說「我的人——」三個人同時看向你。太奶拍著桌子大笑：「好，好！一家人，就該一起！」",
+          "at": { "where": "special", "special_map": "sm_yh_xiantang_inner", "x": 3, "y": 3 },
+          "requires": { "flags": ["yghu_all"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_yh_hu_yuxiao", "npc_yh_hu_jiuniang", "npc_yh_hu_sanniang"],
+          "options": [
+            {
+              "label": "「城裡的狐、屯裡的狐，都是一家」",
+              "success": {
+                "text": "那一夜，內堂的燈一直亮到天亮。早上，胡九娘說胡記每年要撥一筆錢給青丘屯修堂口；胡玉綃說她會在宮裡替屯子說話；三娘醒來，看著兩個姑姪，紅著眼睛笑了。太奶最後說了一句：「三百年，總算團圓了。」",
+                "set_flags": ["yghu_done", "yghu_reconciled"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 10, "reason": "胡家的團圓宴" },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 10, "reason": "胡家的團圓宴" },
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 10, "reason": "胡家的團圓宴" },
+                  { "type": "memory", "summary": "胡三太奶把宮裡、城裡、屯裡的三隻狐叫回青丘屯吃團圓飯；那一夜之後，城裡的狐和屯裡的狐和解了。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "炕上，三隻狐輪流又一起纏著主角：太妃嫵媚熟練、九娘笑裡藏刀地爭寵、三娘被太奶附身時放肆、醒來時害羞；三人的尾巴纏成一團，附身的老仙在一旁起鬨，天亮時四人擠在一床被裡。"
+              }
+            },
+            {
+              "label": "「吃完這頓，各過各的」",
+              "success": {
+                "text": "那一夜很熱鬧，可是天亮之後，九娘回了瑔州港，胡玉綃回了宮，三娘留在屯裡。臨走前，九娘回頭看了仙堂一眼：「……明年再來。」太奶哼了一聲：「這還差不多。」",
+                "set_flags": ["yghu_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_yuxiao", "delta": 8, "reason": "胡家的團圓宴" },
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 8, "reason": "胡家的團圓宴" },
+                  { "type": "affinity", "npc": "npc_yh_hu_sanniang", "delta": 8, "reason": "胡家的團圓宴" },
+                  { "type": "memory", "summary": "胡三太奶把宮裡、城裡、屯裡的三隻狐叫回青丘屯吃團圓飯；天亮之後各過各的，九娘說明年再來。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "團圓飯後的炕上，三隻狐比著看誰最能讓主角失控：太妃用尾巴、九娘用嘴、三娘用整個身子；附身的老仙看熱鬧看得直拍炕沿，天亮後三人各自整衣，誰都沒說下次，卻都看了主角一眼。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yg_gold_ink",
+      "title": "金與墨",
+      "summary": "金墨盟的兩位領袖：金黃鱗的金玉棠主張立憲，墨鐵鱗的陸青禾主張共和。盟裡的路線之爭吵到半夜——兩人發現，她們吵的不只是政見。（多人特殊任務）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_jin_yutang",
+        "min_level": 11,
+        "requires": { "flags": ["ycjy_x_done", "yclq_x_done"] },
+        "text": "金玉棠揉著太陽穴：「陸青禾從萍江來了，說要跟我把盟裡的路線吵清楚。已經吵了三天。」她看著你，「今晚在金玉行的頂樓，最後一次。你來——你是我們兩個都聽得進去的人。」"
+      },
+      "start_flags": ["ygjm_started"],
+      "nodes": [
+        {
+          "id": "tavern",
+          "title": "到瑔州港的酒館找喝悶酒的陸青禾",
+          "text": "陸青禾一個人坐在酒館角落，面前擺著三個空酒罈：「她說我太急。她不知道萍江的織工等了多少年。」她看見你，愣了一下，然後把臉轉開，「……你也是她叫來的？」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "tavern" },
+          "requires": { "flags": ["ygjm_started"] },
+          "kind": "story",
+          "success": { "text": "你陪她喝完了第四罈。她站起來：「走。去頂樓。今晚吵完。」", "set_flags": ["ygjm_lu"] }
+        },
+        {
+          "id": "debate",
+          "title": "晚上在瑔州港的金玉行頂樓聽兩人吵架",
+          "text": "頂樓的桌上攤著盟約。金玉棠說憲章能讓商人和皇帝都照規矩來，陸青禾說規矩是給有錢人訂的。吵到一半，陸青禾脫口而出：「妳就是想要他站在妳那邊！」金玉棠：「……妳不也是？」兩人同時安靜下來，看著你。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["ygjm_lu"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "你說金墨盟不是一個人的盟：金黃鱗有船，墨鐵鱗有手，少了誰都開不了船。兩人看了對方很久。金玉棠先笑了：「……她說得比我們好聽。」陸青禾哼了一聲，嘴角卻翹了起來。", "set_flags": ["ygjm_heard"] },
+          "fail": { "text": "你一開口，兩人一起轉過來：「你站哪邊？」你說不出來。她們又吵了起來——等她們吵累了，再試一次。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_jin_yutang", "npc_yh_lu_qinghe"]
+        },
+        {
+          "id": "roof",
+          "title": "在瑔州港的金玉行頂樓和兩人「一起決定」",
+          "text": "盟約攤在桌上，燈快燒完了。金玉棠把酒杯推給陸青禾：「政見的事，明天再吵。」陸青禾接過來一口喝乾，看著你：「今晚的事，今晚決定。」兩個人一左一右，同時伸出了手。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["ygjm_heard"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_yh_jin_yutang", "npc_yh_lu_qinghe"],
+          "options": [
+            {
+              "label": "握住兩隻手",
+              "success": {
+                "text": "那一夜之後，金墨盟的路線之爭沒有吵完，可是吵法變了：吵完之後，兩人會一起去喝酒。陸青禾說：「她太慢。」金玉棠說：「她太急。」然後兩個人一起看著你：「你說呢？」",
+                "set_flags": ["ygjm_done", "ygjm_united"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 10, "reason": "金與墨" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "金與墨" },
+                  { "type": "memory", "summary": "金墨盟的金玉棠與陸青禾吵了三天路線，最後在金玉行的頂樓和你一起決定了另一件事；從那之後，兩人的盟合得來了。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "金玉行的頂樓上，豐滿從容的金玉棠與直率火熱的陸青禾一起和主角親密：兩人連在床上也要爭誰主導，爭著爭著卻開始配合，一個慢一個急地把主角夾在中間；天亮時三人看著港口的船帆。"
+              }
+            },
+            {
+              "label": "「妳們先分出勝負」",
+              "success": {
+                "text": "「好啊。」金玉棠挑眉。「求之不得。」陸青禾捲起袖子。那一夜的勝負沒有分出來，可是兩人都說自己贏了。天亮時她們還在較勁：誰先醒、誰先下樓、誰先跟你說早安。",
+                "set_flags": ["ygjm_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 8, "reason": "金與墨" },
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 8, "reason": "金與墨" },
+                  { "type": "memory", "summary": "金墨盟的金玉棠與陸青禾在金玉行的頂樓比了一夜，誰也沒分出勝負，兩人都說自己贏了。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" },
+                "scene": "金玉棠與陸青禾把主角當成較勁的戰場：輪流用自己的方式讓主角失控，比誰讓主角先到、誰讓主角叫得更大聲；一整夜誰也不肯認輸，最後三人累倒在一起，兩人還在互瞪。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

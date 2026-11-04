@@ -180,3 +180,41 @@ def close(prefix, i, npc, title, text, at, requires, options, allies=None):
                                      'effects': [aff(npc, a, '一起經歷了一段事')] + ([mem(m)] if m else []), 'complete': True}} for l, t, a, m in options]
     kw = {'allies': allies} if allies else {}
     return node('close', title, text, at, requires, 'choice', options=opts, **kw)
+
+
+# ---------------- 成人向角色（EAST_CONTENT_PLAN 8.9 節） ----------------
+def adult_line(prefix, npc, line, q1, q2, q3, *, tags=()):
+    """一條成人向角色的線：三個任務 D／C／B（Lv.5／8／11，好感 0／20／30），整條標成人向（加上 tags，例如 non_virgin）。
+    q：{'id','title','summary','text','nodes'}，可以有 'start'（預設對象本人開頭）、'rewards'。
+    一、二的最後一步設 f'{prefix}_N_done'；三的最後一步設 f'{prefix}_lover'、f'{prefix}_3_done'（用 lover()）。"""
+    out = []
+    for i, (q, rank, aff_min) in enumerate([(q1, 'D', 0), (q2, 'C', 20), (q3, 'B', 30)], 1):
+        st = dict(q.get('start') or {'kind': 'npc', 'npc': npc})
+        st['requires'] = dict(st.get('requires', {}))
+        st['text'] = q['text']
+        if aff_min:
+            if st['kind'] == 'npc' and st['npc'] == npc:
+                st['min_affinity'] = aff_min
+            else:
+                st['requires']['affinity'] = {npc: aff_min}
+        if i > 1:
+            st['requires']['flags'] = st['requires'].get('flags', []) + [f'{prefix}_{i - 1}_done']
+        if not st['requires']:
+            del st['requires']
+        out.append(story(q['id'], rank, q['title'], q['summary'] + f'（{line}・{"一二三"[i - 1]}）', st, f'{prefix}_{i}_started', q['nodes'],
+                         extra_rewards=q.get('rewards', ()), tags=['adult', *tags]))
+    return out
+
+
+def lover(prefix, npc, title, text, at, requires, options, allies=None, **kw):
+    """成人向角色線三的最後一步：options：[(label, text, memory, scene)]，都設 f'{prefix}_lover'、f'{prefix}_3_done'，第一個過夜到早上"""
+    opts = []
+    for j, (l, t, m, sc) in enumerate(options):
+        o = {'text': t, 'set_flags': [f'{prefix}_lover', f'{prefix}_3_done'],
+             'effects': [aff(npc, 15, '在一起了'), mem(m, 3)], 'complete': True, 'scene': sc}
+        if j == 0:
+            o['time'] = {'until': 'morning'}
+        opts.append({'label': l, 'success': o})
+    if allies:
+        kw['allies'] = allies
+    return node('lover', title, text, at, requires, 'choice', options=opts, **kw)

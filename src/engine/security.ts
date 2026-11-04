@@ -211,11 +211,12 @@ export function zoneEntryBlock(state: GameState, zone: string | undefined): stri
   return null
 }
 
-/** 聲望不夠、沒有許可，今天也還沒說服衛兵：進王城要先說服（主角是皇族時不用） */
+/** 聲望不夠、沒有許可，今天也還沒說服衛兵：進王城要先說服（主角是皇族時不用）。
+ *  許可：程式的 palace_permit:<聚落>，或特殊任務設的劇情旗標 palace_permit_<聚落>（例如宮裡的人給的腰牌） */
 export function palaceNeedsPersuading(state: GameState): boolean {
   const loc = locationById(state.location)
   return !meetsReputation(state, loc.faction, securityRules.palace_reputation)
-    && !state.flags[`palace_permit:${loc.id}`]
+    && !state.flags[`palace_permit:${loc.id}`] && !state.flags[`story:palace_permit_${loc.id}`]
     && state.palacePass?.[loc.id] !== state.time.day
 }
 

@@ -74,6 +74,7 @@ LANDMARKS = [
         'desc': '掌管宮中寢殿與帷帳的女官署；司寢女官溫如玉在這裡教導宮中的閨房之禮。',
         'scene': '層層紗帳後點著安神的香，女官們低聲細語，捧著疊好的錦被穿過長廊。',
         'open': {'official': True},
+        'visit': {'title': '討一包安神香', 'desc': '向值夜的女官討一包宮裡的安神香，回去好睡。', 'money_cc': 10, 'hours': 0.5, 'effects': [cond('relaxed')], 'cooldown_days': 3},
     },
     {
         'id': 'lm_yh_taifei', 'name': '太妃宮', 'emoji': '🌸', 'location': 'longan',
@@ -81,6 +82,7 @@ LANDMARKS = [
         'desc': '皇城深處先帝的後宮。太后與太妃——先帝的皇后與寵妃——鬥了半輩子，如今在這裡當鄰居。',
         'scene': '海棠開滿了庭院，兩座殿閣隔著一道月洞門，各自的宮女都裝作沒看見對方。',
         'open': {'official': True},
+        'visit': {'title': '在海棠樹下歇腳', 'desc': '在庭院的海棠樹下坐一會兒，聽兩邊的宮女隔著月洞門鬥嘴。', 'hours': 0.5, 'effects': [cond('cheered')]},
     },
     # ---------- 萍江府 ----------
     {
@@ -271,7 +273,9 @@ def write_landmarks():
     data = json.loads(src)
     ids = {l['id'] for l in LANDMARKS}
     kept = [l for l in data['landmarks'] if l['id'] not in ids]
-    data['landmarks'] = kept + LANDMARKS
+    # 成人向角色與多人任務解鎖的場景（east_p4e_group.py）
+    from east_p4e_group import SCENES
+    data['landmarks'] = kept + [{**l, 'scenes': SCENES[l['id']]} if l['id'] in SCENES else l for l in LANDMARKS]
     # 檔案是 indent=1 的格式、結尾沒有換行
     open(LM_PATH, 'w', encoding='utf-8').write(json.dumps(data, ensure_ascii=False, indent=1))
 
