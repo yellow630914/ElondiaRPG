@@ -36,7 +36,7 @@ describe('monster data', () => {
       const own: string[] = []
       for (const layer of ['outskirts', 'shallow', 'middle', 'deep'] as const) {
         const ids = new Set(t[layer].flat().map(([id]) => id))
-        // 每層的遭遇只用到這一層與上一層的怪物；這一層自己的至少兩種（炎華南域的地下城有幾層多一種魔物娘）
+        // 每層的遭遇只用到這一層與上一層的怪物；這一層自己的至少兩種（炎華之地的地下城有幾層多一種魔物娘）
         const fresh = [...ids].filter((id) => !own.includes(id))
         // 主題地下城的園區沒有周邊
         if (!(d.park && layer === 'outskirts')) expect(fresh.length, `${d.id} ${layer}`).toBeGreaterThanOrEqual(2)
@@ -46,7 +46,7 @@ describe('monster data', () => {
       expect(new Set(bosses).size, d.id).toBe(3)
       const all = [...own, ...bosses]
       // 內建的照舊是每層兩種加三隻層主（園區沒有周邊）
-      if (d.region !== 'yanhua_south') expect(all.length, d.id).toBe(d.park ? 9 : 11)
+      if (!d.region.startsWith('yanhua')) expect(all.length, d.id).toBe(d.park ? 9 : 11)
       for (const id of all) {
         expect(seen.has(id), `${id} 出現在兩座地下城`).toBe(false)
         seen.add(id)

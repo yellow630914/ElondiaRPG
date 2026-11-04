@@ -4294,6 +4294,317 @@
      }
     ]
    }
+  },
+  {
+   "id": "lm_td_golden_tent",
+   "name": "金帳",
+   "emoji": "⛺",
+   "location": "jinzhang",
+   "at": {
+    "area": "jinzhang/palace",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "official",
+    "monument"
+   ],
+   "desc": "天可汗的金帳「斡魯朵」：一座能坐下上千人的巨大氈帳，帳頂包著金箔，四面插著九斿白纛。",
+   "scene": "金帳前的九斿白纛在風裡獵獵作響，怯薛的親衛一動也不動地站成兩排，帳門的金鈴每響一聲，就有人進去、有人出來。",
+   "open": {
+    "official": true
+   },
+   "visit": {
+    "title": "看怯薛換崗",
+    "desc": "在金帳前看親衛換崗，聽號角吹響。",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   }
+  },
+  {
+   "id": "lm_td_naadam",
+   "name": "那達慕場",
+   "emoji": "🤼",
+   "location": "jinzhang",
+   "at": {
+    "area": "jinzhang/naadam",
+    "x": 5,
+    "y": 3
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "王庭的大校場，摔跤、賽馬、射箭從早比到晚；冠軍巴特爾常在這裡等著有人來挑戰。",
+   "scene": "場邊圍滿了喝馬奶酒的看客，摔跤手們拍著大腿入場，遠處的賽道上揚起一長條塵土，箭靶上插滿了羽箭。",
+   "visit": {
+    "title": "看一場摔跤",
+    "desc": "在場邊喝碗馬奶酒，看摔跤手們比試。",
+    "money_cc": 5,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   },
+   "explore": {
+    "title": "下場比一場",
+    "desc": "跟摔跤手過幾招，或者射幾支箭。",
+    "attr": "str",
+    "dc": 14,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 35
+     },
+     {
+      "type": "memory",
+      "summary": "在金帳王庭的那達慕場下場比試，和草原的摔跤手過了幾招。",
+      "importance": 1
+     }
+    ],
+    "critical": [
+     {
+      "type": "money",
+      "amount": 40
+     },
+     {
+      "type": "reputation",
+      "faction": "local",
+      "delta": 1
+     }
+    ]
+   },
+   "work": {
+    "attr": "str",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替那達慕場搬靶、牽馬、平整摔跤的場地。"
+   }
+  },
+  {
+   "id": "lm_td_ovoo",
+   "name": "敖包",
+   "emoji": "🪨",
+   "location": "jinzhang",
+   "at": {
+    "area": "jinzhang/naadam",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "holy",
+    "monument"
+   ],
+   "desc": "王庭邊上的大敖包，石堆上插滿了經幡與樹枝；國師其其格在這裡祭天、讀羊肩胛骨占卜。",
+   "scene": "石堆上繫滿了藍色的哈達，風一吹就獵獵作響；石堆旁的火裡燒著一塊羊肩胛骨，劈啪地裂開。",
+   "visit": {
+    "title": "在敖包添一塊石頭",
+    "desc": "照草原的規矩，繞著敖包走三圈，添一塊石頭祈福。",
+    "hours": 0.5,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "blessed",
+      "add": true
+     }
+    ],
+    "cooldown_days": 3
+   },
+   "explore": {
+    "title": "請渥都干讀羊骨",
+    "desc": "請大巫燒一塊羊肩胛骨，看看骨紋說了什麼。",
+    "attr": "fai",
+    "dc": 13,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 30
+     },
+     {
+      "type": "memory",
+      "summary": "在金帳王庭的敖包請渥都干讀了一塊羊肩胛骨。",
+      "importance": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "lm_td_south_court",
+   "name": "南院大帳",
+   "emoji": "📜",
+   "location": "jinzhang",
+   "at": {
+    "area": "jinzhang/nanyuan",
+    "x": 5,
+    "y": 5
+   },
+   "types": [
+    "official",
+    "academy"
+   ],
+   "desc": "南院大王阿穆爾的大帳，照大燁的禮制辦公：帳裡擺著書案與屏風，牆上掛著大燁的字畫；可敦燁婉寧也住在這裡。",
+   "scene": "大帳裡飄著墨香，書吏們用大燁的字抄著榷場的帳，屏風後面隱約傳來古琴的聲音。",
+   "open": {
+    "official": true
+   },
+   "explore": {
+    "title": "在南院旁聽議事",
+    "desc": "在南院的大帳裡聽官吏們議論榷場與歲幣。",
+    "attr": "int",
+    "dc": 13,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 30
+     },
+     {
+      "type": "memory",
+      "summary": "在金帳王庭的南院大帳旁聽了一場關於榷場與歲幣的議事。",
+      "importance": 1
+     }
+    ]
+   }
+  },
+  {
+   "id": "lm_td_tea_horse",
+   "name": "茶馬市",
+   "emoji": "🐴",
+   "location": "yinghe",
+   "at": {
+    "area": "yinghe/chama",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "鷹河榷場的互市：大燁的茶磚、絲綢與媞丹的馬匹、皮貨在這裡交換，監官斡勒坐在帳下抽成。",
+   "scene": "一邊是堆成小山的茶磚與一匹匹的絲綢，一邊是嘶鳴的馬群與一捆捆的皮貨，兩國的商人比手畫腳地討價還價。",
+   "visit": {
+    "title": "逛茶馬互市",
+    "desc": "看看大燁與草原的貨。",
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "cha",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替商人當通譯、點貨、牽馬過秤。"
+   }
+  },
+  {
+   "id": "lm_td_falconry",
+   "name": "鷹房",
+   "emoji": "🦅",
+   "location": "yinghe",
+   "at": {
+    "area": "yinghe/yingfang",
+    "x": 5,
+    "y": 1
+   },
+   "types": [
+    "nature",
+    "workshop"
+   ],
+   "desc": "海東部的鷹房：一排排鷹架上停著海東青，馴鷹人托雅在這裡熬鷹；首領海蘭也常在這裡。後面是海東部的冬營。",
+   "scene": "鷹架上的海東青蒙著皮帽，偶爾抖一抖翅膀；馴鷹人整夜不睡地陪著新捉來的鷹「熬」，帳裡瀰漫著生肉與羽毛的味道。",
+   "visit": {
+    "title": "看鷹奴放鷹",
+    "desc": "跟著鷹奴到河邊放一次鷹。",
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "dex",
+    "dc": 13,
+    "rate_cc": 4,
+    "desc": "替鷹房切肉、清理鷹架、陪新鷹熬夜。"
+   },
+   "interior": "sm_td_haidong_camp"
+  },
+  {
+   "id": "lm_td_post_station",
+   "name": "驛站",
+   "emoji": "🏇",
+   "location": "yinghe",
+   "at": {
+    "area": "yinghe/chama",
+    "x": 5,
+    "y": 5
+   },
+   "types": [
+    "official"
+   ],
+   "desc": "大法典規定的驛站：持驛牌的信差在這裡換馬，商隊在這裡歇腳，所有的消息都在這裡經過。",
+   "scene": "驛站的院子裡拴著一排換班的驛馬，信差喝完一碗奶茶就上馬走了；老闆坐在門口，一邊擦銅牌一邊聽客人說話。",
+   "visit": {
+    "title": "在驛站歇腳",
+    "desc": "喝一碗熱奶茶，在驛站的氈房裡打個盹。",
+    "money_cc": 5,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "relaxed",
+      "add": true
+     }
+    ]
+   },
+   "explore": {
+    "title": "跟驛站老闆打聽消息",
+    "desc": "請老闆喝一碗，聽他說說最近經過的人。",
+    "attr": "cha",
+    "dc": 13,
+    "hours": 2,
+    "effects": [
+     {
+      "type": "xp",
+      "amount": 25
+     },
+     {
+      "type": "memory",
+      "summary": "在鷹河榷場的驛站聽老闆講了不少草原上的消息。",
+      "importance": 1
+     }
+    ],
+    "critical": [
+     {
+      "type": "money",
+      "amount": 30
+     }
+    ]
+   }
   }
  ]
 }

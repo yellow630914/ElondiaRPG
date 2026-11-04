@@ -17,6 +17,7 @@
     "greatsword": { "name": "雙手劍", "dice": "2d6", "type": "slashing", "attr": "str", "threat": 0.1 },
     "halberd": { "name": "長戟", "dice": "1d10", "type": "slashing", "attr": "str", "threat": 0.05 },
     "podao": { "name": "朴刀", "dice": "1d10", "type": "slashing", "attr": "str", "threat": 0.05 },
+    "horn_bow": { "name": "角弓", "dice": "1d8", "type": "piercing", "attr": "dex", "threat": -0.1 },
     "spear": { "name": "長槍", "dice": "1d8", "type": "piercing", "attr": "str" },
     "crossbow": { "name": "弩", "dice": "1d10", "type": "piercing", "attr": "dex", "threat": -0.15 },
     "whip": { "name": "長鞭", "dice": "1d6", "type": "slashing", "attr": "dex", "threat": -0.05 },

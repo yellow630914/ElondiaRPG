@@ -202,6 +202,38 @@ describe('炎華之地', () => {
     expect(sanitizeItem('x', { ...itemDef('燒鵝')!, regions: ['yanhua_south', 'Bad Id!'] }, true).regions).toEqual(['yanhua_south'])
   })
 
+  it('opens two northern dungeons on the 北境 level band, and gives 北原 its people and landmarks', () => {
+    const near: Record<string, string> = { mingdi_field: 'jinzhang', whitewolf_cave: 'yinghe' }
+    for (const [d, town] of Object.entries(near)) {
+      expect(locationById(d).region).toBe('yanhua_north')
+      expect(shortestPath(town, d)!.days[1]).toBeLessThanOrEqual(2)
+      const enc = dungeonEncounters[d]!
+      const lv = (layer: 'outskirts' | 'abyss') => enc[layer]!.flat().map(([id]) => enemies[id]!.level)
+      expect(Math.max(...lv('outskirts'))).toBe(3)
+      expect(Math.max(...lv('abyss'))).toBe(11)
+      expect((['shallow', 'middle', 'deep', 'abyss'] as const).map((l) => enemies[enc.bosses![l]![0]![0]]!.level)).toEqual([5, 7, 9, 13])
+      const ids = new Set([
+        ...(['outskirts', 'shallow', 'middle', 'deep', 'abyss'] as const).flatMap((l) => enc[l]!.flat().map(([id]) => id)),
+        ...Object.values(enc.bosses!).flatMap((g) => g!.map(([id]) => id)),
+      ])
+      for (const id of ids) expect(enemies[id]!.habitats, id).toEqual(['yanhua_north'])
+    }
+    const lms = Object.values(landmarks).filter((l) => l.id.startsWith('lm_td_'))
+    expect(lms.length).toBe(7)
+    const s = newGame({ name: '測試者', race: 'centaur', classId: 'fighter', seed: 2, birthplace: 'jinzhang' })
+    for (const l of lms) {
+      s.location = l.location
+      expect(standOn(s, l.id as never), l.id).toBe(true)
+      if (l.interior) expect(specialMaps[l.interior]?.location, l.id).toBe(l.location)
+    }
+    const td = (namedNpcs as { npcs: { id: string; landmark?: string; location: string; race: string }[] }).npcs.filter((n) => n.id.startsWith('npc_td_'))
+    expect(td.length).toBe(18)
+    // 外地人四位（化龍族三位、靈狐族一位），其他都是人馬族
+    expect(td.filter((n) => n.race !== 'centaur').length).toBe(4)
+    for (const n of td) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)
+    expect(specialMaps.sm_td_inner_tent?.location).toBe('jinzhang')
+  })
+
   it('populates 青丘屯 mostly with 靈狐族', () => {
     const s = newGame({ name: '測試者', race: 'linghu', classId: 'cleric', seed: 4, birthplace: 'qingqiu' })
     const races = ensureRoster(s, 'qingqiu')!.members.map((m) => npcRecord(s, m)!.race)

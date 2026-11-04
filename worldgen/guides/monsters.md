@@ -93,7 +93,7 @@
 | `dungeon:<地下城>:<層>` | `dungeon:snake_creek:outskirts` | 地下城的一般遭遇。層：`outskirts` 周邊、`shallow` 淺層、`middle` 中層、`deep` 深層、`abyss` 底層 |
 | `boss:<地下城>:<層>` | `boss:ember_rift:shallow` | **取代**那一層的層主。層：`shallow`、`middle`、`deep`、`abyss` |
 
-地下城 id（`data/world/geography.json`，19 座都有底層）：中央平原 `whisper_crypt`、`snake_creek`、`mist_abbey`；北境群山 `redemption_pit`、`echo_rift`、`giants_spine`；南境枯萎荒原 `ember_rift`、`bloodrock_cave`、`hell_greenhouse`；古樹森林 `moonshadow_roots`、`thorn_corridor`、`verdant_hollow`；東海群島 `tidefall_cave`、`skull_isle`；西部荒野 `echo_canyon`、`quicksand_temple`；炎華南域 `yongzhao_tomb`（永昭陵）、`qianyao_valley`（千窯谷）、`gunpowder_ruins`（火藥坊遺址）。
+地下城 id（`data/world/geography.json`，21 座都有底層）：中央平原 `whisper_crypt`、`snake_creek`、`mist_abbey`；北境群山 `redemption_pit`、`echo_rift`、`giants_spine`；南境枯萎荒原 `ember_rift`、`bloodrock_cave`、`hell_greenhouse`；古樹森林 `moonshadow_roots`、`thorn_corridor`、`verdant_hollow`；東海群島 `tidefall_cave`、`skull_isle`；西部荒野 `echo_canyon`、`quicksand_temple`；炎華南域 `yongzhao_tomb`（永昭陵）、`qianyao_valley`（千窯谷）、`gunpowder_ruins`（火藥坊遺址）；炎華北原 `mingdi_field`（鳴鏑古戰場）、`whitewolf_cave`（白狼雪窟）。
 
 ```json
 "spawns": [

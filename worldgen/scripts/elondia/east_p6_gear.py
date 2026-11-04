@@ -29,7 +29,7 @@ BASES = {
     'horse_leg_ring': {'slot': 'leg_accessory', 'name': '馬腿環', 'kind': 'jewel', 'price': 140, 'scale': {'dr': 'third_up'}, 'races': C,
                        'desc': '套在馬腿上的硬環，護住腿骨。'},
 }
-SHOP = {'metal': 'smith', 'leather': 'tailor', 'cloth': 'tailor', 'jewel': 'jeweler'}
+SHOP = {'metal': 'smith', 'wood': 'smith', 'leather': 'tailor', 'cloth': 'tailor', 'jewel': 'jeweler'}
 
 
 def gear_name(b, m):
@@ -80,7 +80,7 @@ def write_catalog(rows):
     names = [i['name'] for i in data['items']]
     assert len(names) == len(set(names)), '重複的物品名稱'
     open(p, 'w', encoding='utf-8').write(t)
-    print(f'人馬族的制式品 {len(rows)} 件')
+    print(f'制式品 {len(rows)} 件')
 
 
 if __name__ == '__main__':

@@ -274,6 +274,7 @@
     "greatsword": { "slot": "main_hand", "name": "雙手劍", "kind": "metal", "weapon": "greatsword", "two_handed": true, "price": 500, "scale": {"damage": "full", "hit": "half"}, "desc": "比人還長的雙手劍，揮起來要整個身體一起轉。" },
     "halberd": { "slot": "main_hand", "name": "長戟", "kind": "metal", "weapon": "halberd", "two_handed": true, "price": 380, "stats": {"hit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "斧刃、槍尖與鉤子裝在同一根長柄上，搆得比劍遠。" },
     "podao": { "slot": "main_hand", "name": "朴刀", "kind": "metal", "weapon": "podao", "two_handed": true, "price": 360, "stats": {"crit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "長柄短刃的雙手刀，大燁的步卒與刀客最常用；比雙手劍輕，砍得也快。" },
+    "horn_bow": { "slot": "main_hand", "name": "角弓", "kind": "wood", "weapon": "horn_bow", "two_handed": true, "price": 360, "stats": {"crit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "用牛角、木胎與筋膠疊成的反曲短弓，人馬族在馬背……在自己背上也拉得開；比長弓短，力道卻不輸。" },
     "bushen_armor": { "slot": "body", "name": "步人甲", "kind": "metal", "armor": "bushen", "price": 4000, "scale": {"dr": "half"}, "desc": "大燁步卒的重甲：上千片甲葉用皮繩編在一起，從肩頭罩到小腿。比板甲便宜，卻更笨重。" },
     "beizi": { "slot": "body", "name": "褙子", "kind": "cloth", "armor": "cloth", "price": 60, "scale": {"save": "up"}, "outfit": "regular", "desc": "大燁的長衫：直領對襟、兩側開衩，罩在衣裙外面，男女都穿。" },
     "spear": { "slot": "main_hand", "name": "長槍", "kind": "wood", "weapon": "spear", "price": 90, "scale": {"damage": "full", "hit": "half"}, "desc": "木柄的長槍，空出一隻手來拿盾。" },

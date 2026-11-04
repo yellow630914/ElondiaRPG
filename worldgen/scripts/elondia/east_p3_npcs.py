@@ -339,6 +339,10 @@ RELATIONS = [
     ('npc_yh_xiao_fengyi', 'npc_yh_wen_shiheng', '宰相：戲班替他打聽消息，也替女帝打聽。', '瓦舍的勾欄之主：好用的耳目，但不可信。'),
     ('npc_yh_yaoting', 'npc_reno_deeptide', '潮汐港深潮席的老酒友，寫信比誰被灌醉的次數多。', None),
     ('npc_yh_hastings', 'npc_carlos_blacksail', '潮汐港的走私王：自己的貨被他的人盯上過。', None),
+    # 炎華北原的人（east_p7_people.py 寫北原那一邊）
+    ('npc_yh_zhaohua', 'npc_td_wanning', '遠房的妹妹：送去媞丹和親的宗室女。', None),
+    ('npc_yh_hu_jiuniang', 'npc_td_hu_zhanggui', '胡記在鷹河榷場的分號掌櫃：信裡寫的是榷場的消息。', None),
+    ('npc_yh_wen_shiheng', 'npc_td_su_shiyong', '派去媞丹王庭的歲幣使節：自己的人，每個月寫信回來。', None),
     # 地方上的小關係
     ('npc_yh_qian', 'npc_yh_xiaozhu', '自家茶坊的跑堂，勤快，就是老做白日夢。', '茶坊的老闆：摳門，但從不少給工錢。'),
     ('npc_yh_shen_zhilan', 'npc_yh_xiao_fengyi', '勾欄之主：說書人都在講自己的話本。', '寫話本的瀾生：最好的戲都出自她的手，也最會惹禍。'),
