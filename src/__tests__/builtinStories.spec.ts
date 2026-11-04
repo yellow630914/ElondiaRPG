@@ -412,20 +412,22 @@ describe('quests inside a temporary map', () => {
 
   it('gives the non-adult character lines a fourth, adult quest, one per partner, tagging traditional men', () => {
     const fourth = stories.filter((s) => /・四）$/.test(s.summary) && s.nodes.some((n) => n.id === 'night'))
-    // 礁光柱維修沒有：主角是螺鈿婆婆，櫻汐已經有自己的故事線
-    expect(fourth.length).toBe(23)
-    expect(new Set(fourth.map((s) => s.start.npc)).size).toBe(23)
+    // 礁光柱維修沒有：主角是螺鈿婆婆，櫻汐已經有自己的故事線；炎華之地 12 條（燁昭華住在宮裡，從公會開頭）
+    const partner = (s: (typeof fourth)[number]) => s.start.npc ?? Object.keys(s.start.requires?.affinity ?? {})[0]!
+    expect(fourth.length).toBe(35)
+    expect(fourth.filter((s) => s.id.startsWith('yc')).length).toBe(12)
+    expect(new Set(fourth.map(partner)).size).toBe(35)
     expect(fourth.some((s) => s.summary.includes('礁光柱維修'))).toBe(false)
     for (const s of fourth) {
       expect(s.tags?.[0], s.id).toBe('adult')
-      expect(s.start.min_affinity, s.id).toBe(40)
+      expect(s.start.min_affinity ?? s.start.requires?.affinity?.[partner(s)], s.id).toBe(40)
       expect(s.start.requires?.flags_any?.length, s.id).toBeGreaterThan(0)
       // 前一個任務（同一條線的三）的結局旗標
       const line = s.summary.match(/（(.+)・四）$/)![1]!
       const third = stories.find((x) => x.summary.endsWith(`（${line}・三）`))!
       const ends = third.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).flatMap((o) => o?.set_flags ?? [])
       for (const f of s.start.requires!.flags_any!) expect(ends, `${s.id} ${f}`).toContain(f)
-      const male = namedNpcs.find((n) => n.id === s.start.npc)!.gender === 'male'
+      const male = namedNpcs.find((n) => n.id === partner(s))!.gender === 'male'
       expect(s.tags!.includes('male_partner'), s.id).toBe(male)
     }
     expect(fourth.filter((s) => s.tags!.includes('male_partner')).map((s) => s.id).sort()).toEqual(['god_warm_hands', 'nip_desert_bargain', 'valk_ember_night'])

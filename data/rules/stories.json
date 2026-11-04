@@ -40725,6 +40725,3474 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 3500 }, { "type": "xp", "amount": 4000 }, { "type": "item", "name": "精金礦石", "qty": 1 }]
+    },
+    {
+      "id": "yczh_cold_tea",
+      "title": "宣德樓頂的茶",
+      "summary": "殿前司缺人手，雇冒險者在宣德樓夜巡。半夜的城樓頂上，一個穿素衣的女人一個人在喝冷掉的茶。（燁昭華・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "guild", "location": "longan", "text": "公會的告示板上貼著殿前司的告示：「禁軍欠餉，夜巡缺人，雇可靠之人於宣德樓守夜三日。」蓋印的人是尚寢局的司寢女官溫如玉——奇怪，夜巡不歸她管。", "min_level": 5 },
+      "start_flags": ["yczh_1_started"],
+      "nodes": [
+        {
+          "id": "go",
+          "title": "晚上到龍安府的公會報到夜巡",
+          "text": "溫如玉看了你一眼：「守夜而已。看到什麼，不要多問。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yczh_1_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_wen_ruyu"],
+          "hours": "night",
+          "success": { "text": "溫如玉帶著你從皇城的側門進去，登上宣德樓。", "set_flags": ["yczh_on"], "special_map": "sm_yh_xuande_tower" }
+        },
+        {
+          "id": "roof",
+          "title": "晚上在宣德樓的城樓頂上巡夜",
+          "text": "城樓頂的風很大。簷角下坐著一個穿素色外衣的女人，身邊擺著一套茶具，手裡捧著一杯早就涼透的茶，望著瑔州港的方向。她聽見腳步聲，頭也不回：「你是新來的？過來坐。陪我把這壺喝完。」",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 1 },
+          "requires": { "flags": ["yczh_on"] },
+          "kind": "choice",
+          "hours": "night",
+          "options": [
+            {
+              "label": "坐下陪她喝",
+              "success": {
+                "text": "茶是冷的，很苦。她說這壺是傍晚泡的，一直沒空喝。你們聊了半夜：聊瑔州港的船、萍江的織機、御街的燒鵝。她問得很細，像是從沒去過那些地方。天快亮時，她起身說：「明晚再來。」",
+                "set_flags": ["yczh_met"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 8, "reason": "半夜陪她喝冷茶" }]
+              }
+            },
+            {
+              "label": "「這裡不能久留，宮女姐姐」",
+              "success": {
+                "text": "她愣了一下，然後笑了出來——笑得很輕，好像很久沒笑過：「宮女姐姐。好，我記住了。」她給你倒了一杯冷茶，「喝完再趕我走。」",
+                "set_flags": ["yczh_met"],
+                "effects": [{ "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "把她當成了宮女" }]
+              }
+            }
+          ]
+        },
+        {
+          "id": "close",
+          "title": "回龍安府的公會向溫如玉交差",
+          "text": "三夜的守夜結束了。溫如玉把工錢交給你，壓低聲音：「城樓頂上那位，是陛下。她五年來，第一次叫一個人『明晚再來』。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yczh_met"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我會再來」",
+              "success": {
+                "text": "溫如玉點點頭：「陛下會很高興——雖然她不會說。」",
+                "set_flags": ["yczh_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "在宣德樓頂陪一個喝冷茶的女人聊了三夜，後來才知道她是女帝燁昭華。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「她看起來很累」",
+              "success": {
+                "text": "溫如玉沉默了一下：「是的。五年了，從來沒有人這樣跟我說過。」",
+                "set_flags": ["yczh_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "在宣德樓頂陪女帝燁昭華喝了三夜的冷茶；她看起來很累。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_wen_ruyu"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yczh_audience",
+      "title": "御街的燒鵝",
+      "summary": "女帝開始固定召你上城樓「議事」，議的都是外面的小事。這一次，她想嚐嚐御街夜市的燒鵝。（燁昭華・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "text": "溫如玉在公會等你，手裡拿著一塊玉牌：「陛下召你議事。」她頓了一下，「……議的是御街夜市哪一家的燒鵝最好吃。」",
+        "requires": { "affinity": { "npc_yh_zhaohua": 20 }, "flags": ["yczh_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["yczh_2_started"],
+      "nodes": [
+        {
+          "id": "goose",
+          "title": "晚上到龍安府的御街夜市買燒鵝",
+          "text": "夜市最有名的燒鵝攤前排了半條街。攤主認得錢掌櫃的人，說今晚最後一隻，要等。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yczh_2_started"] },
+          "kind": "story",
+          "hours": "night",
+          "success": { "text": "你排了一個時辰，捧著一隻還在滴油的燒鵝，混在夜市的人潮裡往皇城走。", "set_flags": ["yczh_goose"] }
+        },
+        {
+          "id": "go",
+          "title": "帶著燒鵝回龍安府的公會找溫如玉",
+          "text": "溫如玉看著油紙包，嘴角抽了一下：「……我什麼都沒看見。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yczh_goose"] },
+          "kind": "story",
+          "allies": ["npc_yh_wen_ruyu"],
+          "success": { "text": "溫如玉帶著你從皇城的側門進去，登上宣德樓。", "set_flags": ["yczh_up"], "special_map": "sm_yh_xuande_tower" }
+        },
+        {
+          "id": "eat",
+          "title": "在宣德樓的城樓上和女帝吃燒鵝",
+          "text": "女帝拿手撕燒鵝的樣子一點都不像女帝。吃到一半，她忽然說：「朕小時候，父皇帶朕微服出宮過一次，就是吃這一家。那天之後，朕再也沒有出過宮門。」",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 2 },
+          "requires": { "flags": ["yczh_up"] },
+          "kind": "story",
+          "allies": ["npc_yh_zhaohua"],
+          "success": { "text": "她把骨頭整整齊齊地擺在盤子邊：「下次，帶朕出去。不是以女帝的身分。」她看著你，「……你敢嗎？」", "set_flags": ["yczh_ask"] }
+        },
+        {
+          "id": "close",
+          "title": "在宣德樓的城樓上回答女帝",
+          "text": "女帝等著你的回答，手指在茶杯邊上一圈一圈地繞。",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 2 },
+          "requires": { "flags": ["yczh_ask"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我敢」",
+              "success": {
+                "text": "她笑了，把一件舊的素色外衣披上：「那就說定了。等朕把這一堆摺子看完。」",
+                "set_flags": ["yczh_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "女帝燁昭華想微服出宮去吃御街的燒鵝；答應下次帶她出去。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「陛下想出去，就出去」",
+              "success": {
+                "text": "她愣了很久：「朕想出去，就出去。」她重複了一遍，像是在學一句外國話。「……好。」",
+                "set_flags": ["yczh_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對女帝燁昭華說：想出去就出去。她說好。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_zhaohua"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yczh_without_zhen",
+      "title": "放下「朕」的那一夜",
+      "summary": "女帝在城樓頂上遇刺。刺客退去之後，她第一次在你面前放下了「朕」。（燁昭華・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "text": "溫如玉的臉色很難看：「今晚陛下要在城樓頂上看燈。殿前司說宮裡不太平，可是陛下說——你在就好。」",
+        "requires": { "affinity": { "npc_yh_zhaohua": 30 }, "flags": ["yczh_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["yczh_3_started"],
+      "nodes": [
+        {
+          "id": "go",
+          "title": "晚上到龍安府的公會跟溫如玉進宮",
+          "text": "溫如玉把一把短刀塞給你：「以防萬一。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yczh_3_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_wen_ruyu"],
+          "hours": "night",
+          "success": { "text": "溫如玉帶著你從皇城的側門進去，登上宣德樓。", "set_flags": ["yczh_watch"], "special_map": "sm_yh_xuande_tower" }
+        },
+        {
+          "id": "assassins",
+          "title": "晚上在宣德樓的城樓上擋下刺客",
+          "text": "城樓的燈籠一盞一盞被打滅。黑暗裡，三個黑衣人從簷角翻上來，刀光直取女帝。",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 1 },
+          "requires": { "flags": ["yczh_watch"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 3]],
+          "success": { "text": "最後一個刺客從城樓上墜了下去。女帝站在你身後，手裡緊緊握著一只茶杯——杯子裂了，她的手在流血。", "set_flags": ["yczh_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在宣德樓的城樓上陪著她",
+          "text": "你替她包紮手上的傷口。她一直沒說話，等到最後一圈布綁好，才開口，聲音很輕：「……我好累。」不是「朕」。是「我」。",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 2 },
+          "requires": { "flags": ["yczh_safe"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "抱住她",
+              "success": {
+                "text": "她僵了一下，然後慢慢靠進你懷裡，像是在確認一件她不太熟悉的事：「我叫昭華。」她說，「以後沒有人的時候，叫我昭華。」",
+                "set_flags": ["yczh_lover", "yczh_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "女帝燁昭華在城樓上遇刺之後，第一次放下了「朕」：「以後沒有人的時候，叫我昭華。」", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「累了就靠著我」",
+              "success": {
+                "text": "她看了你很久，把頭靠在你的肩上。城下的龍安府燈火通明，她閉上眼睛：「……就一下。」那一下，靠到了天亮。",
+                "set_flags": ["yczh_lover", "yczh_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "女帝燁昭華靠在你肩上睡到天亮；從那一夜起，你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_zhaohua"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yczh_x",
+      "title": "昭華",
+      "summary": "沒有人的時候，她叫昭華。（燁昭華・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "text": "溫如玉把玉牌交給你的時候，難得地紅了臉：「陛下說，今晚沒有摺子。……她讓我跟你說，帶燒鵝。」",
+        "requires": { "affinity": { "npc_yh_zhaohua": 40 }, "flags_any": ["yczh_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["yczh_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上帶著燒鵝到龍安府的公會找溫如玉",
+          "text": "溫如玉領著你，這一次沒有走側門，而是走進了寢殿的那一條長廊。",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["yczh_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她在長廊盡頭停下來：「從這裡開始，我就不跟了。」",
+            "set_flags": ["yczh_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 5, "reason": "一起度過的時光" }],
+            "special_map": "sm_yh_xuande_tower"
+          }
+        },
+        {
+          "id": "night",
+          "title": "在宣德樓的城樓上和昭華度過那一夜",
+          "text": "城樓上點了一盞燈。她換下了龍袍，只穿著一件白色的單衣，頭髮放了下來。燒鵝擺在一邊，茶是熱的。「我想過很多次，」她說，「我不知道該怎麼開始。這件事，沒有人能替我擬旨。」",
+          "at": { "where": "special", "special_map": "sm_yh_xuande_tower", "x": 5, "y": 2 },
+          "requires": { "flags": ["yczh_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她下令",
+              "success": {
+                "text": "「那就下令吧，陛下。」她看著你，眼神一點一點變回那個在朝堂上的人：「……脫。」她的命令短而準確，一道接一道，你照做，她就獎賞；她跨坐在你身上的時候，連喘息都像在批摺子，直到最後一刻才失了分寸，咬著你的肩膀叫出聲來。之後她趴在你胸口，小聲說：「朕……我是不是太兇了？」",
+                "set_flags": ["yczh_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜，昭華用女帝的方式要了你：命令一道接一道，直到最後一刻才失了分寸。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就下令吧，陛下。」她看著你，眼神一點一點變回那個在朝堂上的人：「……脫。」她的命令短而準確，一道接一道，你照做，她就獎賞；她跨坐在你身上的時候，連喘息都像在批摺子，直到最後一刻才失了分寸，咬著你的肩膀叫出聲來。之後她趴在你胸口，小聲說：「朕……我是不是太兇了？」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她只當昭華",
+              "success": {
+                "text": "「今晚沒有陛下。」你解開她的單衣，她發著抖，像第一次被人碰觸。你吻她的手、她的肩、她手上那道包紮過的傷，她一直睜著眼睛看你，像是怕一閉上眼這一切就會消失。她在你懷裡哭了，又笑了，一遍一遍叫你的名字，最後蜷在你身邊睡著，手還抓著你不放。",
+                "set_flags": ["yczh_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_zhaohua", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜沒有陛下，只有昭華。她在你懷裡哭了又笑，抓著你的手睡到天亮。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「今晚沒有陛下。」你解開她的單衣，她發著抖，像第一次被人碰觸。你吻她的手、她的肩、她手上那道包紮過的傷，她一直睜著眼睛看你，像是怕一閉上眼這一切就會消失。她在你懷裡哭了，又笑了，一遍一遍叫你的名字，最後蜷在你身邊睡著，手還抓著你不放。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycsz_banned_book",
+      "title": "禁書",
+      "summary": "沈知瀾的新話本被禮部列為禁書，書坊不敢印。她要找一家地下印坊，在禁令傳開之前印出來。（沈知瀾・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_shen_zhilan",
+        "text": "沈知瀾把一張禮部的告示拍在桌上，上面列著十二本禁書，第一本就是她的《龍角記》：「書坊全都不敢接了。龍安府有一家地下印坊，專印不能印的東西——我需要一個會打架的人陪我去。」",
+        "min_level": 5
+      },
+      "start_flags": ["ycsz_1_started"],
+      "nodes": [
+        {
+          "id": "find",
+          "title": "到龍安府市坊的情報商打聽地下印坊",
+          "text": "情報商聽到「龍角記」三個字就笑了：「你們要找的是『黑墨坊』。」",
+          "at": { "where": "cell", "location": "longan", "cell": "informant" },
+          "requires": { "flags": ["ycsz_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "他給了你們一個地址：城外運河邊的一間舊倉庫。「禮部的人也在找它。快一點。」", "set_flags": ["ycsz_addr"] },
+          "fail": { "text": "情報商推說不知道。也許明天他心情好一點。", "retry": true },
+          "allies": ["npc_yh_shen_zhilan"]
+        },
+        {
+          "id": "raid",
+          "title": "到龍安府的近郊保住地下印坊",
+          "text": "倉庫裡的印工剛把版子排好，外面就傳來砸門聲：禮部的衙役來查封了。",
+          "at": { "where": "outskirts", "location": "longan" },
+          "requires": { "flags": ["ycsz_addr"] },
+          "kind": "combat",
+          "enemies": [["yh_yamen_runner", 2]],
+          "success": { "text": "衙役被你們打跑了。印工們連夜開工，天亮時，第一百本《龍角記》從印版上揭下來，墨還沒乾。", "set_flags": ["ycsz_printed"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "在龍安府的近郊和沈知瀾看第一本書印出來",
+          "text": "沈知瀾捧著第一本書，手上全是墨，笑得像個孩子：「印出來了。他們禁不完的。」",
+          "at": { "where": "outskirts", "location": "longan" },
+          "requires": { "flags": ["ycsz_printed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下一本我也要看」",
+              "success": {
+                "text": "「那你得先活到下一本。」她把第一本塞給你，扉頁上寫著：「給第一個陪我去黑墨坊的人。」",
+                "set_flags": ["ycsz_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪沈知瀾在地下印坊印出了被禁的話本《龍角記》。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳不怕嗎？」",
+              "success": {
+                "text": "她想了想：「怕。可是我更怕寫了沒人看。」她把書塞給你，「所以你要看。」",
+                "set_flags": ["ycsz_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪沈知瀾印出了被禁的《龍角記》；她說她更怕寫了沒人看。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_shen_zhilan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycsz_secret_play",
+      "title": "瓦舍偷演",
+      "summary": "《龍角記》被蕭鳳儀的戲班偷偷改編成雜劇，要在瓦舍演一場。禮部與相府都派了人來。（沈知瀾・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_shen_zhilan",
+        "text": "沈知瀾興奮得說話都快了：「蕭鳳儀要把《龍角記》演成戲！今晚，瓦舍最大的那座勾欄。」她拉著你的袖子，「你得在場。我第一次看自己寫的東西被演出來——而且一定有人來鬧。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycsz_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycsz_2_started"],
+      "nodes": [
+        {
+          "id": "watch",
+          "title": "晚上到龍安府的瓦舍勾欄看戲",
+          "text": "台上的化龍族名角唱到「宰相夜調考卷」一段，滿堂喝采。沈知瀾坐在你旁邊，手抓著你的衣角，嘴裡跟著念台詞。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["ycsz_2_started"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_yh_shen_zhilan", "npc_yh_xiao_fengyi"],
+          "success": { "text": "唱到第三折，後台傳來一聲尖叫——有人在戲箱裡放了火。", "set_flags": ["ycsz_fire"] }
+        },
+        {
+          "id": "fire",
+          "title": "晚上在龍安府的瓦舍勾欄擋住放火的人",
+          "text": "後台的濃煙裡衝出兩個打手，手裡還拿著油罐，看見你就揮刀。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["ycsz_fire"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "火撲滅了，戲服燒了一半。名角穿著燒焦的戲服把最後一折唱完，看客們站起來鼓掌。", "set_flags": ["ycsz_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "在龍安府的瓦舍勾欄後台陪沈知瀾",
+          "text": "散戲之後，沈知瀾坐在燒焦的戲箱上，臉上都是煙灰，眼睛卻亮得嚇人：「你看到了嗎？他們站起來了。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["ycsz_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "擦掉她臉上的煙灰",
+              "success": {
+                "text": "她愣住了，任你擦，耳朵慢慢紅了：「……我的臉有那麼髒嗎？」",
+                "set_flags": ["ycsz_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "在瓦舍勾欄的後台替沈知瀾擦掉臉上的煙灰。她的耳朵紅了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳寫得真好」",
+              "success": {
+                "text": "「我知道。」她咧嘴一笑，又小聲補了一句，「……可是你說的，跟別人說的不一樣。」",
+                "set_flags": ["ycsz_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對沈知瀾說她寫得真好；她說你說的跟別人說的不一樣。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_shen_zhilan"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycsz_true_name",
+      "title": "真名",
+      "summary": "禮部開出了懸賞：交出「瀾生」的真名。沈知瀾要決定，是用真名出下一本書，還是繼續躲在筆名後面。（沈知瀾・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_shen_zhilan",
+        "text": "御街上貼滿了禮部的懸賞：「緝拿妖書作者瀾生，賞銀五百。」沈知瀾站在告示前，看了很久：「下一本書寫完了。我在想，要不要在封面寫上我的真名。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycsz_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycsz_3_started"],
+      "nodes": [
+        {
+          "id": "hunters",
+          "title": "在龍安府擋下來抓瀾生的賞金獵人",
+          "text": "三個亡命的刀客在巷子裡攔住你們，手上拿著懸賞的告示：「瀾生是吧？跟我們走一趟。」",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["ycsz_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2], ["yh_street_thug", 1]],
+          "success": { "text": "刀客們逃了。沈知瀾靠著牆喘氣，手還在發抖，卻笑了出來：「五百兩。我值五百兩。」", "set_flags": ["ycsz_hunted"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在龍安府陪沈知瀾決定封面要寫什麼名字",
+          "text": "她把新書的封面攤在你面前，上面空著作者的名字：「用真名，我就再也不能躲了。用筆名，就永遠只是一個躲起來罵人的人。」她看著你，「你說呢？」",
+          "at": { "where": "npc", "npc": "npc_yh_shen_zhilan", "location": "longan" },
+          "requires": { "flags": ["ycsz_hunted"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「寫妳的真名。我陪妳」",
+              "success": {
+                "text": "她提筆寫下「沈知瀾」三個字，寫完之後把筆一丟，撲過來抱住你：「你說的，要陪我。」書出版的那天，御街上的人排隊買，禮部的人在旁邊看著，不敢動手。",
+                "set_flags": ["ycsz_lover", "ycsz_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "沈知瀾用真名出了下一本書。你說會陪她；從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「繼續當瀾生，我知道妳是誰就好」",
+              "success": {
+                "text": "她看著你，慢慢笑了：「好。瀾生繼續罵人，沈知瀾……」她湊過來，在你臉上很快地親了一下，「沈知瀾是你的。」",
+                "set_flags": ["ycsz_lover", "ycsz_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "沈知瀾繼續用筆名「瀾生」寫書，但她說沈知瀾是你的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycsz_x",
+      "title": "寫不出來的那一章",
+      "summary": "沈知瀾說她的新書卡在一章，寫不出來——因為她沒經歷過。（沈知瀾・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_shen_zhilan",
+        "text": "沈知瀾抱著一疊稿紙堵住你，臉紅得像要燒起來：「新書卡在一章。主角和……和他喜歡的人，那一晚。我寫了十幾遍，都很假。」她把稿紙塞進你懷裡，「……我需要取材。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycsz_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycsz_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和沈知瀾在龍安府的御街夜市逛一圈",
+          "text": "她說取材要從頭開始，拉著你在夜市從頭吃到尾，邊吃邊在小本子上記：「牽手的時候，手心會出汗。記下來。」",
+          "at": { "where": "npc", "npc": "npc_yh_shen_zhilan" },
+          "requires": { "flags": ["ycsz_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "回去的路上，她不記了，只是牽著你的手。",
+            "set_flags": ["ycsz_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到沈知瀾的住處",
+          "text": "她的房間堆滿了書和稿紙，連床上都是。她手忙腳亂地把稿紙掃到地上，坐在床邊，第一次不知道該說什麼。",
+          "at": { "where": "npc", "npc": "npc_yh_shen_zhilan" },
+          "requires": { "flags": ["ycsz_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「這一章我們慢慢寫」",
+              "success": {
+                "text": "你吻她，她閉上眼睛，又睜開，像是怕錯過什麼細節。你一件一件解開她的男式長衫，她緊張得尾巴繃直了，卻一直小聲地問「這樣對嗎」「那裡會怎樣」。你一樣一樣地回答她——用手、用嘴、用整個身體。最後她抱著你，喘著氣笑出來：「……我寫的那十幾遍，全都是錯的。」",
+                "set_flags": ["ycsz_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你陪沈知瀾「取材」了一整夜。她說她寫的那十幾遍，全都是錯的。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你吻她，她閉上眼睛，又睜開，像是怕錯過什麼細節。你一件一件解開她的男式長衫，她緊張得尾巴繃直了，卻一直小聲地問「這樣對嗎」「那裡會怎樣」。你一樣一樣地回答她——用手、用嘴、用整個身體。最後她抱著你，喘著氣笑出來：「……我寫的那十幾遍，全都是錯的。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她來寫",
+              "success": {
+                "text": "「妳是作者，妳來寫。」她瞪著你，然後把你推倒在稿紙堆裡，一邊吻你一邊說「這裡要加一句」「這裡要停頓」，像在改稿。改到後來她說不出話了，騎在你身上，墨鐵色的尾巴纏著你的腿，只剩下喘息和你的名字。天亮的時候，她趴在你胸口，伸手去拿筆。",
+                "set_flags": ["ycsz_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_shen_zhilan", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "沈知瀾把你推倒在稿紙堆裡，像改稿一樣一句一句地「寫」完了那一章。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「妳是作者，妳來寫。」她瞪著你，然後把你推倒在稿紙堆裡，一邊吻你一邊說「這裡要加一句」「這裡要停頓」，像在改稿。改到後來她說不出話了，騎在你身上，墨鐵色的尾巴纏著你的腿，只剩下喘息和你的名字。天亮的時候，她趴在你胸口，伸手去拿筆。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ychn_lamp_oil",
+      "title": "長明燈的燈油",
+      "summary": "太廟的長明燈三百年沒有熄過，這幾天卻忽明忽暗。慧音說，燈油的來處出了問題。（慧音・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_huiyin", "text": "慧音盯著祭殿深處那盞青銅長明燈，火苗一下子竄高、一下子縮小：「三百年沒熄過。燈油是永昭陵的陵戶每月送來的——這個月的油，有問題。」", "min_level": 5 },
+      "start_flags": ["ychn_1_started"],
+      "nodes": [
+        {
+          "id": "keeper",
+          "title": "到龍安府找老陵戶問燈油",
+          "text": "老陵戶聽完，臉色變了：「燈油？這個月的油不是我送的。我那罈被人在路上搶了，換了一罈別的。」",
+          "at": { "where": "npc", "npc": "npc_yh_old_tomb_keeper", "location": "longan" },
+          "requires": { "flags": ["ychn_1_started"] },
+          "kind": "story",
+          "success": { "text": "「搶油的人往永昭陵去了。」老人說，「那一罈油，是從陵裡的燈台上刮下來的，三百年一直是這樣。」", "set_flags": ["ychn_lead"] }
+        },
+        {
+          "id": "thieves",
+          "title": "到永昭陵的周邊追回燈油",
+          "text": "神道邊，兩個打手正在把一罈油倒進草叢。看見你，他們扔下罈子拔刀。",
+          "at": { "where": "dungeon", "location": "yongzhao_tomb", "layer": "outskirts" },
+          "requires": { "flags": ["ychn_lead"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手跑了。罈底還剩一點油，油裡浮著一片燒焦的帛。", "set_flags": ["ychn_oil"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把燈油帶回龍安府的太廟給慧音",
+          "text": "慧音把剩下的油倒進長明燈，火苗穩了下來。她撿起那片燒焦的帛，翻來覆去地看：「這是……祭文的字。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_oil"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「燈油裡為什麼會有祭文？」",
+              "success": {
+                "text": "她搖頭：「我不知道。可是有人不想讓這盞燈繼續燒下去。」她把帛片收進袖子裡，「謝謝你。我會查下去的。」",
+                "set_flags": ["ychn_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替太廟的慧音追回了長明燈的燈油，油裡浮著一片燒焦的祭文。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "陪她看燈",
+              "success": {
+                "text": "你們並肩站在長明燈前看了很久。她小聲說：「小時候，我以為這盞燈是祖龍的眼睛。」她笑了笑，「現在我不知道了。」",
+                "set_flags": ["ychn_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和慧音在太廟的長明燈前站了很久。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_huiyin"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ychn_sealed_jar",
+      "title": "燈座下的罈子",
+      "summary": "慧音在長明燈的燈座下發現一個封了三百年的罈子，罈裡是燈油，油裡泡著一卷帛書。有人想在她讀完之前偷走它。（慧音・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huiyin",
+        "text": "慧音的聲音在發抖：「長明燈的燈座下面有一個暗格，暗格裡有一個罈子，封口的蠟上蓋著燭龍朝的印。我不敢一個人打開。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ychn_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ychn_2_started"],
+      "nodes": [
+        {
+          "id": "open",
+          "title": "在龍安府的太廟和慧音打開罈子",
+          "text": "罈子裡是三百年的燈油，黑得發亮。油裡泡著一卷用蠟封住的帛書，字跡被油浸得模糊。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_2_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 14 },
+          "success": { "text": "你們一個字一個字地辨認：這是燭龍朝的祭司寫下的——開國那年的祖龍祭，長明燈是用燭龍君陪葬的燈油點起來的。「燈不熄，冤不散。」", "set_flags": ["ychn_read"] },
+          "fail": { "text": "油漬太重，字一碰就糊。再小心一點，明天再試。", "retry": true },
+          "allies": ["npc_yh_huiyin"]
+        },
+        {
+          "id": "night",
+          "title": "晚上在龍安府的太廟擋下偷帛書的人",
+          "text": "半夜，太廟的門被撬開了。兩個刀客直奔祭壇，看見你還沒睡，愣了一下，拔刀就砍。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_read"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客逃了。慧音抱著帛書站在燈前，臉色蒼白。", "set_flags": ["ychn_kept"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "在龍安府的太廟陪慧音",
+          "text": "慧音坐在長明燈下，聲音很輕：「我侍奉了十年的燈，是用死人的冤點起來的。我還該信什麼？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_kept"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「信妳自己」",
+              "success": {
+                "text": "她看著你很久：「……你說得好像很簡單。」她把帛書收好，「可是聽起來不壞。」",
+                "set_flags": ["ychn_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "慧音發現長明燈是用陪葬的燈油點起來的；你叫她信她自己。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "陪她坐到天亮",
+              "success": {
+                "text": "你什麼都沒說，只是坐在她旁邊。天亮的時候，她靠在你肩上睡著了，手裡還握著帛書。",
+                "set_flags": ["ychn_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪慧音在太廟的長明燈下坐到天亮。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_huiyin"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ychn_rekindle",
+      "title": "重點長明燈",
+      "summary": "慧音決定熄掉那盞用冤魂點起來的長明燈，用新的油重新點一次。這需要在暴風雨的夜裡爬上太廟的屋脊，從天上取火。（慧音・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huiyin",
+        "text": "慧音的眼神很堅定，和以前不一樣：「我要熄掉那盞燈，重新點一次。祭典的古法說，新火要從天上取——雷雨夜，太廟的屋脊。」她猶豫了一下，「……你會陪我去嗎？」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ychn_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ychn_3_started"],
+      "nodes": [
+        {
+          "id": "guards",
+          "title": "晚上在龍安府的太廟擋住來阻止的人",
+          "text": "雷雨夜，太廟外站著兩個禁軍精兵：「禮部有令，長明燈不能熄。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "禁軍退了。雨越下越大，屋脊上的祖龍雕像在閃電裡忽明忽暗。", "set_flags": ["ychn_roof"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "fire",
+          "title": "晚上在龍安府太廟的屋脊上取火",
+          "text": "你們爬上濕滑的屋脊。慧音舉著一根銅杖，等著雷落下來。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_roof"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 16 },
+          "success": { "text": "一道雷劈在銅杖上，火星落進燈盞，燃起一朵乾淨的白火。慧音差點滑下屋脊，你一把拉住了她。", "set_flags": ["ychn_lit"] },
+          "fail": { "text": "雷落在別的地方，你們差點摔下去。雨停之前再試一次。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "confess",
+          "title": "在龍安府太廟的屋脊上抱著慧音",
+          "text": "慧音被你拉回來，整個人撞進你懷裡。新的長明燈在你們腳下的祭殿裡亮著，乾淨得像月光。她沒有放開你。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_lit"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳的燈點起來了」",
+              "success": {
+                "text": "「是我們的燈。」她抬頭看你，雨水順著她的臉頰流下來，「我侍奉祖龍十年，從來沒有聽見祂說話。可是剛才……我好像聽見我自己的聲音了。」她吻了你，很輕，很生澀。",
+                "set_flags": ["ychn_lover", "ychn_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "和慧音在雷雨夜的太廟屋脊上重新點起長明燈；她吻了你，從那一夜起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "吻她",
+              "success": {
+                "text": "她閉上眼睛，手緊緊抓著你的衣服。雨很冷，她很暖。分開的時候，她說：「我以前以為，信仰是一個人的事。」",
+                "set_flags": ["ychn_lover", "ychn_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在太廟的屋脊上吻了慧音；她說她以前以為信仰是一個人的事。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ychn_x",
+      "title": "燈下",
+      "summary": "慧音說，新的長明燈要有人陪著守第一個整夜。（慧音・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huiyin",
+        "text": "慧音拉著你的袖子，把你帶到祭殿深處：「新燈的第一夜，祭司要守著，不能睡。」她低著頭，「……我想要你陪我守。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ychn_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ychn_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "在龍安府的太廟陪慧音守燈",
+          "text": "祭殿裡只有長明燈的白火。她給你講祖龍的傳說，講到一半停下來，說：「其實我小時候最怕的不是祖龍，是黑。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "你握住她的手，她就不怕了。",
+            "set_flags": ["ychn_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_huiyin", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在龍安府太廟的燈下和慧音度過那一夜",
+          "text": "夜深了，燈火映在她的天青色龍角上。她解開祭服的帶子，手在發抖：「我是祭司，祭司不該……」她沒有說完。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taimiao" },
+          "requires": { "flags": ["ychn_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "溫柔地帶她",
+              "success": {
+                "text": "你一點一點地教她，她一點一點地學，每一次顫抖都像是第一次聽見自己的聲音。白火在燈盞裡靜靜地燒，她咬著袖子不敢出聲，最後還是叫了出來，又羞得把臉埋進你頸窩裡。天亮之前，她小聲說：「祖龍不會怪我的。」",
+                "set_flags": ["ychn_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你在太廟的長明燈下溫柔地帶著慧音度過了第一夜。她說祖龍不會怪她的。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你一點一點地教她，她一點一點地學，每一次顫抖都像是第一次聽見自己的聲音。白火在燈盞裡靜靜地燒，她咬著袖子不敢出聲，最後還是叫了出來，又羞得把臉埋進你頸窩裡。天亮之前，她小聲說：「祖龍不會怪我的。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她自己來",
+              "success": {
+                "text": "「妳想怎麼做，就怎麼做。」她看了你很久，然後慢慢地、虔誠地吻遍你的全身，像在完成一場祭典。她跨上來的時候閉著眼睛，龍角上的祭帶散開了，嘴裡念的不知道是祭文還是你的名字。",
+                "set_flags": ["ychn_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_huiyin", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "慧音像完成一場祭典一樣，虔誠地在燈下要了你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「妳想怎麼做，就怎麼做。」她看了你很久，然後慢慢地、虔誠地吻遍你的全身，像在完成一場祭典。她跨上來的時候閉著眼睛，龍角上的祭帶散開了，嘴裡念的不知道是祭文還是你的名字。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycsh_false_seal",
+      "title": "假公文",
+      "summary": "有人用蘇懷瑾的私印蓋了一份假公文，把萍江一戶人家的田判給了別人。她要在消息傳開之前找出是誰。（蘇懷瑾・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_huaijin",
+        "text": "蘇懷瑾把一份公文推到你面前，上面的私印清清楚楚是她的：「我沒有蓋過這一份。私印只有我和兩個書吏碰得到。」她的聲音很冷，「被奪田的那戶人家，今天在衙門口跪了一天。」",
+        "min_level": 5
+      },
+      "start_flags": ["ycsh_1_started"],
+      "nodes": [
+        {
+          "id": "compare",
+          "title": "到萍江府的情報商比對公文的筆跡",
+          "text": "情報商把假公文和衙門的舊文書擺在一起，看了很久。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "informant" },
+          "requires": { "flags": ["ycsh_1_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 12 },
+          "success": { "text": "「字是衙門的書吏寫的，可是私印……印泥不是衙門的。是從龍安府來的硃砂。」", "set_flags": ["ycsh_clue"] },
+          "fail": { "text": "你看不出差別。也許明天換一份舊文書來比。", "retry": true }
+        },
+        {
+          "id": "field",
+          "title": "到萍江府的近郊趕走霸田的打手",
+          "text": "被奪的田上，幾個打手正在拆那戶人家的茅屋。",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["ycsh_clue"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手們跑了，丟下一張契約——買田的人，是押送花石綱的龐押司手下。", "set_flags": ["ycsh_found"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "回萍江府告訴蘇懷瑾",
+          "text": "蘇懷瑾聽完，把那份假公文撕成兩半：「龍安府來的印泥、龐押司的人。有人在拿我的印做文章。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin", "location": "pingjiang" },
+          "requires": { "flags": ["ycsh_found"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳打算怎麼辦？」",
+              "success": {
+                "text": "「先把田還給那戶人家。」她說，「然後，找出是誰。」她看了你一眼，「……謝謝。很少有人肯替我查我自己的事。」",
+                "set_flags": ["ycsh_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替萍江府的女知府蘇懷瑾查出有人盜用她的私印。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳不用一個人扛」",
+              "success": {
+                "text": "她愣了一下，第一次在你面前笑了——很淡：「我是知府，本來就是一個人。」停了一下，「……不過，謝謝。」",
+                "set_flags": ["ycsh_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對蘇懷瑾說她不用一個人扛。她笑了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycsh_forger",
+      "title": "偽印的人",
+      "summary": "假公文越來越多，每一份都蓋著蘇懷瑾的私印。她要你找出偽造私印的工匠。（蘇懷瑾・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_huaijin",
+        "text": "蘇懷瑾的桌上堆著七份假公文：「這個月第七份。每一份都讓萍江的人更恨我一點。」她遞給你一枚私印的拓本，「龍安府有一個專刻假印的工匠。找到他。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycsh_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycsh_2_started"],
+      "nodes": [
+        {
+          "id": "carver",
+          "title": "到龍安府的刻印師打聽刻假印的人",
+          "text": "刻印師看了拓本，臉色變了：「這種刀法……是老潘。他三個月前接了一筆大生意，主顧穿的是官靴。」",
+          "at": { "where": "cell", "location": "longan", "cell": "carver" },
+          "requires": { "flags": ["ycsh_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": { "text": "他告訴你老潘躲在萍江的園林區，替一位「大人」做事。", "set_flags": ["ycsh_pan"] },
+          "fail": { "text": "刻印師只是搖頭。換個說法再問。", "retry": true }
+        },
+        {
+          "id": "pan",
+          "title": "晚上到萍江府抓刻假印的老潘",
+          "text": "老潘的屋子裡點著燈，桌上擺著三枚蘇懷瑾的私印——全是假的。兩個刀客守在門口。",
+          "at": { "where": "settlement", "location": "pingjiang" },
+          "requires": { "flags": ["ycsh_pan"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客倒下，老潘跪地求饒：「是通判大人！通判大人說，只要知府倒了，他就能坐上那個位子！」", "set_flags": ["ycsh_named"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "把老潘的供詞交給蘇懷瑾",
+          "text": "蘇懷瑾讀完供詞，沉默了很久：「通判……我每天和他一起辦公，他每天叫我一聲大人。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin", "location": "pingjiang" },
+          "requires": { "flags": ["ycsh_named"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「現在就辦他」",
+              "success": {
+                "text": "「不。」她把供詞收起來，「他背後還有人。我要等他把背後的人帶出來。」她看著你，「你會等我嗎？」",
+                "set_flags": ["ycsh_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "查出盜用蘇懷瑾私印的是萍江的通判。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "陪她喝一杯",
+              "success": {
+                "text": "她難得地沒有拒絕。一杯下去，她說：「我十二歲那年就想當一個好官。現在想想，好官是最孤單的那一種。」",
+                "set_flags": ["ycsh_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪蘇懷瑾喝了一杯；她說好官是最孤單的那一種。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycsh_her_seal",
+      "title": "知府的私印",
+      "summary": "通判在萍江的官邸設宴，要蘇懷瑾當眾交出官印。他背後的人，帶著禁軍來了。（蘇懷瑾・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_huaijin",
+        "text": "蘇懷瑾把官印擺在桌上，眼神很平靜：「通判今晚設宴，說要『替萍江請命』，要我當眾交出官印。他請來了龍安府的人，還有兩隊禁軍。」她把私印交給你，「如果我回不來，這枚私印你收著。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycsh_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycsh_3_started"],
+      "nodes": [
+        {
+          "id": "banquet",
+          "title": "晚上在萍江府的官宴上擋住禁軍",
+          "text": "宴席上，通判一聲令下，兩個禁軍精兵拔刀圍住了蘇懷瑾。",
+          "at": { "where": "settlement", "location": "pingjiang" },
+          "requires": { "flags": ["ycsh_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "禁軍倒下了。通判臉色慘白，被蘇懷瑾的衙役按在地上。龍安府來的那個人，早就從後門走了。", "set_flags": ["ycsh_won"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在萍江府的官邸陪蘇懷瑾",
+          "text": "宴席散了，滿地狼藉。蘇懷瑾站在窗前，手裡握著你還給她的私印：「我以為我一直是一個人。可是剛才，我一點都不怕——因為你在。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin", "location": "pingjiang" },
+          "requires": { "flags": ["ycsh_won"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「以後也在」",
+              "success": {
+                "text": "她轉過身，看著你，第一次沒有用「本府」自稱：「懷瑾。叫我懷瑾。」她吻了你，像是在蓋一枚很重要的印。",
+                "set_flags": ["ycsh_lover", "ycsh_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "蘇懷瑾在萍江的官邸對你說「叫我懷瑾」；從那一夜起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "握住她的手",
+              "success": {
+                "text": "她的手很冷，握了很久才暖起來。「這枚私印，」她說，「以後蓋在公文上的，是我；蓋在你身上的……」她紅了臉，沒說完。",
+                "set_flags": ["ycsh_lover", "ycsh_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "握著蘇懷瑾的手直到她的手暖起來；從那一夜起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycsh_x",
+      "title": "懷瑾",
+      "summary": "知府大人今晚沒有公事。（蘇懷瑾・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_huaijin",
+        "text": "蘇懷瑾派人送來一張帖子，字跡很工整，內容卻很短：「今晚府中無事。懷瑾。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycsh_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycsh_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和蘇懷瑾在萍江府的虹橋看燈",
+          "text": "她沒穿官服，穿著一件月白的褙子，站在虹橋上看運河的燈。路過的人認不出她，她說這是她當知府以來第一次這樣走在街上。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["ycsh_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她把手伸過來，你握住了。",
+            "set_flags": ["ycsh_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到蘇懷瑾的官邸",
+          "text": "官邸裡只點了一盞燈。她解下髮簪，長髮落下來，回頭看你的眼神和在公堂上完全不一樣。「我習慣什麼都照規矩來，」她說，「今晚……不想照規矩。」",
+          "at": { "where": "npc", "npc": "npc_yh_su_huaijin" },
+          "requires": { "flags": ["ycsh_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她照自己的規矩",
+              "success": {
+                "text": "「那就照妳的規矩。」她把你按在案前，一條一條地「審問」你：喜歡哪裡、想要什麼，答錯了就罰，答對了也罰。冷靜的知府大人在你身上一點一點失了分寸，最後趴在案卷上，喘著氣說：「……本府，判你今晚不准走。」",
+                "set_flags": ["ycsh_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "蘇懷瑾照她自己的規矩，在官邸的案前「審問」了你一整夜。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就照妳的規矩。」她把你按在案前，一條一條地「審問」你：喜歡哪裡、想要什麼，答錯了就罰，答對了也罰。冷靜的知府大人在你身上一點一點失了分寸，最後趴在案卷上，喘著氣說：「……本府，判你今晚不准走。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她什麼都不用管",
+              "success": {
+                "text": "「今晚什麼都不用管。」你抱她上床，替她解開衣帶。她一開始還繃著，後來慢慢放鬆，閉上眼睛，任你一寸一寸地吻過去。她在你懷裡輕輕地顫抖，叫你的名字，叫了很多次——比她這輩子叫過的任何名字都多。",
+                "set_flags": ["ycsh_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_huaijin", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "那一夜蘇懷瑾什麼都不用管；她在你懷裡叫了你的名字很多次。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「今晚什麼都不用管。」你抱她上床，替她解開衣帶。她一開始還繃著，後來慢慢放鬆，閉上眼睛，任你一寸一寸地吻過去。她在你懷裡輕輕地顫抖，叫你的名字，叫了很多次——比她這輩子叫過的任何名字都多。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "yclq_banned_song",
+      "title": "被禁的工歌",
+      "summary": "萍江的織工工歌被官府禁了。陸青禾不服，要帶著織工在夜裡唱。（陸青禾・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_lu_qinghe",
+        "text": "陸青禾把一張告示撕下來揉成一團：「『淫詞濫調，不得傳唱。』——說的是我們的工歌！唱了三百年的歌！」她咧嘴一笑，「今晚，織坊街，我們偏要唱。你來不來？」",
+        "min_level": 5
+      },
+      "start_flags": ["yclq_1_started"],
+      "nodes": [
+        {
+          "id": "sing",
+          "title": "晚上到萍江府的織造局門口聽織工唱歌",
+          "text": "幾百個織工擠在織造局門口，陸青禾站在木箱上起了頭。歌聲一開始很小，然後越來越大，整條織坊街都在唱。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yclq_1_started"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_yh_lu_qinghe"],
+          "success": { "text": "唱到第三段，街口傳來鐵尺敲地的聲音：衙役來了。", "set_flags": ["yclq_sung"] }
+        },
+        {
+          "id": "runners",
+          "title": "晚上在萍江府的織坊街擋住抓人的衙役",
+          "text": "兩個衙役直奔陸青禾，要把她從木箱上拽下來。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yclq_sung"] },
+          "kind": "combat",
+          "enemies": [["yh_yamen_runner", 2]],
+          "success": { "text": "衙役被打跑了。織工們沒有散，接著唱完最後一段。", "set_flags": ["yclq_held"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "晚上在萍江府的織坊街陪陸青禾",
+          "text": "歌唱完了，人散了。陸青禾坐在木箱上，喉嚨啞了，還在笑：「他們禁一次，我們唱一次。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yclq_held"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次我也唱」",
+              "success": {
+                "text": "她大笑，拍拍你的背：「你唱得肯定很難聽。來吧，我教你。」",
+                "set_flags": ["yclq_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和陸青禾在萍江的織坊街唱了被禁的工歌。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "遞給她一壺水",
+              "success": {
+                "text": "她接過去一口氣喝光，看著你：「……你這種人，在行會裡會很受歡迎。」頓了一下，「在我這裡也是。」",
+                "set_flags": ["yclq_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "在陸青禾唱啞了嗓子之後遞給她一壺水。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_lu_qinghe"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yclq_bridge_song",
+      "title": "虹橋上的歌",
+      "summary": "工歌從織坊街唱到了運河上。官府派兵在虹橋上抓唱歌的人，陸青禾要帶著所有人一起唱過橋。（陸青禾・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_lu_qinghe",
+        "text": "陸青禾的眼睛亮得嚇人：「船夫、窯工、繡娘都學會了！明天傍晚，我們從織坊街唱到虹橋，唱過運河。」她壓低聲音，「官府調了兵守橋。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["yclq_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["yclq_2_started"],
+      "nodes": [
+        {
+          "id": "bridge",
+          "title": "在萍江府的虹橋上擋住官兵",
+          "text": "上千人的歌聲湧上虹橋，橋頭的兵丁舉起長槍。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yclq_2_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 2]],
+          "success": { "text": "兵丁退到橋下。歌聲過了橋，對岸的人推開窗戶跟著唱。", "set_flags": ["yclq_crossed"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "su",
+          "title": "在萍江府的虹橋上和蘇懷瑾談",
+          "text": "知府蘇懷瑾親自來到橋頭，看著人群：「陸青禾，你知道我可以把你們全抓起來。」陸青禾說：「你可以。可是你抓不完。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yclq_crossed"] },
+          "kind": "story",
+          "allies": ["npc_yh_lu_qinghe", "npc_yh_su_huaijin"],
+          "success": { "text": "蘇懷瑾沉默了很久，轉身對兵丁說：「收隊。」她經過你身邊時低聲說：「告訴她，歌可以唱，橋不要擠塌了。」", "set_flags": ["yclq_let"] }
+        },
+        {
+          "id": "close",
+          "title": "在萍江府的虹橋上陪陸青禾",
+          "text": "人群散去之後，陸青禾一個人坐在橋欄上，腳懸在運河上晃：「她居然放了我們。我還以為今晚要坐牢。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["yclq_let"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "坐到她旁邊",
+              "success": {
+                "text": "你坐下，她把頭靠在你肩上，一句話都不說，看著運河上的燈。過了很久，她說：「你知道嗎，你是第一個我不想吵架的人。」",
+                "set_flags": ["yclq_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "和陸青禾坐在虹橋的欄杆上看運河的燈。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳贏了」",
+              "success": {
+                "text": "「不是我贏了，」她說，「是歌贏了。」她轉頭看你，「……不過你在旁邊，我比較敢唱。」",
+                "set_flags": ["yclq_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陸青禾帶著工歌唱過了虹橋；她說你在旁邊她比較敢唱。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_lu_qinghe"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yclq_to_longan",
+      "title": "唱到龍安府",
+      "summary": "陸青禾要把工歌唱到龍安府，唱給女帝聽。相府的人不會讓一群織工走進御街。（陸青禾・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_lu_qinghe",
+        "text": "陸青禾背著一個包袱，站在萍江的城門口：「我要去龍安府，在御街上唱。女帝要聽見——不是聽奏摺，是聽我們的聲音。」她看著你，「這一趟，我只想要你陪。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["yclq_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["yclq_3_started"],
+      "nodes": [
+        {
+          "id": "ambush",
+          "title": "在龍安府的近郊擋下攔路的刀客",
+          "text": "龍安府城外的官道上，幾個黑衣人攔住了去路：「相府有令，萍江的亂民不得入城。」",
+          "at": { "where": "outskirts", "location": "longan" },
+          "requires": { "flags": ["yclq_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "黑衣人退了。陸青禾拍拍身上的土，深吸一口氣：「走，進城。」", "set_flags": ["yclq_in"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "sing",
+          "title": "在龍安府的御街夜市唱萍江的工歌",
+          "text": "御街的人潮裡，陸青禾站上一張桌子，開口唱了第一句。四周的人愣住了。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yclq_in"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "你跟著她唱第二句，然後是茶坊的跑堂、轎夫、說書人，一句一句加進來。歌聲傳到宣德樓下，樓上的燈亮了。", "set_flags": ["yclq_heard"] },
+          "fail": { "text": "人群只是看熱鬧，沒有人跟著唱。陸青禾跳下桌子：「明天再來。」", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "confess",
+          "title": "在龍安府的御街上陪陸青禾",
+          "text": "歌唱完了，陸青禾從桌子上跳下來，跳進你懷裡：「他們聽見了！你看到宣德樓的燈了嗎？」她笑著，笑著笑著就不笑了，看著你，「我想跟你說一件事，比唱歌還難開口。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yclq_heard"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我也是」",
+              "success": {
+                "text": "她瞪大眼睛：「我還沒說！」然後她自己笑了，抓著你的領子把你拉下來吻：「好吧，那就不用說了。」",
+                "set_flags": ["yclq_lover", "yclq_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "陸青禾在御街唱完萍江的工歌之後吻了你；從那一夜起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「說吧，我聽」",
+              "success": {
+                "text": "她深吸一口氣，大聲得整條御街都聽得見：「我喜歡你！」四周的人愣了一秒，然後一起鼓掌。她的臉紅得跟燈籠一樣。",
+                "set_flags": ["yclq_lover", "yclq_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "陸青禾在御街上大聲說她喜歡你；整條街的人都在鼓掌。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_lu_qinghe"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yclq_x",
+      "title": "工歌的最後一段",
+      "summary": "陸青禾說工歌還有最後一段，從來沒有人在外面唱過——只唱給喜歡的人聽。（陸青禾・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_lu_qinghe",
+        "text": "陸青禾把你拉到織坊街的角落，臉紅得厲害：「工歌還有最後一段，只在新婚的時候唱。我……我想唱給你聽。今晚，我家。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["yclq_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["yclq_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和陸青禾在萍江府的織坊街吃宵夜",
+          "text": "她請你吃織坊街最便宜的餛飩，說這是她從小吃到大的。吃完她搶著付錢，說：「今天我請，明天你請，這樣才公平。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_weaving_bureau" },
+          "requires": { "flags": ["yclq_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "回去的路上，她一直在哼那最後一段的調子。",
+            "set_flags": ["yclq_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到陸青禾的家",
+          "text": "她住在織坊街後面的小屋，屋裡只有一張床和一台織機。她坐在床邊，輕輕唱起了最後一段——唱的是兩個織工的手，怎麼在一匹布上碰在一起。唱完了，她把短衫脫掉，手上的織繭在燈下很清楚。",
+          "at": { "where": "npc", "npc": "npc_yh_lu_qinghe" },
+          "requires": { "flags": ["yclq_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她主導",
+              "success": {
+                "text": "「妳來吧。」她咧嘴一笑，把你推倒，像在織機前一樣利落：先這樣，再那樣，手指在你身上來回，像在理絲。她直率得讓人招架不住，想要什麼就說什麼，舒服了就大聲叫，一點都不害羞。最後她趴在你身上喘氣，笑著說：「我就說我學什麼都快。」",
+                "set_flags": ["yclq_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "陸青禾像在織機前一樣利落地要了你一整夜，想要什麼就說什麼。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「妳來吧。」她咧嘴一笑，把你推倒，像在織機前一樣利落：先這樣，再那樣，手指在你身上來回，像在理絲。她直率得讓人招架不住，想要什麼就說什麼，舒服了就大聲叫，一點都不害羞。最後她趴在你身上喘氣，笑著說：「我就說我學什麼都快。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "溫柔地回應她",
+              "success": {
+                "text": "你握住她長滿織繭的手，一根一根手指地吻過去。她愣住了，然後眼眶紅了：「……從來沒有人這樣碰過我的手。」那一夜你們很慢，她第一次沒有急著要什麼，只是抱著你，一遍一遍地小聲哼著那最後一段。",
+                "set_flags": ["yclq_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_lu_qinghe", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你一根一根手指地吻過陸青禾長滿織繭的手；那一夜她一直小聲哼著工歌的最後一段。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你握住她長滿織繭的手，一根一根手指地吻過去。她愣住了，然後眼眶紅了：「……從來沒有人這樣碰過我的手。」那一夜你們很慢，她第一次沒有急著要什麼，只是抱著你，一遍一遍地小聲哼著那最後一段。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycxq_stolen_painting",
+      "title": "被偷的美人圖",
+      "summary": "謝青梧最珍惜的一幅美人圖被人從萍園偷走了。他說畫裡的美人是誰不重要，可是他非要把畫找回來不可。（謝青梧・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_xie_qingwu", "text": "謝青梧坐在空了的畫框前，眼睛紅紅的：「我的〈雨後美人圖〉被偷了。畫裡的人……不重要。」他咬著嘴唇，「可是那幅畫不能被別人看見。求你幫我找回來。」", "min_level": 5 },
+      "start_flags": ["ycxq_1_started"],
+      "nodes": [
+        {
+          "id": "trace",
+          "title": "到萍江府的情報商打聽偷畫的人",
+          "text": "情報商說，最近有一個宮裡畫院的掮客在萍江收畫，專收美人圖。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "informant" },
+          "requires": { "flags": ["ycxq_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "「那幅雨後美人圖，掮客已經轉手給兩個打手，要送去龍安府。今晚出城。」", "set_flags": ["ycxq_lead"] },
+          "fail": { "text": "情報商推說不知道。也許明天再問。", "retry": true }
+        },
+        {
+          "id": "road",
+          "title": "到萍江府的近郊攔下運畫的打手",
+          "text": "城外的官道上，兩個打手扛著一個長長的畫匣。",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["ycxq_lead"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手丟下畫匣跑了。你打開畫匣——畫裡是一個月白衣裙、站在雨後竹林裡的美人。", "set_flags": ["ycxq_back"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把美人圖帶回萍江府的萍園",
+          "text": "謝青梧抱著畫匣，鬆了一口氣，然後偷偷看你：「……你看過了？」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["ycxq_back"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「畫得很美」",
+              "success": {
+                "text": "他的臉一下子紅到耳根：「……嗯。」他把畫收起來，小聲說，「謝謝你沒有問她是誰。」",
+                "set_flags": ["ycxq_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替謝青梧找回了被偷的〈雨後美人圖〉。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「畫裡的人，跟你很像」",
+              "success": {
+                "text": "他整個人僵住了，看了你很久，最後笑了，笑得有點苦：「……你是第一個看出來的。」",
+                "set_flags": ["ycxq_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對謝青梧說〈雨後美人圖〉裡的人跟他很像。他說你是第一個看出來的。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_xie_qingwu"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycxq_court_painter",
+      "title": "畫待詔",
+      "summary": "宮裡的畫院聽說了雨後美人圖，要召謝青梧進宮當畫待詔，還要他把畫裡的美人一起帶進宮。（謝青梧・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xie_qingwu",
+        "text": "謝青梧把一份蓋著畫院印的聘書放在桌上，手在發抖：「宮裡要我當畫待詔。還說——要把畫裡的美人帶進宮，『獻給陛下』。」他苦笑，「他們以為畫的是個女子。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycxq_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycxq_2_started"],
+      "nodes": [
+        {
+          "id": "envoy",
+          "title": "到萍江府的萍園見畫院的使者",
+          "text": "畫院的使者是個圓臉的中年人，笑得很客氣：「謝公子，畫裡的姑娘在哪裡？陛下身邊正缺這樣的美人。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["ycxq_2_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_xie_qingwu"],
+          "success": { "text": "謝青梧支吾其詞，使者的笑容慢慢冷下來：「謝公子，抗旨是什麼罪，您比我清楚。三天後我再來。」", "set_flags": ["ycxq_pressed"] }
+        },
+        {
+          "id": "thugs",
+          "title": "晚上在萍江府的萍園擋下搜園的打手",
+          "text": "夜裡，使者帶來的打手翻進萍園，要把「畫裡的姑娘」搜出來。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["ycxq_pressed"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "打手被你打出了園子。謝青梧站在藏瓷閣的門口，穿著那件畫裡的月白衣裙。", "set_flags": ["ycxq_seen"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "在萍江府的萍園陪謝青梧",
+          "text": "他站在月光下，穿著女裝，像從畫裡走出來一樣：「他們要的美人，就是我。我要怎麼跟他們說？」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["ycxq_seen"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「你不用跟他們說什麼」",
+              "success": {
+                "text": "他看著你，眼淚掉了下來：「……你不覺得奇怪嗎？」你搖頭，他就笑了，用袖子擦眼淚，「那我就不說。」",
+                "set_flags": ["ycxq_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "謝青梧穿著畫裡的衣裙站在月光下；你說他不用跟任何人解釋。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「你今晚很美」",
+              "success": {
+                "text": "他整個人紅透了，把臉埋進袖子裡：「你……你怎麼可以這樣說……」可是他沒有走開。",
+                "set_flags": ["ycxq_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對穿著月白衣裙的謝青梧說他今晚很美。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_xie_qingwu"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycxq_portrait",
+      "title": "美人畫",
+      "summary": "畫院的使者帶著聖旨回來了：謝青梧必須進宮。他決定親自去見女帝，告訴她畫裡的美人是誰。（謝青梧・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xie_qingwu",
+        "text": "謝青梧穿著月白的衣裙，把雨後美人圖捲好背在身上：「我要去龍安府，見陛下。告訴她畫裡的人是誰。」他抓著你的手，「如果陛下要治我的罪……你會在嗎？」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycxq_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycxq_3_started"],
+      "nodes": [
+        {
+          "id": "ambush",
+          "title": "在龍安府的近郊擋下畫院派來的打手",
+          "text": "畫院的使者不想讓謝青梧見到女帝——那會讓他自己的謊話穿幫。兩個死士在官道邊等著。",
+          "at": { "where": "outskirts", "location": "longan" },
+          "requires": { "flags": ["ycxq_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士退了。謝青梧緊緊抓著畫，走進了龍安府的城門。", "set_flags": ["ycxq_city"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "emperor",
+          "title": "到龍安府的太學與貢院把畫呈給女帝",
+          "text": "女帝在太學閱卷，聽說有人求見，召他上前。謝青梧展開畫卷，跪下：「陛下，畫中的美人，是臣自己。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_taixue" },
+          "requires": { "flags": ["ycxq_city"] },
+          "kind": "story",
+          "allies": ["npc_yh_xie_qingwu"],
+          "success": { "text": "女帝看了畫很久，又看了他很久，然後笑了：「美人就是美人。畫待詔不必了——朕要你繼續在萍園畫畫，畫你想畫的人。」使者被拖了出去。", "set_flags": ["ycxq_free"] }
+        },
+        {
+          "id": "confess",
+          "title": "在龍安府陪謝青梧",
+          "text": "走出太學，謝青梧腿一軟，靠在你身上：「我說出來了。在陛下面前。」他抬頭看你，眼睛濕濕的，「下一幅畫，我想畫你。可以嗎？」",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["ycxq_free"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「只要你也在畫裡」",
+              "success": {
+                "text": "他愣住了，然後笑得很燦爛：「好。兩個人的美人圖。」他踮起腳，在你臉上輕輕吻了一下，又羞得躲到你身後。",
+                "set_flags": ["ycxq_lover", "ycxq_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "謝青梧在女帝面前承認畫裡的美人是他自己；你說下一幅畫要兩個人一起。從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「畫多少幅都可以」",
+              "success": {
+                "text": "他把雨後美人圖塞進你懷裡：「那這一幅，送你。它本來就是……畫給喜歡的人看的。」",
+                "set_flags": ["ycxq_lover", "ycxq_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "謝青梧把〈雨後美人圖〉送給了你：他說它本來就是畫給喜歡的人看的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_xie_qingwu"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycxq_x",
+      "title": "兩個人的美人圖",
+      "summary": "謝青梧說，下一幅畫要畫兩個人，要在藏瓷閣裡畫，要畫一整夜。（謝青梧・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_xie_qingwu",
+        "text": "謝青梧把畫具擺好，臉紅紅的：「今晚來藏瓷閣。我要畫……我們。」他低下頭，「畫裡的人，不能穿衣服。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycxq_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycxq_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和謝青梧在萍江府的萍園賞月",
+          "text": "他泡了一壺茶，用千窯谷最早的那只天青盞給你倒。月光照在池子裡，他說這是他第一次在萍園和喜歡的人一起看月亮。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["ycxq_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "他靠在你肩上，輕輕哼著一首萍江的小調。",
+            "set_flags": ["ycxq_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在萍江府萍園的藏瓷閣和謝青梧度過那一夜",
+          "text": "藏瓷閣裡點滿了燈，天青瓷在燈下泛著雨後的光。他解開月白的衣裙，裡面是纖細的少年的身體，皮膚白得像瓷。他拿起畫筆，又放下：「……我畫不下去。我只想碰你。」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_ping_garden" },
+          "requires": { "flags": ["ycxq_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓他畫你",
+              "success": {
+                "text": "「那就用你的方式畫。」他用畫筆蘸著清水，在你身上一筆一筆地描：鎖骨、腰線、大腿內側，每一筆都讓你發抖。描完了，他用嘴把水痕一道一道地吻乾，最後跨上來，長髮垂在你臉邊，像一幅會動的美人圖。天亮時，畫布上只畫了兩個人交疊的影子。",
+                "set_flags": ["ycxq_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "謝青梧用畫筆蘸著清水在你身上描了一整夜，再一道一道地吻乾。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就用你的方式畫。」他用畫筆蘸著清水，在你身上一筆一筆地描：鎖骨、腰線、大腿內側，每一筆都讓你發抖。描完了，他用嘴把水痕一道一道地吻乾，最後跨上來，長髮垂在你臉邊，像一幅會動的美人圖。天亮時，畫布上只畫了兩個人交疊的影子。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "把他抱起來",
+              "success": {
+                "text": "你把他抱起來，放在鋪著錦緞的案上。他輕得像一幅畫，在你身下害羞得用袖子遮住臉，又忍不住從袖子後面偷看你。你吻他的時候，他小聲地、斷斷續續地叫著，聲音和他唱的萍江小調一樣好聽。最後他抱著你，說：「這一幅，我要記一輩子。」",
+                "set_flags": ["ycxq_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_xie_qingwu", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你把謝青梧抱上藏瓷閣的案頭；他說這一夜他要記一輩子。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你把他抱起來，放在鋪著錦緞的案上。他輕得像一幅畫，在你身下害羞得用袖子遮住臉，又忍不住從袖子後面偷看你。你吻他的時候，他小聲地、斷斷續續地叫著，聲音和他唱的萍江小調一樣好聽。最後他抱著你，說：「這一幅，我要記一輩子。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ychj_bodyguard",
+      "title": "九娘的保鏢",
+      "summary": "胡九娘要雇你當保鏢，護送一箱茶引到城外。她笑得很甜，箱子卻輕得可疑。（胡九娘・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_jiuniang",
+        "text": "胡九娘把一只小木箱放在櫃檯上，四條紅尾巴在身後慢慢地搖：「一箱茶引，送到城外的胡記貨棧。路上不太平，我需要一個保鏢——一個我還不知道能不能信的保鏢。」",
+        "min_level": 5
+      },
+      "start_flags": ["ychj_1_started"],
+      "nodes": [
+        {
+          "id": "road",
+          "title": "護送茶引到瑔州港的近郊",
+          "text": "城外的小路上，兩個蒙面的打手攔住你：「把箱子留下。」",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ychj_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手被打跑了。你打開箱子想確認茶引還在——箱子是空的，底下壓著一張紙條：「保鏢不該打開主人的箱子。——九娘」", "set_flags": ["ychj_empty"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "回瑔州港的胡記商號找胡九娘",
+          "text": "胡九娘笑盈盈地等著你：「打開了？」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["ychj_empty"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「打開了，因為我想知道我在護什麼」",
+              "success": {
+                "text": "她的笑容停了一下，然後笑得更深了：「誠實。很少見。」她把一錠銀子推過來，「那兩個打手是我雇的。你過關了——一半。」",
+                "set_flags": ["ychj_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "胡九娘用一只空箱子考驗你；你老實說你打開了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「箱子是空的，打手是妳的人吧」",
+              "success": {
+                "text": "她挑起眉毛，尾巴停止搖動：「聰明。太聰明的保鏢很危險。」她頓了一下，「……也很有用。」",
+                "set_flags": ["ychj_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "看穿了胡九娘用空箱子和自己雇的打手考驗你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ychj_false_debt",
+      "title": "討債",
+      "summary": "胡九娘讓你去替胡記討一筆債。欠債的人說，他根本不欠胡記錢——欠的是三百年前的另一筆帳。（胡九娘・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_jiuniang",
+        "text": "胡九娘把一張借據推給你：「萍江的一個老鹽商，欠胡記三百兩。去討回來。」她的眼神比平常認真，「討不回來，就看看他到底欠的是什麼。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ychj_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ychj_2_started"],
+      "nodes": [
+        {
+          "id": "debtor",
+          "title": "到萍江府找欠債的老鹽商",
+          "text": "老鹽商看了借據，哈哈大笑：「這是三百年前的借據！我祖上欠的不是胡記，是胡記欠我祖上——歸附那年，城裡的狐把鹽引押給了朝廷，換來皇商的位子。」",
+          "at": { "where": "settlement", "location": "pingjiang" },
+          "requires": { "flags": ["ychj_2_started"] },
+          "kind": "story",
+          "success": { "text": "他從箱底翻出另一張發黃的紙：一份三百年前的契約，胡記的祖先在上面按了手印。", "set_flags": ["ychj_contract"] }
+        },
+        {
+          "id": "thieves",
+          "title": "到萍江府的近郊擋下搶契約的人",
+          "text": "你剛出門，兩個刀客就跟了上來：「把那張紙交出來。」",
+          "at": { "where": "outskirts", "location": "pingjiang" },
+          "requires": { "flags": ["ychj_contract"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 2]],
+          "success": { "text": "刀客逃了。他們的腰牌上刻著市舶司的記號。", "set_flags": ["ychj_kept"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "回瑔州港的胡記商號把契約交給胡九娘",
+          "text": "胡九娘讀完那份契約，沉默了很久，四條尾巴都垂了下來：「……原來我們的皇商位子，是拿城裡的狐的命換的。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["ychj_kept"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳早就知道會是這樣」",
+              "success": {
+                "text": "「我猜過。」她承認，「可是我不敢自己去討。」她看著你，「你知道這種事，我只敢交給信得過的人。」",
+                "set_flags": ["ychj_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替胡九娘討回一份三百年前的契約：胡記的皇商位子是用城裡的狐換來的。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "陪她喝一杯",
+              "success": {
+                "text": "她難得地沒有算帳，倒了兩杯酒：「九娘的帳，從來沒有一筆是賠的。這一筆……我不知道。」",
+                "set_flags": ["ychj_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "陪胡九娘喝了一杯；她說這一筆帳她不知道算不算賠。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ychj_old_debt",
+      "title": "三百年的舊債",
+      "summary": "胡九娘決定替城裡的狐討回三百年前的那筆舊債。市舶司的提舉程硯知道契約的另一半在哪裡，但有人不想讓她拿到。（胡九娘・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_jiuniang",
+        "text": "胡九娘把契約鋪在桌上，指著缺了一角的地方：「另一半在市舶司的舊檔裡——歸附那年，朝廷收走的。我要拿回來。」她笑了，笑得不像平常那樣甜，「這一次，不是試你。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ychj_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ychj_3_started"],
+      "nodes": [
+        {
+          "id": "cheng",
+          "title": "到瑔州港的市舶司找程硯要舊檔",
+          "text": "程硯擦著汗：「舊檔……在檔庫最裡面。可是相府的人吩咐過，誰也不能動。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["ychj_3_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "程硯咬咬牙，給了你檔庫的鑰匙：「我什麼都不知道。」", "set_flags": ["ychj_key"] },
+          "fail": { "text": "程硯一直搖頭。換個說法再來。", "retry": true }
+        },
+        {
+          "id": "archive",
+          "title": "晚上在瑔州港的市舶司擋下相府的死士",
+          "text": "你剛從檔庫裡抽出那一卷，兩個黑衣人從樑上跳下來。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["ychj_key"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士咬破毒丸倒下了。你手上的半卷契約，和胡九娘的那一半，剛好拼成一張。", "set_flags": ["ychj_whole"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "回瑔州港的胡記商號找胡九娘",
+          "text": "胡九娘把兩半契約拼在一起，手在發抖。她抬起頭，第一次沒有笑：「我算了一輩子的帳，從來沒有欠過誰。現在我欠你了——而且我不想還。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_huji" },
+          "requires": { "flags": ["ychj_whole"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那就別還，一直欠著」",
+              "success": {
+                "text": "她愣了一下，然後笑了——真心的那種笑，四條尾巴一起纏上你的腰：「好。九娘這輩子，就欠你一個人。」",
+                "set_flags": ["ychj_lover", "ychj_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "替胡九娘拼回三百年前的契約；她說這輩子就欠你一個人。從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「這不是帳，是心意」",
+              "success": {
+                "text": "她看著你很久，把契約收進懷裡，湊過來在你耳邊說：「心意……我不會算。你教我。」",
+                "set_flags": ["ychj_lover", "ychj_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "對胡九娘說這不是帳是心意；她說她不會算，要你教她。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ychj_x",
+      "title": "九娘的私帳",
+      "summary": "胡九娘有一本私帳，從來沒有給人看過。今晚，她說要給你看最後一頁。（胡九娘・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_jiuniang",
+        "text": "胡九娘把一本薄薄的冊子塞進你手裡，冊子上鎖著：「我的私帳。鑰匙在我身上——今晚，你自己來拿。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ychj_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ychj_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和胡九娘在瑔州港的蕃坊看船",
+          "text": "她帶你去碼頭看夜裡進港的船，一艘一艘地告訴你船上載的是什麼、值多少錢。說到一半她停下來，說：「我第一次跟人講這些不是為了做生意。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["ychj_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她握著你的手，沒有放開。",
+            "set_flags": ["ychj_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到胡九娘的閨房",
+          "text": "她的閨房裡燒著沉香，床上鋪著狐皮。鑰匙用一根紅繩繫在她的腰上，她躺下來，四條紅尾巴在身後散開：「找到它，帳就給你看。」",
+          "at": { "where": "npc", "npc": "npc_yh_hu_jiuniang" },
+          "requires": { "flags": ["ychj_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她一點一點地「算帳」",
+              "success": {
+                "text": "她不讓你直接拿鑰匙——每解開一層衣服，她就要你付一點「利息」：一個吻、一句話、一處觸碰。她算得很精，一筆都不讓，四條尾巴纏著你的手腳，笑得又甜又壞。最後你終於拿到鑰匙的時候，她已經在你身下喘得說不出話。私帳的最後一頁，寫的是你的名字。",
+                "set_flags": ["ychj_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "胡九娘用「算帳」的方式要了你一整夜；她私帳的最後一頁寫的是你的名字。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "她不讓你直接拿鑰匙——每解開一層衣服，她就要你付一點「利息」：一個吻、一句話、一處觸碰。她算得很精，一筆都不讓，四條尾巴纏著你的手腳，笑得又甜又壞。最後你終於拿到鑰匙的時候，她已經在你身下喘得說不出話。私帳的最後一頁，寫的是你的名字。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "直接把她抱住",
+              "success": {
+                "text": "你不管鑰匙，直接把她抱進懷裡。她愣住了，那雙總在算計的眼睛第一次慌了起來，然後慢慢軟下來，任你吻她、碰她。她的尾巴不再纏著人，只是輕輕地圍著你。她在你懷裡小聲說：「……這一次，我不想算了。」",
+                "set_flags": ["ychj_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_hu_jiuniang", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你不管鑰匙直接抱住了胡九娘；那一夜她說她不想算了。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你不管鑰匙，直接把她抱進懷裡。她愣住了，那雙總在算計的眼睛第一次慌了起來，然後慢慢軟下來，任你吻她、碰她。她的尾巴不再纏著人，只是輕輕地圍著你。她在你懷裡小聲說：「……這一次，我不想算了。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycjy_missing_ship",
+      "title": "少了一艘",
+      "summary": "金玉棠的船隊少了一艘。帳上說它載的是瓷器，可是她親自送船出港時，船上沒有一件瓷器。（金玉棠・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_jin_yutang",
+        "text": "金玉棠把一本航海日誌摔在桌上：「『玉燕號』，十天前出港，該在三天前回來。帳上寫的是瓷器——可是那艘船上載的不是貨。」她頓了一下，「我需要一個不會多問的人。」",
+        "min_level": 5
+      },
+      "start_flags": ["ycjy_1_started"],
+      "nodes": [
+        {
+          "id": "ask",
+          "title": "到瑔州港的蕃坊打聽玉燕號的下落",
+          "text": "蕃坊的水手說，三天前看見一艘金玉行的船被兩艘沒有旗號的快船夾著，往港外的礁石群去了。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["ycjy_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 12 },
+          "success": { "text": "「快船是走私的，」老水手壓低聲音，「赤鬟的人。」", "set_flags": ["ycjy_lead"] },
+          "fail": { "text": "水手們都說沒看見。換個時候再問。", "retry": true }
+        },
+        {
+          "id": "reef",
+          "title": "到瑔州港的近郊找被劫的玉燕號",
+          "text": "礁石群後面停著玉燕號，甲板上站著兩個打手。船艙是空的。",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ycjy_lead"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手跳海逃了。船長室的地板下藏著一個空的木匣——匣子的形狀，剛好裝得下一封信。", "set_flags": ["ycjy_empty"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "回瑔州港的金玉行告訴金玉棠",
+          "text": "金玉棠聽完，臉色很難看：「信不見了。」她沉默了一下，「……謝謝你沒有問是什麼信。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["ycjy_empty"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「妳想說的時候再說」",
+              "success": {
+                "text": "她拍拍你的肩，力氣很大：「你這個人，做生意一定賠錢。」她笑了，「不過我喜歡。」",
+                "set_flags": ["ycjy_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替金玉棠找回了被劫的玉燕號；船上的信不見了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「信在赤鬟手上吧」",
+              "success": {
+                "text": "她看著你，點了點頭：「聰明人。下一步，我得從那個賭鬼手上把信贏回來。」",
+                "set_flags": ["ycjy_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "猜到金玉棠的信落在走私女王赤鬟手上。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycjy_gamble",
+      "title": "船艙的賭桌",
+      "summary": "金玉棠的信在走私女王赤鬟手上。赤鬟說，想要信，就在她的賭桌上贏回去。（金玉棠・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_jin_yutang",
+        "text": "金玉棠把一袋金子丟給你：「赤鬟說，信可以還——在她的賭桌上贏回去。她的船艙我不能去，金墨盟的盟主不能出現在走私船上。」她看著你，「你賭運怎麼樣？」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycjy_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycjy_2_started"],
+      "nodes": [
+        {
+          "id": "board",
+          "title": "到瑔州港的蕃坊搭小船上赤鬟的走私船",
+          "text": "一艘小船在碼頭邊等著，船夫一句話都不說，把你載到港外那艘大船邊。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["ycjy_2_started"] },
+          "kind": "story",
+          "success": { "text": "你順著繩梯爬上去，被帶進底艙。", "set_flags": ["ycjy_aboard"], "special_map": "sm_yh_chihuan_hold" }
+        },
+        {
+          "id": "dice",
+          "title": "在赤鬟的走私船艙裡賭回那封信",
+          "text": "赤鬟坐在賭桌的另一頭，金鈴在尾巴上叮噹響：「一把定輸贏。你贏了，信拿走；你輸了——你留下來陪我一晚。」",
+          "at": { "where": "special", "special_map": "sm_yh_chihuan_hold", "x": 5, "y": 2 },
+          "requires": { "flags": ["ycjy_aboard"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": { "text": "骰子停下來，你贏了。赤鬟大笑著把信丟給你：「金玉棠找了個好幫手。告訴她，下次自己來。」", "set_flags": ["ycjy_letter"] },
+          "fail": { "text": "你輸了。赤鬟笑著說：「今晚先欠著，明天再來賭。」——你還有機會。", "retry": true },
+          "allies": ["npc_yh_chihuan"]
+        },
+        {
+          "id": "close",
+          "title": "回瑔州港的金玉行把信交給金玉棠",
+          "text": "金玉棠接過信，沒有打開，只是緊緊攥著：「這封信是寫給北原媞丹的。大燁和北原的事，我不能讓朝廷先知道。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["ycjy_letter"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我不會說」",
+              "success": {
+                "text": "她看著你很久，把信收進懷裡：「我信你。」頓了一下，她笑了，「這句話我很少說。」",
+                "set_flags": ["ycjy_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "從赤鬟的賭桌上替金玉棠贏回一封寫給北原媞丹的信。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳在做很危險的事」",
+              "success": {
+                "text": "「我知道。」她說，「所以我需要一個人，在我出事的時候知道我在做什麼。」她看著你，「你願意當那個人嗎？」",
+                "set_flags": ["ycjy_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "金玉棠說她在做很危險的事，需要一個人知道。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycjy_thirty_ships",
+      "title": "三十艘船",
+      "summary": "金玉棠要親自把信送往北原的海岸。朝廷的水師聽到了風聲，在港外等著。（金玉棠・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_jin_yutang",
+        "text": "金玉棠穿著海藍色的窄袖袍，站在船頭：「三十艘船，今晚一起出港，把水師的眼睛引開。真正送信的只有一艘——我坐的那艘。」她向你伸出手，「上船嗎？」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycjy_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycjy_3_started"],
+      "nodes": [
+        {
+          "id": "navy",
+          "title": "晚上在瑔州港的近郊擋住攔船的水師",
+          "text": "港外的礁石邊，水師的快船攔住了你們。兩個禁軍精兵跳上甲板。",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ycjy_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "禁軍被打下了海，水師的快船退了。金玉棠的船乘著夜風往北駛去。", "set_flags": ["ycjy_free"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在瑔州港外的船頭陪金玉棠",
+          "text": "天快亮了，信已經交給了北原來的接頭人。金玉棠站在船頭，海風吹亂了她的辮子：「三十艘船，我一艘都捨不得。可是剛才水師的刀砍向你的時候，我發現我最捨不得的不是船。」",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ycjy_free"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「我也是」",
+              "success": {
+                "text": "她大笑，笑聲被海風吹得很遠，然後一把把你拉過去，吻得又狠又長：「好。那你就是我的第三十一艘船。」",
+                "set_flags": ["ycjy_lover", "ycjy_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在船頭陪金玉棠把信送往北原；她說你是她的第三十一艘船。從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "抱住她",
+              "success": {
+                "text": "她僵了一下，然後抱得比你還緊：「……我這輩子談了幾千筆生意，從來沒有一筆讓我這麼怕輸。」",
+                "set_flags": ["ycjy_lover", "ycjy_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在破曉的船頭抱住了金玉棠；她說從來沒有一筆生意讓她這麼怕輸。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycjy_x",
+      "title": "金玉行的頂樓",
+      "summary": "金玉行的頂樓看得到整個瑔州港。金玉棠說，今晚頂樓只有她一個人——和你。（金玉棠・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_jin_yutang",
+        "text": "金玉棠把一把鑰匙放在你手心：「金玉行頂樓的鑰匙。三十年來，只有我一個人上去過。」她的臉難得地紅了，「今晚，帶一瓶好酒。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycjy_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycjy_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和金玉棠在瑔州港的金玉行喝酒",
+          "text": "頂樓的窗戶對著整個港口，三十艘船的燈在海上一排排亮著。她指給你看：「那艘是玉燕號，那艘是我第一艘船……」她喝了很多，說了很多。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["ycjy_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "最後她不說了，靠在你身上，看著港口的燈。",
+            "set_flags": ["ycjy_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在瑔州港金玉行的頂樓和金玉棠度過那一夜",
+          "text": "她站起來，解開海藍色的窄袖袍，蜜色的皮膚上有海風留下的痕跡，金黃色的鱗片從鎖骨一路長到腰側。「我不習慣被人照顧，」她說，「也不習慣照顧別人。今晚，我們看著辦。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_jinyu" },
+          "requires": { "flags": ["ycjy_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她像掌舵一樣",
+              "success": {
+                "text": "「那就照妳開船的方式。」她笑了，把你推倒在鋪著海圖的地板上，像在風浪裡掌舵一樣——用力、果斷、毫不猶豫。她知道自己要什麼，也知道怎麼拿到手，金黃的鱗片在燈下閃閃發亮。浪頭最高的時候，她咬著你的肩膀笑出聲來。",
+                "set_flags": ["ycjy_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "金玉棠在金玉行的頂樓像掌舵一樣要了你，在海圖上，一夜都沒有減速。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就照妳開船的方式。」她笑了，把你推倒在鋪著海圖的地板上，像在風浪裡掌舵一樣——用力、果斷、毫不猶豫。她知道自己要什麼，也知道怎麼拿到手，金黃的鱗片在燈下閃閃發亮。浪頭最高的時候，她咬著你的肩膀笑出聲來。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "慢慢地帶她靠岸",
+              "success": {
+                "text": "你沒有急，一點一點地吻她、碰她，像在帶一艘大船慢慢靠岸。這個做什麼都快的女人第一次學會等待，在你身下一點一點放鬆，最後抓著你的手，眼睛濕濕的：「……原來慢慢來，是這種感覺。」",
+                "set_flags": ["ycjy_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_jin_yutang", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你帶著金玉棠慢慢靠岸；她說原來慢慢來是這種感覺。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你沒有急，一點一點地吻她、碰她，像在帶一艘大船慢慢靠岸。這個做什麼都快的女人第一次學會等待，在你身下一點一點放鬆，最後抓著你的手，眼睛濕濕的：「……原來慢慢來，是這種感覺。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ychw_confiscated_chart",
+      "title": "被沒收的海圖",
+      "summary": "海鷂用指南魚畫的北原海圖被市舶司沒收了，說是「私繪邊防」。她要把海圖要回來。（海鷂・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_haiyao", "text": "海鷂把一只空的圖筒摔在桌上：「我花了三年畫的海圖，被市舶司收走了，說我『私繪邊防』！」她咬牙切齒，「我才不管什麼邊防，我只想再出海一次。」", "min_level": 5 },
+      "start_flags": ["ychw_1_started"],
+      "nodes": [
+        {
+          "id": "cheng",
+          "title": "到瑔州港的市舶司找程硯要海圖",
+          "text": "程硯一臉為難：「海圖已經造冊了，要拿回去，得有人擔保它不會落到北原人手上。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["ychw_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": { "text": "你替海鷂作保。程硯想了很久，在擔保書上蓋了印：「三天後來拿。」", "set_flags": ["ychw_bond"] },
+          "fail": { "text": "程硯搖頭說不行。換個說法再試。", "retry": true }
+        },
+        {
+          "id": "thieves",
+          "title": "晚上在瑔州港擋下偷海圖的人",
+          "text": "當天夜裡，有兩個打手翻進市舶司的檔庫，要偷走那張海圖。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_shibosi" },
+          "requires": { "flags": ["ychw_bond"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "打手被打跑了，海圖還在。他們是赤鬟的人——走私船也想要北原的航路。", "set_flags": ["ychw_saved"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "把海圖交還給海鷂",
+          "text": "海鷂把海圖攤開，手指順著海岸線一路摸過去，笑得像個孩子：「回來了。」",
+          "at": { "where": "npc", "npc": "npc_yh_haiyao", "location": "quanzhou" },
+          "requires": { "flags": ["ychw_saved"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「下次出海帶上我」",
+              "success": {
+                "text": "她抬頭看你，咧嘴一笑：「你暈船嗎？」不等你回答，她就說，「暈也帶。」",
+                "set_flags": ["ychw_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替海鷂要回了被沒收的北原海圖。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳畫得真好」",
+              "success": {
+                "text": "「那當然。」她得意地拍拍胸口，又小聲補了一句，「……沒人這樣說過。」",
+                "set_flags": ["ychw_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對海鷂說她的海圖畫得真好。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ychw_compass_fish",
+      "title": "指南魚",
+      "summary": "海鷂的指南魚壞了。沒有它，她畫的海圖就只是一張紙。千窯谷的老窯工說，他會燒一種磁石的魚。（海鷂・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_haiyao",
+        "text": "海鷂捧著一只裂開的磁石魚，眼睛紅紅的：「我的指南魚碎了。整個大燁只有一個人會燒這種磁石魚——萍江的窯伯。他說要一種只有千窯谷才有的瓷土。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ychw_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ychw_2_started"],
+      "nodes": [
+        {
+          "id": "clay",
+          "title": "到千窯谷的淺層採燒磁石魚的瓷土",
+          "text": "淺層的碎瓷堆裡，碎瓷精嘩啦啦地站了起來。",
+          "at": { "where": "dungeon", "location": "qianyao_valley", "layer": "shallow" },
+          "requires": { "flags": ["ychw_2_started"] },
+          "kind": "combat",
+          "enemies": [["porcelain_shard_spirit", 2]],
+          "success": { "text": "碎瓷精散成一地瓷片。你在瓷片底下挖到一塊黑得發亮的瓷土，靠近鐵器會微微發抖。", "set_flags": ["ychw_clay"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "fire",
+          "title": "把瓷土帶到萍江府給窯伯",
+          "text": "窯伯把瓷土捏成一條小魚，放進窯裡燒了一夜。開窯時，小魚浮在水碗裡，慢慢地轉向北方。",
+          "at": { "where": "npc", "npc": "npc_yh_yao_bo", "location": "pingjiang" },
+          "requires": { "flags": ["ychw_clay"] },
+          "kind": "story",
+          "success": {
+            "text": "「這條魚，」窯伯說，「指的是回家的路。」",
+            "set_flags": ["ychw_fish"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_yao_bo", "delta": 5, "reason": "幫海鷂燒指南魚" }]
+          }
+        },
+        {
+          "id": "close",
+          "title": "把新的指南魚交給海鷂",
+          "text": "海鷂把指南魚放進水碗，看著它轉向北方，眼淚掉進碗裡：「……它指的是北邊。我一直以為，它指的是我想去的地方。」",
+          "at": { "where": "npc", "npc": "npc_yh_haiyao", "location": "quanzhou" },
+          "requires": { "flags": ["ychw_fish"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「那就去北邊」",
+              "success": {
+                "text": "她用力抹掉眼淚，笑了：「對！去北邊！」她看著你，「……你也去。」",
+                "set_flags": ["ychw_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替海鷂燒了一條新的指南魚，它指向北方。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「它也會指向回來的路」",
+              "success": {
+                "text": "她愣了很久，把指南魚收進懷裡：「回來的路……我從來沒想過要回來。」她看著你，「現在好像有一點了。」",
+                "set_flags": ["ychw_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對海鷂說指南魚也會指向回來的路。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ychw_north_coast",
+      "title": "北原的海岸",
+      "summary": "海鷂要再出海一次，去北原的海岸找她畫在海圖上的那座無名港口。這一次，她想要你在船上。（海鷂・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_haiyao",
+        "text": "海鷂的船停在碼頭，帆已經升起來了：「我要去找海圖上那座港口。很遠，很危險，我不知道能不能回來。」她伸出手，「上船嗎？」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ychw_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ychw_3_started"],
+      "nodes": [
+        {
+          "id": "pirates",
+          "title": "在瑔州港外的海上擊退劫船的海盜",
+          "text": "出港的第二天，兩艘海盜船貼了上來，跳上甲板的是亡命的死士。",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ychw_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "海盜被打下了海。海鷂站在船舵前，一頭短髮被浪打濕了，大聲地笑：「再來啊！」", "set_flags": ["ychw_through"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "在瑔州港外的船頭陪海鷂",
+          "text": "風暴過後的夜裡，海面平得像鏡子。指南魚在碗裡靜靜地指著北方，海鷂坐在你旁邊，把頭靠在你肩上：「我以前出海，都是一個人。」",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ychw_through"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「以後不會了」",
+              "success": {
+                "text": "她轉過頭，看著你，很認真：「你說的。」然後她吻了你，帶著海水的鹹味，「那你得一直待在我的船上。」",
+                "set_flags": ["ychw_lover", "ychw_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在海上的夜裡，海鷂說她以前出海都是一個人；你說以後不會了。從那夜起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "握住她的手",
+              "success": {
+                "text": "她的手很粗糙，全是繩子勒出的繭。她握得很緊：「北原的港口找不找得到都沒關係了。」她笑了，「我好像已經找到要去的地方。」",
+                "set_flags": ["ychw_lover", "ychw_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在海上的夜裡握著海鷂的手；她說她好像找到要去的地方了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ychw_x",
+      "title": "船長室",
+      "summary": "海鷂的船長室只有一張窄窄的床。她說兩個人擠剛好。（海鷂・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_haiyao",
+        "text": "海鷂把船停在港外，水手們都上岸去了：「今晚船上只有我們。」她別過臉，耳朵紅了，「船長室的床很窄……兩個人擠剛好。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ychw_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ychw_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和海鷂在瑔州港的蕃坊吃海鮮",
+          "text": "她帶你去碼頭邊最吵的那間海鮮攤，點了一大桌，用手剝蝦，吃得滿手都是。她說這是她從小吃到大的。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["ychw_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "回船的時候，她搶著划槳，把小船划得飛快。",
+            "set_flags": ["ychw_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_haiyao", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在海鷂的船長室度過那一夜",
+          "text": "船長室裡掛滿了海圖，窄窄的床隨著海浪輕輕搖晃。她脫掉敞領的短衫，古銅色的皮膚上有繩子留下的舊疤，短髮亂翹著。「我不會什麼技巧，」她說，「我只會開船。」",
+          "at": { "where": "npc", "npc": "npc_yh_haiyao" },
+          "requires": { "flags": ["ychw_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她像開船一樣",
+              "success": {
+                "text": "「那就開船。」她笑了，翻身騎上來，像在暴風雨裡掌舵一樣：大膽、粗野、毫不保留，跟著船身的起伏一下一下地搖。她叫得比海浪還大聲，一點都不害羞，最後倒在你身上大笑：「這比打海盜還累！」",
+                "set_flags": ["ychw_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "海鷂在船長室裡像開船一樣，跟著海浪的起伏要了你一整夜。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就開船。」她笑了，翻身騎上來，像在暴風雨裡掌舵一樣：大膽、粗野、毫不保留，跟著船身的起伏一下一下地搖。她叫得比海浪還大聲，一點都不害羞，最後倒在你身上大笑：「這比打海盜還累！」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "慢慢地教她",
+              "success": {
+                "text": "你一點一點地教她，像她教你看指南魚一樣耐心。這個天不怕地不怕的女船長在你身下變得很安靜，睜著眼睛看你，每一次觸碰都讓她屏住呼吸。窄窄的床隨著海浪搖晃，她抱著你，小聲地說：「……原來還有比出海更讓人心跳的事。」",
+                "set_flags": ["ychw_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_haiyao", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你在船長室裡慢慢地教海鷂；她說原來還有比出海更讓人心跳的事。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你一點一點地教她，像她教你看指南魚一樣耐心。這個天不怕地不怕的女船長在你身下變得很安靜，睜著眼睛看你，每一次觸碰都讓她屏住呼吸。窄窄的床隨著海浪搖晃，她抱著你，小聲地說：「……原來還有比出海更讓人心跳的事。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycyt_lost_lute",
+      "title": "月琴",
+      "summary": "瑤汀喝醉了，把夏瀾殿傳下來的月琴押在酒館，酒醒了才發現月琴被人買走了。（瑤汀・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yaoting",
+        "text": "瑤汀抱著頭坐在酒館門口，臉上還帶著醉意：「我的月琴……夏瀾殿傳了三代的月琴……我昨晚把它押了換酒，今天老闆說，被一個蕃商買走了。」她快哭了，「殿主會殺了我的。」",
+        "min_level": 5
+      },
+      "start_flags": ["ycyt_1_started"],
+      "nodes": [
+        {
+          "id": "trader",
+          "title": "到瑔州港的蕃坊找買走月琴的蕃商",
+          "text": "蕃商哈斯丁拿著那把月琴，愛不釋手：「這可是玉璘族的寶貝！我要帶回潮汐港賣個好價錢。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["ycyt_1_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": { "text": "你跟他說這是夏瀾殿的傳家之寶，賣了會得罪整個滄月闕。哈斯丁想了想，原價還給了你。", "set_flags": ["ycyt_lute"], "effects": [{ "type": "money", "amount": -40 }] },
+          "fail": { "text": "哈斯丁不肯。也許明天他想通了。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把月琴還給瑤汀",
+          "text": "瑤汀抱著月琴，眼淚一下子就掉下來了，然後破涕為笑：「你救了我的命！」她撥了一下琴弦，「我唱一首歌給你聽——這首歌，我只在殿裡唱過。」",
+          "at": { "where": "npc", "npc": "npc_yh_yaoting", "location": "quanzhou" },
+          "requires": { "flags": ["ycyt_lute"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "聽她唱",
+              "success": {
+                "text": "她唱了一首關於熱浪和海的古歌，聲音像潮水一樣。唱完了，她說：「這首歌是我們和化龍族共有的。你是第一個聽完的陸地人。」",
+                "set_flags": ["ycyt_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替瑤汀贖回了夏瀾殿的月琴；她唱了一首玉璘族和化龍族共有的古歌給你聽。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「以後別喝那麼多了」",
+              "success": {
+                "text": "「做不到！」她理直氣壯，然後笑嘻嘻地靠過來，「不過以後我喝醉了，你負責送我回去。」",
+                "set_flags": ["ycyt_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替瑤汀贖回了月琴；她說以後她喝醉了要你負責送她回去。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycyt_two_songs",
+      "title": "兩首歌",
+      "summary": "瑤汀想把玉璘族與化龍族的古歌合在一起唱。歌的後半段在潮汐港的深潮席手上——她的老酒友雷諾。（瑤汀・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yaoting",
+        "text": "瑤汀抱著月琴，難得地認真：「我想把玉璘族的歌和化龍族的歌合在一起唱。後半段的譜子，在潮汐港深潮席的雷諾那裡——他是我的酒友，可是他從來不肯給我。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycyt_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycyt_2_started"],
+      "nodes": [
+        {
+          "id": "reno",
+          "title": "到潮汐港找深潮席的雷諾要歌譜",
+          "text": "雷諾聽完，哈哈大笑：「瑤汀要那份譜子？她每次喝醉都說要，酒醒就忘。你替她來要，看來她這次是認真的。」",
+          "at": { "where": "npc", "npc": "npc_reno_deeptide", "location": "tidehaven" },
+          "requires": { "flags": ["ycyt_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": {
+            "text": "他把一卷用海帶紮著的譜子交給你：「告訴她，下次換她請。」",
+            "set_flags": ["ycyt_score"],
+            "effects": [{ "type": "affinity", "npc": "npc_reno_deeptide", "delta": 5, "reason": "替瑤汀要歌譜" }]
+          },
+          "fail": { "text": "雷諾灌了你一晚的酒，譜子的事一個字都沒說。明天再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把歌譜帶回瑔州港給瑤汀",
+          "text": "瑤汀把兩份譜子攤在一起，對了一整夜。天亮的時候，她撥出了合在一起的第一個音，然後轉過頭，看著你，眼睛裡全是光。",
+          "at": { "where": "npc", "npc": "npc_yh_yaoting", "location": "quanzhou" },
+          "requires": { "flags": ["ycyt_score"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「唱給我聽」",
+              "success": {
+                "text": "她唱了。前半是熱浪，後半是海，中間是她自己加的一段——唱的是一個陸地人，從潮汐港把譜子帶回來。",
+                "set_flags": ["ycyt_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替瑤汀從雷諾那裡要回古歌的後半段；她在合起來的歌裡加了一段，唱的是你。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳不喝酒的時候也很好看」",
+              "success": {
+                "text": "她愣了一下，然後臉紅了，紅得比喝醉的時候還紅：「……你、你在說什麼啦。」",
+                "set_flags": ["ycyt_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對瑤汀說她不喝酒的時候也很好看。她的臉紅了。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycyt_tide_mirror",
+      "title": "潮鏡台的歌",
+      "summary": "瑤汀要在滄月闕的潮鏡台上，當著整個玉璘族唱出那首合起來的歌。有人不想讓陸地人的歌在海底響起。（瑤汀・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yaoting",
+        "text": "瑤汀換上了夏瀾殿最正式的廣袖羅裳：「我要在潮鏡台上唱那首歌。給整個滄月闕聽。」她抓住你的手，「……我好緊張。比喝醉還緊張。你要在台下。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycyt_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycyt_3_started"],
+      "nodes": [
+        {
+          "id": "saboteurs",
+          "title": "到滄月闕擋下搗亂的人",
+          "text": "潮鏡台邊，幾個黑衣人混在人群裡——是相府的死士，大燁有人不想讓兩族同源的歌傳開。",
+          "at": { "where": "settlement", "location": "canglue" },
+          "requires": { "flags": ["ycyt_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士被你打出了結界。潮鏡台上的燈一盞一盞亮起來。", "set_flags": ["ycyt_stage"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "sing",
+          "title": "在滄月闕的潮鏡台陪瑤汀唱那首歌",
+          "text": "瑤汀站在潮鏡台中央，手在發抖。她看著台下的你，深吸一口氣，撥響了第一個音。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["ycyt_stage"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": { "text": "唱到中間那一段，她看向你，你跟著和了一句。整個滄月闕安靜下來，然後一起唱。潮鏡台的台面亮了起來——傳說滿月時它會映出下一任潮主，這一次，它映出的是你們兩個。", "set_flags": ["ycyt_sung"] },
+          "fail": { "text": "唱到一半，她的聲音抖了，停了下來。台下的人很溫柔地鼓掌：「明天再唱一次吧。」", "retry": true },
+          "allies": ["npc_yh_yaoting"]
+        },
+        {
+          "id": "confess",
+          "title": "在滄月闕的潮鏡台上陪瑤汀",
+          "text": "歌唱完了，瑤汀從台上跳下來，撲進你懷裡：「你看到了嗎？潮鏡台映出了我們！」她抬起頭，臉頰紅紅的，這一次她一滴酒都沒喝。",
+          "at": { "where": "cell", "location": "canglue", "cell": "lm_tide_mirror" },
+          "requires": { "flags": ["ycyt_sung"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "吻她",
+              "success": {
+                "text": "她閉上眼睛，月琴從手裡滑下來，掉在玉盤般的台面上，發出一聲清響。台下的玉璘族一起歡呼——她們說，這是滄月闕三百年來最好的一場宴會。",
+                "set_flags": ["ycyt_lover", "ycyt_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在滄月闕的潮鏡台上吻了瑤汀；從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「這次妳沒喝酒」",
+              "success": {
+                "text": "「沒有。」她笑著，「所以我說的話都是真的——我喜歡你，陸地人。」",
+                "set_flags": ["ycyt_lover", "ycyt_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "瑤汀在潮鏡台上清醒地說她喜歡你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycyt_x",
+      "title": "水裡的那一夜",
+      "summary": "瑤汀說，玉璘族真正喜歡一個人，是要在海裡的。（瑤汀・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_yaoting",
+        "text": "瑤汀拉著你的手往海邊走，臉紅紅的：「玉璘族……真正喜歡一個人的時候，要在水裡。」她低下頭，「我會讓你在水裡也能呼吸的。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycyt_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycyt_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和瑤汀在瑔州港的蕃坊喝酒",
+          "text": "她說要壯膽，喝了三杯，然後把剩下的酒都推給你：「不行，今晚我要清醒。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "requires": { "flags": ["ycyt_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "她拉著你的手，往港外的沙灘走去。",
+            "set_flags": ["ycyt_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_yaoting", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在瑔州港外的海裡和瑤汀度過那一夜",
+          "text": "月光下的海灣很安靜。她脫下羅裳走進水裡，雙腿化回玉色的鱗尾，在月光下閃閃發亮。她吻了你，把一口帶著珍珠光澤的氣渡進你嘴裡——你發現自己在水下也能呼吸了。",
+          "at": { "where": "outskirts", "location": "quanzhou" },
+          "requires": { "flags": ["ycyt_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她帶你游進深處",
+              "success": {
+                "text": "她拉著你往下游，游進月光照不到的地方。她的鱗尾纏上你的腿，身體貼著你，在水裡輕得像一片綢子，又滑又暖。她教你玉璘族的方式——不用說話，只用觸碰，一直纏到你們兩個都浮上來喘氣，她在月光下笑得像個孩子。",
+                "set_flags": ["ycyt_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "瑤汀帶你游進海灣的深處，用玉璘族的方式，只用觸碰，纏了你一整夜。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "她拉著你往下游，游進月光照不到的地方。她的鱗尾纏上你的腿，身體貼著你，在水裡輕得像一片綢子，又滑又暖。她教你玉璘族的方式——不用說話，只用觸碰，一直纏到你們兩個都浮上來喘氣，她在月光下笑得像個孩子。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "在淺灘上抱著她",
+              "success": {
+                "text": "你們回到淺灘，海浪一下一下地拍過來。她化形的雙腿還有幾片鱗，你一片一片地吻過去，她怕癢地笑，笑著笑著就不笑了，抓著你的肩膀輕輕地叫。浪來的時候她叫得大聲一點，浪退的時候小聲一點，像在唱一首只有你們聽得見的歌。",
+                "set_flags": ["ycyt_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_yaoting", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你在月光下的淺灘抱著瑤汀；她的聲音跟著浪起浪落，像一首只有你們聽得見的歌。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你們回到淺灘，海浪一下一下地拍過來。她化形的雙腿還有幾片鱗，你一片一片地吻過去，她怕癢地笑，笑著笑著就不笑了，抓著你的肩膀輕輕地叫。浪來的時候她叫得大聲一點，浪退的時候小聲一點，像在唱一首只有你們聽得見的歌。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycap_flower_powder",
+      "title": "會開花的火藥",
+      "summary": "阿炮想做一種會在天上開成花的煙火。她需要煙花精身上那種五彩的火藥。（阿炮・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": { "kind": "npc", "npc": "npc_yh_apao", "text": "阿炮的眼睛亮得嚇人：「我要做一種煙火，在天上開成花——一朵很大很大的牡丹！可是我調不出顏色。火藥坊遺址的中層有一種煙花精，身上的火藥是彩色的！」", "min_level": 5 },
+      "start_flags": ["ycap_1_started"],
+      "nodes": [
+        {
+          "id": "sprites",
+          "title": "到火藥坊遺址的中層採煙花精的火藥",
+          "text": "中層的礦道裡，煙花精一身五彩的火花，砰地炸開在你面前。",
+          "at": { "where": "dungeon", "location": "gunpowder_ruins", "layer": "middle" },
+          "requires": { "flags": ["ycap_1_started"] },
+          "kind": "combat",
+          "enemies": [["firework_sprite", 1], ["blast_sprite", 1]],
+          "success": { "text": "煙花精散成一地彩色的粉末。你小心地收了一包。", "set_flags": ["ycap_powder"], "effects": [{ "type": "item", "name": "煙花藥", "qty": 2 }] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把彩色的火藥帶回瑔州港的火藥坊給阿炮",
+          "text": "阿炮捧著那包粉末，興奮得跳起來，差點把它打翻：「就是這個！紅的、藍的、金的！」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["ycap_powder"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「小心一點」",
+              "success": {
+                "text": "她吐吐舌頭：「我很小心的！」說完就把一撮粉末撒進了火盆，「砰」——你們兩個的臉都黑了。她笑得在地上打滾。",
+                "set_flags": ["ycap_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "替阿炮採了煙花精的彩色火藥。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳一定做得出來」",
+              "success": {
+                "text": "她愣了一下，然後用力點頭：「嗯！」她小聲說，「……師父從來沒這樣說過。」",
+                "set_flags": ["ycap_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對阿炮說她一定做得出會開花的煙火。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_apao"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycap_colors",
+      "title": "火的顏色",
+      "summary": "阿炮的煙火總是炸成一團白光，顏色出不來。她聽說萍江的老窯工懂得怎麼讓火變色。（阿炮・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_apao",
+        "text": "阿炮的臉上全是黑灰，眼睛紅紅的：「試了二十次，每次都是一團白光。師父說火藥不是用來玩的。」她握緊拳頭，「我聽說萍江有個老窯工，懂得讓窯火變顏色。」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycap_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycap_2_started"],
+      "nodes": [
+        {
+          "id": "yaobo",
+          "title": "帶阿炮到萍江府找窯伯",
+          "text": "窯伯聽完，從架子上拿下幾個小罐子：「銅屑燒出來是綠的，硃砂是紅的，這個是藍的……釉藥的顏色，就是火的顏色。」",
+          "at": { "where": "npc", "npc": "npc_yh_yao_bo", "location": "pingjiang" },
+          "requires": { "flags": ["ycap_2_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_apao"],
+          "success": { "text": "阿炮聽得眼睛都直了，拿著小本子拚命記。", "set_flags": ["ycap_learned"] }
+        },
+        {
+          "id": "test",
+          "title": "回瑔州港的火藥坊和阿炮試新的配方",
+          "text": "阿炮把窯伯給的釉藥磨成粉，加進火藥裡，緊張地點了火。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["ycap_learned"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 14 },
+          "success": { "text": "紙筒竄上天，炸開一朵綠色的花，接著是紅的、藍的。阿炮跳起來尖叫，秦焰從屋裡衝出來，看著天上，愣住了。", "set_flags": ["ycap_colored"] },
+          "fail": { "text": "又是一團白光。阿炮咬著嘴唇：「比例不對……再來。」", "retry": true },
+          "allies": ["npc_yh_apao", "npc_yh_qin_yan"]
+        },
+        {
+          "id": "close",
+          "title": "在瑔州港的火藥坊陪阿炮",
+          "text": "秦焰看著天上散去的煙花，沉默了很久，拍拍阿炮的頭：「……做得好。」阿炮哇的一聲哭了出來，撲進你懷裡。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["ycap_colored"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "抱住她",
+              "success": {
+                "text": "她哭得一塌糊塗，眼淚和黑灰抹了你一身：「師父……師父誇我了……」哭完了，她抬起頭，臉紅紅的，「……謝謝你一直陪我。」",
+                "set_flags": ["ycap_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "阿炮第一次被師父秦焰誇獎，哭著撲進你懷裡。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "拍拍她的頭",
+              "success": {
+                "text": "她抽抽噎噎地抬頭：「你也要誇我。」你誇了她，她就笑了，笑得比天上的煙花還亮。",
+                "set_flags": ["ycap_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "阿炮做出了會變色的煙火；你誇了她，她笑得比煙花還亮。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_apao"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycap_dragon_boat",
+      "title": "龍舟節的煙火",
+      "summary": "萍江的龍舟節，阿炮要在虹橋上放她做的第一場煙火。軍器監的人不想讓火藥落到「玩煙火的人」手上。（阿炮・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_apao",
+        "text": "阿炮揹著一大捆煙火筒，興奮得說話都在抖：「龍舟節！萍江的龍舟節，我要在虹橋上放煙火！整整三十發！」她拉著你的袖子，「你要在我旁邊，第一發要你點。」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycap_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycap_3_started"],
+      "nodes": [
+        {
+          "id": "seize",
+          "title": "在萍江府的虹橋上擋住來沒收煙火的兵丁",
+          "text": "虹橋上，兩個軍器監的兵丁攔住了阿炮：「火藥一律由軍器監管制，沒收！」",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["ycap_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_court_soldier", 2]],
+          "success": { "text": "兵丁被你打下了橋，掉進運河裡。兩岸的人哈哈大笑。阿炮抱著煙火筒，鬆了一口氣。", "set_flags": ["ycap_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "confess",
+          "title": "晚上在萍江府的虹橋上和阿炮放煙火",
+          "text": "天黑了，龍舟的燈在運河上排成一條長龍。阿炮把火摺子塞進你手裡：「第一發，你點。」你點了，一朵金色的牡丹在萍江的夜空開了出來，兩岸的人一起驚呼。",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "requires": { "flags": ["ycap_safe"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_yh_apao"],
+          "options": [
+            {
+              "label": "看著她，不看煙火",
+              "success": {
+                "text": "她發現你在看她，臉一下子紅了：「你、你看煙火啦！」可是她自己也不看煙火了，看著你，然後很快地在你臉上親了一下，「……第三十發是給你的。」",
+                "set_flags": ["ycap_lover", "ycap_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在萍江的龍舟節和阿炮放了她的第一場煙火；她說第三十發是給你的。從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「妳做到了」",
+              "success": {
+                "text": "「我們做到了。」她抓著你的手，又一發煙火在頭頂炸開，照亮了她的臉，「我喜歡你。比煙火還喜歡。」",
+                "set_flags": ["ycap_lover", "ycap_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "阿炮在龍舟節的煙火下說她喜歡你，比煙火還喜歡。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycap_x",
+      "title": "第三十一發",
+      "summary": "阿炮說，她還藏了一發煙火，只放給一個人看。（阿炮・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_apao",
+        "text": "阿炮把你拉到火藥坊後面的小屋，臉紅得像炸開的爆竹：「我藏了一發煙火，第三十一發。今晚……只放給你看。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycap_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycap_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "晚上和阿炮在瑔州港的火藥坊放最後一發煙火",
+          "text": "她在院子裡點了最後一發。那是一朵小小的、粉紅色的花，開在火藥坊的上空，只有你們兩個看得見。",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["ycap_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "「這是我第一次做粉紅色的。」她小聲說，「因為……因為想到你。」",
+            "set_flags": ["ycap_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_apao", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "在瑔州港的火藥坊和阿炮度過那一夜",
+          "text": "小屋裡堆滿了紙筒和藥粉，只點了一盞燈。她脫下師父改小的皮圍裙，身上還有火藥的味道，短髮亂糟糟地翹著。「我什麼都不懂，」她說，聲音很小，「可是我想要。」",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_gunpowder_works" },
+          "requires": { "flags": ["ycap_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "讓她亂來",
+              "success": {
+                "text": "「那就照妳想的來。」她眼睛一亮，像拿到新火藥一樣撲上來，什麼都想試、什麼都想碰，冒冒失失地撞到你的鼻子，又咯咯笑著道歉。她做什麼都很用力、很直接，舒服了就大聲叫出來，一點都不藏，最後趴在你身上喘著氣：「……比煙火還厲害。」",
+                "set_flags": ["ycap_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "阿炮冒冒失失地撲上來，什麼都想試；她說這比煙火還厲害。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「那就照妳想的來。」她眼睛一亮，像拿到新火藥一樣撲上來，什麼都想試、什麼都想碰，冒冒失失地撞到你的鼻子，又咯咯笑著道歉。她做什麼都很用力、很直接，舒服了就大聲叫出來，一點都不藏，最後趴在你身上喘著氣：「……比煙火還厲害。」",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "慢慢帶她",
+              "success": {
+                "text": "你慢慢地帶她，像窯伯教她調顏色一樣耐心。這個冒失的女孩在你懷裡第一次安靜下來，每一次觸碰都讓她屏住呼吸，緊緊抓著你的手。最後她蜷在你懷裡，小聲說：「我以前以為最開心的事是煙火炸開的那一瞬間。原來不是。」",
+                "set_flags": ["ycap_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_apao", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你慢慢地帶著阿炮；她說她以前以為最開心的事是煙火炸開的那一瞬間，原來不是。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你慢慢地帶她，像窯伯教她調顏色一樣耐心。這個冒失的女孩在你懷裡第一次安靜下來，每一次觸碰都讓她屏住呼吸，緊緊抓著你的手。最後她蜷在你懷裡，小聲說：「我以前以為最開心的事是煙火炸開的那一瞬間。原來不是。」"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "ycbx_city_songs",
+      "title": "城裡的曲子",
+      "summary": "白小蕎想去龍安府聽城裡的曲子，又怕去了就忘了神調。她請你帶她去一趟。（白小蕎・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bai_xiaoqiao",
+        "text": "白小蕎抱著文王鼓，耳朵垂著：「說書的人說龍安府的勾欄裡，每天都有新的曲子……我好想去聽。」她小聲說，「可是三娘說，聽多了城裡的曲子，神調就唱不準了。你……你能帶我去一趟嗎？就一趟。」",
+        "min_level": 5
+      },
+      "start_flags": ["ycbx_1_started"],
+      "nodes": [
+        {
+          "id": "leave",
+          "title": "在青丘屯找白小蕎一起出發",
+          "text": "白小蕎把文王鼓背在背上，回頭看了仙堂好幾眼，才跟著你走出屯口。",
+          "at": { "where": "npc", "npc": "npc_yh_bai_xiaoqiao", "location": "qingqiu" },
+          "requires": { "flags": ["ycbx_1_started"] },
+          "kind": "story",
+          "success": { "text": "「走吧！」她深吸一口氣，尾巴翹得高高的。", "set_flags": ["ycbx_going"], "join": "npc_yh_bai_xiaoqiao" }
+        },
+        {
+          "id": "goulan",
+          "title": "帶白小蕎到龍安府的瓦舍勾欄聽曲",
+          "text": "勾欄裡的旦角正在唱一齣新戲。白小蕎坐在最前排，耳朵豎得直直的，跟著曲子輕輕晃。散戲之後，她還坐著不動。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["ycbx_going"] },
+          "kind": "story",
+          "allies": ["npc_yh_xiao_fengyi"],
+          "success": { "text": "蕭鳳儀走過來，看著她背上的文王鼓：「小狐狸，妳會唱嗎？唱一段給我聽。」", "set_flags": ["ycbx_heard"] }
+        },
+        {
+          "id": "close",
+          "title": "在龍安府的瓦舍勾欄陪白小蕎",
+          "text": "白小蕎看著你，又看著蕭鳳儀，緊張得尾巴都炸了毛。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["ycbx_heard"] },
+          "kind": "choice",
+          "allies": ["npc_yh_bai_xiaoqiao"],
+          "options": [
+            {
+              "label": "「唱吧，我在」",
+              "success": {
+                "text": "她閉上眼睛，敲起文王鼓，唱了一段神調。整座勾欄安靜下來。蕭鳳儀聽完，說：「下個月再來。我給妳留一個場子。」小蕎回屯的路上一直在笑。",
+                "set_flags": ["ycbx_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 10, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "帶白小蕎去龍安府的勾欄聽曲；她唱了一段神調，蕭鳳儀要給她留一個場子。", "importance": 2 }
+                ],
+                "leave": "npc_yh_bai_xiaoqiao",
+                "complete": true
+              }
+            },
+            {
+              "label": "「我們先回去吧」",
+              "success": {
+                "text": "她鬆了一口氣，又有一點失望。回屯的路上，她小聲說：「……下次，我想唱。」",
+                "set_flags": ["ycbx_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 8, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "帶白小蕎去龍安府的勾欄聽了一場曲。", "importance": 2 }
+                ],
+                "leave": "npc_yh_bai_xiaoqiao",
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "ycbx_contract",
+      "title": "勾欄的契約",
+      "summary": "蕭鳳儀要和白小蕎簽一年的契約，在龍安府唱曲。胡三娘說，二神走了，仙堂就沒人敲鼓了。（白小蕎・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bai_xiaoqiao",
+        "text": "白小蕎抱著一張紅紙的契約，眼睛紅紅的：「蕭夫人要我去龍安府唱一年。三娘說，我走了，仙堂就沒人敲鼓了……」她看著你，「我該怎麼辦？」",
+        "min_affinity": 20,
+        "requires": { "flags": ["ycbx_1_done"] },
+        "min_level": 8
+      },
+      "start_flags": ["ycbx_2_started"],
+      "nodes": [
+        {
+          "id": "sanniang",
+          "title": "到青丘屯的仙堂找胡三娘談",
+          "text": "胡三娘喝著燒刀子，很久沒說話：「我十八歲被老仙選中的時候，也想過去城裡。」她把酒杯放下，「小蕎的鼓是我教的。她想飛，我不能折她的翅膀。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["ycbx_2_started"] },
+          "kind": "story",
+          "allies": ["npc_yh_hu_sanniang"],
+          "success": { "text": "「可是，」三娘說，「神調是仙家的話。她要是忘了，就再也請不來仙了。」", "set_flags": ["ycbx_talked"] }
+        },
+        {
+          "id": "weasels",
+          "title": "在青丘屯的近郊擋下來搗亂的黃皮子",
+          "text": "當天夜裡，一群老黃皮子在屯外鬧，說小蕎要走了，仙堂沒人送仙，牠們就要進屯子。",
+          "at": { "where": "outskirts", "location": "qingqiu" },
+          "requires": { "flags": ["ycbx_talked"] },
+          "kind": "combat",
+          "enemies": [["yh_old_weasel", 2]],
+          "success": { "text": "黃皮子們被打跑了。小蕎敲著鼓站在屯口，聲音發抖地唱完了送仙的神調。", "set_flags": ["ycbx_stayed"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "close",
+          "title": "在青丘屯陪白小蕎",
+          "text": "小蕎放下鼓槌，靠著老榆樹坐下來：「我不能走。可是……我也好想去。」",
+          "at": { "where": "npc", "npc": "npc_yh_bai_xiaoqiao", "location": "qingqiu" },
+          "requires": { "flags": ["ycbx_stayed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「為什麼不能兩樣都要？」",
+              "success": {
+                "text": "她抬起頭，愣愣地看著你：「兩樣……都要？」她想了很久，眼睛慢慢亮了起來。",
+                "set_flags": ["ycbx_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "對白小蕎說她可以既唱城裡的曲子，也唱神調。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "陪她坐著",
+              "success": {
+                "text": "你們在老榆樹下坐了很久。她把頭靠在你肩上，尾巴輕輕圈著你的手腕：「……有你在，我好像比較不怕了。」",
+                "set_flags": ["ycbx_2_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 12, "reason": "一起經歷了一段事" },
+                  { "type": "memory", "summary": "在青丘屯的老榆樹下陪白小蕎坐了很久。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "ycbx_two_songs",
+      "title": "神調與新曲",
+      "summary": "白小蕎想到了辦法：把神調寫成新曲，在龍安府唱給城裡的人聽，再回到屯裡請仙。只是，城裡有人不喜歡「淫祀」的歌。（白小蕎・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bai_xiaoqiao",
+        "text": "白小蕎的眼睛亮晶晶的：「我想好了！我要把神調寫成新的曲子，在勾欄裡唱——讓城裡的狐也聽聽仙家的話。唱完了，我就回屯子。」她抓住你的手，「你陪我，好不好？」",
+        "min_affinity": 30,
+        "requires": { "flags": ["ycbx_2_done"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycbx_3_started"],
+      "nodes": [
+        {
+          "id": "rites",
+          "title": "晚上在龍安府的瓦舍勾欄擋下禮部的人",
+          "text": "小蕎在勾欄唱到一半，禮部的人帶著兩個死士闖進來：「淫祀之歌，不得傳唱！」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["ycbx_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_deathsworn", 2]],
+          "success": { "text": "死士被你打出了勾欄。小蕎抱著鼓站在台上，深吸一口氣，接著唱下去。", "set_flags": ["ycbx_sang"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "home",
+          "title": "回青丘屯的仙堂陪白小蕎請仙",
+          "text": "回到屯裡，小蕎敲起鼓，唱起神調——她擔心自己唱不準了。三娘閉著眼睛等著。",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["ycbx_sang"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": { "text": "鼓聲一停，三娘的聲音變成了胡三太奶：「好孩子，比以前唱得還好。」小蕎哭了出來。", "set_flags": ["ycbx_both"] },
+          "fail": { "text": "鼓聲亂了，仙沒有下來。小蕎咬著嘴唇：「……再來一次。」", "retry": true },
+          "allies": ["npc_yh_bai_xiaoqiao", "npc_yh_hu_sanniang"]
+        },
+        {
+          "id": "confess",
+          "title": "在青丘屯的仙堂陪白小蕎",
+          "text": "仙送走了，三娘也醒了。小蕎抱著文王鼓，轉過身看著你，耳朵紅得像要燒起來：「我、我有一首新的曲子，還沒唱給任何人聽過。」",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "requires": { "flags": ["ycbx_both"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「唱給我聽」",
+              "success": {
+                "text": "她敲著鼓，唱了。是一首很短的曲子，唱的是一個外面來的人，帶著一隻小狐狸去看城裡的燈，又把她送回家。唱完了，她把臉埋進鼓面後面：「……是寫給你的。」",
+                "set_flags": ["ycbx_lover", "ycbx_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "白小蕎唱了一首寫給你的新曲；從那天起你們在一起了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "抱住她",
+              "success": {
+                "text": "她僵住了，鼓槌掉在地上，然後一點一點地放鬆，尾巴輕輕地纏上你：「……這樣，我就不用唱了。」",
+                "set_flags": ["ycbx_lover", "ycbx_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "在青丘屯的仙堂抱住了白小蕎；她說這樣她就不用唱了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ],
+          "allies": ["npc_yh_bai_xiaoqiao"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "ycbx_x",
+      "title": "炕頭",
+      "summary": "青丘屯的冬天很冷，炕很暖。白小蕎說，今晚她的炕留給你。（白小蕎・四）",
+      "tags": ["adult"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bai_xiaoqiao",
+        "text": "白小蕎抱著一床新曬的棉被，臉紅得像屯口的紅布條：「今晚……很冷。我的炕燒得很熱。」她把臉埋進棉被裡，「你要不要……一起。」",
+        "min_affinity": 40,
+        "requires": { "flags_any": ["ycbx_lover"] },
+        "min_level": 11
+      },
+      "start_flags": ["ycbx_x_start"],
+      "nodes": [
+        {
+          "id": "date",
+          "title": "和白小蕎在青丘屯的老榆樹下看雪",
+          "text": "雪下了一整天。她牽著你的手，在老榆樹下綁了一條紅布：「三娘說，綁紅布的時候要許一個願。」她不告訴你她許了什麼。",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_old_elm" },
+          "requires": { "flags": ["ycbx_x_start"] },
+          "kind": "story",
+          "success": {
+            "text": "回去的路上，她一直偷偷地笑。",
+            "set_flags": ["ycbx_x_date"],
+            "effects": [{ "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 5, "reason": "一起度過的時光" }]
+          }
+        },
+        {
+          "id": "night",
+          "title": "到白小蕎的炕上",
+          "text": "小屋裡的炕燒得很暖，窗外是一片白。她脫掉淡藍的棉襖，裡面只穿著一件薄薄的單衣，雪白的尾巴不安地掃來掃去。「我……我不會。」她說，「可是我想學。」",
+          "at": { "where": "npc", "npc": "npc_yh_bai_xiaoqiao" },
+          "requires": { "flags": ["ycbx_x_date"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "慢慢地教她",
+              "success": {
+                "text": "你慢慢地教她，她認真得像在學一首新的神調，每一個動作都要問「這樣對嗎」。你吻她的耳朵，她整條尾巴都炸了毛；你吻她的頸子，她就輕輕地哼出聲，像在唱。最後她蜷在你懷裡，在暖暖的炕上睡著了，尾巴還纏在你身上。",
+                "set_flags": ["ycbx_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "你在暖炕上慢慢地教白小蕎；她最後蜷在你懷裡睡著，尾巴還纏著你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "你慢慢地教她，她認真得像在學一首新的神調，每一個動作都要問「這樣對嗎」。你吻她的耳朵，她整條尾巴都炸了毛；你吻她的頸子，她就輕輕地哼出聲，像在唱。最後她蜷在你懷裡，在暖暖的炕上睡著了，尾巴還纏在你身上。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "讓她跟著鼓點",
+              "success": {
+                "text": "「跟著妳的鼓點來。」她愣了一下，然後笑了，在你身上輕輕地敲著神調的節拍，跟著節拍動起來。一開始很慢，像請仙的前奏，然後越來越快、越來越急，她咬著嘴唇也忍不住，最後的那一下，她叫得比敲鼓還響。",
+                "set_flags": ["ycbx_x_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_bai_xiaoqiao", "delta": 15, "reason": "和你共度一夜" },
+                  { "type": "memory", "summary": "白小蕎跟著神調的鼓點，在暖炕上要了你一整夜。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "「跟著妳的鼓點來。」她愣了一下，然後笑了，在你身上輕輕地敲著神調的節拍，跟著節拍動起來。一開始很慢，像請仙的前奏，然後越來越快、越來越急，她咬著嘴唇也忍不住，最後的那一下，她叫得比敲鼓還響。"
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "xp", "amount": 800 }]
     }
   ]
 }

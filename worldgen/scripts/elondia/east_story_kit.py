@@ -114,3 +114,69 @@ def ending(label, text, flags, *, reform=0, balance=0, effects=(), **kw):
         s['effects'] = list(effects)
     s.update(kw)
     return {'label': label, 'success': s}
+
+
+# ---------------- 角色線（CHARACTER_LINES_PLAN 第 2 節的規格） ----------------
+def romance(prefix, npc, line, q1, q2, q3, q4, *, start=None):
+    """一條角色線：一～三 D／C／B（Lv.5／8／11，好感 0／20／30），四是成人向（好感 40、Lv.11）。
+    q1～q3：{'id','title','summary','text','nodes'}，nodes 的最後一個要設 f'{prefix}_N_done'（三是 f'{prefix}_lover'）。
+    q4：{'id','title','summary','text','date': (title, text, success), 'night': (title, text), 'options': [(label, scene, memory), ...]}。
+    start：開頭的方式（預設對象本人；待在皇城裡的人用公會）。"""
+    out = []
+    for i, (q, rank, aff_min) in enumerate([(q1, 'D', 0), (q2, 'C', 20), (q3, 'B', 30)], 1):
+        st = dict(start or {'kind': 'npc', 'npc': npc})
+        st['text'] = q['text']
+        if aff_min:
+            if st['kind'] == 'npc':
+                st['min_affinity'] = aff_min
+            else:
+                st.setdefault('requires', {})['affinity'] = {npc: aff_min}
+        if i > 1:
+            st.setdefault('requires', {})['flags'] = [f'{prefix}_{i - 1}_done']
+        s = story(q['id'], rank, q['title'], q['summary'] + f'（{line}・{"一二三"[i - 1]}）', st, f'{prefix}_{i}_started', q['nodes'],
+                  extra_rewards=q.get('rewards', ()))
+        out.append(s)
+    # 四：成人向
+    st = dict(start or {'kind': 'npc', 'npc': npc})
+    st['text'] = q4['text']
+    if st['kind'] == 'npc':
+        st['min_affinity'] = 40
+    else:
+        st.setdefault('requires', {})['affinity'] = {npc: 40}
+    st.setdefault('requires', {})['flags_any'] = [f'{prefix}_lover']
+    st['min_level'] = 11
+    dt, dtext, dsucc = q4['date']
+    nt, ntext = q4['night']
+    at = q4.get('at') or {'where': 'npc', 'npc': npc}
+    options = []
+    for j, (label, scene, memory) in enumerate(q4['options']):
+        o = {'text': scene, 'set_flags': [f'{prefix}_x_done'],
+             'effects': [aff(npc, 15, '和你共度一夜'), mem(memory, 3)], 'complete': True, 'scene': scene}
+        if j == 0:
+            o['time'] = {'until': 'morning'}
+        options.append({'label': label, 'success': o})
+    nodes = [
+        node('date', dt, dtext, q4.get('date_at') or at, f'{prefix}_x_start',
+             success={'text': dsucc, 'set_flags': [f'{prefix}_x_date'], 'effects': [aff(npc, 5, '一起度過的時光')], **q4.get('date_extra', {})}),
+        node('night', nt, ntext, at, f'{prefix}_x_date', 'choice', options=options),
+    ]
+    s4 = {'id': q4['id'], 'title': q4['title'], 'summary': q4['summary'] + f'（{line}・四）', 'tags': ['adult'] + q4.get('tags', []),
+          'rank': 'B', 'merit': 5, 'start': st, 'start_flags': [f'{prefix}_x_start'], 'nodes': nodes, 'rewards': [{'type': 'xp', 'amount': 800}]}
+    out.append(s4)
+    return out
+
+
+def confess(prefix, npc, title, text, at, requires, options, allies=None):
+    """三的最後一步：告白。options：[(label, text, memory)]，都設 f'{prefix}_lover'"""
+    opts = [{'label': l, 'success': {'text': t, 'set_flags': [f'{prefix}_lover', f'{prefix}_3_done'],
+                                     'effects': [aff(npc, 15, '在一起了'), mem(m, 3)], 'complete': True}} for l, t, m in options]
+    kw = {'allies': allies} if allies else {}
+    return node('confess', title, text, at, requires, 'choice', options=opts, **kw)
+
+
+def close(prefix, i, npc, title, text, at, requires, options, allies=None):
+    """一、二的最後一步：選擇，都設 f'{prefix}_{i}_done' 並完成。options：[(label, text, affinity, memory)]"""
+    opts = [{'label': l, 'success': {'text': t, 'set_flags': [f'{prefix}_{i}_done'],
+                                     'effects': [aff(npc, a, '一起經歷了一段事')] + ([mem(m)] if m else []), 'complete': True}} for l, t, a, m in options]
+    kw = {'allies': allies} if allies else {}
+    return node('close', title, text, at, requires, 'choice', options=opts, **kw)
