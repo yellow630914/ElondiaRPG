@@ -110,18 +110,18 @@ describe('short and long rests', () => {
     // 只少 2 點也會花一顆（以前要少半顆骰以上）
     pc.hp = pc.maxHp - 2
     expect(autoHitDice(pc)).toBe(1)
-    expect(shortRestPreview(state).note).toBe('用 1 顆生命骰')
+    expect(shortRestPreview(state).note).toBe('用 1 顆骰')
     const r = shortRest(state) as Report
     expect(pc.hp).toBe(pc.maxHp)
     expect(r.outcome.summary).toContain('花了 1 顆生命骰')
     // 生命骰用完了：按鈕與日誌都說明
     pc.hp = pc.maxHp - 2
-    expect(shortRestPreview(state).note).toBe('生命骰用完了')
+    expect(shortRestPreview(state).note).toBe('骰用完了')
     const r2 = shortRest(state) as Report
     expect(r2.outcome.summary).toContain('生命骰用完了，要長休才會恢復')
     // 生命是滿的
     pc.hp = pc.maxHp
-    expect(shortRestPreview(state).note).toBe('生命都是滿的')
+    expect(shortRestPreview(state).note).toBe('生命全滿')
     expect((shortRest(state) as Report).outcome.summary).toContain('生命都是滿的')
   })
 

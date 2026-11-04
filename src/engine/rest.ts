@@ -196,12 +196,12 @@ export function autoHitDice(c: Character): number {
   return n
 }
 
-/** 短休會怎樣（休息面板的按鈕）：自動花幾顆生命骰；沒有要花時說明原因（生命都是滿的、受傷的人生命骰用完了） */
+/** 短休會怎樣（休息面板的按鈕，要短）：自動花幾顆生命骰；沒有要花時說明原因（生命全滿、受傷的人生命骰用完了） */
 export function shortRestPreview(state: GameState): { dice: number; note: string } {
   const dice = state.party.reduce((s, m) => s + autoHitDice(m), 0)
-  if (dice) return { dice, note: `用 ${dice} 顆生命骰` }
+  if (dice) return { dice, note: `用 ${dice} 顆骰` }
   const hurt = state.party.filter((m) => m.hp > 0 && m.hp < m.maxHp)
-  return { dice: 0, note: hurt.length ? '生命骰用完了' : '生命都是滿的' }
+  return { dice: 0, note: hurt.length ? '骰用完了' : '生命全滿' }
 }
 
 /**
@@ -237,7 +237,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
   const checks = restChecks(state, report, 'short')
   report.outcome = {
     result: 'success',
-    summary: [`在${area.name}短暫休息了一個小時。`, lines.length ? `${lines.join('；')}。` : state.party.every((m) => m.hp >= m.maxHp) ? '大家的生命都是滿的。' : '', ...checks].filter(Boolean).join(''),
+    summary: [`在${area.name}短暫休息了一會兒。`, lines.length ? `${lines.join('；')}。` : state.party.every((m) => m.hp >= m.maxHp) ? '大家的生命都是滿的。' : '', ...checks].filter(Boolean).join(''),
     tags: ['短休'],
   }
   return commitReport(state, report)
