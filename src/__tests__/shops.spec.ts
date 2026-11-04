@@ -1,3 +1,4 @@
+import { setLeadPool } from '@/engine/leads'
 import { describe, expect, it } from 'vitest'
 import { act, combatant, startCombat } from '@/engine/combat'
 import { itemDef, itemRules, shopRules, statuses } from '@/engine/data'
@@ -69,7 +70,9 @@ describe('shop types', () => {
     expect(cat('material').length - own.length).toBe(shopRules.types.magic.random!.materials)
   })
 
-  it('sells event points and quest leads at the informant', () => {
+  it('sells event points and quest leads at the informant (lead pool off: random points every day)', () => {
+    // 線索池開著時的情報商見 leads.spec.ts
+    setLeadPool({ days: 0 })
     const state = game('rivervale')
     const quest = guildQuests(state).find((q) => q.template === 'lost_purse' || q.template === 'scout_road' || q.template === 'night_patrol' || q.template === 'herb_gathering')
       ?? guildQuests(state)[0]!
@@ -86,6 +89,7 @@ describe('shop types', () => {
       buyDeal(state, 'informant', lead.id)
       expect(state.quests.find((q) => q.id === quest.id)!.flags?.lead).toBe(true)
     }
+    setLeadPool({ days: 7 })
   })
 })
 

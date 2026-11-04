@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 import { setNpcLife } from '@/engine/npcLife'
+import { setLeadPool } from '@/engine/leads'
 import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, setMonsterGirlChance, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
@@ -137,6 +138,8 @@ interface SavedSettings {
   npcLife: boolean
   npcLifeDays: number
   npcLifeAi: NpcLifeAi
+  /** 地區線索池每幾天換一批（leads.ts；0 = 關閉，情報商照舊每天隨機） */
+  leadPoolDays: number
   /** 魔物娘：交給 AI 的怪物換成魔物娘（關閉、只在陽剛體型時、一律；預設關） */
   monsterGirl: MonsterGirlMode
   /** 魔物娘出現的機率（0～100）：每種怪物每天擲一次 */
@@ -199,6 +202,7 @@ function defaults(): SavedSettings {
     npcLife: true,
     npcLifeDays: 3,
     npcLifeAi: 'roll',
+    leadPoolDays: 7,
     monsterGirl: 'off',
     monsterGirlChance: 100,
     defeatAlways: false,
@@ -281,6 +285,8 @@ export const useSettings = defineStore('settings', () => {
   const npcLife = ref(initial.npcLife !== false)
   const npcLifeDays = ref(Number(initial.npcLifeDays) || 3)
   watch([npcLife, npcLifeDays], ([on, days]) => setNpcLife({ on, days: Number(days) || 3 }), { immediate: true })
+  const leadPoolDays = ref(Number.isFinite(Number(initial.leadPoolDays)) ? Math.max(0, Math.min(30, Math.round(Number(initial.leadPoolDays)))) : 7)
+  watch(leadPoolDays, (days) => setLeadPool({ days: Number(days) }), { immediate: true })
   const npcLifeAi = ref<NpcLifeAi>((['roll', 'reunion', 'off'] as const).includes(initial.npcLifeAi) ? initial.npcLifeAi : 'roll')
   const monsterGirl = ref(initial.monsterGirl)
   watch(monsterGirl, setMonsterGirl, { immediate: true })
@@ -305,7 +311,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -331,6 +337,7 @@ export const useSettings = defineStore('settings', () => {
         mascBodyContent: mascBodyContent.value,
         npcLife: npcLife.value,
         npcLifeDays: Number(npcLifeDays.value) || 3,
+        leadPoolDays: Number.isFinite(Number(leadPoolDays.value)) ? Math.max(0, Math.min(30, Math.round(Number(leadPoolDays.value)))) : 7,
         npcLifeAi: npcLifeAi.value,
         monsterGirl: monsterGirl.value,
         monsterGirlChance: Number(monsterGirlChance.value),
@@ -437,7 +444,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

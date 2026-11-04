@@ -21,7 +21,9 @@ import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from '.
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
 import { reputationBand } from './security'
-import { pointOffers, storyOffers } from './intel'
+import { nearbyPlaces, pointOffers, storyOffers } from './intel'
+import { informantLeads, leadPoint, leadPoolOn } from './leads'
+import { openFor } from './storyFlags'
 import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { shopTitle } from './shopNames'
@@ -254,7 +256,14 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
 function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): Deal[] {
   const mult = locationMult(state)
   const deals: Deal[] = []
-  const points = withRng(state, (rng) => pointOffers(state, rng, info.points_per_day, info.point_prices, info.valid_days, mult))
+  // 線索池開著時賣這個地區分給情報商的線索（7 天路程內）；關著時照舊每天隨機
+  const points = leadPoolOn()
+    ? informantLeads(state, new Set(nearbyPlaces(state.location, openFor(state)).map((p) => p.location))).map((l) => ({
+        id: `info:lead:${l.id}`, title: l.title, desc: `${l.text}（第 ${l.until} 天前有效）`,
+        price: Math.round((info.point_prices[l.tier] ?? info.point_prices.at(-1) ?? 100) * mult),
+        gets: [{ type: 'intel', intel: leadPoint(l), lead: l.id }] as RewardEffect[],
+      }))
+    : withRng(state, (rng) => pointOffers(state, rng, info.points_per_day, info.point_prices, info.valid_days, mult))
   for (const o of [...points, ...storyOffers(state, mult)]) {
     deals.push({ id: o.id, title: o.title, desc: o.desc, gives: [{ type: 'money', amount: o.price }], gets: o.gets, stock: 1 })
   }

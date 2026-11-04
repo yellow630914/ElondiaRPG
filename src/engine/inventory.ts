@@ -10,6 +10,8 @@ import {
 } from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
+import { discoverLead, hiddenLeadFor, leadPoolOn } from './leads'
+import type { Lead } from './types'
 import { openFor } from './storyFlags'
 import { gainCondition, pcOf } from './party'
 import { toolDef } from './tools'
@@ -78,6 +80,7 @@ export function readIntelItem(state: GameState, name: string): Report {
   report.kind = 'event'
   report.outcome.tags = ['情報']
   let text = ''
+  let lead: Lead | undefined
   if (spec.kind === 'story') {
     const def = stories.find((s) => s.id === spec.story)
     if (!def) throw new Error('消息裡說的事已經不存在了')
@@ -91,6 +94,10 @@ export function readIntelItem(state: GameState, name: string): Report {
     if (!q) throw new Error('目前沒有用得到這條線索的委託')
     q.flags = { ...(q.flags ?? {}), lead: true }
     text = `找到委託「${q.title}」的線索（委託的檢定 +5）`
+  } else if (leadPoolOn() && !spec.location && (lead = hiddenLeadFor(state, spec.event === 'chest' ? ['chest', 'relic'] : spec.event ? [spec.event] : undefined))) {
+    // 線索池開著：揭露這個地區一則隱藏的線索（事件種類對得上的優先）
+    const it = discoverLead(state, lead, name)
+    text = `記下情報「${it.title}」：${it.text}（第 ${it.until} 天前有效，見冒險筆記）`
   } else {
     const places = spec.location ? placesAt(spec.location, spec.layer) : nearbyPlaces(state.location, openFor(state))
     if (!places.length) throw new Error('看不出這份情報說的是哪裡')

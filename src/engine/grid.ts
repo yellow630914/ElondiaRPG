@@ -22,6 +22,7 @@ import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
 import { ensureIntelPoints, finishIntel } from './intel'
+import { stumbleOnLead } from './leads'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from './security'
@@ -1221,6 +1222,8 @@ export function substituteGroup(state: GameState, area: Area, kind: 'encounter' 
 
 function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cell): StepResult {
   const loc = locationById(area.location)
+  // 線索池裡沒人知道的事件點：走到了就記進冒險筆記（自己遇到的）
+  if (cell.intel && !cell.done) stumbleOnLead(state, cell.intel)
   switch (cell.kind) {
     case 'encounter':
     case 'elite':

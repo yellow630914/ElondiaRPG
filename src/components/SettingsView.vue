@@ -296,6 +296,10 @@ function doReset() {
             </select>
           </label>
         </template>
+        <label>
+          <span class="lab">線索池每幾天換一批 <Hint text="每個地區有一池線索（盤踞的強敵、藏寶處、流浪商人、冒險者的遺物），走進那個地區時才擲；過了這麼多天再擲一批。一部分由情報商賣，其他的要解讀情報物品才知道，不知道也可能在近郊或地下城遇到。0 = 關閉（情報商照舊每天隨機賣事件點）。1～30，預設 7。" /></span>
+          <input v-model.number="settings.leadPoolDays" type="number" min="0" max="30" style="width: 100px" />
+        </label>
       </div>
     </section>
 

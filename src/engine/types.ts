@@ -494,7 +494,7 @@ export interface Intel {
   /** point：哪個地點、哪一層（沒有時是近郊）、什麼事件 */
   location?: string
   layer?: DungeonLayerId
-  event?: 'combat' | 'chest' | 'merchant'
+  event?: 'combat' | 'chest' | 'merchant' | 'relic'
   /** combat：要打的怪物；chest、combat：寶物的等級 */
   group?: [string, number][]
   level?: number
@@ -508,6 +508,18 @@ export interface Intel {
   npc?: string
   /** 傳聞提到的怪物（enemies 的 id，點亮圖鑑） */
   monster?: string
+  status: 'active' | 'done' | 'expired'
+}
+
+/** 地區線索池裡的一則線索（leads.ts）：一個事件點，知道之後以同一個 id 記進 state.intel */
+export interface Lead extends Omit<Intel, 'kind' | 'from' | 'time' | 'status' | 'source' | 'npc' | 'story' | 'monster'> {
+  region: string
+  /** 0 近郊，1～5 地下城的周邊到底層（情報商的價格） */
+  tier: number
+  /** informant：情報商賣；hidden：要打聽或解讀情報物品才知道（不知道也會在地圖上遇到） */
+  visibility: 'informant' | 'hidden'
+  /** 已經記進冒險筆記 */
+  known?: boolean
   status: 'active' | 'done' | 'expired'
 }
 
@@ -933,6 +945,8 @@ export interface GameState {
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 地下城與近郊等待回應的事件（dungeonEvents.ts）：模板與觸發點 */
   dungeonEvent?: { template: string; trigger: string }
+  /** 各地區的線索池（leads.ts）：哪一天擲的、有哪些線索 */
+  leadPools?: Record<string, { day: number; leads: Lead[] }>
   /** 察覺了陷阱、等主角決定要不要主動觸發（存檔規則 trapLure；dungeonEvents.ts 的 offerTrapLure） */
   trapLure?: { area: string }
   /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */

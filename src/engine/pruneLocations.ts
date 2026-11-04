@@ -85,6 +85,10 @@ export function pruneLocations(state: GameState): boolean {
   if (state.intel?.some((i) => isGoneLocation(i.location) || isGoneLocation(i.from))) {
     state.intel = state.intel.filter((i) => !isGoneLocation(i.location) && !isGoneLocation(i.from))
   }
+  // 地區線索池裡指到已經不在的地點的線索
+  for (const pool of Object.values(state.leadPools ?? {})) {
+    if (pool.leads.some((l) => isGoneLocation(l.location))) pool.leads = pool.leads.filter((l) => !isGoneLocation(l.location))
+  }
   for (const rec of Object.values(state.npcs ?? {})) {
     if (rec.haunts?.some((h) => isGoneLocation(h.location))) rec.haunts = rec.haunts.filter((h) => !isGoneLocation(h.location))
   }
