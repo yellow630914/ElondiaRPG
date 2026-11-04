@@ -5,7 +5,7 @@ import { affinityStage, apMaxFor, apRegenFor, attrsOf, carriedAbilities, casting
 import { gameRule } from '@/engine/gameRules'
 import { playerRank } from '@/engine/guild'
 import { abilityDef, attributeRules, attrName, className, classDef, companionRules, conditionName, conditionTone, genderDef, genderName, raceName } from '@/engine/data'
-import { gearSummary, SLOTS, slotName } from '@/engine/gear'
+import { gearSummary, SLOTS, slotNameFor } from '@/engine/gear'
 import { specRarity } from '../items/itemInfo'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
@@ -130,7 +130,7 @@ function canDismiss(m: Character) {
       <button v-if="!isNoncombatant(m) || m.gear" class="sec ghost" @click="emit('detail', m.id, 'gear')">
         <span class="label">裝備</span>
         <span class="items">
-          <span v-for="x in gearList(m)" :key="x.slot" class="gear-ic" :class="`r-${rarityOf(x.g.spec)}`" :title="`${slotName(x.slot)}：${x.g.name}\n${gearSummary(x.g.spec)}`">
+          <span v-for="x in gearList(m)" :key="x.slot" class="gear-ic" :class="`r-${rarityOf(x.g.spec)}`" :title="`${slotNameFor(x.slot, m.race)}：${x.g.name}\n${gearSummary(x.g.spec)}`">
             <ItemIcon :name="x.g.name" :spec="x.g.spec" :size="20" />
           </span>
           <span v-if="!gearList(m).length" class="muted">無</span>

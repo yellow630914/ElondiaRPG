@@ -16,7 +16,7 @@ import {
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
   type Control, type LuckRoll, type StatusDef, type ConditionDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, type BindKind, LOCK_GRADES,
 } from './data'
-import { baseFits, baseSlots, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS, MAX_TIER } from './gear'
+import { baseFits, baseSlots, baseSlotsFor, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS, MAX_TIER } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
@@ -1062,6 +1062,9 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   }
   // 地下城專屬的底材：內建的照原本，自建的可以勾
   if (builtin ? builtin.exclusive : raw.exclusive) out.exclusive = true
+  // 種族限定的底材（人馬族的蹄鐵、馬衣）：內建的照原本（人馬族的欄位規則靠它），自建的可以選
+  const races = (builtin ? builtin.races ?? [] : Array.isArray(raw.races) ? raw.races : []).filter((r) => typeof r === 'string' && !!attributeRules.races[r])
+  if (races.length) out.races = [...new Set(races)]
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {
@@ -1373,8 +1376,9 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
       const spec = sanitizeGearSpecLoose(raw.gear[slot])
       const base = spec && gearRules.bases[spec.base]
       if (!spec || !base) continue
-      // 底材要放得進這個欄位（戒指放兩個戒指欄）
-      if (baseFits(base.slot, slot, base)) g[slot] = spec
+      // 底材要放得進這個欄位（戒指放兩個戒指欄）；有種族時照種族的欄位規則（人馬族的後蹄放鞋子類）
+      const race = typeof raw.race === 'string' && attributeRules.races[raw.race] ? raw.race : undefined
+      if (race ? baseSlotsFor(spec.base, race).includes(slot) : baseFits(base.slot, slot, base)) g[slot] = spec
     }
     if (Object.keys(g).length) out.gear = g
   }

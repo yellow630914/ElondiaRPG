@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, BIND_KINDS, damageTypeName, damageTypes, equipment, itemRules, lewdRules, type BindKind } from '@/engine/data'
+import { ATTR_IDS, attrName, attributeRules, BIND_KINDS, damageTypeName, damageTypes, equipment, itemRules, lewdRules, type BindKind } from '@/engine/data'
 import { baseSlots, gearRules, gearSummary, OUTFIT_KINDS, rarityName, RARITY_ORDER, type OutfitKind } from '@/engine/gear'
 import { builtinBase, builtinMaterial, type BaseMod, type MaterialMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
@@ -30,6 +30,14 @@ const MOD_NAME: Record<string, string> = { hit: '命中', damage: '傷害', evad
 const SCALE_NAME: Record<string, string> = { full: '材料加成全部', half: '一半（捨去）', up: '一半（進位）', third: '三分之一（捨去）', third_up: '三分之一（進位）' }
 const damageIds = damageTypes.types.map((t) => t.id)
 
+/** 種族限定的底材（都不勾時拿掉欄位） */
+function setRace(id: string, on: boolean) {
+  const set = new Set(base.value.races ?? [])
+  if (on) set.add(id)
+  else set.delete(id)
+  if (set.size) base.value.races = Object.keys(attributeRules.races).filter((r) => set.has(r))
+  else delete base.value.races
+}
 function currentBase(): BaseMod {
   const b = clone(content.mods.bases[props.id] ?? (gearRules.bases[props.id] as BaseMod))
   if (b.slot === 'main_hand' && !b.weaponDef && b.weapon) b.weaponDef = clone(equipment.weapons[b.weapon]!)
@@ -169,6 +177,10 @@ function remove() {
         </div>
         <label class="check small"><input type="checkbox" :checked="!!base.adult" :disabled="base.outfit === 'adult'" @change="base.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>
         <label class="check small"><input type="checkbox" :checked="!!base.exclusive" :disabled="builtin" @change="base.exclusive = ($event.target as HTMLInputElement).checked || undefined" /> 地下城專屬：只靠掉落取得（層主的掉落物寫這個底材做成的裝備），不能打造，不會出現在寶箱、商店、建角與 AI 生成的裝備裡</label>
+        <div class="row checks small" title="種族限定的底材：只有勾選的種族能穿（人馬族的下身、鞋子、後蹄、腿部飾品只能穿人馬族限定的底材）">
+          <span>限定種族：</span>
+          <label v-for="(r, id) in attributeRules.races" :key="id" class="check small"><input type="checkbox" :checked="!!base.races?.includes(String(id))" :disabled="builtin" @change="setRace(String(id), ($event.target as HTMLInputElement).checked)" /> {{ r.name }}</label>
+        </div>
         <label v-if="base.slot !== 'main_hand' && base.slot !== 'body'" class="check small">
           <input v-model="base.restraint" type="checkbox" :disabled="builtin" /> 束縛用（項圈、鐐銬）：沒有加成，不能打造，不會出現在寶箱、掉落、建角與 AI 生成的裝備裡；效果只靠物品的屬性加減，給「主人會強制裝備」的物品用
         </label>

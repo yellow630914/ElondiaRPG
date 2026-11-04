@@ -32,7 +32,9 @@
     "quanzhou": [1245, 492],
     "longan": [1432, 548],
     "pingjiang": [1330, 690],
-    "qingqiu": [1310, 345]
+    "qingqiu": [1310, 345],
+    "yinghe": [1318, 262],
+    "jinzhang": [1442, 172]
   },
   "labeled": ["tidehaven", "quanzhou", "longan"]
 }

@@ -24,7 +24,7 @@
     "patron": {
       "$comment": "在娼館消費：價格 = price_cc × 對象種族的倍率（世界書「價格參考-妓女和娼妇」：人類平民 10-14 銅幣、魔族略貴、精靈極貴）；沒有指定對象時用 price_cc。大成功打折並放鬆（下次長休前檢定 +1）、成功放鬆、部分成功只是普通的一晚、失敗被多收錢、大失敗錢袋被摸走。對象的親密度依成功程度變化。",
       "attr": "cha", "dc": 11, "hours": 2, "price_cc": 12,
-      "race_mult": { "demon": 1.2, "elf": 10, "yulin": 6, "hualong": 3, "linghu": 3 },
+      "race_mult": { "demon": 1.2, "elf": 10, "yulin": 6, "hualong": 3, "linghu": 3, "centaur": 4 },
       "discount": 0.5, "overcharge": 0.5, "pickpocket_ratio": 0.1,
       "affinity": { "critical": 4, "success": 2, "partial": 1, "fail": 0, "fumble": -2 }
     }

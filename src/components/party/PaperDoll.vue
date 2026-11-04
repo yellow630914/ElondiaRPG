@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { gearAffinities, weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotName, slotsFor } from '@/engine/gear'
+import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
 import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
@@ -31,6 +31,10 @@ const selected = ref<GearSlot>('main_hand')
 const onlySlot = ref(true)
 watch(() => props.member.id, () => (selected.value = 'main_hand'))
 
+/** 欄位在這個人身上的名字（人馬族的內褲那一格叫「後蹄」） */
+const slotName = (slot: GearSlot) => slotNameFor(slot, m.value.race)
+/** 欄位的圖示：改名的欄位用它改收的那一種（人馬族的後蹄用鞋子） */
+const slotIcon = (slot: GearSlot) => SLOT_ICON[(gearRules.races[m.value.race]?.relabel?.[slot]?.as as GearSlot | undefined) ?? slot] ?? SLOT_ICON[slot]
 const blocked = (slot: GearSlot) => (gearRules.races[m.value.race]?.blocked ?? []).includes(slot)
 const current = computed(() => m.value.gear?.[selected.value])
 
@@ -78,7 +82,7 @@ const candidates = computed(() =>
     .filter((i) => i.qty > 0)
     .map((i) => ({ name: i.name, qty: i.qty, spec: gearSpecOf(s.value, i.name) }))
     .filter((i): i is { name: string; qty: number; spec: GearSpec } => !!i.spec && gearKnown(i.spec))
-    .map((i) => ({ ...i, slots: slotsFor(i.spec).filter((x) => !blocked(x)) }))
+    .map((i) => ({ ...i, slots: slotsFor(i.spec, m.value.race) }))
     .filter((i) => i.slots.length && (!onlySlot.value || i.slots.includes(selected.value))),
 )
 
@@ -129,7 +133,7 @@ const totals = computed(() => {
         >
           <span class="box">
             <ItemIcon v-if="m.gear?.[slot] && !lockedGear(m, slot)" :name="m.gear[slot]!.name" :spec="m.gear[slot]!.spec" :size="24" />
-            <GameIcon v-else :name="lockedGear(m, slot) ? 'lock' : SLOT_ICON[slot]" :size="20" />
+            <GameIcon v-else :name="lockedGear(m, slot) ? 'lock' : slotIcon(slot)" :size="20" />
           </span>
           <span class="txt"><span class="sn">{{ slotName(slot) }}</span><span class="in">{{ blocked(slot) ? '無法使用' : m.gear?.[slot]?.name ?? '—' }}</span></span>
         </button>
@@ -141,7 +145,7 @@ const totals = computed(() => {
     </div>
 
     <div class="picker">
-      <h4><GameIcon :name="SLOT_ICON[selected]" :size="16" />{{ slotName(selected) }}</h4>
+      <h4><GameIcon :name="slotIcon(selected)" :size="16" />{{ slotName(selected) }}</h4>
       <div v-if="current" class="current">
         <span class="gear-ic big" :class="`r-${rarityOf(current.spec)}`"><ItemIcon :name="current.name" :spec="current.spec" :size="36" /></span>
         <div>

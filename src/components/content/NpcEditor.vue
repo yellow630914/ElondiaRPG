@@ -10,7 +10,7 @@ import {
   abilities as abilityTable, ATTR_IDS, attrName, attributeRules, classAbilities, className, combatClasses, GENDER_IDS, genderName, geography,
   locationById, npcs as namedNpcs, npcTags, raceName, regionById,
 } from '@/engine/data'
-import { baseFits, gearName, gearRules, rarityName, RARITY_ORDER, slotName } from '@/engine/gear'
+import { baseFits, baseSlotsFor, gearName, gearRules, rarityName, RARITY_ORDER, slotName } from '@/engine/gear'
 import { blockKeys, CELL_ICON, cellName, settlementArea, ZONES, type Zone } from '@/engine/grid'
 import { builtinNpc, type NpcMod } from '@/engine/mods'
 import { Rng } from '@/engine/rng'
@@ -168,7 +168,7 @@ const customGear = computed({
   },
 })
 function basesFor(slot: GearSlot) {
-  return Object.entries(gearRules.bases).filter(([, b]) => baseFits(b.slot, slot, b))
+  return Object.entries(gearRules.bases).filter(([id, b]) => (draft.value.race ? baseSlotsFor(id, draft.value.race).includes(slot) : baseFits(b.slot, slot, b)))
 }
 function materialsFor(base: string) {
   const kind = gearRules.bases[base]?.kind

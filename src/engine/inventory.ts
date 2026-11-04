@@ -5,10 +5,10 @@ import { hasPerk, offerPerks } from './perks'
 import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
 import { gameRule } from './gameRules'
 import {
-  abilities, attrName, classDef, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK,
+  abilities, attrName, classDef, raceName, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK,
   type ItemIntel, type ItemUse, type LockGrade,
 } from './data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotsFor, syncGear, wearName } from './gear'
+import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotNameFor, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
 import { openFor } from './storyFlags'
 import { gainCondition, pcOf } from './party'
@@ -229,7 +229,7 @@ function assertUnlocked(m: Character, slot: GearSlot) {
 
 /** 這件裝備能放的欄位（種族封住的、被主人鎖住的不算） */
 export function freeSlotsFor(m: Character, spec: GearSpec): GearSlot[] {
-  return slotsFor(spec).filter((x) => !(gearRules.races[m.race]?.blocked ?? []).includes(x) && !lockedGear(m, x))
+  return slotsFor(spec, m.race).filter((x) => !lockedGear(m, x))
 }
 
 /**
@@ -237,9 +237,9 @@ export function freeSlotsFor(m: Character, spec: GearSpec): GearSlot[] {
  * locked：主人強制裝上的（主人的 id）。換了裝備之後重算生命值上限（裝備可能有屬性加減）
  */
 export function putOn(m: Character, name: string, spec: GearSpec, slot?: GearSlot, locked?: string): { target: GearSlot; back: string[] } {
-  const all = slotsFor(spec).filter((x) => !(gearRules.races[m.race]?.blocked ?? []).includes(x))
-  if (!all.length) throw new Error(`${m.name}無法使用這個欄位`)
-  if (slot && !all.includes(slot)) throw new Error(`${name}不能放在${slotName(slot)}`)
+  const all = slotsFor(spec, m.race)
+  if (!all.length) throw new Error(gearRules.bases[spec.base]?.races?.length ? `只有${gearRules.bases[spec.base]!.races!.map(raceName).join('、')}能穿${name}` : `${m.name}無法使用這個欄位`)
+  if (slot && !all.includes(slot)) throw new Error(`${name}不能放在${slotNameFor(slot, m.race)}`)
   if (slot) assertUnlocked(m, slot)
   const options = freeSlotsFor(m, spec)
   if (!options.length) assertUnlocked(m, all[0]!)

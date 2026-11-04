@@ -39,6 +39,9 @@
     },
     "linghu": {
       "name": "靈狐族", "emoji": "🦊", "bonus": { "fai": 2, "cha": 1 }
+    },
+    "centaur": {
+      "name": "人馬族", "emoji": "🐎", "bonus": { "str": 2, "dex": 1 }
     }
   }
 }

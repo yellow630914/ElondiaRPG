@@ -185,6 +185,8 @@ function raceWeights(location: string): Record<string, number> {
   if (region === 'west') Object.assign(base, { catfolk: 5 })
   // 炎華之地（地點都寫了 races，這裡是沒寫的地方的預設）：南域是化龍族，西北的靈狐族已經大多融入大燁
   if (region === 'yanhua_south') Object.assign(base, { hualong: 30, linghu: 3, human: 2, catfolk: 0, dwarf: 0, demon: 0, elf: 0, yulin: 1 })
+  // 炎華北原（媞丹）：人馬族
+  if (region === 'yanhua_north') Object.assign(base, { centaur: 30, hualong: 2, linghu: 1, human: 1, catfolk: 0, dwarf: 0, demon: 0, elf: 0, yulin: 0 })
   return Object.fromEntries(Object.entries(base).filter(([r]) => attributeRules.races[r]))
 }
 

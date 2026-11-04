@@ -6,7 +6,7 @@ import { charmLevel } from './charm'
 import { startCombat, type CombatState } from './combat'
 import { gameRule } from './gameRules'
 import { itemDef, lewdRules, locationById, type EncounterGroup, type LewdKey } from './data'
-import { gearRules } from './gear'
+import { baseSlotsFor, gearRules } from './gear'
 import { applyEffects } from './effects'
 import { currentCell } from './grid'
 import { putOn } from './inventory'
@@ -60,7 +60,9 @@ export function arenaPurse(tier: number, wager = false): { fee: number; prize: n
 
 /** 行囊裡可以帶上拘束戰鬥場的拘束具 */
 export function arenaRestraints(state: GameState): string[] {
-  return state.inventory.filter((i) => i.qty > 0 && !!gearRules.bases[itemDef(i.name)?.gear?.base ?? '']?.bind).map((i) => i.name)
+  const race = pcOf(state).race
+  // 主角的種族戴不上的（人馬族的腳鐐）不列
+  return state.inventory.filter((i) => i.qty > 0 && !!gearRules.bases[itemDef(i.name)?.gear?.base ?? '']?.bind && baseSlotsFor(itemDef(i.name)!.gear!.base, race).length > 0).map((i) => i.name)
 }
 
 /** 報名：付報名費、（拘束戰鬥場）戴上拘束具，開打 */

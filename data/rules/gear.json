@@ -195,6 +195,12 @@
     "anklet_bell":  { "slot": "leg_accessory", "name": "鈴音腳鍊", "kind": "jewel", "price": 100, "scale": { "save": "third_up" }, "desc": "綴著小鈴的腳鍊，鈴聲能讓人保持清醒。" },
     "thigh_band":   { "slot": "leg_accessory", "name": "鐵縛腿環", "kind": "jewel", "price": 140, "scale": { "dr": "third_up" }, "desc": "緊束在大腿上的硬環，護住要害。" },
     "thigh_sheath": { "slot": "leg_accessory", "name": "藏刃腿環", "kind": "jewel", "price": 150, "scale": { "damage": "third_up" }, "desc": "大腿上的皮環，內側藏著一把小刀。" },
+    "horse_cloth": { "slot": "legs", "name": "馬衣", "kind": "cloth", "price": 30, "scale": {"save": "half"}, "outfit": "regular", "races": ["centaur"], "desc": "披在人馬族馬身上的布衣，從腰際垂到膝上，繡著部族的紋樣。" },
+    "horse_barding": { "slot": "legs", "name": "馬鎧", "kind": "metal", "price": 500, "stats": {"dr": 1, "evade": -1}, "scale": {"dr": "half"}, "races": ["centaur"], "desc": "護住人馬族馬身的甲片，從胸前一路罩到後臀，跑起來嘩啦作響。" },
+    "horseshoe": { "slot": "feet", "name": "蹄鐵", "kind": "metal", "price": 60, "scale": {"dr": "half"}, "races": ["centaur"], "desc": "釘在馬蹄上的鐵片，前蹄、後蹄各要一副。" },
+    "hoof_boots": { "slot": "feet", "name": "蹄靴", "kind": "leather", "price": 30, "scale": {"evade": "up"}, "races": ["centaur"], "desc": "套在馬蹄上的軟皮靴，走在石板路上不打滑，也不吵。前蹄、後蹄各要一雙。" },
+    "hoof_bells": { "slot": "leg_accessory", "name": "蹄鈴", "kind": "jewel", "price": 100, "scale": {"save": "third_up"}, "races": ["centaur"], "desc": "繫在馬腿上的一串小鈴，跑起來叮叮噹噹，草原上的人說鈴聲能嚇走邪祟。" },
+    "horse_leg_ring": { "slot": "leg_accessory", "name": "馬腿環", "kind": "jewel", "price": 140, "scale": {"dr": "third_up"}, "races": ["centaur"], "desc": "套在馬腿上的硬環，護住腿骨。" },
 
     "undershirt":   { "slot": "underwear_top", "name": "汗衫", "kind": "cloth", "price": 8, "scale": { "dr": "third" }, "desc": "貼身的短袖內衫，吸汗，穿在盔甲底下不會磨傷。" },
     "breast_band":  { "slot": "underwear_top", "name": "裹胸", "kind": "cloth", "price": 8, "scale": { "save": "third" }, "desc": "一圈纏在胸口的軟布，活動時不晃。" },
@@ -307,7 +313,7 @@
   "races": {
     "$comment": "種族的裝備模板：目前所有種族都使用同一套 16 個欄位；blocked 可以封住某些欄位（例如將來加入無法穿鞋的種族）。",
     "human": { "blocked": [] }, "elf": { "blocked": [] }, "dwarf": { "blocked": [] },
-    "demon": { "blocked": [] }, "catfolk": { "blocked": [] }, "yulin": { "blocked": [] }, "hualong": { "blocked": [] }, "linghu": { "blocked": [] }
+    "demon": { "blocked": [] }, "catfolk": { "blocked": [] }, "yulin": { "blocked": [] }, "hualong": { "blocked": [] }, "linghu": { "blocked": [] }, "centaur": {"blocked": [], "restricted": ["legs", "feet", "underwear_bottom", "leg_accessory"], "relabel": {"underwear_bottom": {"name": "後蹄", "as": "feet"}}}
   },
 
   "craft": {

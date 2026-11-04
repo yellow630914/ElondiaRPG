@@ -5,7 +5,7 @@ import { computed, ref } from 'vue'
 import { armorDef, attrName, damageTypeName, weaponDef, type AttrId } from '@/engine/data'
 import { describeEffects } from '@/engine/perks'
 import {
-  creationCatalog, creationCost, gearRules, gearStats, MOD_NAME, rarityName, SLOT_CATEGORY, slotName, type CreationGear, type CreationOption, type CreationPick,
+  creationCatalog, creationCost, gearRules, gearStats, MOD_NAME, rarityName, SLOT_CATEGORY, slotNameFor, type CreationGear, type CreationOption, type CreationPick,
 } from '@/engine/gear'
 import type { GearSlot } from '@/engine/types'
 import AppDialog from './AppDialog.vue'
@@ -18,6 +18,7 @@ const emit = defineEmits<{ close: [] }>()
 const picks = defineModel<CreationGear>({ required: true })
 
 const catalog = computed(() => creationCatalog(props.classId, props.race))
+const slotName = (slot: GearSlot) => slotNameFor(slot, props.race)
 const CATEGORIES = [
   { id: 'weapon', name: '武器' },
   { id: 'armor', name: '防具' },

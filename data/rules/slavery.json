@@ -9,7 +9,7 @@
     "3": { "human": [400000, 450000], "demon": [450000, 500000], "elf": [2000000, 2500000] },
     "beyond_tier3_mult": 5,
     "variance": 0.25,
-    "race_group": { "human": "human", "catfolk": "human", "dwarf": "human", "demon": "demon", "elf": "elf", "yulin": "elf", "hualong": "human", "linghu": "human" },
+    "race_group": { "human": "human", "catfolk": "human", "dwarf": "human", "demon": "demon", "elf": "elf", "yulin": "elf", "hualong": "human", "linghu": "human", "centaur": "human" },
     "race_mult": { "catfolk": 0.9, "dwarf": 1.2 },
     "class_mult": { "wizard": 1.3, "cleric": 1.25, "druid": 1.2, "bard": 1.1, "paladin": 1.15 }
   },
@@ -29,7 +29,9 @@
     "ashport": { "black": { "name": "灰港鎮碼頭黑市", "price_mult": 0.75, "stock": [3, 5], "races": { "human": 3, "demon": 3, "catfolk": 1, "elf": 1 } } },
     "tidehaven": { "black": { "name": "潮汐港走私船艙", "price_mult": 0.9, "stock": [2, 3], "races": { "human": 2, "yulin": 1, "elf": 1 } } },
     "longan": { "public": { "name": "龍安府官牙", "price_mult": 1.05, "stock": [3, 4], "races": { "hualong": 5, "linghu": 1, "human": 1 } } },
-    "quanzhou": { "black": { "name": "瑔州港的走私船艙", "price_mult": 0.85, "stock": [2, 4], "races": { "hualong": 2, "human": 2, "linghu": 1, "yulin": 1, "elf": 1 } } }
+    "quanzhou": { "black": { "name": "瑔州港的走私船艙", "price_mult": 0.85, "stock": [2, 4], "races": { "hualong": 2, "human": 2, "linghu": 1, "yulin": 1, "elf": 1 } } },
+    "jinzhang": { "public": { "name": "王庭的戰俘營", "price_mult": 0.95, "stock": [3, 4], "races": {"centaur": 3, "hualong": 2, "human": 1} } },
+    "yinghe": { "black": { "name": "鷹河邊的黑市帳", "price_mult": 0.85, "stock": [2, 3], "races": {"centaur": 2, "hualong": 2, "linghu": 1} } }
   },
 
   "black_market_search": { "attr": "cha", "dc": 14, "hours": 2 },

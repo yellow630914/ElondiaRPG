@@ -25,7 +25,7 @@ import { sanitizePcTags } from '@/engine/pcTags'
 import { genderId } from '@/engine/look'
 import type { Body } from '@/engine/traits'
 import NameTag from './NameTag.vue'
-import { creationCatalog, creationCost, creationSlots, gearRules, gearSummary, slotName, type CreationGear } from '@/engine/gear'
+import { creationCatalog, creationCost, creationSlots, gearRules, gearSummary, slotNameFor, type CreationGear } from '@/engine/gear'
 import { useSettings } from '@/stores/settings'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -442,7 +442,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         <thead><tr><th>欄位</th><th>裝備</th><th>性能</th><th class="num">預算</th></tr></thead>
         <tbody>
           <tr v-for="r in gearRows" :key="r.slot">
-            <th>{{ slotName(r.slot) }}</th>
+            <th>{{ slotNameFor(r.slot, race) }}</th>
             <td class="name"><span class="item-tile"><ItemIcon :name="r.option!.item" :spec="r.option!.spec" :size="18" /></span>{{ r.option!.name }}<span v-if="r.option!.item" class="tag">自建</span></td>
             <td class="muted small">{{ gearSummary(r.option!.spec) }}</td>
             <td class="num">{{ r.option!.cost ? `${r.option!.cost} 點` : '免費' }}</td>

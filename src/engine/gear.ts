@@ -56,6 +56,8 @@ export interface BaseDef {
   outfit?: OutfitKind
   /** 成人向的底材：內容編輯器的篩選用 */
   adult?: boolean
+  /** 種族限定的底材（例如人馬族的蹄鐵、馬衣）：只有這些種族能穿 */
+  races?: string[]
   /** 曝露度 0～3（慾望指標的曝露名聲用）；沒寫時依服裝種類（lewd.json 的 gear.outfit） */
   exposure?: number
   /** 雙面效應（lewd.json 的 two_face）：拘束的程度 1～3 與種類；平常是檢定減值，修了流派、鎖上時戰鬥中反轉成增益 */
@@ -106,6 +108,16 @@ export interface ClassGearTemplate {
   pieces: MaterialKind
 }
 
+/** 種族的裝備模板（gear.json 的 races） */
+export interface RaceGear {
+  /** 封住的欄位（不能放任何東西） */
+  blocked: GearSlot[]
+  /** 這些欄位只能放限定這個種族的底材（人馬族的下身、鞋子、後蹄、腿部飾品）；這些位置的一般底材，也不能塞進額外飾品欄 */
+  restricted?: GearSlot[]
+  /** 改名的欄位：name 是顯示的名字，as 是改收哪一種位置的底材（人馬族的內褲那一格是「後蹄」，收鞋子類的） */
+  relabel?: Partial<Record<GearSlot, { name: string; as: BaseSlot }>>
+}
+
 export const gearRules = gearJson as unknown as {
   slots: Record<GearSlot, string>
   slot_groups: Record<string, GearSlot[]>
@@ -114,7 +126,7 @@ export const gearRules = gearJson as unknown as {
   materials: Record<string, MaterialDef>
   bases: Record<string, BaseDef>
   classes: Record<string, ClassGearTemplate>
-  races: Record<string, { blocked: GearSlot[] }>
+  races: Record<string, RaceGear>
   /** 依體型預設穿上的內衣、內褲（底材 id） */
   underwear_defaults: Record<'masc' | 'fem' | 'andro', Partial<Record<GearSlot, string>>>
   drops: {
@@ -334,12 +346,48 @@ export function gearSpecOf(state: Pick<GameState, 'customItems'> | undefined, na
 }
 
 /** 這件裝備可以放的欄位 */
-export function slotsFor(spec: GearSpec): GearSlot[] {
+export function slotsFor(spec: GearSpec, race?: string): GearSlot[] {
   if (!gearKnown(spec)) return []
-  const slot = gearStats(spec).slot
-  const own = gearRules.slot_groups[slot] ?? [slot as GearSlot]
+  return baseSlotsFor(spec.base, race)
+}
+
+/**
+ * 這種底材能放的欄位。給了種族時照種族的模板（gear.json 的 races）：種族限定的底材別的種族不能穿、
+ * 封住的欄位不放、限定的欄位（restricted）只放自己種族的底材、改名的欄位（relabel）改收另一種位置的底材
+ */
+export function baseSlotsFor(baseId: string, race?: string): GearSlot[] {
+  const base = gearRules.bases[baseId]
+  if (!base) return []
+  const slot = base.slot
+  let own = [...(gearRules.slot_groups[slot] ?? [slot as GearSlot])]
   // 原本的部位排前面：原本的部位有空時先放那裡，都滿了才放額外飾品欄
-  return fitsExtra(gearRules.bases[spec.base]) ? [...own, EXTRA_SLOT] : own
+  const extra = fitsExtra(base) ? [EXTRA_SLOT] : []
+  if (race === undefined) return [...own, ...extra]
+  if (base.races?.length && !base.races.includes(race)) return []
+  const rule = gearRules.races[race]
+  const relabel = rule?.relabel ?? {}
+  const native = own
+  own = own.filter((s) => !relabel[s])
+  for (const [s, r] of Object.entries(relabel) as [GearSlot, { as: BaseSlot }][]) if (r.as === slot) own.push(s)
+  const restricted = new Set(rule?.restricted ?? [])
+  const mine = !!base.races?.includes(race)
+  // 原本的位置都是限定或改掉的欄位（一般的鞋子、腳鍊、內褲）：這個種族完全不能穿，額外飾品欄也不行
+  if (!mine && native.every((s) => restricted.has(s) || relabel[s])) return []
+  const blocked = rule?.blocked ?? []
+  return [...own, ...extra].filter((s) => !blocked.includes(s) && (mine || !restricted.has(s)))
+}
+
+/** 欄位在這個種族身上的名字（人馬族的內褲那一格叫「後蹄」） */
+export function slotNameFor(slot: GearSlot, race?: string): string {
+  return (race && gearRules.races[race]?.relabel?.[slot]?.name) || gearRules.slots[slot]
+}
+
+/** 這個種族在這個欄位用的種族限定底材（NPC 的配備、服裝把一般的底材換成它）：同材料類型優先，再來是比較輕的 */
+export function raceBaseFor(race: string | undefined, slot: GearSlot, kind?: MaterialKind): string | undefined {
+  if (!race || !gearRules.races[race]?.restricted?.includes(slot)) return undefined
+  const ids = Object.entries(gearRules.bases).filter(([id, b]) => b.races?.includes(race) && !b.restraint && !b.exclusive && baseSlotsFor(id, race).includes(slot)).map(([id]) => id)
+  const weight = (id: string) => ARMOR_WEIGHT[gearRules.bases[id]!.kind] ?? 0
+  return ids.find((id) => gearRules.bases[id]!.kind === kind) ?? ids.filter((id) => !kind || weight(id) <= (ARMOR_WEIGHT[kind] ?? 2)).sort((a, b) => weight(b) - weight(a))[0]
 }
 
 // ---- 角色身上的裝備 ----
@@ -424,11 +472,11 @@ export const UNDERWEAR_SLOTS: GearSlot[] = ['underwear_top', 'underwear_bottom']
  * 那個欄位已經有東西、或被種族封住時不穿；不用亂數，不影響其他裝備的生成
  */
 export function wearDefaultUnderwear(c: Pick<Character, 'gear' | 'race'>, body: 'masc' | 'fem' | 'andro') {
-  const blocked = gearRules.races[c.race]?.blocked ?? []
   const defaults = gearRules.underwear_defaults?.[body] ?? {}
   for (const slot of UNDERWEAR_SLOTS) {
     const base = defaults[slot]
-    if (!base || !gearRules.bases[base] || blocked.includes(slot) || c.gear?.[slot]) continue
+    // 種族封住或改掉的欄位（人馬族的後蹄）不穿
+    if (!base || !gearRules.bases[base] || !baseSlotsFor(base, c.race).includes(slot) || c.gear?.[slot]) continue
     ;(c.gear ??= {})[slot] = piece(base, 1)
   }
 }
@@ -498,6 +546,8 @@ const ARMOR_WEIGHT: Record<string, number> = { cloth: 0, leather: 1, metal: 2 }
 export function creationSlots(classId: string, race?: string): CreationSlot[] {
   const t = gearRules.classes[classId] ?? gearRules.classes.fighter!
   const blocked = new Set(race ? gearRules.races[race]?.blocked ?? [] : [])
+  // 種族限定的底材與欄位（沒給種族時照底材本來的位置，種族限定的底材不列）
+  const fits = (id: string, b: BaseDef, slot: GearSlot) => (race ? baseSlotsFor(id, race).includes(slot) : !b.races?.length && baseFits(b.slot, slot, b))
   const listed: Partial<Record<GearSlot, string[]>> = { main_hand: t.main, off_hand: t.off, body: t.body }
   const out: CreationSlot[] = []
   for (const slot of SLOTS) {
@@ -508,20 +558,20 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
       const custom = fromClass.length
         ? [...customGear.bases].filter((id) => {
           const b = gearRules.bases[id]
-          return !!b && !b.restraint && !b.exclusive && baseFits(b.slot, slot, b) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
+          return !!b && !b.restraint && !b.exclusive && fits(id, b, slot) && (slot !== 'body' || !(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2))
         })
         : []
       // 上身另外可以選服裝（不能比職業的護甲類型重：比基尼鎧甲是金屬、皮革緊身衣是皮革）
       const outfits = slot === 'body' && fromClass.length
-        ? Object.entries(gearRules.bases).filter(([, b]) => b.outfit && b.slot === 'body' && ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)).map(([id]) => id)
+        ? Object.entries(gearRules.bases).filter(([id, b]) => b.outfit && b.slot === 'body' && fits(id, b, 'body') && ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)).map(([id]) => id)
         : []
-      const bases = [...new Set([...fromClass, ...custom, ...outfits])].filter((b) => baseShown(b))
+      const bases = [...new Set([...fromClass, ...custom, ...outfits])].filter((b) => baseShown(b) && fits(b, gearRules.bases[b]!, slot))
       if (bases.length) out.push({ slot, template: !!t.start[slot], bases })
       continue
     }
     // 頭、腿等護具：不能比職業的護甲類型重（布 < 皮革 < 金屬）；飾品不限
     const bases = Object.entries(gearRules.bases)
-      .filter(([id, b]) => !b.restraint && !b.exclusive && baseShown(id) && baseFits(b.slot, slot, b) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
+      .filter(([id, b]) => !b.restraint && !b.exclusive && baseShown(id) && fits(id, b, slot) && (!(b.kind in ARMOR_WEIGHT) || ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)))
       .map(([id]) => id)
     if (bases.length) out.push({ slot, template: false, bases })
   }
@@ -657,6 +707,9 @@ export function generateLoadout(classId: string, level: number, rng: Rng, race?:
   const out: Partial<Record<GearSlot, EquippedGear>> = {}
   const put = (slot: GearSlot, base: string | undefined) => {
     if (!base || blocked.has(slot)) return
+    // 種族限定的欄位（人馬族的下身、鞋子、腿部飾品）換成種族的底材
+    if (race && !baseSlotsFor(base, race).includes(slot)) base = raceBaseFor(race, slot, gearRules.bases[base]!.kind)
+    if (!base) return
     out[slot] = piece(base, rollTier(rng, gearRules.bases[base]!.kind, level))
   }
   put('main_hand', t.main.length ? rng.pick(t.main) : undefined)
@@ -671,13 +724,13 @@ export function generateLoadout(classId: string, level: number, rng: Rng, race?:
   const extra = new Rng((rng.state ^ 0x5bd1e995) | 0)
   if (extra.chance(jewelChance)) {
     const base = extra.pick(Object.values(JEWELRY_BASES).flat())
-    if (!blocked.has(EXTRA_SLOT)) out[EXTRA_SLOT] = piece(base, rollTier(extra, gearRules.bases[base]!.kind, level))
+    if (!blocked.has(EXTRA_SLOT) && (!race || baseSlotsFor(base, race).includes(EXTRA_SLOT))) out[EXTRA_SLOT] = piece(base, rollTier(extra, gearRules.bases[base]!.kind, level))
   }
   return out
 }
 
 export const MOD_NAME: Record<string, string> = {
-  hit: '命中', damage: '傷害', evade: '迴避', dr: '減傷', save: '豁免', crit: '幸運一擊', ap_regen: '行動點回復',
+  hit: '命中', damage: '傷害', evade: '迴避', dr: '減傷', save: '豁免', crit: '幸運一擊', ap_regen: '行動點回復', threat: '仇恨',
 }
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 

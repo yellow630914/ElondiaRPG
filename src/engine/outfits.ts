@@ -5,7 +5,7 @@
 // - 普通人沒有戰鬥資料：服裝只算出來給形象圖與 AI 的描述用（npcOutfit）。
 // - 冒險者生成時只補空著的非護甲欄位（dressNpc），不換掉護甲與下身護具。
 
-import { baseShown, gearName, gearRules, type MaterialKind } from './gear'
+import { baseShown, baseSlotsFor, gearName, gearRules, raceBaseFor, type MaterialKind } from './gear'
 import type { NpcDef } from './data'
 import { bodyOf } from './traits'
 import type { Character, EquippedGear, GearSlot } from './types'
@@ -49,7 +49,12 @@ export function npcOutfit(def: Pick<NpcDef, 'id' | 'race' | 'gender' | 'tags' | 
   const rule = outfitRule(def)
   const out: Partial<Record<GearSlot, EquippedGear>> = {}
   for (const [slot, list] of Object.entries(rule?.slots ?? {}) as [GearSlot, string[]][]) {
-    const options = list.filter((b) => baseShown(b))
+    // 種族穿不了的底材拿掉；種族限定的欄位（人馬族的下身、鞋子）換成種族的底材
+    let options = list.filter((b) => baseShown(b) && baseSlotsFor(b, def.race).includes(slot))
+    if (!options.length && list.length) {
+      const sub = raceBaseFor(def.race, slot, gearRules.bases[list[0]!]?.kind)
+      options = sub ? [sub] : []
+    }
     if (!options.length) continue
     const base = options[hash(`${def.id}:${slot}`) % options.length]!
     const material = FIRST_MATERIAL[gearRules.bases[base]!.kind]
@@ -62,9 +67,8 @@ export function npcOutfit(def: Pick<NpcDef, 'id' | 'race' | 'gender' | 'tags' | 
 
 /** 冒險者生成時：補上空著的非護甲欄位（種族封住的欄位不穿） */
 export function dressNpc(c: Character, def: Pick<NpcDef, 'id' | 'race' | 'gender' | 'tags' | 'occupation'>) {
-  const blocked = gearRules.races[c.race]?.blocked ?? []
   for (const [slot, g] of Object.entries(npcOutfit(def)) as [GearSlot, EquippedGear][]) {
-    if (!ADVENTURER_SLOTS.includes(slot) || blocked.includes(slot) || c.gear?.[slot]) continue
+    if (!ADVENTURER_SLOTS.includes(slot) || !baseSlotsFor(g.spec.base, c.race).includes(slot) || c.gear?.[slot]) continue
     ;(c.gear ??= {})[slot] = g
   }
 }

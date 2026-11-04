@@ -150,7 +150,7 @@
     "$comment": "魅氣濃度（docs/LEWD_STATS.md 第 12 節）：每個聚落 1～4，地區預設 regions，個別地點 locations 覆蓋。exposure_mult：在這裡穿著曝露的服裝時，曝露名聲每天累積的倍率（依濃度，第 0 個不用）；rut_mult：近郊與地下城的怪物擲到「發情」的權重倍率；spread：每個地區的曝露名聲讓相鄰地區（有路相連）慢慢追到它的 ratio，每天 +1；gate：濃度 min 以上的城門可以照規矩戴上拘束具進城（item 戴上、lock 的鎖鎖上，當天不用盤查）；ai：給 AI 的一句風氣（成人向的判定與敘事）。",
     "names": ["", "清淨", "尋常", "放縱", "淫靡"],
     "regions": { "central": 2, "north": 2, "south": 4, "forest": 1, "east_sea": 2, "west": 2, "yanhua_south": 2, "yanhua_north": 2 },
-    "locations": { "albena": 3, "tidehaven": 3, "coast_ferry": 3, "ashport": 3, "soriel": 1, "quanzhou": 3 },
+    "locations": { "albena": 3, "tidehaven": 3, "coast_ferry": 3, "ashport": 3, "soriel": 1, "quanzhou": 3, "jinzhang": 2, "yinghe": 3 },
     "exposure_mult": [0, 0.5, 1, 1.5, 2],
     "rut_mult": [0, 0.5, 1, 1.5, 2],
     "spread": { "ratio": 0.3 },

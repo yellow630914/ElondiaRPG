@@ -48,8 +48,27 @@ describe('炎華之地', () => {
     expect(shortestPath('longan', 'qingqiu')?.days).toEqual([3, 3])
     // 沿海渡口沒有直航：往瑔州港一定經過潮汐港
     expect(shortestPath('coast_ferry', 'quanzhou')?.legs.map((l) => l.to)).toContain('tidehaven')
-    // 炎華北原還沒有地點
-    expect(geography.locations.filter((l) => l.region === 'yanhua_north')).toEqual([])
+    // 炎華北原（P6）：從青丘屯或龍安府走過去
+    expect(geography.locations.filter((l) => l.region === 'yanhua_north' && l.type !== 'dungeon').map((l) => l.id).sort()).toEqual(['jinzhang', 'yinghe'])
+    expect(shortestPath('qingqiu', 'yinghe')?.days).toEqual([3, 3])
+    expect(shortestPath('longan', 'yinghe')?.days).toEqual([5, 5])
+    expect(shortestPath('yinghe', 'jinzhang')?.days).toEqual([4, 4])
+  })
+
+  it('births 人馬族 in 金帳王庭 and fills the northern wild table with level 1-2 monsters', () => {
+    expect(DEFAULT_BIRTHPLACE.centaur).toBe('jinzhang')
+    expect(racePerks('centaur').map((p) => p.id)).toEqual(['race_centaur'])
+    const s = newGame({ name: '其其格', race: 'centaur', classId: 'ranger', seed: 5, birthplace: DEFAULT_BIRTHPLACE.centaur })
+    expect(s.location).toBe('jinzhang')
+    expect(locationById(s.location).region).toBe('yanhua_north')
+    const races = ensureRoster(s, 'jinzhang')!.members.map((m) => npcRecord(s, m)!.race)
+    expect(races.filter((r) => r === 'centaur').length).toBeGreaterThan(races.length / 2)
+    const ids = new Set(wildEncounters('yanhua_north').flatMap((g) => g.map(([id]) => id)))
+    for (const id of ['steppe_wolf_pack', 'horse_bandit', 'snow_leopard', 'steppe_vulture', 'sandstorm_spirit', 'sheep_spirit', 'white_deer_spirit']) {
+      expect(ids.has(id), id).toBe(true)
+      expect(enemies[id]!.habitats).toEqual(['yanhua_north'])
+    }
+    for (const id of ids) expect(enemies[id]!.level, id).toBeLessThanOrEqual(2)
   })
 
   it('fills the southern wild table with level 1-2 monsters, including the new ones', () => {

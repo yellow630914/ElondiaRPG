@@ -95,12 +95,14 @@ function slotExposure(c: Pick<Character, 'gear'>, slot: string): number {
  * 曝露度 0～3：上身與下身看得到的那一層。上身穿著就看上身那件，沒有時看內衣（只穿內衣至少算 underwear_visible），
  * 什麼都沒穿是 naked；下身看下身那件，沒有時上身那件也算遮住，再沒有才看內褲。頭飾、鞋子、飾品不算。
  */
-export function exposureLevel(c: Pick<Character, 'gear'>): number {
+export function exposureLevel(c: Pick<Character, 'gear'> & { race?: string }): number {
   const g = c.gear ?? {}
   const vis = lewdRules.gear.underwear_visible
   const naked = lewdRules.gear.naked
   const top = g.body ? slotExposure(c, 'body') : g.underwear_top ? Math.max(vis, slotExposure(c, 'underwear_top')) : naked
-  const bottom = g.legs ? slotExposure(c, 'legs') : g.body ? slotExposure(c, 'body') : g.underwear_bottom ? Math.max(vis, slotExposure(c, 'underwear_bottom')) : naked
+  // 改名的內褲欄（人馬族的後蹄）是鞋子，不算遮住下身
+  const pants = !!g.underwear_bottom && !(c.race && gearRules.races[c.race]?.relabel?.underwear_bottom)
+  const bottom = g.legs ? slotExposure(c, 'legs') : g.body ? slotExposure(c, 'body') : pants ? Math.max(vis, slotExposure(c, 'underwear_bottom')) : naked
   return Math.max(top, bottom)
 }
 

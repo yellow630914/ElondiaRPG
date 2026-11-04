@@ -54,7 +54,7 @@ export interface NewGameOptions {
 /** 各種族的預設出生地 */
 export const DEFAULT_BIRTHPLACE: Record<string, string> = {
   human: 'soriel', elf: 'silvermoon', dwarf: 'ironforge', demon: 'bloodplume', catfolk: 'sandcastle', yulin: 'canglue',
-  hualong: 'longan', linghu: 'qingqiu',
+  hualong: 'longan', linghu: 'qingqiu', centaur: 'jinzhang',
 }
 
 export function newGame(opts: NewGameOptions): GameState {
