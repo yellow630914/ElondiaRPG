@@ -5,6 +5,9 @@
     "human_stance": { "name": "人類世界的走向", "desc": "人類方政治故事線的結果：主和 +1、主戰 -1。正數走和平、負數走開戰（見 worldgen/design/elondia-storylines.md 第 1.2 節）", "initial": 0 },
     "demon_stance": { "name": "魔族世界的走向", "desc": "魔族方政治故事線的結果：主和 +1、主戰 -1。正數走和平、負數走開戰", "initial": 0 },
     "yh_reform": { "name": "大燁的走向", "desc": "炎華南域各地故事線的結局：幫朝廷、官府、胡記、改祀那一邊 -1，幫改革、農工、金黃鱗、自治那一邊 +1（見 EAST_CONTENT_PLAN 8.3 節）", "initial": 0 },
-    "yh_balance": { "name": "大燁的平衡", "desc": "炎華南域各地故事線選了「平衡」的結局 +1；多了大燁就走向君主立憲", "initial": 0 }
+    "yh_balance": { "name": "大燁的平衡", "desc": "炎華南域各地故事線選了「平衡」的結局 +1；多了大燁就走向君主立憲", "initial": 0 },
+    "td_war": { "name": "媞丹的主戰", "desc": "炎華北原各地故事線選了「主戰」（天可汗、北院）的結局 +1（見 EAST_CONTENT_PLAN 11.10 節）", "initial": 0 },
+    "td_peace": { "name": "媞丹的主和", "desc": "炎華北原各地故事線選了「主和」（南院、榷場的互市）的結局 +1", "initial": 0 },
+    "td_haidong": { "name": "扶海東", "desc": "炎華北原各地故事線選了「扶海東」（幫海東部）的結局 +1", "initial": 0 }
   }
 }

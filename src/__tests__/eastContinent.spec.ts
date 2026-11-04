@@ -12,7 +12,7 @@ import { QUEST_RANGE_DAYS } from '@/engine/town'
 import { npcTags, landmarks, specialMaps } from '@/engine/data'
 import { standOn } from '@/engine/grid'
 import { storyOffersHere } from '@/engine/story'
-import { stories } from '@/engine/data'
+import { stories, storyCounters } from '@/engine/data'
 import { palaceNeedsPersuading } from '@/engine/security'
 import { setFlag } from '@/engine/storyFlags'
 import { shopState } from '@/engine/trade'
@@ -232,6 +232,19 @@ describe('炎華之地', () => {
     expect(td.filter((n) => n.race !== 'centaur').length).toBe(4)
     for (const n of td) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)
     expect(specialMaps.sm_td_inner_tent?.location).toBe('jinzhang')
+  })
+
+  it('ends every northern region line with a war, peace or 海東 choice (P8a)', () => {
+    const td = stories.filter((s) => s.id.startsWith('td'))
+    expect(td.length).toBe(15)
+    for (const id of ['tdl_the_code', 'tds_missing_tribute', 'tdt_tea_horse', 'tdh_tribute_day']) {
+      const s = td.find((x) => x.id === id)!
+      const opts = s.nodes.at(-1)!.options!
+      const counters = opts.map((o) => Object.keys(o.success!.counters ?? {}))
+      expect(counters, id).toEqual([['td_war'], ['td_peace'], ['td_haidong']])
+      for (const o of opts) expect(o.success!.complete, id).toBe(true)
+    }
+    for (const c of ['td_war', 'td_peace', 'td_haidong']) expect(storyCounters[c]?.initial, c).toBe(0)
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {

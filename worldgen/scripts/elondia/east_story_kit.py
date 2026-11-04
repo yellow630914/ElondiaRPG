@@ -218,3 +218,16 @@ def lover(prefix, npc, title, text, at, requires, options, allies=None, **kw):
     if allies:
         kw['allies'] = allies
     return node('lover', title, text, at, requires, 'choice', options=opts, **kw)
+
+
+# ---------------- 炎華北原（EAST_CONTENT_PLAN 11.9 節） ----------------
+def td_ending(label, text, flags, *, war=0, peace=0, haidong=0, effects=(), **kw):
+    """北原故事線的結局選項：主戰 td_war、主和 td_peace、扶海東 td_haidong（各 +1）"""
+    s = {'text': text, 'set_flags': list(flags), 'complete': True}
+    counters = {k: v for k, v in (('td_war', war), ('td_peace', peace), ('td_haidong', haidong)) if v}
+    if counters:
+        s['counters'] = counters
+    if effects:
+        s['effects'] = list(effects)
+    s.update(kw)
+    return {'label': label, 'success': s}

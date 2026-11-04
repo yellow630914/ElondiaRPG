@@ -46326,6 +46326,965 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdn_tea_caravan",
+      "title": "茶馬路的商隊",
+      "summary": "大燁的茶商陳家每年春天派一支商隊北上鷹河榷場，用茶磚換草原的馬。今年茶馬路上的馬賊特別兇，商隊在龍安府的公會招護衛。（北行引導・一）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "guild",
+        "location": "longan",
+        "text": "公會的告示板上貼著一張蓋著陳家茶號紅印的告示：「北上鷹河榷場，押茶磚三十車，招護衛。路上管吃管住，到了榷場另有重謝。」底下用小字補了一句：「會騎馬者優先——或者自己就是馬。」",
+        "min_level": 8
+      },
+      "start_flags": ["tdn_1_started"],
+      "nodes": [
+        {
+          "id": "join",
+          "title": "在龍安府的公會跟陳家商隊的管事會合",
+          "text": "管事是個精瘦的金黃鱗，一邊點著茶磚一邊說：「從龍安府出城往北，走茶馬路五天到榷場。路上最怕的是黑鬃那夥馬賊——他們從不搶陳家的車，可是今年連陳家的車都搶了。」",
+          "at": { "where": "cell", "location": "longan", "cell": "guild" },
+          "requires": { "flags": ["tdn_1_started"] },
+          "kind": "story",
+          "success": { "text": "「怪事。」管事皺著眉，「東家說，黑鬃跟他有交情的。」他把一面陳家的小旗插在你的行囊上。", "set_flags": ["tdn_on_road"] }
+        },
+        {
+          "id": "raid",
+          "title": "在鷹河榷場的近郊擋下打劫商隊的馬賊",
+          "text": "快到榷場的時候，草坡後面衝出一群人馬族馬賊，彎刀在太陽下閃成一片，直撲最後幾輛車。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdn_on_road"] },
+          "kind": "combat",
+          "enemies": [["td_horse_raider", 2], ["td_raider_veteran", 1]],
+          "success": { "text": "馬賊被你們打退了，臨走前有人喊了一句：「告訴陳胖子，說好的價錢不算數了！」", "set_flags": ["tdn_arrived"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "deliver",
+          "title": "在鷹河榷場的茶馬市把茶磚交給陳茶商",
+          "text": "陳茶商點完茶磚，聽管事說了馬賊那句話，臉色變了一下，又堆起笑來：「馬賊嘛，胡說八道的。」他塞給你一袋錢，「辛苦了。草原上的事，看見了就當沒看見，才活得久。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "requires": { "flags": ["tdn_arrived"] },
+          "kind": "story",
+          "allies": ["npc_td_chen"],
+          "success": {
+            "text": "茶馬市裡人聲鼎沸：一邊是堆成小山的茶磚，一邊是嘶鳴的馬群。這就是鷹河榷場——大燁與媞丹唯一說好不打仗的地方。",
+            "set_flags": ["tdn_1_done"],
+            "effects": [
+              { "type": "money", "amount": 80 },
+              { "type": "affinity", "npc": "npc_td_chen", "delta": 5, "reason": "護送商隊到了榷場" },
+              { "type": "memory", "summary": "押著陳家的茶磚走茶馬路到了鷹河榷場，馬賊說陳茶商「說好的價錢不算數了」。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdn_market_rules",
+      "title": "榷場的規矩",
+      "summary": "外地人在鷹河榷場做買賣，要先拿到監官斡勒的牌子。斡勒說他有自己的規矩——規矩是可以談的。（北行引導・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": { "kind": "npc", "npc": "npc_td_wole", "text": "監官斡勒把算籌一根一根擺在桌上：「在榷場走動，要南院的牌子。牌子要錢，錢我收；收多少，看你懂不懂規矩。」他笑眯眯地看著你，「不懂的話，去驛站問問，大家都懂。」", "min_level": 8 },
+      "start_flags": ["tdn_2_started"],
+      "nodes": [
+        {
+          "id": "ask",
+          "title": "到鷹河榷場的驛站打聽榷場的規矩",
+          "text": "驛站的老闆一邊擦銅牌一邊說：「規矩有兩套。南院的規矩寫在牌子上，抽一成；斡勒的規矩寫在他心裡，抽三成。」他壓低聲音，「多出來的兩成，一成送南院，一成進他的帳篷。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_post_station" },
+          "requires": { "flags": ["tdn_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 13 },
+          "success": { "text": "老闆收了你一碗酒錢，又多說了一句：「大燁的茶商都付三成，只有陳胖子付四成——多的那一成，買的是斡勒閉上眼睛。」", "set_flags": ["tdn_rules"] },
+          "fail": { "text": "老闆只是笑：「消息也要錢的。」也許請他喝一碗再問。", "retry": true }
+        },
+        {
+          "id": "deal",
+          "title": "回鷹河榷場的茶馬市找監官斡勒",
+          "text": "斡勒聽你說完，算籌停在半空：「你知道得不少。」他把一塊刻著南院印的木牌放在桌上，「那你說，你打算付幾成？」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "requires": { "flags": ["tdn_rules"] },
+          "kind": "choice",
+          "allies": ["npc_td_wole"],
+          "options": [
+            {
+              "label": "照規矩付三成",
+              "success": {
+                "text": "斡勒笑得眼睛都瞇起來了：「懂規矩的人，在榷場活得久。」他把牌子推給你。",
+                "set_flags": ["tdn_2_done"],
+                "effects": [
+                  { "type": "money", "amount": -30 },
+                  { "type": "affinity", "npc": "npc_td_wole", "delta": 10, "reason": "照他的規矩付錢" },
+                  { "type": "memory", "summary": "在鷹河榷場付了監官斡勒三成的抽成，拿到南院的牌子。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "只付牌子上寫的一成",
+              "check": { "attr": "cha", "dc": 14 },
+              "success": {
+                "text": "你把南院的告示念了一遍，聲音大得整個茶馬市都聽見了。斡勒的笑僵在臉上，最後還是收了一成：「……外地人就是不懂事。」",
+                "set_flags": ["tdn_2_done"],
+                "effects": [
+                  { "type": "money", "amount": -10 },
+                  { "type": "affinity", "npc": "npc_td_wole", "delta": -8, "reason": "當眾只付一成" },
+                  { "type": "memory", "summary": "在鷹河榷場當眾照南院的告示只付了一成，監官斡勒記恨在心。", "importance": 2 }
+                ],
+                "complete": true
+              },
+              "fail": {
+                "text": "斡勒冷笑一聲：「告示是告示，榷場是榷場。」你最後還是付了三成，旁邊的人都在看你的笑話。",
+                "set_flags": ["tdn_2_done"],
+                "effects": [{ "type": "money", "amount": -30 }, { "type": "memory", "summary": "在鷹河榷場想只付一成，最後還是付了監官斡勒三成。", "importance": 2 }],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdr_ovoo_bones",
+      "title": "敖包上的骨紋",
+      "summary": "國師其其格燒了一塊羊肩胛骨，骨頭上裂出一個她從沒見過的紋：一匹沒有名字的白馬。她要一個不屬於任何一部的人，陪她去問清楚。（人馬族：長生天・一）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "text": "其其格把一塊燒得焦黑的羊肩胛骨放在你手心，指著上面一道細細的裂紋：「這是馬。白馬。可是骨紋裡的馬都有名字——這一匹沒有。」她的聲音很慢，「沒有名字的東西，回不了長生天。夜裡，它在草原上叫。」",
+        "min_level": 8
+      },
+      "start_flags": ["tdr_1_started"],
+      "nodes": [
+        {
+          "id": "burn",
+          "title": "在金帳王庭的敖包陪其其格再燒一塊骨頭",
+          "text": "其其格在敖包前生了火，把一塊新的羊肩胛骨放進去，要你握著她的手，一起看著骨頭裂開。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdr_1_started"] },
+          "kind": "check",
+          "check": { "attr": "fai", "dc": 13 },
+          "success": { "text": "骨頭啪地裂開，裂紋從中間一路延伸到邊緣：白馬、北方、夜裡。其其格睜開眼睛：「它在王庭北邊的草坡上。今晚。」", "set_flags": ["tdr_omen"] },
+          "fail": { "text": "火太大了，骨頭燒成了灰。其其格搖搖頭：「長生天今天不想說話。明天再來。」", "retry": true }
+        },
+        {
+          "id": "night",
+          "title": "晚上到金帳王庭的近郊找沒有名字的白馬",
+          "text": "北邊的草坡上起了霧。霧裡有馬嘶，可是看不見馬；走近了，才看見一群沒有臉的遊魂圍著一團白光，像在守著什麼。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdr_omen"] },
+          "kind": "combat",
+          "enemies": [["td_steppe_spirit", 3]],
+          "success": { "text": "遊魂散了，白光也散了，草地上只留下一塊白色的馬骨，骨頭上刻著一個被刀刮掉的名字。", "set_flags": ["tdr_bone"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "close",
+          "title": "把馬骨帶回金帳王庭的敖包給其其格",
+          "text": "其其格捧著那塊馬骨，看了很久：「名字被刮掉了。刮的人，不想讓它回去。」她把馬骨放在敖包的最上面，「草原上，被刮掉名字的，不只是這一匹馬。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdr_bone"] },
+          "kind": "story",
+          "allies": ["npc_td_qiqige"],
+          "success": {
+            "text": "「謝謝你。」其其格說，「外人看得見我們看不見的東西——因為你們不怕。」",
+            "set_flags": ["tdr_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_qiqige", "delta": 10, "reason": "一起找到了沒有名字的白馬" },
+              { "type": "memory", "summary": "陪國師其其格在王庭北邊的草坡上找到一塊名字被刮掉的白馬骨。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdr_wolf_deer_song",
+      "title": "蒼狼與白鹿的歌",
+      "summary": "草原各部都唱「蒼狼與白鹿」的歌，可是每一部唱的都少了一段。其其格說，少的那一段刻在白狼雪窟的冰牆上。（人馬族：長生天・二）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "requires": { "flags": ["tdr_1_done"] },
+        "text": "其其格輕輕哼著一首歌，哼到一半停住了：「蒼狼與白鹿結合，生下草原的各部——然後呢？媞丹部唱到這裡就停了，蒼狼部唱到這裡就換了調，海東部說後面的不能唱。」她看著你，「老馬倌說，雪窟的冰牆上刻著整首。」",
+        "min_level": 11
+      },
+      "start_flags": ["tdr_2_started"],
+      "nodes": [
+        {
+          "id": "groom",
+          "title": "在金帳王庭找老馬倌問那首歌",
+          "text": "老馬倌喝了一口你請的馬奶酒，眼睛紅了：「那首歌的最後一段……統一戰爭以前，每一部都會唱。天可汗贏了之後，就沒人敢唱了。」他抹了抹嘴，「冰牆上的字是蒼狼部的老人刻的，在雪窟的淺層。」",
+          "at": { "where": "npc", "npc": "npc_td_old_groom", "location": "jinzhang" },
+          "requires": { "flags": ["tdr_2_started"] },
+          "kind": "story",
+          "success": { "text": "他把一支沒有琴的琴弓塞給你：「找到了，唱給我聽。我想再聽一次。」", "set_flags": ["tdr_wall"] }
+        },
+        {
+          "id": "wall",
+          "title": "到白狼雪窟的淺層讀冰牆上的歌",
+          "text": "淺層的冰橋邊，一面冰牆上刻滿了古老的草原文字，有的被冰封住了，有的被狼爪抓花了。",
+          "at": { "where": "dungeon", "location": "whitewolf_cave", "layer": "shallow" },
+          "requires": { "flags": ["tdr_wall"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 15 },
+          "success": { "text": "你把冰一點一點刮開，讀出最後一段：「各部是兄弟，同一個母親。兄弟不殺兄弟，殺了兄弟的，長生天不收他的名字。」", "set_flags": ["tdr_song"] },
+          "fail": { "text": "冰太厚了，字看不清。帶著火再來一次。", "retry": true }
+        },
+        {
+          "id": "sing",
+          "title": "回金帳王庭的敖包把歌唱給其其格與老馬倌聽",
+          "text": "你把最後一段唸出來。老馬倌閉著眼睛跟著哼，哼著哼著哭了。其其格沉默了很久：「兄弟不殺兄弟……天可汗統一草原的時候，殺了很多兄弟。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdr_song"] },
+          "kind": "story",
+          "allies": ["npc_td_qiqige", "npc_td_old_groom"],
+          "success": {
+            "text": "「所以那些名字被刮掉了。」其其格說，「不是長生天不收，是有人不讓長生天收。」她把那塊白馬骨握在手裡，「我要替它們找回名字。」",
+            "set_flags": ["tdr_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_qiqige", "delta": 10, "reason": "找回了那首歌" },
+              { "type": "affinity", "npc": "npc_td_old_groom", "delta": 10, "reason": "把歌唱給他聽" },
+              { "type": "memory", "summary": "在白狼雪窟的冰牆上讀出「蒼狼與白鹿」被禁唱的最後一段：兄弟不殺兄弟，殺了兄弟的，長生天不收他的名字。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdr_name_of_tengri",
+      "title": "長生天的名字",
+      "summary": "其其格要在大雪的夜裡登上王庭最高的敖包，替被刮掉名字的亡魂叫回名字。草原的遊魂聽見了，全都圍了過來。（人馬族：長生天・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_qiqige",
+        "requires": { "flags": ["tdr_2_done"] },
+        "text": "其其格換上了全套的巫袍，銅鈴與骨片在風裡叮噹作響：「今晚大雪。長生天最近的時候，就是雪最大的時候。我要把那些名字一個一個叫回來——叫的時候，它們會來。你替我擋著。」",
+        "min_level": 11
+      },
+      "start_flags": ["tdr_3_started"],
+      "nodes": [
+        {
+          "id": "storm",
+          "title": "晚上在金帳王庭的近郊擋住圍過來的遊魂",
+          "text": "大雪裡，敖包四周全是遊魂的影子。它們不是來害人的——它們只是想聽自己的名字，擠得太急，把活人也擠倒了；其中兩個怨氣特別重，直直地朝其其格撲過去。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdr_3_started"] },
+          "kind": "combat",
+          "enemies": [["td_steppe_spirit", 1], ["td_wrathful_ghost", 2]],
+          "success": { "text": "遊魂退開了，在雪裡排成一圈，安靜地等著。其其格的鈴聲在風裡響了起來。", "set_flags": ["tdr_calling"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "call",
+          "title": "在金帳王庭的敖包陪其其格叫回名字",
+          "text": "其其格一個名字一個名字地叫，叫了一整夜。叫到天快亮時，她停下來，看著你：「最後一個名字，我不知道。是那位被抹去名字的可汗。」她頓了一下，「三部的祖先，誰先叫，就是誰先認他是兄弟。你說，先叫誰？」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_ovoo" },
+          "requires": { "flags": ["tdr_calling"] },
+          "kind": "choice",
+          "allies": ["npc_td_qiqige"],
+          "options": [
+            {
+              "label": "先叫蒼狼部的祖先",
+              "success": {
+                "text": "其其格對著北方喊出蒼狼的名字。風停了一瞬，遠處傳來一聲狼嚎。「蒼狼部是天可汗的部族，」她說，「讓贏的人先認輸的人是兄弟——這是最難的。」",
+                "set_flags": ["tdr_3_done", "tdr_end_canglang"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 12, "reason": "陪她叫了一夜的名字" },
+                  { "type": "memory", "summary": "陪國師其其格在大雪夜的敖包上叫回亡魂的名字；最後先叫了蒼狼部的祖先。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "先叫媞丹部的祖先",
+              "success": {
+                "text": "其其格對著西方喊出媞丹部祖先的名字。雪地上的遊魂一個一個淡去。「媞丹部定下了草原的規矩，」她說，「讓定規矩的人先記得規矩之外的人。」",
+                "set_flags": ["tdr_3_done", "tdr_end_titan"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 12, "reason": "陪她叫了一夜的名字" },
+                  { "type": "memory", "summary": "陪國師其其格在大雪夜的敖包上叫回亡魂的名字；最後先叫了媞丹部的祖先。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "先叫海東部的祖先",
+              "success": {
+                "text": "其其格對著東方喊出海東部祖先的名字。一隻白色的海東青從雪裡飛起來，繞著敖包轉了三圈。「海東部是最後投降的，」她說，「讓最後低頭的人，第一個被記住。」",
+                "set_flags": ["tdr_3_done", "tdr_end_haidong"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_qiqige", "delta": 12, "reason": "陪她叫了一夜的名字" },
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 5, "reason": "讓海東部第一個被記住" },
+                  { "type": "memory", "summary": "陪國師其其格在大雪夜的敖包上叫回亡魂的名字；最後先叫了海東部的祖先。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdl_stolen_horse",
+      "title": "偷馬的人",
+      "summary": "老馬倌的姪子被抓了，說他偷了蒼狼部的馬。照草原的舊規矩，偷一匹賠九匹；照天可汗的大法典，偷馬的人要死。（大法典・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_old_groom",
+        "text": "老馬倌拄著琴弓衝到你面前，一隻眼睛紅得像要滴血：「我姪子沒偷馬！他是去追偷馬的人，追回來的馬上有他的手印，就說是他偷的！」他抓住你的手，「斷事官說，照大法典，明天就要砍頭。」",
+        "min_level": 5
+      },
+      "start_flags": ["tdl_1_started"],
+      "nodes": [
+        {
+          "id": "track",
+          "title": "到金帳王庭的近郊追查偷馬賊的蹤跡",
+          "text": "馬群被偷的草坡上，蹄印亂成一片。人馬族的蹄印和真馬的蹄印不一樣——你得找出哪一串是偷馬的人留下的。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdl_1_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 12 },
+          "success": { "text": "你找到了：一串比一般人馬族還深的蹄印，往北邊的山谷去。蹄鐵上有一道缺口，和老馬倌姪子的蹄鐵不一樣。", "set_flags": ["tdl_trail"] },
+          "fail": { "text": "蹄印太亂了，看不出來。天色還早，再找一次。", "retry": true }
+        },
+        {
+          "id": "thief",
+          "title": "在金帳王庭的近郊抓住真正的偷馬賊",
+          "text": "山谷裡，兩個馬賊正在換馬的烙印，旁邊拴著十幾匹蒼狼部的馬。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdl_trail"] },
+          "kind": "combat",
+          "enemies": [["td_horse_raider", 2]],
+          "success": { "text": "馬賊被你捆了起來，蹄鐵上的缺口和草坡上的蹄印一模一樣。", "set_flags": ["tdl_caught"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "judge",
+          "title": "把偷馬賊帶到金帳王庭交給斷事官",
+          "text": "斷事官看了蹄鐵，又看了老馬倌的姪子，沉默了一會兒：「大法典第十二條：誣告者同罪。」他把姪子的繩子割斷了。老馬倌撲過去抱住姪子，哭得說不出話。",
+          "at": { "where": "settlement", "location": "jinzhang" },
+          "requires": { "flags": ["tdl_caught"] },
+          "kind": "story",
+          "allies": ["npc_td_old_groom"],
+          "success": {
+            "text": "斷事官對你點了點頭：「大法典是天可汗定的，可是查案的是人。」他看了一眼那兩個馬賊，「他們會照大法典處置——這一次，不會錯了。」",
+            "set_flags": ["tdl_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_old_groom", "delta": 15, "reason": "救了他的姪子" },
+              { "type": "reputation", "faction": "tidan_khanate", "delta": 2 },
+              { "type": "memory", "summary": "在金帳王庭找出真正的偷馬賊，救下了老馬倌被誣告的姪子。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdl_blood_feud",
+      "title": "血仇",
+      "summary": "大法典禁止部族之間的血仇，可是媞丹部與蒼狼部的兩家人，為了二十年前的一條命，約好了在那達慕場上決鬥。（大法典・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_batur",
+        "requires": { "flags": ["tdl_1_done"] },
+        "text": "巴特爾難得沒有笑：「兩家人約好了，明天在那達慕場上摔跤——不是摔跤，是拿刀的。照舊規矩，血仇要用血還；照大法典，兩家都要被流放。」他捏著拳頭，「我是蒼狼部的，可是我不想看他們死。」",
+        "min_level": 8
+      },
+      "start_flags": ["tdl_2_started"],
+      "nodes": [
+        {
+          "id": "talk",
+          "title": "在金帳王庭的那達慕場勸兩家人",
+          "text": "那達慕場上，兩家人隔著摔跤場對峙，刀都拔出來了。蒼狼部那家的老人說：「二十年前他們的人殺了我兒子。」媞丹部那家的說：「是你兒子先搶了我們的馬。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdl_2_started"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": { "text": "你讓兩家人各自說完，然後提議：照草原最老的規矩，摔跤定輸贏，輸的那一家賠馬，從此不提。兩家的老人互看一眼，把刀收了回去。", "set_flags": ["tdl_wrestle"] },
+          "fail": { "text": "你一開口，兩家人一起罵你是外人。巴特爾把你拉開：「明天再試。今天他們火氣太大。」", "retry": true }
+        },
+        {
+          "id": "hotheads",
+          "title": "在金帳王庭的那達慕場擋下不肯罷手的騎兵",
+          "text": "摔跤還沒開始，北院的幾個騎兵就闖進場來：「大法典說血仇者流放！北院來抓人！」兩家的年輕人一看見北院的人，刀又拔了出來。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdl_wrestle"] },
+          "kind": "combat",
+          "enemies": [["td_north_rider", 2]],
+          "success": { "text": "騎兵被你打退了。巴特爾大笑一聲，把上衣一脫，跳進摔跤場：「好了！要摔的來！我當裁判！」", "set_flags": ["tdl_settled"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "在金帳王庭的那達慕場看兩家人摔跤",
+          "text": "兩家的人在場中央摔了三跤，蒼狼部那家贏了兩跤。媞丹部的老人賠了九匹馬，兩家的老人在場邊喝了一碗酒，誰也沒有提那條命。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdl_settled"] },
+          "kind": "story",
+          "allies": ["npc_td_batur"],
+          "success": {
+            "text": "巴特爾拍著你的肩膀：「大法典管得了刀，管不了心。今天是摔跤管住了心。」",
+            "set_flags": ["tdl_2_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_batur", "delta": 12, "reason": "一起化解了血仇" },
+              { "type": "memory", "summary": "在那達慕場上用摔跤化解了媞丹部與蒼狼部兩家二十年的血仇。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdl_the_code",
+      "title": "大法典",
+      "summary": "天可汗要重新頒布大法典，各部的舊部聯合起來反對。宣讀法典的那一天，舊部的勇士衝進了那達慕場。（大法典・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_amur",
+        "requires": { "flags": ["tdl_2_done"] },
+        "text": "南院大王阿穆爾把一卷新抄的法典放在桌上：「天可汗要在那達慕場上重新宣讀大法典。北院要把軍法寫進去，南院要照大燁律改寫，海東部要把減貢的條款寫進去——」他苦笑，「而舊部，什麼都不要寫。他們說，那一天會來。」",
+        "min_level": 11
+      },
+      "start_flags": ["tdl_3_started"],
+      "nodes": [
+        {
+          "id": "champions",
+          "title": "在金帳王庭的那達慕場擋下衝進來的舊部勇士",
+          "text": "宣讀到一半，舊部的勇士從四面八方衝進那達慕場，臉上畫著被砍倒的部族圖騰：「草原的規矩是祖先定的！」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdl_3_started"] },
+          "kind": "combat",
+          "enemies": [["td_clan_champion", 2]],
+          "success": { "text": "勇士們被打倒了。天可汗站在台上，一動也沒動：「說完了嗎？那就讓法典說完。」她看向你，「外人——你說，法典最後一卷，該怎麼寫？」", "set_flags": ["tdl_reading"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在金帳王庭的那達慕場決定大法典的最後一卷",
+          "text": "台上，鐵牙、阿穆爾與海東部的使者都看著你。天可汗把筆放在你面前：「寫吧。草原上的人都在聽。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "requires": { "flags": ["tdl_reading"] },
+          "kind": "choice",
+          "allies": ["npc_td_ulantuya", "npc_td_amur", "npc_td_tieya"],
+          "options": [
+            {
+              "label": "寫進北院的軍法",
+              "success": {
+                "text": "你寫下：草原以軍法治，違令者斬，各部的兵歸怯薛統領。鐵牙大笑，北院的騎兵用彎刀敲著盾牌。阿穆爾閉上眼睛。天可汗點了點頭：「草原就該這樣，像一支箭。」",
+                "set_flags": ["tdl_end_war"],
+                "complete": true,
+                "counters": { "td_war": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": 10, "reason": "把軍法寫進大法典" },
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": -6, "reason": "把軍法寫進大法典" },
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 5, "reason": "寫下了大法典" }
+                ]
+              }
+            },
+            {
+              "label": "照大燁律改寫，交給南院",
+              "success": {
+                "text": "你寫下：法典的條文照大燁律逐條改寫，由南院設斷事官，案子要有證人、要能上訴。阿穆爾深深一揖。鐵牙罵了一句「半個龍人」，轉身走了。天可汗看了你很久：「你想讓草原坐下來。」",
+                "set_flags": ["tdl_end_peace"],
+                "complete": true,
+                "counters": { "td_peace": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": 12, "reason": "照大燁律改寫大法典" },
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": -6, "reason": "照大燁律改寫大法典" },
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": 3, "reason": "寫下了大法典" }
+                ]
+              }
+            },
+            {
+              "label": "寫下各部自治、減輕貢賦",
+              "success": {
+                "text": "你寫下：各部照自己的規矩管自己的人，大法典只管各部之間的事；海東部的貢減半。海東部的使者愣住了，然後跪下來磕了一個頭。北院與南院的人都皺起眉頭。天可汗沉默了很久：「你在替弱的人說話。」",
+                "set_flags": ["tdl_end_haidong"],
+                "complete": true,
+                "counters": { "td_haidong": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 12, "reason": "替海東部寫下減貢" },
+                  { "type": "affinity", "npc": "npc_td_ulantuya", "delta": -3, "reason": "削了她的法典" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tds_two_ledgers",
+      "title": "兩本帳",
+      "summary": "歲幣使節蘇時雍點交今年的歲幣時，發現南院的帳和北院的帳對不上：同一批絹、茶、銀，兩邊記的數目差了三成。（南院的帳・一）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_su_shiyong",
+        "text": "蘇時雍捧著暖爐，把兩本帳攤開：「大燁送來的歲幣，南院記一本，北院記一本。今年兩本差了三成。」他壓低聲音，「南院說北院貪了，北院說南院貪了。不管是誰，我的信都要寫回龍安府——你幫我查清楚。」",
+        "min_level": 8
+      },
+      "start_flags": ["tds_1_started"],
+      "nodes": [
+        {
+          "id": "ledger",
+          "title": "在金帳王庭的南院大帳核對歲幣的帳",
+          "text": "南院的書吏把帳冊一本一本搬出來，每一筆絹、茶、銀都寫得清清楚楚——太清楚了。",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tds_1_started"] },
+          "kind": "check",
+          "check": { "attr": "int", "dc": 14 },
+          "success": { "text": "你找到了：北院收走的那三成，南院的帳上寫的是「入庫」，可是庫房的鑰匙在北院的人手上。有人從庫房裡把東西運了出去。", "set_flags": ["tds_found"] },
+          "fail": { "text": "帳太多了，看到眼花。明天再來看。", "retry": true }
+        },
+        {
+          "id": "cart",
+          "title": "晚上在金帳王庭的近郊攔下運出庫房的車",
+          "text": "夜裡，幾輛蓋著氈子的車從庫房後面出了王庭，押車的是北院的騎兵。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tds_found"] },
+          "kind": "combat",
+          "enemies": [["td_north_rider", 2]],
+          "success": { "text": "騎兵被打退了。車上是一捆捆大燁的絹，絹上蓋著歲幣的印——要運去鷹河榷場，賣給大燁的商人。", "set_flags": ["tds_cart"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "report",
+          "title": "回金帳王庭的南院大帳把事情告訴蘇時雍",
+          "text": "蘇時雍看著那捆絹，手在發抖：「大燁送來的歲幣，被賣回給大燁的商人……」他把信紙鋪開，又停住了，「這封信寄回去，宰相會說媞丹貪得無厭，要停歲幣。停了歲幣，北院就有理由南下。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tds_cart"] },
+          "kind": "story",
+          "allies": ["npc_td_su_shiyong"],
+          "success": {
+            "text": "「讓我想想，」他說，「這封信，我先不寄。」",
+            "set_flags": ["tds_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_su_shiyong", "delta": 10, "reason": "查出了歲幣的去向" },
+              { "type": "memory", "summary": "替歲幣使節蘇時雍查出北院把歲幣的絹運出庫房，要賣回給大燁的商人。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tds_missing_tribute",
+      "title": "少了的歲幣",
+      "summary": "運出庫房的不只是絹。一整車銀子在往鷹河榷場的路上被黑鬃的馬賊劫走了，南北兩院都說是對方勾結馬賊。（南院的帳・二）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_amur",
+        "requires": { "flags": ["tds_1_done"] },
+        "text": "阿穆爾的臉色很難看：「一車歲幣銀，在往榷場的路上被黑鬃劫了。鐵牙在大會上說，是南院勾結馬賊；我說，運銀子的是北院的人。」他嘆了口氣，「天可汗說，誰把銀子找回來，誰就有理。」",
+        "min_level": 11
+      },
+      "start_flags": ["tds_2_started"],
+      "nodes": [
+        {
+          "id": "gang",
+          "title": "在鷹河榷場的近郊奪回被劫的歲幣銀",
+          "text": "黑鬃的人把銀車藏在鷹河邊的蘆葦裡，幾個悍匪守著，正在把銀錠熔成沒有印的銀塊。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tds_2_started"] },
+          "kind": "combat",
+          "enemies": [["td_raider_veteran", 4]],
+          "success": { "text": "悍匪被打倒了。銀車裡還剩一大半，旁邊的一封信上寫著：「北院的價錢照舊，南院的人不必知道。」——落款是斡勒。", "set_flags": ["tds_silver"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "end",
+          "title": "把歲幣銀帶回金帳王庭的南院大帳",
+          "text": "阿穆爾看著那封信，又看看你：「斡勒是南院派去的監官，收的是北院的錢。」他苦笑，「這封信交給誰，草原就聽誰的。」",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_south_court" },
+          "requires": { "flags": ["tds_silver"] },
+          "kind": "choice",
+          "allies": ["npc_td_amur"],
+          "options": [
+            {
+              "label": "交給北院的鐵牙",
+              "success": {
+                "text": "你把信交給鐵牙。鐵牙在大會上把信念了一遍：「南院的監官，收錢放馬賊！」南院的人說不出話。天可汗把榷場交給北院管——從此茶馬市上，站的是北院的騎兵。",
+                "set_flags": ["tds_end_war"],
+                "complete": true,
+                "counters": { "td_war": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": 10, "reason": "把南院的醜事交給他" },
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": -8, "reason": "把信交給北院" },
+                  { "type": "reputation", "faction": "tidan_khanate", "delta": 2 }
+                ]
+              }
+            },
+            {
+              "label": "交給南院，照律審斡勒",
+              "success": {
+                "text": "你把信交給阿穆爾。他照大燁律設了斷事官，當眾審了斡勒：斡勒招出北院的人，也招出自己。南北兩院各罰一半，銀子照數交給蘇時雍點收。阿穆爾說：「這是草原第一次有一樁案子，兩邊都認。」",
+                "set_flags": ["tds_end_peace"],
+                "complete": true,
+                "counters": { "td_peace": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": 12, "reason": "讓他照律審案" },
+                  { "type": "affinity", "npc": "npc_td_su_shiyong", "delta": 8, "reason": "歲幣銀照數點收" },
+                  { "type": "reputation", "faction": "tidan_khanate", "delta": 2 }
+                ]
+              }
+            },
+            {
+              "label": "把銀子分給海東部抵貢",
+              "success": {
+                "text": "你建議：既然兩院都說不清，這車銀子就抵海東部今年的貢。阿穆爾愣住了，然後笑了出來：「你這是誰都不給。」海東部的人收下了銀子，北院和南院都恨你——可是都說不出話。",
+                "set_flags": ["tds_end_haidong"],
+                "complete": true,
+                "counters": { "td_haidong": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 12, "reason": "替海東部抵了今年的貢" },
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": -3, "reason": "誰都不給" },
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": -3, "reason": "誰都不給" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdt_night_horses",
+      "title": "夜裡的馬群",
+      "summary": "鷹河榷場的人都說，夜裡有一群沒有烙印的馬從河邊往南走。大燁嚴禁戰馬出境——可是南邊的人，好像很想要這些馬。（茶馬互市・一）",
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_post_keeper",
+        "text": "驛站的老闆一邊擦銅牌一邊說：「這個月第三次了。半夜裡，一群沒有烙印的馬，從河邊往南走，馬蹄上包著布，一點聲音都沒有。」他看看左右，「你要是好奇，今晚去河邊看看——別讓人看見你。」",
+        "min_level": 5
+      },
+      "start_flags": ["tdt_1_started"],
+      "nodes": [
+        {
+          "id": "watch",
+          "title": "晚上在鷹河榷場的近郊偷看夜裡的馬群",
+          "text": "河邊的蘆葦裡，你屏住呼吸。不久，一群包著蹄的馬從霧裡出來，押馬的人有人馬族，也有化龍族。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdt_1_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 12 },
+          "success": { "text": "你看清楚了：押馬的化龍族腰上掛著陳家茶號的銅牌；人馬族裡，有一個鬃毛拖到地上的大個子——馬賊頭目黑鬃。", "set_flags": ["tdt_seen"] },
+          "fail": { "text": "你踩斷了一根蘆葦，押馬的人停下來四處張望。你只好先退回去，明晚再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "tell",
+          "title": "回鷹河榷場的驛站告訴老闆看見了什麼",
+          "text": "老闆聽你說完，手上的銅牌停住了：「陳胖子跟黑鬃……」他笑了一下，「這個消息，值錢。我先替你記著，誰問起，我說不知道。」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_post_station" },
+          "requires": { "flags": ["tdt_seen"] },
+          "kind": "story",
+          "allies": ["npc_td_post_keeper"],
+          "success": {
+            "text": "「小心點，」他說，「在榷場，知道太多的人，通常會在鷹河裡洗個澡——不會游泳的那種。」",
+            "set_flags": ["tdt_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_post_keeper", "delta": 8, "reason": "告訴他夜裡的馬群" },
+              { "type": "memory", "summary": "在鷹河邊看見陳茶商的人和馬賊頭目黑鬃一起押著沒有烙印的戰馬往南走。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "tdt_smugglers_trail",
+      "title": "走私的路",
+      "summary": "戰馬往南走的那條路，要經過青丘屯北邊的山林。黑鬃的人在路上設了哨，誰跟著馬群，誰就回不來。（茶馬互市・二）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hu_zhanggui",
+        "requires": { "flags": ["tdt_1_done"] },
+        "text": "胡掌櫃把眼鏡推到額頭上：「陳胖子的馬，最後到了誰手上，我們胡記想知道。」他把一張草圖推給你，「這是我們的人畫的，馬群往南走的路。跟到底，看看是誰在收。胡記付錢——本家說，這件事很重要。」",
+        "min_level": 8
+      },
+      "start_flags": ["tdt_2_started"],
+      "nodes": [
+        {
+          "id": "sentry",
+          "title": "晚上在鷹河榷場的近郊突破黑鬃的哨",
+          "text": "草圖上標的第一個山口，三個悍匪守著篝火，弓都上了弦。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdt_2_started"] },
+          "kind": "combat",
+          "enemies": [["td_raider_veteran", 1], ["td_horse_raider", 2]],
+          "success": { "text": "悍匪倒下了。篝火旁有一本帳，記著每一批馬的數目——收馬的人只寫了一個字：「岳」。", "set_flags": ["tdt_ledger"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "report",
+          "title": "回鷹河榷場把帳交給胡掌櫃",
+          "text": "胡掌櫃看著那個「岳」字，臉色變了：「龍安府的殿前都指揮使，姓岳。」他把帳收進袖子裡，「禁軍欠餉三個月，有人在替他們養騎兵——用的是媞丹的馬。」",
+          "at": { "where": "settlement", "location": "yinghe" },
+          "requires": { "flags": ["tdt_ledger"] },
+          "kind": "story",
+          "allies": ["npc_td_hu_zhanggui"],
+          "success": {
+            "text": "「這件事，我寫給本家。」胡掌櫃說，「本家會決定要不要告訴女帝。你——先別說出去。」",
+            "set_flags": ["tdt_2_done"],
+            "effects": [
+              { "type": "money", "amount": 120 },
+              { "type": "affinity", "npc": "npc_td_hu_zhanggui", "delta": 10, "reason": "查到了收馬的人" },
+              { "type": "memory", "summary": "替胡記的胡掌櫃跟著走私的戰馬，找到一本帳：收馬的人只寫了一個「岳」字。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdt_tea_horse",
+      "title": "茶馬互市",
+      "summary": "陳茶商最後一批戰馬就在茶馬市的後院。北院、南院與海東部都知道了，三方都想要這批馬。（茶馬互市・三）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_chen",
+        "requires": { "flags": ["tdt_2_done"] },
+        "text": "陳茶商找上你，滿頭大汗：「我知道你查了我。」他把一袋金子推過來，「後院還有最後一批馬，三百匹。北院要、南院要、海東部也要——黑鬃那個瘋子還要把馬搶回去賣第二次。你替我擺平，這袋是你的。」",
+        "min_level": 11
+      },
+      "start_flags": ["tdt_3_started"],
+      "nodes": [
+        {
+          "id": "raid",
+          "title": "在鷹河榷場的茶馬市擋下來搶馬的黑鬃",
+          "text": "半夜，黑鬃帶著悍匪衝進茶馬市的後院：「陳胖子，馬是我偷的，價錢我說了算！」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "requires": { "flags": ["tdt_3_started"] },
+          "kind": "combat",
+          "enemies": [["td_raider_veteran", 4]],
+          "success": { "text": "悍匪被打退了，黑鬃帶傷逃回了草原。後院的三百匹馬在馬廄裡不安地踏著蹄。天一亮，北院的騎兵、南院的監官與海東部的鷹獵手都到了。", "set_flags": ["tdt_horses"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在鷹河榷場的茶馬市決定三百匹戰馬的去向",
+          "text": "三方的人隔著馬廄對峙。陳茶商縮在你身後。每個人都看著你——你打退了黑鬃，馬現在是你說了算。",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "requires": { "flags": ["tdt_horses"] },
+          "kind": "choice",
+          "allies": ["npc_td_chen"],
+          "options": [
+            {
+              "label": "交給北院練騎兵",
+              "success": {
+                "text": "你把馬交給北院的騎兵。鐵牙的人把馬一匹一匹烙上北院的印，說要練一支新的騎兵。陳茶商被押去金帳。榷場的人看著北院的騎兵，誰也不敢說話。",
+                "set_flags": ["tdt_end_war"],
+                "complete": true,
+                "counters": { "td_war": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": 10, "reason": "把三百匹戰馬交給北院" },
+                  { "type": "affinity", "npc": "npc_td_chen", "delta": -10, "reason": "把他交了出去" }
+                ]
+              }
+            },
+            {
+              "label": "照互市的規矩，交給南院罰沒",
+              "success": {
+                "text": "你把馬交給南院，照互市的規矩罰沒；陳茶商罰銀三千，十年不准進榷場。斡勒想說什麼，被南院的人瞪了回去。阿穆爾派人來說：榷場的規矩，從今天起是真的規矩。",
+                "set_flags": ["tdt_end_peace"],
+                "complete": true,
+                "counters": { "td_peace": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": 10, "reason": "照互市的規矩處置" },
+                  { "type": "affinity", "npc": "npc_td_chen", "delta": -5, "reason": "罰了他" },
+                  { "type": "reputation", "faction": "tidan_khanate", "delta": 2 }
+                ]
+              }
+            },
+            {
+              "label": "把馬送給海東部",
+              "success": {
+                "text": "你打開馬廄的門，對海東部的鷹獵手說：「牽走吧。」海東部的人愣住了，然後一人牽兩匹，一聲不響地往上游走了。北院和南院的人追之不及。陳茶商癱坐在地上：「你……你這是要讓海東部造反。」",
+                "set_flags": ["tdt_end_haidong"],
+                "complete": true,
+                "counters": { "td_haidong": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 12, "reason": "把三百匹戰馬送給海東部" },
+                  { "type": "affinity", "npc": "npc_td_chen", "delta": -8, "reason": "把他的馬送走了" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdh_pearl_divers",
+      "title": "採珠人",
+      "summary": "海東部每年要進貢北珠。今年監官斡勒把數目加了一倍，海東部的採珠人只好在結冰的鷹河裡潛水，北院的催貢騎兵在岸上看著。（海東青的貢・一）",
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hailan",
+        "text": "海蘭站在鷹房門口，肩上的海東青一動也不動：「今年的北珠加了一倍。採珠人在冰河裡潛水，昨天凍死了兩個。」她看著你，眼神冷得像河裡的冰，「北院的騎兵在岸上，誰上來得慢，就挨鞭子。我不能動手——我動手，海東部就是造反。」",
+        "min_level": 8
+      },
+      "start_flags": ["tdh_1_started"],
+      "nodes": [
+        {
+          "id": "riders",
+          "title": "在鷹河榷場的近郊趕走催貢的北院騎兵",
+          "text": "冰河邊，幾個採珠人凍得發紫，北院的騎兵揮著鞭子要他們再下去。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdh_1_started"] },
+          "kind": "combat",
+          "enemies": [["td_north_rider", 2]],
+          "success": { "text": "騎兵被你打退了，臨走前撂下一句話：「催貢是天可汗的令！」採珠人圍在火堆邊，抖著手把今天採到的北珠交給你。", "set_flags": ["tdh_divers"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true }
+        },
+        {
+          "id": "close",
+          "title": "把北珠帶回鷹河榷場的鷹房交給海蘭",
+          "text": "海蘭接過北珠，一顆一顆數著，數到最後停住了：「這是他們用命換的。」她把北珠收好，「今年的貢會交——一顆不少。可是明年……」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdh_divers"] },
+          "kind": "story",
+          "allies": ["npc_td_hailan"],
+          "success": {
+            "text": "「謝謝你，外人。」海蘭說，「你不是海東部的人，卻替海東部的人挨了北院的恨。我記住了。」",
+            "set_flags": ["tdh_1_done"],
+            "effects": [
+              { "type": "affinity", "npc": "npc_td_hailan", "delta": 12, "reason": "替採珠人趕走了催貢的騎兵" },
+              { "type": "memory", "summary": "在結冰的鷹河邊替海東部的採珠人趕走了北院催貢的騎兵。", "importance": 2 }
+            ],
+            "complete": true
+          }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "tdh_tribute_day",
+      "title": "進貢的日子",
+      "summary": "海東部的貢隊要出發去金帳了。年輕的鷹獵手們不想讓貢隊走——他們打算在半路上把貢搶回來。（海東青的貢・二）",
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_hailan",
+        "requires": { "flags": ["tdh_1_done"] },
+        "text": "海蘭的聲音壓得很低：「族裡的年輕人要在半路上劫貢。劫了，北院就有理由血洗冬營；不劫，明年的貢又是一倍。」她看著你，「我是首領，我不能選。你是外人——你替我選。」",
+        "min_level": 11
+      },
+      "start_flags": ["tdh_2_started"],
+      "nodes": [
+        {
+          "id": "ambush",
+          "title": "在鷹河榷場的近郊攔住劫貢的鷹獵手",
+          "text": "貢隊走到鷹河的渡口，蘆葦裡飛出幾支箭，射斷了拉車的繩子。年輕的鷹獵手衝了出來，帶頭的是兩個族裡的老獵手——你得在北院的押貢騎兵趕到之前攔住他們。",
+          "at": { "where": "outskirts", "location": "yinghe" },
+          "requires": { "flags": ["tdh_2_started"] },
+          "kind": "combat",
+          "enemies": [["td_haidong_hunter", 1], ["td_haidong_elite", 2]],
+          "success": { "text": "鷹獵手們被你打倒在雪地上，沒有人死。北院的押貢騎兵遠遠地出現在坡上，還沒看見發生了什麼。", "set_flags": ["tdh_stopped"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "end",
+          "title": "在鷹河榷場的鷹房決定這一年的貢",
+          "text": "海蘭把劫貢的年輕人帶回鷹房，每個人都低著頭。她對你說：「貢還在車上。北院的騎兵還在坡上。你說，這一年的貢，怎麼辦？」",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_falconry" },
+          "requires": { "flags": ["tdh_stopped"] },
+          "kind": "choice",
+          "allies": ["npc_td_hailan", "npc_td_toya"],
+          "options": [
+            {
+              "label": "照數交給北院",
+              "success": {
+                "text": "你讓貢隊照常出發，把劫貢的事當作沒發生。北院的騎兵點收了北珠與海東青，滿意地走了。年輕的鷹獵手恨恨地看著你。海蘭什麼也沒說——她只是在貢隊走遠之後，把那幾個年輕人一個一個抱了一下。",
+                "set_flags": ["tdh_end_war"],
+                "complete": true,
+                "counters": { "td_war": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": -5, "reason": "照數交了貢" },
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": 6, "reason": "貢照數交了" },
+                  { "type": "reputation", "faction": "tidan_khanate", "delta": 2 }
+                ]
+              }
+            },
+            {
+              "label": "請南院替海東部減貢",
+              "success": {
+                "text": "你帶著海蘭與採珠人的口供去金帳王庭見阿穆爾，請南院照大法典的條文替海東部申訴。南院在大會上吵了三天，最後把北珠減回原來的數目。海蘭說：「這是海東部第一次用嘴，不是用刀，要回東西。」",
+                "set_flags": ["tdh_end_peace"],
+                "complete": true,
+                "counters": { "td_peace": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_amur", "delta": 8, "reason": "替海東部申訴" },
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 8, "reason": "替海東部減了貢" }
+                ]
+              }
+            },
+            {
+              "label": "讓貢隊回冬營",
+              "success": {
+                "text": "你對海蘭說：「把貢帶回去。」海蘭看了你很久，然後點了點頭。貢隊調頭回了冬營，北院的騎兵在坡上等了一整天，什麼也沒等到。那天晚上，冬營的篝火燒得特別旺——海東部第一次沒有進貢。",
+                "set_flags": ["tdh_end_haidong"],
+                "complete": true,
+                "counters": { "td_haidong": 1 },
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_hailan", "delta": 15, "reason": "讓海東部第一次沒有進貢" },
+                  { "type": "affinity", "npc": "npc_td_tieya", "delta": -8, "reason": "海東部沒有進貢" }
+                ]
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }
