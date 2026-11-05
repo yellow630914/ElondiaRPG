@@ -20,7 +20,7 @@ import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
-  abilities, actionRules, ATTR_IDS, attrName, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
+  abilities, actionRules, ATTR_IDS, attrName, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -520,7 +520,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
 /**
  * 行動的對象答應入隊：成功以上，而且要符合「邀請認識的人」的所有條件（人在身邊、親密度、冷卻、空位、小隊找隊長），
  * 檢定總值也要達到邀請的 DC。親密度用這次判定結算後的數字。不符合時不採用，寫進結果與交給寫手；
- * 對方真的拒絕（成功程度或檢定總值不夠）時和邀請一樣，下次長休前不能再邀請
+ * 對方真的拒絕（成功程度或檢定總值不夠）時和邀請一樣，下次長休前不能再邀請。
+ * 對方先開口邀請、主角答應（offered）而且親密度到 invite.offered_min_affinity：不比邀請的 DC，沒成也不加冷卻
  */
 function judgeJoin(
   state: GameState, p: ActionPending, x: Record<string, unknown>, degree: Degree, attr: AttrId,
@@ -545,11 +546,21 @@ function judgeJoin(
     } catch (err) {
       return refuse(err instanceof Error ? err.message : String(err))
     }
-    if (degree !== 'critical' && degree !== 'success') return refuse('入隊要成功以上', true)
+    const need = companionRules.invite.offered_min_affinity
+    const affinity = rel?.affinity ?? 0
+    const offered = x.offered === true && affinity >= need
+    if (degree !== 'critical' && degree !== 'success') return refuse('入隊要成功以上', !offered)
+    if (offered) {
+      effects.push({ type: 'companion', npc, mode: 'voluntary' })
+      return
+    }
     const inv = inviteDc(state, npc)
     const total = p.natural + p.modifiers[attr] + situationalTotal(p)
     const d = computeDegree(p.natural, total, inv)
-    if (d !== 'critical' && d !== 'success') return refuse(`檢定總值 ${total} 沒有達到邀請的 DC ${inv}`, true)
+    if (d !== 'critical' && d !== 'success') {
+      const why = x.offered === true ? `（對方主動提出，但親密度 ${affinity} 不到 ${need}，照邀請的檢定）` : ''
+      return refuse(`檢定總值 ${total} 沒有達到邀請的 DC ${inv}${why}`, true)
+    }
     effects.push({ type: 'companion', npc, mode: 'voluntary' })
   } finally {
     if (rel) rel.affinity -= delta

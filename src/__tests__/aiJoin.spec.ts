@@ -149,6 +149,53 @@ describe('AI judged free actions bringing the target into the party', () => {
     expect(text(alone)).not.toContain('"type":"join"')
   })
 
+  it('skips the invite DC when they asked first and like the PC enough (L10)', () => {
+    const need = companionRules.invite.offered_min_affinity
+    const offer = (state: GameState, target: string, natural: number, degree = 'success') => {
+      const p = prepareAction(state, { kind: 'free', target, text: '她剛才邀我一起冒險，我答應她' })
+      p.natural = natural
+      return sanitizeJudgment(state, p, { degree, effects: [{ type: 'join', npc: target, offered: true }] })
+    }
+    // 親密度夠：骰得再低也入隊
+    const state = game()
+    const rec = stranger(state, need)
+    const j = offer(state, rec.id, 2)
+    expect(j.effects).toEqual([{ type: 'companion', npc: rec.id, mode: 'voluntary' }])
+    resolveAction(state, j)
+    expect(state.party.some((m) => m.id === rec.id)).toBe(true)
+
+    // 親密度不夠：照邀請的檢定，說明原因
+    const low = game()
+    const cold = stranger(low, need - 1)
+    const k = offer(low, cold.id, 2)
+    expect(k.adjusted?.join()).toContain(`親密度 ${need - 1} 不到 ${need}`)
+    expect(k.effects).toEqual([{ type: 'flag', key: `invite_wait:${cold.id}`, value: true }])
+
+    // 對方主動、但這次沒成（部分成功）：不入隊，也不加冷卻
+    const odd = game()
+    const warm = stranger(odd, need)
+    const m = offer(odd, warm.id, 20, 'partial')
+    expect(m.notes?.join()).toContain('成功以上')
+    expect(m.effects.some((e) => e.type === 'flag')).toBe(false)
+
+    // 其他條件照舊：隊伍滿了
+    const full = game()
+    const r2 = stranger(full, need)
+    while (full.party.length < partyMax(full)) full.party.push({ ...full.party[0]!, id: `x${full.party.length}`, isPlayer: false })
+    expect(offer(full, r2.id, 20).notes?.join()).toContain(`隊伍最多 ${partyMax(full)} 人`)
+  })
+
+  it('tells the AI judge when "offered" counts', () => {
+    const need = companionRules.invite.offered_min_affinity
+    const state = game()
+    const text = (p: ReturnType<typeof prepareAction>) => { const q = buildActionPrompt(state, p, ''); return q.system + '\n' + q.user }
+    const warm = stranger(state, need)
+    expect(text(prepareAction(state, { kind: 'free', target: warm.id, text: '好啊' }))).toContain('就不用達到邀請的 DC')
+    state.pendingAction = undefined
+    const cold = stranger(state, need - 5)
+    expect(text(prepareAction(state, { kind: 'free', target: cold.id, text: '好啊' }))).toContain(`不到 ${need}，仍要達到邀請的 DC`)
+  })
+
   it('only takes the action target', () => {
     const state = game()
     const a = stranger(state)

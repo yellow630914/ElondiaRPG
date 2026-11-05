@@ -296,7 +296,14 @@ function joinDoc(state: GameState, p: ActionPending): string {
   } catch (e) {
     why = e instanceof Error ? e.message : String(e)
   }
-  const cond = why ? `目前不符合邀請的條件（${why}），這次寫了也不會入隊，不要在經過裡寫成已經同行` : `檢定總值要達到邀請的 DC ${dc}（不是這次行動的 DC）才會真的入隊`
+  const need = companionRules.invite.offered_min_affinity
+  const affinity = state.relationships[id]!.affinity
+  const offered = affinity >= need
+    ? `對方先開口邀請主角同行、這次是主角答應時，加上 "offered":true，就不用達到邀請的 DC（現在親密度 ${affinity}，到 ${need} 才算數）`
+    : `對方先開口邀請、主角答應時可以加上 "offered":true，但現在親密度 ${affinity} 不到 ${need}，仍要達到邀請的 DC`
+  const cond = why
+    ? `目前不符合邀請的條件（${why}），這次寫了也不會入隊，不要在經過裡寫成已經同行`
+    : `檢定總值要達到邀請的 DC ${dc}（不是這次行動的 DC）才會真的入隊；${offered}。只有前文裡確實是對方提出的才加，主角自己開口的不算`
   return `{"type":"join","npc":"${id}"}（行動的${p.with?.length ? '主要' : ''}對象答應加入主角的隊伍、從此同行：只在 degree 為 success 以上、對象真心願意跟著主角走時。程式另外檢查邀請的條件：人在身邊、親密度、被婉拒後的冷卻、隊伍空位、小隊要找隊長；${cond}。沒有寫這個效果時，經過裡不要寫成對方已經入隊）`
 }
 

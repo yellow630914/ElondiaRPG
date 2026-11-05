@@ -1329,7 +1329,8 @@ export const companionRules = companionsJson as unknown as {
     pay_chance: number; pay_chance_per_cha_mod: number; pay_per_level: number; leader_level: [number, number]
   }
   /** unhireable：不受雇用的人（統治者、機構首長……）邀請的 DC 另外加多少 */
-  invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number; unhireable?: number }
+  /** offered_min_affinity：對方主動邀請、主角答應時（AI 判定的 join 效果帶 offered），親密度到這裡就不比邀請的 DC */
+  invite: { min_affinity: number; offered_min_affinity: number; base: number; affinity_step: number; level_gap: number; unhireable?: number }
   /** 固定 NPC 的小隊（squads.ts）：整隊邀請每多一人 DC +invite_per_member；請他們帶主角同行的 DC */
   squad: { invite_per_member: number; join: { base: number; min: number; affinity_step: number; per_companion: number; level_gap: number } }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
