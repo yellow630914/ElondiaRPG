@@ -38,6 +38,7 @@ import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeS
 import { notForSale } from './trade'
 import { invalidateSources } from './sources'
 import { sanitizeIcon, setCategoryIcons } from './itemIcons'
+import { isTradeCategory } from './market'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = DungeonLayerId
@@ -897,6 +898,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  // 貿易類別：沒寫（或寫了不認得的）照其他欄位推
+  if (isTradeCategory(raw.trade_category)) out.trade_category = raw.trade_category
   // 鎖（雙面效應）：替身上的拘束具上鎖
   if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
   // 淫市的貨：魅氣濃度至少多少才買得到

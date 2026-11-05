@@ -8,6 +8,7 @@ import { gameRule } from '@/engine/gameRules'
 import { charmGateOpen, charmLevel, charmName } from '@/engine/charm'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import MarketTags from './items/MarketTags.vue'
 
 // 城門：衛兵警戒、通緝、聲望對價格的影響，以及繳罰金（見 docs/NPC_SYSTEM.md 第 9 節）
 const props = defineProps<{ canPay?: boolean }>()
@@ -51,6 +52,7 @@ const crimeRules = computed(() => {
       <Hint :text="`犯法的後果\n${crimeRules}`" />
     </p>
     <p v-else class="muted"><GameIcon name="siren" :size="13" /> 這裡沒有所屬的勢力 <Hint :text="`犯法的後果（這裡沒有勢力：不會被通緝，聲望也不變）\n${crimeRules}`" /></p>
+    <MarketTags :location="loc.id" />
     <p v-if="wanted" class="bad"><GameIcon name="siren" :size="13" /> 你被{{ factionName(loc.faction!) }}通緝：城門不能檢定，必須繳交罰金（賄賂）才能通過，也不能進入貴族區與王城。</p>
     <p v-else-if="alert" class="warn">
       <GameIcon name="siren" :size="13" /> 衛兵警戒 {{ alert }} / {{ securityRules.alert.max }}：出入城門要通過盤查（DC {{ securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * alert }}）<template v-if="blockedToday">；今天已經被攔下，要繳罰金才能通過</template>。<Hint :text="`警戒每 ${gameRule(game.state, 'alertDecayDays')} 天降 1。`" />

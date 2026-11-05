@@ -61,6 +61,8 @@ export interface Location {
   material_series?: string
   /** 給 AI 的描述（自建的地下城才有；內建地點的設定寫在世界書） */
   desc?: string
+  /** 城鎮的固定標籤（data/rules/market.json 的 tags）：某些貿易類別的買賣價格倍率（docs/TRADE.md 3.1 節） */
+  trade_tags?: string[]
 }
 export interface Route {
   a: string
@@ -1825,6 +1827,8 @@ export interface ItemDef {
   forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
+  /** 貿易類別（data/rules/market.json 的 categories）；沒寫時照其他欄位推（market.ts 的 tradeCategory） */
+  trade_category?: string
   /** 只在這些地區的商店賣（地方的特產，例如炎華之地的茶餅、朴刀）；沒有時哪裡都賣 */
   regions?: string[]
   /** 魅氣濃度至少這麼高的聚落才買得到（淫市的貨，docs/LEWD_STATS.md 第 20 節） */

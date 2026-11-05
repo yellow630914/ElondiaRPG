@@ -1,0 +1,38 @@
+{
+  "$comment": "貿易（docs/TRADE.md 3.1 節）：商品的貿易類別、城鎮的固定標籤。標籤的倍率買入與賣出都套用；同一件商品的倍率相乘後夾在 mult_range 之間。城鎮貼哪些標籤寫在 data/world/geography.json 的 trade_tags。",
+  "version": 1,
+  "mult_range": [0.4, 2.5],
+  "categories": {
+    "metal": "礦石與金屬",
+    "wood": "木材",
+    "leather": "皮革與毛皮",
+    "cloth": "布料",
+    "grain": "糧食",
+    "liquor": "酒",
+    "herb": "草藥與藥水",
+    "magic": "魔法物品",
+    "weapon": "武器",
+    "armor": "防具",
+    "clothing": "服飾",
+    "luxury": "奢侈品",
+    "monster": "怪物素材",
+    "goods": "日用品"
+  },
+  "tags": {
+    "mining": { "name": "礦產豐富", "desc": "附近的礦脈挖不完，礦石和金屬便宜", "mult": { "metal": 0.5 } },
+    "forestry": { "name": "林業", "desc": "伐木與木工是這裡的生計", "mult": { "wood": 0.6 } },
+    "ranch": { "name": "牧場", "desc": "成群的牛羊馬，皮毛和肉都多", "mult": { "leather": 0.6, "grain": 0.8 } },
+    "granary": { "name": "糧倉", "desc": "四周的田地或漁場供得起一方的糧食", "mult": { "grain": 0.6 } },
+    "brewing": { "name": "釀酒", "desc": "酒窖和酒坊多，酒便宜", "mult": { "liquor": 0.6 } },
+    "port": { "name": "港口貿易", "desc": "外地的船帶來香料、珠寶與布匹", "mult": { "luxury": 0.8, "cloth": 0.8 } },
+    "arcane": { "name": "魔法學府", "desc": "法師與學者聚集，卷軸與魔法材料不稀罕", "mult": { "magic": 0.7 } },
+    "forge": { "name": "鍛造重鎮", "desc": "鍛爐日夜不熄，兵器和護具便宜", "mult": { "weapon": 0.8, "armor": 0.8 } },
+    "frontier": { "name": "邊境", "desc": "靠近戰線，兵器、護具和糧食都缺", "mult": { "weapon": 1.3, "armor": 1.3, "grain": 1.2 } },
+    "barren": { "name": "貧瘠", "desc": "土地種不太出東西，糧食要從外地運來", "mult": { "grain": 1.4 } },
+    "weaving": { "name": "紡織", "desc": "織坊與繡坊林立，布料和衣服便宜", "mult": { "cloth": 0.6, "clothing": 0.8 } },
+    "herbal": { "name": "藥草之鄉", "desc": "草藥長得好，藥師也多", "mult": { "herb": 0.7 } },
+    "hunting": { "name": "獵場", "desc": "獵人和冒險者常帶著獸皮與怪物素材回來", "mult": { "leather": 0.7, "monster": 0.8 } },
+    "wealthy": { "name": "富庶", "desc": "有錢人多，奢侈品和體面的衣服賣得起價", "mult": { "luxury": 1.3, "clothing": 1.2 } },
+    "remote": { "name": "偏遠", "desc": "商隊很少來，外地的貨都貴", "mult": { "luxury": 1.3, "goods": 1.2, "herb": 1.2 } }
+  }
+}

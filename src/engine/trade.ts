@@ -27,6 +27,7 @@ import { openFor } from './storyFlags'
 import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { shopTitle } from './shopNames'
+import { marketMult } from './market'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
@@ -168,7 +169,7 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1, pri
     id: `item:${name}`,
     title: name,
     ...(def.desc ? { desc: def.desc } : {}),
-    gives: [{ type: 'money', amount: Math.max(1, Math.round(price * markup * locationMult(state))) }],
+    gives: [{ type: 'money', amount: Math.max(1, Math.round(price * markup * locationMult(state) * marketMult(state, shopPlace(state).id, name).x)) }],
     gets: [{ type: 'item', name, qty: 1 }],
     stock,
   }
@@ -319,14 +320,14 @@ export function dealMoney(state: GameState, key: string, deal: Deal): number {
   return base > 0 ? Math.max(1, Math.round(base * (1 - discount(state, key)) * (1 + reputationBand(state).buy) * tag)) : 0
 }
 
-/** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 親密度加成 × 聲望倍率 */
+/** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 類別倍率（城鎮標籤）× 親密度加成 × 聲望倍率 */
 export function sellPrice(state: GameState, key: string, name: string): number | null {
   const type = typeOf(key)
   const cat = itemCategory(state, name)
   const value = itemValue(state, name)
   if (!cat || value === undefined || !shopDef(type).buys.includes(cat) || isUniqueItem(state, name)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
-  const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
+  const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * marketMult(state, shopPlace(state).id, name).x * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
   return capSale(state, name, price)
 }
 

@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 貿易類別與城鎮的固定標籤（R19 的 T2、T3）
+
+- 資料：`data/rules/market.json`（14 個貿易類別、15 個固定標籤、倍率夾在 0.4～2.5）；`geography.json` 的聚落都貼上 1～3 個 `trade_tags`；`items.json` 推不出來的 28 件手寫 `trade_category`。
+- 引擎：`market.ts` 的 `tradeCategory`、`inferTradeCategory`（照底材、打造材料、怪物掉落、物品類別推）、`categoryMult`、`marketMult`；`trade.ts` 的 `itemDeal`（售價）與 `sellPrice`（收購價）乘上類別倍率。打聽、聊天的 `<world_facts>` 多一行「這裡的行情」。
+- 介面：商店視窗上方的「某某的行情」（`MarketTags.vue`，城門的地點面板也有）、商品與收購價旁的 ▼／▲（`MarketBadge.vue`）；內容編輯器的物品多了「貿易類別」。
+- 規則寫在 [TRADE](../../TRADE.md) 3.1 節，測試在 `market.spec.ts`。
+
 ### 2026-11-05 購物車與整車交涉（R19 的 T1，含原 B21）
 
 - 擁有者看過樣稿（`docs/mockups/trade.html`）後決定先做這項；同時定了 R19 其他的數值（動態狀態每 7 天、最多 2 個；倍率 ×0.4～×2.5；收購遞減每件 −3%、做成存檔規則、最多 −50%；交涉的賣出部分除以倍率），寫在 [TRADE_PLAN](TRADE_PLAN.md) 第 2 節。
