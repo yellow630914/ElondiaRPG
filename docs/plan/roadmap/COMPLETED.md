@@ -2,6 +2,12 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 基本價格依據表（R19 的 T7）；R19 貿易全部完成
+
+- [基本價格依據表](../../../worldgen/balance/prices.md)：以世界書的舊幣制與一般人一天 15 白鸛的生活費為錨，對照 14～15 世紀英格蘭的物價（1 便士 ≈ 5 白鸛），逐列寫出武器、防具底材、糧食、日用品、打造材料的現價、依據與處理。
+- 調整的離群值（`gear.json` 底材，`items.json` 的制式裝備照公式一起更新 45 件，手寫價格的獨特裝備不動）：匕首 160 → 60、長戟 380 → 220（玩家回報的「長兵器比劍貴」）、長弓 300 → 150、皮靴 20 → 40、布腰帶 25 → 10。
+- R19 的計畫（TRADE_PLAN）整份做完，刪掉；規則都在 [TRADE](../../TRADE.md) 第 3～5 節。沒決定要不要做的延伸（事件改變行情、世界編輯器編輯標籤與狀態）放在點子庫 [I25](../ideas/dev-discussion.md#i25)。
+
 ### 2026-11-05 跑商的限制與平衡模擬（R19 的 T6）
 
 - 收購遞減：存檔規則 `sellGlutPct`（預設 3%）、`market.json` 的 `sell_glut`（最多 50%、每天回復 5 件）、存檔的 `sales`；`trade.ts` 的 `glutCount`、`glutMult`、`sellTotalOf`，購物車與直接賣出都照遞減算並記錄。
@@ -31,7 +37,7 @@
 
 ### 2026-11-05 購物車與整車交涉（R19 的 T1，含原 B21）
 
-- 擁有者看過樣稿（`docs/mockups/trade.html`）後決定先做這項；同時定了 R19 其他的數值（動態狀態每 7 天、最多 2 個；倍率 ×0.4～×2.5；收購遞減每件 −3%、做成存檔規則、最多 −50%；交涉的賣出部分除以倍率），寫在 [TRADE_PLAN](TRADE_PLAN.md) 第 2 節。
+- 擁有者看過樣稿（`docs/mockups/trade.html`）後決定先做這項；同時定了 R19 其他的數值（動態狀態每 7 天、最多 2 個；倍率 ×0.4～×2.5；收購遞減每件 −3%、做成存檔規則、最多 −50%；交涉的賣出部分除以倍率），寫在當時的 TRADE_PLAN 第 2 節（R19 做完後刪掉，規則見 [TRADE](../../TRADE.md)）。
 - 引擎：`trade.ts` 的 `Cart`、`cartQuote`、`checkoutCart`、`bargainNet`、`settleNet`、`cartBargainTarget`；`ShopState.cartBargain` 記今天的整車交涉；`bargainSetup`、`applyBargain` 多了出價（`ActionPending.offer_cc`），判定的提示詞寫「想付／想收」。
 - 介面：`ShopDialog.vue` 一般商品與行囊改成加進購物車，`CartPanel.vue`（電腦版在兩欄下面，手機版是第三個分頁）。
 - 原 B21（交涉的成交價不是喊的價）：成交價取出價與能談到的最好價中對店家有利的那個。規則寫在 [TRADE](../../TRADE.md) 4.1、第 5 節，測試在 `cart.spec.ts`。
@@ -69,7 +75,7 @@
 - 版本號：`vite.config.ts` 用 `define` 把 `package.json` 的版本帶進程式（`__APP_VERSION__`，型別在 `env.d.ts`），首頁下方與設定的「存檔」頁顯示。
 - 存檔規則「大成功、大失敗只看骰面」（`options.naturalCrit`）：`checks.ts` 的 `computeDegree` 多一個參數、`clampDegree` 收斂 AI 給的程度；主動行動、AI 入隊、談判、撤出地下城、打聽消息、提議夥伴去娼館都照這條；判定提示詞寫明規則。規則寫在 [ACTIONS](../../ACTIONS.md) 第 3 節、[SAVES](../../SAVES.md) 第 7 節，測試在 `naturalCrit.spec.ts`。
 - 戰鬥的回合提示：`CombatView.vue` 播時間軸時排隊出「第 N 回合」「敵方行動」「輪到你了／輪到某某」（`fx.ts` 的 `banner` 多了 `turn`、`foe`、`ally` 三種小橫幅），設定「戰鬥的回合提示」（`settings.turnBanner`）可以關。寫在 [COMBAT_SYSTEM](../../COMBAT_SYSTEM.md) 8.3 節之後，測試在 `turnBanner.spec.ts`。
-- 同一天：交涉的成交價不是喊價（B21）併進 R19 的購物車一起做（[TRADE_PLAN](TRADE_PLAN.md) 第 3 節）。
+- 同一天：交涉的成交價不是喊價（B21）併進 R19 的購物車一起做（R19 的計畫，做完後刪掉）。
 
 ### 2026-11-05 對方主動邀請時不再要過邀請的檢定（L10，原 B22）
 

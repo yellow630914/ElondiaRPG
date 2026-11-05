@@ -132,7 +132,7 @@
     "silk_gag": {"slot": "head", "name": "口塞", "kind": "cloth", "price": 10, "restraint": true, "bind": 1, "bind_kind": "mouth", "adult": true, "desc": "塞進嘴裡、再用絲巾繞到腦後綁住，說話只剩含糊的嗚嗚聲。"},
     "ball_gag": {"slot": "head", "name": "口球", "kind": "leather", "price": 40, "restraint": true, "bind": 2, "bind_kind": "mouth", "adult": true, "desc": "皮帶扣在腦後的圓球，咬著合不攏嘴，口水會一直流下來。"},
     "muzzle_gag": {"slot": "head", "name": "面罩口枷", "kind": "leather", "price": 120, "restraint": true, "bind": 3, "bind_kind": "mouth", "adult": true, "desc": "連著口塞的皮面罩，從鼻樑包到下巴，扣環在腦後。"},
-    "dagger":       { "slot": "main_hand", "type": "刀劍", "name": "匕首", "kind": "metal", "weapon": "dagger", "price": 160, "scale": { "damage": "full", "hit": "half" } },
+    "dagger":       { "slot": "main_hand", "type": "刀劍", "name": "匕首", "kind": "metal", "weapon": "dagger", "price": 60, "scale": { "damage": "full", "hit": "half" } },
     "shortsword":   { "slot": "main_hand", "type": "刀劍", "name": "短劍", "kind": "metal", "weapon": "shortsword", "price": 180, "scale": { "damage": "full", "hit": "half" } },
     "scimitar":     { "slot": "main_hand", "type": "刀劍", "name": "彎刀", "kind": "metal", "weapon": "scimitar", "price": 200, "scale": { "damage": "full", "hit": "half" } },
     "rapier":       { "slot": "main_hand", "type": "刀劍", "name": "細劍", "kind": "metal", "weapon": "rapier", "price": 260, "scale": { "damage": "full", "hit": "half" } },
@@ -142,7 +142,7 @@
     "greataxe":     { "slot": "main_hand", "type": "鎚斧", "name": "巨斧", "kind": "metal", "weapon": "greataxe", "two_handed": true, "price": 450, "scale": { "damage": "full", "hit": "half" } },
     "quarterstaff": { "slot": "main_hand", "type": "長柄", "name": "長棍", "kind": "wood", "weapon": "quarterstaff", "two_handed": true, "price": 30, "scale": { "damage": "full", "hit": "half" } },
     "spellstaff":   { "slot": "main_hand", "type": "法杖", "name": "法杖", "kind": "wood", "weapon": "quarterstaff", "two_handed": true, "price": 120, "scale": { "hit": "up", "save": "half" }, "desc": "施法者的法杖：強化法術的命中，也讓心神更穩。" },
-    "longbow":      { "slot": "main_hand", "type": "弓弩", "name": "長弓", "kind": "wood", "weapon": "longbow", "two_handed": true, "price": 300, "scale": { "damage": "full", "hit": "half" } },
+    "longbow":      { "slot": "main_hand", "type": "弓弩", "name": "長弓", "kind": "wood", "weapon": "longbow", "two_handed": true, "price": 150, "scale": { "damage": "full", "hit": "half" } },
 
     "shield":       { "slot": "off_hand", "type": "盾", "name": "盾", "kind": "metal", "price": 150, "stats": { "dr": 1 }, "threat": 0.1, "scale": { "dr": "half", "evade": "third" } },
     "buckler":      { "slot": "off_hand", "type": "盾", "name": "小圓盾", "kind": "leather", "price": 80, "stats": { "evade": 1 }, "scale": { "evade": "half" } },
@@ -167,12 +167,12 @@
     "wraps":        { "slot": "wrists", "name": "纏腕布", "kind": "cloth", "price": 10, "scale": { "crit": "third", "save": "half" } },
 
     "sabatons":     { "slot": "feet", "name": "戰靴", "kind": "metal", "price": 250, "scale": { "dr": "half" } },
-    "boots":        { "slot": "feet", "name": "皮靴", "kind": "leather", "price": 20, "scale": { "evade": "up" } },
+    "boots":        { "slot": "feet", "name": "皮靴", "kind": "leather", "price": 40, "scale": { "evade": "up" } },
     "shoes":        { "slot": "feet", "name": "布鞋", "kind": "cloth", "price": 8, "scale": { "evade": "half" } },
 
     "girdle":       { "slot": "belt", "name": "護腰", "kind": "metal", "price": 120, "scale": { "dr": "half", "damage": "third" } },
     "belt":         { "slot": "belt", "name": "皮腰帶", "kind": "leather", "price": 12, "scale": { "damage": "half", "hit": "third" } },
-    "sash":         { "slot": "belt", "name": "腰帶", "kind": "cloth", "price": 25, "scale": { "save": "half" } },
+    "sash":         { "slot": "belt", "name": "腰帶", "kind": "cloth", "price": 10, "scale": { "save": "half" } },
 
     "ring_precision": { "slot": "ring", "name": "精準之戒", "kind": "jewel", "price": 80, "scale": { "hit": "up" } },
     "ring_guard":     { "slot": "ring", "name": "守護之戒", "kind": "jewel", "price": 80, "scale": { "save": "up" } },
@@ -272,7 +272,7 @@
     "succubus_horns": {"slot": "head", "name": "魅魔角頭飾", "kind": "jewel", "price": 80, "scale": {"save": "up"}, "outfit": "adult", "adult": true, "desc": "一對彎彎的黑角裝在髮箍上，角尖鑲著小寶石，戴上就像個魅魔。"},
     "body_chain": {"slot": "accessory", "name": "身體鍊", "kind": "jewel", "price": 150, "scale": {"save": "third_up"}, "outfit": "adult", "adult": true, "desc": "從頸子垂到胸前、再纏過腰間的細鍊，隨著呼吸閃閃發亮。"},
     "greatsword": { "slot": "main_hand", "type": "刀劍", "name": "雙手劍", "kind": "metal", "weapon": "greatsword", "two_handed": true, "price": 500, "scale": {"damage": "full", "hit": "half"}, "desc": "比人還長的雙手劍，揮起來要整個身體一起轉。" },
-    "halberd": { "slot": "main_hand", "type": "長柄", "name": "長戟", "kind": "metal", "weapon": "halberd", "two_handed": true, "price": 380, "stats": {"hit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "斧刃、槍尖與鉤子裝在同一根長柄上，搆得比劍遠。" },
+    "halberd": { "slot": "main_hand", "type": "長柄", "name": "長戟", "kind": "metal", "weapon": "halberd", "two_handed": true, "price": 220, "stats": {"hit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "斧刃、槍尖與鉤子裝在同一根長柄上，搆得比劍遠。" },
     "podao": { "slot": "main_hand", "type": "刀劍", "name": "朴刀", "kind": "metal", "weapon": "podao", "two_handed": true, "price": 360, "stats": {"crit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "長柄短刃的雙手刀，大燁的步卒與刀客最常用；比雙手劍輕，砍得也快。" },
     "horn_bow": { "slot": "main_hand", "type": "弓弩", "name": "角弓", "kind": "wood", "weapon": "horn_bow", "two_handed": true, "price": 360, "stats": {"crit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "用牛角、木胎與筋膠疊成的反曲短弓，人馬族在馬背……在自己背上也拉得開；比長弓短，力道卻不輸。" },
     "bushen_armor": { "slot": "body", "name": "步人甲", "kind": "metal", "armor": "bushen", "price": 4000, "scale": {"dr": "half"}, "desc": "大燁步卒的重甲：上千片甲葉用皮繩編在一起，從肩頭罩到小腿。比板甲便宜，卻更笨重。" },

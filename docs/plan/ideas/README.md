@@ -32,4 +32,5 @@
 | I19 | 模組化像素立繪 | 介面、美術 | [early-design](early-design.md#i19) |
 | I20 | 地圖格改用生成的 tileset | 介面、美術 | [early-design](early-design.md#i20) |
 | I23 | 自建聚落與自建地區（自建地下城之後） | 自訂內容 | [dev-discussion](dev-discussion.md#i23) |
+| I25 | 貿易的延伸：事件改變行情、世界編輯器編輯標籤與狀態 | 玩法、自訂內容 | [dev-discussion](dev-discussion.md#i25) |
 | I24 | 慾望戰鬥的收尾：神殿的淨化、園區規則的編輯器、新園區、防具的淫器合煉（成人向，原 R8） | 玩法 | [dev-discussion](dev-discussion.md#i24) |
