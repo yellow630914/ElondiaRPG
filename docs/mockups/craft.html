@@ -88,7 +88,8 @@ table.out { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); tex
 
 <script type="module">
 import { gearRules, baseSlotName, gearName, gearSummary, ordinaryBases, rarityName, rarityPoints } from '/src/engine/gear.ts'
-import { craftRarity } from '/src/engine/craft.ts'
+import { auxElements, craftRarity } from '/src/engine/craft.ts'
+import { damageTypeName, itemDef } from '/src/engine/data.ts'
 
 // ---- 類型（實作時改成 gear.json 底材的欄位） ----
 const WEAPON_FAMILY = {
@@ -118,7 +119,9 @@ const slots = SLOT_ORDER.filter((s) => all.some((b) => b.slot === s))
 
 // 樣稿的角色：皮革與裁縫 Lv.2
 const CRAFT_LV = 2
-const state = { slot: 'feet', type: '', base: 'boots', mat: '', q: '' }
+const state = { slot: 'feet', type: '', base: 'boots', mat: '', q: '', aux: [] }
+// 樣稿的行囊：幾種可以當輔料的材料
+const BAG = ['火蜥鱗片', '雷紋石塊', '狼皮', '月影絲', '黑鐵礦石'].filter((n) => itemDef(n))
 
 const el = (tag, attrs = {}, ...kids) => {
   const e = document.createElement(tag)
@@ -207,6 +210,22 @@ function render() {
           return el('td', {}, rarityName(r), el('div', { class: 'muted' }, d === 'partial' ? '沒有附魔' : `附魔 ${rarityPoints(r)} 點（隨機）`))
         }),
         el('td', {}, '材料損失一半')))),
+    (() => {
+      // 輔料：照舊（最多 3 種、不論結果都用掉；價值越高越可能再高一級；名稱決定附魔的方向）
+      const a = gearRules.craft.aux
+      const value = state.aux.reduce((s, n) => s + (itemDef(n)?.price_cc ?? 0), 0)
+      const plain = base.price * gearRules.materials[state.mat].price
+      const chance = Math.round(Math.min(a.max_chance, (value / Math.max(1, plain)) * a.chance_per_value) * 100)
+      const el2 = auxElements(state.aux.map((n) => ({ name: n, qty: 1 })))
+      const left = BAG.filter((n) => !state.aux.includes(n))
+      return el('div', { class: 'kv' },
+        el('span', {}, '輔料（選填） '),
+        state.aux.map((n) => el('button', { class: 'chip on', onclick: () => pick({ aux: state.aux.filter((x) => x !== n) }) }, `${n} ×`)),
+        state.aux.length < a.max_kinds && left.length
+          ? el('select', { onchange: (e) => e.target.value && pick({ aux: [...state.aux, e.target.value] }) }, el('option', { value: '' }, '加入材料…'), left.map((n) => el('option', { value: n }, n)))
+          : null,
+        state.aux.length ? el('span', { class: 'note' }, `${chance}% 機率稀有度再高一級${el2.length ? `・附魔偏向 ${el2.map(damageTypeName).join('、')}` : ''}`) : null)
+    })(),
     el('div', { class: 'kv' },
       el('span', {}, '檢定 ', el('b', {}, `${base.kind === 'metal' ? '力量' : base.kind === 'jewel' ? '智力' : '靈巧'} +${CRAFT_LV}・DC ${gearRules.craft.dc[gearRules.materials[state.mat].tier - 1]}`)),
       el('span', {}, '時間 ', el('b', {}, '約 8 小時')),
