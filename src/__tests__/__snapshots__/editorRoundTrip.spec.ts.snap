@@ -201,6 +201,22 @@ exports[`world editor round trip > materials: opening and saving without changes
 }
 `;
 
+exports[`world editor round trip > npcTags: opening and saving without changes keeps the data 1`] = `
+{
+  "bishop": "57d2d9197655",
+  "commoner": "57d2d9197655",
+  "good": "57d2d9197655",
+  "merchant": "57d2d9197655",
+  "noble": "57d2d9197655",
+  "priest": "57d2d9197655",
+  "prostitute": "57d2d9197655",
+  "royal": "57d2d9197655",
+  "slave": "57d2d9197655",
+  "traveler": "57d2d9197655",
+  "villain": "57d2d9197655",
+}
+`;
+
 exports[`world editor round trip > parasites: opening and saving without changes keeps the data 1`] = `
 {
   "hungry_lingerie": "06c801a1bd82",

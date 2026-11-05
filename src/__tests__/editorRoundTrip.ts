@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto'
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { nextTick, type Component } from 'vue'
-import { abilities, enemies, itemRules, landmarks, npcs, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories } from '@/engine/data'
+import { abilities, enemies, itemRules, landmarks, npcs, npcTags, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { conditionIds } from '@/engine/mods'
 import { allMasterEvents } from '@/engine/masterEventMods'
@@ -34,6 +34,7 @@ import StatusEditor from '@/components/content/StatusEditor.vue'
 import StoryEditor from '@/components/content/StoryEditor.vue'
 import StoryNodeEditor from '@/components/content/StoryNodeEditor.vue'
 import TattooEditor from '@/components/content/TattooEditor.vue'
+import NpcTagEditor from '@/components/content/NpcTagEditor.vue'
 import TravelEventEditor from '@/components/content/TravelEventEditor.vue'
 
 // 環境用 jsdom：happy-dom 的 <select> 不在畫面上之後也不會釋放它的 <option>（1500 個選項約 40 MB），
@@ -84,6 +85,7 @@ export const CASES: Record<string, () => Case> = {
   statuses: () => ({ editor: StatusEditor, keys: sample(Object.keys(statuses), 25), props: (id) => ({ id }) }),
   conditions: () => ({ editor: ConditionEditor, keys: sample(conditionIds(), 15), props: (id) => ({ id }) }),
   perks: () => ({ editor: PerkEditor, keys: sample(perkRules.perks.map((p) => p.id), 30), props: (id) => ({ id }) }),
+  npcTags: () => ({ editor: NpcTagEditor, keys: Object.keys(npcTags.tags), props: (id) => ({ id }) }),
   tattoos: () => ({ editor: TattooEditor, keys: sample(Object.keys(tattooRules.templates), 10), props: (id) => ({ id }) }),
   parasites: () => ({ editor: ParasiteEditor, keys: Object.keys(parasiteRules.parasites), props: (id) => ({ id }) }),
   marks: () => ({ editor: MarkEditor, keys: sample(Object.keys(slaveryRules.contracts), 10), props: (id) => ({ id }) }),

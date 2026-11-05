@@ -113,6 +113,8 @@
 | `slave_price_mult` | 主角出售自己時的身價倍率（成人向） | `companions.ts` |
 | `lust_resist` | 戰鬥中的慾望抗性（成人向；負數是受到的慾望變少） | `combat.ts` 的 `initLust` |
 
+世界管理可以修改內建標籤的通用欄位、新增自建的標籤（[CONTENT_EDITOR](CONTENT_EDITOR.md) 3.65 節）。
+
 | 標籤 | 效果 |
 |---|---|
 | 旅人 | 求生檢定 +2（旅途的危險與事件、撤出地下城；檢定分類見 [ACTIONS](ACTIONS.md) 2.1 節） |
