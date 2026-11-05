@@ -87,7 +87,7 @@ import { formatMoney } from '/src/engine/money.ts'
 // ---- 樣稿的存檔：站在雜貨店 ----
 const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'rhineburg' })
 enterLocation(state)
-standOn(state, 'general')
+standOn(state, 'shop')
 state.money_cc = 3000
 state.inventory = []
 for (const [n, q] of [['煉金工具組', 1], ['炊具組', 1], ['木工工具組', 1], ['藥草', 2], ['野莓', 4], ['木材', 3], ['生肉', 1], ['月光草', 1]]) if (itemDef(n)) addItem(state.inventory, n, q)

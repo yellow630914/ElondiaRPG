@@ -300,11 +300,11 @@ function boughtText(plan: CraftPlan): string {
   return plan.buys.length ? `，當場買了 ${plan.buys.map((b) => `${b.name}×${b.qty}`).join('、')}（${formatMoney(plan.buyCost)}）` : ''
 }
 
-/** 當場補買：付錢、放進行囊（接著照一般的材料用掉）、扣掉店家的存貨 */
-function buyMaterials(state: GameState, report: Report, plan: CraftPlan) {
-  if (!plan.buys.length) return
-  const effects: RewardEffect[] = [{ type: 'money', amount: -plan.buyCost }]
-  for (const b of plan.buys) {
+/** 當場補買（打造與配方共用）：付錢、放進行囊（接著照一般的材料用掉）、扣掉站的這間店的存貨 */
+export function buyHere(state: GameState, report: Report, buys: { name: string; qty: number; price: number }[]) {
+  if (!buys.length) return
+  const effects: RewardEffect[] = [{ type: 'money', amount: -buys.reduce((s, b) => s + b.qty * b.price, 0) }]
+  for (const b of buys) {
     effects.push({ type: 'item', name: b.name, qty: b.qty })
     const offer = shopOfferHere(state, b.name)
     const deal = offer && state.shops?.[offer.key]?.deals.find((d) => d.id === offer.dealId)
@@ -315,7 +315,7 @@ function buyMaterials(state: GameState, report: Report, plan: CraftPlan) {
 
 function finishCraft(state: GameState, report: Report, plan: CraftPlan, degree: Degree, gear?: Extract<RewardEffect, { type: 'gear' }>): string {
   const { base, material, aux } = plan
-  buyMaterials(state, report, plan)
+  buyHere(state, report, plan.buys)
   const paid = plan.crafter ? `花了 ${formatMoney(plan.fee)} 工坊租金` : `付了 ${formatMoney(plan.fee)} 工錢`
   // 輔料：成功程度有做出東西時擲一次，擲中就再高一級
   const boosted = plan.auxChance > 0 && !!craftRarity(material, degree) && withRng(state, (rng) => rng.chance(plan.auxChance))

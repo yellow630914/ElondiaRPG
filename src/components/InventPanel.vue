@@ -24,6 +24,8 @@ const crafterId = ref('pc')
 const crafter = computed(() => who.value.find((w) => w.member.id === crafterId.value && !w.refusal)?.member ?? s.value.party.find((m) => m.isPlayer)!)
 
 const crafts = CRAFT_IDS.filter((c) => inventCategories(c).length)
+/** 這種工藝能自創哪些類別（工藝按鈕上寫出來） */
+const catsLabel = (c: CraftId) => inventCategories(c).map((x) => INVENT_CATEGORY_NAME[x]).join('、')
 const craft = ref<CraftId>('alchemy')
 const categories = computed(() => inventCategories(craft.value))
 const pickedCategory = ref<InventCategory>('consumable')
@@ -70,27 +72,35 @@ function invent() {
       寫下做法，放進材料試做。
       <Hint :text="`${aiOn ? 'AI 會依做法與材料設計成品並取名' : '沒有開啟 AI 判定時，會仿照同級的現成配方做一件「特製」品'}，做好之後可以在日誌或配方清單上改名。\n強度依擲骰：大成功稍強（最多到高一級的現成配方）、成功和同級相當、部分成功稍弱。做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。`" />
     </p>
-    <div class="row">
-      <label class="field">誰來做
-        <select v-model="crafterId">
-          <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
-        </select>
-      </label>
-      <label class="field">工藝
-        <select v-model="craft">
-          <option v-for="c in crafts" :key="c" :value="c">{{ craftRules.skills[c].name }}（Lv.{{ skillOf(crafter, c).level }}）</option>
-        </select>
-      </label>
-      <label class="field">類別
-        <select :value="category" @change="pickedCategory = ($event.target as HTMLSelectElement).value as InventCategory">
-          <option v-for="c in categories" :key="c" :value="c">{{ INVENT_CATEGORY_NAME[c] }}</option>
-        </select>
-      </label>
-      <label class="field">配方等級
-        <select :value="level" @change="pickedLevel = Number(($event.target as HTMLSelectElement).value)">
-          <option v-for="n in maxLevel" :key="n" :value="n">Lv.{{ n }}</option>
-        </select>
-      </label>
+    <div class="step">
+      <span class="lab">誰來做</span>
+      <select v-model="crafterId">
+        <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
+      </select>
+    </div>
+    <div class="step">
+      <span class="lab">工藝</span>
+      <div class="chips">
+        <!-- 按鈕上直接寫出這種工藝能自創哪些類別（例如製革只能做家具） -->
+        <button v-for="c in crafts" :key="c" class="small" :class="{ primary: craft === c }" @click="craft = c">
+          {{ craftRules.skills[c].name }}<span class="n">Lv.{{ skillOf(crafter, c).level }}・{{ catsLabel(c) }}</span>
+        </button>
+      </div>
+    </div>
+    <div class="step">
+      <span class="lab">類別</span>
+      <div class="chips">
+        <button v-for="c in categories" :key="c" class="small" :class="{ primary: category === c }" @click="pickedCategory = c">{{ INVENT_CATEGORY_NAME[c] }}</button>
+      </div>
+    </div>
+    <div class="step">
+      <span class="lab">配方等級</span>
+      <div class="chips">
+        <button
+          v-for="n in craftRules.max_level" :key="n" class="small" :class="{ primary: level === n }" :disabled="n > maxLevel"
+          :title="n > maxLevel ? `${crafter.name}的${skill.name}要 Lv.${n}` : ''" @click="pickedLevel = n"
+        >Lv.{{ n }}</button>
+      </div>
     </div>
 
     <div v-if="shownCaps" class="caps">
@@ -137,6 +147,14 @@ function invent() {
 </template>
 
 <style scoped>
+.step { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: start; }
+.step > .lab { color: var(--muted); font-weight: 600; padding-top: 4px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chips .n { margin-left: 4px; font-size: var(--fs-xs); opacity: 0.75; }
+@media (max-width: 640px) {
+  .step { grid-template-columns: minmax(0, 1fr); gap: 4px; }
+  .step > .lab { padding-top: 0; }
+}
 .invent { display: grid; gap: 6px; grid-template-columns: minmax(0, 1fr); }
 .invent p { margin: 0; }
 .invent textarea { width: 100%; }

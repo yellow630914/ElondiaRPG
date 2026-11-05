@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { craftPlan, craftTarget, makeTarget, parseCraftTarget, shopOfferHere } from '@/engine/craft'
+import { produceTarget, recipeOf, recipePlan } from '@/engine/recipes'
 import { itemDef } from '@/engine/data'
 import { baseType, forgeItemsForMaterial, gearRules, ordinaryBases } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
@@ -81,5 +82,28 @@ describe('打造材料：第 1 級也是物品，來源可以選、可以當場�
     expect(baseType('boots')).toBe('皮革衣物')
     expect(baseType('plate')).toBe('金屬護甲')
     expect([...types].filter((t) => t.startsWith('其他'))).toEqual([])
+  })
+
+  it('buys missing recipe ingredients at the shop too', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    standOn(state, 'shop')
+    const deal = shopState(state, 'general').deals.find((d) => d.id === 'item:藥草')!
+    deal.stock = 5
+    const need = recipeOf('微弱治療藥劑')!.inputs.find((x) => x.name === '藥草')!.qty
+    addItem(state.inventory, '藥草', need - 1)
+    expect(recipePlan(state, '微弱治療藥劑', 1, pc(state)).blocked).toContain('可以當場補買')
+    const plan = recipePlan(state, '微弱治療藥劑', 1, pc(state), { buy: true })
+    expect(plan.blocked).toBeUndefined()
+    expect(plan.buys.map((b) => [b.name, b.qty])).toEqual([['藥草', 1]])
+    expect(plan.buyCost).toBeGreaterThan(0)
+    const money = state.money_cc
+    prepareAction(state, { kind: 'produce', target: produceTarget('pc', '微弱治療藥劑', 1, { buy: true }), text: '' })
+    state.pendingAction!.natural = 15
+    resolveAction(state, null)
+    expect(state.money_cc).toBe(money - plan.fee - plan.buyCost)
+    expect(state.inventory.some((i) => i.name === '藥草')).toBe(false)
+    expect(state.inventory.some((i) => i.name === '微弱治療藥劑')).toBe(true)
+    expect(deal.stock).toBe(4)
   })
 })

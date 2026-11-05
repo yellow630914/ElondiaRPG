@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 依配方製作與自創配方的介面、配方材料當場補買
+
+- 接著 R18：擁有者看過樣稿（`docs/mockups/recipes.html`）後決定照做，配方材料也能當場補買；自創配方的類別規則不放寬。
+- `RecipePanel.vue`：工藝、類別按鈕列、只看做得出來的、搜尋、配方卡片、詳細區（批數按鈕、材料表、補買）；`InventPanel.vue`：工藝（寫出能自創的類別）、類別、配方等級改成按鈕。
+- 引擎：`recipes.ts` 的 `recipePlan` 加 `buy`（`inputs` 帶 `offer`、`buy`，`buys`、`buyCost`），target 接 `|!buy`；補買和打造共用 `craft.ts` 的 `buyHere`。
+- 規則寫在 [CRAFTING](../../CRAFTING.md) 第 6、7 節；測試在 `craftMaterials.spec.ts`。
+
 ### 2026-11-05 工藝介面與材料（R18）
 
 - 起因：玩家回饋（Discord 的 Tirpitz、issue #62 第 14、15 條）：底材清單混雜難找、看不出做出來的數值、「一級材料為啥非要自己買」。
