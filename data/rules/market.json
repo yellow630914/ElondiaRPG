@@ -3,6 +3,8 @@
   "version": 1,
   "mult_range": [0.4, 2.5],
   "$comment_states": "動態狀態：每座聚落每 period_days 天重抽一次（各聚落錯開），同時 0～max 個（count_weights 是 0、1、2 個的權重）；days 是持續天數範圍（不超過一期）、weight 是抽中的權重；regions、types 限定地區與聚落類型，tags 要有其中一個固定標籤、not_tags 不能有；同一個 group 的不會同時出現。亂數只看世界的種子、聚落與第幾期，讀檔重來結果不變。",
+  "$comment_sell_glut": "收購遞減：同一間店收購同一個貿易類別，每件降 gameRules 的 sellGlutPct（預設 3%），最多降 max_drop；記錄的件數每天回復 recover_per_day 件。",
+  "sell_glut": {"max_drop": 0.5, "recover_per_day": 5},
   "state_rules": {"period_days": 7, "max": 2, "count_weights": [2, 5, 3]},
   "categories": {
     "metal": "礦石與金屬",

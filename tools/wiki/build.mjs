@@ -103,6 +103,7 @@ export const GROUPS = [
     { page: '技能的平衡', src: 'worldgen/balance/abilities.md', sub: '平衡' },
     { page: '物品的平衡', src: 'worldgen/balance/items.md', sub: '平衡' },
     { page: '經濟與報酬', src: 'worldgen/balance/economy.md', sub: '平衡' },
+    { page: '跑商模擬結果', src: 'worldgen/balance/trade-sim.md', sub: '平衡' },
     { page: '狀態、特質、刺青的平衡', src: 'worldgen/balance/statuses-perks-tattoos.md', sub: '平衡' },
     { page: '特殊任務的平衡', src: 'worldgen/balance/stories.md', sub: '平衡' },
   ] },

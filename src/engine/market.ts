@@ -33,6 +33,7 @@ export const marketRules = marketJson as unknown as {
   categories: Record<TradeCategory, string>
   tags: Record<string, TradeTagDef>
   state_rules: { period_days: number; max: number; count_weights: number[] }
+  sell_glut: { max_drop: number; recover_per_day: number }
   states: Record<string, TradeStateDef>
 }
 

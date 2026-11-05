@@ -5,7 +5,7 @@ import { prepareAction, resolveAction } from '@/engine/actions'
 import { shopRules } from '@/engine/data'
 import { enterLocation, standOn } from '@/engine/grid'
 import { addItem, newGame } from '@/engine/state'
-import { bargainNet, cartBargainTarget, cartQuote, checkoutCart, dealMoney, sellPrice, settleNet, shopKey, shopState, type Cart } from '@/engine/trade'
+import { bargainNet, cartBargainTarget, cartQuote, checkoutCart, dealMoney, sellPrice, sellTotalOf, settleNet, shopKey, shopState, type Cart } from '@/engine/trade'
 import type { GameState, Report } from '@/engine/types'
 import { buildActionPrompt } from '@/narrator/judge'
 
@@ -37,7 +37,9 @@ describe('購物車與整車交涉（R19 T1）', () => {
     const cart: Cart = { buy: [{ dealId: a.id, qty: 2 }, { dealId: b.id, qty: 1 }], sell: [{ name: '狼皮', qty: 3 }] }
     const q = cartQuote(state, 'smithy', cart)
     expect(q.buyTotal).toBe(dealMoney(state, key, a) * 2 + dealMoney(state, key, b))
-    expect(q.sellTotal).toBe(sellPrice(state, key, '狼皮')! * 3)
+    // 收購遞減：三張狼皮一張比一張便宜
+    expect(q.sellTotal).toBe(sellTotalOf(state, key, '狼皮', 3))
+    expect(q.sell[0]!.price).toBe(sellPrice(state, key, '狼皮'))
     expect(q.listNet).toBe(q.buyTotal - q.sellTotal)
     expect(q.net).toBe(q.listNet)
     expect(q.blocked).toBeUndefined()

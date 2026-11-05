@@ -26,6 +26,6 @@ defineProps<{ b: PriceBreakdown; sell?: boolean }>()
 .step b { font-weight: 600; }
 .step.k-tag b { color: var(--accent-2); }
 .step.k-state b { color: var(--accent); }
-.step.k-cap b, .step.k-clamp b { color: var(--danger); }
+.step.k-cap b, .step.k-clamp b, .step.k-glut b { color: var(--danger); }
 .note { flex-basis: 100%; font-size: 0.75rem; }
 </style>

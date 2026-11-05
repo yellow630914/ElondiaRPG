@@ -139,6 +139,7 @@
 | 短休的時間 | `shortRestHours` | 1 | 0.5～4 小時 | |
 | 長休的時間 | `longRestHours` | 8 | 2～12 小時 | 旅店與家裡照樣住到隔天早上 |
 | 衛兵警戒多久降一級 | `alertDecayDays` | 7 | 1～30 天 | |
+| 收購遞減 | `sellGlutPct` | 3 | 0～10 % | 同一間店收購同一個貿易類別，每件降這麼多（最多 50%，每天回復 5 件；[TRADE](TRADE.md) 3.4 節）；0 = 不遞減 |
 | 黑市每天的珍品 | `blackMarketGear` | 3 | 0～10 件 | 黑市每天刷新幾件獨特裝備（[ITEMS](ITEMS.md) 3.1 節）；0 = 不賣 |
 | 慾望戰鬥 | `lustMult` | 1 | 0～2 倍 | 戰鬥中所有慾望增加的倍率；0 = 關閉（沒有慾望條、色情技能不能用、敵人不用慾望攻擊；[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 8.5 節）。成人向 |
 | 技能攜帶上限 | `skillLoadout` | 12 | 0～30 個 | 每個角色戰鬥時最多帶幾個技能與法術（戲法不算），在角色詳情的「能力」頁勾選要帶哪些；0 = 不限（[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 7 節） |

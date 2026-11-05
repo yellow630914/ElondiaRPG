@@ -3,7 +3,8 @@ import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { breakdownText, buyBreakdown, costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { breakdownText, buyBreakdown, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { pctText, tradeCategory } from '@/engine/market'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
@@ -115,6 +116,8 @@ const bag = computed(() => s.value.inventory
   .filter((i) => !onlySellable.value || i.price !== null)
   .sort((a, b) => Number(b.price !== null) - Number(a.price !== null)))
 const sellQty = reactive<Record<string, number>>({})
+/** 收購遞減：這間店最近收了很多這一類時，收購價旁邊寫出降了多少 */
+const glutText = (name: string) => { const g = glutMult(s.value, key.value, tradeCategory(s.value, name)); return g < 1 ? `收多了 ${pctText(g)}` : '' }
 /** 展開了收購價拆解的物品 */
 const sellWhy = ref<string | null>(null)
 const buyWhy = (d: Deal) => buyBreakdown(s.value, key.value, d)
@@ -255,7 +258,7 @@ function buy(d: Deal) {
                 </div>
                 <div class="row actions">
                   <template v-if="i.price !== null">
-                    <button class="small ghost why" :title="`看收購價怎麼算`" @click="sellWhy = sellWhy === i.name ? null : i.name">收購 {{ formatMoney(i.price) }} / 個 <MarketBadge :name="i.name" /> <span class="muted">{{ sellWhy === i.name ? '▴' : '▾' }}</span></button>
+                    <button class="small ghost why" :title="`看收購價怎麼算`" @click="sellWhy = sellWhy === i.name ? null : i.name">收購 {{ formatMoney(i.price) }} / 個 <MarketBadge :name="i.name" /> <span v-if="glutText(i.name)" class="glut">{{ glutText(i.name) }}</span> <span class="muted">{{ sellWhy === i.name ? '▴' : '▾' }}</span></button>
                     <span class="grow" />
                     <input v-if="sellLeft(i.name, i.qty) > 1" v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="sellLeft(i.name, i.qty)" placeholder="1" />
                     <button class="small" :disabled="sellLeft(i.name, i.qty) <= 0" title="加進購物車（賣出）" @click="addSell(i.name, i.qty)">
@@ -333,4 +336,5 @@ function buy(d: Deal) {
 .num { width: 58px; }
 .why { padding: 0 4px; border-color: transparent; background: none; color: var(--text); }
 .why:hover { border-color: var(--border); }
+.glut { color: var(--danger); font-size: 0.78rem; }
 </style>

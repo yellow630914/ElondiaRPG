@@ -1,7 +1,7 @@
 # 平衡性自檢流程
 
 > 生成的內容要能玩：怪物打得過、但不無聊；物品與報酬不會讓錢暴增；技能與特質不會強過內建的。這個資料夾說明怎麼用**世界檢查**自檢，以及工具沒有涵蓋、要自己對照的地方。
-> 工具：`src/__tests__/worldCheck.ts`（檢查的內容）、`src/__tests__/balanceSim.ts`（戰鬥模擬）。目標數字來自系統文件 [MONSTERS](../../docs/MONSTERS.md)、[GUILD](../../docs/GUILD.md)、[ITEMS](../../docs/ITEMS.md)、[PERKS](../../docs/PERKS.md)。
+> 工具：`src/__tests__/worldCheck.ts`（檢查的內容）、`src/__tests__/balanceSim.ts`（戰鬥模擬）、`src/__tests__/tradeSim.spec.ts`（跑商模擬，結果在 [trade-sim](trade-sim.md)）。目標數字來自系統文件 [MONSTERS](../../docs/MONSTERS.md)、[GUILD](../../docs/GUILD.md)、[ITEMS](../../docs/ITEMS.md)、[PERKS](../../docs/PERKS.md)。
 
 ## 1. 迴圈
 

@@ -4,7 +4,7 @@ import { enterLocation, standOn } from '@/engine/grid'
 import { categoryMult, marketMult, marketRules, pctText, tagEffectText, townStates, townTags, tradeCategory, TRADE_CATEGORIES, type TradeCategory } from '@/engine/market'
 import { normalizeMods } from '@/engine/mods'
 import { addItem, newGame } from '@/engine/state'
-import { breakdownText, buyBreakdown, dealMoney, sellBreakdown, sellPrice, shopKey, shopState, type PriceBreakdown } from '@/engine/trade'
+import { breakdownText, buyBreakdown, cartQuote, checkoutCart, dealMoney, glutCount, glutMult, sellBreakdown, sellItem, sellPrice, sellTotalOf, shopKey, shopState, type PriceBreakdown } from '@/engine/trade'
 
 const at = (birthplace: string) => {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace })
@@ -253,5 +253,67 @@ describe('價格拆解（R19 T5）', () => {
     // 特別交易沒有拆解
     const special = shopState(s, 'smithy').deals.find((d) => !d.id.startsWith('item:'))
     if (special) expect(buyBreakdown(s, key, special)).toBeUndefined()
+  })
+})
+
+describe('收購遞減（R19 T6）', () => {
+  function smithy(town = 'soriel') {
+    const s = at(town)
+    standOn(s, 'smithy')
+    s.inventory = []
+    addItem(s.inventory, '狼皮', 30)
+    addItem(s.inventory, '鐵礦石', 5)
+    s.money_cc = 0
+    return { s, key: shopKey(s, 'smithy') }
+  }
+
+  it('makes each extra item of the same category cheaper, in the cart and after checkout', () => {
+    const { s, key } = smithy()
+    const first = sellPrice(s, key, '狼皮')!
+    const q = cartQuote(s, 'smithy', { buy: [], sell: [{ name: '狼皮', qty: 5 }] })
+    expect(q.sell[0]!.price).toBe(first)
+    expect(q.sell[0]!.total).toBe(sellTotalOf(s, key, '狼皮', 5))
+    expect(q.sell[0]!.total).toBeLessThan(first * 5)
+    expect(q.sellTotal).toBe(q.sell[0]!.total)
+    checkoutCart(s, 'smithy', { buy: [], sell: [{ name: '狼皮', qty: 5 }] })
+    expect(s.money_cc).toBe(q.sell[0]!.total)
+    expect(glutCount(s, key, 'leather')).toBe(5)
+    expect(glutMult(s, key, 'leather')).toBeCloseTo(0.85)
+    expect(sellPrice(s, key, '狼皮')!).toBeLessThan(first)
+    // 別的類別、別間店不受影響
+    expect(glutMult(s, key, 'metal')).toBe(1)
+    expect(glutMult(s, shopKey(s, 'general'), 'leather')).toBe(1)
+    // 拆解寫出來
+    expect(sellBreakdown(s, key, '狼皮')!.steps.some((x) => x.kind === 'glut' && x.label.includes('5 件皮革與毛皮'))).toBe(true)
+  })
+
+  it('counts earlier lines of the same category in one cart', () => {
+    const { s, key } = smithy()
+    addItem(s.inventory, '野狗皮', 3)
+    const q = cartQuote(s, 'smithy', { buy: [], sell: [{ name: '狼皮', qty: 4 }, { name: '野狗皮', qty: 3 }] })
+    expect(q.sell[1]!.total).toBe(sellTotalOf(s, key, '野狗皮', 3, 4))
+    expect(q.sell[1]!.total).toBeLessThan(sellTotalOf(s, key, '野狗皮', 3)!)
+  })
+
+  it('stops at −50% and recovers day by day', () => {
+    const { s, key } = smithy()
+    sellItem(s, 'smithy', '狼皮', 25)
+    expect(glutCount(s, key, 'leather')).toBe(25)
+    expect(glutMult(s, key, 'leather')).toBe(0.5)
+    s.time.day += 2
+    expect(glutCount(s, key, 'leather')).toBe(25 - 2 * marketRules.sell_glut.recover_per_day)
+    s.time.day += 10
+    expect(glutCount(s, key, 'leather')).toBe(0)
+    expect(glutMult(s, key, 'leather')).toBe(1)
+  })
+
+  it('follows the save rule (0 turns it off)', () => {
+    const { s, key } = smithy()
+    sellItem(s, 'smithy', '狼皮', 10)
+    s.options = { ...(s.options ?? {}), sellGlutPct: 5 }
+    expect(glutMult(s, key, 'leather')).toBeCloseTo(0.5)
+    s.options.sellGlutPct = 0
+    expect(glutMult(s, key, 'leather')).toBe(1)
+    expect(sellTotalOf(s, key, '狼皮', 3)).toBe(sellPrice(s, key, '狼皮')! * 3)
   })
 })

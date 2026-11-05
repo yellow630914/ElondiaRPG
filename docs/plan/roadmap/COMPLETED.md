@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 跑商的限制與平衡模擬（R19 的 T6）
+
+- 收購遞減：存檔規則 `sellGlutPct`（預設 3%）、`market.json` 的 `sell_glut`（最多 50%、每天回復 5 件）、存檔的 `sales`；`trade.ts` 的 `glutCount`、`glutMult`、`sellTotalOf`，購物車與直接賣出都照遞減算並記錄。
+- 介面：購物車賣出的小計寫「▼遞減」，行囊的收購價旁寫「收多了 −N%」，價格拆解多一步。
+- 商店庫存：照現有的每日存貨，沒有另外加上限（原計畫第 11 節的待決定事項）。
+- 平衡模擬：`src/__tests__/tradeSim.spec.ts`，結果 [trade-sim](../../../worldgen/balance/trade-sim.md)。規則寫在 [TRADE](../../TRADE.md) 3.4 節。
+
 ### 2026-11-05 價格拆解（R19 的 T5）
 
 - 引擎：`trade.ts` 的 `buyBreakdown`、`sellBreakdown`、`breakdownText`；一般商品記下定價依據（`Deal.basis`：目錄價、店家加成）。

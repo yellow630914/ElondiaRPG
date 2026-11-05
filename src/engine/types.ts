@@ -783,6 +783,8 @@ export interface GameOptions {
   shortRestHours?: number
   longRestHours?: number
   alertDecayDays?: number
+  /** 收購遞減：同一間店收購同一個貿易類別，每件降幾 %（0 = 不遞減；docs/TRADE.md 3.4 節） */
+  sellGlutPct?: number
   /** 每個採集點採到幾份（小數是機率） */
   gatherMult?: number
   /** 戰鬥撤退與地下城緊急撤退的 DC 加減 */
@@ -891,6 +893,8 @@ export interface GameState {
   auction?: { day: number; location: string; lots: { name: string; start: number; rival: number; won?: number; lost?: boolean }[] }
   /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */
   arena?: Record<string, Record<string, { streak: number; best: number }>>
+  /** 收購遞減（docs/TRADE.md 3.4 節）：商店 key → 貿易類別 → 最近收了幾件（n）、記錄的那天（day）；每天回復 market.json 的 sell_glut.recover_per_day 件 */
+  sales?: Record<string, Record<string, { n: number; day: number }>>
   /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */
   brothelRank?: Record<string, Record<string, number>>
   /** 自由的夥伴答應去娼館接客的那一天：角色 id → 第幾天 */

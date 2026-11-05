@@ -70,7 +70,7 @@ function checkout() {
 <template>
   <section class="cart">
     <h3 class="head"><GameIcon name="coins" :size="17" />這次的交易
-      <Hint text="商品和行囊的「＋」加進來，一次結帳。可以整車交涉（每間店每天一次）：買的部分打折、賣的部分加價；有出價時，成交價取你的出價和這個結果能談到的最好價中，對店家有利的那個。交涉之後改了購物車，談好的折扣照算，出價就不算數了。" />
+      <Hint text="商品和行囊的「＋」加進來，一次結帳。可以整車交涉（每間店每天一次）：買的部分打折、賣的部分加價；有出價時，成交價取你的出價和這個結果能談到的最好價中，對店家有利的那個。交涉之後改了購物車，談好的折扣照算，出價就不算數了。同一間店收同一類的東西越多，收購價一件比一件低（收購遞減，每天慢慢回復；可以在這個存檔的規則調整）。" />
     </h3>
     <p v-if="empty" class="small muted">從店裡的商品、你的行囊按「＋」加進來。</p>
     <div v-else class="lists">
@@ -95,7 +95,7 @@ function checkout() {
             <td class="qty">
               <button class="small" @click="setSell(x.name, x.qty - 1)">−</button>{{ x.qty }}<button class="small" @click="setSell(x.name, x.qty + 1)">＋</button>
             </td>
-            <td>{{ formatMoney(x.price * x.qty) }}</td>
+            <td :title="x.total < x.price * x.qty ? `這間店收多了同一類的東西，一件比一件便宜（第一件 ${formatMoney(x.price)}）` : ''">{{ formatMoney(x.total) }}<small v-if="x.total < x.price * x.qty" class="muted"> ▼遞減</small></td>
             <td><button class="small ghost" title="移除" @click="setSell(x.name, 0)">✕</button></td>
           </tr>
         </tbody>

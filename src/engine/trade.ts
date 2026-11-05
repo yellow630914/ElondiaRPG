@@ -28,6 +28,7 @@ import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { shopTitle } from './shopNames'
 import { marketMult, marketRules, pctText, tradeCategory, tradeCategoryName } from './market'
+import { gameRule } from './gameRules'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
@@ -321,14 +322,54 @@ export function dealMoney(state: GameState, key: string, deal: Deal): number {
   return base > 0 ? Math.max(1, Math.round(base * (1 - discount(state, key)) * (1 + reputationBand(state).buy) * tag)) : 0
 }
 
-/** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 類別倍率（城鎮標籤）× 親密度加成 × 聲望倍率 */
+// ---- 收購遞減（docs/TRADE.md 3.4 節）：同一間店收購同一個貿易類別越多，下一件越便宜，每天慢慢回復 ----
+
+/** 這間店最近收了幾件這一類（扣掉回復的） */
+export function glutCount(state: GameState, key: string, category: string): number {
+  const e = state.sales?.[key]?.[category]
+  if (!e) return 0
+  return Math.max(0, e.n - marketRules.sell_glut.recover_per_day * Math.max(0, state.time.day - e.day))
+}
+
+/** 再收第 extra + 1 件時的收購倍率（每件 sellGlutPct %，最多降 max_drop） */
+export function glutMult(state: GameState, key: string, category: string | undefined, extra = 0): number {
+  const pct = gameRule(state, 'sellGlutPct') / 100
+  if (!category || pct <= 0) return 1
+  return Math.max(1 - marketRules.sell_glut.max_drop, 1 - pct * (glutCount(state, key, category) + extra))
+}
+
+/** 記下這間店收了幾件（結帳、直接賣出之後） */
+function recordSale(state: GameState, key: string, name: string, qty: number) {
+  const cat = tradeCategory(state, name)
+  if (!cat || qty <= 0) return
+  const shop = ((state.sales ??= {})[key] ??= {})
+  shop[cat] = { n: glutCount(state, key, cat) + qty, day: state.time.day }
+}
+
+/** 收購價：目錄價 × 收購比例（材料是全價）× 地點倍率 × 類別倍率（城鎮標籤、狀態）× 收購遞減 × 親密度加成 × 聲望倍率 */
 export function sellPrice(state: GameState, key: string, name: string): number | null {
+  return sellPriceAt(state, key, name, 0)
+}
+
+/** 賣 qty 件的總價（收購遞減：一件比一件便宜）；extra 是同一車裡前面已經要賣的同類件數 */
+export function sellTotalOf(state: GameState, key: string, name: string, qty: number, extra = 0): number | null {
+  let total = 0
+  for (let i = 0; i < qty; i++) {
+    const p = sellPriceAt(state, key, name, extra + i)
+    if (p === null) return null
+    total += p
+  }
+  return total
+}
+
+function sellPriceAt(state: GameState, key: string, name: string, extra: number): number | null {
   const type = typeOf(key)
   const cat = itemCategory(state, name)
   const value = itemValue(state, name)
   if (!cat || value === undefined || !shopDef(type).buys.includes(cat) || isUniqueItem(state, name)) return null
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
-  const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * marketMult(state, shopPlace(state).id, name).x * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
+  const glut = glutMult(state, key, tradeCategory(state, name), extra)
+  const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * marketMult(state, shopPlace(state).id, name).x * glut * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
   return capSale(state, name, price)
 }
 
@@ -338,7 +379,7 @@ export interface PriceStep {
   label: string
   /** 「×1.15」「−50%」「240 白鸛」這類 */
   text: string
-  kind?: 'base' | 'place' | 'tag' | 'state' | 'clamp' | 'deal' | 'cap'
+  kind?: 'base' | 'place' | 'tag' | 'state' | 'clamp' | 'glut' | 'deal' | 'cap'
 }
 export interface PriceBreakdown { steps: PriceStep[]; total: number; category?: string }
 
@@ -390,6 +431,9 @@ export function sellBreakdown(state: GameState, key: string, name: string): Pric
     { label: material ? '材料全價收購' : '收購五成', text: times(material ? itemRules.material_sell_ratio : itemRules.sell_ratio), kind: 'deal' },
     ...placeSteps(state, name),
   ]
+  const cat = tradeCategory(state, name)
+  const g = glutMult(state, key, cat)
+  if (g !== 1) steps.push({ label: `這間店最近收了 ${glutCount(state, key, cat!)} 件${tradeCategoryName(cat)}`, text: pctText(g), kind: 'glut' })
   const d = discount(state, key)
   if (d) steps.push({ label: '親密度、談來的折扣（收購加一半）', text: pctText(1 + d / 2), kind: 'deal' })
   const rep = reputationBand(state).sell
@@ -503,15 +547,16 @@ export function buyDeal(state: GameState, type: ShopType, dealId: string, qty = 
 export function sellItem(state: GameState, type: ShopType, name: string, qty: number): Report {
   const key = shopKey(state, type)
   const shop = shopState(state, type)
-  const price = sellPrice(state, key, name)
-  if (price === null) throw new Error('這間店不收這種東西')
+  if (sellPrice(state, key, name) === null) throw new Error('這間店不收這種東西')
   const n = Math.min(Math.floor(qty), haveItem(state, name))
   if (n <= 0) throw new Error('沒有這個物品')
+  const total = sellTotalOf(state, key, name, n)!
   const report = tradeReport(state, key, 0.1)
   ensureRelationship(state, npcRecord(state, shop.keeper)!)
   report.changes.items_lost = [{ name, qty: n }]
-  report.changes.money_cc = price * n
-  report.outcome.summary = `賣出 ${name} ×${n}，得到 ${formatMoney(price * n)}。`
+  report.changes.money_cc = total
+  report.outcome.summary = `賣出 ${name} ×${n}，得到 ${formatMoney(total)}。`
+  recordSale(state, key, name, n)
   return commitReport(state, report)
 }
 
@@ -526,7 +571,8 @@ export interface Cart {
 
 export interface CartQuote {
   buy: { dealId: string; name: string; qty: number; price: number }[]
-  sell: { name: string; qty: number; price: number }[]
+  /** price 是第一件的收購價，total 是這幾件的總價（收購遞減） */
+  sell: { name: string; qty: number; price: number; total: number }[]
   buyTotal: number
   sellTotal: number
   /** 原價的差額（正數是付錢，負數是收錢） */
@@ -586,6 +632,8 @@ export function cartQuote(state: GameState, type: ShopType, cart: Cart): CartQuo
     buy.push({ dealId: deal.id, name: deal.title, qty, price: dealMoney(state, key, deal) })
   }
   const sell: CartQuote['sell'] = []
+  // 收購遞減：同一車裡同一類的東西照順序越賣越便宜
+  const extra: Record<string, number> = {}
   for (const x of cart.sell.filter((y) => y.qty > 0)) {
     const price = sellPrice(state, key, x.name)
     const qty = Math.floor(x.qty)
@@ -594,10 +642,14 @@ export function cartQuote(state: GameState, type: ShopType, cart: Cart): CartQuo
       continue
     }
     if (haveItem(state, x.name) < qty) blockers.push(`${x.name}只有 ${haveItem(state, x.name)} 個`)
-    sell.push({ name: x.name, qty, price })
+    const cat = tradeCategory(state, x.name) ?? ''
+    const first = sellPriceAt(state, key, x.name, extra[cat] ?? 0)!
+    const total = sellTotalOf(state, key, x.name, qty, extra[cat] ?? 0)!
+    if (cat) extra[cat] = (extra[cat] ?? 0) + qty
+    sell.push({ name: x.name, qty, price: first, total })
   }
   const buyTotal = buy.reduce((s, x) => s + x.qty * x.price, 0)
-  const sellTotal = sell.reduce((s, x) => s + x.qty * x.price, 0)
+  const sellTotal = sell.reduce((s, x) => s + x.total, 0)
   const listNet = buyTotal - sellTotal
   const bargain = shop.cartBargain && !shop.cartBargain.spent ? shop.cartBargain : undefined
   const offerApplies = !!bargain && bargain.offer !== undefined && bargain.cart === cartKey(cart)
@@ -630,6 +682,7 @@ export function checkoutCart(state: GameState, type: ShopType, cart: Cart): Repo
   if (q.sell.length) report.changes.items_lost = q.sell.map((x) => ({ name: x.name, qty: x.qty }))
   if (q.net) report.changes.money_cc = -q.net
   if (shop.cartBargain && !shop.cartBargain.spent) shop.cartBargain.spent = true
+  for (const x of q.sell) recordSale(state, key, x.name, x.qty)
   const list = (xs: { name: string; qty: number }[]) => xs.map((x) => (x.qty > 1 ? `${x.name}×${x.qty}` : x.name)).join('、')
   const deal = q.net !== q.listNet ? `（原價${q.listNet >= 0 ? '要付' : '可收'} ${formatMoney(Math.abs(q.listNet))}，交涉之後）` : ''
   const money = q.net > 0 ? `付了 ${formatMoney(q.net)}` : q.net < 0 ? `收到 ${formatMoney(-q.net)}` : '剛好抵銷'
