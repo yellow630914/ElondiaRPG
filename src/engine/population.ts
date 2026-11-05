@@ -10,7 +10,7 @@ import { combatClasses, geography, landmarkDef, landmarkTypes, locationById, nam
 import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
-import { generateNpc, hashString, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
+import { generateNpc, hashString, inLeadEvent, npcKind, npcRecord, npcSpot, registerNpc, weightedPick } from './npcs'
 import { Rng } from './rng'
 import { condMet } from './storyFlags'
 import { allyPlacement, allyPlacements, type AllyPlacements } from './story'
@@ -244,6 +244,8 @@ export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day, a
   const ally = allyPlacement(state, rec.id, allies)
   if (ally) return ally.area
   if (!visibleNpc(state, rec)) return undefined
+  // 在線索事件裡登場、等主角去的人：不在城裡
+  if (inLeadEvent(state, rec.id)) return undefined
   if (rec.at && day <= rec.at.until) return rec.at.area
   // 小隊的隊員：今天跟著隊長
   const lead = followsLeader(state, rec, day)
@@ -396,7 +398,7 @@ export function adventurersInTown(state: GameState): NpcRecord[] {
   return allNpcs(state).filter((rec) => {
     // 留在你家看家的夥伴不算
     if (inParty.has(rec.id) || npcKind(rec) !== 'adventurer' || rec.hostile || rec.staying) return false
-    if (rec.dead || !visibleNpc(state, rec)) return false
+    if (rec.dead || !visibleNpc(state, rec) || inLeadEvent(state, rec.id)) return false
     // 暫時待在城裡某一格的人（例如剛離隊、在酒館待幾天）
     if (rec.at && state.time.day <= rec.at.until && inTownArea(rec.at.area)) return rec.at.area.split('/')[0] === state.location
     const fixed = fixedCell(rec)

@@ -311,3 +311,16 @@ export function npcSpot(rec: NpcRecord): string | undefined {
   if (/^(tav|pty|gen|inf)_/.test(rec.id) || namedNpcs.some((n) => n.id === rec.id)) return 'tavern'
   return undefined
 }
+
+/**
+ * 正在線索事件裡登場、等主角去的人（leadEvents.ts）：線索還有效時不在城裡、不擲近況，事件發生或過期之後才回來。
+ */
+export function inLeadEvent(state: GameState, id: string): boolean {
+  const day = state.time.day
+  for (const pool of Object.values(state.leadPools ?? {})) {
+    for (const l of pool.leads) {
+      if (l.status === 'active' && (l.until === undefined || day <= l.until) && l.cast?.includes(id)) return true
+    }
+  }
+  return false
+}

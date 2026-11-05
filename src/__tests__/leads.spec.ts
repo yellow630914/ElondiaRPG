@@ -3,7 +3,10 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { currentArea, enterLocation, goOutskirts, move, moveTo, standOn } from '@/engine/grid'
 import { reachableFloors } from '@/engine/intel'
 import { readIntelItem } from '@/engine/inventory'
-import { activeLeads, ensureLeadPool, LEAD_SLOTS, leadById, setLeadPool } from '@/engine/leads'
+import { activeLeads, discoverLead, ensureLeadPool, LEAD_SLOTS, leadById, setLeadPool } from '@/engine/leads'
+import { joinParty } from '@/engine/party'
+import { adventurersInTown, areaOf } from '@/engine/population'
+import { setNpcLife } from '@/engine/npcLife'
 import { addItem, newGame } from '@/engine/state'
 import { buyDeal, shopState } from '@/engine/trade'
 import { ASK_COST, askAround, askAroundBlock } from '@/engine/askAround'
@@ -181,11 +184,11 @@ describe('regional lead pool', () => {
 })
 
 /** 在索里耳近郊放一件線索事件（登場角色是新生成的冒險者） */
-function plantLead(state: GameState, template: string, cast: string[]): Lead {
+function plantLead(state: GameState, template: string, cast: string[], id = 'lead-test'): Lead {
   ensureLeadPool(state, 'central')
   const t = leadTemplate(template)!
   const lead: Lead = {
-    id: 'lead-test', region: 'central', tier: 0, location: 'soriel', event: 'event', template, cast,
+    id, region: 'central', tier: 0, location: 'soriel', event: 'event', template, cast,
     title: t.title, text: t.text, level: 1, until: state.time.day + 7, visibility: 'hidden', status: 'active',
   }
   state.leadPools!.central!.leads.push(lead)
@@ -284,5 +287,98 @@ describe('lead events', () => {
     expect(m).toMatchObject({ scope: 'lead', cast: 2, kind: 'choice', layers: [0] })
     expect(m.offscreen).toBeTruthy()
     expect(travelEventWarnings({ ...m, cast: 1 }).join('')).toContain('乙')
+  })
+})
+
+describe('lead fixes (cast state, informant, news)', () => {
+  it('drops the event when a cast member joined the party or died, and writes no news for them', () => {
+    const state = game()
+    const [a] = pickCast(state, new Rng(3), 1, 'central')
+    applyEffects(state, { changes: {} } as never, [{ type: 'affinity', npc: a!, delta: 5 }])
+    const lead = plantLead(state, 'ld_trapped_adventurer', [a!])
+    joinParty(state, npcRecord(state, a!)!, 'hired')
+    walkToLead(state, lead.id)
+    expect(state.leadEvent).toBeUndefined()
+    expect(lead.status).toBe('expired')
+    expect(state.intel?.find((i) => i.id === lead.id)?.status).toBe('expired')
+    // 過期也不給隊友寫近況
+    const other = plantLead(state, 'ld_wounded_rival', [a!], 'lead-test-2')
+    state.time = { ...state.time, day: state.time.day + 9 }
+    activeLeads(state, 'central')
+    expect(other.status).toBe('expired')
+    expect(state.npcLife?.news[a!]).toBeUndefined()
+  })
+
+  it('marks a lead whose template is gone as expired', () => {
+    const state = game()
+    const lead = plantLead(state, 'ld_campfire_peer', [])
+    lead.template = 'ld_gone'
+    walkToLead(state, lead.id)
+    expect(state.leadEvent).toBeUndefined()
+    expect(lead.status).toBe('expired')
+  })
+
+  it('tells the AI a new cast member is met for the first time even when the answer adds affinity', () => {
+    const state = game()
+    const [a] = pickCast(state, new Rng(11), 1, 'central')
+    const lead = plantLead(state, 'ld_campfire_peer', [a!])
+    walkToLead(state, lead.id)
+    answerLeadEvent(state, 0)
+    expect(state.relationships?.[a!]).toBeTruthy()
+    expect(state.reports.at(-1)!.narration?.focus?.join('')).toContain('主角第一次見到')
+  })
+
+  it('keeps cast out of town and out of NPC life while the lead is open', () => {
+    const state = game()
+    const [a] = pickCast(state, new Rng(11), 1, 'central')
+    const rec = npcRecord(state, a!)!
+    expect(areaOf(state, rec)).toBeTruthy()
+    const lead = plantLead(state, 'ld_campfire_peer', [a!])
+    expect(areaOf(state, rec)).toBeUndefined()
+    expect(adventurersInTown(state).some((r) => r.id === a)).toBe(false)
+    lead.status = 'done'
+    expect(areaOf(state, rec)).toBeTruthy()
+  })
+
+  it('caps new cast at one level above the PC', () => {
+    const state = game()
+    for (let i = 0; i < 30; i++) {
+      for (const id of pickCast(state, new Rng(100 + i), 2, 'central', new Set())) expect(npcRecord(state, id)!.level).toBeLessThanOrEqual(2)
+    }
+  })
+
+  it('writes no news when NPC life is off', () => {
+    const state = game()
+    const [a] = pickCast(state, new Rng(7), 1, 'central')
+    applyEffects(state, { changes: {} } as never, [{ type: 'affinity', npc: a!, delta: 5 }])
+    plantLead(state, 'ld_wounded_rival', [a!])
+    setNpcLife({ on: false })
+    try {
+      state.time = { ...state.time, day: state.time.day + 9 }
+      activeLeads(state, 'central')
+      expect(state.npcLife?.news?.[a!]).toBeUndefined()
+    } finally {
+      setNpcLife({ on: true })
+    }
+  })
+
+  it('stops selling a lead you learned of today, and falls back to random points when none are left', () => {
+    for (let seed = 1; seed < 60; seed++) {
+      const state = game(seed)
+      standOn(state, 'informant')
+      const deals = shopState(state, 'informant').deals
+      const deal = deals.find((d) => d.id.startsWith('info:lead:'))
+      if (!deal) continue
+      expect(deals.some((d) => d.id.startsWith('info:quest:'))).toBe(false)
+      discoverLead(state, leadById(state, deal.id.slice('info:lead:'.length))!, '自己遇到')
+      expect(shopState(state, 'informant').deals.find((d) => d.id === deal.id)!.stock).toBe(0)
+      expect(() => buyDeal(state, 'informant', deal.id)).toThrow()
+      // 分給情報商的都知道了：隔天照舊每天隨機賣事件點
+      for (const l of activeLeads(state)) if (l.visibility === 'informant') discoverLead(state, l)
+      state.time.day += 1
+      expect(shopState(state, 'informant').deals.some((d) => d.id.startsWith('info:point:'))).toBe(true)
+      return
+    }
+    throw new Error('no informant lead')
   })
 })

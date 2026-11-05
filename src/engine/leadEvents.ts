@@ -12,8 +12,8 @@ import { pcEventReport, resolvePcOption } from './dungeonEvents'
 import { currentArea } from './grid'
 import { finishIntel, intelById, type PointPlace } from './intel'
 import { leadById } from './leads'
-import { canLive, NEWS_KEEP } from './npcLife'
-import { npcRecord } from './npcs'
+import { canLive, NEWS_KEEP, npcLifeOn } from './npcLife'
+import { askingPrice, npcRecord } from './npcs'
 import { pcOf } from './party'
 import { generateResident } from './population'
 import { applyPendingMove, travelEvents, type RoadTemplate } from './road'
@@ -93,8 +93,15 @@ export function pickCast(state: GameState, rng: Rng, n: number, region: string, 
       const rec = known.splice(rng.int(0, known.length - 1), 1)[0]!
       out.push(rec.id)
     } else if (homes.length) {
-      out.push(generateResident(state, rng, locationById(rng.pick(homes).id), 'adventurer', CAST_PREFIX).id)
-    }
+      const rec = generateResident(state, rng, locationById(rng.pick(homes).id), 'adventurer', CAST_PREFIX)
+      // 新生成的登場角色最多比主角高 1 級（不然救個人就撿到高等的同伴）
+      const cap = pcOf(state).level + 1
+      if (rec.level > cap) {
+        rec.level = cap
+        rec.hire_cc = askingPrice(cap, rng)
+      }
+      out.push(rec.id)
+    } else continue
     used.add(out[out.length - 1]!)
   }
   return out
@@ -162,14 +169,37 @@ function sourceOf(state: GameState, id: string): Lead | Intel | undefined {
   return leadById(state, id) ?? intelById(state, id)
 }
 
-/** 走上線索事件的格子：線索還有效、模板還在就開始，等主角回應；其他情況這一格作廢 */
+/** 登場角色還能不能出場：活著、不在隊上、沒有敵對、沒被制伏（不能時回傳那個人的名字） */
+export function castMissing(state: GameState, cast: string[] | undefined): string | undefined {
+  for (const id of cast ?? []) {
+    const r = npcRecord(state, id)
+    if (!r || r.dead || r.hostile || state.party.some((m) => m.id === id) || state.captives?.npcs.includes(id)) return r?.name ?? id
+  }
+  return undefined
+}
+
+/** 線索作廢：線索與筆記裡的情報標成過期 */
+function expireLead(state: GameState, id: string) {
+  const lead = leadById(state, id)
+  if (lead && lead.status === 'active') lead.status = 'expired'
+  const it = intelById(state, id)
+  if (it && it.status === 'active') it.status = 'expired'
+}
+
+/** 走上線索事件的格子：線索還有效、模板還在、登場角色都還能出場就開始，等主角回應；其他情況這一格作廢（線索過期） */
 export function startLeadEvent(state: GameState, area: { key: string }, x: number, y: number, cell: { intel?: string; done?: boolean }): boolean {
   const id = cell.intel
   if (!id || cell.done) return false
   const src = sourceOf(state, id)
-  if (!src || src.status !== 'active' || !leadTemplate(src.template)) {
+  if (!src || src.status !== 'active') {
     cell.done = true
     finishIntel(state, id)
+    return false
+  }
+  // 模板被自訂內容拿掉、登場角色已經入隊／死了／敵對：這件事不會發生了
+  if (!leadTemplate(src.template) || castMissing(state, src.cast)) {
+    cell.done = true
+    expireLead(state, id)
     return false
   }
   state.leadEvent = { lead: id, area: area.key, x, y }
@@ -197,9 +227,10 @@ export function answerLeadEvent(state: GameState, index: number): Report {
   const o = t?.options?.[index]
   if (!ev || !t || !o) throw new Error('沒有這個選項')
   const src = sourceOf(state, ev.lead)
+  // 認不認識要在套用選項之前看（好感效果會建立人際關係）
+  const cast = castLines(state, src?.cast)
   const report = pcEventReport(state, t.title, '線索事件')
   resolvePcOption(state, report, t, o, '線索事件')
-  const cast = castLines(state, src?.cast)
   if (cast.length) report.narration = { pov: 'second_person', ...report.narration, focus: [...(report.narration?.focus ?? []), ...cast] }
   for (const n of castNames(state, src?.cast)) report.lore_keys?.push(n)
   finishIntel(state, ev.lead)
@@ -236,7 +267,10 @@ export function leadExpired(state: GameState, lead: Lead) {
   const text = fillCast(t?.offscreen || `{a}在${place}遇上了「${lead.title}」那件事，後來自己處理掉了。`, words)
   const used = castInUse(state)
   for (const id of lead.cast) {
+    const rec = npcRecord(state, id)
     if (state.relationships?.[id]) {
+      // NPC 近況關掉時不寫；已經入隊、死了、敵對、被制伏的人沒有「自己處理掉」這回事
+      if (!npcLifeOn() || !rec || rec.dead || rec.hostile || state.party.some((m) => m.id === id) || state.captives?.npcs.includes(id)) continue
       const life = (state.npcLife ??= { last: state.time.day, news: {} })
       const list = (life.news[id] ??= [])
       list.push({ day, text, place })

@@ -66,10 +66,10 @@ const combat = computed<StatItem[]>(() => {
     { label: '武器', value: w.name, note: `${w.dice} ${damageTypeName(w.type)}・${attrName(w.attr)}` },
     { label: '防具', value: a.name, note: `迴避 ${signed(a.evade)}・物理減傷 ${a.dr}` },
     // 命中、迴避……的加值與來源（裝備、特質、非戰鬥狀態都算在這裡；戰鬥中的狀態另外算）
-    { label: '命中', value: `d20 ${signed(b.value.hit.total)}`, note: sources(b.value.hit.parts), hint: '攻擊擲 d20 加上這些，達到對方的迴避就命中。' },
-    { label: '迴避', value: `d20 ${signed(b.value.evade.total)}`, note: `骰子最低 ${evadeFloor(attrsOf(x))}${b.value.evade.parts.length ? `・${sources(b.value.evade.parts)}` : ''}`, hint: '被攻擊時擲 d20（低於下限時算下限）加上這些，就是對方要達到的數字。' },
+    { label: '命中', value: `d20 ${signed(b.value.hit.total)}`, note: sources(b.value.hit.parts), hint: '攻擊擲 d20 加上這些，達到對方的迴避就命中。慾望戰鬥的加成另計。' },
+    { label: '迴避', value: `d20 ${signed(b.value.evade.total)}`, note: `骰子最低 ${evadeFloor(attrsOf(x))}${b.value.evade.parts.length ? `・${sources(b.value.evade.parts)}` : ''}`, hint: '被攻擊時擲 d20（低於下限時算下限）加上這些，就是對方要達到的數字。慾望戰鬥的加成另計。' },
     ...(b.value.damage.total ? [{ label: '傷害加成', value: signed(b.value.damage.total), note: sources(b.value.damage.parts) }] : []),
-    { label: '減傷', value: b.value.dr.total, note: sources(b.value.dr.parts), hint: '防具與裝備的減傷只擋物理傷害；特質與狀態的擋所有傷害。' },
+    { label: '減傷', value: b.value.dr.total, note: sources(b.value.dr.parts), hint: '防具與裝備的減傷只擋物理傷害；特質與狀態的擋所有傷害。慾望戰鬥的加成另計。' },
     ...(b.value.save.total ? [{ label: '豁免加成', value: signed(b.value.save.total), note: sources(b.value.save.parts) }] : []),
     { label: '傷害倍率', value: affinityText(x) },
   ]

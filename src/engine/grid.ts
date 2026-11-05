@@ -21,8 +21,8 @@ import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } fro
 import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
-import { ensureIntelPoints, finishIntel } from './intel'
-import { stumbleOnLead } from './leads'
+import { ensureIntelPoints, finishIntel, intelById } from './intel'
+import { leadById, stumbleOnLead } from './leads'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from './security'
@@ -1279,7 +1279,7 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       if (cell.intel) finishIntel(state, cell.intel)
       // 寶箱的地下城事件：成人向的（擬態寶箱）取代寶箱，裡面的東西看回應；普通的在寶箱照常打開之後發生
       if (!cell.intel && maybeDungeonEvent(state, 'chest') && pendingDungeonEvent(state)?.tags?.includes('adult')) return {}
-      return { report: openChest(state, area, cell.level ?? 1) }
+      return { report: openChest(state, area, cell.level ?? 1, isRelic(state, cell.intel)) }
     }
     case 'event': {
       // 線索事件（leadEvents.ts）：等主角回應；旅途上的事件格在 road.ts
@@ -1419,7 +1419,7 @@ function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod
   cell.done = true
   if (cell.intel) finishIntel(state, cell.intel)
   advanceTime(state, 10 / 60)
-  const opened = openChest(state, area, cell.level ?? 1)
+  const opened = openChest(state, area, cell.level ?? 1, isRelic(state, cell.intel))
   opened.timeline = [entry, ...(opened.timeline ?? [])]
   opened.outcome.summary = `${picker.name}${how.success}。${opened.outcome.summary ?? ''}`
   opened.outcome.tags = [...(opened.outcome.tags ?? []), '上鎖']
@@ -1438,7 +1438,12 @@ export function pickLock(state: GameState, method: LockMethod = 'dex'): Report {
 }
 
 /** 打開寶箱：錢、消耗品、裝備與打造材料（gear.json 的 chests） */
-function openChest(state: GameState, area: Area, level: number): Report {
+/** 情報、線索的寶箱是冒險者的遺物 */
+function isRelic(state: GameState, id: string | undefined): boolean {
+  return !!id && (leadById(state, id) ?? intelById(state, id))?.event === 'relic'
+}
+
+function openChest(state: GameState, area: Area, level: number, relic = false): Report {
   const report = eventReport(state, area, 5)
   report.kind = 'event'
   const layer = DUNGEON_LAYERS[area.layer ?? 0]!.id
@@ -1467,8 +1472,8 @@ function openChest(state: GameState, area: Area, level: number): Report {
   if (items.length) report.changes.items_gained = items
   report.outcome = {
     result: 'success',
-    summary: `在${area.name}打開一個寶箱：${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name))].join('、')}。`,
-    tags: ['寶箱'],
+    summary: `${relic ? `在${area.name}找到冒險者的遺物，從他們留下的行囊裡翻出` : `在${area.name}打開一個寶箱：`}${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name))].join('、')}。`,
+    tags: [relic ? '遺物' : '寶箱'],
   }
   return commitReport(state, report)
 }

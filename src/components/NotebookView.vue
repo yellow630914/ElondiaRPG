@@ -58,7 +58,7 @@ const intel = computed(() => {
   expireIntel(s.value)
   return [...(s.value.intel ?? [])].sort((a, b) => Number(a.status !== 'active') - Number(b.status !== 'active') || b.time.day - a.time.day)
 })
-const EVENT: Record<string, string> = { combat: '💀 盤踞的強敵', chest: '🎁 藏寶處', merchant: '🧳 流浪商人', relic: '⚰️ 冒險者的遺物' }
+const EVENT: Record<string, string> = { combat: '💀 盤踞的強敵', chest: '🎁 藏寶處', merchant: '🧳 流浪商人', relic: '⚰️ 冒險者的遺物', event: '🔎 線索事件' }
 const STATUS: Record<string, string> = { active: '有效', done: '已完成', expired: '已過期' }
 
 const counts = computed(() => ({

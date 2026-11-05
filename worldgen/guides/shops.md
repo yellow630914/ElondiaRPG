@@ -31,7 +31,7 @@
 | `tailor` | 裁縫店 | `tailor` | `D` | `tailor` | equipment、material | 靈巧 11、3 | 委託打造（皮革、布料）、租工坊、縫補 |
 | `jeweler` | 珠寶店 | `jeweler` | `J` | `jeweler` | equipment、material | 魅力 12、4 | 委託打造（寶石）、租工坊、鑑定 |
 | `magic` | 魔法物品店 | `magic` | `M` | `magic` | scroll、consumable、material | 智力 13、4 | 每天隨機進一批消耗品與材料、租工坊（煉金） |
-| `informant` | 情報商 | `informant` | `N` | `info` | info | 魅力 12、3 | 事件點、特殊任務的消息、委託的線索 |
+| `informant` | 情報商 | `informant` | `N` | `info` | info | 魅力 12、3 | 事件點、特殊任務的消息 |
 | `wanderer` | 流浪商人 | `merchant` | （不在城裡） | `magic` | material、consumable、info、equipment | 沒有 | 隨機的優良裝備。只能改外觀、AI、店主、固定清單、收購；沒有打工、受訓、位置，不能擔任店主、不能擺在特殊地圖 |
 
 來源：`data/rules/shops.json` 的 `types`、`data/rules/work.json` 的 `jobs`（以格子種類為 key）。注意三組名稱不一樣：店種 id（`smithy`、`informant`）、目錄（`smith`、`info`）、格子種類（雜貨店是 `shop`）。

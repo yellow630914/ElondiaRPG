@@ -13,7 +13,7 @@
 import { gainXp, recalc, xpToNext } from './character'
 import { classDef, dungeonEncounters, enemies, geography, itemDef, locationById, npcs as namedNpcs, parkPlaza } from './data'
 import { gearName, gearPrice, generateLoadout, syncGear } from './gear'
-import { characterFor, hashString, npcRecord, registerNpc } from './npcs'
+import { characterFor, hashString, inLeadEvent, npcRecord, registerNpc } from './npcs'
 import { isNoncombatant } from './party'
 import { Rng } from './rng'
 import { attributeRules } from './data'
@@ -86,7 +86,8 @@ export function livingNpcs(state: GameState): NpcRecord[] {
   const inParty = new Set(state.party.map((m) => m.id))
   const out: NpcRecord[] = []
   for (const id of ids) {
-    if (inParty.has(id) || state.captives?.npcs.includes(id)) continue
+    // 在線索事件裡登場、等主角去的人：事件發生或過期之前不擲
+    if (inParty.has(id) || state.captives?.npcs.includes(id) || inLeadEvent(state, id)) continue
     const rec = npcRecord(state, id)
     if (!rec || rec.dead || rec.hostile || !canLive(rec)) continue
     const cared = isFollowed(state, id) || !!rec.character || (state.relationships?.[id]?.affinity ?? 0) >= AFFINITY_MIN

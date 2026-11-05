@@ -70,7 +70,7 @@ describe('shop types', () => {
     expect(cat('material').length - own.length).toBe(shopRules.types.magic.random!.materials)
   })
 
-  it('sells event points and quest leads at the informant (lead pool off: random points every day)', () => {
+  it('sells event points but no quest leads at the informant (lead pool off: random points every day)', () => {
     // 線索池開著時的情報商見 leads.spec.ts
     setLeadPool({ days: 0 })
     const state = game('rivervale')
@@ -84,11 +84,8 @@ describe('shop types', () => {
     state.money_cc = 10000
     buyDeal(state, 'informant', points[0]!.id)
     expect(state.intel?.[0]).toMatchObject({ kind: 'point', status: 'active', from: 'rivervale' })
-    const lead = shop.deals.find((d) => d.id === `info:quest:${quest.id}`)
-    if (lead) {
-      buyDeal(state, 'informant', lead.id)
-      expect(state.quests.find((q) => q.id === quest.id)!.flags?.lead).toBe(true)
-    }
+    // 委託的線索不在情報商賣（只剩情報物品）
+    expect(shop.deals.some((d) => d.id.startsWith('info:quest:'))).toBe(false)
     setLeadPool({ days: 7 })
   })
 })

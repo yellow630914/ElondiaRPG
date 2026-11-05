@@ -1971,7 +1971,7 @@ export interface ShopTypeDef {
   /** 每天隨機上架：目錄裡任何商店的消耗品與材料（材料的售價 = 收購價 × material_markup） */
   random?: { consumables?: number; materials?: number; material_markup?: number; max_material_price?: number[] }
   /** 情報商：事件點的情報（依層數的價格：近郊、周邊、淺層、中層、深層）、特殊任務的消息、委託的線索 */
-  info?: { point_prices: number[]; points_per_day: number; valid_days: number; quest_price: number }
+  info?: { point_prices: number[]; points_per_day: number; valid_days: number }
   /** 流浪商人：每天幾件隨機的優良裝備 */
   rare_gear?: number
   /** 固定清單：每天一定上架的物品（世界設定加的；price_cc 沒寫照目錄價） */
