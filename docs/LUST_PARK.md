@@ -1,7 +1,7 @@
 # 魅魔的遊樂園「緋夢樂園」（成人向）
 
 > 上層：[DUNGEON_DESIGN](DUNGEON_DESIGN.md)（地下城的分層探索）。依賴：[SPECIAL_MAPS](SPECIAL_MAPS.md)（入口廣場、通道）、[LANDMARKS](LANDMARKS.md)（售票亭）、[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 8.5 節（慾望戰鬥）、[LEWD_STATS](LEWD_STATS.md)（指標、第 11 節的技能書）、[ADULT_EVENTS](ADULT_EVENTS.md)（地下城的色情事件、寄生物）、[STORY_QUESTS](STORY_QUESTS.md)（集章的任務）。怪物一覽在 [MONSTERS](MONSTERS.md) 的「魅魔的遊樂園」。
-> 資料：`data/world/geography.json`（五個園區，`park`）、`data/world/special_maps.json` 的 `sm_lust_park`（入口廣場）、`data/world/landmarks.json` 的 `lm_lust_park`（售票亭）、`data/rules/enemies.json`（`lp_` 開頭的怪物、`park_` 開頭的遭遇表）、`data/rules/abilities.json`（`lp_` 開頭的怪物技能）、`data/rules/lewd.json` 的 `park`（魅氣、陷阱、擬態寶箱、寶箱、專屬戰敗）、`data/world/maps.json` 的 `lighting.locations`（各層的光線）。程式：`src/engine/park.ts`，以及 `grid.ts`（生成、進出、陷阱、寶箱、戰敗）、`combat.ts`（魅氣、專屬戰敗、集章）。資料由 `worldgen/scripts/elondia/lust_park_s7.py` 產生；計畫：[慾望戰鬥實作計畫](plan/roadmap/LUST_COMBAT_PLAN.md)。
+> 資料：`data/world/geography.json`（五個園區，`park`）、`data/world/special_maps.json` 的 `sm_lust_park`（入口廣場）、`data/world/landmarks.json` 的 `lm_lust_park`（售票亭）、`data/rules/enemies.json`（`lp_` 開頭的怪物、`park_` 開頭的遭遇表）、`data/rules/abilities.json`（`lp_` 開頭的怪物技能）、`data/rules/lewd.json` 的 `park`（魅氣、陷阱、擬態寶箱、寶箱、專屬戰敗）、`data/world/maps.json` 的 `lighting.locations`（各層的光線）。程式：`src/engine/park.ts`，以及 `grid.ts`（生成、進出、陷阱、寶箱、戰敗）、`combat.ts`（魅氣、專屬戰敗、集章）。資料由 `worldgen/scripts/elondia/lust_park_s7.py` 產生；還沒做的構想：[點子庫 I24](plan/ideas/dev-discussion.md#i24)。
 
 魅魔們經營的遊樂設施：血羽城堡城門區的售票亭走進去是入口廣場，廣場北邊五道拱門各通往一個園區。每個園區是一座獨立的 3 層地下城，依怪物種類區分，戰敗時有那個園區專屬的下場。
 
