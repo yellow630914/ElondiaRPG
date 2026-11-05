@@ -1,10 +1,12 @@
 // 配方（物品的 recipe；規則在 crafts.json 的 recipe，見 docs/CRAFTING.md 第 6 節）：
 // 用工藝依配方做出藥劑、料理、家具、工具。和自己動手打造一樣：做的人擲工藝的屬性檢定加工藝等級，
-// 要有對應階級的工具（配方等級決定），成功時得到工藝經驗。走主動行動 produce（target = 「做的人的 id@物品名稱*批數」）。
+// 要有對應階級的工具（配方等級決定），成功時得到工藝經驗。走主動行動 produce（target = 「做的人的 id@物品名稱*批數」，
+// 當場補買時再接「|!buy」）。
 
 import { craftRules, itemDef, itemRules, locationById, saveItems, type CraftId, type Degree, type ItemDef, type RecipeSpec } from './data'
 import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess, toolBlocker, toolTierFor, type ToolAccess } from './crafting'
 import { applyEffects, type RewardEffect } from './effects'
+import { buyHere, shopOfferHere } from './craft'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
 import { formatMoney } from './money'
@@ -29,8 +31,11 @@ export interface RecipePlan {
   batches: number
   /** 成功時做出的份數 */
   qty: number
-  /** 要用掉的材料與持有數量 */
-  inputs: { name: string; need: number; have: number }[]
+  /** 要用掉的材料與持有數量；站的這間店有賣時的單價與存貨，當場補買幾份 */
+  inputs: { name: string; need: number; have: number; offer?: { price: number; stock: number }; buy: number }[]
+  /** 當場補買（買來直接用掉；沒做成時剩下的留在行囊） */
+  buys: { name: string; qty: number; price: number }[]
+  buyCost: number
   /** 另外要買的東西（乘地點物價） */
   cost: number
   /** 在店裡租工坊的租金 */
@@ -48,13 +53,21 @@ export interface RecipePlan {
   blockers: string[]
 }
 
-/** 依配方做 batches 批：材料、費用、時間都乘批數 */
-export function recipePlan(state: GameState, name: string, batches: number, crafter: Character): RecipePlan {
+/** 依配方做 batches 批：材料、費用、時間都乘批數。buy：不夠的材料向站的這間店當場補買 */
+export function recipePlan(state: GameState, name: string, batches: number, crafter: Character, opts: { buy?: boolean } = {}): RecipePlan {
   const recipe = recipeOf(name)
   if (!recipe) throw new Error(`${name}沒有配方`)
   const rules = craftRules.recipe
   const n = Math.max(1, Math.min(rules.max_batches, Math.round(batches) || 1))
-  const inputs = recipe.inputs.map((x) => ({ name: x.name, need: x.qty * n, have: state.inventory.find((i) => i.name === x.name)?.qty ?? 0 }))
+  const inputs = recipe.inputs.map((x) => {
+    const need = x.qty * n
+    const have = state.inventory.find((i) => i.name === x.name)?.qty ?? 0
+    const offer = shopOfferHere(state, x.name)
+    const buy = opts.buy && offer ? Math.min(Math.max(0, need - have), offer.stock) : 0
+    return { name: x.name, need, have, ...(offer ? { offer: { price: offer.price, stock: offer.stock } } : {}), buy }
+  })
+  const buys = inputs.filter((x) => x.buy > 0).map((x) => ({ name: x.name, qty: x.buy, price: x.offer!.price }))
+  const buyCost = buys.reduce((s, b) => s + b.qty * b.price, 0)
   const hours = (recipe.hours ?? 2) * n
   const needTier = toolTierFor(recipe.level)
   const tool = toolAccess(state, recipe.craft, needTier)
@@ -65,10 +78,14 @@ export function recipePlan(state: GameState, name: string, batches: number, craf
   const blockers: string[] = []
   if (level < recipe.level) blockers.push(`${crafter.name}的${craftName(recipe.craft)}只有 Lv.${level}（要 Lv.${recipe.level}）`)
   if (tool.tier < needTier) blockers.push(toolBlocker(recipe.craft, needTier, tool))
-  for (const x of inputs) if (x.have < x.need) blockers.push(`${x.name}不夠（需要 ${x.need}，持有 ${x.have}）`)
-  if (state.money_cc < cost + rent) blockers.push(`費用不夠（需要 ${formatMoney(cost + rent)}）`)
+  for (const x of inputs) {
+    if (x.have + x.buy >= x.need) continue
+    const hint = !opts.buy && x.offer ? '，這間店有賣，可以當場補買' : opts.buy && x.offer ? `，這間店只剩 ${x.offer.stock}` : ''
+    blockers.push(`${x.name}不夠（需要 ${x.need}，持有 ${x.have}${hint}）`)
+  }
+  if (state.money_cc < cost + rent + buyCost) blockers.push(`${buyCost ? '費用加上補買的材料' : '費用'}不夠（需要 ${formatMoney(cost + rent + buyCost)}）`)
   return {
-    name, recipe, batches: n, qty: (recipe.qty ?? 1) * n, inputs, cost, rent, fee: cost + rent,
+    name, recipe, batches: n, qty: (recipe.qty ?? 1) * n, inputs, buys, buyCost, cost, rent, fee: cost + rent,
     dc: rules.dc[recipe.level - 1] ?? 18, hours, level, tool, blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}),
   }
 }
@@ -89,12 +106,14 @@ export function lostQty(need: number, degree: Degree): number {
 
 // ---- 行動 produce ----
 
-export function produceTarget(crafter: string, name: string, batches = 1): string {
-  return `${crafter}@${name}*${batches}`
+export function produceTarget(crafter: string, name: string, batches = 1, opts: { buy?: boolean } = {}): string {
+  return `${crafter}@${name}*${batches}${opts.buy ? '|!buy' : ''}`
 }
 
-export function parseProduceTarget(state: GameState, target?: string): { crafter: Character; name: string; batches: number } {
-  const t = target ?? ''
+export function parseProduceTarget(state: GameState, target?: string): { crafter: Character; name: string; batches: number; buy: boolean } {
+  const raw = target ?? ''
+  const buy = raw.endsWith('|!buy')
+  const t = buy ? raw.slice(0, -'|!buy'.length) : raw
   const at = t.indexOf('@')
   const star = t.lastIndexOf('*')
   const id = at > 0 ? t.slice(0, at) : 'pc'
@@ -103,18 +122,18 @@ export function parseProduceTarget(state: GameState, target?: string): { crafter
   const crafter = memberOrResident(state, currentArea(state), id)
   if (!crafter) throw new Error('隊伍中（或家裡）沒有這位角色')
   if (!recipeOf(name)) throw new Error('請選擇要做的東西')
-  return { crafter, name, batches }
+  return { crafter, name, batches, buy }
 }
 
 export function setupProduce(state: GameState, target?: string) {
-  const { crafter, name, batches } = parseProduceTarget(state, target)
+  const { crafter, name, batches, buy } = parseProduceTarget(state, target)
   const refusal = crafterRefusal(state, crafter)
   if (refusal) throw new Error(`${crafter.name}不肯動手：${refusal}`)
-  const plan = recipePlan(state, name, batches, crafter)
+  const plan = recipePlan(state, name, batches, crafter, { buy })
   if (plan.blocked) throw new Error(plan.blocked)
   const skill = craftRules.skills[plan.recipe.craft]
   const used = plan.inputs.map((x) => `${x.name}×${x.need}`).join('、')
-  const paid = plan.fee ? `，花費 ${formatMoney(plan.fee)}` : ''
+  const paid = `${plan.fee ? `，花費 ${formatMoney(plan.fee)}` : ''}${plan.buys.length ? `，當場買了 ${plan.buys.map((b) => `${b.name}×${b.qty}`).join('、')}（${formatMoney(plan.buyCost)}）` : ''}`
   return {
     actor: crafter.id,
     attr: skill.attr, dc: plan.dc, hours: plan.hours,
@@ -133,11 +152,13 @@ export function setupProduce(state: GameState, target?: string) {
 
 /** 結算：付費用、用掉材料、做出成品，再給做的人工藝經驗 */
 export function applyProduce(state: GameState, report: Report, target: string, degree: Degree): string {
-  const { crafter, name, batches } = parseProduceTarget(state, target)
-  const plan = recipePlan(state, name, batches, crafter)
+  const { crafter, name, batches, buy } = parseProduceTarget(state, target)
+  const plan = recipePlan(state, name, batches, crafter, { buy })
+  // 先補買（放進行囊），再照一般的材料用掉
+  buyHere(state, report, plan.buys)
   const effects: RewardEffect[] = plan.fee ? [{ type: 'money', amount: -Math.min(plan.fee, state.money_cc) }] : []
   for (const x of plan.inputs) {
-    const q = Math.min(x.have, lostQty(x.need, degree))
+    const q = Math.min(x.have + x.buy, lostQty(x.need, degree))
     if (q) effects.push({ type: 'item', name: x.name, qty: -q })
   }
   const made = producedQty(plan.qty, degree)

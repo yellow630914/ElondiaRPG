@@ -61,6 +61,8 @@ export interface Location {
   material_series?: string
   /** 給 AI 的描述（自建的地下城才有；內建地點的設定寫在世界書） */
   desc?: string
+  /** 城鎮的固定標籤（data/rules/market.json 的 tags）：某些貿易類別的買賣價格倍率（docs/TRADE.md 3.1 節） */
+  trade_tags?: string[]
 }
 export interface Route {
   a: string
@@ -1329,7 +1331,8 @@ export const companionRules = companionsJson as unknown as {
     pay_chance: number; pay_chance_per_cha_mod: number; pay_per_level: number; leader_level: [number, number]
   }
   /** unhireable：不受雇用的人（統治者、機構首長……）邀請的 DC 另外加多少 */
-  invite: { min_affinity: number; base: number; affinity_step: number; level_gap: number; unhireable?: number }
+  /** offered_min_affinity：對方主動邀請、主角答應時（AI 判定的 join 效果帶 offered），親密度到這裡就不比邀請的 DC */
+  invite: { min_affinity: number; offered_min_affinity: number; base: number; affinity_step: number; level_gap: number; unhireable?: number }
   /** 固定 NPC 的小隊（squads.ts）：整隊邀請每多一人 DC +invite_per_member；請他們帶主角同行的 DC */
   squad: { invite_per_member: number; join: { base: number; min: number; affinity_step: number; per_companion: number; level_gap: number } }
   leave_party: { sneak_base: number; affinity: { formal: number; sneak_success: number; sneak_fail: number } }
@@ -1824,6 +1827,8 @@ export interface ItemDef {
   forge?: { materials: string[] }
   /** 最低要在哪種規模的聚落才買得到 */
   min_location?: string
+  /** 貿易類別（data/rules/market.json 的 categories）；沒寫時照其他欄位推（market.ts 的 tradeCategory） */
+  trade_category?: string
   /** 只在這些地區的商店賣（地方的特產，例如炎華之地的茶餅、朴刀）；沒有時哪裡都賣 */
   regions?: string[]
   /** 魅氣濃度至少這麼高的聚落才買得到（淫市的貨，docs/LEWD_STATS.md 第 20 節） */
@@ -2145,7 +2150,7 @@ export const craftRules = craftsJson as unknown as {
   tool_tier_names: string[]
   safe_points: string[]
   workshop_rent: { per_hour_cc: number }
-  self: { hours: number; tier1_cost_ratio: number }
+  self: { hours: number }
   shop_levels: Record<string, [number, number]>
   companion: { min_affinity: number }
   recipe: { dc: number[]; max_batches: number; critical_bonus: number; partial_ratio: number; lost_on_fail: number }

@@ -2,10 +2,104 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 基本價格依據表（R19 的 T7）；R19 貿易全部完成
+
+- [基本價格依據表](../../../worldgen/balance/prices.md)：以世界書的舊幣制與一般人一天 15 白鸛的生活費為錨，對照 14～15 世紀英格蘭的物價（1 便士 ≈ 5 白鸛），逐列寫出武器、防具底材、糧食、日用品、打造材料的現價、依據與處理。
+- 調整的離群值（`gear.json` 底材，`items.json` 的制式裝備照公式一起更新 45 件，手寫價格的獨特裝備不動）：匕首 160 → 60、長戟 380 → 220（玩家回報的「長兵器比劍貴」）、長弓 300 → 150、皮靴 20 → 40、布腰帶 25 → 10。
+- R19 的計畫（TRADE_PLAN）整份做完，刪掉；規則都在 [TRADE](../../TRADE.md) 第 3～5 節。沒決定要不要做的延伸（事件改變行情、世界編輯器編輯標籤與狀態）放在點子庫 [I25](../ideas/dev-discussion.md#i25)。
+
+### 2026-11-05 跑商的限制與平衡模擬（R19 的 T6）
+
+- 收購遞減：存檔規則 `sellGlutPct`（預設 3%）、`market.json` 的 `sell_glut`（最多 50%、每天回復 5 件）、存檔的 `sales`；`trade.ts` 的 `glutCount`、`glutMult`、`sellTotalOf`，購物車與直接賣出都照遞減算並記錄。
+- 介面：購物車賣出的小計寫「▼遞減」，行囊的收購價旁寫「收多了 −N%」，價格拆解多一步。
+- 商店庫存：照現有的每日存貨，沒有另外加上限（原計畫第 11 節的待決定事項）。
+- 平衡模擬：`src/__tests__/tradeSim.spec.ts`，結果 [trade-sim](../../../worldgen/balance/trade-sim.md)。規則寫在 [TRADE](../../TRADE.md) 3.4 節。
+
+### 2026-11-05 價格拆解（R19 的 T5）
+
+- 引擎：`trade.ts` 的 `buyBreakdown`、`sellBreakdown`、`breakdownText`；一般商品記下定價依據（`Deal.basis`：目錄價、店家加成）。
+- 介面：`PriceSteps.vue`，商店清單點開一列、行囊點收購價展開；價格上滑過去也看得到。
+- 規則寫在 [TRADE](../../TRADE.md) 3.3 節，測試在 `market.spec.ts`。
+
+### 2026-11-05 動態狀態庫（R19 的 T4）
+
+- 資料：`data/rules/market.json` 的 `states`（38 個：商路不安全、豐收、歉收、瘟疫、慶典、戰事、礦坑塌方、商隊抵達……）與 `state_rules`（每 7 天一期、最多 2 個）。
+- 引擎：`market.ts` 的 `townStates`（種子 + 聚落 + 第幾期決定，不存檔）；`categoryMult` 把狀態和固定標籤一起相乘。
+- 介面：行情列與 ▼／▲ 的說明寫出狀態與剩幾天；打聽、聊天與 AI 準備商店清單的提示詞帶上狀態。
+- 規則寫在 [TRADE](../../TRADE.md) 3.2 節，測試在 `market.spec.ts`。
+
+### 2026-11-05 貿易類別與城鎮的固定標籤（R19 的 T2、T3）
+
+- 資料：`data/rules/market.json`（14 個貿易類別、15 個固定標籤、倍率夾在 0.4～2.5）；`geography.json` 的聚落都貼上 1～3 個 `trade_tags`；`items.json` 推不出來的 28 件手寫 `trade_category`。
+- 引擎：`market.ts` 的 `tradeCategory`、`inferTradeCategory`（照底材、打造材料、怪物掉落、物品類別推）、`categoryMult`、`marketMult`；`trade.ts` 的 `itemDeal`（售價）與 `sellPrice`（收購價）乘上類別倍率。打聽、聊天的 `<world_facts>` 多一行「這裡的行情」。
+- 介面：商店視窗上方的「某某的行情」（`MarketTags.vue`，城門的地點面板也有）、商品與收購價旁的 ▼／▲（`MarketBadge.vue`）；內容編輯器的物品多了「貿易類別」。
+- 規則寫在 [TRADE](../../TRADE.md) 3.1 節，測試在 `market.spec.ts`。
+
+### 2026-11-05 購物車與整車交涉（R19 的 T1，含原 B21）
+
+- 擁有者看過樣稿（`docs/mockups/trade.html`）後決定先做這項；同時定了 R19 其他的數值（動態狀態每 7 天、最多 2 個；倍率 ×0.4～×2.5；收購遞減每件 −3%、做成存檔規則、最多 −50%；交涉的賣出部分除以倍率），寫在當時的 TRADE_PLAN 第 2 節（R19 做完後刪掉，規則見 [TRADE](../../TRADE.md)）。
+- 引擎：`trade.ts` 的 `Cart`、`cartQuote`、`checkoutCart`、`bargainNet`、`settleNet`、`cartBargainTarget`；`ShopState.cartBargain` 記今天的整車交涉；`bargainSetup`、`applyBargain` 多了出價（`ActionPending.offer_cc`），判定的提示詞寫「想付／想收」。
+- 介面：`ShopDialog.vue` 一般商品與行囊改成加進購物車，`CartPanel.vue`（電腦版在兩欄下面，手機版是第三個分頁）。
+- 原 B21（交涉的成交價不是喊的價）：成交價取出價與能談到的最好價中對店家有利的那個。規則寫在 [TRADE](../../TRADE.md) 4.1、第 5 節，測試在 `cart.spec.ts`。
+
+### 2026-11-05 依配方製作與自創配方的介面、配方材料當場補買
+
+- 接著 R18：擁有者看過樣稿（`docs/mockups/recipes.html`）後決定照做，配方材料也能當場補買；自創配方的類別規則不放寬。
+- `RecipePanel.vue`：工藝、類別按鈕列、只看做得出來的、搜尋、配方卡片、詳細區（批數按鈕、材料表、補買）；`InventPanel.vue`：工藝（寫出能自創的類別）、類別、配方等級改成按鈕。
+- 引擎：`recipes.ts` 的 `recipePlan` 加 `buy`（`inputs` 帶 `offer`、`buy`，`buys`、`buyCost`），target 接 `|!buy`；補買和打造共用 `craft.ts` 的 `buyHere`。
+- 規則寫在 [CRAFTING](../../CRAFTING.md) 第 6、7 節；測試在 `craftMaterials.spec.ts`。
+
+### 2026-11-05 工藝介面與材料（R18）
+
+- 起因：玩家回饋（Discord 的 Tirpitz、issue #62 第 14、15 條）：底材清單混雜難找、看不出做出來的數值、「一級材料為啥非要自己買」。
+- 樣稿 `docs/mockups/craft.html` 確認後實作（`CraftPanel.vue`，委託與自己打造共用）：部位 → 類型 → 底材按鈕列、搜尋、材料比較表（做樣稿時確認稀有度不改數值、只決定附魔點數）、記住上次的選擇。
+- 底材的類型：`gear.json` 主手、副手的底材加 `type`，其他依欄位與材料推（`gear.ts` 的 `baseType`）；世界編輯器可以改（`mods.ts` 的 `sanitizeBase`）。
+- 第 1 級材料改成物品（擁有者決定）：鐵礦石、木材加上 `forge` 並在店裡賣，新增鞣製皮革、亞麻布、銅錠，低階獸皮、羊毛、古代亞麻布、燒焦的銅料也能用；拿掉 `crafts.json` 的 `self.tier1_cost_ratio`。委託的第 1 級照舊由工匠提供。
+- 材料來源：`craftPlan` 的 `sources`、選項 `use`（優先用哪一種）與 `buy`（向站的這間店當場補買，`shopOfferHere`、結算時扣存貨）；target 接 `|!use=`、`|!buy`。輔料照舊。
+- 規則寫在 [CRAFTING](../../CRAFTING.md) 2、2.1 節、[ITEMS](../../ITEMS.md) 第 5、5.1 節、[CONTENT_EDITOR](../../CONTENT_EDITOR.md)；測試在 `craftMaterials.spec.ts`、`crafting.spec.ts`、`gear.spec.ts`。
+
+### 2026-11-05 提示詞與正則（R17 結案）
+
+- 起因：玩家用自訂破限預設（「貓神」）時，模型在正文寫出 `<think_nya>…</think_nya>`，原樣顯示在冒險日誌（Discord，2026-11-05）。
+- 頁籤「提示詞」改名「提示詞與正則」，加「🔣 正文正則」（`narrator/regex.ts`、`RegexPanel.vue`）：規則跟著提示詞組存（`PromptConfig.regex`），內建「刪掉思考區塊」；編譯一次快取、串流中節流只改顯示、收完整段套用一次並存下處理過的文字；`extractJson` 解析前先拿掉思考區塊。
+- 匯入 SillyTavern 的 regex 腳本：轉成自己的格式（只收 AI 輸出、`{{match}}` → `$&`、`trimStrings` 變刪除規則），略過與拿掉的設定都列出來。
+- R17 的其他項目（版本號、骰面判定、回合提示、設定匯出、規則說明）見下面同一天的紀錄；`roadmap/QOL_PLAN.md` 刪掉。規則寫在 [PROMPTS](../../PROMPTS.md) 6.1 節，測試在 `regex.spec.ts`。
+
+### 2026-11-05 設定的匯出與匯入、遊戲內規則說明（R17 的 Q-6、Q-7）
+
+- 設定的匯出與匯入（issue #62 第 2 條）：`stores/settingsFile.ts`、`SettingsFilePanel.vue`（設定頁的「存檔」改名「存檔與設定檔」）。原樣搬 `elondia.settings`、`elondia.image`、`elondia.promptSets`、`elondia.characters`；`apiKey` 預設清空，匯入時空的金鑰沿用原本的；匯入後重新整理頁面。規則寫在 [SAVES](../../SAVES.md) 第 8 節，測試在 `settingsFile.spec.ts`。
+- 遊戲內規則說明（issue #62 第 19、21 條）：酒館「招募冒險者」的說明寫出雇用一次付清、沒有期限與週薪、戰利品不分、親密度太低會離隊；`GuardStatus.vue` 在聲望旁加「犯法的後果」（數字照 `security.json`）。只寫現有的規則，沒有新增規則。寫在 [COMPANIONS](../../COMPANIONS.md) 2.1 節、[NPC_SYSTEM](../../NPC_SYSTEM.md) 第 9 節，測試在 `ruleHints.spec.ts`。
+
+### 2026-11-05 小改進：版本號、骰面判定、戰鬥的回合提示（R17 的 Q-1～Q-3）
+
+- 版本號：`vite.config.ts` 用 `define` 把 `package.json` 的版本帶進程式（`__APP_VERSION__`，型別在 `env.d.ts`），首頁下方與設定的「存檔」頁顯示。
+- 存檔規則「大成功、大失敗只看骰面」（`options.naturalCrit`）：`checks.ts` 的 `computeDegree` 多一個參數、`clampDegree` 收斂 AI 給的程度；主動行動、AI 入隊、談判、撤出地下城、打聽消息、提議夥伴去娼館都照這條；判定提示詞寫明規則。規則寫在 [ACTIONS](../../ACTIONS.md) 第 3 節、[SAVES](../../SAVES.md) 第 7 節，測試在 `naturalCrit.spec.ts`。
+- 戰鬥的回合提示：`CombatView.vue` 播時間軸時排隊出「第 N 回合」「敵方行動」「輪到你了／輪到某某」（`fx.ts` 的 `banner` 多了 `turn`、`foe`、`ally` 三種小橫幅），設定「戰鬥的回合提示」（`settings.turnBanner`）可以關。寫在 [COMBAT_SYSTEM](../../COMBAT_SYSTEM.md) 8.3 節之後，測試在 `turnBanner.spec.ts`。
+- 同一天：交涉的成交價不是喊價（B21）併進 R19 的購物車一起做（R19 的計畫，做完後刪掉）。
+
+### 2026-11-05 對方主動邀請時不再要過邀請的檢定（L10，原 B22）
+
+- 起因：玩家回報（[issue #62](https://github.com/yellow630914/ElondiaRPG/issues/62) 第 20 條）對方邀請、自己答應，卻因魅力檢定失敗入不了隊。白箱重現：AI 判定成功並給了入隊，`actions.ts` 的 `judgeJoin` 另外要求檢定總值達到邀請的 DC（重現時 18），沒達到就不入隊還加冷卻。酒館的「等待組隊」沒有這個問題（接受邀請不擲骰）。
+- 擁有者決定：AI 判定的 `join` 效果可以帶 `offered`（對方先開口），親密度至少 30（`companions.json` 的 `invite.offered_min_affinity`）時不比邀請的 DC；人在身邊、冷卻、空位、小隊找隊長照舊；沒成時不加冷卻。親密度不夠時照一般邀請，結果寫明原因。判定的提示詞寫出現在的親密度算不算數。
+- 規則寫在 [COMPANIONS](../../COMPANIONS.md) 2.5 節，測試在 `aiJoin.spec.ts`。
+
+### 2026-11-05 寶箱的打造材料不再只給最便宜的（L11，原 B19）
+
+- 起因：寶箱的打造材料一律是那一級最便宜的一件，第 2～5 級有 15 種開不出來（精鋼錠、硬化獸皮、絲綢布匹、古樹心材、金錠……），而且和地下城所在的地區無關（第 2 級皮革一律是沙丘豺皮）。
+- 改成從那一級的候選裡平均抽一種：沒有怪物會掉的通用材料，加上這座地下城（各層與層主）與所在地區野外的怪物會掉的；一種都對不上時用那一級的全部（`gear.ts` 的 `chestForgeCandidates`、`localLootItems`）。實際上第 1～5 級的打造材料幾乎都有怪物會掉，通用的只有銀錠、金錠，所以多半是「當地怪物會掉的」優先，其他地方（緋夢樂園底下、高等地下城、炎華之地）開那一級的全部。
+- 第 6、7 級照舊依地點的材料系列挑。材料委託與裝備的收購上限仍用最便宜的那一件（`forgeItemFor`）。
+- 規則寫在 [ITEMS](../../ITEMS.md) 4.4 節；攻略的來源（`sources.ts`）列出每一級全部的候選，怪物素材標「這種怪物出沒的地方」。測試在 `items.spec.ts`。
+
+### 2026-11-05 Bug 整理：修好 B23、B14，B22、B19 改記到業務邏輯問題
+
+- B23 開戰的橫幅在手機上斷成兩行：`position: fixed; left: 50%` 的元素只拿得到半個畫面寬，左右內距又各 64px，連兩個字都放不下。`.fx-banner` 改成照內容的寬度（最多畫面寬減 16px），760px 以下縮小內距與字（`src/style.css`）；Chromium 量過 320～1280 寬都是一行。
+- B14 形象圖同一毫秒的兩版互相蓋掉：各版用毫秒時間當 key，也用時間認出目前的那版；新增一版時同一毫秒已經有一版就往後挪 1 毫秒（`stores/portraits.ts` 的 `addVersion`），回歸測試在 `imageStudio.spec.ts`。
+- B22（對方邀請仍要過邀請檢定）、B19（寶箱開不出大部分打造材料）白箱重現後確認是照設計運作，改記到 [LOGIC_ISSUES](../LOGIC_ISSUES.md) L10、L11。
+
 ### 2026-11-05 手機版畫面的實機測試（R10 結案）
 
 - M1～M4 在 2026-10-30 完成並合併（規則見 [MOBILE_UI](../../MOBILE_UI.md)）；擁有者 2026-11-05 實機測試完，R10 結案。
-- 剩下的已知小問題「開戰的地名橫幅在手機上斷成兩行」移到 [BUGS](../BUGS.md) B23。
+- 剩下的已知小問題「開戰的地名橫幅在手機上斷成兩行」移到 [BUGS](../BUGS.md) B23（同一天修好，見上面）。
 - 擁有者 2026-10-30 決定先不做的：手機橫拿；iPhone SE 直拿時主動行動列被地圖擠掉、打完的遭遇格還有「查看遭遇」、旅途最後一天的按鈕字、`viewport-fit=cover`；行囊升格成底部分頁列的獨立按鈕。
 
 ### 2026-11-05 慾望戰鬥的收尾移回點子庫（R8 → I24）

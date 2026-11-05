@@ -2,6 +2,7 @@
 // 跟著瀏覽器走（所有存檔共用），存在 localStorage（見 src/stores/prompts.ts）。
 
 import type { LoreItem, LoreOverride } from './lore'
+import { defaultRegexRules, normalizeRegexRules, type RegexRule } from './regex'
 import { LENGTH_SCALES, type LengthScale } from './prompt'
 
 /**
@@ -56,6 +57,8 @@ export interface PromptConfig {
   defeatRules?: string
   /** 玩家修改過的成人場景規則；沒有時用預設（DEFAULT_SCENE_RULES） */
   sceneRules?: string
+  /** 正文正則（regex.ts）：日誌正文顯示與存檔前的尋找與取代；舊的設定沒有時用內建規則 */
+  regex: RegexRule[]
 }
 
 export const TARGET_NAME: Record<PromptTarget, string> = { narration: '敘事', adult: '成人場景', judge: '判定' }
@@ -267,6 +270,7 @@ export function defaultPromptConfig(): PromptConfig {
     lengthScale: 'standard',
     continuity: true,
     variety: true,
+    regex: defaultRegexRules(),
   }
 }
 
@@ -307,6 +311,7 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     ...(typeof r.narrationRules === 'string' && r.narrationRules.trim() ? { narrationRules: r.narrationRules } : {}),
     ...(typeof r.defeatRules === 'string' && r.defeatRules.trim() ? { defeatRules: r.defeatRules } : {}),
     ...(typeof r.sceneRules === 'string' && r.sceneRules.trim() ? { sceneRules: r.sceneRules } : {}),
+    regex: r.regex === undefined ? defaultRegexRules() : normalizeRegexRules(r.regex),
   }
 }
 

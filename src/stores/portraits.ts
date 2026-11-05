@@ -272,6 +272,10 @@ export const usePortraits = defineStore('portraits', () => {
   /** 新增一版（makeCurrent：同時換成目前的形象圖）；超過上限時刪掉最舊的（目前的那版不刪） */
   async function addVersion(key: string, rec: PortraitRecord, makeCurrent: boolean): Promise<string> {
     const list = await loadVersions(key)
+    // 各版用時間當 key，也用時間認出目前的那版：同一毫秒已經有一版時往後挪，不蓋掉它
+    let time = rec.time
+    while (list.some((v) => v.time === time)) time += 1
+    if (time !== rec.time) rec = { ...rec, time }
     const vkey = versionKey(key, rec.time)
     await idbPut(vkey, rec)
     if (makeCurrent) await put(key, rec)

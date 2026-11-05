@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, Degree, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { BestiaryEntry } from './bestiary'
@@ -783,6 +783,8 @@ export interface GameOptions {
   shortRestHours?: number
   longRestHours?: number
   alertDecayDays?: number
+  /** 收購遞減：同一間店收購同一個貿易類別，每件降幾 %（0 = 不遞減；docs/TRADE.md 3.4 節） */
+  sellGlutPct?: number
   /** 每個採集點採到幾份（小數是機率） */
   gatherMult?: number
   /** 戰鬥撤退與地下城緊急撤退的 DC 加減 */
@@ -806,6 +808,8 @@ export interface GameOptions {
   lustMult?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
+  /** 大成功、大失敗只看骰面：只有骰出 20 才大成功、骰出 1 才大失敗（engine/checks.ts） */
+  naturalCrit?: boolean
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */
@@ -889,6 +893,8 @@ export interface GameState {
   auction?: { day: number; location: string; lots: { name: string; start: number; rival: number; won?: number; lost?: boolean }[] }
   /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */
   arena?: Record<string, Record<string, { streak: number; best: number }>>
+  /** 收購遞減（docs/TRADE.md 3.4 節）：商店 key → 貿易類別 → 最近收了幾件（n）、記錄的那天（day）；每天回復 market.json 的 sell_glut.recover_per_day 件 */
+  sales?: Record<string, Record<string, { n: number; day: number }>>
   /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */
   brothelRank?: Record<string, Record<string, number>>
   /** 自由的夥伴答應去娼館接客的那一天：角色 id → 第幾天 */
@@ -1029,6 +1035,8 @@ export interface Deal {
   haggled?: boolean
   /** 氛圍性的交易：給 AI 的提示（見 shops.json 的 flavor） */
   flavor?: string
+  /** 一般商品的定價依據（價格拆解用，trade.ts 的 buyBreakdown）：目錄價（或固定清單寫的價格）與店家加成 */
+  basis?: { base: number; markup: number }
 }
 
 export interface ShopState {
@@ -1039,6 +1047,11 @@ export interface ShopState {
   source: 'ai' | 'rules'
   /** 今天已經請 AI 生成過（不論成功與否） */
   aiTried?: boolean
+  /**
+   * 今天的整車交涉（每間店每天一次，trade.ts 的購物車）：結果的倍率、成功程度、玩家的出價（正數是付錢、負數是收錢），
+   * 交涉時的購物車內容（內容沒變時出價才算數）；結帳之後 spent
+   */
+  cartBargain?: { degree: Degree; factor: number; offer?: number; cart: string; spent?: boolean }
 }
 
 export interface NegotiationOption {

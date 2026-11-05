@@ -9,10 +9,11 @@ import { luckyThreshold } from '@/engine/character'
 import { abilityDef, combatRules, damageTypeName, lewdRules, describeStatus, monsterTraits, statusDef, type AbilityDef } from '@/engine/data'
 import { upcastText } from '@/engine/upcast'
 import { describeCombatLine } from '@/narrator/describe'
-import { banner, climaxBreath, fxOn, flash, floatText, lustHit, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
+import { banner, climaxBreath, fxOn, type BannerKind, flash, floatText, lustHit, screenFlash, screenShake, shake, shatter } from '@/fx/fx'
 import { BUFF_COLOR, CRIT_COLOR, DEBUFF_COLOR, HEAL_COLOR, LUST_COLOR, MISS_COLOR, PHYSICAL_COLOR, cuesFor, unplayedHpDelta, unplayedLustDelta } from '@/fx/combatFx'
 import type { TimelineEntry } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
@@ -210,6 +211,53 @@ const hasLustBar = (c: Combatant) => c.lustMax !== undefined && !(c.side === 'en
 /** 畫面上倒下了嗎（致命的那一下還沒播到時先不算） */
 const shownDown = (c: Combatant) => !isActive(c) && !(c.hp === 0 && (hpDelta.value[c.id] ?? 0) > 0)
 
+// ---- 回合提示（新回合、敵方行動、輪到我方）：排隊播，一條播完再播下一條，不疊在一起 ----
+const settings = useSettings()
+const cueQueue: [string, BannerKind][] = []
+let cueTimer: ReturnType<typeof setTimeout> | null = null
+function cue(text: string, kind: BannerKind) {
+  if (!settings.turnBanner || combat.value.status !== 'ongoing') return
+  if (cueQueue.at(-1)?.[0] === text) return
+  cueQueue.push([text, kind])
+  if (!cueTimer) nextCue()
+}
+function nextCue() {
+  cueTimer = null
+  const c = cueQueue.shift()
+  if (!c) return
+  if (combat.value.status === 'ongoing') banner(c[0], c[1])
+  cueTimer = setTimeout(nextCue, 750)
+}
+const sideOf = (id: string) => combat.value.combatants.find((c) => c.id === id)?.side
+/** 畫面上播到第幾回合、上一個行動者站在哪一邊；從上次輪到我方之後，有沒有換回合或敵人行動過 */
+let shownRound = combat.value.timeline.at(-1)?.round ?? combat.value.round
+let lastSide: 'party' | 'enemy' | undefined
+let othersActed = false
+function roundCue(round: number | undefined) {
+  if (!round || round <= shownRound) return
+  shownRound = round
+  cue(`第 ${round} 回合`, 'turn')
+  othersActed = true
+}
+function turnCues(t: TimelineEntry) {
+  roundCue(t.round)
+  const side = sideOf(t.actor)
+  if (side === 'enemy' && lastSide !== 'enemy') cue('敵方行動', 'foe')
+  if (side === 'enemy') othersActed = true
+  if (side) lastSide = side
+}
+/** 時間軸播完、輪到我方能操作的人：換過回合或敵人動過才提示 */
+function yourTurnCue() {
+  // 新回合由我方先動時，這一回合還沒有時間軸：照戰鬥目前的回合數
+  roundCue(combat.value.round)
+  const a = actor.value
+  if (!othersActed || combat.value.status !== 'ongoing' || !a || a.side !== 'party' || a.ally) return
+  othersActed = false
+  lastSide = 'party'
+  const pc = game.state?.party.find((m) => m.isPlayer)?.id
+  cue(a.id === pc ? '輪到你了' : `輪到${a.name}`, 'ally')
+}
+
 let timer: ReturnType<typeof setTimeout> | null = null
 function step() {
   timer = null
@@ -217,6 +265,7 @@ function step() {
   if (played.value >= list.length) { played.value = list.length; drained(); return }
   if (!fxOn()) { played.value = list.length; drained(); return }
   const t = list[played.value]!
+  turnCues(t)
   played.value++
   play(t)
   // 積了很多筆（例如敵人一口氣行動完）時加快
@@ -306,6 +355,7 @@ function play(t: TimelineEntry) {
 /** 全部播完：戰鬥結束時出勝利或戰敗的橫幅 */
 let ended = combat.value.status !== 'ongoing'
 function drained() {
+  yourTurnCue()
   if (ended || combat.value.status === 'ongoing') return
   ended = true
   if (combat.value.status === 'victory') banner('勝利', 'victory')
@@ -330,9 +380,14 @@ onMounted(() => {
     }
     banner(boss ? '強敵' : '遭遇', boss ? 'boss' : 'encounter')
     if (boss) screenShake(field.value, 1.2)
+    // 開場橫幅播完之前不出回合提示
+    cueTimer = setTimeout(nextCue, boss ? 1300 : 900)
   }
 })
-onBeforeUnmount(() => { if (timer) clearTimeout(timer) })
+onBeforeUnmount(() => {
+  if (timer) clearTimeout(timer)
+  if (cueTimer) clearTimeout(cueTimer)
+})
 
 /** 倒下、撤離、已逃走 */
 function downText(c: Combatant): string {

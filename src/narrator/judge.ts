@@ -11,6 +11,7 @@ import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { selectContext } from '@/engine/social'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
+import { naturalCritOnly } from '@/engine/checks'
 import { inviteDc, validateInvite } from '@/engine/companions'
 import {
   geography, genderPrompt, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
@@ -22,6 +23,7 @@ import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarg
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
 import { itemCategory, shopKey, shopPlace } from '@/engine/trade'
+import { tagEffectText, townStates, townTags } from '@/engine/market'
 import { shopTitle } from '@/engine/shopNames'
 import { toolSummary } from '@/engine/tools'
 import { intelSummary, lockedGear } from '@/engine/inventory'
@@ -44,8 +46,12 @@ import type { PromptEntry } from './promptConfig'
 import { genderSwapNote } from '@/engine/genderSwap'
 import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
 
-/** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
+/**
+ * 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。
+ * 自訂破限預設會讓模型先寫 <think…>…</think…> 思考區塊（裡面可能有大括號）：先拿掉
+ */
 export function extractJson(text: string): unknown {
+  text = text.replace(/<(think[\w-]*)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
   const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(text)
   const body = fenced ? fenced[1]! : text
   const start = body.indexOf('{')
@@ -296,7 +302,14 @@ function joinDoc(state: GameState, p: ActionPending): string {
   } catch (e) {
     why = e instanceof Error ? e.message : String(e)
   }
-  const cond = why ? `目前不符合邀請的條件（${why}），這次寫了也不會入隊，不要在經過裡寫成已經同行` : `檢定總值要達到邀請的 DC ${dc}（不是這次行動的 DC）才會真的入隊`
+  const need = companionRules.invite.offered_min_affinity
+  const affinity = state.relationships[id]!.affinity
+  const offered = affinity >= need
+    ? `對方先開口邀請主角同行、這次是主角答應時，加上 "offered":true，就不用達到邀請的 DC（現在親密度 ${affinity}，到 ${need} 才算數）`
+    : `對方先開口邀請、主角答應時可以加上 "offered":true，但現在親密度 ${affinity} 不到 ${need}，仍要達到邀請的 DC`
+  const cond = why
+    ? `目前不符合邀請的條件（${why}），這次寫了也不會入隊，不要在經過裡寫成已經同行`
+    : `檢定總值要達到邀請的 DC ${dc}（不是這次行動的 DC）才會真的入隊；${offered}。只有前文裡確實是對方提出的才加，主角自己開口的不算`
   return `{"type":"join","npc":"${id}"}（行動的${p.with?.length ? '主要' : ''}對象答應加入主角的隊伍、從此同行：只在 degree 為 success 以上、對象真心願意跟著主角走時。程式另外檢查邀請的條件：人在身邊、親密度、被婉拒後的冷卻、隊伍空位、小隊要找隊長；${cond}。沒有寫這個效果時，經過裡不要寫成對方已經入隊）`
 }
 
@@ -436,7 +449,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
       text: `<action>
 行動：${kind.name}
 場景：${p.scene}（${locationById(p.location).name}）
-${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}${extra}
+${p.offer_cc !== undefined ? `出價：${p.kind === 'bargain' ? (p.offer_cc >= 0 ? `想付 ${formatMoney(p.offer_cc)}` : `想收 ${formatMoney(-p.offer_cc)}`) : formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}${extra}
 </action>`,
     },
     {
@@ -448,7 +461,7 @@ ${p.actor ? `擲骰的人：${state.party.find((m) => m.id === p.actor)?.name ??
 各屬性的總值（自然骰 + 屬性調整值 + 熟練 + 情境）：
 ${totals}
 參考 DC：${p.base_dc}（dc 可標示 ${p.base_dc - adj}～${p.base_dc + adj}）
-依預設屬性（${attrName(p.attr)}）的參考結果：${DEGREE_NAME[computeDegree(p.natural, p.natural + p.modifiers[p.attr] + sit, p.base_dc)]}
+依預設屬性（${attrName(p.attr)}）的參考結果：${DEGREE_NAME[computeDegree(p.natural, p.natural + p.modifiers[p.attr] + sit, p.base_dc, naturalCritOnly(state))]}${naturalCritOnly(state) ? '\n這個存檔的規則：大成功只在自然骰 20、大失敗只在自然骰 1；其他情況差再多也最多是成功或失敗（程式會把不符合的 critical、fumble 改成 success、fail）。' : ''}
 </dice>`,
     },
     {
@@ -576,11 +589,21 @@ ${def.ai_effects.map((t) => `- ${docs[t] ?? t}`).join('\n')}
 6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`
   const user = `${place.waystation ? `地點：${loc.name}附近旅途上的${place.name}（偏遠的歇腳處，貨色少、價格高）\n` : ''}城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
 商店：${def.name}：${shopTitle(place.id, type).name}
-${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
+${marketLine(state, place.waystation ? undefined : loc.id)}${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
 主角：${pc.name} Lv.${pc.level}，持有 ${formatMoney(state.money_cc)}
 目錄（這間店平常賣的東西與價格）：
 ${catalog || '（無）'}`
   return { system, user }
+}
+
+/** 這裡的行情（城鎮的固定標籤、今天的動態狀態）：讓 AI 的特別商品呼應；目錄的價格程式已經算進去了 */
+function marketLine(state: GameState, locationId: string | undefined): string {
+  if (!locationId) return ''
+  const parts = [
+    ...townTags(locationId).map((t) => `${t.def.name}（${tagEffectText(t.def)}）`),
+    ...townStates(state, locationId).map((t) => `${t.def.name}：${t.def.desc}（${tagEffectText(t.def)}，還有 ${t.end - state.time.day} 天）`),
+  ]
+  return parts.length ? `這裡的行情（目錄價格已經照這個算過）：${parts.join('；')}\n` : ''
 }
 
 /** 談判方式：AI 依對象與情境生成，程式把 DC 夾在基準 ±3（見 engine/negotiation.ts）。 */

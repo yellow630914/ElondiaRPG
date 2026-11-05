@@ -153,6 +153,8 @@ interface SavedSettings {
   uiLanguage: UiLanguage
   /** 畫面特效；auto 跟著系統的「減少動態效果」 */
   effects: FxLevel | 'auto'
+  /** 戰鬥中新回合、輪到敵方、輪到我方時的提示橫幅（特效關閉時也不顯示） */
+  turnBanner: boolean
   /** 背景圖：依所在的地區、城鎮、地下城換背景（見 src/assets/backgrounds） */
   background: boolean
   /** 背景圖的亮度（百分比，20～100；越低越暗，面板上的字越清楚） */
@@ -211,6 +213,7 @@ function defaults(): SavedSettings {
     uiLanguage: 'zh-Hant',
     loreBudget: 12000,
     effects: 'auto',
+    turnBanner: true,
     background: true,
     backgroundBrightness: 60,
     panelOpacity: 80,
@@ -300,6 +303,7 @@ export const useSettings = defineStore('settings', () => {
   watch(uiLanguage, applyUiLanguage, { immediate: true })
   const loreBudget = ref(initial.loreBudget)
   const effects = ref(initial.effects)
+  const turnBanner = ref(initial.turnBanner !== false)
   /** 實際用的特效等級 */
   const effectsLevel = (): FxLevel => (effects.value === 'auto' ? (reducedMotion() ? 'lite' : 'full') : effects.value)
   // 樣式表用 html[data-fx] 決定播哪些 CSS 動畫
@@ -311,7 +315,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -347,6 +351,7 @@ export const useSettings = defineStore('settings', () => {
         uiLanguage: uiLanguage.value === 'zh-Hans' ? 'zh-Hans' : 'zh-Hant',
         loreBudget: loreBudget.value,
         effects: effects.value,
+        turnBanner: turnBanner.value !== false,
         background: background.value !== false,
         backgroundBrightness: Math.max(20, Math.min(100, Math.round(Number(backgroundBrightness.value) || 60))),
         panelOpacity: Math.max(40, Math.min(100, Math.round(Number(panelOpacity.value) || 80))),
@@ -444,7 +449,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

@@ -11,6 +11,7 @@ import type { LewdStat } from '@/engine/types'
 import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod, SYSTEM_CONDITIONS } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
+import { inferTradeCategory, marketRules, tradeCategoryName } from '@/engine/market'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
 import { PLACE_NAME } from '@/engine/homes'
@@ -68,6 +69,8 @@ const edited = computed(() => !custom.value && !!content.mods.items[props.name])
 
 // ---- 選項 ----
 const CATS = itemRules.categories
+// 貿易類別（城鎮標籤的價格倍率看這個，docs/TRADE.md 3.1 節）：沒填時照其他欄位推
+const inferredTrade = computed(() => tradeCategoryName(inferTradeCategory({ ...draft.value, name: newName.value })))
 const damageIds = damageTypes.types.map((t) => t.id)
 const statusList = Object.entries(statuses).map(([id, s]) => ({ id, ...s }))
 const debuffs = statusList.filter((s) => s.kind === 'debuff')
@@ -367,6 +370,12 @@ function setFuel(v: string) {
           </select>
         </label>
         <label>價格（{{ formatMoney(draft.price_cc) }}）<input v-model.number="draft.price_cc" type="number" min="0" /></label>
+        <label title="城鎮標籤（礦產豐富、港口貿易……）照貿易類別調整買賣價格">貿易類別
+          <select :value="draft.trade_category ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.trade_category = ($event.target as HTMLSelectElement).value) : delete draft.trade_category">
+            <option value="">（照推的：{{ inferredTrade }}）</option>
+            <option v-for="(n, k) in marketRules.categories" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
       </div>
       <label class="block">描述 <textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
       <label class="check small"><input type="checkbox" :checked="!!draft.adult" @change="draft.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>

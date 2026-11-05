@@ -66,6 +66,7 @@ import {
   buildNegotiationPrompt, buildNewsPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
 import type { Prompt } from '@/narrator/prompt'
+import { applyRegex, type RegexScope } from '@/narrator/regex'
 import { providerInfo, type ProviderId, type TokenUsage } from '@/narrator/providerInfo'
 import type { ContentMods } from '@/engine/mods'
 import { useContent, VANILLA, VANILLA_NAME, type WorldRef } from './content'
@@ -1011,6 +1012,11 @@ export const useGame = defineStore('game', () => {
     return { ...composeJudge(st, pending, opts, narrations.value), sample: !s.pendingAction }
   }
 
+  /** 正文正則（提示詞組的 regex，narrator/regex.ts）：收完整段時套用一次，存下處理過的文字 */
+  function cleanText(text: string, scope: RegexScope): string {
+    return applyRegex(text, usePrompts().config.regex, scope)
+  }
+
   /** 請「敘事正文」（帶親密場景時是「成人場景正文」）的模型寫出這則日誌的經過。manual：玩家在日誌上手動要求（AI 細節描述關閉時也顯示） */
   async function narrate(report: Report, opts: { manual?: boolean } = {}) {
     const settings = useSettings()
@@ -1035,13 +1041,16 @@ export const useGame = defineStore('game', () => {
         entry.text += chunk
       }
       // 正文後面的人際關係更新提議：取出來等玩家確認
-      const { text, updates } = splitSuggestions(entry.text)
+      const split = splitSuggestions(entry.text)
+      const text = cleanText(split.text, 'narration')
       entry.text = text
-      if (state.value && updates.length) social.addSuggestions(state.value, updates, report.report_id)
+      if (state.value && split.updates.length) social.addSuggestions(state.value, split.updates, report.report_id)
       entry.status = 'done'
       save()
       if (!rewrite && text.trim() && state.value) void useScenes().auto(state.value, report)
     } catch (e) {
+      // 停止或出錯時留下的半段也照正則清理
+      entry.text = cleanText(splitSuggestions(entry.text).text, 'narration')
       entry.status = 'error'
       entry.error = controller.signal.aborted ? '已取消' : e instanceof Error ? e.message : String(e)
     } finally {
@@ -1079,14 +1088,16 @@ export const useGame = defineStore('game', () => {
         added += chunk
         entry.text = `${base}\n\n${added.trimStart()}`
       }
-      const { text, updates } = splitSuggestions(added)
-      if (state.value && updates.length) social.addSuggestions(state.value, updates, report.report_id)
+      const split = splitSuggestions(added)
+      const text = cleanText(split.text, 'narration')
+      if (state.value && split.updates.length) social.addSuggestions(state.value, split.updates, report.report_id)
       entry.text = text.trim() ? `${base}\n\n${text.trim()}` : base
       if (text.trim()) entry.continued = (entry.continued ?? 0) + 1
     } catch (e) {
       // 按了停止：留下已經寫出來的；其他錯誤：恢復成續寫前的正文
-      if (controller.signal.aborted && added.trim()) {
-        entry.text = `${base}\n\n${added.trim()}`
+      const kept = cleanText(splitSuggestions(added).text, 'narration').trim()
+      if (controller.signal.aborted && kept) {
+        entry.text = `${base}\n\n${kept}`
         entry.continued = (entry.continued ?? 0) + 1
       } else {
         entry.text = base
@@ -1159,8 +1170,8 @@ export const useGame = defineStore('game', () => {
       if (report && rewrite) {
         if (settings.autoNarrates(report) && settings.ready('adult')) void narrate(report)
       } else if (report && judgment.narrative) {
-        narrations.value[report.report_id] = { text: judgment.narrative, status: 'done' }
-        if (judgment.narrative.trim()) void useScenes().auto(s, report)
+        narrations.value[report.report_id] = { text: cleanText(judgment.narrative, 'judge'), status: 'done' }
+        if (narrations.value[report.report_id]!.text.trim()) void useScenes().auto(s, report)
       }
       // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
       if (report && thinking.trim()) {
@@ -1266,6 +1277,9 @@ export const useGame = defineStore('game', () => {
     buyDeal: (type: ShopType, id: string, qty = 1) => run((s) => trade.buyDeal(s, type, id, qty)),
     sellItem: (type: ShopType, name: string, qty: number) => run((s) => trade.sellItem(s, type, name, qty)),
     bargain: (type: ShopType, dealId: string, text: string) => perform({ kind: 'bargain', target: trade.bargainTarget(type, dealId), text }),
+    /** 購物車：結帳（一次買賣）、整車交涉（offer：想付多少，負數是想收多少；不填照倍率） */
+    checkout: (type: ShopType, cart: trade.Cart) => run((s) => trade.checkoutCart(s, type, cart)),
+    bargainCart: (type: ShopType, cart: trade.Cart, text: string, offer?: number) => perform({ kind: 'bargain', target: trade.cartBargainTarget(type, cart), text, ...(offer !== undefined ? { offer_cc: offer } : {}) }),
     chooseOption: (id: string, option: string) => run((s) => negotiation.chooseOption(s, id, option)),
     negotiateFreely: (id: string, text: string, use?: { member: string; ability: string }) =>
       perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),
@@ -1472,6 +1486,13 @@ export const useGame = defineStore('game', () => {
       const { trapLure: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
       state.value.options = { ...rest, ...(on ? { trapLure: true } : {}) }
       if (!on) delete state.value.trapLure
+      save()
+    },
+    /** 這個存檔的大成功、大失敗只看骰面（20 與 1，見 engine/checks.ts） */
+    setNaturalCrit: (on: boolean) => {
+      if (!state.value) return
+      const { naturalCrit: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
+      state.value.options = { ...rest, ...(on ? { naturalCrit: true } : {}) }
       save()
     },
     /** 更換主角的身分標籤（存檔規則要允許，見 pcTags.ts） */

@@ -7,7 +7,7 @@
 
 import { checkModifiers, modifierNote } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
-import { computeDegree, DEGREE_NAME } from './checks'
+import { computeDegree, DEGREE_NAME, naturalCritOnly } from './checks'
 import {
   actionRules, ATTR_IDS, attrName, locationById, negotiationRules, regionById,
   type AttrId, type Degree, type NegotiationTemplate, type ShopType,
@@ -176,7 +176,7 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   const extra = checkModifiers(pc, { context: 'negotiation', attr: o.attr, vsTags: npcRecord(state, n.counterpart)?.tags ?? [] })
   const modifier = mod(attrOf(pc, o.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0)
   const total = natural + modifier
-  const degree = computeDegree(natural, total, o.dc)
+  const degree = computeDegree(natural, total, o.dc, naturalCritOnly(state))
   const report = negotiationReport(state, n, actionRules.kinds.negotiation.hours)
   if (o.cost_cc) report.changes.money_cc = -o.cost_cc
   const check: CheckInfo = { action: `${n.title}：${o.label}`, attr: o.attr, base_dc: n.base_dc, dc: o.dc, natural, modifier, total, degree, source: 'rules' }

@@ -9,6 +9,8 @@ import { usePrompts } from '@/stores/prompts'
 import GameIcon from './ui/GameIcon.vue'
 import CreditsDialog from './home/CreditsDialog.vue'
 
+const APP_VERSION = __APP_VERSION__
+
 // 首頁：繼續（有進行中的遊戲時）、開新遊戲、讀取存檔、世界管理、提示詞管理
 const emit = defineEmits<{ new: []; load: []; worlds: []; prompts: []; settings: [] }>()
 const game = useGame()
@@ -47,13 +49,14 @@ const place = (id: string) => {
       </button>
       <button class="big" @click="emit('prompts')">
         <GameIcon name="script" :size="22" />
-        <span>提示詞管理<span class="detail">目前：{{ prompts.activeName }}（共 {{ prompts.sets.length }} 組）</span></span>
+        <span>提示詞與正則<span class="detail">目前：{{ prompts.activeName }}（共 {{ prompts.sets.length }} 組）</span></span>
       </button>
       <button class="big" @click="emit('settings')"><GameIcon name="settings" :size="22" /><span>設定</span></button>
     </div>
 
     <p v-if="cur" class="small muted">進行中的遊戲會一直自動保存。開新遊戲或讀取存檔會蓋掉它（{{ settings.backupBeforeSwitch ? '蓋掉前會先備份到自動存檔欄位' : '設定裡關掉了備份，蓋掉就找不回來' }}）。</p>
     <button class="link credits" @click="showCredits = true"><GameIcon name="info" :size="14" /> 素材授權與致謝</button>
+    <p class="version small muted" title="遊戲版本">v{{ APP_VERSION }}</p>
     <CreditsDialog :open="showCredits" @close="showCredits = false" />
     <!-- 成人向內容一律存在（沒有開關），首頁角落提示年齡 -->
     <div class="age" role="note" title="本遊戲含成人向內容（性描寫、奴隸、非自願等題材），僅供年滿 18 歲的玩家遊玩。NTR、非處女、主角非自願、男性對象與戰敗事件可以在「設定」的內容篩選關閉。">
@@ -77,6 +80,7 @@ const place = (id: string) => {
 .big > span { display: grid; }
 .detail { font-size: var(--fs-xs); opacity: 0.8; }
 .credits { justify-self: center; display: inline-flex; gap: 4px; align-items: center; }
+.version { justify-self: center; margin: 0; }
 .age {
   position: fixed; right: calc(14px + env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px));
   display: flex; align-items: center; gap: 8px; max-width: calc(100vw - 28px); color: var(--muted); cursor: help;

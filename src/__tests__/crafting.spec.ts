@@ -68,15 +68,18 @@ describe('tools', () => {
 })
 
 describe('making it yourself', () => {
-  it('checks level, tools and materials; tier 1 material is bought', () => {
+  it('checks level, tools and materials; tier 1 uses forge items too', () => {
     const state = game()
     state.inventory = []
     expect(craftPlan(state, 'longsword', 'iron', [], pc(state)).blocked).toContain('低階')
     addItem(state.inventory, '隨身鍛造工具', 1)
+    expect(craftPlan(state, 'longsword', 'iron', [], pc(state)).blocked).toContain('打造材料不夠')
+    addItem(state.inventory, '鐵礦石', 2)
     const iron = craftPlan(state, 'longsword', 'iron', [], pc(state))
     expect(iron.blocked).toBeUndefined()
-    expect(iron.materialCost).toBeGreaterThan(0)
-    expect(iron.fee).toBe(iron.materialCost)
+    expect(iron.units).toBe(2)
+    expect(iron.uses).toEqual([{ name: '鐵礦石', qty: 2 }])
+    expect(iron.fee).toBe(0)
     expect(craftPlan(state, 'longsword', 'steel', [], pc(state)).blocked).toContain('只有 Lv.1')
     pc(state).crafts = { smithing: { level: 3, xp: 0 } }
     addItem(state.inventory, '精鋼錠', 2)
@@ -104,9 +107,10 @@ describe('making it yourself', () => {
     expect(plan.blockers.some((b) => b.includes('打造材料不夠'))).toBe(true)
   })
 
-  it('crafts a piece, pays the material and gives craft experience', () => {
+  it('crafts a piece, uses the material and gives craft experience', () => {
     const state = game()
     addItem(state.inventory, '隨身鍛造工具', 1)
+    addItem(state.inventory, '鐵礦石', 3)
     const plan = craftPlan(state, 'longsword', 'iron', [], pc(state))
     const money = state.money_cc
     prepareAction(state, { kind: 'make', target: makeTarget('pc', 'longsword', 'iron'), text: '' })
@@ -116,6 +120,7 @@ describe('making it yourself', () => {
     valid(r)
     expect(r.check?.degree).toBe('critical')
     expect(state.money_cc).toBe(money - plan.fee)
+    expect(state.inventory.find((i) => i.name === '鐵礦石')?.qty).toBe(1)
     const made = r.changes.items_gained!.find((i) => gearSpecOf(state, i.name))!
     expect(gearSpecOf(state, made.name)).toMatchObject({ base: 'longsword', material: 'iron' })
     expect(r.changes.craft_xp).toEqual([{ actor: 'pc', craft: 'smithing', amount: 3 }])
@@ -125,6 +130,7 @@ describe('making it yourself', () => {
   it('lets willing companions and slaves craft with their own stats, but not hired hands', () => {
     const state = game()
     addItem(state.inventory, '製革工具組', 1)
+    addItem(state.inventory, '鞣製皮革', 3)
     const hired = companion(state, 'hired')
     expect(crafterRefusal(state, hired)).toContain('雇傭')
     expect(() => prepareAction(state, { kind: 'make', target: makeTarget(hired.id, 'leather_armor', 'leather'), text: '' })).toThrow('不肯動手')

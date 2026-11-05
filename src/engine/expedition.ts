@@ -5,7 +5,7 @@
 import { checkBonus } from './perks'
 import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
-import { computeDegree } from './checks'
+import { computeDegree, naturalCritOnly } from './checks'
 import { DUNGEON_LAYER_IDS, dungeonEncounters, locationById, regionById, type DungeonLayerId } from './data'
 import { inDarkness } from './light'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
@@ -130,7 +130,7 @@ export function attemptRetreat(state: GameState, area: Area, safe: boolean): Ret
   })
   const modifier = mod(attrOf(guide, r.attr)) + proficiency(guide.level) + checkBonus(guide, { context: 'retreat', attr: r.attr })
   const total = natural + modifier
-  const degree = computeDegree(natural, total, dc)
+  const degree = computeDegree(natural, total, dc, naturalCritOnly(state))
   const ok = degree === 'success' || degree === 'critical'
   report.check = { action: '撤出地下城', attr: r.attr, base_dc: dc, dc, natural, modifier, total, degree, source: 'rules' }
   report.timeline = [{

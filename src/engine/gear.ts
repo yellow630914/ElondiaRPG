@@ -7,7 +7,10 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, raceName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
+import {
+  armorDef, attrName, raceName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
+  type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type Mods,
+} from './data'
 import { describeEffects } from './perks'
 import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
@@ -35,6 +38,8 @@ export type BaseSlot = GearSlot | 'ring' | 'piercing'
 
 export interface BaseDef {
   slot: BaseSlot
+  /** 打造時的類型（刀劍、鎚斧、盾……）；沒寫時依欄位與材料推（baseType） */
+  type?: string
   name: string
   kind: MaterialKind
   weapon?: string
@@ -88,6 +93,45 @@ export function gearLewdOf(spec: GearSpec): Partial<Record<LewdStat, number>> {
 /** 這個底材存在（自訂內容可能刪掉了） */
 export function baseShown(id: string): boolean {
   return !!gearRules.bases[id]
+}
+
+// ---- 打造時的分類：部位 → 類型 → 底材（docs/CRAFTING.md） ----
+
+export const MATERIAL_KIND_NAME: Record<MaterialKind, string> = { metal: '金屬', leather: '皮革', cloth: '布', wood: '木', jewel: '寶石' }
+
+/** 部位的順序（照裝備欄由上到下；戒指、穿孔飾品是一組欄位） */
+export const CRAFT_SLOT_ORDER: BaseSlot[] = ['main_hand', 'off_hand', 'head', 'body', 'wrists', 'belt', 'legs', 'feet', 'accessory', 'ring', 'piercing', 'leg_accessory', 'underwear_top', 'underwear_bottom'] as BaseSlot[]
+
+/** 類型的順序（沒列到的排在最後） */
+export const BASE_TYPE_ORDER = [
+  '刀劍', '鎚斧', '長柄', '弓弩', '法杖', '鞭', '其他武器', '盾', '副手武器', '法器', '其他副手',
+  '金屬護甲', '皮革護甲', '布護甲', '木護甲', '布衣物', '皮革衣物', '金屬衣物', '木衣物', '飾品', '寶石衣物', '成人向服裝',
+]
+
+/** 底材的類型：寫了 type 就用它；否則主手、副手是「其他」，成人向服裝一類，有護甲數值的是護甲，寶石是飾品，其他照材料是衣物 */
+export function baseType(id: string): string {
+  const b = gearRules.bases[id]
+  if (!b) return '其他'
+  return b.type || defaultBaseType(b)
+}
+
+/** 沒寫 type 時的類型（世界編輯器的提示也用） */
+export function defaultBaseType(b: Pick<BaseDef, 'slot' | 'adult' | 'outfit' | 'armor' | 'stats' | 'kind'> & { armorDef?: unknown }): string {
+  if (b.slot === 'main_hand') return '其他武器'
+  if (b.slot === 'off_hand') return '其他副手'
+  if (b.adult || b.outfit === 'adult') return '成人向服裝'
+  if (b.armor || b.armorDef || b.stats?.dr) return `${MATERIAL_KIND_NAME[b.kind]}護甲`
+  if (b.kind === 'jewel') return '飾品'
+  return `${MATERIAL_KIND_NAME[b.kind]}衣物`
+}
+
+/** 依 BASE_TYPE_ORDER 排類型 */
+export function sortBaseTypes(types: Iterable<string>): string[] {
+  const order = (t: string) => {
+    const i = BASE_TYPE_ORDER.indexOf(t)
+    return i < 0 ? BASE_TYPE_ORDER.length : i
+  }
+  return [...new Set(types)].sort((a, b) => order(a) - order(b) || a.localeCompare(b))
 }
 
 /** 可以打造、隨機生成的底材（不含束縛用的、地下城專屬的） */
@@ -1008,12 +1052,58 @@ export function randomGear(rng: Rng, level: number, bases = randomBases(), serie
   return spec
 }
 
-/** 某一類型、某一級的打造材料（items.json 有 forge 的物品，挑最便宜的） */
-export function forgeItemFor(kind: MaterialKind, tier: number, series?: string): string | undefined {
+/** 能做成這種材料的物品（items.json 有 forge 的），由便宜到貴 */
+export function forgeItemsForMaterial(material: string): string[] {
+  return itemRules.items
+    .filter((i) => i.forge?.materials.includes(material))
+    .sort((a, b) => a.price_cc - b.price_cc)
+    .map((i) => i.name)
+}
+
+/** 某一類型、某一級的打造材料（items.json 有 forge 的物品），由便宜到貴 */
+export function forgeItemsFor(kind: MaterialKind, tier: number, series?: string): string[] {
   const material = materialOf(kind, tier, series)
   return itemRules.items
     .filter((i) => i.forge?.materials.includes(material))
-    .sort((a, b) => a.price_cc - b.price_cc)[0]?.name
+    .sort((a, b) => a.price_cc - b.price_cc)
+    .map((i) => i.name)
+}
+
+/** 某一類型、某一級最便宜的打造材料（材料委託、說明用） */
+export function forgeItemFor(kind: MaterialKind, tier: number, series?: string): string | undefined {
+  return forgeItemsFor(kind, tier, series)[0]
+}
+
+/** 有怪物會掉的物品（怪物素材） */
+export function monsterLootItems(): Set<string> {
+  return new Set(Object.values(enemies).flatMap((e) => (e.loot ?? []).map((l) => l.item)))
+}
+
+/** 這個地點的怪物會掉的物品：地下城各層與層主，加上所在地區的野外遭遇 */
+export function localLootItems(location: string): Set<string> {
+  const ids = new Set<string>()
+  const addGroups = (groups: EncounterGroup[] | undefined) => {
+    for (const g of groups ?? []) for (const [id] of g) ids.add(id)
+  }
+  const d = dungeonEncounters[location]
+  if (d) {
+    for (const layer of DUNGEON_LAYER_IDS) addGroups(d[layer])
+    addGroups([d.boss])
+    addGroups(Object.values(d.bosses ?? {}))
+  }
+  const region = geography.locations.find((l) => l.id === location)?.region
+  if (region) addGroups(wildEncounters(region))
+  return new Set([...ids].flatMap((id) => (enemies[id]?.loot ?? []).map((l) => l.item)))
+}
+
+/**
+ * 寶箱開得出的打造材料：那一級的通用材料（沒有怪物會掉的），加上這裡的怪物會掉的；
+ * 兩者都沒有時用那一級的全部。系列照材料（materialOf）挑，其他系列的不會出現。
+ */
+export function chestForgeCandidates(kind: MaterialKind, tier: number, series: string | undefined, local: Set<string>, loot = monsterLootItems()): string[] {
+  const all = forgeItemsFor(kind, tier, series)
+  const pool = all.filter((n) => !loot.has(n) || local.has(n))
+  return pool.length ? pool : all
 }
 
 export const MATERIAL_KINDS: MaterialKind[] = ['metal', 'leather', 'cloth', 'wood', 'jewel']

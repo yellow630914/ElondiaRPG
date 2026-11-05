@@ -3,7 +3,8 @@ import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, keeperTitle, sellPrice, shopKey } from '@/engine/trade'
+import { breakdownText, buyBreakdown, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { pctText, tradeCategory } from '@/engine/market'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
@@ -14,13 +15,24 @@ import SwipeTabs from '../mobile/SwipeTabs.vue'
 import { isMobile } from '../mobile/mobile'
 import ContentTagChips from '../ContentTagChips.vue'
 import { storyDef, storyMaxCost } from '@/engine/story'
+import CartPanel from './CartPanel.vue'
+import MarketBadge from './MarketBadge.vue'
+import MarketTags from './MarketTags.vue'
+import PriceSteps from './PriceSteps.vue'
 
-// 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價）
+// 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價），下面是購物車（一般商品與賣出一次結帳，CartPanel）。
+// 特別交易（AI 準備的、情報、服務）照舊一件一件買、一件一件交涉
 const props = defineProps<{ type: ShopType; loading?: boolean }>()
 const game = useGame()
 const s = computed(() => game.state!)
-// 手機版的分頁：店裡的商品｜你的行囊
-const SIDES = [{ id: 'buy', label: '店裡的商品' }, { id: 'sell', label: '你的行囊' }]
+// 購物車：買入（交易 id → 數量）、賣出（物品名稱 → 數量）
+const cart = reactive<{ buy: Record<string, number>; sell: Record<string, number> }>({ buy: {}, sell: {} })
+const cartCount = computed(() => Object.values(cart.buy).reduce((a, b) => a + b, 0) + Object.values(cart.sell).reduce((a, b) => a + b, 0))
+// 手機版的分頁：店裡的商品｜你的行囊｜購物車（電腦版購物車放在兩欄下面）
+const SIDES = computed(() => [
+  { id: 'buy', label: '店裡的商品' }, { id: 'sell', label: '你的行囊' },
+  ...(isMobile.value ? [{ id: 'cart', label: `購物車${cartCount.value ? ` ${cartCount.value}` : ''}` }] : []),
+])
 const side = ref('buy')
 const key = computed(() => shopKey(s.value, props.type))
 const shop = computed(() => {
@@ -30,6 +42,7 @@ const shop = computed(() => {
 const keeper = computed(() => (shop.value ? npcRecord(s.value, shop.value.keeper) : undefined))
 const off = computed(() => Math.round(discount(s.value, key.value) * 100))
 const busy = computed(() => game.judging)
+const place = computed(() => shopPlace(s.value))
 /** 最近一次交易的結果（顯示在視窗上方） */
 const last = ref('')
 
@@ -68,7 +81,14 @@ const toggle = (id: string) => { expanded.value = expanded.value === id ? null :
 const groupName = (g: Group) => (g === 'special' ? '特別交易' : itemRules.categories[g])
 
 const buyQty = reactive<Record<string, number>>({})
-const qtyOf = (d: Deal) => Math.max(1, Math.min(d.stock, Math.floor(buyQty[d.id] ?? 1) || 1))
+/** 還沒放進購物車的存貨 */
+const leftOf = (d: Deal) => d.stock - (cart.buy[d.id] ?? 0)
+const qtyOf = (d: Deal) => Math.max(1, Math.min(leftOf(d), Math.floor(buyQty[d.id] ?? 1) || 1))
+function addBuy(d: Deal) {
+  if (leftOf(d) <= 0) return
+  cart.buy[d.id] = (cart.buy[d.id] ?? 0) + qtyOf(d)
+  buyQty[d.id] = 1
+}
 const price = (d: Deal) => dealMoney(s.value, key.value, d)
 function affordable(d: Deal, n = 1): boolean {
   if (s.value.money_cc < price(d) * n) return false
@@ -96,7 +116,19 @@ const bag = computed(() => s.value.inventory
   .filter((i) => !onlySellable.value || i.price !== null)
   .sort((a, b) => Number(b.price !== null) - Number(a.price !== null)))
 const sellQty = reactive<Record<string, number>>({})
-const sellN = (name: string, have: number) => Math.max(1, Math.min(have, Math.floor(sellQty[name] ?? 1) || 1))
+/** 收購遞減：這間店最近收了很多這一類時，收購價旁邊寫出降了多少 */
+const glutText = (name: string) => { const g = glutMult(s.value, key.value, tradeCategory(s.value, name)); return g < 1 ? `收多了 ${pctText(g)}` : '' }
+/** 展開了收購價拆解的物品 */
+const sellWhy = ref<string | null>(null)
+const buyWhy = (d: Deal) => buyBreakdown(s.value, key.value, d)
+const buyWhyText = (d: Deal) => { const b = buyWhy(d); return b ? `${breakdownText(b)}\n（點一下展開）` : undefined }
+const sellLeft = (name: string, have: number) => have - (cart.sell[name] ?? 0)
+const sellN = (name: string, have: number) => Math.max(1, Math.min(sellLeft(name, have), Math.floor(sellQty[name] ?? 1) || 1))
+function addSell(name: string, have: number) {
+  if (sellLeft(name, have) <= 0) return
+  cart.sell[name] = (cart.sell[name] ?? 0) + sellN(name, have)
+  sellQty[name] = 1
+}
 
 // ---- 結果 ----
 function done(r: Report | undefined) {
@@ -106,10 +138,7 @@ function buy(d: Deal) {
   done(game.buyDeal(props.type, d.id, isItemDeal(d) ? qtyOf(d) : 1))
   buyQty[d.id] = 1
 }
-function sell(name: string, have: number) {
-  done(game.sellItem(props.type, name, sellN(name, have)))
-  sellQty[name] = 1
-}
+
 </script>
 
 <template>
@@ -123,6 +152,7 @@ function sell(name: string, have: number) {
       </div>
       <strong class="money"><GameIcon name="coins" :size="16" />{{ formatMoney(s.money_cc) }}</strong>
     </div>
+    <MarketTags :location="place.id" :name="place.name" />
     <p v-if="game.error" class="error small"><GameIcon name="warning" :size="13" /> {{ game.error }}</p>
     <p v-else-if="last" class="last small"><GameIcon name="check" :size="13" /> {{ last }}</p>
 
@@ -180,30 +210,30 @@ function sell(name: string, have: number) {
                     <span class="what">
                       <strong>{{ d.title }}</strong>
                       <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
+                      <MarketBadge :name="itemName(d)" />
                       <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
                     </span>
-                    <span class="price">{{ costText(s, key, d) }}</span>
-                    <span class="stock small muted">{{ d.stock < 20 ? `剩 ${d.stock}` : '' }}</span>
+                    <span class="price" :title="buyWhyText(d)">{{ costText(s, key, d) }}</span>
+                    <span class="stock small muted">{{ d.stock < 20 ? `剩 ${leftOf(d)}` : '' }}</span>
                     <span class="btns" @click.stop>
-                      <input v-if="d.stock > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="d.stock" placeholder="1" />
-                      <button class="small primary" :disabled="busy || !affordable(d, qtyOf(d))" @click="buy(d)">
-                        {{ qtyOf(d) > 1 ? `買 ${qtyOf(d)} 個（${formatMoney(price(d) * qtyOf(d))}）` : '買下' }}
+                      <input v-if="leftOf(d) > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="leftOf(d)" placeholder="1" />
+                      <button class="small" :disabled="leftOf(d) <= 0" :title="'加進購物車'" @click="addBuy(d)">
+                        ＋{{ qtyOf(d) > 1 ? ` ${qtyOf(d)} 個` : '' }}<template v-if="cart.buy[d.id]">（車裡 {{ cart.buy[d.id] }}）</template>
                       </button>
-                      <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉' : '交涉' }}</button>
                     </span>
                   </div>
                   <div v-if="expanded === d.id" class="more small">
                     <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
                     <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
-                  </div>
-                  <div v-if="haggling === d.id" class="row haggle">
-                    <input v-model="haggleText[d.id]" class="grow" placeholder="怎麼交涉？例如：挑出瑕疵、搬出熟人、請店主喝一杯" />
-                    <button class="small" :disabled="busy" @click="bargain(d)">交涉（檢定）</button>
+                    <PriceSteps v-if="buyWhy(d)" :b="buyWhy(d)!" />
                   </div>
                 </li>
               </ul>
             </div>
           </section>
+        </template>
+        <template v-else-if="id === 'cart'">
+          <CartPanel :type="type" :cart="cart" @done="(t) => (last = t)" />
         </template>
         <template v-else>
           <!-- 行囊 -->
@@ -228,21 +258,23 @@ function sell(name: string, have: number) {
                 </div>
                 <div class="row actions">
                   <template v-if="i.price !== null">
-                    <span class="small">收購 {{ formatMoney(i.price) }} / 個</span>
+                    <button class="small ghost why" :title="`看收購價怎麼算`" @click="sellWhy = sellWhy === i.name ? null : i.name">收購 {{ formatMoney(i.price) }} / 個 <MarketBadge :name="i.name" /> <span v-if="glutText(i.name)" class="glut">{{ glutText(i.name) }}</span> <span class="muted">{{ sellWhy === i.name ? '▴' : '▾' }}</span></button>
                     <span class="grow" />
-                    <input v-if="i.qty > 1" v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="i.qty" placeholder="1" />
-                    <button class="small" :disabled="busy" @click="sell(i.name, i.qty)">
-                      賣 {{ sellN(i.name, i.qty) > 1 ? `${sellN(i.name, i.qty)} 個（${formatMoney(i.price * sellN(i.name, i.qty))}）` : `（${formatMoney(i.price)}）` }}
+                    <input v-if="sellLeft(i.name, i.qty) > 1" v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="sellLeft(i.name, i.qty)" placeholder="1" />
+                    <button class="small" :disabled="sellLeft(i.name, i.qty) <= 0" title="加進購物車（賣出）" @click="addSell(i.name, i.qty)">
+                      ＋ 賣{{ sellN(i.name, i.qty) > 1 ? ` ${sellN(i.name, i.qty)} 個` : '' }}<template v-if="cart.sell[i.name]">（車裡 {{ cart.sell[i.name] }}）</template>
                     </button>
                   </template>
                   <span v-else class="small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
                 </div>
+                <PriceSteps v-if="sellWhy === i.name && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
               </li>
             </ul>
           </section>
         </template>
       </template>
     </SwipeTabs>
+    <CartPanel v-if="!isMobile" :type="type" :cart="cart" @done="(t) => (last = t)" />
   </div>
 </template>
 
@@ -264,7 +296,9 @@ function sell(name: string, have: number) {
 .cols.swipe .col > h3.head { display: none; }
 .chips { gap: 4px; }
 .chips button.active { border-color: var(--accent); color: var(--accent); }
-.list { display: grid; gap: 6px; margin: 0; max-height: calc(100vh - 350px); overflow-y: auto; padding-right: 2px; align-content: start; }
+/* 電腦版：下面還有購物車，清單矮一點；手機版購物車是另一個分頁 */
+.list { display: grid; gap: 6px; margin: 0; max-height: max(220px, calc(100vh - 600px)); overflow-y: auto; padding-right: 2px; align-content: start; }
+.cols.swipe .list { max-height: calc(100vh - 350px); }
 /* 手機：清單自己會捲，橫滑要留給分頁切換（不然瀏覽器把橫滑當成清單的捲動） */
 .cols.swipe .list { touch-action: pan-y; }
 .specials { display: grid; gap: 6px; }
@@ -300,4 +334,7 @@ function sell(name: string, have: number) {
 .effect { color: var(--accent); }
 .actions { margin-top: 2px; }
 .num { width: 58px; }
+.why { padding: 0 4px; border-color: transparent; background: none; color: var(--text); }
+.why:hover { border-color: var(--border); }
+.glut { color: var(--danger); font-size: 0.78rem; }
 </style>

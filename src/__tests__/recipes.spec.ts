@@ -86,7 +86,7 @@ describe('recipe plans', () => {
     addItem(state.inventory, '藥草', 9)
     const plan = recipePlan(state, '微弱治療藥劑', 3, pc(state))
     expect(plan.blocked).toBeUndefined()
-    expect(plan.inputs).toEqual([{ name: '藥草', need: 9, have: 9 }])
+    expect(plan.inputs).toEqual([{ name: '藥草', need: 9, have: 9, buy: 0 }])
     expect(plan.cost).toBe(Math.round(140 * 3 * locationMult(state)))
     expect(plan.hours).toBe(6)
     expect(plan.dc).toBe(craftRules.recipe.dc[0])

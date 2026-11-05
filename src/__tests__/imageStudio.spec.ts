@@ -231,6 +231,24 @@ describe('portrait versions', () => {
     expect(await portraits.countFor(state.seed)).toBe(1)
   })
 
+  it('keeps two versions made in the same millisecond (B14)', async () => {
+    openai()
+    const state = game()
+    const id = state.party[0]!.id
+    const key = portraitKey(state, id)
+    const portraits = usePortraits()
+    vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000)
+    await portraits.generate(state, id)
+    await portraits.studioGenerate(key, { prompt: 'same ms' })
+    await portraits.upload(key, new Blob(['up'], { type: 'image/png' }) as unknown as File)
+    const list = await portraits.loadVersions(key)
+    expect(list.map((v) => v.from)).toEqual(['generate', 'studio', 'upload'])
+    expect(new Set(list.map((v) => v.vkey)).size).toBe(3)
+    // 上傳換成目前的圖：認得出是哪一版
+    expect(portraits.records[key]!.time).toBe(list.at(-1)!.time)
+    expect(portraits.records[key]!.from).toBe('upload')
+  })
+
   it('tweaks the current portrait as an edit and remembers an edited description', async () => {
     const fetchMock = openai()
     const state = game()

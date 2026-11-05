@@ -1,3 +1,4 @@
+import { marketMult } from '@/engine/market'
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -33,8 +34,8 @@ describe('shops', () => {
     const state = game(1)
     const shop = shopState(state, 'general')
     const rations = shop.deals.find((d) => d.id === 'item:乾糧')!
-    // 索里耶爾是王都：價格 ×1.15
-    expect(rations.gives[0]).toEqual({ type: 'money', amount: 6 })
+    // 索里耶爾是王都（×1.15），又是糧倉（糧食 ×0.6）：5 × 1.15 × 0.6 ≈ 3
+    expect(rations.gives[0]).toEqual({ type: 'money', amount: 3 })
     // 裝備改在鐵匠鋪、裁縫店、珠寶店賣
     expect(shop.deals.some((d) => itemDef(d.title)?.gear)).toBe(false)
     const gear = shopState(state, 'smithy').deals.filter((d) => d.id.startsWith('item:') && itemDef(d.title)?.gear)
@@ -43,7 +44,7 @@ describe('shops', () => {
     const report = buyDeal(state, 'general', 'item:乾糧')
     expectValid(report)
     expect(report.check).toBeUndefined()
-    expect(state.money_cc).toBe(494)
+    expect(state.money_cc).toBe(497)
     expect(state.inventory.find((i) => i.name === '乾糧')?.qty).toBe(6)
   })
 
@@ -54,7 +55,7 @@ describe('shops', () => {
     const stock = deal.stock
     const report = buyDeal(state, 'general', 'item:乾糧', 3)
     expectValid(report)
-    expect(state.money_cc).toBe(500 - 6 * 3)
+    expect(state.money_cc).toBe(500 - 3 * 3)
     expect(state.inventory.find((i) => i.name === '乾糧')?.qty).toBe(8)
     expect(deal.stock).toBe(stock - 3)
     expect(report.outcome.summary).toContain('×3')
@@ -136,7 +137,8 @@ describe('shops', () => {
     expect(state.party.some((m) => m.name === '醉漢' && m.bond === 'hired')).toBe(true)
     buyDeal(state, 'tavern', mead.id)
     expect(state.inventory.find((i) => i.name === '蜂蜜酒')?.qty).toBe(1)
-    expect(sellPrice(state, shopKey(state, 'tavern'), '蜂蜜酒')).toBe(Math.floor(40 * 0.5 * 1.15 * (1 + 0.006 / 2)))
+    // 酒：照這裡的行情（固定標籤與今天的狀態）
+    expect(sellPrice(state, shopKey(state, 'tavern'), '蜂蜜酒')).toBe(Math.floor(40 * 0.5 * 1.15 * marketMult(state, 'soriel', '蜂蜜酒').x * (1 + 0.006 / 2)))
   })
 
   it('builds the shop prompt from the catalog', () => {

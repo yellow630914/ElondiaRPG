@@ -409,7 +409,8 @@ describe('crime and the guards', () => {
     const state = game()
     const shop = shopState(state, 'general')
     const key = shopKey(state, 'general')
-    const deal = shop.deals.find((d) => d.gives.some((g) => g.type === 'money'))!
+    // 最貴的一樣：便宜的東西（糧倉的乾糧只要 3）打九折四捨五入後看不出差別
+    const deal = shop.deals.filter((d) => d.gives.some((g) => g.type === 'money')).sort((x, y) => dealMoney(state, key, y) - dealMoney(state, key, x))[0]!
     const normal = dealMoney(state, key, deal)
     state.reputation.holy_ring = -10
     expect(reputationBand(state).buy).toBe(0.3)

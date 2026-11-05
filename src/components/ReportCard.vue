@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { flash, floatText, sparks } from '@/fx/fx'
 import { isFreshReport } from '@/fx/seen'
 import { itemRarity } from './items/itemInfo'
@@ -8,6 +8,8 @@ import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
 import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
 import { narrationParagraphs } from '@/narrator/paragraphs'
+import { streamingView } from '@/narrator/regex'
+import { usePrompts } from '@/stores/prompts'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
 import { undoConfirmText } from '@/stores/undo'
 import { inventedIn } from '@/engine/invention'
@@ -48,11 +50,36 @@ const thinking = computed(() => [
   ...(entry.value?.judgeThinking ? [{ label: '判定', text: entry.value.judgeThinking }] : []),
   ...(entry.value?.thinking ? [{ label: '敘事', text: entry.value.thinking }] : []),
 ])
+// 串流中的正文照正文正則處理過再顯示（還沒寫完的 <think…> 先藏起來）；最多每 300 毫秒處理一次。
+// 收完整段時 game.ts 已經套用正則、存下處理過的文字，之後直接顯示
+const prompts = usePrompts()
+const streamShown = ref('')
+let streamTimer: ReturnType<typeof setTimeout> | null = null
+let streamLast = 0
+function refreshStream() {
+  streamTimer = null
+  streamLast = Date.now()
+  streamShown.value = streamingView(narration.value?.text ?? '', prompts.config.regex, 'narration')
+}
+watch(() => (narration.value?.status === 'streaming' ? narration.value.text : null), (t) => {
+  if (t === null) {
+    if (streamTimer) clearTimeout(streamTimer)
+    streamTimer = null
+    return
+  }
+  if (streamTimer) return
+  const wait = 300 - (Date.now() - streamLast)
+  if (wait <= 0) refreshStream()
+  else streamTimer = setTimeout(refreshStream, wait)
+}, { immediate: true })
+onBeforeUnmount(() => { if (streamTimer) clearTimeout(streamTimer) })
+const displayText = computed(() => (narration.value?.status === 'streaming' ? streamShown.value : narration.value?.text ?? ''))
+
 // 關閉 AI 細節描述時不顯示敘事，改顯示戰報或事件簡述（已生成的敘事仍保留，重新開啟後會再出現）
 // AI 判定的主動行動：AI 直接寫出的經過一律顯示
 // 敘事依空行分段（段距比整行空白小）
 const paragraphs = computed(() => {
-  const list = narrationParagraphs(narration.value?.text ?? '')
+  const list = narrationParagraphs(displayText.value)
   return list.length ? list : ['']
 })
 const showStory = computed(() => !!narration.value && (settings.aiNarration || !!narration.value.manual || props.report.check?.source === 'ai'))
@@ -128,7 +155,7 @@ const image = useImageSettings()
 const scenes = useScenes()
 const scene = computed(() => (game.state ? sceneKey(game.state, props.report.report_id) : ''))
 /** 正文的段落（插圖的位置照這個算；沒有正文時是空的） */
-const storyParagraphs = computed(() => (showStory.value && narration.value ? narrationParagraphs(narration.value.text) : []))
+const storyParagraphs = computed(() => (showStory.value && narration.value ? narrationParagraphs(displayText.value) : []))
 const sceneLayout = computed(() => scenes.layout(scene.value, storyParagraphs.value, storyParagraphs.value.length > 0))
 const hasScene = computed(() => scenes.keysOf(scene.value).length > 0)
 /** 正在整理分鏡或生圖（出錯的不算） */

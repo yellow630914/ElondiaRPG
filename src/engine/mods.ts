@@ -38,6 +38,7 @@ import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeS
 import { notForSale } from './trade'
 import { invalidateSources } from './sources'
 import { sanitizeIcon, setCategoryIcons } from './itemIcons'
+import { isTradeCategory } from './market'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
 export type ChestLayer = DungeonLayerId
@@ -897,6 +898,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  // 貿易類別：沒寫（或寫了不認得的）照其他欄位推
+  if (isTradeCategory(raw.trade_category)) out.trade_category = raw.trade_category
   // 鎖（雙面效應）：替身上的拘束具上鎖
   if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
   // 淫市的貨：魅氣濃度至少多少才買得到
@@ -1016,6 +1019,9 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   for (const [k, v] of Object.entries(raw.resist_scale ?? {})) if (AFFINITY_KEYS().includes(k) && SCALES.includes(v)) rs[k] = v
   if (Object.keys(rs).length) out.resist_scale = rs as BaseDef['resist_scale']
   if (str(raw.desc, 120)) out.desc = str(raw.desc, 120)
+  // 打造時的類型（刀劍、盾……）：沒寫時內建的照原本，再沒有就依欄位與材料推（gear.ts 的 baseType）
+  const type = str(raw.type, 8) || (!custom && id ? snapshot.bases[id]?.type : undefined)
+  if (type) out.type = type
   const icon = sanitizeIcon(raw.icon)
   if (icon) out.icon = icon
   // 指向別的武器、防具類型時複製原版的數值（不是目前世界改過的），名稱用底材的；

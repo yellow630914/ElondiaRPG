@@ -8,7 +8,7 @@ import {
   abilities, attributeRules, DUNGEON_LAYER_NAME, geography, craftRules, dungeonEncounters, enemies, itemRules, landmarks, lewdRules, MASTER_EVENT_POOLS, masterEventPool,
   npcs, npcTags, perkRules, shopRules, specialMaps, statuses, stories, townQuestTemplates, wildEncounterTables, type EncounterGroup, type MasterEventPool,
 } from './data'
-import { forgeItemFor, gearName, gearRules, MATERIAL_KINDS } from './gear'
+import { forgeItemsFor, gearName, gearRules, MATERIAL_KINDS, monsterLootItems } from './gear'
 import { parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import { notForSale } from './trade'
@@ -159,11 +159,17 @@ function build(): Index {
     }
   }
   for (const e of Object.values(enemies)) for (const l of e.loot ?? []) group('item', l.item, '怪物掉落', e.name, 'drop')
+  const loot = monsterLootItems()
+  const chestSeries = [undefined, ...new Set(geography.locations.map((l) => l.material_series).filter((x): x is string => !!x))]
   for (const [layer, c] of Object.entries(gearRules.chests)) {
     if (!Array.isArray(c?.items)) continue
     for (const [n] of c.items) group('item', n, '地下城的寶箱', LAYER_NAME[layer] ?? layer, 'chest')
-    // 打造材料：每一級挑最便宜的那一種（gear.ts 的 forgeItemFor）
-    for (const [tier] of c.forge ?? []) for (const k of MATERIAL_KINDS) group('item', forgeItemFor(k, tier), '地下城的寶箱（打造材料）', LAYER_NAME[layer] ?? layer, 'chest')
+    // 打造材料：那一級的通用材料，加上當地怪物會掉的（gear.ts 的 chestForgeCandidates）
+    for (const [tier] of c.forge ?? []) for (const k of MATERIAL_KINDS) for (const series of chestSeries) {
+      for (const n of forgeItemsFor(k, tier, series)) {
+        group('item', n, loot.has(n) ? '地下城的寶箱（打造材料，這種怪物出沒的地方）' : '地下城的寶箱（打造材料）', LAYER_NAME[layer] ?? layer, 'chest')
+      }
+    }
   }
   for (const [n] of lewdRules.park.chest_items) add('item', n, '緋夢樂園的寶箱', 'chest')
   for (const [n] of lewdRules.auction.pool) add('item', n, '拍賣會', 'venue')

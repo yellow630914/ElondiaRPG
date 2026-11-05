@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>依配方製作與自創配方樣稿</title>
+<!--
+  工藝對話框另外兩個分頁的樣稿（接在 R18 打造裝備之後）：用 vite 開（npx vite），網址 /docs/mockups/recipes.html。
+  共用遊戲本身的樣式；配方、材料、強度上限直接讀遊戲的資料與計算（src/engine/recipes.ts、invention.ts）。
+  樣稿的角色站在一座城的雜貨店裡（示範當場補買），煉金 Lv.2、烹飪 Lv.1、木工 Lv.2，帶著三種隨身工具。
+-->
+<link rel="stylesheet" href="/src/style.css" />
+<style>
+body { padding: 24px 16px; }
+.screen { margin: 0 auto 40px; max-width: 920px; }
+.screen > .cap { color: var(--gold-hi); font-size: var(--fs-lg); margin: 0 0 10px; letter-spacing: 0.08em; }
+.screen > .cap small { color: var(--muted); font-size: var(--fs-sm); margin-left: 10px; letter-spacing: 0; }
+.dlg { border: 6px solid #3a2818; border-image: linear-gradient(180deg, #5b3f24, #2e1f12) 1; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #c99a45, 0 20px 60px #000; background: #f3e4c2; color: var(--ink); }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px; position: relative; }
+.dlg-head::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); }
+.dlg-head h2 { margin: 0; font-size: var(--fs-xl); letter-spacing: 0.16em; color: #5b3a1e; }
+.dlg-body { padding: 14px 18px 18px; display: grid; gap: 12px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.step { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: start; }
+.step > .lab { color: #5b3a1e; font-weight: 700; padding-top: 5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 4px 10px; border: 1px solid #b8955a; border-radius: 4px; background: #fbf3df; color: #5b3a1e; font-size: var(--fs-sm); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip.on { background: #6d4a22; border-color: #6d4a22; color: #fff3d6; font-weight: 700; }
+.chip .n { font-size: var(--fs-xs); opacity: 0.75; }
+.chip .sub { font-size: var(--fs-xs); opacity: 0.8; font-weight: 400; }
+.chip:disabled { opacity: 0.45; cursor: not-allowed; }
+input, select, textarea { background: #fbf3df; color: var(--ink); border: 1px solid #b8955a; }
+.search { width: 100%; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 6px; }
+.card { text-align: left; padding: 6px 9px; border: 1px solid #c4a671; border-radius: 4px; background: #fbf3df; color: var(--ink); cursor: pointer; display: grid; gap: 2px; }
+.card.on { outline: 2px solid #6d4a22; outline-offset: -1px; background: #f6e6c0; }
+.card.no { opacity: 0.6; }
+.card b { color: #5b3a1e; }
+.card .s { font-size: var(--fs-xs); color: #7a5a3a; }
+.card .ok { color: #2f6a3a; }
+.card .bad { color: #9a3a2a; }
+.panel2 { border: 1px solid #b8955a; border-radius: 4px; background: #fbf3df; padding: 10px 12px; display: grid; gap: 8px; }
+.panel2 h3 { margin: 0; color: #5b3a1e; font-size: var(--fs-lg); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.panel2 h3 small { color: #7a5a3a; font-weight: 400; font-size: var(--fs-sm); }
+.desc { color: #5b3a1e; font-size: var(--fs-sm); }
+table.t { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.t th { text-align: left; color: #7a5a3a; font-weight: 600; border-bottom: 1px solid #c4a671; padding: 4px 6px; }
+.t td { padding: 4px 6px; border-bottom: 1px dashed #d8c08f; }
+.t .short { color: #9a3a2a; font-weight: 600; }
+.t .bought { color: #2f5a3a; }
+.out { text-align: center; }
+.out td, .out th { text-align: center; }
+.kv { font-size: var(--fs-sm); color: #5b3a1e; display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; }
+.note { font-size: var(--fs-xs); color: #7a5a3a; margin: 0; }
+.warn { color: #9a3a2a; font-size: var(--fs-sm); margin: 0; }
+.go { display: flex; justify-content: flex-end; }
+.go button { background: #6d4a22; color: #fff3d6; border-color: #6d4a22; }
+.caps li { font-size: var(--fs-sm); color: #5b3a1e; }
+@media (max-width: 640px) {
+  body { padding: 12px 8px; }
+  .step { grid-template-columns: 1fr; gap: 4px; }
+  .step > .lab { padding-top: 0; }
+  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hide-sm { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="screen">
+  <p class="cap">工藝：依配方製作與自創配方 <small>樣稿・資料是遊戲的實際資料</small></p>
+  <div class="dlg">
+    <div class="dlg-head"><h2>⚒️ 工藝</h2></div>
+    <div class="dlg-body" id="app"></div>
+  </div>
+</div>
+
+<script type="module">
+import { newGame, addItem } from '/src/engine/state.ts'
+import { enterLocation, standOn } from '/src/engine/grid.ts'
+import { attrName, craftRules, itemDef } from '/src/engine/data.ts'
+import { CRAFT_IDS } from '/src/engine/crafting.ts'
+import { recipeItems, recipePlan, producedQty } from '/src/engine/recipes.ts'
+import { capsSource, capsText, inventCaps, inventCategories, INVENT_CATEGORY_NAME, INVENT_GRADE_NAME } from '/src/engine/invention.ts'
+import { dealMoney, shopKey, shopState } from '/src/engine/trade.ts'
+import { formatMoney } from '/src/engine/money.ts'
+
+// ---- 樣稿的存檔：站在雜貨店 ----
+const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'rhineburg' })
+enterLocation(state)
+standOn(state, 'shop')
+state.money_cc = 3000
+state.inventory = []
+for (const [n, q] of [['煉金工具組', 1], ['炊具組', 1], ['木工工具組', 1], ['藥草', 2], ['野莓', 4], ['木材', 3], ['生肉', 1], ['月光草', 1]]) if (itemDef(n)) addItem(state.inventory, n, q)
+const pc = state.party[0]
+pc.crafts = { alchemy: { level: 2, xp: 0 }, cooking: { level: 1, xp: 0 }, woodworking: { level: 2, xp: 0 } }
+const shop = shopState(state, 'general')
+const key = shopKey(state, 'general')
+const offer = (name) => {
+  const d = shop.deals.find((x) => x.id === `item:${name}` && x.stock > 0)
+  return d ? { price: dealMoney(state, key, d), stock: d.stock } : undefined
+}
+
+const CAT = { consumable: '藥劑與消耗品', food: '料理', furniture: '家具', gear: '工具', material: '材料' }
+const catOf = (name) => itemDef(name)?.category ?? 'consumable'
+const skillName = (c) => craftRules.skills[c].name
+const lv = (c) => pc.crafts?.[c]?.level ?? 1
+
+const ui = { tab: 'recipe', craft: 'alchemy', cat: '', ready: false, q: '', pick: '', batches: 1, buy: true,
+  icraft: 'leatherwork', icat: '', ilevel: 1, grade: 'success', inputs: [], text: '' }
+
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag)
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+    else if (v === true) e.setAttribute(k, '')
+    else if (v !== false && v != null) e.setAttribute(k, v)
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c)
+  return e
+}
+const set = (patch) => { Object.assign(ui, patch); render() }
+const chip = (on, label, n, onclick, extra = {}) => el('button', { class: `chip${on ? ' on' : ''}`, onclick, ...extra }, label, n != null ? el('span', { class: 'n' }, String(n)) : null)
+
+/** 配方的材料加上當場補買（樣稿的算法：不夠的份數照這間店的售價買，店裡沒有的就是不夠） */
+function plan(name) {
+  const p = recipePlan(state, name, ui.batches, pc)
+  const rows = p.inputs.map((x) => {
+    const o = offer(x.name)
+    const lack = Math.max(0, x.need - x.have)
+    const buy = ui.buy && o ? Math.min(lack, o.stock) : 0
+    return { ...x, offer: o, buy, short: lack - buy }
+  })
+  const buyCost = rows.reduce((s, r) => s + r.buy * (r.offer?.price ?? 0), 0)
+  const blockers = p.blockers.filter((b) => !rows.some((r) => b.startsWith(`${r.name}不夠`)))
+  for (const r of rows) if (r.short > 0) blockers.push(`${r.name}不夠（需要 ${r.need}，持有 ${r.have}${r.offer ? `，這裡只剩 ${r.offer.stock}` : ''}）`)
+  if (buyCost && state.money_cc < p.fee + buyCost) blockers.push(`費用不夠（需要 ${formatMoney(p.fee + buyCost)}）`)
+  return { ...p, rows, buyCost, blockers }
+}
+
+function recipeTab(app) {
+  const crafts = CRAFT_IDS.filter((c) => recipeItems(c).length)
+  const all = recipeItems().map((r) => ({ ...r, cat: catOf(r.name), p: plan(r.name) }))
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '誰來做'), el('select', {}, el('option', {}, '艾倫'))))
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '搜尋'),
+    el('input', { class: 'search', placeholder: '找配方或成品，例如「藥劑」「床」', value: ui.q, oninput: (e) => { ui.q = e.target.value; render(); const i = document.querySelector('.search'); i.focus(); i.setSelectionRange(i.value.length, i.value.length) } })))
+  if (!ui.q.trim()) {
+    app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '工藝'), el('div', { class: 'chips' },
+      crafts.map((c) => chip(ui.craft === c, el('span', {}, skillName(c), el('span', { class: 'sub' }, ` Lv.${lv(c)}`)), all.filter((r) => r.recipe.craft === c).length, () => set({ craft: c, cat: '', pick: '' }))))))
+    const inCraft = all.filter((r) => r.recipe.craft === ui.craft)
+    const cats = [...new Set(inCraft.map((r) => r.cat))]
+    app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '類別'), el('div', { class: 'chips' },
+      chip(!ui.cat, '全部', inCraft.length, () => set({ cat: '', pick: '' })),
+      cats.map((c) => chip(ui.cat === c, CAT[c] ?? c, inCraft.filter((r) => r.cat === c).length, () => set({ cat: c, pick: '' }))),
+      chip(ui.ready, '只看做得出來的', inCraft.filter((r) => !r.p.blockers.length).length, () => set({ ready: !ui.ready })))))
+  }
+  const q = ui.q.trim()
+  const list = (q ? all.filter((r) => r.name.includes(q) || CAT[r.cat]?.includes(q)) : all.filter((r) => r.recipe.craft === ui.craft && (!ui.cat || r.cat === ui.cat)))
+    .filter((r) => !ui.ready || !r.p.blockers.length)
+    .sort((a, b) => a.recipe.level - b.recipe.level || a.name.localeCompare(b.name))
+  if (!list.some((r) => r.name === ui.pick)) ui.pick = (list.find((r) => !r.p.blockers.length) ?? list[0])?.name ?? ''
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '配方'),
+    list.length ? el('div', { class: 'cards' }, list.map((r) => {
+      const ok = !r.p.blockers.length
+      const need = r.p.rows.map((x) => `${x.name} ${Math.min(x.have, x.need)}/${x.need}`).join('、')
+      return el('button', { class: `card${ui.pick === r.name ? ' on' : ''}${ok ? '' : ' no'}`, onclick: () => set({ pick: r.name }) },
+        el('b', {}, `${r.name}${(r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : ''}`),
+        el('span', { class: 's' }, `${q ? `${skillName(r.recipe.craft)}・` : ''}Lv.${r.recipe.level}・`, el('span', { class: ok ? 'ok' : 'bad' }, ok ? (r.p.buyCost ? `要補買 ${formatMoney(r.p.buyCost)}` : '做得出來') : r.p.blockers[0].replace(/（.*$/, ''))),
+        el('span', { class: 's' }, need))
+    })) : el('p', { class: 'note' }, '沒有符合的配方。')))
+
+  const r = all.find((x) => x.name === ui.pick)
+  if (!r) return
+  const p = plan(r.name)
+  const def = itemDef(r.name)
+  app.append(el('div', { class: 'panel2' },
+    el('h3', {}, r.name, el('small', {}, `${skillName(r.recipe.craft)} Lv.${r.recipe.level}・${CAT[r.cat] ?? r.cat}`)),
+    def?.desc ? el('div', { class: 'desc' }, def.desc) : null,
+    el('div', { class: 'kv' }, '批數', ...[1, 2, 3, 4, 5].map((n) => chip(ui.batches === n, `${n}`, null, () => set({ batches: n }))), el('span', { class: 'note' }, '材料、費用、時間都乘批數，只擲一次')),
+    el('table', { class: 't' },
+      el('thead', {}, el('tr', {}, el('th', {}, '材料'), el('th', {}, '需要'), el('th', {}, '持有'), el('th', {}, '這裡賣'), el('th', {}, '當場買'))),
+      el('tbody', {}, p.rows.map((x) => el('tr', {},
+        el('td', {}, x.name), el('td', {}, String(x.need)), el('td', { class: x.have < x.need ? 'short' : '' }, String(x.have)),
+        el('td', {}, x.offer ? `${formatMoney(x.offer.price)}（剩 ${x.offer.stock}）` : '—'),
+        el('td', { class: 'bought' }, x.buy ? `${x.buy} 份・${formatMoney(x.buy * x.offer.price)}` : x.short ? el('span', { class: 'short' }, `缺 ${x.short}`) : '')))),
+    ),
+    p.rows.some((x) => x.offer && x.have < x.need) || ui.buy
+      ? el('label', { class: 'kv' }, el('input', { type: 'checkbox', checked: ui.buy, onchange: (e) => set({ buy: e.target.checked }) }), '不夠的當場補買（照這間店的售價）')
+      : null,
+    el('table', { class: 't out' },
+      el('thead', {}, el('tr', {}, ['大成功', '成功', '部分成功', '失敗', '大失敗'].map((n) => el('th', {}, n)))),
+      el('tbody', {}, el('tr', {}, ['critical', 'success', 'partial'].map((d) => el('td', {}, `做出 ${producedQty(p.qty, d)} 份`)), el('td', {}, '材料損失一部分'), el('td', {}, '材料全部損失')))),
+    el('div', { class: 'kv' },
+      el('span', {}, `檢定 `, el('b', {}, `${attrName(craftRules.skills[r.recipe.craft].attr)} +${lv(r.recipe.craft)}・DC ${p.dc}`)),
+      el('span', {}, `時間 `, el('b', {}, `約 ${p.hours} 小時`)),
+      el('span', {}, `工具 `, el('b', {}, p.tool.source)),
+      el('span', {}, `費用 `, el('b', {}, formatMoney(p.fee)), p.buyCost ? el('span', {}, '＋補買 ', el('b', {}, formatMoney(p.buyCost))) : null)),
+    p.blockers.length ? el('ul', { class: 'warn' }, p.blockers.map((b) => el('li', {}, b))) : el('div', { class: 'go' }, el('button', {}, `⚒️ 做 ${p.qty} 份`))))
+}
+
+function inventTab(app) {
+  const crafts = CRAFT_IDS
+  app.append(el('p', { class: 'note' }, '寫下做法、放進材料試做；做出東西時記成新的配方（只在這個存檔），之後可以在「依配方製作」重複做。'))
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '誰來做'), el('select', {}, el('option', {}, '艾倫'))))
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '工藝'), el('div', { class: 'chips' },
+    crafts.map((c) => chip(ui.icraft === c, el('span', {}, skillName(c), el('span', { class: 'sub' }, ` Lv.${lv(c)}・${inventCategories(c).map((x) => INVENT_CATEGORY_NAME[x]).join('、')}`)), null, () => set({ icraft: c, icat: '', ilevel: 1 }))))))
+  const cats = inventCategories(ui.icraft)
+  if (!cats.includes(ui.icat)) ui.icat = cats[0]
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '類別'), el('div', { class: 'chips' },
+    cats.map((c) => chip(ui.icat === c, INVENT_CATEGORY_NAME[c], null, () => set({ icat: c }))))))
+  const max = lv(ui.icraft)
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '配方等級'), el('div', { class: 'chips' },
+    Array.from({ length: 7 }, (_, i) => i + 1).map((n) => chip(ui.ilevel === n, `Lv.${n}`, null, () => set({ ilevel: n }), { disabled: n > max, title: n > max ? `${skillName(ui.icraft)}要 Lv.${n}` : '' })))))
+  const caps = inventCaps(ui.icraft, ui.ilevel, ui.icat, ui.grade)
+  app.append(el('div', { class: 'panel2' },
+    el('div', { class: 'kv' }, el('b', {}, '強度上限'), ['critical', 'success', 'partial'].map((g) => chip(ui.grade === g, INVENT_GRADE_NAME[g], null, () => set({ grade: g })))),
+    caps ? [el('p', { class: 'note' }, `參考${capsSource(caps)}`), el('ul', { class: 'caps' }, capsText(caps).map((t) => el('li', {}, t)))]
+      : el('p', { class: 'warn' }, `第 ${ui.ilevel} 級以內還沒有可以參考的${skillName(ui.icraft)}${INVENT_CATEGORY_NAME[ui.icat]}配方`),
+    el('div', { class: 'kv' }, '材料（最多 4 種，不論結果都用掉）',
+      ui.inputs.map((n) => chip(true, `${n} ×`, null, () => set({ inputs: ui.inputs.filter((x) => x !== n) }))),
+      el('select', { onchange: (e) => e.target.value && set({ inputs: [...ui.inputs, e.target.value] }) }, el('option', { value: '' }, '加入材料…'),
+        state.inventory.filter((i) => itemDef(i.name)?.category === 'material' && !ui.inputs.includes(i.name)).map((i) => el('option', { value: i.name }, `${i.name}（持有 ${i.qty}）`)))),
+    el('textarea', { rows: 3, placeholder: '做法：例如「把月光草和野莓一起熬，做成讓人睡得安穩的藥茶」' }),
+    el('div', { class: 'go' }, el('button', {}, '💡 試做'))))
+}
+
+function render() {
+  const app = document.getElementById('app')
+  app.replaceChildren(el('div', { class: 'tabs' },
+    chip(ui.tab === 'recipe', '📜 依配方製作', null, () => set({ tab: 'recipe' })),
+    chip(ui.tab === 'invent', '💡 自創配方', null, () => set({ tab: 'invent' })),
+    chip(false, '⚒️ 打造裝備', null, () => {}, { title: 'R18 已改好' })))
+  if (ui.tab === 'recipe') recipeTab(app)
+  else inventTab(app)
+}
+render()
+</script>
+</body>
+</html>

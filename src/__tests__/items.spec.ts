@@ -2,8 +2,9 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { act, combatant, finishCombat, itemTargets, startCombat, type Combatant } from '@/engine/combat'
-import { ATTR_IDS, combatRules, enemies, itemDef, itemRules, statuses } from '@/engine/data'
-import { forgeItemFor, gearRules, gearSpecOf, MATERIAL_KINDS, randomGear } from '@/engine/gear'
+import { ATTR_IDS, combatRules, dungeonEncounters, enemies, itemDef, itemRules, statuses } from '@/engine/data'
+import { sourcesOf } from '@/engine/sources'
+import { chestForgeCandidates, forgeItemFor, forgeItemsFor, gearRules, gearSpecOf, localLootItems, MATERIAL_KINDS, monsterLootItems, randomGear } from '@/engine/gear'
 import { currentArea, moveTo } from '@/engine/grid'
 import { useItem } from '@/engine/inventory'
 import { Rng } from '@/engine/rng'
@@ -147,5 +148,45 @@ describe('gear sources', () => {
       drops += (r.changes.items_gained ?? []).filter((g) => gearSpecOf(state, g.name)).length
     }
     expect(drops).toBeGreaterThan(0)
+  })
+})
+
+describe('forge materials in chests (L11)', () => {
+  const loot = monsterLootItems()
+  const dungeons = Object.keys(dungeonEncounters)
+
+  it('draws from local monster drops and generic materials, or the whole tier when nothing fits', () => {
+    let narrowed = 0
+    for (const d of dungeons) {
+      const local = localLootItems(d)
+      for (const kind of MATERIAL_KINDS) for (let tier = 2; tier <= 5; tier++) {
+        const all = forgeItemsFor(kind, tier)
+        const pool = chestForgeCandidates(kind, tier, undefined, local, loot)
+        expect(pool.length, `${d} ${kind} ${tier}`).toBeGreaterThan(0)
+        if (pool.length === all.length) continue
+        narrowed++
+        for (const n of pool) expect(!loot.has(n) || local.has(n), `${d} ${n}`).toBe(true)
+      }
+    }
+    expect(narrowed).toBeGreaterThan(0)
+    // 沒有怪物會掉的通用材料（銀錠）每個地方都開得到
+    for (const d of dungeons) expect(chestForgeCandidates('jewel', 2, undefined, localLootItems(d), loot)).toContain('銀錠')
+  })
+
+  it('no longer leaves materials of tiers 2-5 that no chest can give', () => {
+    const seen = new Set<string>()
+    for (const d of dungeons) for (const kind of MATERIAL_KINDS) for (let tier = 2; tier <= 5; tier++) {
+      for (const n of chestForgeCandidates(kind, tier, undefined, localLootItems(d), loot)) seen.add(n)
+    }
+    for (const kind of MATERIAL_KINDS) for (let tier = 2; tier <= 5; tier++) for (const n of forgeItemsFor(kind, tier)) expect(seen.has(n), n).toBe(true)
+    // 以前開不出來的幾種
+    for (const n of ['精鋼錠', '硬化獸皮', '絲綢布匹', '古樹心材', '金錠']) expect(seen.has(n), n).toBe(true)
+    expect(sourcesOf('item', '金錠').join()).toContain('地下城的寶箱（打造材料）')
+    expect(sourcesOf('item', '硬化獸皮').join()).toContain('這種怪物出沒的地方')
+  })
+
+  it('opens the series of the place for tiers 6 and 7', () => {
+    expect(chestForgeCandidates('metal', 7, 'pleasure', new Set(), loot)).toEqual(['鱗光金塊'])
+    expect(chestForgeCandidates('metal', 7, undefined, new Set(), loot)).toEqual(['編年鋼塊'])
   })
 })

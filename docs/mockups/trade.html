@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>貿易樣稿</title>
+<!--
+  R19 貿易的樣稿（計畫已做完並刪除；規則見 docs/TRADE.md 第 3～5 節）：用 vite 開（npx vite），網址 /docs/mockups/trade.html。
+  共用遊戲本身的樣式；商品、基本價格、店家加成、聲望與折扣直接讀遊戲的資料與計算（src/engine/trade.ts）。
+  城鎮標籤、動態狀態與貿易類別還沒有做，這裡先用示範資料（TAGS、STATES、tradeCategory）。
+-->
+<link rel="stylesheet" href="/src/style.css" />
+<style>
+body { padding: 24px 16px; }
+.screen { margin: 0 auto 40px; max-width: 1180px; }
+.screen > .cap { color: var(--gold-hi); font-size: var(--fs-lg); margin: 0 0 10px; letter-spacing: 0.08em; }
+.screen > .cap small { color: var(--muted); font-size: var(--fs-sm); margin-left: 10px; letter-spacing: 0; }
+.dlg { border: 6px solid #3a2818; border-image: linear-gradient(180deg, #5b3f24, #2e1f12) 1; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #c99a45, 0 20px 60px #000; background: #f3e4c2; color: var(--ink); }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px; position: relative; }
+.dlg-head::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); }
+.dlg-head h2 { margin: 0; font-size: var(--fs-xl); letter-spacing: 0.16em; color: #5b3a1e; }
+.dlg-body { padding: 12px 16px 16px; display: grid; gap: 10px; }
+input, select, textarea { background: #fbf3df; color: var(--ink); border: 1px solid #b8955a; }
+button { background: #fbf3df; color: #5b3a1e; border-color: #b8955a; }
+button.on, button.go { background: #6d4a22; color: #fff3d6; border-color: #6d4a22; }
+.topbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font-size: var(--fs-sm); color: #5b3a1e; }
+.topbar .money { margin-left: auto; font-weight: 700; }
+.town { border: 1px solid #c4a671; border-radius: 4px; background: #f8ecd2; padding: 8px 10px; display: grid; gap: 6px; font-size: var(--fs-sm); color: #5b3a1e; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag { border: 1px solid #b8955a; border-radius: 3px; padding: 1px 8px; background: #fbf3df; }
+.tag.fixed { border-color: #7a6a3a; }
+.tag.state { border-color: #9a5a2a; background: #f6dfc4; }
+.tag small { opacity: 0.8; }
+.note { font-size: var(--fs-xs); color: #7a5a3a; margin: 0; }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.col { border: 1px solid #c4a671; border-radius: 4px; background: #fbf3df; padding: 8px; display: grid; gap: 6px; align-content: start; max-height: 460px; overflow-y: auto; }
+.col h3 { position: sticky; top: -8px; background: #fbf3df; padding: 4px 0; z-index: 1; }
+.col h3 { margin: 0; color: #5b3a1e; font-size: var(--fs-md); display: flex; justify-content: space-between; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding: 5px 4px; border-bottom: 1px dashed #d8c08f; font-size: var(--fs-sm); }
+.row .nm b { color: #5b3a1e; }
+.row .nm small { color: #7a5a3a; display: block; }
+.price { text-align: right; white-space: nowrap; }
+.down { color: #2f6a3a; font-size: var(--fs-xs); }
+.up { color: #9a3a2a; font-size: var(--fs-xs); }
+.row button { padding: 1px 10px; }
+.why { grid-column: 1 / -1; font-size: var(--fs-xs); color: #7a5a3a; background: #f3e4c2; padding: 4px 6px; border-radius: 3px; }
+.cart { border: 2px solid #8a6a3a; border-radius: 4px; background: #fff7e4; padding: 10px; display: grid; gap: 8px; }
+.cart h3 { margin: 0; color: #5b3a1e; }
+.cart .lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cart table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.cart th { text-align: left; color: #7a5a3a; font-weight: 600; border-bottom: 1px solid #c4a671; padding: 3px 4px; }
+.cart td { padding: 3px 4px; border-bottom: 1px dashed #d8c08f; }
+.cart .qty { display: inline-flex; gap: 4px; align-items: center; }
+.cart .qty button { padding: 0 6px; }
+.sum { display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: baseline; font-size: var(--fs-sm); color: #5b3a1e; }
+.sum .net { font-size: var(--fs-lg); font-weight: 700; }
+.haggle { border-top: 1px solid #c4a671; padding-top: 8px; display: grid; gap: 6px; font-size: var(--fs-sm); color: #5b3a1e; }
+.haggle .line { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.haggle input.offer { width: 110px; }
+.haggle input.how { flex: 1; min-width: 200px; }
+.out { width: 100%; border-collapse: collapse; text-align: center; font-size: var(--fs-xs); }
+.out th { color: #7a5a3a; border-bottom: 1px solid #c4a671; padding: 3px; }
+.out td { padding: 3px; }
+.out td.pick { background: #ecd6a6; font-weight: 700; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.tabs { display: none; gap: 6px; }
+@media (max-width: 760px) {
+  body { padding: 12px 6px; }
+  .tabs { display: flex; }
+  .cols { grid-template-columns: 1fr; }
+  .cols .col.hide-sm { display: none; }
+  .cart .lists { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="screen">
+  <p class="cap">貿易：購物車、整車交涉、城鎮標籤 <small>R19 樣稿・商品與基本價格是遊戲的實際資料，標籤與狀態是示範</small></p>
+  <div class="dlg">
+    <div class="dlg-head"><h2>🔨 鐵匠鋪</h2></div>
+    <div class="dlg-body" id="app"></div>
+  </div>
+</div>
+
+<script type="module">
+import { newGame, addItem } from '/src/engine/state.ts'
+import { enterLocation, standOn } from '/src/engine/grid.ts'
+import { gearRules, gearSpecOf } from '/src/engine/gear.ts'
+import { itemDef, shopRules } from '/src/engine/data.ts'
+import { dealMoney, keeperFor, locationMult, sellPrice, shopKey, shopState } from '/src/engine/trade.ts'
+import { formatMoney } from '/src/engine/money.ts'
+import { npcRecord } from '/src/engine/npcs.ts'
+
+// ---- 樣稿的存檔：鐵爐堡的鐵匠鋪 ----
+const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'ironforge' })
+enterLocation(state)
+standOn(state, 'smithy')
+state.money_cc = 2000
+for (const [n, q] of [['狼皮', 3], ['野狗皮', 2], ['絲綢布匹', 2], ['銀錠', 1], ['乾糧', 4]]) if (itemDef(n)) addItem(state.inventory, n, q)
+const shop = shopState(state, 'smithy')
+const key = shopKey(state, 'smithy')
+
+// ---- 示範：貿易類別、城鎮的固定標籤、動態狀態（實作時是資料檔） ----
+function tradeCategory(name) {
+  const d = itemDef(name)
+  if (!d) return '其他'
+  if (d.category === 'material') {
+    const m = d.forge?.materials?.[0]
+    const kind = m ? gearRules.materials[m]?.kind : undefined
+    return { metal: '礦石與金屬', leather: '皮革與毛皮', cloth: '布料', wood: '木材', jewel: '奢侈品' }[kind] ?? '其他'
+  }
+  if (d.category === 'food') return '糧食'
+  if (d.category === 'consumable') return '草藥與藥水'
+  const spec = gearSpecOf(state, name)
+  if (spec) {
+    const b = gearRules.bases[spec.base]
+    if (b.slot === 'main_hand') return '武器'
+    if (b.armor || b.stats?.dr || b.slot === 'off_hand') return '防具'
+    return '服飾'
+  }
+  return '其他'
+}
+const TAGS = [
+  { name: '礦產豐富', desc: '山裡的礦脈挖不完', mult: { '礦石與金屬': 0.5 } },
+  { name: '鍛造重鎮', desc: '矮人的鍛爐日夜不熄', mult: { '武器': 0.8, '防具': 0.8 } },
+]
+const STATES = [
+  { name: '商路不安全', desc: '山道上出現了山賊，商隊不太敢來', days: 3, mult: { '布料': 1.25, '糧食': 1.25, '奢侈品': 1.25 } },
+]
+function catMult(cat) {
+  const parts = []
+  for (const t of TAGS) if (t.mult[cat]) parts.push({ label: t.name, x: t.mult[cat], kind: 'tag' })
+  for (const s of STATES) if (s.mult[cat]) parts.push({ label: s.name, x: s.mult[cat], kind: 'state' })
+  return { x: Math.max(0.4, Math.min(2.5, parts.reduce((a, p) => a * p.x, 1))), parts }
+}
+
+// ---- 價格：遊戲現在的價格 × 類別倍率 ----
+const deals = shop.deals.filter((d) => d.id.startsWith('item:') && d.stock > 0).map((d) => {
+  const name = d.id.slice(5)
+  const base = dealMoney(state, key, d)
+  const cat = tradeCategory(name)
+  const m = catMult(cat)
+  return { name, cat, base, price: Math.max(1, Math.round(base * m.x)), mult: m, stock: d.stock, value: itemDef(name)?.price_cc ?? 0 }
+}).sort((a, b) => a.cat.localeCompare(b.cat) || a.price - b.price)
+const bag = state.inventory.filter((i) => itemDef(i.name)).map((i) => {
+  const base = sellPrice(state, key, i.name)
+  const cat = tradeCategory(i.name)
+  const m = catMult(cat)
+  return { name: i.name, qty: i.qty, cat, base, price: base === null ? null : Math.max(1, Math.round(base * m.x)), mult: m }
+})
+
+const F = shopRules.bargain.price_factor
+const DEG = [['critical', '大成功'], ['success', '成功'], ['partial', '部分成功'], ['fail', '失敗'], ['fumble', '大失敗']]
+const ui = { tab: 'buy', buy: {}, sell: {}, open: '', haggle: false, offer: '', deg: 'success', done: false }
+
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag)
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+    else if (v === true) e.setAttribute(k, '')
+    else if (v !== false && v != null) e.setAttribute(k, v)
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c)
+  return e
+}
+const set = (patch) => { Object.assign(ui, patch); render() }
+const pct = (x) => `${x < 1 ? '' : '+'}${Math.round((x - 1) * 100)}%`
+function badge(m) {
+  if (!m.parts.length) return null
+  return el('span', { class: m.x < 1 ? 'down' : 'up' }, ` ${m.x < 1 ? '▼' : '▲'}${pct(m.x)}`)
+}
+function why(r, sell) {
+  const mult = locationMult(state)
+  const parts = [
+    `基本價 ${formatMoney(r.value ?? itemDef(r.name)?.price_cc ?? 0)}`,
+    sell ? `收購 ×${itemDef(r.name)?.category === 'material' ? '1' : '0.5'}` : itemDef(r.name)?.category === 'material' ? '材料加成 ×2' : '',
+    `${state.location === 'ironforge' ? '王都' : '這裡'}物價 ×${mult}`,
+    ...r.mult.parts.map((p) => `${p.label} ×${p.x}`),
+    '親密度、聲望與身分照舊',
+  ].filter(Boolean)
+  return el('div', { class: 'why' }, `${parts.join(' × ')} ＝ ${formatMoney(r.price)}（${r.cat}）`)
+}
+
+// ---- 購物車 ----
+function totals() {
+  const buy = Object.entries(ui.buy).reduce((s, [n, q]) => s + q * deals.find((d) => d.name === n).price, 0)
+  const sell = Object.entries(ui.sell).reduce((s, [n, q]) => s + q * bag.find((d) => d.name === n).price, 0)
+  return { buy, sell, net: buy - sell }
+}
+/** 這個結果能談到的差額：買入的部分乘倍率、賣出的部分除以倍率 */
+const netAt = (t, f) => Math.round(t.buy * f) - Math.round(t.sell / f)
+/** 成交的差額：玩家出價與能談到的最好價之間，對店家有利的那個 */
+function settle(t, deg) {
+  const best = netAt(t, F[deg])
+  const offer = Number(ui.offer)
+  if (!ui.offer || !Number.isFinite(offer) || deg === 'fail' || deg === 'fumble') return best
+  return Math.max(best, offer)
+}
+const money = (n) => (n >= 0 ? `你付 ${formatMoney(n)}` : `你收 ${formatMoney(-n)}`)
+
+function render() {
+  const app = document.getElementById('app')
+  app.replaceChildren()
+  app.append(el('div', { class: 'topbar' },
+    el('span', {}, `鐵匠：${npcRecord(state, keeperFor(state, 'smithy'))?.name ?? '店主'}`),
+    el('span', { class: 'money' }, `💰 ${formatMoney(state.money_cc)}`)))
+
+  // 這裡的行情
+  app.append(el('div', { class: 'town' },
+    el('div', { class: 'tags' }, el('b', {}, '鐵爐堡的行情'),
+      TAGS.map((t) => el('span', { class: 'tag fixed', title: t.desc }, t.name, el('small', {}, `：${Object.entries(t.mult).map(([c, x]) => `${c} ${pct(x)}`).join('、')}`))),
+      STATES.map((s) => el('span', { class: 'tag state', title: s.desc }, `⚠ ${s.name}`, el('small', {}, `：${Object.entries(s.mult).map(([c, x]) => `${c} ${pct(x)}`).join('、')}・還有 ${s.days} 天`)))),
+    el('p', { class: 'note' }, '固定標籤是這座城的特色；狀態會隨時間變（幾天後換掉）。買入、賣出都照這個價格，跑到別的城市賣可能賺一筆。')))
+
+  // 手機版分頁
+  const cnt = Object.values(ui.buy).reduce((a, b) => a + b, 0) + Object.values(ui.sell).reduce((a, b) => a + b, 0)
+  app.append(el('div', { class: 'tabs' },
+    el('button', { class: ui.tab === 'buy' ? 'on' : '', onclick: () => set({ tab: 'buy' }) }, '店裡的商品'),
+    el('button', { class: ui.tab === 'sell' ? 'on' : '', onclick: () => set({ tab: 'sell' }) }, '你的行囊'),
+    el('button', { class: ui.tab === 'cart' ? 'on' : '', onclick: () => set({ tab: 'cart' }) }, `購物車 ${cnt || ''}`)))
+
+  const shopCol = el('section', { class: `col${ui.tab === 'buy' ? '' : ' hide-sm'}` }, el('h3', {}, '店裡的商品', el('small', {}, '點名字看價格怎麼算')),
+    deals.map((d) => {
+      const inCart = ui.buy[d.name] ?? 0
+      return el('div', { class: 'row' },
+        el('div', { class: 'nm', onclick: () => set({ open: ui.open === d.name ? '' : d.name }) }, el('b', {}, d.name), el('small', {}, `${d.cat}・剩 ${d.stock - inCart}`)),
+        el('div', { class: 'price' }, formatMoney(d.price), badge(d.mult)),
+        el('button', { disabled: inCart >= d.stock, onclick: () => set({ buy: { ...ui.buy, [d.name]: inCart + 1 }, done: false }) }, inCart ? `＋（${inCart}）` : '＋'),
+        ui.open === d.name ? why(d, false) : null)
+    }))
+  const bagCol = el('section', { class: `col${ui.tab === 'sell' ? '' : ' hide-sm'}` }, el('h3', {}, '你的行囊', el('small', {}, '這間店收：武器、防具、材料')),
+    bag.map((b) => {
+      const inCart = ui.sell[b.name] ?? 0
+      return el('div', { class: 'row' },
+        el('div', { class: 'nm', onclick: () => b.price !== null && set({ open: ui.open === `s:${b.name}` ? '' : `s:${b.name}` }) }, el('b', {}, b.name), el('small', {}, `${b.cat}・持有 ${b.qty - inCart}`)),
+        el('div', { class: 'price' }, b.price === null ? el('span', { class: 'note' }, '不收') : [formatMoney(b.price), badge(b.mult)]),
+        b.price === null ? el('span') : el('button', { disabled: inCart >= b.qty, onclick: () => set({ sell: { ...ui.sell, [b.name]: inCart + 1 }, done: false }) }, inCart ? `＋（${inCart}）` : '＋'),
+        ui.open === `s:${b.name}` ? why(b, true) : null)
+    }))
+  app.append(el('div', { class: 'cols' }, shopCol, bagCol))
+
+  // 購物車
+  const t = totals()
+  const line = (side, list, n, q) => {
+    const r = list.find((x) => x.name === n)
+    const max = side === 'buy' ? r.stock : r.qty
+    const upd = (v) => { const next = { ...ui[side] }; if (v > 0) next[n] = v; else delete next[n]; set({ [side]: next, done: false }) }
+    return el('tr', {}, el('td', {}, n), el('td', {}, el('span', { class: 'qty' }, el('button', { onclick: () => upd(q - 1) }, '−'), String(q), el('button', { disabled: q >= max, onclick: () => upd(q + 1) }, '＋'))),
+      el('td', {}, formatMoney(q * r.price)), el('td', {}, el('button', { onclick: () => upd(0) }, '✕')))
+  }
+  const cart = el('section', { class: `cart${ui.tab === 'cart' || window.innerWidth > 760 ? '' : ' hide-sm'}` },
+    el('h3', {}, '🛒 這次的交易'),
+    el('div', { class: 'lists' },
+      el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, '買入'), el('th', {}, '數量'), el('th', {}, '小計'), el('th', {}, ''))),
+        el('tbody', {}, Object.keys(ui.buy).length ? Object.entries(ui.buy).map(([n, q]) => line('buy', deals, n, q)) : el('tr', {}, el('td', { colspan: 4, class: 'note' }, '從左邊的「＋」加進來')))),
+      el('table', {}, el('thead', {}, el('tr', {}, el('th', {}, '賣出'), el('th', {}, '數量'), el('th', {}, '小計'), el('th', {}, ''))),
+        el('tbody', {}, Object.keys(ui.sell).length ? Object.entries(ui.sell).map(([n, q]) => line('sell', bag, n, q)) : el('tr', {}, el('td', { colspan: 4, class: 'note' }, '從行囊的「＋」加進來'))))),
+    el('div', { class: 'sum' }, el('span', {}, `買入 ${formatMoney(t.buy)}`), el('span', {}, `賣出 ${formatMoney(t.sell)}`), el('span', { class: 'net' }, money(t.net))),
+    ui.haggle ? el('div', { class: 'haggle' },
+      el('div', { class: 'line' }, el('b', {}, '整車交涉'), el('span', { class: 'note' }, '這間店今天交涉一次；買的部分打折、賣的部分加價'),
+      ),
+      el('div', { class: 'line' },
+        t.net >= 0 ? '我想付' : '我想收', el('input', { class: 'offer', type: 'number', min: 0, placeholder: String(Math.abs(netAt(t, F.success))), value: ui.offer ? Math.abs(Number(ui.offer)) : '', onchange: (e) => set({ offer: e.target.value === '' ? '' : String((t.net >= 0 ? 1 : -1) * Number(e.target.value)) }) }), '白鸛（選填）',
+        el('input', { class: 'how', placeholder: '怎麼交涉？例如：一次買這麼多、搬出熟人、挑出瑕疵' })),
+      el('table', { class: 'out' },
+        el('thead', {}, el('tr', {}, DEG.map(([, n]) => el('th', {}, n)))),
+        el('tbody', {}, el('tr', {}, DEG.map(([d]) => el('td', { class: ui.deg === d ? 'pick' : '', onclick: () => set({ deg: d }) }, money(settle(t, d))))))),
+      el('p', { class: 'note' }, '有出價時，成交價取「你的出價」和「這個結果能談到的最好價」中對店家有利的那個（出價 300、成功能談到 280 → 300）。點一格看看那個結果；實際由魅力檢定決定。'),
+    ) : null,
+    el('div', { class: 'actions' },
+      el('button', { disabled: !cnt, onclick: () => set({ buy: {}, sell: {}, offer: '', haggle: false }) }, '清空'),
+      el('button', { disabled: !t.buy || ui.haggle, onclick: () => set({ haggle: true }) }, '交涉（檢定）'),
+      el('button', { class: 'go', disabled: !cnt, onclick: () => set({ done: true }) }, ui.haggle ? `結帳（假設${DEG.find(([d]) => d === ui.deg)[1]}：${money(settle(t, ui.deg))}）` : `結帳（${money(t.net)}）`)),
+    ui.done ? el('p', { class: 'note' }, '（樣稿：結帳後日誌記一筆，列出買了什麼、賣了什麼、最後付或收多少）') : null)
+  app.append(cart)
+}
+// 預設放一點東西，看得出樣子
+const first = deals.find((d) => d.cat === '礦石與金屬') ?? deals[0]
+if (first) ui.buy[first.name] = 2
+const weapon = deals.find((d) => d.cat === '武器')
+if (weapon) ui.buy[weapon.name] = 1
+const hide = bag.find((b) => b.name === '狼皮' && b.price !== null)
+if (hide) ui.sell[hide.name] = 3
+render()
+addEventListener('resize', render)
+</script>
+</body>
+</html>
