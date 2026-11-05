@@ -3,7 +3,7 @@
 ③ 萬民書的最後一步依計數器決定能選哪幾種政體（條件沒有「或」，君主立憲拆成兩個選項）：
 - 君主制：yh_reform ≤ -2　- 共和制：yh_reform ≥ 2　- 君主立憲：yh_balance ≥ 3，或 yh_reform 在 -1～1
 至少一個一定能選。選了之後開始對應的終章（④），終章在「宣德樓的城樓」特殊地圖裡打。
-結局旗標：yhpol_monarchy／yhpol_republic／yhpol_constitution（NPC 的階段在 east_p3_npcs.py）。
+結局旗標：yhpol_monarchy／yhpol_republic／yhpol_constitution（NPC 的階段在 east_p3_npcs.py，世界書的政體段落在 east_p4c_lore.py）。
 
 在專案根目錄執行：python3 worldgen/scripts/elondia/east_p4c.py
 """

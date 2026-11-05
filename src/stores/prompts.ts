@@ -269,7 +269,7 @@ export const usePrompts = defineStore('prompts', () => {
 
   /**
    * 匯入世界書檔案（SillyTavern 格式或本遊戲匯出的檔案）：
-   * - 本遊戲匯出的內建條目：套用成覆寫（和預設相同就清掉覆寫）
+   * - 本遊戲匯出的內建條目：套用成覆寫（和預設相同就清掉覆寫）；劇情變體照內建的，不從檔案讀
    * - 其他條目：新增成自訂條目；內容和現有條目完全相同的略過
    */
   async function importLore(text: string): Promise<{ added: number; updated: number; skipped: number }> {
@@ -300,7 +300,7 @@ export const usePrompts = defineStore('prompts', () => {
         continue
       }
       const item = addLore()
-      Object.assign(item, { comment: e.comment, content: e.content, keys: e.keys, mode: e.mode, order: e.order, adult: e.adult })
+      Object.assign(item, { comment: e.comment, content: e.content, keys: e.keys, mode: e.mode, order: e.order, adult: e.adult, ...(e.variants ? { variants: e.variants } : {}) })
       result.added += 1
     }
     return result

@@ -390,6 +390,7 @@ function resetAll() {
             <span v-if="!it.builtin" class="tag">自訂</span>
             <span v-else-if="it.edited" class="tag">已修改</span>
             <span v-if="it.adult" class="tag">成人</span>
+            <span v-if="st?.variant" class="tag" :title="`依劇情旗標換掉了內容：${st.variant}`">劇情變體</span>
             <span class="spacer" />
             <select class="small" :value="it.mode" @change="prompts.updateLore(it.uid, { mode: inputValue($event) as LoreMode })">
               <option v-for="m in MODES" :key="m.id" :value="m.id">{{ m.label }}</option>
@@ -401,6 +402,7 @@ function resetAll() {
           <p v-if="it.note && openLore !== it.uid" class="small muted note">{{ it.note }}</p>
           <div v-if="openLore === it.uid" class="editor">
             <p v-if="it.note" class="small muted">{{ it.note }}</p>
+            <p v-if="it.variants?.length" class="small muted">依劇情旗標換掉內容（第一個符合的生效；下面編輯的是原本的內容）：{{ it.variants.map((v) => v.note ?? v.flags.join('＋')).join('；') }}</p>
             <label>名稱 <input :value="it.comment" @change="prompts.updateLore(it.uid, { comment: inputValue($event) })" /></label>
             <label><span>關鍵字 <Hint text="用逗號或頓號分隔；「關鍵字觸發」時使用。" /></span><input :value="keysText(it)" @change="setKeys(it, inputValue($event))" /></label>
             <label class="check"><input type="checkbox" :checked="it.adult" @change="prompts.updateLore(it.uid, { adult: ($event.target as HTMLInputElement).checked })" /> 成人向 <Hint text="只在成人場景注入（日誌帶親密場景，或判定的行動可能進入親密場景）。" /></label>

@@ -6,6 +6,7 @@ import { charmNote } from '@/engine/charm'
 import { protagonistText } from '@/engine/character'
 import { locationById } from '@/engine/data'
 import * as social from '@/engine/social'
+import { hasFlag } from '@/engine/storyFlags'
 import type { GameState, Report } from '@/engine/types'
 import { actionLoreText, buildActionPrompt, partyLewd } from './judge'
 import { loreForReport, pickLore, type LoreItem, type LoreSelection } from './lore'
@@ -31,6 +32,11 @@ export interface Composed {
   prompt: Prompt
   /** 沒帶世界書時為 undefined */
   lore?: LoreSelection
+}
+
+/** 世界書的劇情變體看主角目前的劇情旗標（重寫舊日誌的敘事時也是看現在的旗標） */
+function flagsOf(state: GameState | null): { hasFlag?: (name: string) => boolean } {
+  return state ? { hasFlag: (f) => hasFlag(state, f) } : {}
 }
 
 function playerName(state: GameState | null): string {
@@ -72,7 +78,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   const bodyNote = bodyNoteFor(state, name)
   // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
   const adult = !!adultSceneOf(report)
-  const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name })
+  const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name, ...flagsOf(state) })
   // 成人場景：主角與隊友的慾望指標（分段的文字）
   const protagonist = protagonistOf(state) + (adult && state ? `\n慾望指標：${lewdSummary(state, state.party.find((m) => m.isPlayer)!)}${partyLewd(state, false)}\n${charmNote(state)}` : '')
   const context = narrationContext(state, report)
@@ -106,7 +112,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
   // 分流：行動可能進入親密場景（娼館、主人的要求、戰敗事件……）時才送成人向的條目
   const adult = !!p.adultScene
   const lore = o.config.loreInJudge
-    ? pickLore(o.lore, { text: actionLoreText(state, p), travel: false }, { adult, budgetChars: o.budgetChars, playerName: name })
+    ? pickLore(o.lore, { text: actionLoreText(state, p), travel: false }, { adult, budgetChars: o.budgetChars, playerName: name, ...flagsOf(state) })
     : undefined
   // 戰敗事件的回應：圍上來的怪物的外觀（魔物娘的設定看被圍住的人）
   const monsters = p.kind === 'defeat_event'

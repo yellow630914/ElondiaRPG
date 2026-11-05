@@ -7,6 +7,9 @@
 //   travel   旅行：只有旅行報告注入
 //   off      停用
 // 預設值依下面的常數決定；玩家可以在「提示詞」頁籤覆寫（見 src/stores/prompts.ts）。
+//
+// 條目可以帶「劇情變體」（variants）：依主角的劇情旗標換掉內容，例如大燁的政體依政治線的結局換掉。
+// 變體寫在世界書檔案條目的 extensions.elondia.variants（SillyTavern 會忽略），見 docs/PROMPTS.md。
 
 import { Converter } from 'opencc-js/t2cn'
 import type { Report } from '@/engine/types'
@@ -19,6 +22,22 @@ export interface WorldbookEntry {
   constant: boolean
   order: number
   disable?: boolean
+  /** 本遊戲的資料（SillyTavern 會忽略）：劇情變體 */
+  extensions?: { elondia?: { variants?: LoreVariant[] } }
+}
+
+/**
+ * 劇情變體：主角有 flags 裡的每一個劇情旗標（作者寫的名稱，和特殊任務的 set_flags 相同）時換掉內容。
+ * 依順序比對，第一個符合的變體生效；都不符合時用原本的內容。
+ */
+export interface LoreVariant {
+  flags: string[]
+  /** 換掉整段內容 */
+  content?: string
+  /** 只換掉內容裡的幾段文字：[原文, 新文]（在 content 之後套用）；原文找不到時略過這一組 */
+  replace?: [string, string][]
+  /** 說明（顯示在提示詞頁籤） */
+  note?: string
 }
 
 export interface Worldbook {
@@ -43,6 +62,8 @@ export interface LoreItem {
   edited?: boolean
   /** 預設值的說明（為什麼常駐、為什麼停用） */
   note?: string
+  /** 劇情變體（見 LoreVariant）；玩家改過內容的內建條目只套用 replace，不套用整段的 content */
+  variants?: LoreVariant[]
 }
 
 /** 玩家對內建條目的覆寫；沒寫的欄位用預設值 */
@@ -54,6 +75,8 @@ export interface LoreOptions {
   /** 注入字數上限 */
   budgetChars: number
   playerName: string
+  /** 主角有沒有這個劇情旗標（作者寫的名稱）；沒給時不套用劇情變體 */
+  hasFlag?: (name: string) => boolean
 }
 
 // 世界觀、勢力概述、神祇：常駐
@@ -86,7 +109,11 @@ export function loadWorldbook(): Promise<Worldbook> {
 
 /** 內建條目的預設注入方式 */
 export function defaultLoreItem(e: WorldbookEntry): LoreItem {
-  const base = { uid: e.uid, comment: e.comment, content: e.content, keys: e.key.filter(Boolean), order: e.order, adult: ADULT.has(e.uid), builtin: true }
+  const variants = e.extensions?.elondia?.variants
+  const base = {
+    uid: e.uid, comment: e.comment, content: e.content, keys: e.key.filter(Boolean), order: e.order, adult: ADULT.has(e.uid), builtin: true,
+    ...(variants?.length ? { variants } : {}),
+  }
   if (e.disable) return { ...base, mode: 'off', note: '世界書檔案中已停用' }
   if (ALWAYS.includes(e.uid)) return { ...base, mode: 'constant', note: '世界觀基礎，預設常駐' }
   if (e.uid === STYLE) return { ...base, mode: 'off', note: '文風改由「文風」條目管理；需要時可以開啟' }
@@ -104,7 +131,13 @@ export function loreItems(book: Worldbook, overrides: Record<string, LoreOverrid
     .map((e) => {
       const d = defaultLoreItem(e)
       const o = overrides[e.uid]
-      return o && Object.keys(o).length ? { ...d, ...o, edited: true } : d
+      if (!o || !Object.keys(o).length) return d
+      // 玩家改過內容：保留玩家的文字，劇情變體只換掉找得到的段落
+      const variants = o.content !== undefined && d.variants
+        ? d.variants.filter((v) => v.replace?.length).map((v) => ({ flags: v.flags, replace: v.replace, ...(v.note ? { note: v.note } : {}) }))
+        : d.variants
+      const { variants: _, ...rest } = d
+      return { ...rest, ...o, ...(variants?.length ? { variants } : {}), edited: true }
     })
   return [...builtin, ...custom.map((c) => ({ ...c, builtin: false }))].sort((a, b) => a.order - b.order || a.uid - b.uid)
 }
@@ -126,6 +159,8 @@ export interface LoreEntryState {
   hit?: string
   /** 注入順序（1 起算；沒注入時沒有） */
   position?: number
+  /** 套用的劇情變體（說明或旗標） */
+  variant?: string
 }
 
 export interface LoreSelection {
@@ -147,11 +182,24 @@ function withPlayerName(content: string, playerName: string): string {
   return content.split(HARDCODED_NAME).join(playerName).split('{{player}}').join(playerName)
 }
 
+/** 依劇情旗標選出條目這次的內容：第一個旗標全部符合的變體（沒有旗標的變體不算） */
+export function resolveLoreVariant(item: Pick<LoreItem, 'content' | 'variants'>, hasFlag?: (name: string) => boolean): { content: string; variant?: LoreVariant } {
+  const v = hasFlag ? item.variants?.find((x) => x.flags.length > 0 && x.flags.every((f) => hasFlag(f))) : undefined
+  if (!v) return { content: item.content }
+  let content = v.content ?? item.content
+  for (const [from, to] of v.replace ?? []) if (from && content.includes(from)) content = content.split(from).join(to)
+  return { content, variant: v }
+}
+
 export function pickLore(items: LoreItem[], q: LoreQuery, opts: LoreOptions): LoreSelection {
   const haystack = q.text + '\n' + toSimplified(q.text)
   const states: Record<number, LoreEntryState> = {}
   const wanted: { item: LoreItem; constant: boolean }[] = []
-  for (const it of items) {
+  for (const raw of items) {
+    // 先套用劇情變體：之後的判斷、字數與注入都用這次的內容
+    const { content, variant } = resolveLoreVariant(raw, opts.hasFlag)
+    const it = variant ? { ...raw, content } : raw
+    const via = variant ? { variant: variant.note ?? variant.flags.join('、') } : {}
     if (it.mode === 'off' || !it.content.trim()) {
       states[it.uid] = { status: 'off' }
       continue
@@ -161,15 +209,16 @@ export function pickLore(items: LoreItem[], q: LoreQuery, opts: LoreOptions): Lo
       continue
     }
     if (it.mode === 'constant') {
+      states[it.uid] = { status: 'constant', ...via }
       wanted.push({ item: it, constant: true })
       continue
     }
     const hit = it.mode === 'travel' ? (q.travel ? '旅行報告' : undefined) : it.keys.find((k) => k && haystack.includes(k))
     if (hit) {
-      states[it.uid] = { status: 'triggered', hit }
+      states[it.uid] = { status: 'triggered', hit, ...via }
       wanted.push({ item: it, constant: false })
     } else {
-      states[it.uid] = { status: 'idle' }
+      states[it.uid] = { status: 'idle', ...via }
     }
   }
 
@@ -185,7 +234,7 @@ export function pickLore(items: LoreItem[], q: LoreQuery, opts: LoreOptions): Lo
     }
     position += 1
     result.chars += content.length
-    states[item.uid] = { ...(constant ? { status: 'constant' as const } : states[item.uid]!), position }
+    states[item.uid] = { ...states[item.uid]!, position }
     ;(constant ? result.constant : result.triggered).push({ ...item, content })
   }
   return result
@@ -220,13 +269,15 @@ interface ElondiaLoreExt {
   adult: boolean
   /** 內建條目：匯入時改成覆寫，而不是新增一條 */
   builtin: boolean
+  /** 劇情變體 */
+  variants?: LoreVariant[]
 }
 
 /** 匯出成 SillyTavern 世界書格式（含玩家的修改與新增條目），也可以匯入回本遊戲 */
 export function exportWorldbook(items: LoreItem[], name = '埃隆迪亞大陸'): object {
   const entries: Record<string, object> = {}
   for (const it of items) {
-    const ext: ElondiaLoreExt = { mode: it.mode, adult: it.adult, builtin: it.builtin }
+    const ext: ElondiaLoreExt = { mode: it.mode, adult: it.adult, builtin: it.builtin, ...(it.variants?.length ? { variants: it.variants } : {}) }
     entries[it.uid] = {
       uid: it.uid,
       key: it.keys,
@@ -254,6 +305,24 @@ export interface ImportedLore {
   order: number
   adult: boolean
   builtin: boolean
+  variants?: LoreVariant[]
+}
+
+/** 檔案裡的劇情變體：留下格式正確、至少有一個旗標而且會換掉內容的 */
+function parseVariants(raw: unknown): LoreVariant[] {
+  if (!Array.isArray(raw)) return []
+  const out: LoreVariant[] = []
+  for (const v of raw as Record<string, unknown>[]) {
+    if (!v || typeof v !== 'object' || !Array.isArray(v.flags)) continue
+    const flags = v.flags.filter((f): f is string => typeof f === 'string' && !!f.trim()).map((f) => f.trim())
+    const replace = Array.isArray(v.replace)
+      ? v.replace.filter((r): r is [string, string] => Array.isArray(r) && r.length === 2 && typeof r[0] === 'string' && !!r[0] && typeof r[1] === 'string')
+      : []
+    const content = typeof v.content === 'string' ? v.content : undefined
+    if (!flags.length || (content === undefined && !replace.length)) continue
+    out.push({ flags, ...(content !== undefined ? { content } : {}), ...(replace.length ? { replace } : {}), ...(typeof v.note === 'string' && v.note ? { note: v.note } : {}) })
+  }
+  return out
 }
 
 /** 讀取世界書檔案：SillyTavern 格式（entries 物件或陣列），或本遊戲匯出的檔案 */
@@ -266,6 +335,7 @@ export function parseWorldbookFile(raw: unknown): ImportedLore[] {
   for (const e of list as Record<string, unknown>[]) {
     if (!e || typeof e !== 'object' || typeof e.content !== 'string' || !e.content.trim()) continue
     const ext = ((e.extensions as Record<string, unknown> | undefined)?.elondia ?? {}) as Partial<ElondiaLoreExt>
+    const variants = parseVariants(ext.variants)
     const mode: LoreMode = ext.mode && ['constant', 'keyword', 'travel', 'off'].includes(ext.mode)
       ? ext.mode
       : e.disable ? 'off' : e.constant ? 'constant' : 'keyword'
@@ -278,6 +348,7 @@ export function parseWorldbookFile(raw: unknown): ImportedLore[] {
       order: typeof e.order === 'number' ? e.order : 700,
       adult: !!ext.adult,
       builtin: !!ext.builtin,
+      ...(variants.length ? { variants } : {}),
     })
   }
   return out
