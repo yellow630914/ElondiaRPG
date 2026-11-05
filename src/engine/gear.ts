@@ -7,7 +7,10 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
+import {
+  armorDef, attrName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
+  type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type Mods,
+} from './data'
 import { describeEffects } from './perks'
 import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
@@ -977,12 +980,50 @@ export function randomGear(rng: Rng, level: number, bases = randomBases(), serie
   return spec
 }
 
-/** 某一類型、某一級的打造材料（items.json 有 forge 的物品，挑最便宜的） */
-export function forgeItemFor(kind: MaterialKind, tier: number, series?: string): string | undefined {
+/** 某一類型、某一級的打造材料（items.json 有 forge 的物品），由便宜到貴 */
+export function forgeItemsFor(kind: MaterialKind, tier: number, series?: string): string[] {
   const material = materialOf(kind, tier, series)
   return itemRules.items
     .filter((i) => i.forge?.materials.includes(material))
-    .sort((a, b) => a.price_cc - b.price_cc)[0]?.name
+    .sort((a, b) => a.price_cc - b.price_cc)
+    .map((i) => i.name)
+}
+
+/** 某一類型、某一級最便宜的打造材料（材料委託、說明用） */
+export function forgeItemFor(kind: MaterialKind, tier: number, series?: string): string | undefined {
+  return forgeItemsFor(kind, tier, series)[0]
+}
+
+/** 有怪物會掉的物品（怪物素材） */
+export function monsterLootItems(): Set<string> {
+  return new Set(Object.values(enemies).flatMap((e) => (e.loot ?? []).map((l) => l.item)))
+}
+
+/** 這個地點的怪物會掉的物品：地下城各層與層主，加上所在地區的野外遭遇 */
+export function localLootItems(location: string): Set<string> {
+  const ids = new Set<string>()
+  const addGroups = (groups: EncounterGroup[] | undefined) => {
+    for (const g of groups ?? []) for (const [id] of g) ids.add(id)
+  }
+  const d = dungeonEncounters[location]
+  if (d) {
+    for (const layer of DUNGEON_LAYER_IDS) addGroups(d[layer])
+    addGroups([d.boss])
+    addGroups(Object.values(d.bosses ?? {}))
+  }
+  const region = geography.locations.find((l) => l.id === location)?.region
+  if (region) addGroups(wildEncounters(region))
+  return new Set([...ids].flatMap((id) => (enemies[id]?.loot ?? []).map((l) => l.item)))
+}
+
+/**
+ * 寶箱開得出的打造材料：那一級的通用材料（沒有怪物會掉的），加上這裡的怪物會掉的；
+ * 兩者都沒有時用那一級的全部。系列照材料（materialOf）挑，其他系列的不會出現。
+ */
+export function chestForgeCandidates(kind: MaterialKind, tier: number, series: string | undefined, local: Set<string>, loot = monsterLootItems()): string[] {
+  const all = forgeItemsFor(kind, tier, series)
+  const pool = all.filter((n) => !loot.has(n) || local.has(n))
+  return pool.length ? pool : all
 }
 
 export const MATERIAL_KINDS: MaterialKind[] = ['metal', 'leather', 'cloth', 'wood', 'jewel']
