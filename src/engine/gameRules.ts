@@ -11,7 +11,7 @@ import parasitesJson from '@data/rules/parasites.json'
 import lewdJson from '@data/rules/lewd.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure'>
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit'>
 
 export interface RuleDef {
   label: string

@@ -2,6 +2,7 @@
 // 成功 1 則、大成功（自然 20 或超過 DC 10 以上）2 則；失敗只花了酒錢。同一間酒館一天一次，花 1 小時。
 
 import { attrOf, mod, proficiency, snapshot } from './character'
+import { naturalCritOnly } from './checks'
 import { formatMoney } from './money'
 import { currentArea, currentCell } from './grid'
 import { activeLeads, discoverLead, ensureLeadPool, leadPoolOn } from './leads'
@@ -46,7 +47,7 @@ export function askAround(state: GameState): Report {
   const r = withRng(state, (rng) => roll(rng, dice))
   const natural = r.rolls[0] ?? r.total
   const ok = natural === 20 || (natural !== 1 && r.total >= ASK_DC)
-  const critical = natural === 20 || r.total >= ASK_DC + 10
+  const critical = natural === 20 || (!naturalCritOnly(state) && r.total >= ASK_DC + 10)
   state.flags[`asked:${state.location}`] = state.time.day
   const found = ok ? hiddenHere(state).slice(0, critical ? 2 : 1).map((l) => discoverLead(state, l, `${loc.name}的酒館`)) : []
   const report: Report = {

@@ -806,6 +806,8 @@ export interface GameOptions {
   lustMult?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
+  /** 大成功、大失敗只看骰面：只有骰出 20 才大成功、骰出 1 才大失敗（engine/checks.ts） */
+  naturalCrit?: boolean
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */

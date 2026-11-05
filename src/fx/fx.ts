@@ -178,15 +178,17 @@ export function sparkle(x: number, y: number, width: number, colors = ['#f0d083'
   }
 }
 
-export type BannerKind = 'encounter' | 'boss' | 'victory' | 'defeat'
+/** turn、foe、ally：戰鬥中的回合提示（小一點、短一點，不加暗角） */
+export type BannerKind = 'encounter' | 'boss' | 'victory' | 'defeat' | 'turn' | 'foe' | 'ally'
 
 /** 畫面中央的橫幅（遭遇、層主、勝利、戰敗），四周加暗角 */
 export function banner(text: string, kind: BannerKind): void {
   if (!fxOn()) return
   const full = fxFull()
   const long = kind === 'victory' || kind === 'boss'
-  const duration = long ? 1200 : 800
-  if (full) {
+  const cue = kind === 'turn' || kind === 'foe' || kind === 'ally'
+  const duration = long ? 1200 : cue ? 700 : 800
+  if (full && !cue) {
     const v = document.createElement('div')
     v.className = `fx-vignette ${kind}`
     spawn(v, [{ opacity: 0 }, { opacity: 1, offset: 0.25 }, { opacity: 1, offset: 0.7 }, { opacity: 0 }], { duration, easing: 'ease-out' })

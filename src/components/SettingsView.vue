@@ -17,6 +17,8 @@ import ModelSourceEditor from './ModelSourceEditor.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
+const APP_VERSION = __APP_VERSION__
+
 const settings = useSettings()
 // 走一格的時間：三種地方
 const STEP_DEFAULT = mapsJson.generation.step_minutes
@@ -222,6 +224,7 @@ function doReset() {
           <option value="off">關閉</option>
         </select>
       </label>
+      <label class="check"><input v-model="settings.turnBanner" type="checkbox" /> 戰鬥的回合提示 <Hint text="戰鬥中新的回合開始、輪到敵方、輪到你方的角色時，畫面中央閃過一條提示橫幅（不擋操作）。特效關閉時不顯示。" /></label>
       <label class="check"><input v-model="settings.background" type="checkbox" /> 背景圖 <Hint text="依所在的地區、城鎮或地下城換整頁背景（城鎮與地區依時段、地下城依深度，有那張圖才換）。還沒有圖的地方不顯示背景圖。" /></label>
       <label v-if="settings.background">
         <span class="lab">背景圖亮度 {{ settings.backgroundBrightness }}% <Hint text="越暗，面板上的字越清楚。" /></span>
@@ -255,6 +258,8 @@ function doReset() {
           允許在遊戲中更換身分標籤 <Hint text="勾選時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個）。皇族可以直接進出王城。" /></label>
         <label class="check"><input type="checkbox" :checked="!!game.state.options?.trapLure" @change="game.setTrapLure(($event.target as HTMLInputElement).checked)" />
           察覺陷阱時可以主動觸發 <Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。" /></label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.naturalCrit" @change="game.setNaturalCrit(($event.target as HTMLInputElement).checked)" />
+          大成功、大失敗只看骰面 <Hint text="勾選時，只有骰出 20 才是大成功、骰出 1 才是大失敗；總和比 DC 高或低 10 以上不再算（最多是成功或失敗）。AI 判定也照這條規則。不勾時維持原本的規則：骰出 20 或總和 ≥ DC+10 大成功，骰出 1 或總和 ≤ DC−10 大失敗。" /></label>
         <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
       </div>
     </section>
@@ -313,6 +318,7 @@ function doReset() {
       <button class="danger" @click="doReset">放棄目前的進度並回到開始畫面</button>
     </div>
     <p class="small muted">存檔欄位裡的存檔不會被刪除。</p>
+    <p class="small muted">遊戲版本 v{{ APP_VERSION }}</p>
     <label class="check">
       <input v-model="settings.backupBeforeSwitch" type="checkbox" /> 讀檔、開新遊戲前先備份到自動存檔
       <Hint text="開著時，讀檔前會把目前的進度存一份；在首頁開新遊戲或讀檔、蓋掉還沒繼續的遊戲前，也會先把它存一份。都存進自動存檔欄位（和長休、抵達目的地的自動存檔輪流用最近 3 格）。關掉時不存，自動存檔欄位只留長休、抵達的存檔，但誤讀或誤開新遊戲就找不回原本的進度。" />

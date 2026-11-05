@@ -15,7 +15,7 @@ import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
 import { checkModifiers } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
-import { computeDegree, DEGREE_NAME } from './checks'
+import { clampDegree, computeDegree, DEGREE_NAME, naturalCritOnly } from './checks'
 import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
@@ -267,9 +267,11 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   // 日常小事：結果至少是成功（骰值只決定過程順不順），效果的門檻也照成功看
   const trivial = !!kindDef.trivial && r.difficulty === 'trivial'
   // AI 沒寫（或寫錯）成功程度時，用骰值對 DC 算出的參考結果（和結算時一樣），效果的門檻也照這個看
+  // 存檔規則「只看骰面」：AI 給的大成功、大失敗也照骰面收斂
+  const natOnly = naturalCritOnly(state)
   const judged = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
-    ? (r.degree as Degree)
-    : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc)
+    ? clampDegree(r.degree as Degree, p.natural, natOnly)
+    : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc, natOnly)
   const degree: Degree = trivial && judged !== 'critical' ? 'success' : judged
   const hoursRaw = num(r.hours)
   const range = kindDef.hours_range
@@ -556,7 +558,7 @@ function judgeJoin(
     }
     const inv = inviteDc(state, npc)
     const total = p.natural + p.modifiers[attr] + situationalTotal(p)
-    const d = computeDegree(p.natural, total, inv)
+    const d = computeDegree(p.natural, total, inv, naturalCritOnly(state))
     if (d !== 'critical' && d !== 'success') {
       const why = x.offered === true ? `（對方主動提出，但親密度 ${affinity} 不到 ${need}，照邀請的檢定）` : ''
       return refuse(`檢定總值 ${total} 沒有達到邀請的 DC ${inv}${why}`, true)
@@ -599,8 +601,9 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const modifier = p.modifiers[attr] + situationalTotal(p)
   const total = p.natural + modifier
   // 參考：骰值對 DC 算出的成功程度；實際結果由 AI 決定
-  const reference = computeDegree(p.natural, total, dc)
-  const degree = judgment?.degree ?? reference
+  const natOnly = naturalCritOnly(state)
+  const reference = computeDegree(p.natural, total, dc, natOnly)
+  const degree = clampDegree(judgment?.degree ?? reference, p.natural, natOnly)
   delete state.pendingAction
 
   const report = actionReport(state, p, judgment?.hours ?? p.hours ?? kind.hours)

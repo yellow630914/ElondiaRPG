@@ -11,6 +11,7 @@ import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
 import { selectContext } from '@/engine/social'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
+import { naturalCritOnly } from '@/engine/checks'
 import { inviteDc, validateInvite } from '@/engine/companions'
 import {
   geography, genderPrompt, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
@@ -455,7 +456,7 @@ ${p.actor ? `擲骰的人：${state.party.find((m) => m.id === p.actor)?.name ??
 各屬性的總值（自然骰 + 屬性調整值 + 熟練 + 情境）：
 ${totals}
 參考 DC：${p.base_dc}（dc 可標示 ${p.base_dc - adj}～${p.base_dc + adj}）
-依預設屬性（${attrName(p.attr)}）的參考結果：${DEGREE_NAME[computeDegree(p.natural, p.natural + p.modifiers[p.attr] + sit, p.base_dc)]}
+依預設屬性（${attrName(p.attr)}）的參考結果：${DEGREE_NAME[computeDegree(p.natural, p.natural + p.modifiers[p.attr] + sit, p.base_dc, naturalCritOnly(state))]}${naturalCritOnly(state) ? '\n這個存檔的規則：大成功只在自然骰 20、大失敗只在自然骰 1；其他情況差再多也最多是成功或失敗（程式會把不符合的 critical、fumble 改成 success、fail）。' : ''}
 </dice>`,
     },
     {

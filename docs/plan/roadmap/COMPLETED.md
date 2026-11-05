@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 小改進：版本號、骰面判定、戰鬥的回合提示（R17 的 Q-1～Q-3）
+
+- 版本號：`vite.config.ts` 用 `define` 把 `package.json` 的版本帶進程式（`__APP_VERSION__`，型別在 `env.d.ts`），首頁下方與設定的「存檔」頁顯示。
+- 存檔規則「大成功、大失敗只看骰面」（`options.naturalCrit`）：`checks.ts` 的 `computeDegree` 多一個參數、`clampDegree` 收斂 AI 給的程度；主動行動、AI 入隊、談判、撤出地下城、打聽消息、提議夥伴去娼館都照這條；判定提示詞寫明規則。規則寫在 [ACTIONS](../../ACTIONS.md) 第 3 節、[SAVES](../../SAVES.md) 第 7 節，測試在 `naturalCrit.spec.ts`。
+- 戰鬥的回合提示：`CombatView.vue` 播時間軸時排隊出「第 N 回合」「敵方行動」「輪到你了／輪到某某」（`fx.ts` 的 `banner` 多了 `turn`、`foe`、`ally` 三種小橫幅），設定「戰鬥的回合提示」（`settings.turnBanner`）可以關。寫在 [COMBAT_SYSTEM](../../COMBAT_SYSTEM.md) 8.3 節之後，測試在 `turnBanner.spec.ts`。
+- 同一天：交涉的成交價不是喊價（B21）併進 R19 的購物車一起做（[TRADE_PLAN](TRADE_PLAN.md) 第 3 節）。
+
 ### 2026-11-05 對方主動邀請時不再要過邀請的檢定（L10，原 B22）
 
 - 起因：玩家回報（[issue #62](https://github.com/yellow630914/ElondiaRPG/issues/62) 第 20 條）對方邀請、自己答應，卻因魅力檢定失敗入不了隊。白箱重現：AI 判定成功並給了入隊，`actions.ts` 的 `judgeJoin` 另外要求檢定總值達到邀請的 DC（重現時 18），沒達到就不入隊還加冷卻。酒館的「等待組隊」沒有這個問題（接受邀請不擲骰）。

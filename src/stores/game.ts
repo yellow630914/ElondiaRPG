@@ -1474,6 +1474,13 @@ export const useGame = defineStore('game', () => {
       if (!on) delete state.value.trapLure
       save()
     },
+    /** 這個存檔的大成功、大失敗只看骰面（20 與 1，見 engine/checks.ts） */
+    setNaturalCrit: (on: boolean) => {
+      if (!state.value) return
+      const { naturalCrit: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
+      state.value.options = { ...rest, ...(on ? { naturalCrit: true } : {}) }
+      save()
+    },
     /** 更換主角的身分標籤（存檔規則要允許，見 pcTags.ts） */
     setPcTags: (tags: string[]) => run((s) => setPcTags(s, tags)),
     descend: () => run((s) => (grid.descend(s), encounters.checkHostiles(s)), { onMap: true }),

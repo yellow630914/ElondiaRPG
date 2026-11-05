@@ -327,10 +327,19 @@ ul.plain > li:last-child { border-bottom: none; }
 .fx-banner.victory span { font-size: 2.4rem; }
 .fx-banner.defeat { border-color: var(--muted); box-shadow: none; }
 .fx-banner.defeat span { color: var(--muted); text-shadow: 3px 3px 0 #000; }
+/* 戰鬥中的回合提示：小一點，放在畫面偏上，不擋住隊伍卡 */
+.fx-banner.turn, .fx-banner.foe, .fx-banner.ally { top: 30%; padding: 6px 48px; box-shadow: none; }
+.fx-banner.turn span, .fx-banner.foe span, .fx-banner.ally span { font-size: 1.3rem; letter-spacing: 0.3em; padding-left: 0.3em; }
+.fx-banner.foe { border-color: #ff5a4a; }
+.fx-banner.foe span { color: #ff8a78; }
+.fx-banner.ally { border-color: #7fd3a8; }
+.fx-banner.ally span { color: #a8ecc6; }
 @media (max-width: 760px) {
   .fx-banner { padding: 8px 32px; }
   .fx-banner span { font-size: 1.6rem; letter-spacing: 0.3em; padding-left: 0.3em; }
   .fx-banner.victory span { font-size: 1.9rem; }
+  .fx-banner.turn, .fx-banner.foe, .fx-banner.ally { padding: 5px 24px; }
+  .fx-banner.turn span, .fx-banner.foe span, .fx-banner.ally span { font-size: 1.1rem; letter-spacing: 0.2em; padding-left: 0.2em; }
 }
 .fx-pillar {
   position: fixed; transform-origin: center bottom;
