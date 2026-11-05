@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
-import { actionRules, ATTR_IDS, attrName, type Degree } from '@/engine/data'
+import { actionRules, ATTR_IDS, attrName, skillName, type Degree, type SkillId } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
@@ -19,6 +19,12 @@ const pendingMark = computed(() => s.value.pendingMark)
 
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 const DEGREES = Object.keys(DEGREE_NAME) as Degree[]
+/** 自由行動：各分類多出來的修正（AI 判定時選分類） */
+const skillHint = computed(() => {
+  const m = pending.value?.skillMods ?? {}
+  const lines = (Object.keys(m) as SkillId[]).map((k) => `${skillName(k)}：${m[k]!.map((x) => `${x.label} ${signed(x.value)}`).join('、')}`)
+  return `AI 判定時依你的做法選一個檢定分類（說服、欺瞞、潛行……）。${lines.length ? `選到這些分類時另外有修正：\n${lines.join('\n')}` : '你身上沒有寫在分類上的加成。'}`
+})
 const totals = computed(() => {
   const p = pending.value
   if (!p) return []
@@ -31,6 +37,8 @@ const totals = computed(() => {
   <article v-if="pending" class="pending-card" :class="{ judging: game.judging }">
     <h3>
       <GameIcon name="d20" :size="16" /> {{ actionRules.kinds[pending.kind].name }}<template v-if="pending.targetName">（{{ pending.targetName }}）</template>
+      <span v-if="pending.skill" class="tag skill">{{ skillName(pending.skill) }}檢定</span>
+      <span v-else-if="pending.kind === 'free'" class="tag skill">分類由 AI 判定 <Hint :text="skillHint" /></span>
       <span class="state">{{ game.judging ? 'AI 判定中…' : '等待判定' }}</span>
     </h3>
     <p v-if="pending.text" class="small">「{{ pending.text }}」</p>

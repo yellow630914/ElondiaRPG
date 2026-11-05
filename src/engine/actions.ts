@@ -13,14 +13,14 @@ import { applyUnbind } from './restraints'
 import { applyExplore, withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
-import { checkModifiers } from './perks'
+import { checkModifiers, type CheckCtx } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { clampDegree, computeDegree, DEGREE_NAME, naturalCritOnly } from './checks'
 import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
-  abilities, actionRules, ATTR_IDS, attrName, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
+  abilities, actionRules, ATTR_IDS, attrName, SKILL_IDS, type SkillId, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -91,6 +91,10 @@ export interface ActionPending extends ActionInput {
   /** 各屬性的檢定修正 = mod + 熟練 */
   modifiers: Record<AttrId, number>
   situational: { label: string; value: number }[]
+  /** 這次行動的檢定分類（actions.json 的 skill）；自由行動沒有，由 AI 判定時選 */
+  skill?: SkillId
+  /** 自由行動：選了某個分類時額外的情境修正（特質、身分、裝備……寫在分類上的加值） */
+  skillMods?: Partial<Record<SkillId, { label: string; value: number }[]>>
   outcomes: Partial<Record<Degree, string>>
   targetName?: string
   scene: string
@@ -108,6 +112,8 @@ export interface RelationshipUpdate { id: string; to_player: string }
 
 export interface Judgment {
   attr: AttrId
+  /** 自由行動：AI 選的檢定分類（沒有時不分類） */
+  skill?: SkillId
   dc: number
   rationale?: string
   /** AI 決定的成功程度（骰值只是參考）；沒有給時依骰值與 DC 計算 */
@@ -144,8 +150,26 @@ export function actionTargets(p: Pick<ActionInput, 'target' | 'with'>): string[]
   return [...(p.target ? [p.target] : []), ...(p.with ?? [])]
 }
 
-export function situationalTotal(p: ActionPending): number {
-  return p.situational.reduce((s, x) => s + x.value, 0)
+/** 情境修正；自由行動選了分類時加上那個分類的修正 */
+export function situationalFor(p: ActionPending, skill?: SkillId): { label: string; value: number }[] {
+  return [...p.situational, ...(skill ? p.skillMods?.[skill] ?? [] : [])]
+}
+
+export function situationalTotal(p: ActionPending, skill?: SkillId): number {
+  return situationalFor(p, skill).reduce((s, x) => s + x.value, 0)
+}
+
+/** 自由行動：每個檢定分類多出來的修正（選了這個分類時才算；同一個來源只算比不分類時多的部分） */
+function freeSkillMods(pc: Character, ctx: CheckCtx, base: { label: string; value: number }[]): Partial<Record<SkillId, { label: string; value: number }[]>> {
+  const before = new Map(base.map((x) => [x.label, x.value]))
+  const out: Partial<Record<SkillId, { label: string; value: number }[]>> = {}
+  for (const skill of SKILL_IDS) {
+    const extra = checkModifiers(pc, { ...ctx, skill })
+      .map((x) => ({ label: x.label, value: x.value - (before.get(x.label) ?? 0) }))
+      .filter((x) => x.value !== 0)
+    if (extra.length) out[skill] = extra
+  }
+  return out
 }
 
 export function prepareAction(state: GameState, input: ActionInput): ActionPending {
@@ -169,7 +193,11 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
   const vsTags = (input.target && npcRecord(state, input.target)?.tags) || undefined
-  const situational = [...setup.situational, ...checkModifiers(pc, { context: 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) }), ...lewdModifiers(state, pc, input.kind, vsTags)].filter((x) => x.value !== 0)
+  const ctx = { context: 'action' as const, kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) }
+  const base = checkModifiers(pc, ctx)
+  const situational = [...setup.situational, ...base, ...lewdModifiers(state, pc, input.kind, vsTags)].filter((x) => x.value !== 0)
+  // 自由行動：判定時才知道是哪個分類，先替每個分類算好多出來的修正（同一個來源只算差額）
+  const skillMods = input.kind === 'free' ? freeSkillMods(pc, ctx, base) : undefined
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
   let user: Character | undefined
@@ -196,6 +224,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(attrOf(pc, a)) + proficiency(pc.level)])) as Record<AttrId, number>,
     ...(setup.actor && !pc.isPlayer ? { actor: pc.id } : {}),
     situational,
+    ...(kind.skill ? { skill: kind.skill } : {}),
+    ...(skillMods && Object.keys(skillMods).length ? { skillMods } : {}),
     outcomes: setup.outcomes,
     ...(setup.targetName ? { targetName: setup.targetName } : {}),
     ...(setup.adultScene ? { adultScene: setup.adultScene } : {}),
@@ -261,6 +291,8 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const caps = actionRules.caps
   const adj = actionRules.dc_adjust
   const attr = (ATTR_IDS as string[]).includes(String(r.attr)) ? (r.attr as AttrId) : p.attr
+  // 檢定分類：只有自由行動由 AI 選，其他行動照行動本身的分類
+  const skill = p.kind === 'free' && (SKILL_IDS as string[]).includes(String(r.skill)) ? (r.skill as SkillId) : undefined
   const dcRaw = num(r.dc)
   const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
   const kindDef = actionRules.kinds[p.kind]
@@ -271,7 +303,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const natOnly = naturalCritOnly(state)
   const judged = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree)
     ? clampDegree(r.degree as Degree, p.natural, natOnly)
-    : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p), dc, natOnly)
+    : computeDegree(p.natural, p.natural + p.modifiers[attr] + situationalTotal(p, skill), dc, natOnly)
   const degree: Degree = trivial && judged !== 'critical' ? 'success' : judged
   const hoursRaw = num(r.hours)
   const range = kindDef.hours_range
@@ -492,7 +524,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       }
     }
   }
-  if (joinAsk) judgeJoin(state, p, joinAsk, degree, attr, affinitySeen, effects, adjusted, notes)
+  if (joinAsk) judgeJoin(state, p, joinAsk, degree, attr, skill, affinitySeen, effects, adjusted, notes)
   const updates: RelationshipUpdate[] = []
   for (const u of Array.isArray(r.relationship_updates) ? r.relationship_updates : []) {
     const id = String((u as Record<string, unknown>)?.id ?? '')
@@ -501,6 +533,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   }
   return {
     attr, dc,
+    ...(skill ? { skill } : {}),
     ...(clipText(r.rationale, 200) ? { rationale: clipText(r.rationale, 200) } : {}),
     degree,
     ...(clipText(r.summary, caps.summary_chars) ? { summary: clipText(r.summary, caps.summary_chars) } : {}),
@@ -526,7 +559,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
  * 對方先開口邀請、主角答應（offered）而且親密度到 invite.offered_min_affinity：不比邀請的 DC，沒成也不加冷卻
  */
 function judgeJoin(
-  state: GameState, p: ActionPending, x: Record<string, unknown>, degree: Degree, attr: AttrId,
+  state: GameState, p: ActionPending, x: Record<string, unknown>, degree: Degree, attr: AttrId, skill: SkillId | undefined,
   affinitySeen: Map<string, number>, effects: RewardEffect[], adjusted: string[], notes: string[],
 ) {
   const npc = String(x.npc ?? p.target ?? '')
@@ -557,7 +590,7 @@ function judgeJoin(
       return
     }
     const inv = inviteDc(state, npc)
-    const total = p.natural + p.modifiers[attr] + situationalTotal(p)
+    const total = p.natural + p.modifiers[attr] + situationalTotal(p, skill)
     const d = computeDegree(p.natural, total, inv, naturalCritOnly(state))
     if (d !== 'critical' && d !== 'success') {
       const why = x.offered === true ? `（對方主動提出，但親密度 ${affinity} 不到 ${need}，照邀請的檢定）` : ''
@@ -598,7 +631,9 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const kind = actionRules.kinds[p.kind]
   const attr = judgment?.attr ?? p.attr
   const dc = judgment?.dc ?? p.base_dc
-  const modifier = p.modifiers[attr] + situationalTotal(p)
+  const skill = judgment?.skill ?? p.skill
+  const situational = situationalFor(p, judgment?.skill)
+  const modifier = p.modifiers[attr] + situationalTotal(p, judgment?.skill)
   const total = p.natural + modifier
   // 參考：骰值對 DC 算出的成功程度；實際結果由 AI 決定
   const natOnly = naturalCritOnly(state)
@@ -608,7 +643,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
 
   const report = actionReport(state, p, judgment?.hours ?? p.hours ?? kind.hours)
   const check: CheckInfo = {
-    action: kind.name, attr, base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(p.situational.length ? { situational: p.situational } : {}), total, degree,
+    action: kind.name, attr, ...(skill ? { skill } : {}), base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(situational.length ? { situational } : {}), total, degree,
     ...(judgment?.trivial ? { trivial: true } : {}),
     // 日常小事的骰值只決定過程順不順，不算「和骰值不同」
     ...(degree !== reference && !judgment?.trivial ? { reference_degree: reference } : {}),

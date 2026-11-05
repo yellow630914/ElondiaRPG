@@ -1591,8 +1591,14 @@ export const actionRules = actionsJson as unknown as {
     /** 慾望指標：每項每次 ±這個數 */
     lewd: number
   }
+  /** 檢定分類（docs/ACTIONS.md 第 2 節）：只是分組 */
+  skills: Record<SkillId, { name: string; desc: string }>
+  /** 情境 → 分類 */
+  context_skills: Partial<Record<CheckContext, SkillId>>
   kinds: Record<ActionKind, {
     name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
+    /** 這種行動屬於哪個檢定分類（沒有時不分類；自由行動由 AI 判定時選） */
+    skill?: SkillId
     /** 社交互動：各成功程度的親密度變化 */
     affinity?: Record<Degree, number>
     value_steps?: number[]
@@ -2117,6 +2123,16 @@ export function raceImageName(id: string): string {
   return tags ? `${raceName(id)} (${tags})` : raceName(id)
 }
 
+/** 檢定分類的名字（說服、欺瞞……） */
+export function skillName(id: string | undefined): string {
+  return id ? actionRules.skills[id as SkillId]?.name ?? id : ''
+}
+
+/** 這種行動、這個情境屬於哪個檢定分類（行動優先） */
+export function skillOfAction(kind: ActionKind | undefined, context?: CheckContext): SkillId | undefined {
+  return (kind && actionRules.kinds[kind]?.skill) || (context ? actionRules.context_skills[context] : undefined)
+}
+
 export function attrName(id: AttrId): string {
   return attributeRules.attributes.find((a) => a.id === id)?.name ?? id
 }
@@ -2203,7 +2219,13 @@ export type CheckContext =
   | 'initiative' | 'save'
 
 /** 檢定加值適用的範圍：同一欄位是「或」，不同欄位是「且」；沒寫的欄位不限 */
+/** 檢定分類（actions.json 的 skills） */
+export type SkillId = 'persuade' | 'deceive' | 'intimidate' | 'trade' | 'charm' | 'stealth' | 'sleight' | 'perception' | 'survival' | 'craft' | 'labor' | 'service' | 'escape'
+export const SKILL_IDS: SkillId[] = ['persuade', 'deceive', 'intimidate', 'trade', 'charm', 'stealth', 'sleight', 'perception', 'survival', 'craft', 'labor', 'service', 'escape']
+
 export interface CheckFilter {
+  /** 檢定分類（說服、欺瞞……）：這次檢定的行動或情境屬於其中一類時適用 */
+  skills?: SkillId[]
   attrs?: AttrId[]
   contexts?: CheckContext[]
   kinds?: ActionKind[]

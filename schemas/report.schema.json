@@ -267,6 +267,7 @@
       "properties": {
         "action": { "type": "string" },
         "attr": { "enum": ["str", "dex", "int", "fai", "cha"] },
+        "skill": { "type": "string", "description": "檢定分類（說服、欺瞞……的 id，actions.json 的 skills）：行動本身的分類，或自由行動由 AI 選的" },
         "base_dc": { "type": "integer" },
         "dc": { "type": "integer" },
         "natural": { "type": "integer", "minimum": 1, "maximum": 20 },

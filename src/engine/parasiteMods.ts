@@ -4,7 +4,7 @@
 // 雙面效應（lewd.json 的 parasite_two_face.parasites）跟著每一種寄生物一起編輯（two_face）。
 // 寄生物會引用物品、技能、非戰鬥狀態與特殊任務：整理時給已知的清單（同一個包裡新增的也算），不存在的拿掉。
 
-import { ATTR_IDS, abilities, itemDef, lewdRules, perkRules, stories, type AttrId, type CheckContext, type CheckFilter } from './data'
+import { ATTR_IDS, SKILL_IDS, abilities, itemDef, lewdRules, perkRules, stories, type AttrId, type CheckContext, type CheckFilter } from './data'
 import { SLOTS } from './gear'
 import { parasiteRules, type ParasiteDef } from './parasites'
 import { isTattooPlace } from './tattoos'
@@ -76,11 +76,12 @@ export function isCustomParasiteId(id: string): boolean {
 function checkFilter(v: unknown): CheckFilter {
   const o = v && typeof v === 'object' ? v as Record<string, unknown> : {}
   const list = <T extends string>(x: unknown, allowed?: readonly T[]) => [...new Set((Array.isArray(x) ? x : []).filter((s): s is T => typeof s === 'string' && s.length <= 40 && (!allowed || allowed.includes(s as T))))].slice(0, 8)
+  const skills = list(o.skills, SKILL_IDS)
   const attrs = list(o.attrs, ATTR_IDS)
   const contexts = list(o.contexts, CONTEXTS)
   const kinds = list(o.kinds)
   const tags = list(o.vs_tags)
-  return { ...(attrs.length ? { attrs } : {}), ...(contexts.length ? { contexts } : {}), ...(kinds.length ? { kinds: kinds as CheckFilter['kinds'] } : {}), ...(tags.length ? { vs_tags: tags } : {}) }
+  return { ...(skills.length ? { skills } : {}), ...(attrs.length ? { attrs } : {}), ...(contexts.length ? { contexts } : {}), ...(kinds.length ? { kinds: kinds as CheckFilter['kinds'] } : {}), ...(tags.length ? { vs_tags: tags } : {}) }
 }
 
 /** 各階段一個陣列，補齊到階段數、多的拿掉 */

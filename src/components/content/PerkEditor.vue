@@ -72,6 +72,7 @@ const usage = computed(() => {
 
 // ---- 選項 ----
 const contexts = Object.entries(perkRules.contexts)
+const skills = Object.entries(actionRules.skills).map(([k, v]) => [k, v.name, v.desc] as const)
 const kinds = Object.entries(actionRules.kinds).map(([k, v]) => [k, v.name] as const)
 const tags = Object.entries(npcTags.tags).map(([k, v]) => [k, v.name] as const)
 const dmgTypes = damageTypes.types.map((t) => [t.id, t.name] as const)
@@ -268,6 +269,9 @@ function remove() {
         <template v-if="'check' in e">
           <label class="small">加值 <input v-model.number="e.bonus" type="number" :min="limits.check_bonus[0]" :max="limits.check_bonus[1]" class="num" /></label>
           <p class="small muted">勾選篩選條件：同一欄是「或」，不同欄是「且」，都不勾就是所有檢定。</p>
+          <details class="small" open><summary>檢定分類（{{ e.check.skills?.length ?? 0 }}）</summary>
+            <label v-for="[k, n, d] in skills" :key="k" class="check" :title="d"><input type="checkbox" :checked="e.check.skills?.includes(k as never)" @change="toggleFilter(e.check, 'skills', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
+          </details>
           <details class="small"><summary>屬性（{{ e.check.attrs?.length ?? 0 }}）</summary>
             <label v-for="a in ATTR_IDS" :key="a" class="check"><input type="checkbox" :checked="e.check.attrs?.includes(a)" @change="toggleFilter(e.check, 'attrs', a, ($event.target as HTMLInputElement).checked)" /> {{ attrName(a as AttrId) }}</label>
           </details>

@@ -210,6 +210,7 @@ function setEnchantMod(k: string, v: number) {
 const MOD_NAME: Record<string, string> = { hit: '命中', damage: '傷害', evade: '迴避', dr: '減傷', save: '豁免', crit: '幸運一擊', ap_regen: '行動點回復' }
 // ---- 獨特物品的檢定加值（一種，可以疊加；不能打造、購買，只能從特殊事件或寶箱得到） ----
 const uniqueContexts = Object.entries(perkRules.contexts)
+const uniqueSkills = Object.entries(actionRules.skills).map(([k, v]) => [k, v.name] as const)
 const uniqueKinds = Object.entries(actionRules.kinds).map(([k, v]) => [k, v.name] as const)
 const uniqueTags = Object.entries(npcTags.tags).map(([k, v]) => [k, v.name] as const)
 function setUnique(on: boolean) {
@@ -217,7 +218,7 @@ function setUnique(on: boolean) {
   if (on) draft.value.gear.unique = { check: { contexts: ['lock'] }, bonus: 1 }
   else delete draft.value.gear.unique
 }
-function toggleUniqueFilter(key: 'attrs' | 'contexts' | 'kinds' | 'vs_tags', value: string, on: boolean) {
+function toggleUniqueFilter(key: 'skills' | 'attrs' | 'contexts' | 'kinds' | 'vs_tags', value: string, on: boolean) {
   const u = draft.value.gear?.unique
   if (!u) return
   const set = new Set<string>((u.check[key] as string[] | undefined) ?? [])
@@ -716,6 +717,9 @@ function setFuel(v: string) {
         <div v-if="draft.gear.unique" class="unique small">
           <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="1" max="3" class="num" /></label>
           <span class="muted">勾選篩選條件：同一欄是「或」，不同欄是「且」，都不勾就是所有檢定。</span>
+          <details open><summary>檢定分類（{{ draft.gear.unique.check.skills?.length ?? 0 }}）</summary>
+            <label v-for="[k, n] in uniqueSkills" :key="k" class="check"><input type="checkbox" :checked="draft.gear.unique.check.skills?.includes(k as never)" @change="toggleUniqueFilter('skills', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
+          </details>
           <details><summary>屬性（{{ draft.gear.unique.check.attrs?.length ?? 0 }}）</summary>
             <label v-for="a in ATTR_IDS" :key="a" class="check"><input type="checkbox" :checked="draft.gear.unique.check.attrs?.includes(a)" @change="toggleUniqueFilter('attrs', a, ($event.target as HTMLInputElement).checked)" /> {{ attrName(a) }}</label>
           </details>
