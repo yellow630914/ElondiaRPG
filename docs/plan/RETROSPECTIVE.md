@@ -172,7 +172,7 @@ commit 標題有「修、fix、review、實測、白箱、revert」或問題編�
 
 - 測試只在推 `v*` 標籤時由 `release.yml` 跑：v0.3.0 發布前才發現型別錯誤讓建置失敗（4cee15b），另外修過測試本身的型別（62d19ae）。
 - 測試的斷言依賴亂數種子產生的數量（57910e2）。
-- 偶發失敗：形象圖同一毫秒的兩版互相蓋掉（B14，待確認）。
+- 偶發失敗：形象圖同一毫秒的兩版互相蓋掉（B14，2026-11-05 修好）。
 - 模擬器本身有錯（e30bcca）；世界檢查的勝率雜訊（W22）。
 
 **為了不再發生而加的測試**：`lustFixes.spec`、`lewdFixes2.spec`、`contentCache.spec`、`aiJoin.spec`、`storyEdges.spec`、`campRest.spec`。
