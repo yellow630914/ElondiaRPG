@@ -20,6 +20,7 @@ import { sanitizeItem } from '@/engine/mods'
 import { itemDef } from '@/engine/data'
 import namedNpcs from '../../data/world/npcs.json'
 import mapsData from '../../data/world/maps.json'
+import travelEventsData from '../../data/rules/travel_events.json'
 
 // 炎華之地 P1（docs/plan/roadmap/EAST_CONTINENT_PLAN.md）：兩個種族、炎華南域的四座聚落、航線與野外
 describe('炎華之地', () => {
@@ -388,6 +389,28 @@ describe('炎華之地', () => {
     expect(stageFor('npc_td_tieya', ['nspol_war_yanye'])!.fixed!.area).toBe('longan/palace')
     expect(stageFor('npc_yh_yue_zhenshan', ['nspol_war_tidan'])!.fixed!.area).toBe('jinzhang/beiyuan')
     expect(stageFor('npc_yh_wen_shiheng', ['yhpol_republic'])!.location).toBe('quanzhou')
+  })
+
+  it('gives 炎華北原 its own travel, town and dungeon events (P8g)', () => {
+    type Tpl = { id: string; scope?: string; regions?: string[]; locations?: string[]; cells?: string[]; dungeons?: string[]; requires?: { pc_races?: string[] } }
+    const td = (travelEventsData as { templates: Tpl[] }).templates.filter((e) => e.id.startsWith('tde_'))
+    const scopeOf = (e: Tpl) => e.scope ?? 'travel'
+    expect(td.filter((e) => scopeOf(e) === 'travel').length).toBe(7)
+    expect(td.filter((e) => scopeOf(e) === 'town').length).toBe(8)
+    expect(td.filter((e) => scopeOf(e) === 'dungeon').length).toBe(4)
+    for (const e of td.filter((x) => scopeOf(x) === 'travel')) expect(e.regions, e.id).toEqual(['yanhua_north'])
+    expect(td.find((e) => e.id === 'tde_young_rider')!.requires!.pc_races).toEqual(['centaur'])
+    for (const e of td.filter((x) => scopeOf(x) === 'dungeon')) expect(['mingdi_field', 'whitewolf_cave']).toContain(e.dungeons![0])
+    // 城鎮事件的設施在那座聚落的地圖上真的有
+    const KIND: Record<string, string> = { I: 'inn', G: 'guild', T: 'tavern', S: 'shop', C: 'temple', E: 'gate', B: 'brothel', F: 'smithy', D: 'tailor', J: 'jeweler', M: 'magic', N: 'informant', H: 'manor', K: 'tattoo', X: 'carver' }
+    const maps = mapsData.maps as Record<string, { blocks: { grid: string[] }[] }>
+    for (const e of td.filter((x) => scopeOf(x) === 'town')) {
+      for (const loc of e.locations!) {
+        const kinds = new Set(maps[loc]!.blocks.flatMap((b) => [...b.grid.join('')]).map((ch) => KIND[ch]).filter(Boolean))
+        expect(e.cells!.some((c) => kinds.has(c)), `${e.id} @ ${loc}`).toBe(true)
+        for (const c of e.cells!) expect(kinds.has(c), `${e.id} @ ${loc}：${c}`).toBe(true)
+      }
+    }
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {
