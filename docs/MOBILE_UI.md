@@ -1,7 +1,7 @@
 # 手機版畫面
 
 > 上層：[文件地圖](README.md)。程式：`src/components/mobile/`（`mobile.ts` 判斷寬度與返回鍵、`MobileGame.vue` 冒險頁、`BottomSheet.vue` 半屏面板、`SwipeTabs.vue` 滑動分頁）、`App.vue`、`AppDialog.vue`、`CombatView.vue`、`ContentView.vue`。
-> 樣稿：`docs/mockups/mobile.html`（探索）、`docs/mockups/mobile-combat.html`（戰鬥）。還沒做的部分見 [ROADMAP](plan/ROADMAP.md) R10。
+> 樣稿：`docs/mockups/mobile.html`（探索）、`docs/mockups/mobile-combat.html`（戰鬥）。已知的問題見 [BUGS](plan/BUGS.md) B23。
 
 螢幕寬度 **720px 以下**（手機直拿）時換成這套版面；電腦與平板照舊。面板元件和電腦版共用，只換外框與排列。不支援手機橫拿。
 

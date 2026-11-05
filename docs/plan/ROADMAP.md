@@ -8,8 +8,7 @@
 
 | # | 項目 | 現況 | 細節 |
 |---|---|---|---|
-| R1（原 D1） | **數值平衡**：生命值、行動點、傷害、經驗值、報酬，以及慾望戰鬥的係數 | 都是起始值，要實際遊玩後調整（高階委託的問題見 [LOGIC_ISSUES](LOGIC_ISSUES.md) L1；慾望戰鬥要調的數值見 R8 的計畫第 3 節；玩家反映敏捷明顯強過力量，[issue #62](https://github.com/yellow630914/ElondiaRPG/issues/62) 第 8 條，工藝的部分在 R21 處理） | [GAME_DESIGN](../GAME_DESIGN.md)、[worldgen/balance/](../../worldgen/balance/README.md) |
-| R8（原 I14） | **慾望戰鬥的收尾**（成人向）：神殿的淨化、園區規則的編輯器、新園區、防具的淫器合煉 | S0～S9 已在 v0.4.0 發布；S10（流派的老師與秘法書、寄生類的雙面效應、聲望交叉與「放蕩的貴族」做成稱號）已完成（2026-11-02）；剩下的還沒開始 | [roadmap/LUST_COMBAT_PLAN](roadmap/LUST_COMBAT_PLAN.md) |
+| R1（原 D1） | **數值平衡**：生命值、行動點、傷害、經驗值、報酬，以及慾望戰鬥的係數 | 都是起始值，要實際遊玩後調整（高階委託的問題見 [LOGIC_ISSUES](LOGIC_ISSUES.md) L1；慾望戰鬥要調的數值見點子庫 [I24](ideas/dev-discussion.md#i24) 的「要實際遊玩後再調的數值」；玩家反映敏捷明顯強過力量，[issue #62](https://github.com/yellow630914/ElondiaRPG/issues/62) 第 8 條，工藝的部分在 R21 處理） | [GAME_DESIGN](../GAME_DESIGN.md)、[worldgen/balance/](../../worldgen/balance/README.md) |
 | R9 | **角色線：白百合巡禮（奧菈莉婭＆格溫德琳）、全城跑最快的精靈（琥珀）**：陰柔、中性形象的固定角色還沒有角色線的補上；各四個任務（一～三非成人向，四成人向） | 規劃完成（2026-10-30），還沒做成資料；有三個待決定（計畫第 5 節） | [roadmap/CHARACTER_LINES_PLAN](roadmap/CHARACTER_LINES_PLAN.md) |
 | R12 | **高等地下城（Lv.13～20）**：歷史裂縫、歷史迴廊、禁果庭園（成人向）、歡愉秘宮（成人向） | 做好了（2026-10-31）：四座地下城、兩條故事線、第 6、7 級材料、一般與專屬底材、補齊傳說獨特裝備；剩下新稀有度與高階材料的寶箱、委託要不要做（計畫第 4 節） | [roadmap/HIGH_DUNGEONS_PLAN](roadmap/HIGH_DUNGEONS_PLAN.md) |
 | R13 | **特殊任務與事件的時段：套用到內建內容**：夜裡的場景只在夜裡觸發、夜裡的事件結束後推到隔天早上（不會在大白天看到月亮） | 功能與內建內容都完成（2026-10-31：147 個任務點的時段、226 個結果的時間、事件 27 個結果；「三天後取件」這類改用新條件「幾天之後」）；剩下事件本身的時段（計畫第 8 節） | [roadmap/STORY_TIME_PLAN](roadmap/STORY_TIME_PLAN.md) |
@@ -21,7 +20,6 @@
 
 | # | 項目 | 現況 | 細節 |
 |---|---|---|---|
-| R10 | **手機版畫面**：實機測試、已知的小問題 | M1～M4 已完成並合併（2026-10-30，規則見 [MOBILE_UI](../MOBILE_UI.md)）；等實機測試 | [roadmap/MOBILE_UI_PLAN](roadmap/MOBILE_UI_PLAN.md) |
 | R11 | **世界編輯器**：局部匯入／匯出（有關聯就一起帶）、特殊任務流程圖、AI 特殊任務生成器 | E5 介面整理、E1 關聯、E2 局部匯入與匯出、E3 流程圖、E4 特殊任務生成器完成（剩小項目） | [roadmap/WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md) |
 | R17 | **小改進**：「提示詞」頁籤改名「提示詞與正則」並加入正文正則（可匯入 SillyTavern 的 regex，轉成自己的格式）、戰鬥過回合提醒、首頁版本號、存檔規則「大成功、大失敗只看骰面」、設定匯出與匯入、遊戲內的雇傭與犯罪規則說明 | 規劃完成（2026-11-05，玩家回饋與 issue #62），還沒開始 | [roadmap/QOL_PLAN](roadmap/QOL_PLAN.md) |
 | R18 | **工藝介面**：打造裝備改成「部位 → 類型 → 底材 → 材料」的連動選單；結果表寫出各結果的預計數值 | 規劃完成（2026-11-05），還沒開始 | [roadmap/CRAFTING_PLAN](roadmap/CRAFTING_PLAN.md) 第 2 節 |

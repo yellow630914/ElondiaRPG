@@ -189,7 +189,7 @@ flowchart TD
 | [plan/LOGIC_ISSUES](plan/LOGIC_ISSUES.md) | 業務邏輯問題 | — |
 | [plan/ROADMAP](plan/ROADMAP.md) | 未來計畫 | — |
 | [plan/RETROSPECTIVE](plan/RETROSPECTIVE.md) | 開發回顧：問題盤點 | — |
-| [plan/roadmap/](plan/roadmap/COMPLETED.md) | ROADMAP 項目的細節計畫（R8 慾望戰鬥的收尾、R9 角色線、R10 手機版、R11 世界編輯器）與已完成的紀錄 | — |
+| [plan/roadmap/](plan/roadmap/COMPLETED.md) | ROADMAP 項目的細節計畫（R9 角色線、R11 世界編輯器、R17～R21 玩家回饋……）與已完成的紀錄 | — |
 | [plan/ideas/](plan/ideas/README.md) | 點子庫（依來源分開） | — |
 
 沒有標資料夾的程式檔都在 `src/engine/`。

@@ -1,7 +1,7 @@
 # 慾望指標、流派與雙面效應（成人向）
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 8.5 節（慾望戰鬥）、[ITEMS](ITEMS.md)（服裝的底材）、[COMPANIONS](COMPANIONS.md)（奴隸契約）、[WORK](WORK.md)（娼館）。被依賴：[PERKS](PERKS.md)（流派特質）、[ITEMS](ITEMS.md)（拘束具與鎖）、[EFFECTS](EFFECTS.md)（`lewd` 效果）、[STORY_QUESTS](STORY_QUESTS.md)（`stats` 條件）、[ACTIONS](ACTIONS.md)（情境修正、AI 判定的效果）、[TRAVEL_EVENTS](TRAVEL_EVENTS.md) 第 6 節（城鎮事件）、[PROMPTS](PROMPTS.md)（給 AI 的資料）。
-> 資料：`data/rules/lewd.json`（分段、預設、成長量、服裝的預設、流派、雙面效應、鎖、主人工具人）；底材的曝露度與拘束在 `gear.json` 的 `bases`（`exposure`、`bind`、`bind_kind`）；流派特質在 `perks.json`（`school`、`lust`）。程式：`src/engine/lewd.ts`（指標）、`src/engine/schools.ts`（流派、雙面效應、鎖）、`src/engine/masterTool.ts`（主人工具人）。計畫：[慾望戰鬥實作計畫](plan/roadmap/LUST_COMBAT_PLAN.md)。
+> 資料：`data/rules/lewd.json`（分段、預設、成長量、服裝的預設、流派、雙面效應、鎖、主人工具人）；底材的曝露度與拘束在 `gear.json` 的 `bases`（`exposure`、`bind`、`bind_kind`）；流派特質在 `perks.json`（`school`、`lust`）。程式：`src/engine/lewd.ts`（指標）、`src/engine/schools.ts`（流派、雙面效應、鎖）、`src/engine/masterTool.ts`（主人工具人）。還沒做的構想：[點子庫 I24](plan/ideas/dev-discussion.md#i24)。
 
 每個角色有四項長期指標，加上依地區記的曝露名聲，合計五項。它們隨經歷慢慢改變，影響慾望戰鬥與 AI 的描寫。角色詳情的「屬性與戰鬥」頁最下面顯示目前的值、分段與裝備的加減。
 
