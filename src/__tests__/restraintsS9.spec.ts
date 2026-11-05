@@ -88,9 +88,9 @@ describe('S9-2 拘束具', () => {
   })
 
   it('魅氣濃的城市，裁縫店多了全罩皮頭套；普通城鎮沒有。主人會強制戴上、又有商店標籤的（口球）照樣在店裡賣', () => {
-    /** 換幾個種子（每天上架的貨是隨機的），有沒有哪一次賣這件 */
+    /** 換幾個種子（每天上架的貨是隨機的，口球大約 13%），有沒有哪一次賣這件 */
     const anySells = (birthplace: string, name: string) => {
-      for (let seed = 1; seed <= 20; seed++) {
+      for (let seed = 1; seed <= 60; seed++) {
         const s = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed, birthplace })
         enterLocation(s)
         if (sells(s, 'tailor', name)) return true
