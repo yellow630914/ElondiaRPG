@@ -109,7 +109,7 @@ watch(() => `${stateKey(game.state)}|${areaInfo.value?.key ?? ''}`, (now, old) =
 type Tab = 'adventure' | 'prompts' | 'content'
 const TABS: { id: Tab; label: string; icon: IconName }[] = [
   { id: 'adventure', label: '冒險', icon: 'map' },
-  { id: 'prompts', label: '提示詞', icon: 'script' },
+  { id: 'prompts', label: '提示詞與正則', icon: 'script' },
   { id: 'content', label: '世界', icon: 'world' },
 ]
 const tab = ref<Tab>('adventure')

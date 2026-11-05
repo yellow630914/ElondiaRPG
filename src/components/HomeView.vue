@@ -49,7 +49,7 @@ const place = (id: string) => {
       </button>
       <button class="big" @click="emit('prompts')">
         <GameIcon name="script" :size="22" />
-        <span>提示詞管理<span class="detail">目前：{{ prompts.activeName }}（共 {{ prompts.sets.length }} 組）</span></span>
+        <span>提示詞與正則<span class="detail">目前：{{ prompts.activeName }}（共 {{ prompts.sets.length }} 組）</span></span>
       </button>
       <button class="big" @click="emit('settings')"><GameIcon name="settings" :size="22" /><span>設定</span></button>
     </div>

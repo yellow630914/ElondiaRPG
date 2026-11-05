@@ -9,15 +9,17 @@ import { useGame } from '@/stores/game'
 import { usePrompts } from '@/stores/prompts'
 import { useSettings } from '@/stores/settings'
 import PromptEntryList from './PromptEntryList.vue'
+import RegexPanel from './RegexPanel.vue'
 import { dateStamp, download } from './download'
 import Hint from './ui/Hint.vue'
 
-type Sub = 'rules' | 'styles' | 'lore' | 'custom' | 'data' | 'preview'
+type Sub = 'rules' | 'styles' | 'lore' | 'custom' | 'regex' | 'data' | 'preview'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'rules', label: '📜 敘事規則' },
   { id: 'styles', label: '🎨 文風' },
   { id: 'lore', label: '📚 世界書' },
   { id: 'custom', label: '🧩 其他提示詞' },
+  { id: 'regex', label: '🔣 正文正則' },
   { id: 'data', label: '🔍 注入資料' },
   { id: 'preview', label: '👁️ 預覽' },
 ]
@@ -339,6 +341,12 @@ function resetAll() {
         前段：和規則、文風一起常駐，可以被快取。後段：放在每次請求的最後、「本次要求」之前，AI 比較不容易忘記，但每次都要重新計費。
       </p>
       <PromptEntryList list="custom" />
+    </section>
+
+    <!-- 正文正則 -->
+    <section v-else-if="sub === 'regex'" class="panel">
+      <h2>🔣 正文正則</h2>
+      <RegexPanel />
     </section>
 
     <!-- 世界書 -->

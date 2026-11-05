@@ -130,7 +130,6 @@ export const GROUPS = [
     { page: '特殊任務時段計畫', src: 'docs/plan/roadmap/STORY_TIME_PLAN.md', desc: '內建特殊任務與事件的時段盤點與套用（R13）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
-    { page: '小改進計畫', src: 'docs/plan/roadmap/QOL_PLAN.md', desc: '提示詞與正則：正文正則、匯入 SillyTavern 的 regex（R17）' },
     { page: '工藝計畫', src: 'docs/plan/roadmap/CRAFTING_PLAN.md', desc: '工藝介面、技能門檻、學費、圖紙與檢定（R18、R21）' },
     { page: '貿易計畫', src: 'docs/plan/roadmap/TRADE_PLAN.md', desc: '購物車、城鎮標籤、動態狀態與物價（R19）' },
     { page: '檢定與特質計畫', src: 'docs/plan/roadmap/CHECKS_PERKS_PLAN.md', desc: '檢定分類、特質整併、身分標籤、創角版面（R20）' },

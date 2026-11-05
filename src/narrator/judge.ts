@@ -45,8 +45,12 @@ import type { PromptEntry } from './promptConfig'
 import { genderSwapNote } from '@/engine/genderSwap'
 import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
 
-/** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
+/**
+ * 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。
+ * 自訂破限預設會讓模型先寫 <think…>…</think…> 思考區塊（裡面可能有大括號）：先拿掉
+ */
 export function extractJson(text: string): unknown {
+  text = text.replace(/<(think[\w-]*)\b[^>]*>[\s\S]*?<\/\1\s*>/gi, '')
   const fenced = /```(?:json)?\s*([\s\S]*?)```/.exec(text)
   const body = fenced ? fenced[1]! : text
   const start = body.indexOf('{')

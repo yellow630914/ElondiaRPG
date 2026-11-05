@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 提示詞與正則（R17 結案）
+
+- 起因：玩家用自訂破限預設（「貓神」）時，模型在正文寫出 `<think_nya>…</think_nya>`，原樣顯示在冒險日誌（Discord，2026-11-05）。
+- 頁籤「提示詞」改名「提示詞與正則」，加「🔣 正文正則」（`narrator/regex.ts`、`RegexPanel.vue`）：規則跟著提示詞組存（`PromptConfig.regex`），內建「刪掉思考區塊」；編譯一次快取、串流中節流只改顯示、收完整段套用一次並存下處理過的文字；`extractJson` 解析前先拿掉思考區塊。
+- 匯入 SillyTavern 的 regex 腳本：轉成自己的格式（只收 AI 輸出、`{{match}}` → `$&`、`trimStrings` 變刪除規則），略過與拿掉的設定都列出來。
+- R17 的其他項目（版本號、骰面判定、回合提示、設定匯出、規則說明）見下面同一天的紀錄；`roadmap/QOL_PLAN.md` 刪掉。規則寫在 [PROMPTS](../../PROMPTS.md) 6.1 節，測試在 `regex.spec.ts`。
+
 ### 2026-11-05 設定的匯出與匯入、遊戲內規則說明（R17 的 Q-6、Q-7）
 
 - 設定的匯出與匯入（issue #62 第 2 條）：`stores/settingsFile.ts`、`SettingsFilePanel.vue`（設定頁的「存檔」改名「存檔與設定檔」）。原樣搬 `elondia.settings`、`elondia.image`、`elondia.promptSets`、`elondia.characters`；`apiKey` 預設清空，匯入時空的金鑰沿用原本的；匯入後重新整理頁面。規則寫在 [SAVES](../../SAVES.md) 第 8 節，測試在 `settingsFile.spec.ts`。

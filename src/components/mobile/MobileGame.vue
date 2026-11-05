@@ -95,7 +95,7 @@ const moreItems = computed<MoreItem[]>(() => [
   { icon: 'load', label: '快讀', open: 'quickload' },
   { icon: 'settings', label: '設定', open: 'settings' },
   { icon: 'globe', label: settings.uiLanguage === 'zh-Hans' ? '繁體' : '简体', run: () => { settings.uiLanguage = settings.uiLanguage === 'zh-Hans' ? 'zh-Hant' : 'zh-Hans' } },
-  { icon: 'script', label: '提示詞', open: 'prompts' },
+  { icon: 'script', label: '提示詞與正則', open: 'prompts' },
   { icon: 'world', label: '世界', open: 'content' },
   { icon: 'home', label: '首頁', open: 'home' },
 ])
