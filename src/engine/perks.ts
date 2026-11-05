@@ -138,10 +138,17 @@ export function perkCombat(c: PerkHolder): { mods: Mods; resist: AffinityMap; of
 
 // ---- 強度：AI 設計的特質不能比提供的強太多 ----
 
-/** 檢定加值適用的範圍有多廣（全部檢定 4；一個屬性 1.5；一個分類 1；一種情境 0.75；一種行動或標籤 0.5；不同欄位取最窄的） */
+/** 一個檢定分類有多廣：照它涵蓋的行動（每種 0.5）與情境（每種 0.75）加總，夾在 1～2 */
+function skillBreadth(id: SkillId): number {
+  const kinds = Object.values(actionRules.kinds).filter((k) => k.skill === id).length
+  const contexts = Object.values(actionRules.context_skills).filter((x) => x === id).length
+  return Math.max(1, Math.min(2, kinds * 0.5 + contexts * 0.75))
+}
+
+/** 檢定加值適用的範圍有多廣（全部檢定 4；一個屬性 1.5；一個分類 1～2；一種情境 0.75；一種行動或標籤 0.5；不同欄位取最窄的） */
 function breadth(f: CheckFilter): number {
   const parts = [
-    f.skills?.length ? f.skills.length * 1 : undefined,
+    f.skills?.length ? Math.min(4, f.skills.reduce((s, x) => s + skillBreadth(x), 0)) : undefined,
     f.attrs?.length ? f.attrs.length * 1.5 : undefined,
     f.contexts?.length ? f.contexts.length * 0.75 : undefined,
     f.kinds?.length ? f.kinds.length * 0.5 : undefined,
