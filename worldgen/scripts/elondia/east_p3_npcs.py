@@ -255,6 +255,9 @@ POLITICS = {
          'background': '立憲之後的女帝，和「五席」共治大燁：皇權寫在憲章第一條，限制皇權的寫在第二條到第三十條。她說這樣比較累，可是睡得比較安心。'},
     ],
     'npc_yh_wen_shiheng': [
+        # 共和：出逃了，但沒有離開炎華之地——躲在瑔州港的蕃坊碼頭等船，找得到
+        {'requires': {'flags': ['yhpol_republic']}, 'location': 'quanzhou', 'fixed': {'area': 'quanzhou/fanfang', 'x': 3, 'y': 3},
+         'background': '出逃的前宰相。公議會的通緝告示貼滿了瑔州港的碼頭，他卻換了一身商人的衣服，躲在蕃坊碼頭一間香料貨倉的二樓等船出海——等了半年，船一直沒來。陸青禾知道他在哪裡，沒有派人去抓：「讓他看著共和也好。」'},
         {'requires': {'flags': ['yhpol_monarchy']}, 'location': 'longan', 'haunts': [{'location': 'longan', 'zone': 'noble', 'weight': 1}],
          'background': '罷相之後閉門思過的前宰相。溫家的門前冷落了，他每天在書房裡抄經，抄的都是開國那一年的祭文。'},
         {'requires': {'flags': ['yhpol_constitution']}, 'location': 'longan', 'haunts': [{'location': 'longan', 'zone': 'palace', 'weight': 1}, {'location': 'longan', 'zone': 'noble', 'weight': 0.8}],
@@ -292,10 +295,16 @@ POLITICS = {
 for _n in NPCS:
     if _n['id'] in POLITICS:
         _n['stages'] = POLITICS[_n['id']] + _n.get('stages', [])
-# 共和之後宰相出逃：不再出現
+# 政治線下半「南北交會」（east_p8d.py）：媞丹贏了鷹河之戰時，禁軍統帥被俘，關在金帳王庭北院的戰俘營
+_SOUTH_NORTH = {
+    'npc_yh_yue_zhenshan': [
+        {'requires': {'flags': ['nspol_war_tidan']}, 'location': 'jinzhang', 'fixed': {'area': 'jinzhang/beiyuan', 'x': 1, 'y': 1},
+         'background': '鷹河之戰兵敗被俘的大燁禁軍統帥，關在金帳王庭北院的戰俘營。媞丹沒有殺他：天可汗說，敬重對手是草原的規矩，等龍安府拿歲幣來贖。他每天在柵欄後面練拳，看守的怯薛偷偷跟著學。'},
+    ],
+}
 for _n in NPCS:
-    if _n['id'] == 'npc_yh_wen_shiheng':
-        _n['requires'] = {'flags_none': ['yhpol_republic']}
+    if _n['id'] in _SOUTH_NORTH:
+        _n['stages'] = _SOUTH_NORTH[_n['id']] + _n.get('stages', [])
 
 # 特殊任務用到的人（開頭、任務點、友方、同行）不能被偷襲（builtinStories.spec）：從 stories.json 找出來
 def _story_npcs():

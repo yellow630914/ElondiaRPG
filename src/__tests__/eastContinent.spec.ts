@@ -19,6 +19,7 @@ import { shopState } from '@/engine/trade'
 import { sanitizeItem } from '@/engine/mods'
 import { itemDef } from '@/engine/data'
 import namedNpcs from '../../data/world/npcs.json'
+import mapsData from '../../data/world/maps.json'
 
 // 炎華之地 P1（docs/plan/roadmap/EAST_CONTINENT_PLAN.md）：兩個種族、炎華南域的四座聚落、航線與野外
 describe('炎華之地', () => {
@@ -361,6 +362,32 @@ describe('炎華之地', () => {
     for (const p of ['tdur_', 'tdsr_']) expect(stories.filter((s) => s.id.startsWith(p)).map((s) => s.tags?.includes('adult')), p).toEqual([true, true, true])
     expect(by('tdg_golden_three').start.requires!.flags).toEqual(['tdcu_x_done', 'tdcc_x_done', 'tdcq_x_done'])
     expect(by('tdg_golden_three').summary.startsWith('內容警示')).toBe(true)
+  })
+
+  it('keeps every eastern NPC findable after the political endings, kept under guard instead of killed', () => {
+    type Stage = { requires: { flags?: string[]; flags_any?: string[] }; location: string; fixed?: { area: string; x: number; y: number } }
+    type Def = { id: string; name: string; requires?: { flags_none?: string[] }; stages?: Stage[] }
+    const east = (namedNpcs as { npcs: Def[] }).npcs.filter((n) => /^npc_(yh|td)_/.test(n.id))
+    // 沒有人因為結局消失（以前共和的宰相出逃後就不見了，現在躲在瑔州港）
+    for (const n of east) expect(n.requires?.flags_none ?? [], n.id).toEqual([])
+    // 固定位置都站在地圖的空地上（城鎮的區塊；特殊地圖照它自己的格子）
+    const grids = mapsData.maps as Record<string, { blocks: { id: string; grid: string[] }[] }>
+    for (const n of east) {
+      for (const st of n.stages ?? []) {
+        if (!st.fixed) continue
+        const [loc, block] = st.fixed.area.split('/')
+        const grid = loc === 'sm' ? specialMaps[block!]!.grid! : grids[loc!]!.blocks.find((b) => b.id === block)!.grid
+        expect(grid[st.fixed.y]![st.fixed.x], `${n.id} ${st.fixed.area}`).toBe('.')
+      }
+    }
+    // 南北交會的每一個結局：天可汗、鐵牙、蘇時雍都有下落；輸的一方被軟禁或關起來
+    const stageFor = (id: string, flags: string[]) => east.find((n) => n.id === id)!.stages!.find((st) =>
+      (st.requires.flags ?? []).every((f) => flags.includes(f)) && (!st.requires.flags_any || st.requires.flags_any.some((f) => flags.includes(f))))
+    const endings = [['nspol_alliance', 'tdpol_south'], ['nspol_war', 'nspol_war_yanye', 'tdpol_khanate'], ['nspol_war', 'nspol_war_tidan', 'tdpol_khanate'], ['nspol_sea', 'tdpol_haidong']]
+    for (const flags of endings) for (const id of ['npc_td_ulantuya', 'npc_td_tieya', 'npc_td_su_shiyong']) expect(stageFor(id, flags), `${id} ${flags}`).toBeTruthy()
+    expect(stageFor('npc_td_tieya', ['nspol_war_yanye'])!.fixed!.area).toBe('longan/palace')
+    expect(stageFor('npc_yh_yue_zhenshan', ['nspol_war_tidan'])!.fixed!.area).toBe('jinzhang/beiyuan')
+    expect(stageFor('npc_yh_wen_shiheng', ['yhpol_republic'])!.location).toBe('quanzhou')
   })
 
   it('populates 青丘屯 mostly with 靈狐族', () => {

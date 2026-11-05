@@ -74,7 +74,8 @@ describe('pickLore with story flags', () => {
 
 describe('built-in political variants of 炎華之地', () => {
   const items = loreItems(book)
-  const withVariants = items.filter((it) => it.variants?.length)
+  // 大燁的政體（east_p4c_lore.py）：北原的條目另外看媞丹的走向與南北交會（east_p8_lore.py），在下面測
+  const withVariants = items.filter((it) => it.variants?.some((v) => v.flags.some((f) => f.startsWith('yhpol_'))))
 
   it('covers the three endings on the 炎華 entries', () => {
     expect(withVariants.map((it) => it.comment).sort()).toEqual(['人物-炎华南域', '区域-炎华南域', '区域地理与势力划分概述', '埃隆迪亚大陆'].sort())
@@ -160,5 +161,33 @@ describe('worldbook export and import keep the variants', () => {
       null,
     ] } } } } })
     expect(e!.variants).toEqual([{ flags: ['x'], replace: [['內容', '新內容']] }])
+  })
+})
+
+describe('built-in variants of 炎華北原 (媞丹的走向 and 南北交會)', () => {
+  const items = loreItems(book)
+  const region = items.find((it) => it.comment === '区域-炎华北原')!
+  const people = items.find((it) => it.comment === '人物-炎华北原')!
+
+  it('lists the reachable combinations before the early endings alone', () => {
+    for (const it of [region, people]) {
+      const keys = it.variants!.map((v) => v.flags.join('+'))
+      expect(keys.length, it.comment).toBe(11)
+      expect(keys.slice(-3), it.comment).toEqual(['tdpol_khanate', 'tdpol_south', 'tdpol_haidong'])
+      for (const v of it.variants!) for (const [from] of v.replace ?? []) expect(it.content.split(from).length - 1, `${it.comment}：${from.slice(0, 20)}`).toBe(1)
+    }
+  })
+
+  it('describes the early ending, then the later one on top of it', () => {
+    const text = (it: typeof region, ...f: string[]) => resolveLoreVariant(it, flags(...f)).content
+    expect(text(region, 'tdpol_khanate')).toContain('大汗国')
+    expect(text(region, 'tdpol_khanate', 'nspol_war_yanye')).toContain('鹰河以北三百里划给大烨')
+    expect(text(region, 'tdpol_haidong', 'nspol_sea')).toContain('海上之盟')
+    // 沒有人死：輸的一方被軟禁、幽禁或關起來
+    expect(text(people, 'tdpol_khanate', 'nspol_war_yanye')).toContain('龍安府・皇城的天牢')
+    expect(text(people, 'tdpol_south', 'nspol_alliance')).toContain('软禁在金帐后面')
+    expect(text(people, 'tdpol_haidong', 'nspol_sea')).toContain('幽禁在金帐后面')
+    // 沒有結局時照原本的寫
+    expect(text(region)).toBe(region.content)
   })
 })

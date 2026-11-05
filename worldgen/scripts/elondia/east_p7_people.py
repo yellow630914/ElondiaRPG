@@ -150,7 +150,17 @@ INTRO = {
 
 # 北原的前期政治線的結局（east_p8c.py）：tdpol_khanate／tdpol_south／tdpol_haidong 換掉幾位的身分與出沒
 POLITICS = {
+    # 政治線下半「南北交會」（east_p8d.py）的結局：nspol_alliance／nspol_war_yanye／nspol_war_tidan／nspol_sea。
+    # 寫在前期的結局前面（第一個符合的階段生效）；沒有人死，輸的一方被軟禁、幽禁或關進戰俘營、天牢，都找得到
     'npc_td_ulantuya': [
+        {'requires': {'flags': ['nspol_alliance']}, 'location': 'jinzhang',
+         'background': '和大燁立盟的天可汗。歲幣改成了互市，鷹河兩岸開了十個榷場；她說這是她打過最難的一仗，因為對手是自己的雄心。夜裡她還是會轉著銀碗，看著帳裡那面沒有名字的戰旗——現在旁邊多了一卷盟書。'},
+        {'requires': {'flags': ['nspol_war_yanye']}, 'location': 'jinzhang',
+         'background': '鷹河之戰敗給大燁的天可汗。她把鷹河以北三百里讓了出去，退回金帳，卻沒有低頭：她說草原輸過很多次，每一次都回來了。她派人去龍安府打聽鐵牙在天牢裡過得好不好。'},
+        {'requires': {'flags': ['nspol_war_tidan']}, 'location': 'jinzhang',
+         'background': '贏了鷹河之戰的天可汗。鷹河以南三百里成了媞丹的草場，大燁的歲幣加了一倍；她把俘虜的大燁統帥關在北院的戰俘營，每隔幾天就去和他喝一碗酒，說敬重對手是草原的規矩。'},
+        {'requires': {'flags': ['nspol_sea']}, 'location': 'jinzhang',
+         'background': '被海上之盟逼回草原深處的天可汗。東邊的獵場、北珠與海東青都沒了，她卻沒有再派兵：她說這一局輸了，下一局她等著。她把鐵牙幽禁在金帳後面——她說這是在救他。'},
         {'requires': {'flags': ['tdpol_khanate']}, 'location': 'jinzhang',
          'background': '大汗國的天可汗。她廢了南院、把各部的兵都交給怯薛，金帳前的白纛換成了出征的黑纛；她說草原的馬要喝到鷹河以南的水。夜裡她還是會一個人轉著那只銀碗，看著帳裡那面沒有名字的戰旗。'},
         {'requires': {'flags': ['tdpol_south']}, 'location': 'jinzhang',
@@ -159,12 +169,23 @@ POLITICS = {
          'background': '失去東邊獵場的天可汗。海東部自立之後，她沒有再派兵去追，只是把那面海東部的戰旗從金帳裡取了下來。有人說她老了，她說：「放走一隻鷹，比抓住一隻鷹難。」'},
     ],
     'npc_td_amur': [
+        {'requires': {'flags': ['nspol_alliance']}, 'location': 'jinzhang',
+         'background': '主持兩國互市的南院大王。和盟之後，鷹河兩岸的十個榷場都歸南院管，他照大燁的禮制寫了互市的律令，連北院的人都來問他怎麼收稅。他說，這是他這輩子最得意的一卷書。'},
         {'requires': {'flags': ['tdpol_khanate']}, 'location': 'jinzhang',
          'background': '被廢的南院大王。南院的印交給了北院，他被貶回媞丹部的草場，只留著南院大帳裡的幾卷書。他每天還是照大燁的規矩寫字，寫的都是同一句：「天下不是用馬蹄踩出來的。」'},
         {'requires': {'flags': ['tdpol_south']}, 'location': 'jinzhang',
          'background': '媞丹真正掌政的南院大王。他照大燁的禮制定了築城、設倉、斷事官與榷場的稅則，天可汗在每一份詔令上蓋印；北院的人不再罵他「半個龍人」——他們不敢了。'},
     ],
     'npc_td_tieya': [
+        {'requires': {'flags': ['nspol_alliance']}, 'location': 'jinzhang', 'fixed': {'area': 'jinzhang/palace', 'x': 1, 'y': 5},
+         'background': '名義上還是怯薛長，實際上被軟禁在金帳後面的一頂氈帳裡。兩國主戰派的殘黨在鷹河邊被擋下之後，天可汗收了他的兵符；他每天在帳裡磨那把用不上的大斧，說總有一天草原還會需要他。'},
+        {'requires': {'flags': ['nspol_war_yanye']}, 'location': 'longan', 'fixed': {'area': 'longan/palace', 'x': 9, 'y': 5},
+         'background': '鷹河之戰兵敗被俘的怯薛長，關在龍安府皇城的天牢裡。大燁沒有殺他：龍安府說，留著他比殺了他有用，等草原拿戰馬來換。他在牢裡還是笑得像打雷，獄卒都怕他，又常常偷偷給他多送一碗酒。'},
+        {'requires': {'flags': ['nspol_war_tidan']}, 'location': 'jinzhang',
+         'haunts': [{'location': 'jinzhang', 'zone': 'palace', 'weight': 1}, {'location': 'jinzhang', 'zone': 'noble', 'weight': 0.6}],
+         'background': '贏了鷹河之戰的怯薛長，重新拿回了兵符。他說這一仗打得痛快，可是看見北院戰俘營裡那位大燁的統帥，又說：「是個好對手。別讓他死了。」'},
+        {'requires': {'flags': ['nspol_sea']}, 'location': 'jinzhang', 'fixed': {'area': 'jinzhang/palace', 'x': 1, 'y': 5},
+         'background': '被罷了怯薛長的鐵牙。黑纛的先鋒在雪原上倒下之後，天可汗把他幽禁在金帳後面的一頂氈帳裡——她說這是在救他，不然北院的人會拿他去祭黑纛。他每天在帳裡數著那把大斧上的缺口。'},
         {'requires': {'flags': ['tdpol_khanate']}, 'location': 'jinzhang',
          'haunts': [{'location': 'jinzhang', 'zone': 'palace', 'weight': 1}, {'location': 'jinzhang', 'zone': 'noble', 'weight': 0.6}],
          'background': '大汗國的怯薛長，統領各部所有的兵。南院廢了之後，他每天在那達慕場上練兵，笑聲比以前更像打雷；他說明年秋天，要在鷹河以南的草場上烤全羊。'},
@@ -176,7 +197,19 @@ POLITICS = {
         {'requires': {'flags': ['tdwn_club']}, 'hours': 'night', 'location': 'yinghe', 'fixed': {'area': 'sm/sm_td_wild_horse', 'x': 4, 'y': 2},
          'background': '南院的可敦，女帝燁昭華的遠房妹妹。白天她在南院大帳裡端端正正地彈琴，夜裡卻常常出現在鷹河榷場外的野馬帳：她不再偷看了。每一次，她都會先回頭找那個帶她走到這一步的人。'},
     ],
+    'npc_td_su_shiyong': [
+        {'requires': {'flags': ['nspol_alliance']}, 'location': 'yinghe', 'haunts': town('yinghe', 1),
+         'background': '和盟之後的大燁互市使，常駐鷹河榷場。歲幣變成了買賣，他終於不用每年點收二十萬匹絹；他還是不肯喝馬奶酒，可是會在茶裡加一點奶。'},
+        {'requires': {'flags': ['nspol_war_yanye']}, 'location': 'yinghe', 'haunts': town('yinghe', 1),
+         'background': '大燁在鷹河設的關市使。鷹河以北三百里劃給了大燁，榷場改成了大燁的關市，他每天在驛站裡點收草原送來的戰馬，點得比以前收歲幣還仔細。'},
+        {'requires': {'flags': ['nspol_war_tidan']}, 'location': 'jinzhang', 'fixed': {'area': 'jinzhang/nanyuan', 'x': 5, 'y': 5},
+         'background': '鷹河之戰之後被軟禁在金帳王庭南院的歲幣使節。歲幣加了一倍，龍安府還沒湊齊，他就被留在南院當「人質」；阿穆爾待他很客氣，每天陪他下棋，他每天寫信回龍安府，信都寄得到。'},
+        {'requires': {'flags': ['nspol_sea']}, 'location': 'yinghe', 'haunts': town('yinghe', 1),
+         'background': '海上之盟的大燁使節，常駐鷹河榷場，三天兩頭往海東部的冬營跑。他學會了怎麼讓海東青停在手臂上，還是學不會喝馬奶酒。'},
+    ],
     'npc_td_hailan': [
+        {'requires': {'flags': ['nspol_sea']}, 'location': 'yinghe',
+         'background': '和大燁立下海上之盟的海東部首領。大燁承認了海東部，海東部替大燁守住鷹河的上游；她在冬營的篝火邊接見龍安府的使節，肩上的阿爾斯蘭比以前更常飛到別人的手臂上。'},
         {'requires': {'flags': ['tdpol_haidong']}, 'location': 'yinghe',
          'background': '自立的海東部的首領。她把鷹房裡的海東青都放回了天上，在鷹河上游的冬營裡接見大燁的使節；她還是不愛笑，可是族人說，她現在睡覺的時候不再握著刀了。'},
         {'requires': {'flags_any': ['tdpol_khanate', 'tdpol_south']}, 'location': 'yinghe',
