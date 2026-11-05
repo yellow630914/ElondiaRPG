@@ -42,7 +42,7 @@ exports[`world editor round trip > bases: opening and saving without changes kee
   "blindfold": "240e3b2af05c",
   "bodice": "b7d9abc94130",
   "chain": "621538960f34",
-  "dagger": "9d13d35a89ae",
+  "dagger": "20999376e916",
   "fishnet": "e5d9fecaf7f7",
   "full_hood": "67168edf7b16",
   "garter_belt": "62ab93eb76c7",
@@ -125,7 +125,7 @@ exports[`world editor round trip > items: opening and saving without changes kee
 {
   "乾糧": "772954edce24",
   "亞麻兜襠布": "6a6b68d1c245",
-  "亞麻腰帶": "6c1c4a78674b",
+  "亞麻腰帶": "8c83c220b600",
   "亞麻連身裙": "4247aa822d43",
   "凝固的暗影": "07e558bd3033",
   "同步心跳": "2342b936946b",
