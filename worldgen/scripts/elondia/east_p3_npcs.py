@@ -295,16 +295,85 @@ POLITICS = {
 for _n in NPCS:
     if _n['id'] in POLITICS:
         _n['stages'] = POLITICS[_n['id']] + _n.get('stages', [])
-# 政治線下半「南北交會」（east_p8d.py）：媞丹贏了鷹河之戰時，禁軍統帥被俘，關在金帳王庭北院的戰俘營
-_SOUTH_NORTH = {
-    'npc_yh_yue_zhenshan': [
-        {'requires': {'flags': ['nspol_war_tidan']}, 'location': 'jinzhang', 'fixed': {'area': 'jinzhang/beiyuan', 'x': 1, 'y': 1},
-         'background': '鷹河之戰兵敗被俘的大燁禁軍統帥，關在金帳王庭北院的戰俘營。媞丹沒有殺他：天可汗說，敬重對手是草原的規矩，等龍安府拿歲幣來贖。他每天在柵欄後面練拳，看守的怯薛偷偷跟著學。'},
-    ],
+# 政治線下半「南北交會」（east_p8d.py）的結局：nspol_alliance／nspol_war_yanye／nspol_war_tidan／nspol_sea。
+# 準則：沒有人死，輸的一方被軟禁、幽禁或關起來，都找得到。每個人在大燁的政體（上面的 POLITICS）的背景後面接一句下半的結局：
+# 有政體階段的人，每種政體 × 每種結局各一個階段（位置照政體）；沒有的照原本的位置。寫了 location 的結局會換地方（被俘的岳鎮山）
+NS_ENDINGS = ['nspol_alliance', 'nspol_war_yanye', 'nspol_war_tidan', 'nspol_sea']
+LATE = {
+    'npc_yh_zhaohua': {
+        'nspol_alliance': '大燁與媞丹在鷹河立下和盟，歲幣改成互市；她說這是三百年來大燁第一次不用花錢買和平。',
+        'nspol_war_yanye': '鷹河之戰大燁獲勝，被俘的怯薛長鐵牙關進了皇城的天牢——她去看過他一次，兩個人隔著柵欄喝了一碗酒。',
+        'nspol_war_tidan': '鷹河之戰大燁戰敗，歲幣加了一倍，禁軍統帥岳鎮山被俘、關在金帳王庭的戰俘營；她說無論如何都要把他贖回來。',
+        'nspol_sea': '大燁與海東部立下海上之盟，把媞丹逼回草原深處；她說草原的事，讓草原的人自己去吵。',
+    },
+    'npc_yh_wen_shiheng': {
+        'nspol_alliance': '鷹河邊被擋下的大燁主戰派殘黨裡，有幾個是溫家的門生；他聽說之後閉門三天，誰也不見。',
+        'nspol_war_yanye': '鷹河之戰的捷報傳來，他說「祖宗的江山從此北至鷹河」，難得地笑了。',
+        'nspol_war_tidan': '鷹河之戰戰敗的消息傳來，他說這就是不聽老臣之言的下場——說完卻一個人在書房裡坐到天亮。',
+        'nspol_sea': '海上之盟之後，他寫了一篇〈論海東〉，說和蠻夷結盟，總有一天要還。',
+    },
+    'npc_yh_yue_zhenshan': {
+        'nspol_alliance': '鷹河和盟那天，他帶著禁軍在茶馬路上擋下大燁主戰派的殘黨；他說對自己人拔刀，比對草原人難得多。',
+        'nspol_war_yanye': '鷹河之戰的主將，打贏了，加封了一個他記不住的官銜；他把賞銀全分給了欠餉的弟兄。',
+        'nspol_war_tidan': {'location': 'jinzhang', 'fixed': {'area': 'jinzhang/beiyuan', 'x': 1, 'y': 1},
+                            'background': '鷹河之戰兵敗被俘的大燁禁軍統帥，關在金帳王庭北院的戰俘營。媞丹沒有殺他：天可汗說，敬重對手是草原的規矩，等龍安府拿歲幣來贖。他每天在柵欄後面練拳，看守的怯薛偷偷跟著學。'},
+        'nspol_sea': '海上之盟之後，他帶著一營禁軍去鷹河上游替海東部築了第一座寨子，築完才回龍安府。',
+    },
+    'npc_yh_su_huaijin': {
+        'nspol_alliance': '互市開了以後，萍江府的稅收多了三成，她第一次在年底的帳上看到盈餘。',
+        'nspol_war_yanye': '鷹河之戰時，她替北伐軍督辦江南的糧草，一石也沒有短少。',
+        'nspol_war_tidan': '鷹河之戰輸了，加倍的歲幣要從江南湊，她在府衙裡一夜一夜地算，算到頭髮白了幾根。',
+        'nspol_sea': '海上之盟之後，她奉命督造往海東部的船，說這是她辦過最像樣的差事。',
+    },
+    'npc_yh_lu_qinghe': {
+        'nspol_alliance': '互市開了以後，萍江的絲綢一船一船運往鷹河，織工的工錢漲了一成；她說和平也是織出來的。',
+        'nspol_war_yanye': '鷹河之戰時，萍江的織工被徵去織軍帳，她帶頭織完又帶頭討工錢；仗打贏了，工錢一文也沒少。',
+        'nspol_war_tidan': '鷹河之戰輸了，歲幣加倍、稅又加重；她帶著織工到府衙前唱工歌，唱了三天三夜。',
+        'nspol_sea': '海上之盟之後，萍江的絲綢改走海路運到海東部；她說海東部的人穿上萍江的綢子，比誰都好看。',
+    },
+    'npc_yh_hu_jiuniang': {
+        'nspol_alliance': '互市的茶引一大半落在胡記手上，鷹河榷場的胡記分號擴成了三間；她說和平是最好的生意。',
+        'nspol_war_yanye': '鷹河之戰時，胡記替北伐軍運糧，賺了一大筆，也被罵了一大筆。',
+        'nspol_war_tidan': '鷹河之戰輸了，加倍的歲幣有三成攤到胡記頭上；她一邊算帳一邊笑：「這筆債，總有一天要草原還。」',
+        'nspol_sea': '海上之盟之後，胡記把分號開進了海東部的冬營，第一筆生意是用茶磚換北珠。',
+    },
+    'npc_yh_jin_yutang': {
+        'nspol_alliance': '互市開了以後，金玉行的船一年往返鷹河口十幾趟；她說陸上的路是胡記的，海上的路是她的。',
+        'nspol_war_yanye': '鷹河之戰時，金玉行的船替北伐軍運火藥與糧草；她說打仗的錢，戰後都要算回來。',
+        'nspol_war_tidan': '鷹河之戰輸了，她的船替朝廷把加倍的歲幣運往北邊，一趟比一趟心疼。',
+        'nspol_sea': '海上之盟的國書，是金玉行的船送到海東部冬營的；從此她的船隊多了一條往北的海路。',
+    },
 }
+
+
+def _late_stages(n):
+    polity = [st for st in n.get('stages', []) if any(f.startswith('yhpol_') for f in st['requires'].get('flags', []) + st['requires'].get('flags_any', []))]
+    out = []
+    for ending in NS_ENDINGS:
+        spec = LATE[n['id']][ending]
+        if isinstance(spec, dict):
+            # 換地方：整個背景換掉（被俘、被軟禁）
+            out.append({'requires': {'flags': [ending]}, **spec})
+            continue
+        if polity:
+            for st in polity:
+                req = {k: list(v) for k, v in st['requires'].items()}
+                req['flags'] = req.get('flags', []) + [ending]
+                out.append({**st, 'requires': req, 'background': st['background'] + spec})
+        else:
+            st = {'requires': {'flags': [ending]}, 'location': n['location']}
+            for k in ('haunts', 'fixed'):
+                if n.get(k):
+                    st[k] = n[k]
+            out.append({**st, 'background': n['background'] + spec})
+    for st in out:
+        assert len(st['background']) <= 400, (n['id'], st['requires'], len(st['background']))
+    return out
+
+
 for _n in NPCS:
-    if _n['id'] in _SOUTH_NORTH:
-        _n['stages'] = _SOUTH_NORTH[_n['id']] + _n.get('stages', [])
+    if _n['id'] in LATE:
+        _n['stages'] = _late_stages(_n) + _n.get('stages', [])
 
 # 特殊任務用到的人（開頭、任務點、友方、同行）不能被偷襲（builtinStories.spec）：從 stories.json 找出來
 def _story_npcs():

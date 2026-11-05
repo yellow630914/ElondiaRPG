@@ -389,6 +389,17 @@ describe('炎華之地', () => {
     expect(stageFor('npc_td_tieya', ['nspol_war_yanye'])!.fixed!.area).toBe('longan/palace')
     expect(stageFor('npc_yh_yue_zhenshan', ['nspol_war_tidan'])!.fixed!.area).toBe('jinzhang/beiyuan')
     expect(stageFor('npc_yh_wen_shiheng', ['yhpol_republic'])!.location).toBe('quanzhou')
+    // 南域的人也跟著南北交會的結局換背景（east_p3_npcs.py 的 LATE）：每種政體 × 每種結局都有一個階段，位置照政體
+    const south = ['npc_yh_zhaohua', 'npc_yh_wen_shiheng', 'npc_yh_yue_zhenshan', 'npc_yh_su_huaijin', 'npc_yh_lu_qinghe', 'npc_yh_hu_jiuniang', 'npc_yh_jin_yutang']
+    for (const id of south) {
+      for (const polity of ['yhpol_monarchy', 'yhpol_republic', 'yhpol_constitution']) {
+        for (const late of ['nspol_alliance', 'nspol_war_yanye', 'nspol_war_tidan', 'nspol_sea']) {
+          const st = stageFor(id, [polity, late]) as Stage & { background?: string }
+          expect(st?.requires.flags ?? [], `${id} ${polity} ${late}`).toContain(late)
+        }
+      }
+    }
+    expect(stageFor('npc_yh_wen_shiheng', ['yhpol_republic', 'nspol_alliance'])!.location).toBe('quanzhou')
   })
 
   it('gives 炎華北原 its own travel, town and dungeon events (P8g)', () => {

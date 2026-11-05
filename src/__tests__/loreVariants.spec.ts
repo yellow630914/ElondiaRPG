@@ -79,7 +79,12 @@ describe('built-in political variants of 炎華之地', () => {
 
   it('covers the three endings on the 炎華 entries', () => {
     expect(withVariants.map((it) => it.comment).sort()).toEqual(['人物-炎华南域', '区域-炎华南域', '区域地理与势力划分概述', '埃隆迪亚大陆'].sort())
-    for (const it of withVariants) expect(it.variants!.map((v) => v.flags)).toEqual(ENDINGS.map((f) => [f]))
+    // 最後三個是只看政體的；人物-炎华南域前面另有「政體＋南北交會」的 12 種組合（east_p4c_lore.py 的 LATE）
+    for (const it of withVariants) expect(it.variants!.slice(-3).map((v) => v.flags), it.comment).toEqual(ENDINGS.map((f) => [f]))
+    const people = withVariants.find((it) => it.comment === '人物-炎华南域')!
+    expect(people.variants!.length).toBe(15)
+    expect(people.variants!.slice(0, 12).every((v) => v.flags.length === 2 && v.flags[1]!.startsWith('nspol_'))).toBe(true)
+    for (const it of withVariants.filter((x) => x !== people)) expect(it.variants!.length, it.comment).toBe(3)
   })
 
   it('finds every replaced passage exactly once in the default text', () => {
@@ -189,5 +194,18 @@ describe('built-in variants of 炎華北原 (媞丹的走向 and 南北交會)',
     expect(text(people, 'tdpol_haidong', 'nspol_sea')).toContain('幽禁在金帐后面')
     // 沒有結局時照原本的寫
     expect(text(region)).toBe(region.content)
+  })
+})
+
+describe('南域的人物 after 南北交會', () => {
+  const people = loreItems(book).find((it) => it.comment === '人物-炎华南域')!
+  const text = (...f: string[]) => resolveLoreVariant(people, flags(...f)).content
+  it('adds the later ending on top of the polity, and nobody dies', () => {
+    expect(text('yhpol_republic', 'nspol_war_tidan')).toContain('岳鎮山（金帳王庭・北院的戰俘營）')
+    expect(text('yhpol_republic', 'nspol_war_tidan')).toContain('瑔州港・蕃坊碼頭')
+    expect(text('yhpol_monarchy', 'nspol_alliance')).toContain('与媞丹在鹰河立下和盟')
+    expect(text('yhpol_constitution', 'nspol_sea')).toContain('海上之盟')
+    // 只有政體時照舊
+    expect(text('yhpol_monarchy')).not.toContain('鹰河')
   })
 })

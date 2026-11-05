@@ -129,6 +129,43 @@ PATCHES = {
 }
 
 
+# 政治線下半「南北交會」（east_p8d.py）：人物-炎华南域再依下半的結局接一句（NPC 的階段在 east_p3_npcs.py 的 LATE）。
+# 只有第一個符合的變體生效，所以先寫「政體＋下半結局」的 12 種組合，再寫只有政體的 3 種。
+LATE_ENDINGS = [('nspol_alliance', '和盟'), ('nspol_war_yanye', '鷹河之戰（大燁勝）'), ('nspol_war_tidan', '鷹河之戰（媞丹勝）'), ('nspol_sea', '海上之盟')]
+LATE = {
+    '人物-炎华南域': {
+        # 原文（政體換過之後的）裡的人 → {下半的結局: 接在後面的一句}
+        '燁昭華': {
+            'nspol_alliance': '与媞丹在鹰河立下和盟，岁币改成互市',
+            'nspol_war_yanye': '鹰河之战大烨获胜，被俘的怯薛长铁牙关在皇城的天牢',
+            'nspol_war_tidan': '鹰河之战大烨战败，岁币加倍，正在凑赎回岳镇山的钱',
+            'nspol_sea': '大烨与海东部立下海上之盟，把媞丹逼回草原深处',
+        },
+        '溫世衡': {
+            'nspol_alliance': '鹰河边被挡下的主战派残党里有温家的门生，他闭门不出',
+            'nspol_war_yanye': '鹰河之战的捷报让他难得地笑了',
+            'nspol_war_tidan': '鹰河之战战败后，他说这是不听老臣之言的下场',
+            'nspol_sea': '海上之盟之后写了〈论海东〉，反对和蛮夷结盟',
+        },
+    },
+    # 原本沒有政體變體的人：整行換掉（只看下半的結局）
+    '人物-炎华南域 lines': {
+        "    - 岳鎮山（龍安府走動）: '殿前都指挥使，朱砂鳞武人之首，禁军已欠饷三个月'": {
+            'nspol_alliance': "    - 岳鎮山（龍安府走動）: '殿前都指挥使，朱砂鳞武人之首；鹰河和盟那天带禁军在茶马路上挡下了大烨主战派的残党'",
+            'nspol_war_yanye': "    - 岳鎮山（龍安府走動）: '殿前都指挥使，朱砂鳞武人之首；鹰河之战的主将，打赢了，把赏银全分给了欠饷的弟兄'",
+            'nspol_war_tidan': "    - 岳鎮山（金帳王庭・北院的戰俘營）: '殿前都指挥使，鹰河之战兵败被俘，关在金帐王庭北院的战俘营，等龙安府拿岁币来赎'",
+            'nspol_sea': "    - 岳鎮山（龍安府走動）: '殿前都指挥使，朱砂鳞武人之首；海上之盟之后带禁军替海东部筑了第一座寨子'",
+        },
+    },
+}
+
+
+def with_late(line, clause):
+    """在人物那一行的最後（結尾的引號前）接一句"""
+    assert line.endswith("'"), line
+    return line[:-1] + '；' + clause + "'"
+
+
 def main():
     wb = json.load(open(WB, encoding='utf-8'))
     by_comment = {e['comment']: e for e in wb['entries'].values()}
@@ -138,6 +175,20 @@ def main():
             n = e['content'].count(old)
             assert n == 1, f'「{comment}」裡的原文出現 {n} 次（要剛好 1 次）：{old[:30]}…'
         variants = [{'flags': [flag], 'replace': [[old, new[flag]] for old, new in patches], 'note': note} for flag, note in ENDINGS]
+        if comment in LATE:
+            people, lines = LATE[comment], LATE.get(comment + ' lines', {})
+            for old in lines:
+                assert e['content'].count(old) == 1, f'「{comment}」裡找不到：{old[:30]}…'
+            combos = []
+            for flag, note in ENDINGS:
+                for late, late_note in LATE_ENDINGS:
+                    rep = []
+                    for old, new in patches:
+                        name = next((p for p in people if old.startswith(f'    - {p}（')), None)
+                        rep.append([old, with_late(new[flag], people[name][late]) if name else new[flag]])
+                    rep += [[old, new[late]] for old, new in lines.items()]
+                    combos.append({'flags': [flag, late], 'replace': rep, 'note': f'{note}＋{late_note}'})
+            variants = combos + variants
         ext = e.setdefault('extensions', {}).setdefault('elondia', {})
         ext['variants'] = variants
         print(f'世界書：{comment}（uid {e["uid"]}）{len(variants)} 種劇情變體、每種換 {len(patches)} 段')

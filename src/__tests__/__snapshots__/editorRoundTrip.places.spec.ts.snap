@@ -104,7 +104,7 @@ exports[`world editor round trip > npcs: opening and saving without changes keep
   "npc_lena": "2f375a78c063",
   "npc_lina": "97bc0158e2ec",
   "npc_magda_ironforge": "5743521effb0",
-  "npc_mentor_servitude": "c67abfca9eec",
+  "npc_mentor_exhibition": "a8a5270fcc6e",
   "npc_nashira": "c2d6bb59ec8c",
   "npc_old_ironroot": "f8389c9cb3a8",
   "npc_pururu": "02f541256d21",
@@ -116,12 +116,12 @@ exports[`world editor round trip > npcs: opening and saving without changes keep
   "npc_servion_cult": "6f5fa5408bfb",
   "npc_stella": "717b9d844fcc",
   "npc_td_amur": "5d2c0b9ab5fd",
-  "npc_td_toya": "f3f79d30d28c",
-  "npc_yh_cheng_yan": "c1902f4546df",
-  "npc_yh_hu_taiye": "8aec286337c0",
-  "npc_yh_xuanshuang": "18791b7cca45",
-  "npc_yh_ye_guhong": "1d4b26510ea5",
-  "npc_yh_zhao_hu": "a2fe9ffa79eb",
+  "npc_td_hailan": "62a1da03d719",
+  "npc_td_post_keeper": "fe55bafb7b99",
+  "npc_yh_apao": "09202ee46f84",
+  "npc_yh_hu_yuxiao": "1ac1ad2f2f31",
+  "npc_yh_ruan": "c761e1b2d2a0",
+  "npc_yh_xiao_fengyi": "ca7cb8dc4280",
 }
 `;
 
