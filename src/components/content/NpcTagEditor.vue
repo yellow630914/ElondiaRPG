@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { actionRules, ATTR_IDS, attrName, npcTags, perkRules, type AttrId, type CheckFilter } from '@/engine/data'
+import { actionRules, ATTR_IDS, attrName, craftRules, itemRules, NPC_TAG_GROUPS, npcTags, perkRules, type AttrId, type CheckFilter, type CraftId, type NpcTagGroup } from '@/engine/data'
 import { builtinNpcTag } from '@/engine/mods'
 import { editableOf, TAG_KINDS, TAG_LIMITS, TAG_LOCATION_TYPES, TAG_ZONES, type NpcTagMod } from '@/engine/npcTagMods'
 import { pcTagEffectLines } from '@/engine/pcTags'
@@ -105,6 +105,27 @@ function setMult(k: 'buy_mult' | 'sell_mult' | 'service_mult' | 'exposure_mult' 
   else pe.value[k] = Math.round((1 + n / 100) * 100) / 100
 }
 const pctOf = (x: number | undefined) => (x === undefined ? '' : String(Math.round((x - 1) * 100)))
+function setFare(pct: string) {
+  const n = Number(pct)
+  if (pct === '' || !Number.isFinite(n) || n === 0) delete pe.value.fare_mult
+  else pe.value.fare_mult = Math.round((1 + n / 100) * 100) / 100
+}
+// 開局帶的物品（最多 TAG_LIMITS.start_items 樣）
+const itemNames = itemRules.items.map((i) => i.name)
+function addStartItem() {
+  const list = (pe.value.start_items ??= [])
+  if (list.length < TAG_LIMITS.start_items) list.push({ name: '乾糧', qty: 1 })
+}
+function removeStartItem(i: number) {
+  pe.value.start_items!.splice(i, 1)
+  if (!pe.value.start_items!.length) delete pe.value.start_items
+}
+const crafts = Object.entries(craftRules.skills).map(([k, v]) => [k as CraftId, v.name] as const)
+function setGroup(g: string) {
+  if (g === 'identity') delete draft.value.group
+  else draft.value.group = g as NpcTagGroup
+  if (g !== 'craft') delete draft.value.craft
+}
 
 function save() {
   try {
@@ -150,6 +171,17 @@ function remove() {
         <label>Emoji <input v-model="draft.emoji" :maxlength="TAG_LIMITS.emoji_chars" class="emoji" /></label>
         <label title="NPC 的財富：決定他身上的錢與被偷的油水（0 窮 ～ 5 很有錢）">財富 <input v-model.number="draft.wealth" type="number" :min="TAG_LIMITS.wealth[0]" :max="TAG_LIMITS.wealth[1]" /></label>
         <label class="check"><input type="checkbox" :checked="draft.player !== false" @change="setOpt('player', ($event.target as HTMLInputElement).checked ? undefined : false)" /> 主角可以選</label>
+        <label title="創角的身分選擇器照分組排">分組
+          <select :value="draft.group ?? 'identity'" @change="setGroup(($event.target as HTMLSelectElement).value)">
+            <option v-for="(n, g) in NPC_TAG_GROUPS" :key="g" :value="g">{{ n }}</option>
+          </select>
+        </label>
+        <label v-if="draft.group === 'craft'" title="工匠的工藝（之後的工藝規則會讓開局帶這門工藝的等級）">工藝
+          <select :value="draft.craft ?? ''" @change="setOpt('craft', (($event.target as HTMLSelectElement).value || undefined) as CraftId | undefined)">
+            <option value="">（沒有）</option>
+            <option v-for="[k, n] in crafts" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
       </div>
       <label class="block">給 AI 的描述 <Hint text="NPC 帶著這個標籤時，AI 會照這段描寫他。" /><textarea v-model="draft.ai_hint" rows="2" :maxlength="TAG_LIMITS.hint_chars" /></label>
       <div class="row">
@@ -208,6 +240,18 @@ function remove() {
         <label title="成人向">被賣時身價 % <input type="number" min="-50" max="200" :value="pctOf(pe.slave_price_mult)" @input="setMult('slave_price_mult', ($event.target as HTMLInputElement).value)" /></label>
         <label title="成人向；負數是受到的慾望變少">戰鬥中受到的慾望 <input type="number" min="-0.5" max="0.5" step="0.05" :value="pe.lust_resist ?? ''" @input="pe.lust_resist = numOrNone(($event.target as HTMLInputElement).value) || undefined" /></label>
       </div>
+      <div class="grid">
+        <label>海路船資 % <input type="number" min="-50" max="50" :value="pctOf(pe.fare_mult)" @input="setFare(($event.target as HTMLInputElement).value)" /></label>
+      </div>
+      <div class="row">
+        <span class="small">開局帶的物品：</span>
+        <span v-for="(x, i) in pe.start_items ?? []" :key="i" class="row">
+          <input v-model="x.name" list="tag-start-items" class="item" />×<input v-model.number="x.qty" type="number" :min="TAG_LIMITS.start_qty[0]" :max="TAG_LIMITS.start_qty[1]" class="num" />
+          <button class="small" title="移除" @click="removeStartItem(i)">✕</button>
+        </span>
+        <button class="small" :disabled="(pe.start_items?.length ?? 0) >= TAG_LIMITS.start_items" @click="addStartItem">＋ 物品</button>
+        <datalist id="tag-start-items"><option v-for="n in itemNames" :key="n" :value="n" /></datalist>
+      </div>
       <label class="block">給 AI 的主角身分說明（選填）<input v-model="pe.hint" :maxlength="TAG_LIMITS.pc_hint_chars" /></label>
       <p v-if="preview.length" class="small muted">存檔後的效果：{{ preview.join('；') }}</p>
     </FoldSet>
@@ -220,4 +264,5 @@ function remove() {
 .effect { border: 1px dashed var(--border); border-radius: var(--radius); padding: 4px 8px; display: grid; gap: 2px; }
 .spacer { flex: 1; }
 .num { width: 4em; }
+.item { width: 10em; }
 </style>

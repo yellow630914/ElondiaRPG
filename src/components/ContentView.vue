@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, npcTags, type NpcKind, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, className, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, npcTags, NPC_TAG_GROUPS, type NpcKind, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
@@ -314,7 +314,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   ],
   statuses: [{ model: statusKind, name: '種類', all: '所有狀態', options: () => [['buff', '🟢 增益（BUFF）'], ['debuff', '🔴 減益（DEBUFF）'], ['cond', '🏕️ 非戰鬥狀態（用餐、喝酒……）']] }],
   perks: [{ model: perkCat, name: '分類', all: '所有分類', options: () => [...entries(PERK_CATEGORIES), ['race', '種族天賦']] }],
-  npcTags: [{ model: tagKind, name: '種類', all: '所有身分', options: () => [['commoner', '普通人'], ['adventurer', '冒險者'], ['player', '主角可以選']] }],
+  npcTags: [{ model: tagKind, name: '種類', all: '所有身分', options: () => [...Object.entries(NPC_TAG_GROUPS).map(([g, n]) => [`g:${g}`, `分組：${n}`] as Opt), ['commoner', '普通人'], ['adventurer', '冒險者'], ['player', '主角可以選']] }],
   parasites: [{ model: parasiteCat, name: '分類', all: '所有寄生物', options: () => entries(PARASITE_CATEGORY_NAME) }],
   tattoos: [{ model: tattooKind, name: '種類', all: '所有刺青與印記', options: () => [['plain', '🖋️ 普通刺青'], ['oath', '📜 誓約印記'], ['slave', '⛓️ 奴隸印記']] }],
   landmarks: [placeDef(), adultDef, flagDef],
@@ -450,7 +450,7 @@ const rows = computed<Row[]>(() => {
   } else if (sub.value === 'npcTags') {
     const k = tagKind.value
     list = Object.entries(npcTags.tags)
-      .filter(([, t]) => !k || (k === 'player' ? t.player !== false : t.kinds.includes(k as NpcKind)))
+      .filter(([, t]) => !k || (k.startsWith('g:') ? (t.group ?? 'identity') === k.slice(2) : k === 'player' ? t.player !== false : t.kinds.includes(k as NpcKind)))
       .map(([id, t]) => ({ key: id, name: `${t.emoji} ${t.name}`, note: [t.kinds.map((x) => (x === 'commoner' ? '普通人' : '冒險者')).join('、'), t.player === false ? '主角不能選' : '', t.pc_effects?.checks?.length ? '有主角效果' : ''].filter(Boolean).join('・'), status: st(!!m.npcTags?.[id], !builtinNpcTag(id)) }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'tattoos') {

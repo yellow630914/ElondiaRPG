@@ -1631,7 +1631,15 @@ export const npcPool = npcPoolJson as unknown as {
   commoner_outfits: Record<string, string[]>
 }
 
+/** 身分標籤的分組（創角的選擇器照這個分；docs/NPC_SYSTEM.md 4.1 節） */
+export type NpcTagGroup = 'identity' | 'profession' | 'craft' | 'underworld' | 'moral'
+export const NPC_TAG_GROUPS: Record<NpcTagGroup, string> = { identity: '身分', profession: '職業', craft: '工匠', underworld: '地下', moral: '善惡' }
+
 export interface NpcTagDef {
+  /** 分組（沒寫時算「身分」） */
+  group?: NpcTagGroup
+  /** 工匠：對應的工藝（R21 開局工藝等級用） */
+  craft?: CraftId
   name: string
   emoji: string
   kinds: NpcKind[]
@@ -1680,6 +1688,10 @@ export interface PcTagEffects {
   slave_price_mult?: number
   /** 戰鬥中的慾望抗性（負數是受到的慾望變少；成人向） */
   lust_resist?: number
+  /** 海路船資的倍率（水手認識船長） */
+  fare_mult?: number
+  /** 開新遊戲時帶的物品 */
+  start_items?: { name: string; qty: number }[]
   /** 給 AI 的身分說明 */
   hint?: string
 }

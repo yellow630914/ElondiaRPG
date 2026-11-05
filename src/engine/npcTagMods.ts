@@ -4,13 +4,17 @@
 // 犯罪的額外聲望、職業倍率、只在某區域、出沒的地點數）保留內建的值、不開放編輯；自建標籤沒有這些。
 
 import { cleanPerkEffects } from './perks'
-import { itemRules, npcTags, npcs, perkRules, shopRules, stories, type CheckFilter, type NpcKind, type NpcTagDef, type PcTagEffects } from './data'
+import { CRAFT_IDS, itemDef, itemRules, NPC_TAG_GROUPS, npcTags, npcs, perkRules, shopRules, stories, type CraftId, type NpcTagGroup, type CheckFilter, type NpcKind, type NpcTagDef, type PcTagEffects } from './data'
 import { travelEvents } from './road'
 import { allMasterEvents } from './masterEventMods'
 import type { GameState } from './types'
 
 /** 編輯器存的身分標籤：通用欄位（自建的是整份，內建的照內建合併） */
 export interface NpcTagMod {
+  /** 分組（創角的選擇器照這個分；沒有時算身分） */
+  group?: NpcTagGroup
+  /** 工匠：對應的工藝 */
+  craft?: CraftId
   name: string
   emoji: string
   kinds: NpcKind[]
@@ -30,7 +34,7 @@ export interface NpcTagMod {
 }
 
 /** 編輯器開放的欄位（其他欄位只有內建標籤有，套用時沿用內建的值） */
-export const EDITABLE_KEYS = ['name', 'emoji', 'kinds', 'ai_hint', 'wealth', 'commoner_weight', 'adventurer_chance', 'extra_chance', 'location_types', 'zone_weights', 'occupations', 'exclusive', 'player', 'pc_effects'] as const
+export const EDITABLE_KEYS = ['group', 'craft', 'name', 'emoji', 'kinds', 'ai_hint', 'wealth', 'commoner_weight', 'adventurer_chance', 'extra_chance', 'location_types', 'zone_weights', 'occupations', 'exclusive', 'player', 'pc_effects'] as const
 
 export const TAG_KINDS: NpcKind[] = ['commoner', 'adventurer']
 export const TAG_LOCATION_TYPES = ['capital', 'city', 'town', 'port', 'village', 'outpost', 'fortress'] as const
@@ -40,7 +44,7 @@ export const TAG_ZONES: Record<string, string> = { town: '城區', outskirts: '�
 export const TAG_LIMITS = {
   name_chars: 8, emoji_chars: 4, hint_chars: 120, pc_hint_chars: 80, occupation_chars: 12, occupations: 16, checks: 6,
   wealth: [0, 5], commoner_weight: [0, 100], chance: [0, 1], zone_weight: [0, 5],
-  price_mult: [0.5, 1.5], exposure_mult: [0, 3], slave_price_mult: [0.5, 3], lust_resist: [-0.5, 0.5], check_bonus: [-3, 3],
+  price_mult: [0.5, 1.5], exposure_mult: [0, 3], slave_price_mult: [0.5, 3], lust_resist: [-0.5, 0.5], check_bonus: [-3, 3], fare_mult: [0.5, 1.5], start_items: 4, start_qty: [1, 10],
 } as const
 
 const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
@@ -60,6 +64,8 @@ export function sanitizeNpcTagMod(raw: Partial<NpcTagMod> | undefined, custom: b
     ai_hint: str(r.ai_hint, TAG_LIMITS.hint_chars),
     wealth: num(r.wealth, TAG_LIMITS.wealth) ?? 1,
   }
+  if (r.group && r.group in NPC_TAG_GROUPS && r.group !== 'identity') out.group = r.group
+  if (r.craft && (CRAFT_IDS as string[]).includes(r.craft)) out.craft = r.craft
   const cw = num(r.commoner_weight, TAG_LIMITS.commoner_weight)
   if (cw !== undefined) out.commoner_weight = cw
   const ac = num(r.adventurer_chance, TAG_LIMITS.chance)
@@ -94,6 +100,13 @@ export function sanitizeNpcTagMod(raw: Partial<NpcTagMod> | undefined, custom: b
     if (sp !== undefined && sp !== 1) e.slave_price_mult = sp
     const lr = num(pe.lust_resist, TAG_LIMITS.lust_resist)
     if (lr) e.lust_resist = lr
+    const fare = num(pe.fare_mult, TAG_LIMITS.fare_mult)
+    if (fare !== undefined && fare !== 1) e.fare_mult = fare
+    const items = (Array.isArray(pe.start_items) ? pe.start_items : [])
+      .filter((x) => !!x && typeof x.name === 'string' && !!itemDef(x.name))
+      .map((x) => ({ name: x.name, qty: num(x.qty, TAG_LIMITS.start_qty) ?? 1 }))
+      .slice(0, TAG_LIMITS.start_items)
+    if (items.length) e.start_items = items
     const hint = str(pe.hint, TAG_LIMITS.pc_hint_chars)
     if (hint) e.hint = hint
     if (Object.keys(e).length) out.pc_effects = e

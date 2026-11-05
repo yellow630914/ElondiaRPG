@@ -5,7 +5,7 @@ import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './charact
 import { pruneSpecialMaps } from './specialMaps'
 import { pruneParasites, refreshParasiteMarks } from './parasites'
 import { pruneLocations } from './pruneLocations'
-import { abilities, attributeRules, classDef, companionRules, findLocation, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -16,7 +16,7 @@ import type { Character, ContractRef, EquippedGear, GameOptions, GameState, Game
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
 import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
-import { sanitizePcTags } from './pcTags'
+import { pcTagStartItems, sanitizePcTags } from './pcTags'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
@@ -56,6 +56,18 @@ export interface NewGameOptions {
 export const DEFAULT_BIRTHPLACE: Record<string, string> = {
   human: 'soriel', elf: 'silvermoon', dwarf: 'ironforge', demon: 'bloodplume', catfolk: 'sandcastle', yulin: 'canglue',
   hualong: 'longan', linghu: 'qingqiu', centaur: 'jinzhang',
+}
+
+/** 開局的行囊：5 份乾糧，加上身分標籤帶的物品（同一樣合在一起，目錄沒有的略過） */
+function startInventory(tags: string[]): { name: string; qty: number }[] {
+  const inv = [{ name: '乾糧', qty: 5 }]
+  for (const x of pcTagStartItems(tags)) {
+    if (!itemDef(x.name)) continue
+    const have = inv.find((i) => i.name === x.name)
+    if (have) have.qty += x.qty
+    else inv.push({ name: x.name, qty: x.qty })
+  }
+  return inv
 }
 
 export function newGame(opts: NewGameOptions): GameState {
@@ -106,7 +118,8 @@ export function newGame(opts: NewGameOptions): GameState {
     location: birthplace,
     money_cc: START_MONEY_CC,
     party: [pc],
-    inventory: [{ name: '乾糧', qty: 5 }],
+    // 開局的乾糧，加上身分帶的東西（獵人的風乾肉、工匠的工具組……，npc_tags.json 的 start_items）
+    inventory: startInventory(tags),
     quests: [],
     recruited: [],
     reputation: {},
