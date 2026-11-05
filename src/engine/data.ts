@@ -2146,7 +2146,7 @@ export const craftRules = craftsJson as unknown as {
   tool_tier_names: string[]
   safe_points: string[]
   workshop_rent: { per_hour_cc: number }
-  self: { hours: number; tier1_cost_ratio: number }
+  self: { hours: number }
   shop_levels: Record<string, [number, number]>
   companion: { min_affinity: number }
   recipe: { dc: number[]; max_batches: number; critical_bonus: number; partial_ratio: number; lost_on_fail: number }

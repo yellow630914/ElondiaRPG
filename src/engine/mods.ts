@@ -1016,6 +1016,9 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   for (const [k, v] of Object.entries(raw.resist_scale ?? {})) if (AFFINITY_KEYS().includes(k) && SCALES.includes(v)) rs[k] = v
   if (Object.keys(rs).length) out.resist_scale = rs as BaseDef['resist_scale']
   if (str(raw.desc, 120)) out.desc = str(raw.desc, 120)
+  // 打造時的類型（刀劍、盾……）：沒寫時內建的照原本，再沒有就依欄位與材料推（gear.ts 的 baseType）
+  const type = str(raw.type, 8) || (!custom && id ? snapshot.bases[id]?.type : undefined)
+  if (type) out.type = type
   const icon = sanitizeIcon(raw.icon)
   if (icon) out.icon = icon
   // 指向別的武器、防具類型時複製原版的數值（不是目前世界改過的），名稱用底材的；

@@ -155,7 +155,7 @@ describe('crafting', () => {
     expect(craftPlan(state, 'longsword', 'steel', [{ name: '火蜥鱗片', qty: 5 }]).blocked).toContain('不夠')
     // 打造材料本身不能再當輔料用掉
     expect(craftPlan(state, 'longsword', 'steel', [{ name: '精鋼錠', qty: 1 }]).blocked).toContain('不夠')
-    expect(parseCraftTarget(craftTarget('longsword', 'steel', [{ name: '火蜥鱗片', qty: 2 }]))).toEqual({ base: 'longsword', material: 'steel', aux: [{ name: '火蜥鱗片', qty: 2 }] })
+    expect(parseCraftTarget(craftTarget('longsword', 'steel', [{ name: '火蜥鱗片', qty: 2 }]))).toEqual({ base: 'longsword', material: 'steel', aux: [{ name: '火蜥鱗片', qty: 2 }], opts: {} })
 
     // 擲中時：部分成功照成功做（附魔），用掉輔料
     const aux = gearRules.craft.aux

@@ -2,6 +2,15 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 工藝介面與材料（R18）
+
+- 起因：玩家回饋（Discord 的 Tirpitz、issue #62 第 14、15 條）：底材清單混雜難找、看不出做出來的數值、「一級材料為啥非要自己買」。
+- 樣稿 `docs/mockups/craft.html` 確認後實作（`CraftPanel.vue`，委託與自己打造共用）：部位 → 類型 → 底材按鈕列、搜尋、材料比較表（做樣稿時確認稀有度不改數值、只決定附魔點數）、記住上次的選擇。
+- 底材的類型：`gear.json` 主手、副手的底材加 `type`，其他依欄位與材料推（`gear.ts` 的 `baseType`）；世界編輯器可以改（`mods.ts` 的 `sanitizeBase`）。
+- 第 1 級材料改成物品（擁有者決定）：鐵礦石、木材加上 `forge` 並在店裡賣，新增鞣製皮革、亞麻布、銅錠，低階獸皮、羊毛、古代亞麻布、燒焦的銅料也能用；拿掉 `crafts.json` 的 `self.tier1_cost_ratio`。委託的第 1 級照舊由工匠提供。
+- 材料來源：`craftPlan` 的 `sources`、選項 `use`（優先用哪一種）與 `buy`（向站的這間店當場補買，`shopOfferHere`、結算時扣存貨）；target 接 `|!use=`、`|!buy`。輔料照舊。
+- 規則寫在 [CRAFTING](../../CRAFTING.md) 2、2.1 節、[ITEMS](../../ITEMS.md) 第 5、5.1 節、[CONTENT_EDITOR](../../CONTENT_EDITOR.md)；測試在 `craftMaterials.spec.ts`、`crafting.spec.ts`、`gear.spec.ts`。
+
 ### 2026-11-05 提示詞與正則（R17 結案）
 
 - 起因：玩家用自訂破限預設（「貓神」）時，模型在正文寫出 `<think_nya>…</think_nya>`，原樣顯示在冒險日誌（Discord，2026-11-05）。
