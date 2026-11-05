@@ -32,7 +32,7 @@ FIVE = [ZHAOHUA, SU, LU, JIU, JIN]
 STORIES.append(story(
     'yg_five_seats', 'B', '五席的夜宴',
     '大燁立憲之後的第一次五席會議：朝廷、萍江的官府與農工、瑔州港的胡記與金黃鱗各一席。會議之後的夜宴只有五個人——她們發現，聊的是同一個人。' + GROUP,
-    {'kind': 'guild', 'location': 'longan', 'min_level': 11,
+    {'kind': 'guild', 'location': 'longan', 'min_level': 15,
      'requires': {'flags': ['yhpol_constitution', 'yczh_lover', 'ycsh_lover', 'yclq_lover', 'ychj_lover', 'ycjy_lover']},
      'text': '溫如玉在公會等你，手上是一封蓋了五個印的信：龍紋的玉璽、萍江府的官印、織工行會的梭子印、胡記的狐印、金墨盟的金秤印。「陛下親手交給我的，」她說，「要我當面給你。」信上只有一句話：「五席會議，請證人出席。會後設宴，只有五席——和你。」'},
     'ygfs_started', [

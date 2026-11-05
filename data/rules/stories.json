@@ -38844,7 +38844,7 @@
           "id": "give",
           "title": "把工單交給陸青禾",
           "text": "陸青禾看完工單，冷笑一聲：「工期翻一倍、工錢少一半，阿蓮的手是被這張紙穿透的。」",
-          "at": { "where": "npc", "npc": "npc_yh_lu_qinghe", "location": "pingjiang" },
+          "at": { "where": "npc", "npc": "npc_yh_lu_qinghe" },
           "requires": { "flags": ["yhw_got"] },
           "kind": "story",
           "success": {
@@ -45985,7 +45985,7 @@
       "start": {
         "kind": "guild",
         "location": "longan",
-        "min_level": 11,
+        "min_level": 15,
         "requires": { "flags": ["yhpol_constitution", "yczh_lover", "ycsh_lover", "yclq_lover", "ychj_lover", "ycjy_lover"] },
         "text": "溫如玉在公會等你，手上是一封蓋了五個印的信：龍紋的玉璽、萍江府的官印、織工行會的梭子印、胡記的狐印、金墨盟的金秤印。「陛下親手交給我的，」她說，「要我當面給你。」信上只有一句話：「五席會議，請證人出席。會後設宴，只有五席——和你。」"
       },
@@ -50789,7 +50789,7 @@
         "kind": "npc",
         "npc": "npc_td_wanning",
         "min_affinity": 20,
-        "requires": { "flags": ["tdwn_1_done"] },
+        "requires": { "flags": ["tdwn_1_done"], "pc_races": ["centaur"] },
         "text": "燁婉寧換下了宮裝，穿著一件不合身的媞丹皮袍，銀冠也摘了，只用頭巾包著龍角：「今晚那達慕結束，摔跤手們會在營帳裡喝一整夜的酒。」她抓著你的手，掌心全是汗，「我想去看看。最後一次——我保證。」",
         "min_level": 8
       },
@@ -51586,6 +51586,78 @@
         }
       ],
       "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "tdwn_after_naadam_other",
+      "title": "那達慕之後的夜",
+      "summary": "那達慕之後，摔跤手們在營帳裡喝酒到天亮。燁婉寧說她想去帳外「只是看看」——你知道她想要的不只是看。（燁婉寧・二）",
+      "tags": ["adult", "ntr"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_wanning",
+        "min_affinity": 20,
+        "requires": { "flags": ["tdwn_1_done"], "pc_races_none": ["centaur"] },
+        "text": "燁婉寧換下了宮裝，穿著一件不合身的媞丹皮袍，銀冠也摘了，只用頭巾包著龍角：「今晚那達慕結束，摔跤手們會在營帳裡喝一整夜的酒。」她抓著你的手，掌心全是汗，「我想去看看。最後一次——我保證。」",
+        "min_level": 8
+      },
+      "start_flags": ["tdwn_2o_started"],
+      "nodes": [
+        {
+          "id": "sneak",
+          "title": "晚上到金帳王庭的近郊溜到摔跤手的營帳外",
+          "text": "摔跤手的營帳外點著一圈火把，帳裡傳來粗啞的笑聲與唱歌聲。巴特爾和幾個赤膊的雄性人馬族坐在火邊大口喝酒。你得帶著燁婉寧繞過守夜的人，溜到帳後的陰影裡。",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdwn_2o_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": { "text": "你們貼著帳篷的陰影溜到帳後。帳布的縫裡透出火光，燁婉寧蹲在你身邊，呼吸越來越急，眼睛一眨也不眨。", "set_flags": ["tdwn_close"] },
+          "fail": { "text": "守夜的人往這邊看了一眼，你只好拉著她退回草叢。等一下再試。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_td_wanning"]
+        },
+        {
+          "id": "tail",
+          "title": "晚上在金帳王庭的近郊擋下尾隨可敦的人",
+          "text": "你們還沒看多久，身後的草叢就傳來窸窣聲：兩個黑鬃的悍匪一路尾隨可敦出了王庭，手上拿著麻袋。「南院的可敦，值多少贖金？」",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdwn_close"] },
+          "kind": "combat",
+          "enemies": [["td_raider_veteran", 1], ["td_smuggler_guard", 1]],
+          "success": { "text": "悍匪跑了。帳裡的歌聲停了一下，又繼續。燁婉寧靠在帳篷邊大口喘氣，臉頰紅得不像是被嚇的。", "set_flags": ["tdwn_escaped"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "urgent": true
+        },
+        {
+          "id": "want",
+          "title": "晚上在金帳王庭的近郊回答燁婉寧",
+          "text": "帳裡的火光照在她臉上。她看著帳布上那些高大的影子，又轉頭看著你，聲音在發抖：「我想進去。」她抓著你的手，指甲陷進你的掌心，「我不知道我想要什麼……不對，我知道。我只是不敢。」",
+          "at": { "where": "outskirts", "location": "jinzhang" },
+          "requires": { "flags": ["tdwn_escaped"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_td_wanning"],
+          "options": [
+            {
+              "label": "「去吧，我在帳外等妳」",
+              "tags": ["ntr"],
+              "success": {
+                "text": "她看了你很久，然後鬆開你的手，掀開帳簾走了進去。帳裡的歌聲停了，接著是一陣低沉的笑聲。你在帳外等到天亮。她出來的時候，頭巾不見了，龍角上纏著一根馬鬃，走路有點不穩——可是她在笑，笑得像第一次活過來。",
+                "set_flags": ["tdwn_2_done", "tdwn_ntr"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_td_wanning", "delta": 10, "reason": "在帳外等她" },
+                  { "type": "memory", "summary": "那達慕之後的夜，你在摔跤手的營帳外等燁婉寧到天亮；她出來的時候在笑，笑得像第一次活過來。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" }
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
     }
   ]
 }

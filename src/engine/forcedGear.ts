@@ -2,9 +2,9 @@
 // 免費給主角裝上並鎖住；契約還在時不能卸下，也不能在那個欄位換別的（inventory.ts 的 lockedGear）。
 // 陷阱鎖（docs/LEWD_STATS.md 第 27 節）：事件的 restrain 把拘束具鎖在主角身上，不綁契約；脫縛、鑰匙或鐵匠剪鎖才拿得下。
 
-import { itemRules, lewdRules, LOCK_GRADES, TRAP_LOCK, type LockGrade } from './data'
+import { itemRules, raceName, lewdRules, LOCK_GRADES, TRAP_LOCK, type LockGrade } from './data'
 import { tagsAllowed } from './content'
-import { EXTRA_SLOT, gearKnown, gearRules, slotName } from './gear'
+import { EXTRA_SLOT, gearKnown, gearRules, slotNameFor, slotsFor } from './gear'
 import { freeSlotsFor, putOn } from './inventory'
 import { npcRecord } from './npcs'
 import { pcOf } from './party'
@@ -37,7 +37,7 @@ export function forceEquip(state: GameState, report: Report, master: string, ite
   // 拘束具：主人用自己的鎖鎖上（依身分，雙面效應的倍率）
   if (gearRules.bases[spec.base]?.bind) pc.gear![target]!.lock = masterLockGrade(rec?.tags ?? [])
   if (back.length) (report.changes.items_gained ??= []).push(...back.map((n) => ({ name: n, qty: 1, owner: 'pc' })))
-  return `${rec?.name ?? '主人'}替主角在${slotName(target)}裝上了【${name}】，契約還在時拿不下來${back.length ? `（${back.join('、')}收進行囊）` : ''}`
+  return `${rec?.name ?? '主人'}替主角在${slotNameFor(target, pc.race)}裝上了【${name}】，契約還在時拿不下來${back.length ? `（${back.join('、')}收進行囊）` : ''}`
 }
 
 /**
@@ -53,6 +53,8 @@ export function restrainPc(state: GameState, report: Report, item: string, lock:
   const options = freeSlotsFor(pc, spec)
   const native = options.filter((x) => x !== EXTRA_SLOT)
   const slot = native.find((x) => !pc.gear?.[x]) ?? native[0] ?? (options.includes(EXTRA_SLOT) ? EXTRA_SLOT : undefined)
+  // 種族穿不了（人馬族戴不上步鍊、腳鐐這類戴在腳上的）
+  if (!slotsFor(spec, pc.race).length) return `${raceName(pc.race)}戴不上${item}`
   if (!slot) return `${item}沒有地方戴（那些部位都被鎖住了）`
   // 事件寫的鎖和物品自帶的鎖取比較好的一把（自帶符文鎖的枷不會被陷阱的白鐵鎖換掉）
   const given: LockGrade = lewdRules.locks.grades[lock] ? lock : 'white'
@@ -60,5 +62,5 @@ export function restrainPc(state: GameState, report: Report, item: string, lock:
   const { target, back } = putOn(pc, item, spec, slot, `${TRAP_LOCK}${item}`)
   pc.gear![target]!.lock = grade
   if (back.length) (report.changes.items_gained ??= []).push(...back.map((n) => ({ name: n, qty: 1, owner: 'pc' })))
-  return `【${item}】被${lockName(grade)}鎖在主角的${slotName(target)}上，自己打不開（要脫縛、用鑰匙或找鐵匠剪鎖）${back.length ? `（${back.join('、')}收進行囊）` : ''}`
+  return `【${item}】被${lockName(grade)}鎖在主角的${slotNameFor(target, pc.race)}上，自己打不開（要脫縛、用鑰匙或找鐵匠剪鎖）${back.length ? `（${back.join('、')}收進行囊）` : ''}`
 }

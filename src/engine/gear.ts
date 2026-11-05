@@ -7,7 +7,7 @@
 //   其餘欄位與材料、附魔的加成合計成 mods / resist / offense（gearBonuses）。
 
 import gearJson from '@data/rules/gear.json'
-import { armorDef, attrName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
+import { armorDef, attrName, raceName, damageTypeName, damageTypes, equipment, itemDef, itemRules, lewdRules, weaponDef, mulResist, type AffinityMap, type AttrId, type BindKind, type Mods } from './data'
 import { describeEffects } from './perks'
 import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
@@ -382,6 +382,29 @@ export function slotNameFor(slot: GearSlot, race?: string): string {
   return (race && gearRules.races[race]?.relabel?.[slot]?.name) || gearRules.slots[slot]
 }
 
+/** 這個種族穿不了這種底材的原因（人馬族穿不了一般的鞋子、內褲）；穿得了時是 undefined */
+export function raceUnfitReason(baseId: string, race?: string): string | undefined {
+  const base = gearRules.bases[baseId]
+  if (!base || !race || baseSlotsFor(baseId, race).length) return undefined
+  const rn = raceName(race)
+  if (base.races?.length && !base.races.includes(race)) return `只有${base.races.map(raceName).join('、')}能穿${base.name}`
+  const rule = gearRules.races[race]
+  const slot = (gearRules.slot_groups[base.slot]?.[0] ?? base.slot) as GearSlot
+  const what = gearRules.slots[slot] ?? base.slot
+  const relabel = rule?.relabel?.[slot]
+  if (relabel) return `${rn}沒有穿${what}的地方（那一格是${relabel.name}，只能穿${rn}的${raceWearNames(race, relabel.as as GearSlot).join('、') || relabel.name}）`
+  if (rule?.restricted?.includes(slot)) {
+    const own = raceWearNames(race, slot)
+    return `${rn}穿不了一般的${what}${own.length ? `，只能穿${rn}的${own.join('、')}` : ''}`
+  }
+  return `${rn}穿不了${base.name}`
+}
+
+/** 這個種族在這個部位專用的底材名稱（一般的，不含拘束具與專屬底材） */
+function raceWearNames(race: string, slot: GearSlot): string[] {
+  return Object.values(gearRules.bases).filter((b) => b.races?.includes(race) && b.slot === slot && !b.restraint && !b.exclusive).map((b) => b.name)
+}
+
 /** 這個種族在這個欄位用的種族限定底材（NPC 的配備、服裝把一般的底材換成它）：同材料類型優先，再來是比較輕的 */
 export function raceBaseFor(race: string | undefined, slot: GearSlot, kind?: MaterialKind): string | undefined {
   if (!race || !gearRules.races[race]?.restricted?.includes(slot)) return undefined
@@ -437,6 +460,14 @@ export function wearChoices(): [string, string][] {
     ...Object.entries(gearRules.bases).filter(([, b]) => b.outfit).map(([id, b]): [string, string] => [id, `任何一件${b.name}`]),
     ...itemRules.items.filter((i) => i.gear && gearRules.bases[i.gear.base]?.outfit).map((i): [string, string] => [i.name, i.name]),
   ]
+}
+
+/** 限定穿著裡這個種族完全穿不了的（例如人馬族穿不了一般的鞋子、內褲）：底材 id 或物品名稱 */
+export function wearUnfit(race: string | undefined, wear: string[] | undefined): string[] {
+  return (wear ?? []).filter((w) => {
+    const base = gearRules.bases[w] ? w : itemDef(w)?.gear?.base
+    return !!base && !baseSlotsFor(base, race).length
+  })
 }
 
 /** 還沒穿上限定穿著時的說明（按鈕停用）；穿好了是 undefined */

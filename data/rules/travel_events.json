@@ -17,7 +17,7 @@
       ]
     },
     {
-      "id": "wounded_traveler", "tier": "normal", "kind": "choice", "category": "social",
+      "id": "wounded_traveler", "tier": "normal", "kind": "choice", "category": "social", "modes": ["road", "trail", "wild"],
       "title": "受傷的旅人",
       "text": "路邊坐著一個受傷的旅人，腿上的傷口還在滲血。",
       "options": [
@@ -636,7 +636,7 @@
       "modes": ["sea"],
       "regions": ["yanhua_south"],
       "title": "偷渡的人",
-      "text": "貨艙裡躲著一個瘦小的化龍族少年，墨鐵色的鱗片上全是煤灰。他求你別告訴船長：他想去潮汐港找在那裡當水手的哥哥。",
+      "text": "貨艙裡躲著一個瘦小的化龍族少年，墨鐵色的鱗片上全是煤灰。他求你別告訴船長：他想去瑔州港找在那裡當水手的哥哥。",
       "options": [
         {
           "label": "替他付船資（50 白鸛）",

@@ -8,7 +8,7 @@ import {
   abilities, attrName, classDef, raceName, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK,
   type ItemIntel, type ItemUse, type LockGrade,
 } from './data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotNameFor, slotsFor, syncGear, wearName } from './gear'
+import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, slotNameFor, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
 import { discoverLead, hiddenLeadFor, leadPoolOn } from './leads'
 import type { Lead } from './types'
@@ -249,7 +249,7 @@ export function freeSlotsFor(m: Character, spec: GearSpec): GearSlot[] {
  */
 export function putOn(m: Character, name: string, spec: GearSpec, slot?: GearSlot, locked?: string): { target: GearSlot; back: string[] } {
   const all = slotsFor(spec, m.race)
-  if (!all.length) throw new Error(gearRules.bases[spec.base]?.races?.length ? `只有${gearRules.bases[spec.base]!.races!.map(raceName).join('、')}能穿${name}` : `${m.name}無法使用這個欄位`)
+  if (!all.length) throw new Error(gearRules.bases[spec.base]?.races?.length ? `只有${gearRules.bases[spec.base]!.races!.map(raceName).join('、')}能穿${name}` : raceUnfitReason(spec.base, m.race) ?? `${m.name}無法使用這個欄位`)
   if (slot && !all.includes(slot)) throw new Error(`${name}不能放在${slotNameFor(slot, m.race)}`)
   if (slot) assertUnlocked(m, slot)
   const options = freeSlotsFor(m, spec)
@@ -283,7 +283,7 @@ export function equipItem(state: GameState, name: string, memberId: string, slot
   const { target, back } = putOn(m, name, spec, slot)
   report.changes.items_lost = [{ name, qty: 1 }]
   if (back.length) report.changes.items_gained = back.map((n) => ({ name: n, qty: 1, owner: 'pc' }))
-  report.outcome.summary = `${m.name}在${slotName(target)}裝上了${name}${back.length ? `，把${back.join('、')}收進行囊` : ''}。`
+  report.outcome.summary = `${m.name}在${slotNameFor(target, m.race)}裝上了${name}${back.length ? `，把${back.join('、')}收進行囊` : ''}。`
   return commitReport(state, report)
 }
 
@@ -292,7 +292,7 @@ export function unequipItem(state: GameState, memberId: string, slot: GearSlot):
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   const m = member(state, memberId)
   const g = m.gear?.[slot]
-  if (!g) throw new Error(`${slotName(slot)}沒有裝備`)
+  if (!g) throw new Error(`${slotNameFor(slot, m.race)}沒有裝備`)
   assertUnlocked(m, slot)
   delete m.gear![slot]
   syncGear(m, classDef(m.class).weapon)

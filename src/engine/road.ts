@@ -70,7 +70,7 @@ export interface RoadTemplate {
   triggers?: DungeonTrigger[]
   /** 地下城、線索：只在這些地點（地下城的 id；近郊是那座聚落的 id；沒有時任何地點） */
   dungeons?: string[]
-  /** 地下城：只在這些地區；旅途：這一段路要去的地區（沒有時任何地區） */
+  /** 地下城：只在這些地區；旅途：這一段路要去的地區（海路是兩端的地區；沒有時任何地區） */
   regions?: string[]
   /** 地下城、線索：哪幾層（0 近郊、1 淺層、2 中層、3 深層、4 底層；沒有時任何一層） */
   layers?: number[]
@@ -203,8 +203,9 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
     const mode = legs[cell.road!.leg]!.mode
     if (!rng.chance(Math.min(1, (travelEvents.chance[mode] ?? 0) * gameRule(state, 'travelEventMult')))) continue
     // 成人向的旅途事件：內容篩選、主角的體型（和城鎮事件一樣）
-    // 地區：這一段路要去的地區（旅途事件在規劃路線時就決定）
-    const legRegion = locationById(legs[cell.road!.leg]!.to).region
+    // 地區：這一段路要去的地區（旅途事件在規劃路線時就決定）。海路兩端的地區都算（遠洋的海上不屬於哪一邊，去程回程都會遇到）
+    const leg = legs[cell.road!.leg]!
+    const legRegion = mode === 'sea' ? [locationById(leg.to).region, locationById(leg.from).region] : locationById(leg.to).region
     const fits = (t: RoadTemplate) => roadEventFits(state, t, mode, legRegion)
     const checks = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'check' && fits(t))
     const choices = travelEvents.templates.filter((t) => t.tier === 'normal' && t.kind === 'choice' && fits(t))
@@ -459,11 +460,12 @@ function locationExists(id: string): boolean {
 }
 
 /**
- * 這件旅途事件能不能出現在這一段路：路段、地區（這一段路要去的地區）、條件、內容篩選、主角的體型。
+ * 這件旅途事件能不能出現在這一段路：路段、地區（這一段路要去的地區；海路是兩端的地區，給好幾個時任何一個符合就算）、條件、內容篩選、主角的體型。
  * 規劃路線時就決定，所以條件看的是出發時的狀態（魅氣濃度、地點看的是出發的地方）
  */
-export function roadEventFits(state: GameState, t: RoadTemplate, mode: RouteMode, region: string): boolean {
-  return (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && (!t.regions?.length || t.regions.includes(region))
+export function roadEventFits(state: GameState, t: RoadTemplate, mode: RouteMode, region: string | string[]): boolean {
+  const regions = Array.isArray(region) ? region : [region]
+  return (t.scope ?? 'road') === 'road' && (!t.modes || t.modes.includes(mode)) && (!t.regions?.length || regions.some((r) => t.regions!.includes(r)))
     && condMet(state, t.requires) && tagsAllowed(t.tags) && pcBodyAllowed(t.pc_body, characterBody(pcOf(state)))
 }
 
