@@ -32,6 +32,9 @@ function sync() {
   if (props.open && !d.open) {
     opener = lastInputWasPointer && document.activeElement instanceof HTMLElement ? document.activeElement : null
     d.showModal()
+    // 瀏覽器會聚焦對話框裡第一個能聚焦的東西：是「?」說明時拿掉焦點，不要一打開就跳出說明蓋住內容
+    const f = document.activeElement
+    if (f instanceof HTMLElement && f.classList.contains('hint') && d.contains(f)) f.blur()
   } else if (!props.open && d.open) d.close()
 }
 function onClose() {

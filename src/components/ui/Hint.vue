@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, ref } from 'vue'
 import GameIcon from './GameIcon.vue'
 import type { IconName } from './iconPaths'
 
-// 「?」說明：滑鼠移上去、聚焦或點一下時顯示羊皮紙小框。
+// 「?」說明：滑鼠移上去、用鍵盤移到上面或點一下時顯示羊皮紙小框（對話框打開時自動聚焦不會跳出來）。
 // 小框掛在 body 上（fixed 定位），不會被有捲軸的面板裁掉；用 popover 放進瀏覽器的最上層，
 // 才不會被 showModal() 開的對話框（也在最上層）蓋住。點「?」不會觸發外面的 label。
 // warn：改成三角形的警告圖示（提醒費用、風險；文字一樣移上去才顯示）。
@@ -28,6 +28,10 @@ async function show() {
   const p = pop.value as (HTMLElement & { showPopover?: () => void }) | null
   if (p?.showPopover && !p.matches(':popover-open')) p.showPopover()
 }
+/** 聚焦時：只有用鍵盤移過來的才顯示（對話框打開時瀏覽器自動聚焦、點過之後留著的焦點不算） */
+function onFocus() {
+  if (btn.value?.matches(':focus-visible')) void show()
+}
 function hide() {
   if (!pinned.value) open.value = false
 }
@@ -50,7 +54,7 @@ onBeforeUnmount(() => window.removeEventListener('click', onOutside))
 <template>
   <span
     ref="btn" class="hint" :class="{ warn }" role="button" tabindex="0" :aria-label="warn ? '注意' : '說明'"
-    @mouseenter="show" @mouseleave="hide" @focus="show" @blur="hide" @click.stop="toggle" @keydown.enter.prevent="toggle()"
+    @mouseenter="show" @mouseleave="hide" @focus="onFocus" @blur="hide" @click.stop="toggle" @keydown.enter.prevent="toggle()"
   >
     <GameIcon :name="icon" :size="14" />
   </span>
