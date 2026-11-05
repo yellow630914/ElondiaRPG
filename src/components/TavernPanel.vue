@@ -202,7 +202,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
     <AppDialog :open="section !== null" :title="section ? TITLES[section] : ''" icon="mug" :inline-error="section === 'trade'" :width="section === 'trade' ? '1180px' : section === 'black' ? '980px' : '900px'" @close="section = null">
       <template #head>
         <Hint v-if="section === 'meals'" text="全隊一起吃（價格是每人）。吃完的狀態到下次長休前有效；同時只保留最好的一餐，喝酒喝多了會微醺。" />
-        <Hint v-else-if="section === 'recruit'" text="今天在城裡、可以雇用的冒險者（在右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。" />
+        <Hint v-else-if="section === 'recruit'" :text="`今天在城裡、可以雇用的冒險者（在右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。\n雇用是一次付清：沒有期限，也不用按週付薪水。之後的戰利品與委託報酬都歸你，不用分給同伴。\n同伴的親密度降到 ${companionRules.leave_threshold} 以下時，會在短休或長休後離隊（奴隸除外）；也可以在隊伍裡遣散。`" />
         <Hint v-else-if="section === 'invite'" text="需要親密度與魅力檢定。被婉拒後，要等下次長休才能再邀請。" />
       </template>
 

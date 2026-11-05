@@ -2,6 +2,11 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 設定的匯出與匯入、遊戲內規則說明（R17 的 Q-6、Q-7）
+
+- 設定的匯出與匯入（issue #62 第 2 條）：`stores/settingsFile.ts`、`SettingsFilePanel.vue`（設定頁的「存檔」改名「存檔與設定檔」）。原樣搬 `elondia.settings`、`elondia.image`、`elondia.promptSets`、`elondia.characters`；`apiKey` 預設清空，匯入時空的金鑰沿用原本的；匯入後重新整理頁面。規則寫在 [SAVES](../../SAVES.md) 第 8 節，測試在 `settingsFile.spec.ts`。
+- 遊戲內規則說明（issue #62 第 19、21 條）：酒館「招募冒險者」的說明寫出雇用一次付清、沒有期限與週薪、戰利品不分、親密度太低會離隊；`GuardStatus.vue` 在聲望旁加「犯法的後果」（數字照 `security.json`）。只寫現有的規則，沒有新增規則。寫在 [COMPANIONS](../../COMPANIONS.md) 2.1 節、[NPC_SYSTEM](../../NPC_SYSTEM.md) 第 9 節，測試在 `ruleHints.spec.ts`。
+
 ### 2026-11-05 小改進：版本號、骰面判定、戰鬥的回合提示（R17 的 Q-1～Q-3）
 
 - 版本號：`vite.config.ts` 用 `define` 把 `package.json` 的版本帶進程式（`__APP_VERSION__`，型別在 `env.d.ts`），首頁下方與設定的「存檔」頁顯示。

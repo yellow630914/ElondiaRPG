@@ -14,6 +14,7 @@ import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
 import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultySummary, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
 import ModelSourceEditor from './ModelSourceEditor.vue'
+import SettingsFilePanel from './SettingsFilePanel.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
@@ -48,7 +49,7 @@ const PAGES = [
   { id: 'narration', label: '敘事與判定', icon: 'sparkles' },
   { id: 'rules', label: '遊戲規則', icon: 'd20' },
   { id: 'display', label: '畫面', icon: 'eye' },
-  { id: 'save', label: '存檔', icon: 'save' },
+  { id: 'save', label: '存檔與設定檔', icon: 'save' },
 ] as const
 type PageId = (typeof PAGES)[number]['id']
 const PAGE_KEY = 'elondia.settingsPage'
@@ -332,6 +333,7 @@ function doReset() {
       <p v-if="game.state" class="small muted">目前：{{ game.state.reports.length }} 則完整的日誌、{{ game.state.logArchive?.length ?? 0 }} 則封存的紀錄。</p>
     </div>
   </section>
+  <SettingsFilePanel v-if="page === 'save'" />
 </template>
 
 <style scoped>
