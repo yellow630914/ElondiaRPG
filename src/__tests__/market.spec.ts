@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { geography, itemRules } from '@/engine/data'
 import { enterLocation, standOn } from '@/engine/grid'
-import { categoryMult, marketMult, marketRules, pctText, tagEffectText, townTags, tradeCategory, TRADE_CATEGORIES } from '@/engine/market'
+import { categoryMult, marketMult, marketRules, pctText, tagEffectText, townStates, townTags, tradeCategory, TRADE_CATEGORIES, type TradeCategory } from '@/engine/market'
 import { normalizeMods } from '@/engine/mods'
 import { addItem, newGame } from '@/engine/state'
 import { sellPrice, shopKey, shopState } from '@/engine/trade'
@@ -74,40 +74,50 @@ describe('城鎮的固定標籤（R19 T3）', () => {
   })
 
   it('multiplies the tags of the town and clamps the result', () => {
-    expect(categoryMult('ironforge', 'metal').x).toBe(0.5)
-    expect(categoryMult('ironforge', 'weapon').x).toBe(0.8)
-    expect(categoryMult('ironforge', 'grain').x).toBe(1)
-    expect(categoryMult('ironforge', 'metal').parts.map((p) => p.label)).toEqual(['礦產豐富'])
+    const s = at('ironforge')
+    // 只看固定標籤（今天的動態狀態另外測）
+    const tagX = (loc: string, cat: TradeCategory) => categoryMult(s, loc, cat).parts.filter((p) => p.kind === 'tag').reduce((a, p) => a * p.x, 1)
+    expect(tagX('ironforge', 'metal')).toBe(0.5)
+    expect(tagX('ironforge', 'weapon')).toBe(0.8)
+    expect(tagX('ironforge', 'grain')).toBe(1)
+    expect(categoryMult(s, 'ironforge', 'metal').parts.filter((p) => p.kind === 'tag').map((p) => p.label)).toEqual(['礦產豐富'])
     // 灰岩堡壘：邊境（武器 ×1.3）
-    expect(categoryMult('greyrock', 'weapon').x).toBe(1.3)
-    // 地下城、驛站沒有標籤
-    expect(categoryMult('ws_a_b', 'metal').x).toBe(1)
+    expect(tagX('greyrock', 'weapon')).toBe(1.3)
+    // 地下城、驛站沒有標籤也沒有狀態
+    expect(categoryMult(s, 'ws_a_b', 'metal')).toEqual({ category: 'metal', x: 1, parts: [] })
     const [lo, hi] = marketRules.mult_range
     expect(lo).toBe(0.4)
     expect(hi).toBe(2.5)
+    // 結果是各部分相乘、再夾在範圍裡
+    for (const loc of ['ironforge', 'greyrock', 'soriel', 'tidehaven']) {
+      for (const day of [1, 9, 23, 40]) {
+        s.time.day = day
+        for (const c of TRADE_CATEGORIES) {
+          const m = categoryMult(s, loc, c)
+          expect(m.x).toBeCloseTo(Math.max(lo, Math.min(hi, m.parts.reduce((a, p) => a * p.x, 1))))
+        }
+      }
+    }
   })
 
   it('applies to both the shop price and the buying price', () => {
-    const iron = at('ironforge')
-    const soriel = at('soriel')
-    for (const s of [iron, soriel]) {
+    for (const town of ['ironforge', 'soriel']) {
+      const s = at(town)
       standOn(s, 'smithy')
       s.inventory = []
       addItem(s.inventory, '鐵礦石', 1)
-      addItem(s.inventory, '狼皮', 1)
+      // 王都（×1.15）× 類別倍率；材料全價收購，沒有折扣、聲望與身分的加減
+      const x = marketMult(s, town, '鐵礦石').x
+      expect(sellPrice(s, shopKey(s, 'smithy'), '鐵礦石')).toBe(Math.max(1, Math.floor(itemRules.items.find((i) => i.name === '鐵礦石')!.price_cc * 1.15 * x)))
+      // 店裡的武器
+      const deal = shopState(s, 'smithy').deals.find((d) => d.id.startsWith('item:') && tradeCategory(s, d.title) === 'weapon')
+      if (deal) {
+        const def = itemRules.items.find((i) => i.name === deal.id.slice(5))!
+        expect(deal.gives[0]!.amount).toBe(Math.max(1, Math.round(def.price_cc * 1.15 * marketMult(s, town, def.name).x)))
+      }
     }
-    // 兩座都是王都（聚落倍率相同）：鐵爐堡的礦石只收一半，狼皮一樣
-    const sell = (s: typeof iron, n: string) => sellPrice(s, shopKey(s, 'smithy'), n)!
-    expect(sell(iron, '鐵礦石')).toBe(Math.floor(sell(soriel, '鐵礦石') * 0.5))
-    expect(sell(iron, '狼皮')).toBe(sell(soriel, '狼皮'))
-    // 店裡的武器：鐵爐堡（鍛造重鎮）是 ×0.8
-    const deal = shopState(iron, 'smithy').deals.find((d) => d.id.startsWith('item:') && tradeCategory(iron, d.title) === 'weapon')
-    if (deal) {
-      const name = deal.id.slice(5)
-      const def = itemRules.items.find((i) => i.name === name)!
-      expect(marketMult(iron, 'ironforge', name).x).toBe(0.8)
-      expect(deal.gives[0]!.amount).toBe(Math.max(1, Math.round(def.price_cc * 1.15 * 0.8)))
-    }
+    // 鐵爐堡的礦石有「礦產豐富」
+    expect(marketMult(at('ironforge'), 'ironforge', '鐵礦石').parts.some((p) => p.label === '礦產豐富')).toBe(true)
   })
 
   it('describes the tags for the town screen', () => {
@@ -115,5 +125,74 @@ describe('城鎮的固定標籤（R19 T3）', () => {
     expect(t.map((x) => x.def.name)).toEqual(['礦產豐富', '鍛造重鎮'])
     expect(tagEffectText(t[0]!.def)).toBe('礦石與金屬 −50%')
     expect(pctText(1.3)).toBe('+30%')
+  })
+})
+
+describe('動態狀態（R19 T4）', () => {
+  const towns = geography.locations.filter((l) => l.type !== 'dungeon')
+
+  it('has 30–40 states that only use known categories and tags', () => {
+    const ids = Object.keys(marketRules.states)
+    expect(ids.length).toBeGreaterThanOrEqual(30)
+    expect(ids.length).toBeLessThanOrEqual(40)
+    for (const d of Object.values(marketRules.states)) {
+      for (const c of Object.keys(d.mult)) expect(TRADE_CATEGORIES).toContain(c)
+      for (const t of [...(d.tags ?? []), ...(d.not_tags ?? [])]) expect(marketRules.tags[t]).toBeDefined()
+      expect(d.days[0]).toBeLessThanOrEqual(d.days[1])
+      expect(d.days[1]).toBeLessThanOrEqual(marketRules.state_rules.period_days)
+    }
+  })
+
+  it('draws at most 2 fitting, non-conflicting states, the same on every load', () => {
+    const s = at('ironforge')
+    let seen = 0
+    for (const l of towns) {
+      for (let day = 1; day <= 120; day++) {
+        s.time.day = day
+        const list = townStates(s, l.id)
+        seen += list.length
+        expect(list.length).toBeLessThanOrEqual(marketRules.state_rules.max)
+        const groups = list.map((x) => x.def.group).filter(Boolean)
+        expect(new Set(groups).size).toBe(groups.length)
+        for (const x of list) {
+          if (x.def.tags?.length) expect(x.def.tags.some((t) => l.trade_tags!.includes(t)), `${l.id} ${x.id}`).toBe(true)
+          if (x.def.regions?.length) expect(x.def.regions).toContain(l.region)
+          if (x.def.types?.length) expect(x.def.types).toContain(l.type)
+          expect(day).toBeGreaterThanOrEqual(x.start)
+          expect(day).toBeLessThan(x.end)
+          expect(x.end - x.start).toBeLessThanOrEqual(marketRules.state_rules.period_days)
+        }
+        // 同一個存檔、同一天重算一樣
+        expect(townStates({ seed: s.seed, time: { ...s.time } }, l.id).map((x) => x.id)).toEqual(list.map((x) => x.id))
+      }
+    }
+    // 平均每座聚落每天大約 0.4～1.2 個狀態
+    const avg = seen / (towns.length * 120)
+    expect(avg).toBeGreaterThan(0.3)
+    expect(avg).toBeLessThan(1.3)
+    expect(townStates(s, 'ws_a_b')).toEqual([])
+  })
+
+  it('changes over time and between worlds', () => {
+    const a = at('ironforge')
+    const b = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 99, birthplace: 'ironforge' })
+    const seq = (s: typeof a) => Array.from({ length: 60 }, (_, d) => { s.time.day = d + 1; return townStates(s, 'tidehaven').map((x) => x.id).join('+') }).join(',')
+    expect(new Set(seq(a).split(',')).size).toBeGreaterThan(2)
+    expect(seq(a)).not.toEqual(seq(b))
+  })
+
+  it('adds the states to the price', () => {
+    const s = at('ironforge')
+    for (let day = 1; day <= 60; day++) {
+      s.time.day = day
+      for (const st of townStates(s, 'ironforge')) {
+        const [cat, x] = Object.entries(st.def.mult)[0]!
+        const part = categoryMult(s, 'ironforge', cat as TradeCategory).parts.find((p) => p.kind === 'state' && p.label === st.def.name)
+        expect(part?.x).toBe(x)
+        expect(part?.daysLeft).toBe(st.end - day)
+        return
+      }
+    }
+    throw new Error('60 天裡鐵爐堡都沒有狀態')
   })
 })

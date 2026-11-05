@@ -23,6 +23,7 @@ import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarg
 import { currencyRule, CURRENCY, formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/interactions'
 import { itemCategory, shopKey, shopPlace } from '@/engine/trade'
+import { tagEffectText, townStates, townTags } from '@/engine/market'
 import { shopTitle } from '@/engine/shopNames'
 import { toolSummary } from '@/engine/tools'
 import { intelSummary, lockedGear } from '@/engine/inventory'
@@ -588,11 +589,21 @@ ${def.ai_effects.map((t) => `- ${docs[t] ?? t}`).join('\n')}
 6. 只輸出 JSON：{"deals":[{"title":"≤12 字","desc":"≤40 字","gives":[…],"gets":[…],"stock":1}]}`
   const user = `${place.waystation ? `地點：${loc.name}附近旅途上的${place.name}（偏遠的歇腳處，貨色少、價格高）\n` : ''}城鎮：${loc.name}（${geography.regions.find((r) => r.id === loc.region)?.name ?? ''}，${loc.type}${loc.faction ? `，${geography.factions.find((f) => f.id === loc.faction)?.name ?? loc.faction}` : ''}）
 商店：${def.name}：${shopTitle(place.id, type).name}
-${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
+${marketLine(state, place.waystation ? undefined : loc.id)}${keeper ? `${def.keeper.title}：${keeper.name}（${raceName(keeper.race)}）｜${keeper.personality}｜${keeper.appearance ?? ''}` : ''}
 主角：${pc.name} Lv.${pc.level}，持有 ${formatMoney(state.money_cc)}
 目錄（這間店平常賣的東西與價格）：
 ${catalog || '（無）'}`
   return { system, user }
+}
+
+/** 這裡的行情（城鎮的固定標籤、今天的動態狀態）：讓 AI 的特別商品呼應；目錄的價格程式已經算進去了 */
+function marketLine(state: GameState, locationId: string | undefined): string {
+  if (!locationId) return ''
+  const parts = [
+    ...townTags(locationId).map((t) => `${t.def.name}（${tagEffectText(t.def)}）`),
+    ...townStates(state, locationId).map((t) => `${t.def.name}：${t.def.desc}（${tagEffectText(t.def)}，還有 ${t.end - state.time.day} 天）`),
+  ]
+  return parts.length ? `這裡的行情（目錄價格已經照這個算過）：${parts.join('；')}\n` : ''
 }
 
 /** 談判方式：AI 依對象與情境生成，程式把 DC 夾在基準 ±3（見 engine/negotiation.ts）。 */

@@ -1,3 +1,4 @@
+import { marketMult } from '@/engine/market'
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -136,7 +137,8 @@ describe('shops', () => {
     expect(state.party.some((m) => m.name === '醉漢' && m.bond === 'hired')).toBe(true)
     buyDeal(state, 'tavern', mead.id)
     expect(state.inventory.find((i) => i.name === '蜂蜜酒')?.qty).toBe(1)
-    expect(sellPrice(state, shopKey(state, 'tavern'), '蜂蜜酒')).toBe(Math.floor(40 * 0.5 * 1.15 * (1 + 0.006 / 2)))
+    // 酒：照這裡的行情（固定標籤與今天的狀態）
+    expect(sellPrice(state, shopKey(state, 'tavern'), '蜂蜜酒')).toBe(Math.floor(40 * 0.5 * 1.15 * marketMult(state, 'soriel', '蜂蜜酒').x * (1 + 0.006 / 2)))
   })
 
   it('builds the shop prompt from the catalog', () => {

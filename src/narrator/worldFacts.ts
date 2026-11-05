@@ -7,7 +7,7 @@ import { monsterLine } from '@/engine/bestiary'
 import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, landmarks, locationById, regionById } from '@/engine/data'
 import { intelPlace, nearbyPlaces } from '@/engine/intel'
 import { activeLeads, ensureLeadPool, leadPoolOn } from '@/engine/leads'
-import { tagEffectText, townTags } from '@/engine/market'
+import { tagEffectText, townStates, townTags } from '@/engine/market'
 import { ENEMY_KINDS } from '@/engine/mods'
 import type { GameState } from '@/engine/types'
 import { shortestPath } from '@/engine/world'
@@ -42,7 +42,10 @@ export function worldFacts(state: GameState): string {
     .map(({ l, path }) => `- ${l.name} [${l.id}]｜${TYPE_NAME[l.type] ?? l.type}｜${regionById(l.region).name}｜${path.days[1] === 0 ? '就在附近' : `約 ${path.days[0] === path.days[1] ? path.days[0] : `${path.days[0]}～${path.days[1]}`} 天`}`)
   const marks = Object.values(landmarks).filter((l) => l.location === here.id).map((l) => l.name)
   // 這裡的行情（城鎮的固定標籤）：讓對方聊得出「這裡礦石便宜」；價格只由程式算
-  const market = townTags(here.id).map((t) => `${t.def.name}（${t.def.desc}；${tagEffectText(t.def)}）`)
+  const market = [
+    ...townTags(here.id).map((t) => `${t.def.name}（${t.def.desc}；${tagEffectText(t.def)}）`),
+    ...townStates(state, here.id).map((t) => `${t.def.name}（最近的事：${t.def.desc}；${tagEffectText(t.def)}；還有 ${t.end - state.time.day} 天）`),
+  ]
 
   // 怪物：附近（這裡的近郊、7 天內的地下城）每一層的遭遇表；淺的先列（各地下城的周邊、淺層比某一座的底層常被問到）
   const where = new Map<string, string[]>()
