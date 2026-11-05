@@ -19,6 +19,11 @@ const fileInput = ref<HTMLInputElement | null>(null)
 function exportFile() {
   if (withKeys.value && !confirm('檔案裡會有你的 API 金鑰（明文）。不要把這個檔案傳給別人或放到公開的地方。要繼續嗎？')) return
   const file = buildSettingsFile(withKeys.value)
+  if (!Object.keys(file.parts).length) {
+    error.value = '這台電腦還沒有改過任何設定（都是預設值），沒有東西可以匯出。'
+    return
+  }
+  error.value = ''
   download(`elondia-settings-${dateStamp()}${withKeys.value ? '-keys' : ''}.json`, JSON.stringify(file, null, 2))
 }
 

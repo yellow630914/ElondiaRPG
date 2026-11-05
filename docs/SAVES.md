@@ -151,6 +151,6 @@
 
 設定頁的「存檔與設定檔」有「匯出設定」「匯入設定…」（`src/components/SettingsFilePanel.vue`、`src/stores/settingsFile.ts`），換電腦時帶著走。和存檔分開：存檔用右上角的「存讀檔」，世界的自訂內容用「世界管理」。
 
-- 檔案是 JSON（`kind: "elondia-settings"`），四個部分原樣搬瀏覽器裡的內容：AI 來源與遊戲設定（`elondia.settings`）、生圖設定（`elondia.image`）、提示詞組（`elondia.promptSets`）、角色預設（`elondia.characters`）。這台電腦沒有的部分不放。
+- 檔案是 JSON（`kind: "elondia-settings"`），四個部分原樣搬瀏覽器裡的內容：AI 來源與遊戲設定（`elondia.settings`）、生圖設定（`elondia.image`）、提示詞組（`elondia.promptSets`）、角色預設（`elondia.characters`）。這台電腦沒有的部分不放；四個部分都沒有（從沒改過設定）時不下載，說明沒有東西可以匯出。
 - **API 金鑰預設不帶**：所有名為 `apiKey` 的欄位（含 Vertex 的服務帳戶 JSON）清成空的。勾「包含 API 金鑰」時照原樣寫進檔案，匯出前會提醒檔案裡有明文金鑰。
 - 匯入時先列出檔案的版本、匯出時間、有沒有金鑰，勾選要取代的部分，確認後寫進瀏覽器並重新整理頁面（各設定讀取時本來就會整理舊資料）。檔案裡空的金鑰沿用這台電腦同一個位置原本的金鑰。存檔、世界包放錯地方時說明該去哪裡匯入。
