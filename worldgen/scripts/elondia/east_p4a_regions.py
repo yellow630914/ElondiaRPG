@@ -197,7 +197,7 @@ STORIES = [
                     '打手們跑了。你把工單揣好，回去找陸青禾。', win_flags=['yhw_got'], urgent=True),
               node('give', '把工單交給陸青禾',
                    '陸青禾看完工單，冷笑一聲：「工期翻一倍、工錢少一半，阿蓮的手是被這張紙穿透的。」',
-                   at_npc(LU, 'pingjiang'), 'yhw_got',
+                   at_npc(LU), 'yhw_got',
                    success={'text': '「行會要開會了。」她說，「要嘛織造局簽工約，要嘛我們停機。」她看著你，「到時候，你站哪一邊？」',
                             'set_flags': ['yhw_1_done'], 'effects': [aff(LU, 10, '拿到了織造局的工單'), mem('替萍江織工行會的陸青禾從織造局拿到工單：工期翻倍、工錢減半。')], 'complete': True}),
           ]),

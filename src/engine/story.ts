@@ -17,7 +17,7 @@ import {
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
-import { wearNote } from './gear'
+import { wearNote, wearUnfit } from './gear'
 import { wearLocks } from './inventory'
 import { formatMoney } from './money'
 import { npcRecord, registerNpc } from './npcs'
@@ -69,6 +69,8 @@ export function canStart(state: GameState, def: StoryDef): boolean {
   if (state.stories?.[def.id]) return false
   if (!tagsAllowed(def.tags)) return false
   if (!pcBodyAllowed(def.start.pc_body, characterBody(pcOf(state)))) return false
+  // 限定穿著有主角的種族穿不了的（人馬族穿不了一般的鞋子、內褲）：接了也做不完，不發
+  if (storyWearUnfit(state, def).length) return false
   if (!storyRankOk(state, def)) return false
   if (def.start.min_level && pcOf(state).level < def.start.min_level) return false
   if (def.start.kind === 'npc' && def.start.npc && def.start.min_affinity !== undefined
@@ -486,6 +488,11 @@ export function storyCosts(node: StoryNode, option?: number): { success: number;
 export function storyWearLocks(state: GameState, def: StoryDef): string | undefined {
   const locks = wearLocks(pcOf(state), [...new Set(def.nodes.flatMap((n) => n.wear ?? []))])
   return locks.length ? `提醒：${locks.join('；')}，要先拿下來才能進行這個任務` : undefined
+}
+
+/** 任務要穿的（各任務點的 wear）裡主角的種族穿不了的 */
+export function storyWearUnfit(state: GameState, def: StoryDef): string[] {
+  return wearUnfit(pcOf(state).race, [...new Set(def.nodes.flatMap((n) => n.wear ?? []))])
 }
 
 /** 沒有穿上任務點的限定穿著（node.wear）時的說明；穿好了是 undefined */

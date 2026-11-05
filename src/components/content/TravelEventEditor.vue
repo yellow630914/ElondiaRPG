@@ -235,7 +235,7 @@ function remove() {
           <input type="checkbox" :checked="draft.modes?.includes(m)" @change="toggle<RouteMode>('modes', m, ($event.target as HTMLInputElement).checked)" /> {{ MODE_NAME[m] }}
         </label>
       </div>
-      <div v-if="!onPc" class="row small"><b>地區</b> <Hint text="這一段路要去的地區；沒勾時任何地區。旅途事件在規劃路線時就決定，所以魅氣濃度、地點這類條件看的是出發的地方，要限定地區請用這裡。" />
+      <div v-if="!onPc" class="row small"><b>地區</b> <Hint text="這一段路要去的地區（海路是兩端的地區，去程回程都算）；沒勾時任何地區。旅途事件在規劃路線時就決定，所以魅氣濃度、地點這類條件看的是出發的地方，要限定地區請用這裡。" />
         <label v-for="r in geography.regions" :key="r.id" class="check">
           <input type="checkbox" :checked="draft.regions?.includes(r.id)" @change="toggle('regions', r.id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}
         </label>

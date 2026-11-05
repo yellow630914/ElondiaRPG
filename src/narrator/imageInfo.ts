@@ -144,13 +144,18 @@ export function portraitComposition(places: string[], slots: string[]): string {
   return 'upper body'
 }
 
-/** 身上的裝備（名稱）：內衣、內褲被上身、下身的衣物蓋住時標「穿在裡面」；回傳露在外面的欄位 */
-function wornGear(gear: Partial<Record<GearSlot, EquippedGear>> | undefined): { names: string[]; visible: string[] } {
+/**
+ * 身上的裝備（名稱）：內衣、內褲被上身、下身的衣物蓋住時標「穿在裡面」；回傳露在外面的欄位。
+ * 種族改名的欄位照它收的部位算（人馬族的「後蹄」是鞋子：不會被蓋住，也不會拉成腰部的構圖）
+ */
+function wornGear(gear: Partial<Record<GearSlot, EquippedGear>> | undefined, race?: string): { names: string[]; visible: string[] } {
   const names: string[] = []
   const visible: string[] = []
   const cover: Partial<Record<GearSlot, GearSlot>> = { underwear_top: 'body', underwear_bottom: 'legs' }
-  for (const [slot, g] of Object.entries(gear ?? {}) as [GearSlot, EquippedGear | undefined][]) {
+  const relabel = (race && gearRules.races[race]?.relabel) || {}
+  for (const [raw, g] of Object.entries(gear ?? {}) as [GearSlot, EquippedGear | undefined][]) {
     if (!g?.name) continue
+    const slot = (relabel[raw]?.as as GearSlot | undefined) ?? raw
     const over = cover[slot]
     const hidden = !!over && !!gear?.[over]
     names.push(hidden ? `${g.name}（穿在裡面）` : g.name)
@@ -168,10 +173,10 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
   const gender = m?.gender ?? rec?.gender
   // 主角的性別是自由輸入的文字；NPC 是性別 id
   const genderText = !gender ? '' : m?.isPlayer ? gender : genderName(gender)
-  const worn = wornGear(m ? m.gear : rec?.character?.gear)
+  const worn = wornGear(m ? m.gear : rec?.character?.gear, m?.race ?? rec?.race)
   const gear = worn.names
   // 還沒有戰鬥資料的人（普通人、還沒登場的冒險者）：內容頁籤指定的裝備，沒有時依身分穿的服裝
-  const defGear = gear.length ? [] : rec?.gear ? Object.values(rec.gear).filter((g) => !!g).map((g) => gearName(g!)) : rec ? wornGear(npcOutfit(rec, rec.class ? undefined : state.time.day)).names : []
+  const defGear = gear.length ? [] : rec?.gear ? Object.values(rec.gear).filter((g) => !!g).map((g) => gearName(g!)) : rec ? wornGear(npcOutfit(rec, rec.class ? undefined : state.time.day), rec.race).names : []
   const tattoos = tattoosOf(m ?? rec?.character)
   return {
     id,

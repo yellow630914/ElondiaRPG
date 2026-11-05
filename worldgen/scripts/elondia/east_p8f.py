@@ -78,14 +78,13 @@ STORIES.append(story(
         ]),
     ], tags=['adult', 'ntr']))
 
-STORIES.append(story(
-    'tdwn_after_naadam', 'C', '那達慕之後的夜',
-    '那達慕之後，摔跤手們在營帳裡喝酒到天亮。燁婉寧說她想去帳外「只是看看」——你知道她想要的不只是看。（燁婉寧・二）',
-    {'kind': 'npc', 'npc': WANNING, 'min_affinity': 20, 'requires': {'flags': ['tdwn_1_done']},
-     'text': '燁婉寧換下了宮裝，穿著一件不合身的媞丹皮袍，銀冠也摘了，只用頭巾包著龍角：「今晚那達慕結束，摔跤手們會在營帳裡喝一整夜的酒。」她抓著你的手，掌心全是汗，「我想去看看。最後一次——我保證。」'},
-    'tdwn_2_started', [
+SUMMARY_NAADAM = '那達慕之後，摔跤手們在營帳裡喝酒到天亮。燁婉寧說她想去帳外「只是看看」——你知道她想要的不只是看。（燁婉寧・二）'
+# ② 兩個版本（照①）：人馬族的主角兩個選項都有（NTR 標在選項上）；其他主角只剩 NTR 的那一個，整條標 ntr（設定關掉 NTR 時暫停）
+NAADAM_START = {'kind': 'npc', 'npc': WANNING, 'min_affinity': 20, 'requires': {'flags': ['tdwn_1_done']},
+     'text': '燁婉寧換下了宮裝，穿著一件不合身的媞丹皮袍，銀冠也摘了，只用頭巾包著龍角：「今晚那達慕結束，摔跤手們會在營帳裡喝一整夜的酒。」她抓著你的手，掌心全是汗，「我想去看看。最後一次——我保證。」'}
+NAADAM_NODES = lambda flag, options: [  # noqa: E731
         check('sneak', '晚上到金帳王庭的近郊溜到摔跤手的營帳外', '摔跤手的營帳外點著一圈火把，帳裡傳來粗啞的笑聲與唱歌聲。巴特爾和幾個赤膊的雄性人馬族坐在火邊大口喝酒。你得帶著燁婉寧繞過守夜的人，溜到帳後的陰影裡。',
-              out('jinzhang'), 'tdwn_2_started', 'dex', 14,
+              out('jinzhang'), flag, 'dex', 14,
               '你們貼著帳篷的陰影溜到帳後。帳布的縫裡透出火光，燁婉寧蹲在你身邊，呼吸越來越急，眼睛一眨也不眨。',
               '守夜的人往這邊看了一眼，你只好拉著她退回草叢。等一下再試。', win_flags=['tdwn_close'], hours='night', allies=[WANNING]),
         fight('tail', '晚上在金帳王庭的近郊擋下尾隨可敦的人', '你們還沒看多久，身後的草叢就傳來窸窣聲：兩個黑鬃的悍匪一路尾隨可敦出了王庭，手上拿著麻袋。「南院的可敦，值多少贖金？」',
@@ -94,17 +93,31 @@ STORIES.append(story(
         node('want', '晚上在金帳王庭的近郊回答燁婉寧',
              '帳裡的火光照在她臉上。她看著帳布上那些高大的影子，又轉頭看著你，聲音在發抖：「我想進去。」她抓著你的手，指甲陷進你的掌心，「我不知道我想要什麼……不對，我知道。我只是不敢。」',
              out('jinzhang'), 'tdwn_escaped', 'choice', hours='night', allies=[WANNING], options=[
-                 {'label': '「讓妳看著我」', 'requires': {'pc_races': CENTAUR},
+                 *options,
+             ]),
+]
+OPT_LOOK_AT_ME = {'label': '「讓妳看著我」', 'requires': {'pc_races': CENTAUR},
                   'success': {'text': '你把她拉離帳篷，走到月光下，讓她看著你——人的上半身，馬的下半身，就是她每一晚想起的那種身體。她愣了很久，然後伸出手，從你的胸口慢慢摸到馬身，指尖一直在抖：「……原來不用去那麼遠。」',
                               'set_flags': ['tdwn_2_done', 'tdwn_pc'], 'effects': [aff(WANNING, 12, '讓她看著你'), mem('那達慕之後的夜，燁婉寧想走進摔跤手的營帳；你讓她看著你，她說原來不用去那麼遠。', 3)],
                               'complete': True,
-                              'scene': '月光下的草坡上，燁婉寧第一次碰觸人馬族的身體：她從主角的胸口一路摸到馬身，端莊的可敦臉紅得說不出話，只敢用手、用唇一寸寸地確認；最後她靠在主角的馬身上，說她三年來第一次睡得著。'}},
-                 {'label': '「去吧，我在帳外等妳」', 'tags': ['ntr'],
+                              'scene': '月光下的草坡上，燁婉寧第一次碰觸人馬族的身體：她從主角的胸口一路摸到馬身，端莊的可敦臉紅得說不出話，只敢用手、用唇一寸寸地確認；最後她靠在主角的馬身上，說她三年來第一次睡得著。'}}
+OPT_WAIT_OUTSIDE = {'label': '「去吧，我在帳外等妳」', 'tags': ['ntr'],
                   'success': {'text': '她看了你很久，然後鬆開你的手，掀開帳簾走了進去。帳裡的歌聲停了，接著是一陣低沉的笑聲。你在帳外等到天亮。她出來的時候，頭巾不見了，龍角上纏著一根馬鬃，走路有點不穩——可是她在笑，笑得像第一次活過來。',
                               'set_flags': ['tdwn_2_done', 'tdwn_ntr'], 'effects': [aff(WANNING, 10, '在帳外等她'), mem('那達慕之後的夜，你在摔跤手的營帳外等燁婉寧到天亮；她出來的時候在笑，笑得像第一次活過來。', 3)],
-                              'complete': True, 'time': {'until': 'morning'}}},
-             ]),
-    ], tags=['adult']))
+                              'complete': True, 'time': {'until': 'morning'}}}
+
+
+STORIES.append(story(
+    'tdwn_after_naadam', 'C', '那達慕之後的夜',
+    SUMMARY_NAADAM,
+    {**NAADAM_START, 'requires': {'flags': ['tdwn_1_done'], 'pc_races': CENTAUR}},
+    'tdwn_2_started', NAADAM_NODES('tdwn_2_started', [OPT_LOOK_AT_ME, OPT_WAIT_OUTSIDE]), tags=['adult']))
+
+STORIES.append(story(
+    'tdwn_after_naadam_other', 'C', '那達慕之後的夜',
+    SUMMARY_NAADAM,
+    {**NAADAM_START, 'requires': {'flags': ['tdwn_1_done'], 'pc_races_none': CENTAUR}},
+    'tdwn_2o_started', NAADAM_NODES('tdwn_2o_started', [OPT_WAIT_OUTSIDE]), tags=['adult', 'ntr']))
 
 STORIES.append(story(
     'tdwn_choice', 'B', '可敦的選擇',
