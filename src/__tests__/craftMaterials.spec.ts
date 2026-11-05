@@ -6,7 +6,8 @@ import { itemDef } from '@/engine/data'
 import { baseType, forgeItemsForMaterial, gearRules, ordinaryBases } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { addItem, newGame } from '@/engine/state'
-import { shopKey, shopState } from '@/engine/trade'
+import { locationMult, sellPrice, shopKey, shopState } from '@/engine/trade'
+import { craftRules } from '@/engine/data'
 import type { GameState } from '@/engine/types'
 
 function game(): GameState {
@@ -26,6 +27,20 @@ describe('打造材料：第 1 級也是物品，來源可以選、可以當場�
       expect(items.length, id).toBeGreaterThan(0)
       expect(items.some((n) => itemDef(n)!.tags.length), `${id} 要有店在賣`).toBe(true)
     }
+  })
+
+  it('still charges a material fee for tier 1 by the base price, so a plate is not nearly free', () => {
+    const state = game()
+    standOn(state, 'smithy')
+    addItem(state.inventory, '鐵礦石', 3)
+    const plan = craftPlan(state, 'plate', 'iron', [], pc(state))
+    const full = Math.round(gearRules.bases.plate!.price * craftRules.self.tier1_cost_ratio * locationMult(state))
+    expect(plan.materialCost).toBe(full - itemDef('鐵礦石')!.price_cc * 3)
+    expect(plan.fee).toBe((plan.rent ?? 0) + plan.materialCost!)
+    // 做出來的普通鐵板甲賣不回成本
+    expect(sellPrice(state, shopKey(state, 'smithy'), '鐵板甲')!).toBeLessThan(plan.fee + 1)
+    // 委託不收材料費（工錢已經照底材價格）
+    expect(craftPlan(state, 'plate', 'iron').materialCost).toBeUndefined()
   })
 
   it('keeps the options in the target and reads old targets', () => {

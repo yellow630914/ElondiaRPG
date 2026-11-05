@@ -23,6 +23,8 @@ export interface RegexRule {
   /** 取代成（可用 $1、$&、$<name>） */
   replace: string
   scopes: RegexScope[]
+  /** 取代時，$& 先去掉這些字（匯入酒館的 trimStrings：只處理比對到的文字，不是整篇） */
+  trim?: string[]
   /** 內建規則的 id（可以關掉、改內容，也能恢復原本的） */
   builtin?: string
 }
@@ -65,6 +67,7 @@ export function normalizeRegexRules(raw: unknown): RegexRule[] {
         flags: cleanFlags(r.flags ?? 'g'),
         replace: typeof r.replace === 'string' ? r.replace : '',
         scopes: scopes.length ? scopes : [...REGEX_SCOPES],
+        ...(Array.isArray(r.trim) && r.trim.some((t) => typeof t === 'string' && t) ? { trim: r.trim.filter((t): t is string => typeof t === 'string' && !!t) } : {}),
         ...(typeof r.builtin === 'string' ? { builtin: r.builtin } : {}),
       }
     })
@@ -84,6 +87,7 @@ export function regexError(rule: Pick<RegexRule, 'find' | 'flags'>): string {
 interface Compiled {
   re: RegExp
   replace: string
+  trim?: string[]
   scopes: RegexScope[]
   builtin?: string
 }
@@ -91,13 +95,13 @@ interface Compiled {
 // 以規則的內容當 key：內容沒變就不重新編譯（規則通常只有幾條，快取留最近幾份就夠）
 const cache = new Map<string, Compiled[]>()
 export function compileRules(rules: readonly RegexRule[]): Compiled[] {
-  const key = JSON.stringify(rules.filter((r) => r.enabled).map((r) => [r.find, r.flags, r.replace, r.scopes, r.builtin]))
+  const key = JSON.stringify(rules.filter((r) => r.enabled).map((r) => [r.find, r.flags, r.replace, r.scopes, r.builtin, r.trim]))
   const hit = cache.get(key)
   if (hit) return hit
   const out: Compiled[] = []
   for (const r of rules) {
     if (!r.enabled || regexError(r)) continue
-    out.push({ re: new RegExp(r.find, cleanFlags(r.flags)), replace: r.replace, scopes: r.scopes, ...(r.builtin ? { builtin: r.builtin } : {}) })
+    out.push({ re: new RegExp(r.find, cleanFlags(r.flags)), replace: r.replace, scopes: r.scopes, ...(r.trim?.length ? { trim: r.trim } : {}), ...(r.builtin ? { builtin: r.builtin } : {}) })
   }
   if (cache.size > 8) cache.clear()
   cache.set(key, out)
@@ -112,9 +116,31 @@ export function applyRegex(text: string, rules: readonly RegexRule[], scope: Reg
   let out = text
   for (const c of list) {
     c.re.lastIndex = 0
-    out = out.replace(c.re, c.replace)
+    const trim = c.trim
+    out = trim ? out.replace(c.re, (...args) => expandReplacement(c.replace, args, trim)) : out.replace(c.re, c.replace)
   }
   return out.replace(/^\s*\n/, '')
+}
+
+/**
+ * 自己展開取代字串（$$、$&、$1～$99、$<name>），讓 $& 用去掉 trim 之後的比對結果；
+ * args 是 String.replace 的取代函式拿到的參數（比對、各組、位置、原文、具名組）
+ */
+function expandReplacement(replace: string, args: unknown[], trim: string[]): string {
+  const match = String(args[0])
+  const named = typeof args[args.length - 1] === 'object' && args[args.length - 1] ? (args[args.length - 1] as Record<string, string | undefined>) : undefined
+  const groups = args.slice(1, named ? -3 : -2) as (string | undefined)[]
+  const trimmed = trim.reduce((s, t) => s.split(t).join(''), match)
+  return replace.replace(/\$(\$|&|<([^>]*)>|(\d{1,2}))/g, (all, what: string, name?: string, num?: string) => {
+    if (what === '$') return '$'
+    if (what === '&') return trimmed
+    if (name !== undefined) return named ? named[name] ?? '' : all
+    const n = Number(num)
+    if (n >= 1 && n <= groups.length) return groups[n - 1] ?? ''
+    // 兩位數的組不存在時，照 JS 的規則退回一位數
+    if (num!.length === 2 && Number(num![0]) >= 1 && Number(num![0]) <= groups.length) return (groups[Number(num![0]) - 1] ?? '') + num![1]
+    return all
+  })
 }
 
 const OPEN_THINK = /<(think[\w-]*)\b[^>]*>/i
@@ -210,18 +236,10 @@ export function importTavernRegex(raw: unknown): TavernImport {
       out.skipped.push({ name, why: `語法錯誤：${err}` })
       continue
     }
-    out.rules.push(rule)
+    // trimStrings：只從比對到的文字（$&）裡去掉，不動整篇
     const trims = Array.isArray(s.trimStrings) ? s.trimStrings.filter((t): t is string => typeof t === 'string' && !!t) : []
-    if (trims.length) {
-      out.rules.push({
-        ...rule,
-        id: `${rule.id}-trim`,
-        name: `${name}（刪掉 trimStrings）`,
-        find: trims.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'),
-        flags: 'g',
-        replace: '',
-      })
-    }
+    if (trims.length) rule.trim = trims
+    out.rules.push(rule)
     if (s.markdownOnly === true) notes.add('「只改顯示」（markdownOnly）：這裡一律改寫存下的正文')
     if (s.runOnEdit === true) notes.add('「編輯時套用」（runOnEdit）')
     if (s.substituteRegex && Number(s.substituteRegex) !== 0) notes.add('「替換尋找內容裡的巨集」（substituteRegex）')

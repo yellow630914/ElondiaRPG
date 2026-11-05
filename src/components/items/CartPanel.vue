@@ -3,7 +3,7 @@ import { computed, ref } from 'vue'
 import { DEGREE_NAME } from '@/engine/checks'
 import { shopRules, type Degree, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { bargainNet, cartQuote, settleNet, shopKey, type Cart } from '@/engine/trade'
+import { bargainNet, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, cartQuote, settleNet, shopKey, type Cart } from '@/engine/trade'
 import { useGame } from '@/stores/game'
 import GameIcon from '../ui/GameIcon.vue'
 import Hint from '../ui/Hint.vue'
@@ -15,23 +15,25 @@ const game = useGame()
 const s = computed(() => game.state!)
 const busy = computed(() => game.judging)
 
-const asCart = (): Cart => ({
-  buy: Object.entries(props.cart.buy).filter(([, q]) => q > 0).map(([dealId, qty]) => ({ dealId, qty })),
-  sell: Object.entries(props.cart.sell).filter(([, q]) => q > 0).map(([name, qty]) => ({ name, qty })),
-})
+const asCart = (): Cart => cartFromRecords(props.cart)
+/** 談好價之後要改購物車：先提醒（改了就照原價交易，今天也不能再交涉） */
+const okToChange = () => !cartBargainHeld(s.value, props.type, asCart()) || confirm(CHANGE_WARNING)
 const quote = computed(() => cartQuote(s.value, props.type, asCart()))
 const empty = computed(() => !quote.value.buy.length && !quote.value.sell.length)
 const money = (n: number) => (n > 0 ? `你付 ${formatMoney(n)}` : n < 0 ? `你收 ${formatMoney(-n)}` : '剛好抵銷')
 
 function setBuy(id: string, q: number) {
+  if (!okToChange()) return
   if (q > 0) props.cart.buy[id] = q
   else delete props.cart.buy[id]
 }
 function setSell(name: string, q: number) {
+  if (!okToChange()) return
   if (q > 0) props.cart.sell[name] = q
   else delete props.cart.sell[name]
 }
-function clear() {
+function clear(ask = true) {
+  if (ask && !okToChange()) return
   for (const k of Object.keys(props.cart.buy)) delete props.cart.buy[k]
   for (const k of Object.keys(props.cart.sell)) delete props.cart.sell[k]
 }
@@ -61,7 +63,7 @@ async function bargain() {
 function checkout() {
   const r = game.checkout(props.type, asCart())
   if (!r) return
-  clear()
+  clear(false)
   offerInput.value = ''
   emit('done', r.outcome.summary ?? '')
 }
@@ -70,7 +72,7 @@ function checkout() {
 <template>
   <section class="cart">
     <h3 class="head"><GameIcon name="coins" :size="17" />這次的交易
-      <Hint text="商品和行囊的「＋」加進來，一次結帳。可以整車交涉（每間店每天一次）：買的部分打折、賣的部分加價；有出價時，成交價取你的出價和這個結果能談到的最好價中，對店家有利的那個。交涉之後改了購物車，談好的折扣照算，出價就不算數了。同一間店收同一類的東西越多，收購價一件比一件低（收購遞減，每天慢慢回復；可以在這個存檔的規則調整）。" />
+      <Hint text="商品和行囊的「＋」加進來，一次結帳。可以整車交涉（每間店每天一次）：買的部分打折，賣的部分照原價；有出價時，成交價取你的出價和這個結果能談到的最好價中，對店家有利的那個。談好的價只算交涉時的那一車：之後改了購物車就照原價交易。同一間店收同一類的東西越多，收購價一件比一件低（收購遞減，每天慢慢回復；可以在這個存檔的規則調整）。" />
     </h3>
     <p v-if="empty" class="small muted">從店裡的商品、你的行囊按「＋」加進來。</p>
     <div v-else class="lists">
@@ -106,7 +108,7 @@ function checkout() {
       <span>賣出 {{ formatMoney(quote.sellTotal) }}</span>
       <strong class="net">{{ money(quote.net) }}</strong>
       <span v-if="quote.bargain" class="small muted">
-        （今天交涉{{ DEGREE_NAME[quote.bargain.degree] }}<template v-if="quote.net !== quote.listNet">，原價{{ money(quote.listNet) }}</template><template v-if="quote.bargain.offer !== undefined && !quote.offerApplies">；購物車改過了，出價不算數</template>）
+        （今天交涉{{ DEGREE_NAME[quote.bargain.degree] }}<template v-if="quote.net !== quote.listNet">，原價{{ money(quote.listNet) }}</template><template v-if="!quote.held">；購物車改過了，照原價</template>）
       </span>
     </div>
 
@@ -115,22 +117,25 @@ function checkout() {
         {{ quote.listNet >= 0 ? '我想付' : '我想收' }}
         <input v-model.number="offerInput" class="offer" type="number" min="0" :placeholder="String(Math.abs(preview('success')))" />
         白鸛（選填）
+      </div>
+      <div class="row">
         <input v-model="how" class="grow" placeholder="怎麼交涉？例如：一次買這麼多、搬出熟人、挑出瑕疵" />
       </div>
+      <p v-if="!quote.buy.length" class="muted">整車交涉只會讓買的東西便宜，賣出照原價；購物車裡沒有要買的東西。</p>
       <table class="out">
         <thead><tr><th v-for="d in DEGREES" :key="d">{{ DEGREE_NAME[d] }}</th></tr></thead>
         <tbody><tr><td v-for="d in DEGREES" :key="d">{{ money(preview(d)) }}</td></tr></tbody>
       </table>
       <div class="row">
-        <span class="muted grow">魅力檢定；結果決定這一車能談到多少。</span>
+        <span class="muted grow">魅力檢定；結果決定這一車買的東西能便宜多少。之後改了購物車就照原價。</span>
         <button class="small" @click="haggling = false">取消</button>
-        <button class="small primary" :disabled="busy" @click="bargain">交涉（檢定）</button>
+        <button class="small primary" :disabled="busy || !quote.buy.length" @click="bargain">交涉（檢定）</button>
       </div>
     </div>
 
     <ul v-if="!empty && quote.blocked" class="warn small plain"><li v-for="b in quote.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
     <div v-if="!empty" class="row actions">
-      <button class="small" :disabled="busy" @click="clear">清空</button>
+      <button class="small" :disabled="busy" @click="clear()">清空</button>
       <span class="grow" />
       <button v-if="!haggling" class="small" :disabled="busy || bargained" :title="bargained ? '今天已經和這間店交涉過了' : ''" @click="haggling = true">
         {{ bargained ? '今天交涉過了' : '整車交涉' }}

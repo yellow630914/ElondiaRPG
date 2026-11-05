@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
-import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, forgeOf, makeTarget, type AuxItem } from '@/engine/craft'
+import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, forgeOf, makeTarget, selfFeeName, type AuxItem } from '@/engine/craft'
 import { craftForKind, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import {
   baseShown, baseSlotName, baseType, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, MATERIAL_KIND_NAME, rarityName, rarityPoints, sortBaseTypes, type BaseSlot,
@@ -297,7 +297,7 @@ function craft() {
         <span>檢定 <b>{{ attrName(make ? skill.attr : gearRules.craft.attr) }}<template v-if="make"> +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
         <span>時間 <b>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</b></span>
         <span v-if="make">工具 <b>要{{ toolTierName(toolTierFor(plan.tier)) }}</b> <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></span>
-        <span>{{ make ? '工坊租金' : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
+        <span>{{ make ? selfFeeName(plan) : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><Hint v-if="plan.materialCost" text="第 1 級材料：材料費照底材的價格算（底材價格的一半，乘這裡的物價），用掉的打造材料抵掉它們的價值。" /><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
       </div>
       <div class="aux-row">
         <span>輔料 <Hint :text="`選填，最多 ${auxRules.max_kinds} 種；不論結果都會用掉。價值越高越可能讓稀有度再高一級（部分成功時照成功做）；名稱與描述決定附魔偏向的屬性。`" /></span>

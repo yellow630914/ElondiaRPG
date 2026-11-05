@@ -43,15 +43,35 @@ export function hasKeys(value: unknown): boolean {
   return Object.entries(value).some(([k, v]) => (k === 'apiKey' ? typeof v === 'string' && v.trim() !== '' : hasKeys(v)))
 }
 
-/** 匯入的內容裡空的 apiKey，用目前同一個位置的金鑰補上（陣列照索引對應） */
-export function fillKeys<T>(incoming: T, current: unknown): T {
-  if (Array.isArray(incoming)) return incoming.map((v, i) => fillKeys(v, Array.isArray(current) ? current[i] : undefined)) as T
+const urlOf = (o: Record<string, unknown>) => (typeof o.baseURL === 'string' ? o.baseURL.trim().replace(/\/+$/, '') : '')
+
+/**
+ * 匯入的內容裡空的 apiKey，用目前同一個位置的金鑰補上（陣列照索引對應）。
+ * 只有網址（baseURL）和這台電腦一樣時才補：別人的設定檔把網址換成他的伺服器時，你的金鑰不會被送過去。
+ * 沒補上的（這台電腦有金鑰、但網址不同）記在 dropped
+ */
+export function fillKeys<T>(incoming: T, current: unknown, dropped: string[] = [], path = ''): T {
+  if (Array.isArray(incoming)) return incoming.map((v, i) => fillKeys(v, Array.isArray(current) ? current[i] : undefined, dropped, `${path}[${i}]`)) as T
   if (!isObj(incoming)) return incoming
   const cur = isObj(current) ? current : {}
   return Object.fromEntries(Object.entries(incoming).map(([k, v]) => {
-    if (k === 'apiKey' && v === '' && typeof cur[k] === 'string') return [k, cur[k]]
-    return [k, fillKeys(v, cur[k])]
+    if (k === 'apiKey' && v === '' && typeof cur[k] === 'string') {
+      if (urlOf(incoming) === urlOf(cur)) return [k, cur[k]]
+      if ((cur[k] as string).trim()) dropped.push(path)
+      return [k, v]
+    }
+    return [k, fillKeys(v, cur[k], dropped, path ? `${path}.${k}` : k)]
   })) as T
+}
+
+/** 這個檔案匯入後，有幾個地方的金鑰因為網址不同而不沿用（要重新填） */
+export function keysNotCarried(file: SettingsFile, parts: readonly SettingsPartId[]): number {
+  const dropped: string[] = []
+  for (const p of SETTINGS_PARTS) {
+    if (!parts.includes(p.id) || file.parts[p.id] === undefined) continue
+    fillKeys(file.parts[p.id], readPart(p.key), dropped)
+  }
+  return dropped.length
 }
 
 function readPart(key: string): unknown {
