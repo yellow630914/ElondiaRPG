@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>打造裝備樣稿</title>
+<!--
+  R18 工藝介面的樣稿（docs/plan/roadmap/CRAFTING_PLAN.md 第 2 節）：用 vite 開（npx vite），網址 /docs/mockups/craft.html。
+  共用遊戲本身的樣式；底材、材料、數值直接讀遊戲的資料與計算（src/engine/gear.ts、craft.ts），不是寫死的假資料。
+  類型的分法（武器的種類、防具與服裝）在這份樣稿裡先寫死，實作時改成 gear.json 的欄位。
+-->
+<link rel="stylesheet" href="/src/style.css" />
+<style>
+body { padding: 24px 16px; }
+.screen { margin: 0 auto 40px; max-width: 900px; }
+.screen > .cap { color: var(--gold-hi); font-size: var(--fs-lg); margin: 0 0 10px; letter-spacing: 0.08em; }
+.screen > .cap small { color: var(--muted); font-size: var(--fs-sm); margin-left: 10px; letter-spacing: 0; }
+
+/* 仿 AppDialog（羊皮紙） */
+.dlg { border: 6px solid #3a2818; border-image: linear-gradient(180deg, #5b3f24, #2e1f12) 1; box-shadow: 0 0 0 1px #000, inset 0 0 0 1px #c99a45, 0 20px 60px #000; background: #f3e4c2; color: var(--ink); }
+.dlg-head { display: flex; align-items: center; gap: 10px; padding: 10px 16px 8px; position: relative; }
+.dlg-head::after { content: ''; position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px; background: linear-gradient(90deg, transparent, #8a6a3a, transparent); }
+.dlg-head h2 { margin: 0; font-size: var(--fs-xl); letter-spacing: 0.16em; color: #5b3a1e; }
+.dlg-body { padding: 14px 18px 18px; display: grid; gap: 12px; }
+
+.step { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: start; }
+.step > .lab { color: #5b3a1e; font-weight: 700; padding-top: 5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { padding: 4px 10px; border: 1px solid #b8955a; border-radius: 4px; background: #fbf3df; color: #5b3a1e; font-size: var(--fs-sm); cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chip:hover { border-color: #8a6a3a; }
+.chip.on { background: #6d4a22; border-color: #6d4a22; color: #fff3d6; font-weight: 700; }
+.chip .n { font-size: var(--fs-xs); opacity: 0.7; }
+.chip.adult .n::before { content: '🔞 '; }
+
+.search { display: flex; gap: 8px; align-items: center; }
+.search input { flex: 1; min-width: 0; background: #fbf3df; color: var(--ink); border: 1px solid #b8955a; }
+.hits { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+
+.bases { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 6px; }
+.base { text-align: left; padding: 6px 9px; border: 1px solid #c4a671; border-radius: 4px; background: #fbf3df; color: var(--ink); cursor: pointer; display: grid; gap: 2px; }
+.base:hover { border-color: #8a6a3a; }
+.base.on { outline: 2px solid #6d4a22; outline-offset: -1px; background: #f6e6c0; }
+.base b { color: #5b3a1e; }
+.base .s { font-size: var(--fs-xs); color: #7a5a3a; }
+
+table.mats { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
+.mats th { text-align: left; color: #7a5a3a; font-weight: 600; border-bottom: 1px solid #c4a671; padding: 4px 6px; }
+.mats td { padding: 5px 6px; border-bottom: 1px dashed #d8c08f; vertical-align: top; }
+.mats tr.mrow { cursor: pointer; }
+.mats tr.mrow:hover td { background: #f6e6c0; }
+.mats tr.on td { background: #ecd6a6; font-weight: 600; }
+.mats tr.locked td { color: #9a876a; }
+.mats .lv { white-space: nowrap; }
+.mats .stat { color: #2f5a3a; }
+.mats .none { color: #9a876a; }
+
+.result { border: 1px solid #b8955a; border-radius: 4px; background: #fbf3df; padding: 10px 12px; display: grid; gap: 8px; }
+.result h3 { margin: 0; color: #5b3a1e; font-size: var(--fs-lg); display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.result h3 small { color: #7a5a3a; font-weight: 400; font-size: var(--fs-sm); }
+.result .stats { color: #2f5a3a; }
+table.out { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); text-align: center; }
+.out th { color: #7a5a3a; font-weight: 600; border-bottom: 1px solid #c4a671; padding: 4px; }
+.out td { padding: 5px 4px; }
+.out .muted { color: #8a7458; font-size: var(--fs-xs); }
+.note { font-size: var(--fs-xs); color: #7a5a3a; margin: 0; }
+.kv { font-size: var(--fs-sm); color: #5b3a1e; display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.kv span b { color: #5b3a1e; }
+.actions { display: flex; gap: 8px; justify-content: flex-end; }
+.actions button { background: #6d4a22; color: #fff3d6; border-color: #6d4a22; }
+
+@media (max-width: 640px) {
+  body { padding: 12px 8px; }
+  .step { grid-template-columns: 1fr; gap: 4px; }
+  .step > .lab { padding-top: 0; }
+  .bases { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mats .hide-sm { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="screen">
+  <p class="cap">打造裝備：部位 → 類型 → 底材 → 材料 <small>R18 樣稿・資料是遊戲的實際資料</small></p>
+  <div class="dlg">
+    <div class="dlg-head"><h2>🔨 打造裝備</h2></div>
+    <div class="dlg-body" id="app"></div>
+  </div>
+</div>
+
+<script type="module">
+import { gearRules, baseSlotName, gearName, gearSummary, ordinaryBases, rarityName, rarityPoints } from '/src/engine/gear.ts'
+import { craftRarity } from '/src/engine/craft.ts'
+
+// ---- 類型（實作時改成 gear.json 底材的欄位） ----
+const WEAPON_FAMILY = {
+  dagger: '刀劍', shortsword: '刀劍', scimitar: '刀劍', rapier: '刀劍', longsword: '刀劍', greatsword: '刀劍', podao: '刀劍',
+  mace: '鎚斧', warhammer: '鎚斧', greataxe: '鎚斧',
+  halberd: '長柄', spear: '長柄', quarterstaff: '長柄',
+  longbow: '弓弩', horn_bow: '弓弩', crossbow: '弓弩',
+  spellstaff: '法杖', whip: '鞭',
+}
+const OFF_FAMILY = { shield: '盾', buckler: '盾', tower_shield: '盾', parrying_dagger: '副手武器', focus: '法器', grimoire: '法器' }
+const KIND = { metal: '金屬', leather: '皮革', cloth: '布', wood: '木', jewel: '寶石' }
+function typeOf(id, b) {
+  if (b.slot === 'main_hand') return WEAPON_FAMILY[id] ?? '其他武器'
+  if (b.slot === 'off_hand') return OFF_FAMILY[id] ?? '其他'
+  if (b.adult) return '成人向服裝'
+  if (b.armor || b.stats?.dr) return `${KIND[b.kind]}護甲`
+  if (b.kind === 'jewel') return '飾品'
+  return `${KIND[b.kind]}衣物`
+}
+// 部位的順序（照角色的裝備欄由上到下）
+const SLOT_ORDER = ['main_hand', 'off_hand', 'head', 'body', 'wrists', 'belt', 'legs', 'feet', 'accessory', 'ring', 'piercing', 'leg_accessory', 'underwear_top', 'underwear_bottom']
+const TYPE_ORDER = ['刀劍', '鎚斧', '長柄', '弓弩', '法杖', '鞭', '盾', '副手武器', '法器', '金屬護甲', '皮革護甲', '布護甲', '布衣物', '皮革衣物', '金屬衣物', '飾品', '成人向服裝']
+
+const all = ordinaryBases().map((id) => ({ id, ...gearRules.bases[id] })).filter((b) => !b.races)
+for (const b of all) b.type = typeOf(b.id, b)
+const slots = SLOT_ORDER.filter((s) => all.some((b) => b.slot === s))
+
+// 樣稿的角色：皮革與裁縫 Lv.2
+const CRAFT_LV = 2
+const state = { slot: 'feet', type: '', base: 'boots', mat: '', q: '' }
+
+const el = (tag, attrs = {}, ...kids) => {
+  const e = document.createElement(tag)
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === 'class') e.className = v
+    else if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+    else if (v !== false && v != null) e.setAttribute(k, v)
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) e.append(c)
+  return e
+}
+const statsOf = (base, material, rarity) => gearSummary({ base, material, rarity }).split('・').slice(2).join('・')
+
+function pick(patch) {
+  Object.assign(state, patch)
+  render()
+}
+
+function render() {
+  const app = document.getElementById('app')
+  app.replaceChildren()
+
+  // 搜尋：直接跳到底材
+  const hits = state.q.trim() ? all.filter((b) => b.name.includes(state.q.trim())) : []
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '搜尋'),
+    el('div', {},
+      el('div', { class: 'search' }, el('input', { placeholder: '直接找底材，例如「帽」「靴」「弓」', value: state.q, oninput: (e) => { state.q = e.target.value; render(); document.querySelector('.search input').focus() } })),
+      hits.length ? el('div', { class: 'hits' }, hits.slice(0, 12).map((b) => el('button', { class: 'chip', onclick: () => pick({ slot: b.slot, type: b.type, base: b.id, mat: '', q: '' }) }, `${baseSlotName(b.slot)}・${b.type}・${b.name}`))) : null,
+    )))
+
+  // 1. 部位
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '部位'),
+    el('div', { class: 'chips' }, slots.map((s) => el('button', { class: `chip${state.slot === s ? ' on' : ''}`, onclick: () => pick({ slot: s, type: '', base: '', mat: '' }) },
+      baseSlotName(s), el('span', { class: 'n' }, String(all.filter((b) => b.slot === s).length)))))))
+
+  // 2. 類型
+  const inSlot = all.filter((b) => b.slot === state.slot)
+  const types = TYPE_ORDER.filter((t) => inSlot.some((b) => b.type === t)).concat([...new Set(inSlot.map((b) => b.type))].filter((t) => !TYPE_ORDER.includes(t)))
+  if (!types.includes(state.type)) state.type = (inSlot.find((b) => b.id === state.base)?.type) ?? types[0]
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '類型'),
+    el('div', { class: 'chips' }, types.map((t) => el('button', { class: `chip${state.type === t ? ' on' : ''}${t === '成人向服裝' ? ' adult' : ''}`, onclick: () => pick({ type: t, base: '', mat: '' }) },
+      t, el('span', { class: 'n' }, String(inSlot.filter((b) => b.type === t).length)))))))
+
+  // 3. 底材（同類型照價格排）
+  const list = inSlot.filter((b) => b.type === state.type).sort((a, b) => a.price - b.price)
+  if (!list.some((b) => b.id === state.base)) state.base = list[0]?.id
+  const firstMat = (b) => Object.entries(gearRules.materials).find(([, m]) => m.kind === b.kind && m.tier === 1)?.[0]
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '底材'),
+    el('div', { class: 'bases' }, list.map((b) => {
+      const w = b.weapon ? gearRules.bases[b.id] : null
+      const line = statsOf(b.id, firstMat(b) ?? Object.keys(gearRules.materials)[0])
+      return el('button', { class: `base${state.base === b.id ? ' on' : ''}`, onclick: () => pick({ base: b.id, mat: '' }) },
+        el('b', {}, b.name), el('span', { class: 's' }, `${KIND[b.kind]}${line ? `・${line}` : ''}`))
+    }))))
+
+  // 4. 材料：同一張表比較每種材料做出來的數值
+  const base = gearRules.bases[state.base]
+  const mats = Object.entries(gearRules.materials).filter(([, m]) => m.kind === base.kind).sort(([, a], [, b]) => a.tier - b.tier)
+  if (!mats.some(([id]) => id === state.mat)) state.mat = (mats.filter(([, m]) => m.tier <= CRAFT_LV).at(-1) ?? mats[0])[0]
+  const rows = mats.map(([id, m]) => {
+    const line = statsOf(state.base, id)
+    const locked = m.tier > CRAFT_LV
+    return el('tr', { class: `mrow${state.mat === id ? ' on' : ''}${locked ? ' locked' : ''}`, onclick: () => pick({ mat: id }) },
+      el('td', {}, m.name, m.series ? el('span', { class: 'note' }, ` ${m.series === 'pleasure' ? '歡愉系列' : '歷史系列'}`) : null),
+      el('td', { class: 'lv' }, `第 ${m.tier} 級${locked ? ' 🔒' : ''}`),
+      el('td', { class: 'hide-sm lv' }, `建議 Lv.${m.level}`),
+      el('td', { class: line ? 'stat' : 'none' }, line || '沒有加成'))
+  })
+  app.append(el('div', { class: 'step' }, el('span', { class: 'lab' }, '材料'),
+    el('div', {},
+      el('table', { class: 'mats' }, el('thead', {}, el('tr', {}, el('th', {}, '材料'), el('th', {}, '等級'), el('th', { class: 'hide-sm' }, '適合'), el('th', {}, '做出來的數值'))), el('tbody', {}, rows)),
+      el('p', { class: 'note' }, `🔒 你的${base.kind === 'metal' ? '鍛造' : base.kind === 'wood' ? '木工' : base.kind === 'jewel' ? '珠寶' : '皮革與裁縫'}是 Lv.${CRAFT_LV}，還做不了這一級。數值由材料決定；成功程度只影響稀有度與附魔點數。`))))
+
+  // 成品
+  const name = gearName({ base: state.base, material: state.mat })
+  const line = statsOf(state.base, state.mat)
+  const deg = [['critical', '大成功'], ['success', '成功'], ['partial', '部分成功']]
+  app.append(el('div', { class: 'result' },
+    el('h3', {}, name, el('small', {}, `${baseSlotName(base.slot)}・${state.type}`)),
+    el('div', { class: 'stats' }, line ? `數值：${line}` : el('span', { class: 'none' }, `數值：這個材料做出來沒有加成${(() => { const next = mats.find(([id]) => statsOf(state.base, id)); return next ? `（換成${next[1].name}：${statsOf(state.base, next[0])}）` : '' })()}`)),
+    el('table', { class: 'out' },
+      el('thead', {}, el('tr', {}, deg.map(([, n]) => el('th', {}, n)), el('th', {}, '失敗'))),
+      el('tbody', {}, el('tr', {},
+        deg.map(([d]) => {
+          const r = craftRarity(state.mat, d)
+          return el('td', {}, rarityName(r), el('div', { class: 'muted' }, d === 'partial' ? '沒有附魔' : `附魔 ${rarityPoints(r)} 點（隨機）`))
+        }),
+        el('td', {}, '材料損失一半')))),
+    el('div', { class: 'kv' },
+      el('span', {}, '檢定 ', el('b', {}, `${base.kind === 'metal' ? '力量' : base.kind === 'jewel' ? '智力' : '靈巧'} +${CRAFT_LV}・DC ${gearRules.craft.dc[gearRules.materials[state.mat].tier - 1]}`)),
+      el('span', {}, '時間 ', el('b', {}, '約 8 小時')),
+      el('span', {}, '工具 ', el('b', {}, '隨身工具組'))),
+    el('div', { class: 'actions' }, el('button', {}, '🔨 親手打造'))))
+}
+render()
+</script>
+</body>
+</html>
