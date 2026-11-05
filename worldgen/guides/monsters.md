@@ -7,9 +7,9 @@
 
 - 區塊：`content.enemies`，key 是怪物的 id。
 - **新的怪物**：id 用 `mod_enemy_<英文小寫>`（例：`mod_enemy_ash_wyrm`），加 `"custom": true`。
-- **修改內建的怪物**：用原本的 id（查 `data/rules/enemies.json`），不加 `custom`，寫整份修改後的資料。`offense` 每個 key 最多 7（內建的層主也在這個範圍內），原樣抄過來不會被改。
+- **修改內建的怪物**：用原本的 id（查 `data/rules/enemies.json`），不加 `custom`，寫整份修改後的資料。`offense` 每個 key 最多 20（內建有到 10 以上的），原樣抄過來不會被改。
 - 項目裡可以不寫 `id`；寫的話要和 key 一樣。
-- 新怪物一定要放進遭遇表（`spawns`）或被特殊任務用到，不然遊戲裡遇不到（世界檢查會提醒）。
+- 新怪物一定要放進遭遇表（`spawns`）、自建地下城的各層（[dungeons](dungeons.md)）、特殊地圖的遭遇表，或被特殊任務用到，不然遊戲裡遇不到（世界檢查會提醒）。
 
 ## 2. 欄位一覽
 
@@ -18,60 +18,62 @@
 | 欄位 | 型別 | 範圍 | 說明 |
 |---|---|---|---|
 | `name` | 字串 | 最多 20 字 | 顯示的名字。不要和內建或別的怪物同名。空白時變成「未命名的怪物」 |
-| `level` | 整數 | 1～30（預設 1） | 等級。決定熟練加值、技能的 `scale`、掉裝備的機率；平衡模擬用同等級的隊伍。玩家最高 20 級，內建最高 13 |
+| `level` | 整數 | 1～30（預設 1） | 等級。決定熟練加值、技能的 `scale`、掉裝備的機率；平衡模擬用同等級的隊伍。玩家最高 20 級，內建最高 20（13 級以上是特殊任務與高等地下城的） |
 | `kind` | 字串 | `beast` 野獸、`humanoid` 人形、`undead` 不死、`spirit` 靈體、`construct` 構裝、`plant` 植物、`demon` 魔族、`elemental` 元素、`fey` 妖精 | 種類（篩選與給 AI 的描寫）。其他值整個拿掉 |
 | `attrs` | 物件 | 每項整數 1～30（預設 10） | `str` 力量、`dex` 靈巧、`int` 智力、`fai` 信仰、`cha` 魅力。影響命中、迴避（靈巧）、豁免、技能 DC 與傷害的調整值，見 COMBAT_SYSTEM 第 1、3、5 節 |
 | `hp` | 整數 | 1～9999（預設 10） | 最大生命。依耐打度挑（2.1 節） |
 | `ap` | 整數 | 1～12（預設 3） | 行動點上限，開戰時全滿。怪物每回合固定回復 2 點（不隨等級增加），武器攻擊花 2 點，所以 `ap` 越高越能一回合連出好幾招 |
 | `weapon` | 物件 | 見下 | 普通攻擊。沒寫時是 `1d6` 斬擊、力量 |
 | `weapon.dice` | 字串 | `XdY` 或 `XdY+Z`：X 1～20、Y 2～100、Z 0～99 | 攻擊骰。**不能寫減號、不能省略 X**（`1d6-1`、`d8` 都會變成 `1d6`） |
-| `weapon.type` | 字串 | 13 種傷害屬性的 id（預設 `slashing`） | `bludgeoning` 鈍擊、`piercing` 穿刺、`slashing` 斬擊、`fire` 火焰、`cold` 寒冰、`lightning` 閃電、`thunder` 雷鳴、`acid` 酸蝕、`poison` 毒素、`radiant` 神聖、`necrotic` 暗影、`force` 奧術、`psychic` 心靈。物理三種才吃防具減傷 |
+| `weapon.type` | 字串 | 14 種傷害屬性的 id（預設 `slashing`） | `bludgeoning` 鈍擊、`piercing` 穿刺、`slashing` 斬擊、`fire` 火焰、`cold` 寒冰、`lightning` 閃電、`thunder` 雷鳴、`acid` 酸蝕、`poison` 毒素、`radiant` 神聖、`necrotic` 暗影、`force` 奧術、`psychic` 心靈、`lust` 魅惑（慾望戰鬥用，COMBAT_SYSTEM 8.5 節）。物理三種才吃防具減傷 |
 | `weapon.attr` | 字串 | `str`、`dex`、`int`、`fai`、`cha`（預設 `str`） | 命中與傷害加的屬性 |
 | `evade` | 整數 | -10～20（預設 0） | 迴避修正（像防具的迴避） |
 | `dr` | 整數 | 0～30（預設 0） | 減傷，只擋物理傷害（COMBAT_SYSTEM 第 6 節） |
-| `resist` | 物件 | key：13 種屬性、`physical`、`elemental`、`divine`、`arcane`、`all`；值 -1～2，取到小數 2 位 | 受傷倍率的加減：-1 免疫、-0.5 減半、+0.5 弱點。同一次傷害的屬性、群組、`all` 會疊加。值是 0 的拿掉 |
-| `offense` | 物件 | 每個 key -1～**7**（`resist` 仍是 -1～2） | 攻擊加成：傷害 ×(1 + 加總)。小怪上限 ×5（`all` 4）、層主上限 ×8（`all` 7），見 [MONSTERS](../../docs/MONSTERS.md)。套在普通攻擊與所有技能上 |
+| `resist` | 物件 | key：14 種屬性、`physical`、`elemental`、`divine`、`arcane`、`all`；值 -1～2，取到小數 2 位 | 受傷倍率的加減：-1 免疫、-0.5 減半、+0.5 弱點。同一次傷害的屬性、群組、`all` 會疊加。值是 0 的拿掉 |
+| `offense` | 物件 | 每個 key -1～**20**（`resist` 仍是 -1～2） | 攻擊加成：傷害 ×(1 + 加總)。照模擬調，沒有另外的上限（內建最高約 ×11），見 [MONSTERS](../../docs/MONSTERS.md)。套在普通攻擊與所有技能上 |
 | `abilities` | 字串陣列 | 存在的能力 id，不能是法術 | 會用的技能與戲法（內建、同一個檔案自建的都可以；職業技能也行）。怪物沒有法術環，`type: spell` 的會被拿掉。重複的合併 |
 | `ability_hp_below` | 物件 | key：`abilities` 裡的 id；值整數 1～99 | 生命 ≤ 這個百分比才能用（層主的低血大招）。不在 `abilities` 裡的 key 拿掉 |
 | `xp` | 整數 | 0～99999（預設 25） | 打倒時的經驗（特徵另有倍率） |
 | `money_cc` | `[最少, 最多]` | 各 0～1000000 | 打倒時給的錢（白鸛）。要剛好兩個數；兩個都是 0 時拿掉；順序會排成小、大 |
 | `loot` | 陣列 | 每項 `{ item, chance, qty }` | 掉落物，見 2.3 節 |
 | `armed` | `true` | 只能寫 `true` | 持有裝備：打倒時有機會掉一件依等級生成的裝備（12% + 每級 2%，最多 35%）。給人形怪物用 |
-| `rut` | `true` | 只能寫 `true` | 開戰時可能擲到「發情」特徵（COMBAT_SYSTEM 8.2 節；成人向的戰敗事件會用到） |
+| `rut` | `true` 或 `"field"` | 其他值都當成 `true` | 開戰時可能擲到「發情」特徵（COMBAT_SYSTEM 8.2 節；成人向的戰敗事件會用到）。`"field"`：只在近郊、旅途、地下城的遭遇擲（特殊任務的戰鬥要寫了才擲，淫鬥場不擲） |
 | `traits` | 字串陣列 | `monster_traits.json` 的特徵 id | 一定帶著的特徵，見 2.4 節 |
 | `desc` | 字串 | 最多 200 字 | 給 AI 的一句描述（外觀、習性） |
+| `icon` | 字串 | 圖片的 data URL（最多 16,000 字，見 [items-gear](items-gear.md) 2.11 節） | 選填：這隻怪物的圖示。沒有時依種類與等級用內建的圖 |
+| `girl` | 物件 | 見下 | 魔物娘形態（成人向；設定「魔物娘」打開時交給 AI）：`name` 稱呼（最多 20 字）、`desc` 外觀（最多 300 字，成年女性的身體、保留種族特徵）兩欄都要寫；`personality` 性情、`habits` 習性（各 200 字，可以不寫，只給敘事、插圖不用）；`chance` 出現機率 0～100 的整數（不寫照設定的「魔物娘出現機率」）。`name`、`desc` 缺一個時整個 `girl` 拿掉 |
 | `habitats` | 字串陣列 | 不檢查 | 內建資料標的棲地（地區 id），遊戲沒有用到。可以不寫 |
 | `spawns` | 陣列 | 每項 `{ table, count, weight }`（層主可以再寫 `guards`） | 加進哪些遭遇表，見 2.2 節 |
 | `exclude` | 字串陣列 | 遭遇表的 key | 從**內建**遭遇表拿掉這隻怪物（只對修改內建怪物有意義），見 2.2 節 |
 | `custom` | `true` | | 新的怪物要寫 |
 
-布林欄位（`armed`、`rut`）只寫 `true`；不需要就不要寫，寫 `false` 會被當成改動列在報告裡。
+布林欄位（`armed`、`rut`）只寫 `true`（`rut` 也可以寫 `"field"`）；不需要就不要寫，寫 `false` 會被當成改動列在報告裡。
 
 ### 2.1 怎麼挑數值
 
 目標都在 [MONSTERS](../../docs/MONSTERS.md) 開頭的說明，世界檢查用同樣的模擬量：
 
-- **耐打度**（調 `hp`）：和怪物同等級的 4 人隊伍打牠，**小怪要挨 3～4.5 下、層主要撐 4～5 回合**。模擬時拿掉弱點與特徵（`traits` 的巨大 ×1.5 不算），保留抗性與 `dr`。
+- **耐打度**（調 `hp`）：和怪物同等級的 4 人隊伍打牠，**小怪要挨 3～5 下、層主要撐 4～5.5 回合**。模擬時拿掉弱點與特徵（`traits` 的巨大 ×1.5 不算），保留抗性與 `dr`。
 - **小怪的輸出**（調 `offense`）：兩隻一組打同等級的隊伍，每場掉的生命依怪物出現的**最淺**區域：城郊 25～35%（1 人隊伍）、地下城周邊 20～30%（2 人）、淺層 15～20%（3 人）、只在中層以下 10～15%（4 人），勝率 85% 以上。
-- **層主的輸出**（調 `offense`，不夠再加 `ap`）：4 人隊伍打層主那一場，勝率目標淺層 80%、中層 75%、深層 70%、底層 65%（±10%）。層主戰會擲特徵，`traits` 的效果算在裡面。
-- **等級**跟著位置走（MONSTERS 開頭）：城郊 1 級起；地下城周邊 1、淺層 2、中層 4、深層 6 級起，層主 3、5、7 級起；底層小怪 11～12、層主 13。地區加成：中央平原 +0，古樹森林、東海群島、西部荒野 +1，北境群山 +2，南境枯萎荒原 +3。
+- **層主的輸出**（調 `offense`，不夠再加 `ap`）：4 人隊伍打層主那一場，勝率目標各層一律 85%（±10%）。層主戰會擲特徵，`traits` 的效果算在裡面。
+- **等級**跟著位置走（MONSTERS 開頭）：城郊不分地區都是 1～2 級；地下城周邊 1、淺層 2、中層 4、深層 6 級起，層主 3、5、7 級起；底層小怪 11～12、層主 13。地下城的地區加成：中央平原 +0，古樹森林、東海群島、西部荒野 +1，北境群山 +2，南境枯萎荒原 +3（周邊最多 3 級）。
 
 起點可以參考內建怪物的中位數（`data/rules/enemies.json`），再照模擬調整：
 
 | 等級 | 小怪 `hp` | 小怪 `xp` | 層主 `hp` | 層主 `xp` | `ap` |
 |---|---|---|---|---|---|
-| 1～2 | 14～16 | 25～70 | — | — | 3～4 |
-| 3～4 | 22～25 | 130～200 | 220～240 | 210～320 | 小怪 4、層主 5 |
-| 5～6 | 28～30 | 280～365 | 320～345 | 445～590 | 小怪 5、層主 6 |
-| 7～9 | 38～45 | 465～675 | 400～510 | 740～1080 | 小怪 5、層主 6 |
-| 11～13 | 50～60 | 900～1020 | 約 900 | 約 1850 | 小怪 6、層主 7 |
+| 1～2 | 21～24 | 35～70 | — | — | 3～4 |
+| 3～4 | 32～36 | 130～190 | 290～315 | 210～320 | 小怪 4、層主 5 |
+| 5～6 | 40～48 | 280～365 | 410～455 | 445～590 | 小怪 5、層主 6 |
+| 7～9 | 54～68 | 465～565 | 495～575 | 約 905 | 小怪 5、層主 6 |
+| 11～13 | 74～90 | 900～1020 | 1040～1280 | 約 1850 | 小怪 6、層主 7 |
 
 調整的方法：
 
 1. 先寫好等級、屬性、武器、技能、抗性；小怪先不寫 `offense`（寫 0 會被拿掉並列在報告裡），層主先寫 `{ "all": 1 }`。
 2. 跑世界檢查（第 7 節的指令）。耐打度不對時照比例改 `hp`（要 2.5 下、現在 1.8 下 → `hp × 2.5 / 1.8`）。
 3. 每場掉的生命或勝率不對時改 `offense.all`。層主的勝率對 `offense` 很敏感，一次改 0.05～0.1。
-4. `offense.all` 到上限（小怪 4、層主 7）還不夠時，提高 `ap`（每次 +1）或加傷害技能。
+4. `offense.all` 調得很高（例如 7 以上）還不夠時，提高 `ap`（每次 +1）或加傷害技能。
 5. 邊改邊查用 `WORLD_TRIALS=6`，最後用預設的場數再跑一次（小怪 20 場）。層主戰的勝率雜訊大（20 場的誤差約 ±9%，和容許範圍差不多），所以不論 `WORLD_TRIALS` 設多少都至少打 40 場；場數少於 20 的快速模式下，層主勝率超出範圍只列成提醒，以預設場數的結果為準。
 
 **最後以 [balance/monsters.md](../balance/monsters.md) 的平衡檢查為準**：世界檢查沒有錯誤才算完成。
@@ -93,7 +95,7 @@
 | `dungeon:<地下城>:<層>` | `dungeon:snake_creek:outskirts` | 地下城的一般遭遇。層：`outskirts` 周邊、`shallow` 淺層、`middle` 中層、`deep` 深層、`abyss` 底層 |
 | `boss:<地下城>:<層>` | `boss:ember_rift:shallow` | **取代**那一層的層主。層：`shallow`、`middle`、`deep`、`abyss` |
 
-地下城 id（`data/world/geography.json`，21 座都有底層）：中央平原 `whisper_crypt`、`snake_creek`、`mist_abbey`；北境群山 `redemption_pit`、`echo_rift`、`giants_spine`；南境枯萎荒原 `ember_rift`、`bloodrock_cave`、`hell_greenhouse`；古樹森林 `moonshadow_roots`、`thorn_corridor`、`verdant_hollow`；東海群島 `tidefall_cave`、`skull_isle`；西部荒野 `echo_canyon`、`quicksand_temple`；炎華南域 `yongzhao_tomb`（永昭陵）、`qianyao_valley`（千窯谷）、`gunpowder_ruins`（火藥坊遺址）；炎華北原 `mingdi_field`（鳴鏑古戰場）、`whitewolf_cave`（白狼雪窟）。
+地下城 id（`data/world/geography.json`，這 21 座都有底層）：中央平原 `whisper_crypt`、`snake_creek`、`mist_abbey`；北境群山 `redemption_pit`、`echo_rift`、`giants_spine`；南境枯萎荒原 `ember_rift`、`bloodrock_cave`、`hell_greenhouse`；古樹森林 `moonshadow_roots`、`thorn_corridor`、`verdant_hollow`；東海群島 `tidefall_cave`、`skull_isle`；西部荒野 `echo_canyon`、`quicksand_temple`；炎華南域 `yongzhao_tomb`（永昭陵）、`qianyao_valley`（千窯谷）、`gunpowder_ruins`（火藥坊遺址）；炎華北原 `mingdi_field`（鳴鏑古戰場）、`whitewolf_cave`（白狼雪窟）。另有緋夢樂園的七處（`park_beast`、`park_insect`、`park_aquarium`、`park_garden`、`park_theater`、`forbidden_garden`、`pleasure_palace`）與要劇情條件的 `history_rift`、`history_corridor`：表也收，但沒有底層，一般不要放。**自建地下城**的表不能用（整理時拿掉）：自建地下城的遭遇寫在地下城上（[dungeons](dungeons.md)）。
 
 ```json
 "spawns": [
@@ -143,7 +145,7 @@
 | `loot[].item` | 物品名稱 | 內建物品，或同一個檔案 `items` 裡的（整理時不檢查；不存在時世界檢查會提醒） |
 | `traits` | 特徵 id | `data/rules/monster_traits.json`（不能新增） |
 | `weapon.type`、`resist`、`offense` 的 key | 傷害屬性與群組 | `data/rules/damage_types.json`（不能新增） |
-| `spawns[].table`、`exclude` | 遭遇表 | 現有的地區與地下城（不能新增） |
+| `spawns[].table`、`exclude` | 遭遇表 | 現有的地區與內建地下城（自建地下城的遭遇寫在 `dungeons`） |
 
 被引用：特殊任務的戰鬥（[stories](stories.md)）、特殊地圖的遭遇表（[special-maps](special-maps.md)，一組最多 4 種怪物）、旅途事件與情報，以及存檔裡的委託與地圖格子。改 id 前先確認沒有人用到（[CONTENT_DEPENDENCIES](../../docs/CONTENT_DEPENDENCIES.md) 第 1 節）。
 
@@ -158,19 +160,19 @@
   "level": 2,
   "kind": "beast",
   "attrs": { "str": 8, "dex": 14, "int": 2, "fai": 10, "cha": 4 },
-  "hp": 15,
+  "hp": 21,
   "ap": 3,
   "weapon": { "dice": "1d6", "type": "piercing", "attr": "dex" },
   "evade": 0,
   "dr": 0,
-  "offense": { "all": -0.1 },
+  "offense": { "all": -0.3 },
   "xp": 50,
   "loot": [{ "item": "鼠皮", "chance": 0.5 }],
   "spawns": [{ "table": "wild:central", "count": 2 }]
 }
 ```
 
-世界檢查的結果：挨 2.2 下、兩隻一組讓 1 人隊伍掉 27% 的生命，都在城郊的範圍內。
+世界檢查的結果（預設場數）：挨 3.1 下、兩隻一組讓 1 人隊伍掉 29% 的生命、勝率 97%，都在城郊的範圍內。
 
 ## 5. 完整範例
 
@@ -208,8 +210,8 @@
 
 - `offense`：普通攻擊（斬擊）×1.95，火焰的技能 ×2.45。
 - `resist`：火焰免疫、寒冰弱點 ×1.5。
-- 世界檢查的結果（層主戰 20 場時量的）：3.2 回合打得倒；層主戰勝率 80%（淺層目標 80%）。`offense.all` 1.0 時 75%、0.8 時 100%，所以一次只改一點。
-- 層主戰現在至少打 40 場，數字會和上面略有不同；快速模式（`WORLD_TRIALS=6`）超出範圍只是提醒，以預設場數的結果為準。
+- 世界檢查的結果（預設場數，層主戰 40 場）：3.81 回合打得倒；層主戰勝率 90%（目標 85%）。`offense.all` 1.0 時 83%、0.8 時 95%，所以一次只改一點。
+- 快速模式（`WORLD_TRIALS=6`）超出範圍只是提醒，以預設場數的結果為準。
 - 原本的層主（地獄犬首領）和護衛不會再出現在這一層（要護衛就寫 `guards`，見 2.2 節）。
 
 ## 6. 常見錯誤
@@ -218,7 +220,7 @@
 
 | 寫法 | 結果 |
 |---|---|
-| `offense` 某個 key 大於 7、`resist` 某個 key 大於 2，或小於 -1 | 夾到範圍內 |
+| `offense` 某個 key 大於 20、`resist` 某個 key 大於 2，或小於 -1 | 夾到範圍內 |
 | `offense`、`resist` 的 key 拼錯（`slash`、`magic`） | 那個 key 拿掉 |
 | 值寫 0（`"fire": 0`） | 拿掉（沒有影響） |
 | `weapon.dice` 寫 `1d6-1`、`d8`、`1d6+1d4` | 變成 `1d6` |
@@ -230,7 +232,8 @@
 | `kind` 不在 9 種裡 | 拿掉 |
 | `traits` 有不存在的特徵 | 那一個拿掉 |
 | `armed`、`rut` 寫 `false` | 拿掉（不需要就不要寫） |
-| `spawns` 的 `table` 不存在（`wild:default`、`dungeon:snake_creek:boss`、拼錯的地下城） | 整項拿掉；`count` 夾在 1～6、`weight` 夾在 1～5 |
+| `girl` 只寫了 `name` 或 `desc` 其中一個 | 整個 `girl` 拿掉（性情、習性、機率也一起） |
+| `spawns` 的 `table` 不存在（`wild:default`、`dungeon:snake_creek:boss`、拼錯的地下城）或指到自建地下城 | 整項拿掉；`count` 夾在 1～6、`weight` 夾在 1～5 |
 | `boss:` 寫了 `weight`；`guards` 寫在一般遭遇表、超過 2 種、是自己或不存在的怪物、數量超出 1～4 | `weight` 與不合的護衛拿掉、多的截掉、數量夾住 |
 | `level` 大於 30、`hp` 大於 9999、`ap` 大於 12、屬性大於 30 | 夾到上限 |
 | `name` 超過 20 字、`desc` 超過 200 字 | 截斷 |

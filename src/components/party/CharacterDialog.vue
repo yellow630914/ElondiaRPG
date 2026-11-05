@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
+  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, combatBonuses, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, genderName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
-import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf } from '@/engine/lewd'
+import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
 import { MOD_NAME } from '@/engine/gear'
@@ -30,7 +30,7 @@ import StatGrid, { type StatItem } from '../ui/StatGrid.vue'
 import PaperDoll from './PaperDoll.vue'
 import TattooMap from './TattooMap.vue'
 import ParasitePane from './ParasitePane.vue'
-import { parasitesOf } from '@/engine/parasites'
+import { activeParasites, parasiteDef, parasitesOf, parasiteTwoFace } from '@/engine/parasites'
 import { abilityMeta, affinityText, attrNote, CHAR_TABS, contractFor, groupedAbilities, QUALITY_NAME, signed, slotsText, TYPE_NAME, type CharTab } from './memberInfo'
 import SwipeTabs from '../mobile/SwipeTabs.vue'
 import { isMobile } from '../mobile/mobile'
@@ -52,6 +52,8 @@ watch([tabs, () => props.tab, () => props.open], () => {
   if (props.open && !tabs.value.some((t) => t.id === props.tab)) emit('update:tab', 'stats')
 }, { immediate: true })
 
+const b = computed(() => combatBonuses(m.value))
+const sources = (parts: { src: string; v: number }[]) => parts.map((p) => `${p.src} ${signed(p.v)}`).join('・')
 const combat = computed<StatItem[]>(() => {
   const x = m.value
   const w = weaponFor(x)
@@ -61,9 +63,14 @@ const combat = computed<StatItem[]>(() => {
     { label: '法術環', value: slotsText(x) },
     ...(classDef(x.class).caster !== 'none' ? [{ label: '施法屬性', value: attrName(castingAttr(x.class)), note: `熟練 +${proficiency(x.level)}` }] : []),
     { label: '幸運一擊', value: `自然骰 ${luckyThreshold(attrsOf(x), gearAffinities(x).mods.crit ?? 0)} 以上`, hint: '擲出這個數字以上的自然骰時，傷害加倍' },
-    { label: '迴避骰下限', value: evadeFloor(attrsOf(x)) },
     { label: '武器', value: w.name, note: `${w.dice} ${damageTypeName(w.type)}・${attrName(w.attr)}` },
     { label: '防具', value: a.name, note: `迴避 ${signed(a.evade)}・物理減傷 ${a.dr}` },
+    // 命中、迴避……的加值與來源（裝備、特質、非戰鬥狀態都算在這裡；戰鬥中的狀態另外算）
+    { label: '命中', value: `d20 ${signed(b.value.hit.total)}`, note: sources(b.value.hit.parts), hint: '攻擊擲 d20 加上這些，達到對方的迴避就命中。慾望戰鬥的加成另計。' },
+    { label: '迴避', value: `d20 ${signed(b.value.evade.total)}`, note: `骰子最低 ${evadeFloor(attrsOf(x))}${b.value.evade.parts.length ? `・${sources(b.value.evade.parts)}` : ''}`, hint: '被攻擊時擲 d20（低於下限時算下限）加上這些，就是對方要達到的數字。慾望戰鬥的加成另計。' },
+    ...(b.value.damage.total ? [{ label: '傷害加成', value: signed(b.value.damage.total), note: sources(b.value.damage.parts) }] : []),
+    { label: '減傷', value: b.value.dr.total, note: sources(b.value.dr.parts), hint: '防具與裝備的減傷只擋物理傷害；特質與狀態的擋所有傷害。慾望戰鬥的加成另計。' },
+    ...(b.value.save.total ? [{ label: '豁免加成', value: signed(b.value.save.total), note: sources(b.value.save.parts) }] : []),
     { label: '傷害倍率', value: affinityText(x) },
   ]
 })
@@ -100,6 +107,22 @@ const lewdItems = computed<StatItem[]>(() => {
       note: tf.active.length ? `戰鬥中：${twoFaceText(tf)}` : schools.length ? '鎖上之後戰鬥中才有增益' : '沒修流派：只有平常的檢定減值',
     })
   }
+  // 寄生類的雙面效應（第 14.1 節）
+  const wild = activeParasites(x).filter((p) => !p.tamed)
+  if (wild.length) {
+    const pt = parasiteTwoFace(x)
+    const parts = Object.entries(pt.mods).filter(([, n]) => n).map(([k, n]) => `${MOD_NAME[k] ?? k} ${signed(n ?? 0)}`)
+    if (pt.lustBonus) parts.push(`造成的慾望 ${signed(pt.lustBonus)}`)
+    items.push({
+      label: '寄生',
+      value: pt.active.length ? pt.active.map((a) => `${a.name}（${a.stage}${a.mult !== 1 ? `・×${a.mult}` : ''}）`).join('、') : wild.map((p) => parasiteDef(p.id)?.name ?? p.id).join('、'),
+      note: parts.length ? `戰鬥中：${parts.join('・')}` : schools.length ? '還在潛伏：戰鬥中沒有加成' : '沒修流派：只有平常的檢定減值',
+      wide: true,
+    })
+  }
+  // 稱號（第 28 節，只是稱號）
+  const titles = lewdTitles(s.value, x)
+  if (titles.length) items.push({ label: '稱號', value: titles.map((t) => t.name).join('、'), note: titles.map((t) => t.desc).join(' '), wide: true })
   return items
 })
 

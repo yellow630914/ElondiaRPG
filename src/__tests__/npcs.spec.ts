@@ -5,6 +5,8 @@ import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions
 import { tavernCandidates } from '@/engine/companions'
 import { affinityTable, giftBonus } from '@/engine/interactions'
 import { generateNpc } from '@/engine/npcs'
+import { rollLook } from '@/engine/traits'
+import { Rng } from '@/engine/rng'
 import { withRng } from '@/engine/state'
 import { locationById, npcTags } from '@/engine/data'
 import { cellAt, currentArea, enterLocation, standOn, zonesOf } from '@/engine/grid'
@@ -304,5 +306,15 @@ describe('appearance and personality', () => {
     expect(heavyShare('femboy')).toBe(0)
     const male = heavyShare('male')
     for (const g of ['female', 'ts', 'futa']) expect(heavyShare(g), g).toBeLessThan(male / 2)
+  })
+})
+
+describe('yulin looks', () => {
+  it('always mention the tail, even when the lineage (冬璃宮) rolls its own feature', () => {
+    for (let seed = 0; seed < 400; seed++) {
+      const look = rollLook(new Rng(seed), { race: 'yulin', gender: 'f', kind: 'commoner', location: 'canglue', used: new Set() })
+      expect(look.appearance, look.appearance).toMatch(/尾/)
+      expect(look.appearance).not.toMatch(/走路還有點不穩/)
+    }
   })
 })

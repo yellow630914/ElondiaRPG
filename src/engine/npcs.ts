@@ -7,7 +7,7 @@
 import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
 import {
-  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, npcs as namedNpcs, npcTags, perkDef, slaveryRules, tagDef,
+  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, namedNpcById, npcs as namedNpcs, npcTags, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind, type NpcStage,
 } from './data'
 import { Rng } from './rng'
@@ -44,7 +44,7 @@ export function hashString(s: string): number {
 
 export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
   let stored = state.npcs?.[id]
-  const def = namedNpcs.find((n) => n.id === id)
+  const def = namedNpcById(id)
   if (!def) return stored
   // 依劇情旗標改變出沒：有一組成立時，複製進存檔再改（同一個角色，關係與記憶延續）
   const stage = activeStage(state, def)
@@ -56,7 +56,7 @@ export function npcRecord(state: GameState, id: string): NpcRecord | undefined {
 
 /** 交給 AI 與形象圖的外貌：接上固定 NPC 的成人向外貌（跟著內容頁籤的設定走，不存進存檔） */
 export function appearanceOf(id: string, appearance?: string): string {
-  const extra = namedNpcs.find((n) => n.id === id)?.adult_appearance
+  const extra = namedNpcById(id)?.adult_appearance
   return [appearance, extra].filter(Boolean).join('')
 }
 
@@ -209,11 +209,19 @@ function newNpcId(state: GameState, prefix: string): string {
 /** 生成一位 NPC 並登錄。spec 沒指定的欄位隨機決定；普通人沒有職業。 */
 /** 有性別的職業稱呼依性別換成對應的（公主／王子、修女／修士……；npc_tags.json 的 gendered_occupations） */
 export function occupationFor(occupation: string, gender: string | undefined): string {
-  const row = npcTags.gendered_occupations?.find((r) => r.female === occupation || r.male === occupation || r.neutral === occupation)
-  if (!row) return occupation
-  if (gender === 'female' || gender === 'ts' || gender === 'futa') return row.female
-  if (gender === 'male' || gender === 'femboy') return row.male
-  return row.neutral
+  const rows = npcTags.gendered_occupations ?? []
+  const pick = (r: { female: string; male: string; neutral: string }) =>
+    gender === 'female' || gender === 'ts' || gender === 'futa' ? r.female : gender === 'male' || gender === 'femboy' ? r.male : r.neutral
+  const row = rows.find((r) => r.female === occupation || r.male === occupation || r.neutral === occupation)
+  if (row) return pick(row)
+  // 結尾是清單裡的稱呼（主人家的「某某的妻子」、「見習女僕」）：換掉結尾，比對最長的那個
+  let best: { row: (typeof rows)[number]; end: string } | undefined
+  for (const r of rows) {
+    for (const end of [r.female, r.male, r.neutral]) {
+      if (end && occupation.length > end.length && occupation.endsWith(end) && (!best || end.length > best.end.length)) best = { row: r, end }
+    }
+  }
+  return best ? occupation.slice(0, -best.end.length) + pick(best.row) : occupation
 }
 
 export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, prefix = 'gen'): NpcRecord {
@@ -306,4 +314,17 @@ export function npcSpot(rec: NpcRecord): string | undefined {
   if (rec.id.startsWith('clerk_')) return 'guild'
   if (/^(tav|pty|gen|inf)_/.test(rec.id) || namedNpcs.some((n) => n.id === rec.id)) return 'tavern'
   return undefined
+}
+
+/**
+ * 正在線索事件裡登場、等主角去的人（leadEvents.ts）：線索還有效時不在城裡、不擲近況，事件發生或過期之後才回來。
+ */
+export function inLeadEvent(state: GameState, id: string): boolean {
+  const day = state.time.day
+  for (const pool of Object.values(state.leadPools ?? {})) {
+    for (const l of pool.leads) {
+      if (l.status === 'active' && (l.until === undefined || day <= l.until) && l.cast?.includes(id)) return true
+    }
+  }
+  return false
 }

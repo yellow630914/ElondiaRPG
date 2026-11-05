@@ -2,11 +2,29 @@
 // （docs/CONTENT_DEPENDENCIES.md 第 2 節）。
 // 內建的地點不會不見，所以只看 loc_ 開頭的 id；目前的存檔用到的地下城本來就不能刪，這裡處理的是其他存檔與匯入。
 
-import { findLocation, isSettlement } from './data'
+import { findLocation, isSettlement, locationName } from './data'
 import { dropExam } from './guild'
 import type { GameState } from './types'
 
 const CUSTOM_LOCATION = /^loc_/
+
+let notice: string | null = null
+
+/** 上一次 pruneLocations 把主角送回聚落時的提示（讀檔時跳出來）；拿了就清掉 */
+export function takeLocationNotice(): string | null {
+  const n = notice
+  notice = null
+  return n
+}
+
+/** 已經消失的地點原本叫什麼：從存檔裡還留著的地圖名稱找（「霜牙洞窟・周邊」的前半） */
+function goneName(state: GameState, id: string | undefined): string | undefined {
+  if (!id) return undefined
+  for (const [key, area] of Object.entries(state.areas ?? {})) {
+    if (key.split('/')[0] === id && area?.name) return area.name.split('・')[0]
+  }
+  return undefined
+}
 
 /** 這個 id 是已經不存在的自建地點 */
 export function isGoneLocation(id: string | undefined | null): boolean {
@@ -39,6 +57,9 @@ export function pruneLocations(state: GameState): boolean {
   if (lost) {
     // 旅途的起點還在時回到起點（例如從聚落出發、要去的地下城不見了）
     const back = road && !isGoneLocation(road.from) && findLocation(road.from) ? road.from : fallbackLocation(state)
+    const goneId = isGoneLocation(state.location) ? state.location : road && isGoneLocation(road.to) ? road.to : road?.from
+    const name = goneName(state, goneId)
+    notice = `${name ? `「${name}」` : road && !isGoneLocation(state.location) ? '要去的地點' : '原本所在的地點'}已經不在這個世界，你回到了${locationName(back)}。`
     delete state.road
     delete state.roadEvent
     delete state.side
@@ -63,6 +84,10 @@ export function pruneLocations(state: GameState): boolean {
   if (gone.length) state.quests = state.quests.filter((q) => !gone.includes(q))
   if (state.intel?.some((i) => isGoneLocation(i.location) || isGoneLocation(i.from))) {
     state.intel = state.intel.filter((i) => !isGoneLocation(i.location) && !isGoneLocation(i.from))
+  }
+  // 地區線索池裡指到已經不在的地點的線索
+  for (const pool of Object.values(state.leadPools ?? {})) {
+    if (pool.leads.some((l) => isGoneLocation(l.location))) pool.leads = pool.leads.filter((l) => !isGoneLocation(l.location))
   }
   for (const rec of Object.values(state.npcs ?? {})) {
     if (rec.haunts?.some((h) => isGoneLocation(h.location))) rec.haunts = rec.haunts.filter((h) => !isGoneLocation(h.location))

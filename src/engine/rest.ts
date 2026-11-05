@@ -98,7 +98,8 @@ export function restEventBlock(state: GameState): string | null {
   if (state.standoff) return '先處理眼前的對峙'
   if (state.pendingMark) return '先完成契約印記的刻印'
   if (state.pendingMasterEvent) return '先回應主人的要求'
-  if (state.dungeonEvent || state.parasiteEvent) return '先應付眼前的處境'
+  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent) return '先應付眼前的處境'
+  if (state.trapLure) return '先決定要不要觸發察覺到的陷阱'
   if (state.townEvent || state.roadEvent) return '先決定怎麼應付眼前的事'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
@@ -182,16 +183,25 @@ function ambushGroup(state: GameState) {
   return withRng(state, (rng) => (layer ? encounterFor(state.location, rng, layer) : rng.pick(wildEncounters(locationById(state.location).region))))
 }
 
-/** 自動決定要花幾顆生命骰：還差半顆骰以上的傷就繼續花 */
+/** 自動決定要花幾顆生命骰：有受傷就至少花一顆；之後還差半顆骰以上的傷才繼續花（不浪費） */
 export function autoHitDice(c: Character): number {
+  if (c.hp <= 0) return 0
   const avg = Math.floor(hitDie(c) / 2) + 1 + hitDieBonus(c)
   let missing = c.maxHp - c.hp
   let n = 0
-  while (n < hitDiceLeft(c) && missing >= Math.max(1, Math.ceil(avg / 2))) {
+  while (n < hitDiceLeft(c) && missing > 0 && (n === 0 || missing >= Math.max(1, Math.ceil(avg / 2)))) {
     missing -= Math.max(1, avg)
     n++
   }
   return n
+}
+
+/** 短休會怎樣（休息面板的按鈕，要短）：自動花幾顆生命骰；沒有要花時說明原因（生命全滿、受傷的人生命骰用完了） */
+export function shortRestPreview(state: GameState): { dice: number; note: string } {
+  const dice = state.party.reduce((s, m) => s + autoHitDice(m), 0)
+  if (dice) return { dice, note: `用 ${dice} 顆骰` }
+  const hurt = state.party.filter((m) => m.hp > 0 && m.hp < m.maxHp)
+  return { dice: 0, note: hurt.length ? '骰用完了' : '生命全滿' }
 }
 
 /**
@@ -210,7 +220,11 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
   withRng(state, (rng) => {
     for (const m of state.party) {
       const n = Math.max(0, Math.min(hitDiceLeft(m), Math.floor(spend?.[m.id] ?? autoHitDice(m))))
-      if (n === 0 || m.hp <= 0) continue
+      if (n === 0 || m.hp <= 0) {
+        // 沒回血時寫明原因（受傷的人才寫）
+        if (m.hp > 0 && m.hp < m.maxHp) lines.push(hitDiceLeft(m) ? `${m.name}這次沒有用生命骰` : `${m.name}的生命骰用完了，要長休才會恢復`)
+        continue
+      }
       const before = m.hp
       for (let i = 0; i < n; i++) m.hp = Math.min(m.maxHp, m.hp + Math.max(1, roll(rng, `1d${hitDie(m)}`).total + hitDieBonus(m)))
       m.hitDiceUsed = (m.hitDiceUsed ?? 0) + n
@@ -223,7 +237,7 @@ export function shortRest(state: GameState, spend?: Record<string, number>): Rep
   const checks = restChecks(state, report, 'short')
   report.outcome = {
     result: 'success',
-    summary: [`在${area.name}短暫休息了一個小時。`, lines.join('；'), ...checks].filter(Boolean).join(''),
+    summary: [`在${area.name}短暫休息了一會兒。`, lines.length ? `${lines.join('；')}。` : state.party.every((m) => m.hp >= m.maxHp) ? '大家的生命都是滿的。' : '', ...checks].filter(Boolean).join(''),
     tags: ['短休'],
   }
   return commitReport(state, report)

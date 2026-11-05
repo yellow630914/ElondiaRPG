@@ -7,10 +7,11 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
-import { parasiteDef } from './parasites'
+import { parasiteDef, parasiteRules } from './parasites'
+import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, bumpContentRevision, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, bumpContentRevision, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
@@ -23,9 +24,10 @@ import { TOOL_KINDS } from './tools'
 import { cleanPerkEffects, describeEffects, PERK_CATEGORIES, type PerkLimits } from './perks'
 import { sanitizeLustPerk, schoolDef } from './schools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
+import { applyParasiteMod, restoreParasites, sanitizeParasiteMod, type ParasiteMod } from './parasiteMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
-import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod } from './landmarkMods'
+import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod, type LandmarkPack } from './landmarkMods'
 import { applySpecialMapMod, restoreSpecialMaps, sanitizeSpecialMapMod, specialPreview, type SpecialMapMod } from './specialMapMods'
 import { applyDungeonMod, isCustomDungeon, restoreDungeons, sanitizeDungeonMod, type DungeonMod } from './dungeonMods'
 import { applyCounter, builtinCounter, restoreCounters, sanitizeCounter, type CounterMod } from './counterMods'
@@ -34,7 +36,7 @@ import { applyBindRules, restoreBindRules, sanitizeBindRules, type BindRulesMod 
 import { applyEventRules, applyTravelEvent, builtinTravelEvent, restoreTravelEvents, sanitizeEventRules, sanitizeTravelEvent, type EventRulesMod, type TravelEventMod } from './travelEventMods'
 import { applyShopMod, applyShopPlacements, canListItem, restoreShops, sanitizeShopMod, type ShopMod } from './shopMods'
 import { notForSale } from './trade'
-import { travelEvents } from './road'
+import { invalidateSources } from './sources'
 import { sanitizeIcon, setCategoryIcons } from './itemIcons'
 import type { Character, GameState, GearSlot, GearSpec } from './types'
 
@@ -118,6 +120,8 @@ export interface ContentMods {
   conditions: Record<string, ConditionMod>
   /** 刺青圖樣（普通刺青、誓約印記） */
   tattoos: Record<string, TattooMod>
+  /** 寄生物（內建的改過的、自建的 mod_par_…；舊的自訂內容沒有這一欄，讀取時補上） */
+  parasites: Record<string, ParasiteMod>
   /** 奴隸印記的模板 */
   marks: Record<string, MarkMod>
   /** 印記的用途與權重（只有 rules 一筆） */
@@ -148,7 +152,7 @@ export interface CategoryIconMod {
 }
 
 export function emptyMods(): ContentMods {
-  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {}, dungeons: {} }
+  return { version: 1, enemies: {}, items: {}, bases: {}, materials: {}, npcs: {}, stories: {}, abilities: {}, perks: {}, statuses: {}, conditions: {}, tattoos: {}, marks: {}, markRules: {}, shops: {}, landmarks: {}, specialMaps: {}, travelEvents: {}, eventRules: {}, bindRules: {}, masterEvents: {}, categoryIcons: {}, counters: {}, dungeons: {}, parasites: {} }
 }
 
 // ---- 內建資料的快照（模組載入時） ----
@@ -259,6 +263,7 @@ function restore() {
   replaceRecord(statuses, snapshot.statuses)
   replaceRecord(companionRules.conditions, snapshot.conditions)
   replaceRecord(tattooRules.templates, snapshot.tattoos)
+  restoreParasites()
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
   restoreShops()
@@ -402,31 +407,6 @@ export function enemyPlaceOptions(): { key: string; label: string }[] {
   ]
 }
 
-/** 物品的取得方式 */
-export const ITEM_SOURCE_NAME: Record<string, string> = {
-  'shop:general': '雜貨店', 'shop:temple': '神殿', 'shop:tavern': '酒館', 'shop:smith': '鐵匠鋪', 'shop:tailor': '裁縫店',
-  'shop:jeweler': '珠寶店', 'shop:magic': '魔法物品店', 'shop:info': '情報商',
-  chest: '寶箱', 'gather:wild': '近郊採集', 'gather:dungeon': '地下城採集', drop: '怪物掉落', event: '事件獎勵', forge: '打造材料', none: '沒有取得方式',
-}
-
-/** 每個物品的取得方式（ITEM_SOURCE_NAME 的 key） */
-export function itemSourceIndex(): Map<string, Set<string>> {
-  const drops = new Set(Object.values(enemies).flatMap((e) => (e.loot ?? []).map((l) => l.item)))
-  const chests = new Set(CHEST_LAYERS.flatMap((l) => (gearRules.chests[l]?.items ?? []).map(([n]) => n)))
-  const out = new Map<string, Set<string>>()
-  for (const i of itemRules.items) {
-    const set = new Set<string>(i.tags.map((t) => `shop:${t}`))
-    if (chests.has(i.name)) set.add('chest')
-    for (const g of ['wild', 'dungeon'] as const) if (maps.generation[g].resource_items.includes(i.name)) set.add(`gather:${g}`)
-    if (drops.has(i.name)) set.add('drop')
-    if (i.event) set.add('event')
-    if (i.forge?.materials.length) set.add('forge')
-    if (!set.size) set.add('none')
-    out.set(i.name, set)
-  }
-  return out
-}
-
 // ---- 套用 ----
 
 const strip = <T extends object>(v: T, keys: string[]): T => {
@@ -445,7 +425,8 @@ function generatedGear(mods: Pick<ContentMods, 'bases' | 'materials'>): [string,
   const out: [string, GearSpec][] = []
   for (const [bid, b] of Object.entries(gearRules.bases)) {
     for (const [mid, m] of Object.entries(gearRules.materials)) {
-      if (b.restraint || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
+      // 拘束具、地下城專屬（只靠層主掉落）的底材不產生制式裝備
+      if (b.restraint || b.exclusive || m.kind !== b.kind || (!mods.bases[bid]?.custom && !mods.materials[mid]?.custom)) continue
       const spec: GearSpec = { base: bid, material: mid }
       out.push([gearName(spec), spec])
     }
@@ -496,6 +477,8 @@ function pruneDungeonTables() {
 /** 把覆寫套用到遊戲資料（先還原成內建的樣子）。壞掉的項目略過，回傳略過的原因 */
 export function applyContent(mods: ContentMods): string[] {
   restore()
+  // 「怎麼拿到」的索引跟著內容重建（下次查詢時）
+  invalidateSources()
   const problems: string[] = []
   const tryEach = <T>(label: string, list: Record<string, T>, fn: (key: string, v: T) => void) => {
     for (const [k, v] of Object.entries(list)) {
@@ -526,7 +509,7 @@ export function applyContent(mods: ContentMods): string[] {
   // 自建地下城（地點、路線、遭遇表）最先：特殊地圖、任務、事件、情報物品與怪物的出現地點都會檢查地點存不存在
   tryEach('地下城', mods.dungeons ?? {}, (_id, m) => applyDungeonMod(m))
   tryEach('地標', mods.landmarks ?? {}, (id, m) => {
-    const l = sanitizeLandmarkMod(id, m)
+    const l = sanitizeLandmarkMod(id, m, { maps: mods.specialMaps as LandmarkPack['maps'], npcs: Object.keys(mods.npcs ?? {}) })
     applyLandmarkMod(id, l)
     // 擺不上去的照樣套用（引用它的 NPC、任務才不會失效），但要讓作者知道
     const why = landmarkSpotProblem(id, l.at)
@@ -601,6 +584,11 @@ export function applyContent(mods: ContentMods): string[] {
     }
   })
   reindexItems()
+  // 寄生物（物品、技能、非戰鬥狀態之後；特殊任務與事件之前：它們的寄生效果、發作事件會檢查寄生物存不存在）
+  tryEach('寄生物', mods.parasites ?? {}, (id, m) => applyParasiteMod(id, sanitizeParasiteMod(id, m, {
+    condition: (x) => !!companionRules.conditions[x],
+    story: (x) => stories.some((s) => s.id === x) || !!mods.stories[x],
+  })))
   tryEach('怪物', mods.enemies, (id, m) => {
     enemies[id] = { ...strip(m, ['custom', 'spawns', 'exclude']), id }
   })
@@ -753,7 +741,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   }
   const res = affinity(raw.resist)
   if (res) out.resist = res
-  const off = affinity(raw.offense, 7)
+  // 層主、強敵的全傷害倍率可以到 7 以上（例如血祭司 7.26、十字軍審判官 10.01）
+  const off = affinity(raw.offense, 20)
   if (off) out.offense = off
   // 怪物沒有法術環：只能用技能與戲法
   const abil = (raw.abilities ?? []).filter((a) => !!abilities[a] && abilities[a]!.type !== 'spell')
@@ -770,7 +759,16 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   if (raw.rut) out.rut = raw.rut === 'field' ? 'field' : true
   const girlName = str(raw.girl?.name, 20)
   const girlDesc = str(raw.girl?.desc, 300)
-  if (girlName && girlDesc) out.girl = { name: girlName, desc: girlDesc }
+  if (girlName && girlDesc) {
+    out.girl = { name: girlName, desc: girlDesc }
+    const personality = str(raw.girl?.personality, 200)
+    const habits = str(raw.girl?.habits, 200)
+    if (personality) out.girl.personality = personality
+    if (habits) out.girl.habits = habits
+    // 機率沒寫（空白）時照設定；寫了就是 0～100 的整數
+    const chance = raw.girl?.chance as unknown
+    if (chance !== undefined && chance !== null && chance !== '' && Number.isFinite(Number(chance))) out.girl.chance = int(chance, 0, 100, 100)
+  }
   const traits = (raw.traits ?? []).filter((t) => !!monsterTraits.traits[t])
   if (traits.length) out.traits = traits
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
@@ -876,7 +874,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     name: cleanItemName(name) || '未命名的物品',
     category,
     price_cc: int(raw.price_cc, 0, 1e8, 10),
-    tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t)),
+    // unique：獨特物品（不會在商店、黑市與 NPC 的換裝出現；沒有勾選框，照原樣留著）
+    tags: (raw.tags ?? []).filter((t) => SHOP_TAGS.includes(t) || t === 'unique'),
   }
   if (str(raw.desc, 200)) out.desc = str(raw.desc, 200)
   const icon = sanitizeIcon(raw.icon)
@@ -1154,10 +1153,24 @@ export function normalizeMods(raw: unknown): ContentMods {
     const name = cleanItemName(raw)
     if (name) out.items[name] = sanitizeItem(name, v, !!v.custom || !snapshot.items.some((i) => i.name === name))
   }
+  // 寄生物：特殊任務的寄生效果與條件、發作事件會檢查存不存在，先登錄自建的（物品、技能、非戰鬥狀態、任務可以是同一包裡的）
+  for (const [id, v] of Object.entries(r.parasites ?? {})) {
+    try {
+      out.parasites[id] = sanitizeParasiteMod(id, v, {
+        item: (n) => !!itemDef(n) || !!out.items[n],
+        ability: (x) => !!abilities[x] || !!r.abilities?.[x],
+        condition: (x) => !!companionRules.conditions[x] || !!r.conditions?.[x],
+        story: (x) => stories.some((s) => s.id === x) || !!r.stories?.[x],
+      })
+    } catch {
+      // id 不對、寄生裝備沒有物品或欄位：略過
+    }
+  }
+  for (const [id, p] of Object.entries(out.parasites)) if (p.custom && !parasiteDef(id)) applyParasiteMod(id, p)
   // 地標：固定 NPC 與特殊任務的任務點會檢查存不存在，先登錄自建的
   for (const [id, v] of Object.entries(r.landmarks ?? {})) {
     try {
-      out.landmarks[id] = sanitizeLandmarkMod(id, v)
+      out.landmarks[id] = sanitizeLandmarkMod(id, v, { maps: r.specialMaps as LandmarkPack['maps'], npcs: Object.keys(r.npcs ?? {}) })
     } catch {
       // 位置或 id 不對的：略過
     }
@@ -1374,6 +1387,15 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   // 娼婦光顧時會教的色情技能
   const teaches = [...new Set((Array.isArray(raw.teaches) ? raw.teaches : []).filter((id) => typeof id === 'string' && abilities[id]?.classes.includes('lewd')))].slice(0, 12)
   if (teaches.length) out.teaches = teaches
+  // 老師會教的特質（清單裡的、不是種族特質；docs/LEWD_STATS.md 第 6.1 節）
+  if (raw.mentor && typeof raw.mentor === 'object') {
+    const perks = [...new Set((Array.isArray(raw.mentor.perks) ? raw.mentor.perks : []).filter((id) => typeof id === 'string' && isChoosablePerk(id) && !perkDef(id)?.flaw))].slice(0, 8)
+    if (perks.length) {
+      out.mentor = { perks }
+      if (raw.mentor.affinity !== undefined && Number.isFinite(Number(raw.mentor.affinity))) out.mentor.affinity = int(raw.mentor.affinity, 0, 100, 10)
+      if (raw.mentor.price_mult !== undefined && Number.isFinite(Number(raw.mentor.price_mult))) out.mentor.price_mult = Math.round(num(raw.mentor.price_mult, 0, 3, 0.8) * 100) / 100
+    }
+  }
   if (raw.gear) {
     const g: NonNullable<NpcDef['gear']> = {}
     for (const slot of GEAR_SLOTS) {
@@ -1455,7 +1477,8 @@ function applyDef(v: unknown): ApplyDef | undefined {
   if (!v || typeof v !== 'object') return undefined
   const a = v as ApplyDef
   if (!a.status || !statuses[a.status]) return undefined
-  const out: ApplyDef = { status: a.status, turns: int(a.turns, 1, 20, 2) }
+  // 1～20 回合，或 99＝整場戰鬥（內建的熱泉的耐性）
+  const out: ApplyDef = { status: a.status, turns: Number(a.turns) === 99 ? 99 : int(a.turns, 1, 20, 2) }
   if (a.to && ['target', 'self', 'allies', 'enemies'].includes(a.to)) out.to = a.to
   if (a.on && ['hit', 'fail', 'always'].includes(a.on)) out.on = a.on
   if (a.save && ATTR_IDS.includes(a.save)) out.save = a.save
@@ -1530,6 +1553,24 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.lifesteal) out.lifesteal = Math.round(num(raw.lifesteal, 0.05, 1, 0.5) * 100) / 100
   if (raw.vs_slave && raw.vs_slave !== 1) out.vs_slave = Math.round(num(raw.vs_slave, 0.25, 4, 2) * 100) / 100
   if (raw.hp_limit) out.hp_limit = int(raw.hp_limit, 1, 9999, 30)
+  // 升環（只有法術；upcast.ts）
+  if (type === 'spell' && raw.upcast && typeof raw.upcast === 'object') {
+    const r = raw.upcast
+    const dice = (v: unknown) => (v && DICE.test(String(v).replace(/\s+/g, '')) ? String(v).replace(/\s+/g, '') : undefined)
+    const u: NonNullable<AbilityDef['upcast']> = {}
+    if (dice(r.dice) && out.damage?.length) {
+      u.dice = dice(r.dice)
+      const part = int(r.part, 0, out.damage.length - 1, 0)
+      if (part > 0) u.part = part
+    }
+    if (dice(r.heal) && out.heal) u.heal = dice(r.heal)
+    if (r.heal_flat && out.heal) u.heal_flat = int(r.heal_flat, 1, 999, 10)
+    if (r.count && target === 'random_enemies') u.count = int(r.count, 1, 5, 1)
+    if (r.hits) u.hits = int(r.hits, 1, 5, 1)
+    if (r.shield && out.shield) u.shield = int(r.shield, 1, 999, 5)
+    if (dice(r.status_dice) && out.apply?.length) u.status_dice = dice(r.status_dice)
+    if (Object.keys(u).length) out.upcast = u
+  }
   if (raw.threat) out.threat = int(raw.threat, -50, 50, 0)
   // 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節）
   if (raw.lust_gain?.flat) out.lust_gain = { flat: int(raw.lust_gain.flat, 1, 200, 10) }
@@ -1658,6 +1699,9 @@ export function sanitizeCondition(id: string, raw: Partial<ConditionMod>, custom
   if (m) out.combat_mods = m
   const hp = int(raw.combat_temp_hp, 0, 50, 0)
   if (hp) out.combat_temp_hp = hp
+  // 慾望上限倍率加減（壯陽料理 0.2 = +20%）
+  const lustMax = Math.round(num(raw.combat_lust_max, -0.9, 2, 0) * 100) / 100
+  if (lustMax) out.combat_lust_max = lustMax
   // 系統狀態：照內建的
   const src = base && SYSTEM_CONDITIONS.includes(id) ? base : raw
   if (src.clears === 'long_rest') out.clears = 'long_rest'
@@ -1700,6 +1744,22 @@ export function conditionUsage(id: string, state?: GameState | null): string[] {
   for (const [k, c] of Object.entries(companionRules.conditions)) {
     if (k !== id && !k.startsWith('$') && (c.stacks_to === id || c.replaces?.includes(id))) out.push(`非戰鬥狀態「${c.name}」`)
   }
+  for (const p of Object.values(parasiteRules.parasites)) if (p.tamed?.buff === id) out.push(`寄生物「${p.name}」（主動觸發後得到）`)
+  return out
+}
+
+/** 哪些地方用到這種寄生物（刪除前檢查）：特殊任務與事件的寄生效果與條件、發作事件、地標的場景、奴隸生活的事件、目前存檔的主角 */
+export function parasiteUsage(id: string, state?: GameState | null): string[] {
+  const out: string[] = []
+  const has = (v: unknown) => {
+    const s = JSON.stringify(v ?? null).replace(/\s+/g, '')
+    return s.includes(`"parasite":"${id}"`) || (s.includes('"parasites":{') && s.includes(`"${id}":{`))
+  }
+  for (const st of stories) if (has(st)) out.push(`特殊任務「${st.title}」`)
+  for (const t of travelEvents.templates) if (has(t)) out.push(t.scope === 'parasite' ? `發作事件「${t.title}」` : `事件「${t.title}」`)
+  for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
+  if (has(slaveryRules)) out.push('奴隸生活的事件')
+  for (const c of state?.party ?? []) if (c.parasites?.some((p) => p.id === id)) out.push(`目前存檔的「${c.name}」身上`)
   return out
 }
 
@@ -1730,23 +1790,51 @@ export function newAbility(id: string): AbilityMod {
   }
 }
 
+/** 一份資料裡有沒有「學會這個能力」的效果（`{ type: 'ability', ability: id }`，任何深度） */
+function teachesAbility(node: unknown, id: string): boolean {
+  if (!node || typeof node !== 'object') return false
+  if (Array.isArray(node)) return node.some((x) => teachesAbility(x, id))
+  const o = node as Record<string, unknown>
+  if (o.type === 'ability' && o.ability === id) return true
+  return Object.values(o).some((x) => teachesAbility(x, id))
+}
+
 /**
- * 哪些地方用到這個能力（刪除前檢查）：職業的初始能力、怪物、固定 NPC（自己的與教人的）、特殊任務的獎勵、
- * 主奴與娼館的事件掛的技能，以及目前存檔裡的角色（隊伍與登場過的人）。
+ * 哪些地方用到這個能力（刪除前檢查，也讓內容編輯器看得出這個能力怎麼拿到）：職業的初始能力、怪物與怪物特徵、固定 NPC（會的、娼婦會教的）、
+ * 特殊任務、旅途／城鎮／地下城事件、地標、主奴與娼館的事件（會教的與獎勵）、技能書、寄生物（還沒馴服的階段、馴服之後有獸蟲派時可以用的）、
+ * 奴房與娼館恩客預設會教的，以及目前存檔裡的角色（隊伍與登場過的人）。
  */
 export function abilityUsage(id: string, state?: GameState | null): string[] {
   const out: string[] = []
   for (const [cid, c] of Object.entries(classes)) if (c.start?.includes(id)) out.push(`職業「${c.name ?? cid}」的初始能力`)
   for (const e of Object.values(enemies)) if (e.abilities?.includes(id)) out.push(`怪物「${e.name}」`)
+  for (const t of Object.values(monsterTraits.traits)) if (t.abilities?.includes(id)) out.push(`怪物特徵「${t.name}」`)
   for (const n of namedNpcs) {
     if (n.abilities?.includes(id)) out.push(`固定 NPC「${n.name}」`)
-    else if (n.teaches?.includes(id)) out.push(`固定 NPC「${n.name}」教的技能`)
+    if (n.teaches?.includes(id)) out.push(`固定 NPC「${n.name}」（光顧時會教）`)
   }
-  for (const { def } of allMasterEvents()) if (def.teaches?.includes(id)) out.push(`主奴、娼館的事件「${def.id}」`)
-  for (const s of stories) {
-    const effects = [...(s.rewards ?? []), ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])].flatMap((o) => o?.effects ?? []))]
-    if (effects.some((e) => e.type === 'ability' && e.ability === id)) out.push(`特殊任務「${s.title}」的獎勵`)
+  for (const s of stories) if (teachesAbility([s.rewards, s.nodes], id)) out.push(`特殊任務「${s.title}」的獎勵`)
+  for (const t of travelEvents.templates) {
+    if (!teachesAbility(t.options ?? [t.success, t.fail], id)) continue
+    const where = t.scope === 'town' ? '城鎮事件' : t.scope === 'dungeon' ? '地下城事件' : t.scope === 'parasite' ? '寄生物的發作' : '旅途事件'
+    out.push(`${where}「${t.title}」`)
   }
+  for (const l of Object.values(landmarks)) if (teachesAbility(l, id)) out.push(`地標「${l.name}」`)
+  for (const [pool, name] of Object.entries(MASTER_EVENT_POOLS) as [MasterEventPool, string][]) {
+    for (const e of masterEventPool(pool)) {
+      // 主奴與娼館的事件沒有標題：用 id 與開頭的幾個字
+      const label = `${e.id}：${e.text.replace(/\{master\}/g, '主人').slice(0, 12)}…`
+      if (e.teaches?.includes(id)) out.push(`${name}「${label}」（會教）`)
+      else if (teachesAbility(e.options, id)) out.push(`${name}「${label}」的獎勵`)
+    }
+  }
+  for (const i of itemRules.items) if (i.use?.abilities?.includes(id)) out.push(`技能書「${i.name}」`)
+  for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
+    if (p.stage_abilities?.some((list) => list.includes(id))) out.push(`寄生物「${p.name ?? pid}」（還沒馴服時依階段給的）`)
+    if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後、有獸蟲派時可以用，不分先後）`)
+  }
+  if (lewdRules.slave_room?.abilities?.includes(id)) out.push('驛站的奴房（可能學會）')
+  if (lewdRules.brothel?.patron?.default?.includes(id)) out.push('娼館的娼婦光顧時預設會教的')
   if (state) {
     const who = [...state.party, ...Object.values(state.npcs ?? {}).map((r) => r.character).filter((c): c is Character => !!c)]
     for (const c of who) {
@@ -1810,7 +1898,8 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
     }
   }
   if (!race && raw.npc) {
-    const weight = Math.round(num(raw.npc.weight, 0, 10, 0))
+    // 權重可以是小數（例如【幸運】0.5：比一般特質少見）
+    const weight = Math.round(num(raw.npc.weight, 0, 10, 0) * 10) / 10
     const tags = (raw.npc.tags ?? []).filter((t) => !!npcTags.tags[t])
     const ncls = (raw.npc.classes ?? []).filter((k) => !!classes[k])
     if (weight > 0) out.npc = { weight, ...(tags.length ? { tags } : {}), ...(ncls.length ? { classes: ncls } : {}) }

@@ -4,7 +4,7 @@
 #     python3 worldgen/tools/guide/guide.py           產生 docs/guide/
 #     python3 worldgen/tools/guide/guide.py --check   只檢查 docs/guide/ 是不是最新的（測試 src/__tests__/guide.spec.ts 會跑）
 # 內建內容（data/）改過之後重跑一次。特殊任務與地下城、寄生物、城鎮的成人向事件沿用 flowdoc.py 整理好的資料。
-import collections, pathlib, re, sys
+import collections, json, pathlib, re, sys
 
 HERE = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / 'flowdoc'))
@@ -179,7 +179,7 @@ def event_md(t, where, out):
 
 
 def events_page():
-    out = ['# 旅途與城鎮事件', '', HEAD]
+    out = ['# 旅途、城鎮與地下城事件', '', HEAD]
     road = [t for t in TE['templates'] if t.get('scope', 'road') == 'road' and 'adult' not in t.get('tags', [])]
     town = [t for t in TE['templates'] if t.get('scope') == 'town' and 'adult' not in t.get('tags', [])]
     ch = TE['chance']
@@ -199,6 +199,33 @@ def events_page():
         cells = '、'.join(F.CELL.get(c, c) for c in t.get('cells', [])) or '任何設施'
         where = '、'.join(loc(x) for x in t.get('locations', [])) or '任何聚落'
         event_md(t, f'{where}的{cells}', out)
+    # 普通的地下城與近郊事件（成人向的在成人向事件頁）
+    dg = [t for t in TE['templates'] if t.get('scope') == 'dungeon' and 'adult' not in t.get('tags', [])]
+    if dg:
+        dc = TE['dungeon']
+        trig = {'trap': '觸發陷阱（沒察覺時）', 'chest': '打開寶箱', 'gather': '採集之後', 'rest': '安全房長休之後'}
+        layer = ['周邊與近郊', '淺層', '中層', '深層', '底層']
+        out.append('## 地下城與近郊的事件')
+        out.append('')
+        out.append('在近郊與地下城觸發陷阱、打開寶箱、採集或在安全房長休之後，有機率遇到一件事（' + '、'.join(f"{trig[k]} {int(v * 100)}%" for k, v in dc['chance'].items()) + f"；兩次之間至少隔 {dc['cooldown_hours']} 小時）。選項的 DC 依層調整。")
+        out.append('')
+        for t in dg:
+            places = '、'.join(F.loc(d) for d in t.get('dungeons', [])) or '任何地下城與近郊'
+            layers = '、'.join(layer[i] for i in t.get('layers', [])) or '任何一層'
+            event_md(t, f"{'、'.join(trig[x] for x in t.get('triggers', []))}・{places}（{layers}）", out)
+    # 線索事件（線索池的事件點；登場角色寫成甲、乙）
+    ld = [t for t in TE['templates'] if t.get('scope') == 'lead' and 'adult' not in t.get('tags', [])]
+    if ld:
+        layer = ['近郊與周邊', '淺層', '中層', '深層', '底層']
+        out.append('## 線索事件')
+        out.append('')
+        out.append('地區的線索池有時是一件「事」：在近郊或地下城的某一格（❔），走到那裡時發生。登場的人一半是這一帶你認識的冒險者，一半是新面孔（下面寫成甲、乙）；情報商、酒館打聽、情報物品都可能告訴你在哪裡。沒人去處理的事，過一陣子會變成你認識的人的近況。')
+        out.append('')
+        for t in ld:
+            shown = json.loads(json.dumps(t, ensure_ascii=False).replace('{a他}', '他').replace('{b他}', '他').replace('{a}', '甲').replace('{b}', '乙').replace('"$a"', '"甲"').replace('"$b"', '"乙"'))
+            places = '、'.join(F.loc(d) for d in t.get('dungeons', [])) or '任何近郊與地下城'
+            layers = '、'.join(layer[i] for i in t.get('layers', [])) or '任何一層'
+            event_md(shown, f"{places}（{layers}）・登場 {t.get('cast', 0)} 人", out)
     return '\n'.join(out)
 
 
@@ -471,7 +498,7 @@ def build():
         files[slug] = quests_page(slug, cat, adult, intro)
         n = sum(len(l['quests']) for l in F.out if l['cat'] == cat)
         pages.append((slug, f'特殊任務：{cat}', f'{intro}（{n} 個任務）'))
-    files['events'] = events_page(); pages.append(('events', '旅途與城鎮事件', '旅途上與城鎮設施裡會遇到的事件'))
+    files['events'] = events_page(); pages.append(('events', '旅途、城鎮與地下城事件', '旅途上、城鎮設施裡與地下城會遇到的事件'))
     files['events-adult'] = adult_events_page(); pages.append(('events-adult', '成人向事件', '地下城、寄生物、城鎮的成人向事件'))
     files['items'] = items_page(src); pages.append(('items', '物品的取得方式', '消耗品、卷軸、食物、材料、家具……從哪裡拿'))
     files['equipment'] = equipment_page(src); pages.append(('equipment', '裝備的取得方式', '獨特裝備與一般裝備從哪裡拿'))

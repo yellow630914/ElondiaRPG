@@ -176,7 +176,7 @@
     "overdue": { "base": 0.2, "per_day": 0.15, "max": 0.8 },
     "district": { "royal": "manor", "noble": "manor", "bishop": "manor", "merchant": "house", "priest": "house" },
     "household": {
-      "$comment": "主人家裡的人（第一次建立主人的家時生成，同一位主人一直是同一批人；換主人就換一批）。patterns：依房子的規格，先依 weight 抽一種組成，再依數量範圍生成伴侶（spouse 為出現機率）、子女、僕人、奴隸。小屋只會有其中一種（只有伴侶、只有子女或只有奴隸）。子女的種族從家裡的大人（主人、伴侶、僕人、奴隸）之中抽。spouse_same_race：伴侶和主人同種族的機率（其他依城鎮的種族分布）。spouse_inherits：主人有這些身分標籤時，伴侶也是（貴族娶貴族）。servant_jobs、slave_jobs：職業描述。",
+      "$comment": "主人家裡的人（第一次建立主人的家時生成，同一位主人一直是同一批人；換主人就換一批）。patterns：依房子的規格，先依 weight 抽一種組成，再依數量範圍生成伴侶（spouse 為出現機率）、子女、僕人、奴隸。小屋只會有其中一種（只有伴侶、只有子女或只有奴隸）。子女的種族從家裡的大人（主人、伴侶、僕人、奴隸）之中抽。spouse_same_race：伴侶和主人同種族的機率（其他依城鎮的種族分布）。spouse_inherits：主人有這些身分標籤時，伴侶也是（貴族娶貴族）。spouse_genders：依主人的性別限定伴侶的性別（照 npc_pool.json 的生成權重從清單裡抽；沒寫的性別不限定）。伴侶與子女的稱謂（妻子／丈夫、女兒／兒子）照 npc_tags.json 的 gendered_occupations。servant_jobs、slave_jobs：職業描述。",
       "patterns": {
         "cottage": [
           { "weight": 1, "spouse": 1 },
@@ -195,6 +195,7 @@
       },
       "spouse_same_race": 0.7,
       "spouse_inherits": ["noble", "royal", "merchant"],
+      "spouse_genders": { "male": ["female", "ts", "futa"] },
       "servant_jobs": ["管家", "女僕", "廚娘", "園丁", "馬夫", "侍從", "洗衣婦"],
       "slave_jobs": ["家奴", "雜役", "廚房的奴隸", "貼身的奴隸", "看門的奴隸"]
     }

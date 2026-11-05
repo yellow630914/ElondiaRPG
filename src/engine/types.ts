@@ -182,6 +182,8 @@ export interface Report {
     mode?: 'defeat_cliffhanger' | 'defeat_event'
     /** 戰敗事件被圍住的是隊友：那位隊員的 id（沒有時是主角） */
     defeat_victim?: string
+    /** 擲魔物娘用的日子（戰敗事件的回應：照那場戰鬥開始的日子，和戰敗前情一致）；沒有時看報告開始的日子 */
+    girl_day?: number
     /** 成人向的親密場景：這段經過是什麼，敘事會附上成人場景規則、在正文詳細描寫 */
     adult_scene?: string
     /** 這段經過來自限定陰柔、中性主角的內容（特殊任務、事件、地標場景的 pc_body）：陽剛體型的主角玩到時，敘事附上照主角身體寫的說明（narrator 的 mascBodyNote） */
@@ -433,6 +435,8 @@ export interface MarkTerms {
 /** 遊戲中登場的 NPC（含程式生成的）；不在隊伍時保存角色資料，再次入隊時沿用 */
 export interface NpcRecord extends NpcDef {
   generated?: boolean
+  /** 歡愉的惡作劇改過性別（genderSwap.ts）：原本的性別與哪一天；交給 AI 時附上說明 */
+  genderSwap?: { from: string; day: number }
   /** 程式生成的文字已經請 AI 潤飾過（名單的潤飾，每個人一次） */
   flavored?: boolean
   background?: string
@@ -490,7 +494,10 @@ export interface Intel {
   /** point：哪個地點、哪一層（沒有時是近郊）、什麼事件 */
   location?: string
   layer?: DungeonLayerId
-  event?: 'combat' | 'chest' | 'merchant'
+  event?: 'combat' | 'chest' | 'merchant' | 'relic' | 'event'
+  /** event：線索事件的模板（travel_events.json 的 scope lead）與登場角色（NPC id，甲、乙） */
+  template?: string
+  cast?: string[]
   /** combat：要打的怪物；chest、combat：寶物的等級 */
   group?: [string, number][]
   level?: number
@@ -504,6 +511,18 @@ export interface Intel {
   npc?: string
   /** 傳聞提到的怪物（enemies 的 id，點亮圖鑑） */
   monster?: string
+  status: 'active' | 'done' | 'expired'
+}
+
+/** 地區線索池裡的一則線索（leads.ts）：一個事件點，知道之後以同一個 id 記進 state.intel */
+export interface Lead extends Omit<Intel, 'kind' | 'from' | 'time' | 'status' | 'source' | 'npc' | 'story' | 'monster'> {
+  region: string
+  /** 0 近郊，1～5 地下城的周邊到底層（情報商的價格） */
+  tier: number
+  /** informant：情報商賣；hidden：要打聽或解讀情報物品才知道（不知道也會在地圖上遇到） */
+  visibility: 'informant' | 'hidden'
+  /** 已經記進冒險筆記 */
+  known?: boolean
   status: 'active' | 'done' | 'expired'
 }
 
@@ -550,6 +569,8 @@ export interface PendingDefeat {
   willing?: boolean
   /** 被圍住的是隊友（隊員 id）：主角不會遇到戰敗事件時改由隊友遇到，玩家替這位隊友選擇反應；沒有時是主角 */
   victim?: string
+  /** 那場戰鬥開始的日子：戰敗事件擲魔物娘照這天（和戰敗前情一致；舊存檔沒有時看現在） */
+  day?: number
 }
 
 export interface PendingMasterEvent {
@@ -772,6 +793,10 @@ export interface GameOptions {
   masterEventMult?: number
   parasiteMult?: number
   dungeonEventMult?: number
+  /** 成人向地下城事件的比重（1～8 倍；普通的地下城事件不變） */
+  adultDungeonMult?: number
+  /** 察覺陷阱時可以選擇主動觸發（遇到陷阱的地下城事件） */
+  trapLure?: boolean
   /** 娼館打工事件的機率倍率（docs/LEWD_STATS.md 第 10 節） */
   brothelEventMult?: number
   eventDc?: number
@@ -923,6 +948,12 @@ export interface GameState {
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 地下城與近郊等待回應的事件（dungeonEvents.ts）：模板與觸發點 */
   dungeonEvent?: { template: string; trigger: string }
+  /** 走到線索事件的格子、等主角回應（leadEvents.ts）：哪一則線索、在哪一格 */
+  leadEvent?: { lead: string; area: string; x: number; y: number }
+  /** 各地區的線索池（leads.ts）：哪一天擲的、有哪些線索 */
+  leadPools?: Record<string, { day: number; leads: Lead[] }>
+  /** 察覺了陷阱、等主角決定要不要主動觸發（存檔規則 trapLure；dungeonEvents.ts 的 offerTrapLure） */
+  trapLure?: { area: string }
   /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */
   dungeonEvents?: { last?: number; seen: Record<string, number> }
   /** 寄生物等待回應的發作事件（parasiteEvents.ts）：模板與寄生物 */
@@ -937,6 +968,8 @@ export interface GameState {
   intel?: Intel[]
   /** 怪物圖鑑：怪物 id → 聽說、遭遇、擊敗（bestiary.ts） */
   bestiary?: Record<string, BestiaryEntry>
+  /** NPC 自己的日子：上次擲骰的日子、近況、玩家關注的人（npcLife.ts） */
+  npcLife?: NpcLifeState
   /** 事件結果要求的移動（進入臨時地圖、改去別的地點），在報告提交之後執行 */
   pendingMove?: { side_map?: string; special_map?: string; travel_to?: string; /** 特殊任務的結果帶進臨時地圖 */ story?: string }
   /** 特殊任務按了「稍候」的任務點：任務點 → 當時的地方（離開那裡之後再來會再觸發） */
@@ -1035,4 +1068,30 @@ export interface Negotiation {
   result?: 'critical' | 'success' | 'partial' | 'fail' | 'fumble'
   /** 談判方式由 AI 生成 */
   ai?: boolean
+}
+
+/** NPC 自己的日子（npcLife.ts）：一則近況 */
+export interface NpcNews {
+  /** 擲骰的那一天 */
+  day: number
+  /** 規則寫的近況（一定有） */
+  text: string
+  /** AI 潤飾過的近況（有時優先顯示、交給 AI） */
+  story?: string
+  /** 這次升到的等級、換上的裝備、休養的地方（AI 潤飾時參考） */
+  level?: number
+  gear?: string
+  rest?: string
+  /** 夥伴換下、寄回行囊的裝備 */
+  returned?: string
+  place?: string
+}
+
+export interface NpcLifeState {
+  /** 上一次擲骰的日子 */
+  last: number
+  /** 角色 id → 近況（新的在後） */
+  news: Record<string, NpcNews[]>
+  /** 玩家關注的人 */
+  followed?: string[]
 }

@@ -284,7 +284,8 @@ DLAYER = ['周邊與近郊', '淺層', '中層', '深層', '底層']
 BODYN = {'fem': '女性形象', 'andro': '中性', 'masc': '男性形象'}
 SCENE = {'always': '進入親密場景', 'success': '成功時進入親密場景', 'fail': '失敗時進入親密場景'}
 for trig, tname in DTRIG.items():
-    evs = [t for t in TE['templates'] if t.get('scope') == 'dungeon' and trig in t.get('triggers', [])]
+    # 只列成人向的（普通的地下城事件在攻略的「旅途與城鎮事件」頁）
+    evs = [t for t in TE['templates'] if t.get('scope') == 'dungeon' and trig in t.get('triggers', []) and 'adult' in t.get('tags', [])]
     if not evs: continue
     qs = []
     for t in evs:

@@ -15,7 +15,7 @@ import { applyEffects } from '@/engine/effects'
 import { enterLocation, standOn } from '@/engine/grid'
 import { generateNpc, npcKind, npcRecord, slavePrice } from '@/engine/npcs'
 import { isFugitive, leaderOf } from '@/engine/party'
-import { hitDiceLeft, longRest, shortRest } from '@/engine/rest'
+import { autoHitDice, hitDiceLeft, longRest, shortRest, shortRestPreview } from '@/engine/rest'
 import { acceptSuggestion, addMemory, addSuggestions, compactMemories, editMemory, ensureRelationship, setAffinity } from '@/engine/social'
 import { applyRosterFlavor, outsideQuota } from '@/engine/population'
 import { chooseMark, termsFromTemplate } from '@/engine/slavery'
@@ -104,6 +104,27 @@ describe('reward template', () => {
 })
 
 describe('short and long rests', () => {
+  it('spends a hit die for any wound, says so on the button, and explains a rest that heals nothing', () => {
+    const state = game(4)
+    const pc = state.party.find((m) => m.isPlayer)!
+    // 只少 2 點也會花一顆（以前要少半顆骰以上）
+    pc.hp = pc.maxHp - 2
+    expect(autoHitDice(pc)).toBe(1)
+    expect(shortRestPreview(state).note).toBe('用 1 顆骰')
+    const r = shortRest(state) as Report
+    expect(pc.hp).toBe(pc.maxHp)
+    expect(r.outcome.summary).toContain('花了 1 顆生命骰')
+    // 生命骰用完了：按鈕與日誌都說明
+    pc.hp = pc.maxHp - 2
+    expect(shortRestPreview(state).note).toBe('骰用完了')
+    const r2 = shortRest(state) as Report
+    expect(r2.outcome.summary).toContain('生命骰用完了，要長休才會恢復')
+    // 生命是滿的
+    pc.hp = pc.maxHp
+    expect(shortRestPreview(state).note).toBe('生命全滿')
+    expect((shortRest(state) as Report).outcome.summary).toContain('生命都是滿的')
+  })
+
   it('spends hit dice on a short rest and regains half of them on a long rest', () => {
     const state = game(4)
     const pc = state.party[0]!

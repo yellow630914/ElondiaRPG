@@ -1,6 +1,8 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
+import { setNpcLife } from '@/engine/npcLife'
+import { setLeadPool } from '@/engine/leads'
+import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, setMonsterGirlChance, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
@@ -24,7 +26,7 @@ function reducedMotion(): boolean {
 }
 
 /** 會呼叫 AI 的功能（見 docs/PROMPTS.md 第 1 節） */
-export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'tags' | 'designer'
+export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'life' | 'tags' | 'designer'
 
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
@@ -33,6 +35,7 @@ export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: bo
   { id: 'roster', name: '居民潤飾', desc: '「AI 設計 → 居民」開啟時：到一個地點而有還沒潤飾的居民時（第一次來或新搬來的人），設計居民的名字、外貌與性格（JSON）', prose: false },
   { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：每間店每天第一次進店時，設計今天的交易清單（JSON）', prose: false },
   { id: 'negotiation', name: '談判方式', desc: '「AI 設計 → 談判方式」開啟時：開始談判時設計可以採取的方式（JSON）', prose: false },
+  { id: 'life', name: 'NPC 近況', desc: '「NPC 會自己成長」開啟、近況交給 AI 寫時：依角色的性格、經歷與和主角的記憶，把程式擲出的近況寫成一段（JSON）', prose: false },
   { id: 'tags', name: '插圖提示詞預處理', desc: '生成形象插圖前，依選的預處理指示改寫角色描述（例如轉成 Danbooru 標籤、JSON），插圖設定選了「生圖提示詞預處理」時才用；日誌插圖整理分鏡也用這個來源', prose: false },
   { id: 'designer', name: '世界設計', desc: '世界編輯器的「✨ AI 編排」：依一段描述編排新的特殊任務（大綱、完整內容與修正，JSON）；輸入很長，建議用推理強的模型', prose: false },
 ]
@@ -60,6 +63,14 @@ export const SOURCE_COUNT = 3
 export const SOURCE_MAX = 8
 
 /** 自動寫出經過的日誌種類 */
+/** NPC 近況什麼時候交給 AI 寫：每次擲骰時（一次寫完這次有變化的人）、重逢時（見到他時才寫）、不用 AI（規則寫的短句） */
+export type NpcLifeAi = 'roll' | 'reunion' | 'off'
+export const NPC_LIFE_AI: { id: NpcLifeAi; name: string }[] = [
+  { id: 'roll', name: '每次擲骰時' },
+  { id: 'reunion', name: '重逢時' },
+  { id: 'off', name: '不用 AI' },
+]
+
 export type NarrateKind = 'action' | 'combat' | 'travel' | 'event' | 'story' | 'rest' | 'social' | 'trade'
 
 export const NARRATE_KINDS: { id: NarrateKind; name: string; desc: string }[] = [
@@ -123,8 +134,16 @@ interface SavedSettings {
   defeatCompanion: DefeatAdultMode
   /** 陽剛體型也能遇到「只給陰柔、中性」的成人內容（預設關） */
   mascBodyContent: boolean
+  /** NPC 會自己成長（npcLife.ts）：開關、每幾天擲一次、近況什麼時候交給 AI 寫 */
+  npcLife: boolean
+  npcLifeDays: number
+  npcLifeAi: NpcLifeAi
+  /** 地區線索池每幾天換一批（leads.ts；0 = 關閉，情報商照舊每天隨機） */
+  leadPoolDays: number
   /** 魔物娘：交給 AI 的怪物換成魔物娘（關閉、只在陽剛體型時、一律；預設關） */
   monsterGirl: MonsterGirlMode
+  /** 魔物娘出現的機率（0～100）：每種怪物每天擲一次 */
+  monsterGirlChance: number
   /** 戰敗色情事件一定發生（不擲「敵人起意」） */
   defeatAlways: boolean
   /** 讀檔、開新遊戲前，先把目前（或還沒繼續）的進度存進自動存檔欄位 */
@@ -180,7 +199,12 @@ function defaults(): SavedSettings {
     defeatAdult: 'all',
     defeatCompanion: 'not_masc',
     mascBodyContent: false,
+    npcLife: true,
+    npcLifeDays: 3,
+    npcLifeAi: 'roll',
+    leadPoolDays: 7,
     monsterGirl: 'off',
+    monsterGirlChance: 100,
     defeatAlways: false,
     backupBeforeSwitch: true,
     language: 'zh-Hant',
@@ -258,8 +282,16 @@ export const useSettings = defineStore('settings', () => {
   watch(defeatCompanion, setDefeatCompanion, { immediate: true })
   const mascBodyContent = ref(initial.mascBodyContent === true)
   watch(mascBodyContent, setMascBodyContent, { immediate: true })
+  const npcLife = ref(initial.npcLife !== false)
+  const npcLifeDays = ref(Number(initial.npcLifeDays) || 3)
+  watch([npcLife, npcLifeDays], ([on, days]) => setNpcLife({ on, days: Number(days) || 3 }), { immediate: true })
+  const leadPoolDays = ref(Number.isFinite(Number(initial.leadPoolDays)) ? Math.max(0, Math.min(30, Math.round(Number(initial.leadPoolDays)))) : 7)
+  watch(leadPoolDays, (days) => setLeadPool({ days: Number(days) }), { immediate: true })
+  const npcLifeAi = ref<NpcLifeAi>((['roll', 'reunion', 'off'] as const).includes(initial.npcLifeAi) ? initial.npcLifeAi : 'roll')
   const monsterGirl = ref(initial.monsterGirl)
   watch(monsterGirl, setMonsterGirl, { immediate: true })
+  const monsterGirlChance = ref(Number.isFinite(Number(initial.monsterGirlChance)) ? Math.max(0, Math.min(100, Math.round(Number(initial.monsterGirlChance)))) : 100)
+  watch(monsterGirlChance, (n) => setMonsterGirlChance(Number(n)), { immediate: true })
   const defeatAlways = ref(initial.defeatAlways === true)
   watch(defeatAlways, setDefeatAlways, { immediate: true })
   const backupBeforeSwitch = ref(initial.backupBeforeSwitch !== false)
@@ -279,7 +311,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, monsterGirl, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -303,7 +335,12 @@ export const useSettings = defineStore('settings', () => {
         defeatAdult: defeatAdult.value,
         defeatCompanion: defeatCompanion.value,
         mascBodyContent: mascBodyContent.value,
+        npcLife: npcLife.value,
+        npcLifeDays: Number(npcLifeDays.value) || 3,
+        leadPoolDays: Number.isFinite(Number(leadPoolDays.value)) ? Math.max(0, Math.min(30, Math.round(Number(leadPoolDays.value)))) : 7,
+        npcLifeAi: npcLifeAi.value,
         monsterGirl: monsterGirl.value,
+        monsterGirlChance: Number(monsterGirlChance.value),
         defeatAlways: defeatAlways.value,
         backupBeforeSwitch: backupBeforeSwitch.value,
         language: language.value,
@@ -407,7 +444,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, monsterGirl, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

@@ -5,13 +5,15 @@ export interface StatItem {
   value: string | number
   note?: string
   hint?: string
+  /** 數值與補充都比較長：補充換到下一行（例如稱號、寄生） */
+  wide?: boolean
 }
 withDefaults(defineProps<{ items: StatItem[]; columns?: number }>(), { columns: 1 })
 </script>
 
 <template>
   <div class="stat-grid" :style="{ '--cols': columns }">
-    <div v-for="it in items" :key="it.label" class="kv" :title="it.hint">
+    <div v-for="it in items" :key="it.label" class="kv" :class="{ wide: it.wide }" :title="it.hint">
       <span class="label">{{ it.label }}</span>
       <span class="v">{{ it.value }}</span>
       <span v-if="it.note" class="note">{{ it.note }}</span>
@@ -24,4 +26,6 @@ withDefaults(defineProps<{ items: StatItem[]; columns?: number }>(), { columns: 
 .kv { display: grid; grid-template-columns: 6.5em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 5px 0; border-bottom: 1px dotted var(--border); }
 .v { font-weight: 700; font-variant-numeric: tabular-nums; }
 .note { font-size: var(--fs-sm); color: var(--muted); text-align: right; }
+.kv.wide .v { grid-column: 2 / -1; }
+.kv.wide .note { grid-column: 2 / -1; text-align: left; }
 </style>

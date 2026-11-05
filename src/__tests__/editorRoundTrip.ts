@@ -12,6 +12,7 @@ import { conditionIds } from '@/engine/mods'
 import { allMasterEvents } from '@/engine/masterEventMods'
 import { travelEvents } from '@/engine/road'
 import { tattooRules } from '@/engine/tattoos'
+import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
 import AbilityEditor from '@/components/content/AbilityEditor.vue'
 import BindRulesEditor from '@/components/content/BindRulesEditor.vue'
@@ -25,6 +26,7 @@ import MarkEditor from '@/components/content/MarkEditor.vue'
 import MarkRulesEditor from '@/components/content/MarkRulesEditor.vue'
 import MasterEventEditor from '@/components/content/MasterEventEditor.vue'
 import NpcEditor from '@/components/content/NpcEditor.vue'
+import ParasiteEditor from '@/components/content/ParasiteEditor.vue'
 import PerkEditor from '@/components/content/PerkEditor.vue'
 import ShopEditor from '@/components/content/ShopEditor.vue'
 import SpecialMapEditor from '@/components/content/SpecialMapEditor.vue'
@@ -83,6 +85,7 @@ export const CASES: Record<string, () => Case> = {
   conditions: () => ({ editor: ConditionEditor, keys: sample(conditionIds(), 15), props: (id) => ({ id }) }),
   perks: () => ({ editor: PerkEditor, keys: sample(perkRules.perks.map((p) => p.id), 30), props: (id) => ({ id }) }),
   tattoos: () => ({ editor: TattooEditor, keys: sample(Object.keys(tattooRules.templates), 10), props: (id) => ({ id }) }),
+  parasites: () => ({ editor: ParasiteEditor, keys: Object.keys(parasiteRules.parasites), props: (id) => ({ id }) }),
   marks: () => ({ editor: MarkEditor, keys: sample(Object.keys(slaveryRules.contracts), 10), props: (id) => ({ id }) }),
   landmarks: () => ({ editor: LandmarkEditor, keys: sample(Object.keys(landmarks), 25), props: (id) => ({ id }) }),
   specialMaps: () => ({ editor: SpecialMapEditor, keys: sample(Object.keys(specialMaps), 10), props: (id) => ({ id }) }),

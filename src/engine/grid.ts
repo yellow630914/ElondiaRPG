@@ -13,7 +13,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, contentRevision, dungeonEncounters, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
+  attrName, contentRevision, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
@@ -21,14 +21,16 @@ import { forgeItemFor, gearRules, MATERIAL_KINDS, randomGear, registerGear } fro
 import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
-import { ensureIntelPoints, finishIntel } from './intel'
+import { ensureIntelPoints, finishIntel, intelById } from './intel'
+import { leadById, stumbleOnLead } from './leads'
 import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
 import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
-import { maybeDungeonEvent } from './dungeonEvents'
+import { maybeDungeonEvent, offerTrapLure, pendingDungeonEvent } from './dungeonEvents'
+import { startLeadEvent } from './leadEvents'
 import { enterPark, mimicFor, parkOfLink, parkRules, parkTrap, returnToPlaza, stepParkLust } from './park'
 import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
@@ -381,6 +383,8 @@ export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   const o = l.open
   if (o?.hidden && !condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return true
   if (!l.scenes?.length || l.visit || l.explore || l.work || l.scenes.some((sc) => sceneShown(state, sc))) return false
+  // 有老師（固定 NPC 的 mentor）待在這裡：照常出現，找得到人受訓（docs/LEWD_STATS.md 第 6.1 節）
+  if (namedNpcs.some((n) => n.landmark === l.id && n.mentor?.perks.length)) return false
   // 沒勾的（打工線的委託人所在、完成之後才有場景的地標）：還有接得到或進行中的任務要用到時留著，任務點才走得到
   return !!o?.hidden || !storyNeedsLandmark(state, l.id)
 }
@@ -664,6 +668,24 @@ export function questRunnableHere(state: GameState, quest: { id: string; area: s
 }
 
 /** 冒險區域的一層：從入口隨機挖出通道，最遠處放下行階梯（深層放層主），入口旁是安全房。 */
+/** 強敵：這一層最強的一組，再多一隻 */
+function strongestPlusOne(table: EncounterGroup[]): EncounterGroup {
+  const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
+  return strongest.map(([id, n], idx) => [id, idx === 0 ? n + 1 : n] as [string, number])
+}
+
+/** 這一層上面幾層的遭遇表（沒有怪物的層算寶箱等級用） */
+function shallowerTables(location: string, layer: number): EncounterGroup[] {
+  const enc = dungeonEncounters[location]
+  return maps.generation.dungeon.layers.slice(0, layer).flatMap((l) => enc?.[l.id as DungeonLayerId] ?? [])
+}
+
+/** 地下城這一層的遭遇表：沒寫的層用地區的城郊遭遇表；寫了但是空的（自建地下城沒放怪物的層）就不生怪物，可以當作休息或獎勵的樓層 */
+export function layerEncounters(loc: Location, layer: number): EncounterGroup[] {
+  const spec = maps.generation.dungeon.layers[layer]
+  return (spec && dungeonEncounters[loc.id]?.[spec.id as keyof (typeof dungeonEncounters)[string]] as EncounterGroup[] | undefined) ?? wildEncounters(loc.region)
+}
+
 export function generateLayer(state: GameState, loc: Location, layer: number, rng: Rng): Area {
   const g = maps.generation.dungeon
   const spec = g.layers[layer]!
@@ -699,24 +721,23 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
   // 最深的一層（有底層時是底層，否則是深層）：最終層主；其他層：層主守著往下的階梯（沒有層主資料時直接是階梯）
   const enc = dungeonEncounters[loc.id]
   const last = layer >= dungeonDepth(loc.id) - 1
-  const bossGroup = enc?.bosses?.[spec.id as BossLayerId] ?? (spec.id === 'deep' ? enc?.boss : undefined)
+  const table = layerEncounters(loc, layer)
+  // 沒設層主的層照強敵的規則：這一層最強的一組再多一隻（這一層沒有怪物時沒有層主）
+  const bossGroup = enc?.bosses?.[spec.id as BossLayerId] ?? (spec.id === 'deep' && enc?.boss?.length ? enc.boss : undefined) ?? (table.length ? strongestPlusOne(table) : undefined)
   cells[far] = last
-    ? { kind: 'boss', group: bossGroup ?? [] }
+    ? bossGroup?.length ? { kind: 'boss', group: bossGroup } : { kind: 'floor' }
     : spec.guard && bossGroup?.length
       ? { kind: 'boss', group: bossGroup, then: 'stairs_down' }
       : { kind: 'stairs_down' }
   used.add(far)
 
-  const table = dungeonEncounters[loc.id]?.[spec.id] ?? wildEncounters(loc.region)
-  for (const i of randomCells(rng, area, between(rng, spec.encounters), used)) {
+  for (const i of randomCells(rng, area, table.length ? between(rng, spec.encounters) : 0, used)) {
     cells[i] = { kind: 'encounter', group: rng.pick(table) }
     used.add(i)
   }
-  for (const i of randomCells(rng, area, spec.elites ?? 0, used)) {
+  for (const i of randomCells(rng, area, table.length ? spec.elites ?? 0 : 0, used)) {
     // 強敵：本層最強的一組，再多一隻
-    const strongest = [...table].sort((a, b) => b.reduce((s, [, n]) => s + n, 0) - a.reduce((s, [, n]) => s + n, 0))[0] ?? []
-    const group = strongest.map(([id, n], idx) => [id, idx === 0 ? n + 1 : n] as [string, number])
-    cells[i] = { kind: 'elite', group }
+    cells[i] = { kind: 'elite', group: strongestPlusOne(table) }
     used.add(i)
   }
   for (const i of randomCells(rng, area, between(rng, spec.traps), used)) {
@@ -727,8 +748,8 @@ export function generateLayer(state: GameState, loc: Location, layer: number, rn
     cells[i] = { kind: 'resource', item: rng.pick(g.resource_items) }
     used.add(i)
   }
-  // 寶箱：內容依這一層怪物的最高等級
-  const level = Math.max(1, ...table.flat().map(([id]) => enemies[id]?.level ?? 1))
+  // 寶箱：內容依這一層怪物的最高等級（沒有怪物的層：照上面幾層最強的怪物）
+  const level = Math.max(1, ...(table.length ? table : shallowerTables(loc.id, layer)).flat().map(([id]) => enemies[id]?.level ?? 1))
   const mimic = parkPlaza(loc.id) ? mimicFor(area) : undefined
   for (const i of randomCells(rng, area, spec.chests ? between(rng, spec.chests) : 0, used)) {
     // 園區：有機會是擬態寶箱
@@ -767,14 +788,15 @@ export interface SideMapDef {
  * 生成臨時地圖：固定地圖照著畫；洞窟、遺跡從出口隨機挖出通道，放遭遇（用 table，強一點）、陷阱、資源與寶箱。
  * location 是這張地圖算在哪個地點（地名、地區、店家）。
  */
-export function generateSide(state: GameState, key: string, template: string, def: SideMapDef, location: string, table: EncounterGroup[], rng: Rng): Area {
+export function generateSide(state: GameState, key: string, template: string, def: SideMapDef, location: string, table: EncounterGroup[], rng: Rng, dungeonLayer?: number): Area {
   if (def.grid) {
     const width = def.grid[0]!.length
     const cells = def.grid.join('').split('').map((ch) => ({ kind: def.legend?.[ch] ?? 'floor' }) as Cell)
     return { key, location, name: def.name, kind: 'side', template, width, height: def.grid.length, cells, revealed: [], lighting: def.lighting ?? 'lit' }
   }
   const [width, height] = def.size ?? [7, 7]
-  const layer = Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.chest_layer ?? 'outskirts')))
+  // 從地下城裡帶進來的：寶箱與陷阱照那一層
+  const layer = dungeonLayer ?? Math.max(0, DUNGEON_LAYERS.findIndex((l) => l.id === (def.chest_layer ?? 'outskirts')))
   const cells: Cell[] = Array.from({ length: width * height }, () => ({ kind: 'wall' }) as Cell)
   const area: Area = { key, location, name: def.name, kind: 'side', template, layer, width, height, cells, revealed: [], lighting: def.lighting ?? 'dark' }
   let x = Math.floor(width / 2)
@@ -816,8 +838,21 @@ export function generateSide(state: GameState, key: string, template: string, de
 
 // ---- 特殊地圖（special_maps.json，docs/SPECIAL_MAPS.md） ----
 
-/** 地圖定義的版本：版面與內容的設定改過時，存檔裡的地圖重新生成 */
+/**
+ * 地圖定義的版本：版面與內容的設定改過時，存檔裡的地圖重新生成。
+ * 站在特殊地圖裡時每次取得區域都要比一次，整份定義轉成文字很花時間：同一份定義在內容沒改過（contentRevision）時記住結果
+ */
+let versionCache: { rev: number; map: WeakMap<SpecialMapDef, string> } | undefined
 export function specialVersion(def: SpecialMapDef): string {
+  if (versionCache?.rev !== contentRevision()) versionCache = { rev: contentRevision(), map: new WeakMap() }
+  const known = versionCache.map.get(def)
+  if (known !== undefined) return known
+  const v = computeSpecialVersion(def)
+  versionCache.map.set(def, v)
+  return v
+}
+
+function computeSpecialVersion(def: SpecialMapDef): string {
   const { name: _n, desc: _d, location: _l, connections: _c, entry: _e, refresh: _r, ...layout } = def
   const text = JSON.stringify(layout)
   let h = 5381
@@ -1194,6 +1229,8 @@ export function substituteGroup(state: GameState, area: Area, kind: 'encounter' 
 
 function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cell): StepResult {
   const loc = locationById(area.location)
+  // 線索池裡沒人知道的事件點：走到了就記進冒險筆記（自己遇到的）
+  if (cell.intel && !cell.done) stumbleOnLead(state, cell.intel)
   switch (cell.kind) {
     case 'encounter':
     case 'elite':
@@ -1240,9 +1277,14 @@ function enterCell(state: GameState, area: Area, x: number, y: number, cell: Cel
       cell.done = true
       // 情報的藏寶處：結束這則情報
       if (cell.intel) finishIntel(state, cell.intel)
-      // 擬態寶箱（地下城事件）：寶箱本身不打開，裡面的東西看回應
-      if (!cell.intel && maybeDungeonEvent(state, 'chest')) return {}
-      return { report: openChest(state, area, cell.level ?? 1) }
+      // 寶箱的地下城事件：成人向的（擬態寶箱）取代寶箱，裡面的東西看回應；普通的在寶箱照常打開之後發生
+      if (!cell.intel && maybeDungeonEvent(state, 'chest') && pendingDungeonEvent(state)?.tags?.includes('adult')) return {}
+      return { report: openChest(state, area, cell.level ?? 1, isRelic(state, cell.intel)) }
+    }
+    case 'event': {
+      // 線索事件（leadEvents.ts）：等主角回應；旅途上的事件格在 road.ts
+      if (area.kind !== 'road') startLeadEvent(state, area, x, y, cell)
+      return {}
     }
     default:
       return {}
@@ -1281,8 +1323,9 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const dc = spec.trap_dc + (dark ? lightingRules.dark.trap_dc : 0)
   const success = r.total >= dc
   const effects: NonNullable<Report['timeline']>[number]['effects'] = []
-  // 沒察覺：可能是色情陷阱（地下城事件），事件取代陷阱的傷害
+  // 沒察覺：可能遇到陷阱的地下城事件，事件取代陷阱的傷害；察覺了：存檔規則開著時問要不要主動觸發
   const event = !success && maybeDungeonEvent(state, 'trap')
+  const lure = success && offerTrapLure(state)
   // 園區：沒察覺的陷阱是媚藥機關，不扣生命、魅氣大增（下一場戰鬥帶著慾望開場）
   const lewdTrap = !success && !event && parkPlaza(area.location) ? parkTrap(state, scout.id) : 0
   if (!success && !event && !lewdTrap) {
@@ -1298,7 +1341,7 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
   report.outcome = {
     result: success ? 'success' : 'failure',
-    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。`
+    summary: success ? `${scout.name}及時察覺${area.name}的陷阱。${lure ? '要不要主動觸發它？' : ''}` : event ? `${scout.name}沒有察覺${area.name}的陷阱——機關對準的是你。`
       : lewdTrap ? `${scout.name}觸發了${area.name}的媚藥機關，甜膩的霧噴了一身（魅氣 +${Math.round(lewdTrap * 100)}%）。` : `${scout.name}觸發了${area.name}的陷阱。`,
     tags: ['陷阱', ...(dark ? ['黑暗'] : [])],
   }
@@ -1376,7 +1419,7 @@ function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod
   cell.done = true
   if (cell.intel) finishIntel(state, cell.intel)
   advanceTime(state, 10 / 60)
-  const opened = openChest(state, area, cell.level ?? 1)
+  const opened = openChest(state, area, cell.level ?? 1, isRelic(state, cell.intel))
   opened.timeline = [entry, ...(opened.timeline ?? [])]
   opened.outcome.summary = `${picker.name}${how.success}。${opened.outcome.summary ?? ''}`
   opened.outcome.tags = [...(opened.outcome.tags ?? []), '上鎖']
@@ -1395,7 +1438,12 @@ export function pickLock(state: GameState, method: LockMethod = 'dex'): Report {
 }
 
 /** 打開寶箱：錢、消耗品、裝備與打造材料（gear.json 的 chests） */
-function openChest(state: GameState, area: Area, level: number): Report {
+/** 情報、線索的寶箱是冒險者的遺物 */
+function isRelic(state: GameState, id: string | undefined): boolean {
+  return !!id && (leadById(state, id) ?? intelById(state, id))?.event === 'relic'
+}
+
+function openChest(state: GameState, area: Area, level: number, relic = false): Report {
   const report = eventReport(state, area, 5)
   report.kind = 'event'
   const layer = DUNGEON_LAYERS[area.layer ?? 0]!.id
@@ -1424,8 +1472,8 @@ function openChest(state: GameState, area: Area, level: number): Report {
   if (items.length) report.changes.items_gained = items
   report.outcome = {
     result: 'success',
-    summary: `在${area.name}打開一個寶箱：${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name))].join('、')}。`,
-    tags: ['寶箱'],
+    summary: `${relic ? `在${area.name}找到冒險者的遺物，從他們留下的行囊裡翻出` : `在${area.name}打開一個寶箱：`}${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name))].join('、')}。`,
+    tags: [relic ? '遺物' : '寶箱'],
   }
   return commitReport(state, report)
 }
@@ -1437,7 +1485,8 @@ export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
-  if (state.dungeonEvent || state.parasiteEvent) throw new Error('先應付眼前的處境')
+  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent) throw new Error('先應付眼前的處境')
+  if (state.trapLure) throw new Error('先決定要不要觸發察覺到的陷阱')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')
   if (state.captives?.npcs.length) throw new Error('先決定怎麼處置被制伏的人')
   if (state.pendingJoins?.length) throw new Error('先決定要不要讓想入隊的人加入（騰出位子或放棄）')

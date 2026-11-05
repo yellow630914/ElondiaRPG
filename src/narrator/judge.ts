@@ -9,6 +9,7 @@ import { charmNote } from '@/engine/charm'
 import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
 import { affinityStage, attrOf, learnable, lifeTier, snapshot } from '@/engine/character'
+import { selectContext } from '@/engine/social'
 import { CAPTIVE_NOTE, computeDegree, DEGREE_NAME, situationalTotal, type ActionPending } from '@/engine/actions'
 import { inviteDc, validateInvite } from '@/engine/companions'
 import {
@@ -31,7 +32,7 @@ import { masterHomeSummary } from '@/engine/masterHome'
 import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks'
 import { appearanceOf, npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
-import type { Character, GameState, GearSlot, Negotiation, NpcRecord } from '@/engine/types'
+import type { Character, GameState, GearSlot, Negotiation, NpcNews, NpcRecord } from '@/engine/types'
 import { PARASITE_LOCK } from '@/engine/parasites'
 import { lockName } from '@/engine/schools'
 import {
@@ -40,6 +41,7 @@ import {
 } from './prompt'
 import type { Continuity } from './continuity'
 import type { PromptEntry } from './promptConfig'
+import { genderSwapNote } from '@/engine/genderSwap'
 import { contractOf, tattoosOf, tattooSummary } from '@/engine/tattoos'
 
 /** 從模型輸出取出第一個 JSON 物件（容忍 ```json 區塊與前後的說明文字）。 */
@@ -64,7 +66,8 @@ export function partyLines(state: GameState): string {
     const conds = m.status.map(conditionName).join('、')
     const c = contractOf(m)
     const mark = c && !m.isPlayer ? `｜印記：${contractTerms(c).name}（${contractTerms(c).mark}）` : ''
-    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+    const swap = m.isPlayer ? '' : genderSwapNote(state.npcs?.[m.id])
+    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${swap ? `；${swap}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
 
@@ -130,8 +133,9 @@ function squadLine(state: GameState, id: string): string {
 }
 
 /** 身上穿著的（有戰鬥資料時是裝備，沒有時是依身分穿的服裝） */
-function wearing(rec: NpcRecord): string {
-  const gear = rec.character?.gear ?? npcOutfit(rec)
+function wearing(state: GameState, rec: NpcRecord): string {
+  // 普通人每週換一套（outfits.ts 的 outfitWeek）
+  const gear = rec.character?.gear ?? npcOutfit(rec, rec.class ? undefined : state.time.day)
   const names = Object.values(gear ?? {}).map((g) => g?.name).filter(Boolean)
   return names.length ? `穿著：${names.join('、')}` : ''
 }
@@ -159,11 +163,11 @@ function npcDetail(state: GameState, id: string, label: string, fallback?: strin
   const rel = state.relationships?.[id]
   if (!rec) return `${label}：${fallback ?? id}`
   const lines = [
-    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderPrompt(rec.gender)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
+    `${label} ${rec.name}（id: ${rec.id}${rec.gender ? `，${genderPrompt(rec.gender)}` : ''}${genderSwapNote(rec) ? `；${genderSwapNote(rec)}` : ''}）：${raceName(rec.race)}・${npcTitle(rec)} Lv.${rec.level}（生命層級 ${lifeTier(rec.level)}）`,
     `身分：${npcIdentity(rec)}`,
     `性格：${rec.personality}`,
     appearanceOf(rec.id, rec.appearance) ? `外貌：${appearanceOf(rec.id, rec.appearance)}` : '',
-    wearing(rec),
+    wearing(state, rec),
     rec.background ? `背景：${rec.background}` : '',
     rel ? `與主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '與主角：素不相識',
     state.captives?.npcs.includes(rec.id) ? `現況：${CAPTIVE_NOTE}` : '',
@@ -271,7 +275,7 @@ function effectsAllowed(state: GameState, p: ActionPending): string {
     change_master: `{"type":"change_master","npc":"${p.target ?? '<對象 id>'}"}（行動的對象成為主角的新主人，印記沿用：只在 degree 為 success 以上、對象願意收下主角時）`,
     gear: gearDoc(state, p),
     join: joinDoc(state, p),
-    rumor: `{"type":"rumor","title":"<≤20 字>","text":"<≤160 字，傳聞的內容>","location":"<地點 id，可以不填>","layer":"<地下城的層 id，可以不填>","monster":"<怪物 id，可以不填>"}（主角這次聽到、值得記下的消息，最多一則：記在冒險筆記的情報頁；提到怪物時點亮怪物圖鑑。地點與怪物只能用 <world_facts> 的 id，沒有 <world_facts> 時不要填 location、layer、monster。degree 為 success 以上、而且那種怪物真的在那個地點出沒時，地圖上會出現牠們盤踞的事件點）`,
+    rumor: `{"type":"rumor","title":"<≤20 字>","text":"<≤160 字，傳聞的內容>","location":"<地點 id，可以不填>","layer":"<地下城的層 id，可以不填>","monster":"<怪物 id，可以不填>","lead":"<<world_facts> 裡傳聞的 id，可以不填>"}（主角這次聽到、值得記下的消息，最多一則：記在冒險筆記的情報頁；提到怪物時點亮怪物圖鑑。地點與怪物只能用 <world_facts> 的 id，沒有 <world_facts> 時不要填 location、layer、monster。degree 為 success 以上、而且那種怪物真的在那個地點出沒時，地圖上會出現牠們盤踞的事件點）`,
     lewd: `{"type":"lewd","target":"pc 或隊友 id","stat":"lewdness（淫亂）／sensitivity（敏感）／endurance（忍耐）／submission（順從）／exposure（曝露名聲）","delta":<±${caps.lewd}>}（慾望指標：只在經過明顯改變了這個人時，例如屈服讓順從上升、在眾人面前被看光讓曝露名聲上升；每項一次）`,
   }
   // 主角不是奴隸時，不提供和契約有關的效果；入隊只在對象是認識、還不在隊伍裡的人時提供
@@ -481,6 +485,29 @@ export function buildRosterPrompt(state: GameState, locId: string): Prompt | nul
   }).join('\n')
   const system = `你是奇幻 RPG《埃隆迪亞大陸》的角色設計者。請為這個地點的居民重新設計名字、外貌、性格與一句背景，讓他們符合種族、性別、身分（冒險者或普通人、職業、標籤）與所在地的風土；普通人可以把職業描述改得更具體。種族、血統、性別、類型、冒險者的職業與等級不可更改，名字要符合性別，彼此不要重複；草稿的外貌與性格是依世界書的種族設定組出來的，潤飾時保留其中的種族特徵（例如耳尾、角、鰓裂、膚色）與主要的性格基調，只把文字寫得更自然。只輸出 JSON：{"npcs":[{"id":"…","name":"≤8 字","appearance":"≤80 字","personality":"≤60 字","background":"≤60 字","occupation":"普通人才填，≤10 字"}]}`
   const user = `地點：${loc.name}（${region}${faction ? `，${faction}` : ''}）\n居民：\n${lines}`
+  return { system, user }
+}
+
+/**
+ * NPC 的近況（engine/npcLife.ts）：程式擲出這段時間發生了什麼（去了哪裡、升級、換裝、休養），
+ * 請 AI 依角色的性格、身分、和主角的關係與共同記憶寫成一段。數值、等級、裝備都照程式的結果，不可更改或增加。
+ */
+export function buildNewsPrompt(state: GameState, items: { id: string; news: NpcNews[] }[]): Prompt | null {
+  if (!items.length) return null
+  const blocks = items.map(({ id, news }) => {
+    const ctx = selectContext(state, { participants: [id], maxMemories: 4 })
+    const memories = ctx.memories.filter((m) => m.participants.includes(id))
+    const rel = ctx.relationships[0]
+    return [
+      `## ${npcDetail(state, id, '角色')}`,
+      rel ? `和主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '',
+      memories.length ? `和主角的共同記憶：\n${memories.map((m) => `- ${m.summary}`).join('\n')}` : '',
+      `這段時間（程式擲出來的，要照寫）：\n${news.map((n) => `- day ${n.day}：${n.text}`).join('\n')}`,
+    ].filter(Boolean).join('\n')
+  }).join('\n\n')
+  const pc = state.party.find((m) => m.isPlayer)!
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的寫手。下面這些角色是主角${pc.name}認識的冒險者，最近不在主角身邊。請依每個人的性格、身分、和主角的關係與共同記憶，把程式擲出的「這段時間」（可能有好幾件事）寫成一段近況（每人一段；第三人稱，像是主角聽人說起或之後聽本人講起的樣子）。近況寫的是他自己的日子：大部分不要提到主角，也不要用想起主角、惦記主角收尾；只有和主角很親近（親密度高）或這段經歷和主角有關時才可以帶一句，而且同一批最多一則。只能寫程式列出的事：去的地方、做的事、升到的等級、換上的裝備、受傷休養都照寫，不可更改、不可增加別的戰果、物品或人物，也不要寫成他已經死去或離開這片大陸。每段 ≤ 150 字。只輸出 JSON：{"news":[{"id":"…","day":數字,"story":"…"}]}（每個人一則，把他這段時間的事依序寫進同一段；day 填他最後一件事的 day）`
+  const user = `主角：${pc.name}（現在在${locationById(state.location).name}）\n\n${blocks}`
   return { system, user }
 }
 

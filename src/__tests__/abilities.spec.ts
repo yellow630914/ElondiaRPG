@@ -16,14 +16,15 @@ describe('custom abilities', () => {
       name: '烈焰斬',
       classes: ['fighter', 'nobody', 'monster'],
       damage: [{ weapon: true, type: 'fire' }, { dice: 'oops' }, { dice: '2d6', type: 'nope' }],
-      apply: [{ status: 'burning_x', turns: 2 }, { status: 'stunned', turns: 99, on: 'hit', save: 'str' }],
+      apply: [{ status: 'burning_x', turns: 2 }, { status: 'stunned', turns: 50, on: 'hit', save: 'str' }, { status: 'hindered', turns: 99, to: 'self' }],
       mult: '' as unknown as number,
       uses: { per_combat: 1 },
       heal: {},
     }, true)
     expect(a.classes).toEqual(['fighter', 'monster'])
     expect(a.damage).toEqual([{ weapon: true, type: 'fire' }, { dice: '2d6' }])
-    expect(a.apply).toEqual([{ status: 'stunned', turns: 20, on: 'hit', save: 'str' }])
+    // 超過 20 回合拉回 20；99 是「整場戰鬥」
+    expect(a.apply).toEqual([{ status: 'stunned', turns: 20, on: 'hit', save: 'str' }, { status: 'hindered', turns: 99, to: 'self' }])
     expect(a.mult).toBeUndefined()
     expect(a.heal).toBeUndefined()
     expect(a).toMatchObject({ unlock: 1, uses: { per_combat: 1 }, custom: true })
@@ -45,6 +46,17 @@ describe('custom abilities', () => {
     startCombat(state, [['mod_enemy_y', 1]])
     expect(state.combat!.combatants.find((c) => c.side === 'enemy')!.abilities).toContain('mod_ability_y')
     expect(abilityUsage('mod_ability_y')).toEqual(['怪物「新的怪物」'])
+  })
+
+  it('也列出寄生物、技能書、事件、事件庫、怪物特徵這些拿得到能力的地方；色情技能與怪物技能都有來源', () => {
+    expect(abilityUsage('para_lingerie_bind')).toEqual(['寄生物「渴求的魔導衣」（馴服之後、有獸蟲派時可以用，不分先後）'])
+    expect(abilityUsage('para_mark_surge')).toEqual(['寄生物「魅魔的契紋」（馴服之後、有獸蟲派時可以用，不分先後）'])
+    expect(abilityUsage('lust_kiss').some((u) => u.startsWith('寄生物「魅魔的契紋」（還沒馴服'))).toBe(true)
+    expect(abilityUsage('lust_bind_stance').some((u) => u.startsWith('地下城事件「會自己穿上的繩衣」'))).toBe(true)
+    expect(abilityUsage('lust_glance').some((u) => u.startsWith('技能書'))).toBe(true)
+    expect(abilityUsage('rut_mount').some((u) => u.startsWith('怪物特徵'))).toBe(true)
+    const orphans = Object.values(abilities).filter((x) => !x.classes.some((c) => c !== 'lewd' && c !== 'monster') && abilityUsage(x.id).length === 0)
+    expect(orphans.map((x) => x.id)).toEqual([])
   })
 
   it('reports where an ability is used, including the current save, and prunes deleted ones', () => {

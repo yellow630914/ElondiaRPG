@@ -25,7 +25,7 @@ export interface EventRulesMod {
   dungeon: DungeonEventRules
 }
 
-export const EVENT_LIMITS = { title_chars: 20, text_chars: 400, label_chars: 30, options: 5, cooldown_days: [0, 60], scene_chars: 200 } as const
+export const EVENT_LIMITS = { title_chars: 20, text_chars: 400, label_chars: 30, options: 5, cooldown_days: [0, 60], scene_chars: 200, offscreen_chars: 120 } as const
 export const DUNGEON_TRIGGERS: Record<DungeonTrigger, string> = { trap: '觸發陷阱', chest: '打開寶箱', gather: '採集', rest: '安全房長休' }
 /** 寄生物發作的時機（parasiteEvents.ts） */
 export const PARASITE_MOMENTS: Record<NonNullable<RoadTemplate['moments']>[number], string> = { step: '走動', travel: '旅途', rest: '長休之後' }
@@ -99,9 +99,9 @@ function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
 /** extraCells：還沒套用、但同一包裡有的自建商店（匯入時） */
 export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean, extraCells: string[] = []): TravelEventMod {
   const L = EVENT_LIMITS
-  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' || raw.scope === 'parasite' ? raw.scope : 'road'
-  // 地下城事件與寄生物的發作只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
-  const kind = raw.kind === 'check' && scope !== 'dungeon' && scope !== 'parasite' ? 'check' : 'choice'
+  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' || raw.scope === 'parasite' || raw.scope === 'lead' ? raw.scope : 'road'
+  // 地下城事件、線索事件與寄生物的發作只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
+  const kind = raw.kind === 'check' && (scope === 'road' || scope === 'town') ? 'check' : 'choice'
   const out: TravelEventMod = {
     id,
     ...(scope !== 'road' ? { scope } : {}),
@@ -125,8 +125,22 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
     const layers = [...new Set((Array.isArray(raw.layers) ? raw.layers : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < EVENT_LAYERS.length))].sort()
     if (layers.length) out.layers = layers
     if (raw.cooldown_days !== undefined && raw.cooldown_days !== null && String(raw.cooldown_days) !== '') out.cooldown_days = Math.round(num(raw.cooldown_days, ...L.cooldown_days, 3))
+  } else if (scope === 'lead') {
+    // 線索事件：放在哪些地點、地區、層；登場角色幾位；沒人處理時登場角色的近況
+    const dungeons = pick(raw.dungeons, geography.locations.map((l) => l.id))
+    if (dungeons.length) out.dungeons = dungeons
+    const regions = pick(raw.regions, geography.regions.map((r) => r.id))
+    if (regions.length) out.regions = regions
+    const layers = [...new Set((Array.isArray(raw.layers) ? raw.layers : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < EVENT_LAYERS.length))].sort()
+    if (layers.length) out.layers = layers
+    const cast = Math.round(num(raw.cast, 0, 2, 0))
+    if (cast) out.cast = cast
+    const off = str(raw.offscreen, L.offscreen_chars)
+    if (off && cast) out.offscreen = off
   } else if (scope === 'parasite') {
-    out.parasite = typeof raw.parasite === 'string' && parasiteDef(raw.parasite) ? raw.parasite : Object.keys(parasiteRules.parasites)[0]!
+    // 找不到的寄生物（被刪掉、寄生物整理失敗）照原樣留著：事件不會發生，編輯畫面標成壞掉；不要換成別的寄生物
+    const pid = typeof raw.parasite === 'string' ? raw.parasite.trim().slice(0, 60) : ''
+    out.parasite = pid || Object.keys(parasiteRules.parasites)[0]!
     const stages = [...new Set((Array.isArray(raw.stages) ? raw.stages : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < parasiteRules.stages.length))].sort()
     if (stages.length && stages.length < parasiteRules.stages.length) out.stages = stages
     const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
@@ -179,7 +193,7 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
 
 export function newTravelEvent(id: string, scope: EventScope = 'road'): TravelEventMod {
   return sanitizeTravelEvent(id, {
-    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : '新的旅途事件', text: '',
+    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : scope === 'lead' ? '新的線索事件' : '新的旅途事件', text: '',
     ...(scope === 'dungeon' ? { triggers: ['trap'] as DungeonTrigger[] } : {}),
     ...(scope === 'parasite' ? { tags: ['adult' as const] } : {}),
     options: [{ label: '答應', success: { text: '' } }, { label: '離開', success: { text: '你沒有多管。' } }],
@@ -245,6 +259,12 @@ export function currentEventRules(): EventRulesMod {
 export function travelEventWarnings(t: RoadTemplate): string[] {
   const out: string[] = []
   if (!t.text) out.push('沒有描述')
+  if (t.scope === 'parasite' && t.parasite && !parasiteDef(t.parasite)) out.push(`找不到寄生物「${t.parasite}」：這件發作事件不會發生（選一種存在的寄生物）`)
   if (t.tier === 'advanced' && t.kind === 'check' && !t.options?.length) out.push('高階的檢定事件成功後沒有選項')
+  if (t.scope === 'lead') {
+    const text = JSON.stringify([t.title, t.text, t.options, t.offscreen])
+    if ((t.cast ?? 0) < 1 && (/\{a他?\}/.test(text) || text.includes('"$a"'))) out.push('寫了登場角色甲（{a} 或 $a），可是登場角色是 0 位')
+    if ((t.cast ?? 0) < 2 && (/\{b他?\}/.test(text) || text.includes('"$b"'))) out.push('寫了登場角色乙（{b} 或 $b），可是登場角色不到 2 位')
+  }
   return out
 }

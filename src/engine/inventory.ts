@@ -1,7 +1,7 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
 import { PARASITE_LOCK } from './parasites'
-import { hasPerk, offerPerks } from './perks'
+import { hasPerk, learnablePerks, offerPerks } from './perks'
 import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
 import { gameRule } from './gameRules'
 import {
@@ -10,6 +10,8 @@ import {
 } from './data'
 import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, slotName, slotNameFor, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
+import { discoverLead, hiddenLeadFor, leadPoolOn } from './leads'
+import type { Lead } from './types'
 import { openFor } from './storyFlags'
 import { gainCondition, pcOf } from './party'
 import { toolDef } from './tools'
@@ -78,6 +80,7 @@ export function readIntelItem(state: GameState, name: string): Report {
   report.kind = 'event'
   report.outcome.tags = ['情報']
   let text = ''
+  let lead: Lead | undefined
   if (spec.kind === 'story') {
     const def = stories.find((s) => s.id === spec.story)
     if (!def) throw new Error('消息裡說的事已經不存在了')
@@ -91,6 +94,10 @@ export function readIntelItem(state: GameState, name: string): Report {
     if (!q) throw new Error('目前沒有用得到這條線索的委託')
     q.flags = { ...(q.flags ?? {}), lead: true }
     text = `找到委託「${q.title}」的線索（委託的檢定 +5）`
+  } else if (leadPoolOn() && !spec.location && (lead = hiddenLeadFor(state, spec.event === 'chest' ? ['chest', 'relic'] : spec.event ? [spec.event] : undefined))) {
+    // 線索池開著：揭露這個地區一則隱藏的線索（事件種類對得上的優先）
+    const it = discoverLead(state, lead, name)
+    text = `記下情報「${it.title}」：${it.text}（第 ${it.until} 天前有效，見冒險筆記）`
   } else {
     const places = spec.location ? placesAt(spec.location, spec.layer) : nearbyPlaces(state.location, openFor(state))
     if (!places.length) throw new Error('看不出這份情報說的是哪裡')
@@ -157,8 +164,12 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
   if (!def?.use) throw new Error('這個東西不能使用')
   if (def.use.perks?.length) {
     // 書籍：讀完得到一次學特質的機會（從書裡的特質選一個，或寫說法交給 AI）
-    const options = def.use.perks.filter((id) => !hasPerk(m, id))
-    if (!options.length) throw new Error(`${m.name}已經學會書裡的特質了`)
+    // 只給現在學得了的：進階特質要先有入門、互斥的流派不能同修（秘法書，docs/LEWD_STATS.md 第 6.1 節）
+    const learnable = new Set(learnablePerks(m).map((p) => p.id))
+    const unread = def.use.perks.filter((id) => !hasPerk(m, id))
+    if (!unread.length) throw new Error(`${m.name}已經學會書裡的特質了`)
+    const options = unread.filter((id) => learnable.has(id))
+    if (!options.length) throw new Error(`${m.name}現在還學不了書裡的特質（${unread.map((id) => perkDef(id)?.name ?? id).join('、')}：要先學會前面的特質，或和身上的特質互斥）`)
     offerPerks(m, `讀了「${name}」`, options)
     report.time.end = addHours(report.time.start, 4)
     text = `讀完之後，有機會學會：${options.map((id) => perkDef(id)?.name ?? id).join('、')}`

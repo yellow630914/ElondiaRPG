@@ -58,7 +58,7 @@ const intel = computed(() => {
   expireIntel(s.value)
   return [...(s.value.intel ?? [])].sort((a, b) => Number(a.status !== 'active') - Number(b.status !== 'active') || b.time.day - a.time.day)
 })
-const EVENT: Record<string, string> = { combat: '💀 盤踞的強敵', chest: '🎁 藏寶處', merchant: '🧳 流浪商人' }
+const EVENT: Record<string, string> = { combat: '💀 盤踞的強敵', chest: '🎁 藏寶處', merchant: '🧳 流浪商人', relic: '⚰️ 冒險者的遺物', event: '🔎 線索事件' }
 const STATUS: Record<string, string> = { active: '有效', done: '已完成', expired: '已過期' }
 
 const counts = computed(() => ({
@@ -144,7 +144,7 @@ const counts = computed(() => ({
           <template v-if="it.kind === 'point'">地點：{{ intelPlace(it) }}・第 {{ it.until }} 天前有效・</template>
           <template v-else-if="it.location">地點：{{ locationById(it.location).name }}・</template>
           <template v-if="it.monster && enemies[it.monster]">怪物：{{ enemies[it.monster]!.name }}・</template>
-          {{ formatTime(it.time) }}{{ it.npc ? `在${locationById(it.from).name}聽${it.npc}說的` : it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
+          {{ formatTime(it.time) }}{{ it.npc ? `在${locationById(it.from).name}聽${it.npc}說的` : it.source === '自己遇到' ? `在${locationById(it.location ?? it.from).name}${it.layer ? '' : '附近'}自己遇到的` : it.source ? `在${locationById(it.from).name}解讀「${it.source}」得到` : `在${locationById(it.from).name}的情報商買到` }}
         </div>
       </div>
     </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, inject, type Ref } from 'vue'
 import { abilities, ATTR_IDS, attrName, conditionName, contractDef, geography, itemRules, lewdRules, LOCK_GRADES, npcs as namedNpcs, choosablePerks, perkDef, slaveryRules, stories, tagDef } from '@/engine/data'
 import type { RewardEffect } from '@/engine/effects'
 import { gearRules } from '@/engine/gear'
@@ -60,8 +60,8 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   lose_perk: () => ({ type: 'lose_perk', perk: choosablePerks()[0]!.id }),
   tattoo: () => ({ type: 'tattoo', template: Object.keys(tattooRules.templates)[0]! }),
   remove_tattoo: () => ({ type: 'remove_tattoo', kind: 'plain' }),
-  parasite: () => ({ type: 'parasite', parasite: parasiteIds[0]!, op: 'add' }),
-  corruption: () => ({ type: 'corruption', parasite: parasiteIds[0]!, delta: 10 }),
+  parasite: () => ({ type: 'parasite', parasite: defaultParasite(), op: 'add' }),
+  corruption: () => ({ type: 'corruption', parasite: defaultParasite(), delta: 10 }),
   lewd: () => ({ type: 'lewd', stat: 'lewdness', delta: 1 }),
   ability_pool: () => ({ type: 'ability_pool', pool: 'master', fallback: [{ type: 'lewd', stat: 'lewdness', delta: 3 }] }),
   strict: () => ({ type: 'strict', delta: 1 }),
@@ -72,6 +72,14 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   flag: () => ({ type: 'flag', key: '', value: true }),
 }
 const parasiteIds = Object.keys(parasiteRules.parasites)
+// 寄生物的發作事件裡新增的寄生物效果：預設是這件事件自己的寄生物（TravelEventEditor 提供）
+const eventParasite = inject<Ref<string | undefined> | undefined>('eventParasite', undefined)
+// 線索事件的登場角色（TravelEventEditor）：好感、入隊可以指定甲（$a）、乙（$b）
+const eventCast = inject<Ref<number> | undefined>('eventCast', undefined)
+function defaultParasite(): string {
+  const own = eventParasite?.value
+  return own && parasiteIds.includes(own) ? own : parasiteIds[0]!
+}
 // 刺青：圖樣，或自己描述（誓約要填屬性的加減）
 const tattooTemplates = computed(() => {
   void content.version
@@ -188,6 +196,8 @@ function setBase(r: Row, base: string) {
       <template v-else-if="r.type === 'affinity' || r.type === 'companion'">
         <select v-model="r.npc">
           <option v-if="master && r.type === 'affinity'" value="master">主人</option>
+          <option v-if="(eventCast ?? 0) >= 1 || r.npc === '$a'" value="$a">登場角色甲</option>
+          <option v-if="(eventCast ?? 0) >= 2 || r.npc === '$b'" value="$b">登場角色乙</option>
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
         </select>
         <input v-if="r.type === 'affinity'" v-model.number="r.delta" type="number" class="num" />
@@ -284,7 +294,7 @@ function setBase(r: Row, base: string) {
         <select v-model="r.parasite"><option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option></select>
         <select v-if="r.type === 'parasite'" v-model="r.op"><option value="add">寄生</option><option value="tame">馴服</option><option value="remove">拿掉</option></select>
         <template v-else><input v-model.number="r.delta" type="number" min="-100" max="100" class="num" />點</template>
-        <Hint :text="r.type === 'parasite' ? '對象是主角。寄生：寄生裝備穿上並鎖住、淫紋刻在小腹（已經有同一種、或小腹是奴隸印記時不寄生）；馴服：換成馴服後的物品或印記，不再自動發作；拿掉：寄生物離開身體。' : '主角身上這個寄生物的侵蝕度加減（0～100，決定階段）；沉睡或已馴服時不變。'" />
+        <Hint :text="r.type === 'parasite' ? '對象是主角。寄生：寄生裝備穿上並鎖住、淫紋刻在設定的部位（已經有同一種、或那個部位是奴隸印記時不寄生）；馴服：換成馴服後的物品或印記，不再自動發作；拿掉：寄生物離開身體。' : '主角身上這個寄生物的侵蝕度加減（0～100，決定階段）；沉睡或已馴服時不變。'" />
       </template>
       <template v-else-if="r.type === 'lewd'">
         <select v-model="r.stat"><option v-for="k in LEWD_KEYS" :key="k" :value="k">{{ lewdName(k) }}</option></select>

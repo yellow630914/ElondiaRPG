@@ -8,7 +8,9 @@
 
 - **旅途事件**（`scope: "road"`，預設）：出發時依路段的機率擲好，放在旅途單行道的某一天（❔ 普通、✨ 高階）。高階事件可以把隊伍帶進臨時地圖（洞窟、遺跡、驛站）。
 - **城鎮事件**（`scope: "town"`）：在聚落裡走上設施（旅店、酒館、神殿……）時，冷卻過了就有機率遇到。
-- 兩種都有兩個 `kind`：
+- 同一個區塊還有**地下城事件**（`scope: "dungeon"`）、**線索事件**（`scope: "lead"`）與**寄生物的發作**（`scope: "parasite"`），三種都只能是 `choice`，欄位見 [ADULT_EVENTS](../../docs/ADULT_EVENTS.md) 與 [TRAVEL_EVENTS](../../docs/TRAVEL_EVENTS.md) 第 5.1、6 節；這份指南只講旅途與城鎮。
+- 線索事件另有 `cast`（登場角色 0～2 位，文字寫 `{a}`、`{b}`（名字）與 `{a他}`、`{b他}`（照性別換成他或她），效果 `affinity`、`companion` 的 `npc` 寫 `"$a"`、`"$b"`）與 `offscreen`（沒人去處理、過期時登場角色的近況）；地點用 `layers`（0 近郊與地下城的周邊、1 淺層 … 4 底層）、`regions`、`dungeons`（近郊寫聚落 id）。
+- 旅途與城鎮事件都有兩個 `kind`：
   - `check`：檢定，擲骰直接揭曉，成功與失敗各有結果（旅途事件的骰子出發時就擲好）。
   - `choice`：選擇，玩家選一個選項，選項可以有自己的檢定。
   - 高階（`tier: "advanced"`，只有旅途）的 `check`：先擲好的檢定，**成功之後接著出現選項**（例如要不要進洞窟）。
@@ -33,18 +35,22 @@
 
 | 欄位 | 型別 | 範圍 | 說明 |
 |---|---|---|---|
-| `scope` | `"road"`／`"town"` | | 旅途或城鎮。不寫＝旅途 |
+| `scope` | `"road"`／`"town"`（另有 `"dungeon"`、`"lead"`、`"parasite"`，見第 1 節） | | 旅途或城鎮。不寫＝旅途 |
 | `tier` | `"normal"`／`"advanced"` | 高階只有旅途 | 不寫＝普通 |
 | `kind` | `"check"`／`"choice"` | | 檢定或選擇。其他值變成 `choice` |
 | `title` | 字串 | **最多 20 字** | 標題 |
 | `text` | 字串 | 最多 400 字 | 描述（玩家與 AI 都看得到）。不要空著 |
 | `modes` | 陣列 | 只有旅途：`road` 官道、`trail` 山道、`wild` 荒野、`sea` 海路、`dive` 潛水、`underground` 地底 | 出現在哪些路段。不寫＝任何路段 |
-| `cells` | 陣列 | 只有城鎮：`inn` 旅店、`guild` 公會、`tavern` 酒館、`shop` 雜貨店、`temple` 神殿、`gate` 城門、`brothel` 娼館、`smithy` 鐵匠鋪、`tailor` 裁縫店、`jeweler` 珠寶店、`magic` 魔法物品店、`informant` 情報商、`tattoo` 刺青店、`carver` 雕刻師，或自建商店的 id（`shop_…`，同一個檔案裡新增的也可以） | 走上哪些設施時會發生。不寫＝任何設施 |
+| `regions` | 陣列 | 只有旅途：`central`、`north`、`south`、`forest`、`east_sea`、`west` | 只在這一段路要去的地區（事件在規劃路線時就決定）。不寫＝任何地區 |
+| `cells` | 陣列 | 只有城鎮：`inn` 旅店、`guild` 公會、`tavern` 酒館、`shop` 雜貨店、`temple` 神殿、`gate` 城門、`brothel` 娼館、`smithy` 鐵匠鋪、`tailor` 裁縫店、`jeweler` 珠寶店、`magic` 魔法物品店、`informant` 情報商、`tattoo` 刺青店、`carver` 刻印師，或自建商店的 id（`shop_…`，同一個檔案裡新增的也可以） | 走上哪些設施時會發生。不寫＝任何設施 |
 | `location_types` | 陣列 | 只有城鎮：`capital` 主城、`city` 城市、`town` 城鎮、`village` 村莊、`port` 港口、`outpost` 哨站、`fortress` 要塞 | 聚落規模。不寫＝不限 |
 | `locations` | 陣列 | 只有城鎮：聚落的地點 id（`data/world/geography.json`，地下城不行） | 只在這些地點。不寫＝不限 |
 | `cooldown_days` | 整數 | 只有城鎮：0～60 | 同一事件隔幾天才會再出現。不寫＝`eventRules` 的 `repeat_days`（內建 10） |
 | `category` | 字串 | `social` 人情、`trouble` 麻煩、`opportunity` 機會、`omen` 傳聞與異象、`commerce` 買賣 | 分類。城鎮事件依最近出現過的分類降低權重；旅途上只是標記 |
-| `requires` | `{ "flags", "flags_none" }` | 旗標名稱，最多 40 字 | 這些旗標都成立、那些都不成立時才會出現（第 3 節） |
+| `requires` | `{ "flags", "flags_none" }` | 旗標名稱，最多 40 字 | 這些旗標都成立、那些都不成立時才會出現（第 3 節）。和特殊任務的 `requires` 同一種寫法，也可以寫計數器、慾望指標、主角戴著什麼、身分標籤這類條件（[STORY_QUESTS](../../docs/STORY_QUESTS.md) 1.1 節） |
+| `tags` | 陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling`、`male_partner` | 內容標籤：玩家在設定關掉的標籤不出現 |
+| `pc_body` | 陣列 | `masc`、`fem`、`andro` | 只給這些體型的主角 |
+| `scene` | 字串 | 最多 200 字 | 親密場景的描述：選項帶 `adult_scene` 時交給成人場景正文 |
 | `check` | `{ "attr", "dc" }` | `attr`：`str` `dex` `int` `fai` `cha`；`dc` 1～40 | `kind: check` 才用。沒寫時變成智力 DC 12 |
 | `success` | 結果 | 第 2.3 節 | `kind: check` 成功時 |
 | `fail` | 結果 | 第 2.3 節 | `kind: check` 失敗時 |
@@ -59,6 +65,7 @@
 | `check` | `{ "attr", "dc" }` | 同上 | 選這一項要過的檢定。不寫＝選了就成功 |
 | `success` | 結果 | | 成功（或沒有檢定）時 |
 | `fail` | 結果 | | 檢定失敗時。**沒有 `check` 時會被拿掉** |
+| `adult_scene` | 字串 | `always`；有 `check` 時也可以 `success`、`fail` | 選了（或檢定成功、失敗）時進入親密場景。事件沒有 `scene` 時拿掉 |
 
 ### 2.3 結果（`success`、`fail`）
 
@@ -71,7 +78,7 @@
 | `clear_flags` | 陣列 | 旗標名稱 | 清除劇情旗標 |
 | `effects` | 陣列 | 下表 | 效果 |
 | `side_map` | 字串 | `cave` 神秘洞窟、`ruins` 遺跡廢墟、`waystation` 驛站 | 進入臨時地圖，從出口離開回到原本的位置（旅途的那一格，或城裡） |
-| `special_map` | 字串 | 特殊地圖 id（內建 `sm_rhineburg_sewer`、`sm_rhineburg_cistern`，或自建的 `sm_…`，見 [special-maps](special-maps.md)） | 傳送到特殊地圖的入口 |
+| `special_map` | 字串 | 特殊地圖 id（內建的查 `data/world/special_maps.json` 的 `maps`，例如 `sm_rhineburg_sewer`；或自建的 `sm_…`，見 [special-maps](special-maps.md)） | 傳送到特殊地圖的入口 |
 | `travel_to` | 字串 | 聚落的地點 id | 改去別的地點：旅途中直接抵達那裡（旅行報告註明改道），在城裡（或特殊地圖裡）時被帶過去 |
 
 - 三種移動在報告提交之後才執行。**一個結果只會執行一種**，優先順序 `travel_to` → `side_map` → `special_map`；不要同時寫。
@@ -84,21 +91,22 @@
 | `money` | `{ "type": "money", "amount": -20 }`：整數，負的是花費 |
 | `item` | `{ "type": "item", "name": "藥草", "qty": 2 }`：名稱最多 30 字，數量 -99～99（負的是失去）。**名稱不會被檢查**：要是內建或同一個檔案裡新增的物品 |
 | `gear` | `{ "type": "gear", "spec": { "base": "…", "material": "…" }, "name": "…", "desc": "…" }`：底材與材料要存在、種類相符（[items-gear](items-gear.md)） |
-| `xp` | `{ "type": "xp", "amount": 15 }`：0 以上 |
+| `xp` | `{ "type": "xp", "amount": 15 }`：0 以上；不寫 `target`＝全隊，`"target": "pc"` 只給主角 |
 | `reputation` | `{ "type": "reputation", "faction": "holy_ring", "delta": 1 }`：-20～20；勢力 id 在 `data/world/geography.json` 的 `factions`，`local`＝所在地的勢力（沒有勢力的地方算冒險者公會） |
 | `affinity` | `{ "type": "affinity", "npc": "<固定 NPC id>", "delta": 3, "reason": "…" }`：-50～50 |
 | `memory` | `{ "type": "memory", "summary": "…", "importance": 2 }`：最多 200 字，重要度 1～3 |
 | `ability` | `{ "type": "ability", "ability": "<技能 id>" }`；不存在的 id 會變成 `{ "choices": 3 }`（三選一） |
 | `companion` | `{ "type": "companion", "npc": "<固定 NPC id>", "mode": "voluntary" }`：正式入隊；`mode` 是 `voluntary` 或 `hired` |
-| `condition` | `{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }`：非戰鬥狀態（`punished` `blessed` `shaken` `fed_light` `well_rested` `fed_well` `fed_fine` `fed_feast` `fed_legend` `cheered` `tipsy` `honed` `relaxed`）；`add: false` 是拿掉 |
-| `hp` | `{ "type": "hp", "target": "pc", "ratio": -0.1 }`：比例 -0.9～1（只對主角，不會因此倒下） |
+| `condition` | `{ "type": "condition", "target": "pc", "condition": "blessed", "add": true }`：非戰鬥狀態（`data/rules/companions.json` 的 `conditions`，`slave_mark`、`fugitive`、`away` 除外；或同一個檔案的 `conditions`）；`add: false` 是拿掉 |
+| `hp` | `{ "type": "hp", "target": "pc", "ratio": -0.1 }`：比例 -0.9～1；或沒寫 `ratio` 時用 `amount`（固定點數 -999～999）。只對主角，不會因此倒下 |
 | `start_story` | `{ "type": "start_story", "story": "<特殊任務 id>" }` |
 | `perk` | `{ "type": "perk", "perk": "<特質 id>", "options": ["<特質 id>"], "direct": true }`：學特質的機會；缺陷直接染上（[statuses-perks-tattoos](statuses-perks-tattoos.md) 第二部分） |
 | `lose_perk` | `{ "type": "lose_perk", "perk": "<特質 id>" }` |
 | `tattoo` | `{ "type": "tattoo", "template": "<圖樣 id>", "place": "left_calf", "by": "…" }`，或自己描述（同上第三部分） |
 | `remove_tattoo` | `{ "type": "remove_tattoo", "place": "chest" }` 或 `{ "type": "remove_tattoo", "kind": "plain" }` |
+| `parasite`、`corruption`、`lewd`、`ability_pool`、`restrain` | 寫法同 [stories](stories.md) 2.5 節的效果表（寄生物、侵蝕度、慾望指標、事件庫的技能、陷阱鎖） |
 
-其他種類（`flag`、`meet`、`intel`、`join_party`、`enslave_player`、`leave`……）會被拿掉，世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity`；情報用情報商或旅途事件開頭的特殊任務；`enslave_player`（主角淪為奴隸）只有特殊任務能用。
+其他種類（`meet`、`intel`、`join_party`、`enslave_player`、`leave`……）會被拿掉（`flag` 寫了 `key` 時會留下，但它不是劇情旗標，世界檢查仍會提醒），世界檢查會提醒並寫出替代的寫法：旗標用 `set_flags`／`clear_flags`；認識 NPC 用 `affinity`；情報用情報商或旅途事件開頭的特殊任務；`enslave_player`（主角淪為奴隸）只有特殊任務能用。
 
 ### 2.4 事件設定（`eventRules.rules`）
 
@@ -113,6 +121,10 @@
 | `town.repeat_days` | 整數 | 0～60 | 同一事件幾天內不重複（10） |
 | `town.recent_penalty` | 數字 | 0～1 | 最近出現過的分類，每出現一次權重乘上這個數（0.35） |
 | `town.recent_size` | 整數 | 0～10 | 記住最近幾次的分類（4） |
+| `dungeon.chance.trap` `chest` `gather` `rest` | 數字 | 0～1 | 地下城事件：觸發陷阱、打開寶箱、採集、安全房長休之後遇到事件的機率（0.5、0.08、0.15、0.15） |
+| `dungeon.cooldown_hours` | 數字 | 0～168 | 兩次地下城事件至少隔幾小時（6） |
+| `dungeon.repeat_days` | 整數 | 0～60 | 同一個地下城事件幾天內不重複（3） |
+| `dungeon.dc` | 5 個整數 | 每個 5～30 | 近郊、淺層、中層、深層、底層普通難度的 DC（11、13、14、16、18） |
 
 分類（`town.categories`）是固定的，不要寫。
 
@@ -274,8 +286,8 @@
 | 超過 5 個選項 | 後面的拿掉 |
 | 結果寫 `join`、`leave`、`complete`、`fail_quest`、`retry` | 拿掉 |
 | `side_map` 寫 `cave`、`ruins`、`waystation` 以外的；`special_map` 指到不存在的地圖；`travel_to` 指到不存在的地點 | 拿掉 |
-| 效果寫 `{ "type": "flag", … }` 或其他不在表上的種類 | 拿掉（旗標用 `set_flags`） |
-| `hp` 寫 `amount` 或 `"target": "party"` | `amount` 拿掉（只收 `ratio`），`target` 一律是 `pc` |
+| 效果寫不在表上的種類（`meet`、`intel`……）；`flag` 沒寫 `key` | 拿掉（旗標用 `set_flags`） |
+| `hp` 同時寫 `ratio` 與 `amount`，或寫 `"target": "party"` | 只留 `ratio`；`target` 一律是 `pc` |
 | `ability` 指到不存在的技能 | 變成三選一的學習機會 |
 | `perk` 指到不存在的特質 | 那一項效果拿掉 |
 | `item` 的名稱打錯 | **留著**，遊戲裡給出一件沒有定義的物品（變成無法使用的雜物，不會被發現） |
@@ -290,4 +302,4 @@
 - [EFFECTS](../../docs/EFFECTS.md)：效果的種類。
 - [STORY_QUESTS](../../docs/STORY_QUESTS.md)：結果的格式、劇情旗標、`perk` 與 `tattoo` 效果。
 - [CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.97 節（事件頁籤）。
-- 內建的事件：`data/rules/travel_events.json` 的 `templates`（39 件，可以拿來對照語氣與數值）。
+- 內建的事件：`data/rules/travel_events.json` 的 `templates`（旅途 31 件、城鎮 47 件，另有地下城事件與寄生物的發作，可以拿來對照語氣與數值）。

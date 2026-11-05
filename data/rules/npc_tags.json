@@ -14,7 +14,7 @@
     }
   },
   "neighbor_weight": 0.1,
-  "$gendered_occupations": "有性別的職業稱呼：生成 NPC 時依性別換成對應的稱呼（女性、TS、扶她用 female；男性、偽娘用 male；未知用 neutral），清單裡寫哪一個都可以。",
+  "$gendered_occupations": "有性別的職業稱呼：生成 NPC 時、歡愉的惡作劇改性別時依性別換成對應的稱呼（女性、TS、扶她用 female；男性、偽娘用 male；未知用 neutral），清單裡寫哪一個都可以。職業的結尾是清單裡的稱呼時也換（例如主人家的「某某的妻子」換成「某某的丈夫」、「見習女僕」換成「見習男僕」），比對最長的那個。主人家的伴侶、子女稱謂與僕人職業也在這裡。",
   "gendered_occupations": [
     { "female": "公主", "male": "王子", "neutral": "王室的子嗣" },
     { "female": "王妹", "male": "王弟", "neutral": "國王的手足" },
@@ -26,7 +26,11 @@
     { "female": "修女", "male": "修士", "neutral": "修道者" },
     { "female": "洗衣婦", "male": "洗衣工", "neutral": "洗衣工" },
     { "female": "酒館女侍", "male": "酒館夥計", "neutral": "酒館夥計" },
-    { "female": "補網婦", "male": "補網工", "neutral": "補網工" }
+    { "female": "補網婦", "male": "補網工", "neutral": "補網工" },
+    { "female": "妻子", "male": "丈夫", "neutral": "伴侶" },
+    { "female": "女兒", "male": "兒子", "neutral": "孩子" },
+    { "female": "女僕", "male": "男僕", "neutral": "僕人" },
+    { "female": "廚娘", "male": "廚子", "neutral": "廚子" }
   ],
   "tags": {
     "traveler": {

@@ -54,7 +54,7 @@
 | 1 | 狀態、刺青與印記、特質（新的技能、物品、NPC 要用到的才做） | [statuses-perks-tattoos](guides/statuses-perks-tattoos.md) | [statuses-perks-tattoos](balance/statuses-perks-tattoos.md) | `parts/statuses.json`、`tattoos.json`、`perks.json` |
 | 2 | 技能（玩家與怪物；怪物的技能要在怪物之前） | [abilities](guides/abilities.md) | [abilities](balance/abilities.md) | `parts/abilities.json` |
 | 3 | 材料、底材、物品（獨特物品、任務道具、掉落物） | [items-gear](guides/items-gear.md) | [items](balance/items.md)、[economy](balance/economy.md) | `parts/items.json`…… |
-| 4 | 怪物，以及牠們出現的地方（地下城的層、野外的群組） | [monsters](guides/monsters.md) | [monsters](balance/monsters.md) | `parts/enemies-<地區>.json` |
+| 4 | 怪物，以及牠們出現的地方（內建地下城的層、野外的群組；自建地下城的怪物寫在第 5 步那座地下城的 `layers`） | [monsters](guides/monsters.md) | [monsters](balance/monsters.md) | `parts/enemies-<地區>.json` |
 | 5 | 地標、特殊地圖、地下城、商店 | [landmarks](guides/landmarks.md)、[special-maps](guides/special-maps.md)、[dungeons](guides/dungeons.md)、[shops](guides/shops.md) | [economy](balance/economy.md) | `parts/landmarks.json`…… |
 | 6 | 固定 NPC：先寫 `npcs.md` 給玩家看，再做成資料 | [design/npc-design](design/npc-design.md)、[npcs](guides/npcs.md) | | `parts/npcs-<地區>.json` |
 | 7 | 特殊任務：先寫 `stories.md` 給玩家看，再做成資料 | [design/story-design](design/story-design.md)、[stories](guides/stories.md) | [stories](balance/stories.md) | `parts/stories.json` |

@@ -5,6 +5,8 @@ import { askingFor, invitable, joinableSquads, marketsHere, partyOffersHere, pro
 import { abilityDef, attributeRules, className, companionRules, conditionName, genderName, raceName } from '@/engine/data'
 import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
+import { ASK_COST, ASK_DC, askAroundBlock } from '@/engine/askAround'
+import { leadPoolOn } from '@/engine/leads'
 import { characterFor, npcRecord } from '@/engine/npcs'
 import { perksOf } from '@/engine/perks'
 import { isBound, isNoncombatant, leaderOf, partyMax, partyRoom } from '@/engine/party'
@@ -166,6 +168,9 @@ const menuItems = computed<MenuItem[]>(() => {
     if (lodgers.value.length || companions.value.length) items.push({ id: 'lodge', icon: 'home', label: '寄放夥伴', detail: lodgers.value.length ? `${lodgers.value.map((m) => m.name).join('、')}在這裡等你` : '讓同伴在酒館等你回來（不算離隊、不收錢）', badge: lodgers.value.length || '' })
     items.push({ id: 'black', icon: 'eye', label: blackKnown.value ? '黑市' : '打聽黑市', detail: blackKnown.value ? '不公開的奴隸買賣' : '魅力檢定，約 2 小時' })
   }
+  // 打聽：線索池的隱藏線索（askAround.ts）
+  const askBlock = game.state ? askAroundBlock(game.state) : null
+  if (leadPoolOn()) items.push({ id: 'ask', icon: 'eye', label: '打聽消息', disabled: !!askBlock, detail: askBlock ?? `請一輪酒（${formatMoney(ASK_COST)}），魅力檢定 DC ${ASK_DC}：打聽這一帶的線索（約 1 小時）` })
   items.push({ id: 'trade', icon: 'coins', label: '酒館的交易', detail: tradeLoading.value ? 'AI 正在準備今天的特別交易…' : '餐點以外的交易：情報、請客、幫忙……' })
   // 長期折扣（和其他商店一樣，見 ShopPanel）
   items.push({
@@ -183,6 +188,7 @@ const off = computed(() => Math.round(discount(s.value, shopKey(s.value, 'tavern
 const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { shop: 'tavern' }))
 function pick(id: string) {
   if (id === 'discount') game.startNegotiation('shop_discount', { shop: 'tavern' })
+  else if (id === 'ask') game.askAround()
   else section.value = id as Section
 }
 const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', lodge: '寄放夥伴', black: '黑市', trade: '酒館的交易' }

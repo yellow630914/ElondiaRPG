@@ -8,7 +8,7 @@ import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, SOURCE_MAX, useSettings } from '@/stores/settings'
+import { AI_FEATURES, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/settings'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
@@ -194,6 +194,11 @@ function doReset() {
             <option value="all">一律</option>
           </select>
         </label>
+        <label v-if="settings.monsterGirl !== 'off'">
+          <span class="lab">魔物娘出現機率 <Hint text="不是每隻怪物都要是魔物娘時調低。每種怪物每天擲一次：同一天的戰鬥、戰敗事件、重寫經過與插圖都一樣，同一場的同一種怪物一起是或一起不是。怪物編輯器可以替個別怪物另外設定（例如巨鼠設 0，一定照原本的樣子）。" /></span>
+          <input v-model.number="settings.monsterGirlChance" type="range" min="0" max="100" step="5" />
+          <span class="small">{{ settings.monsterGirlChance }}%</span>
+        </label>
         <label v-if="settings.defeatAdult !== 'off' || settings.defeatCompanion !== 'off'" class="check">
           <input v-model="settings.defeatAlways" type="checkbox" /> 戰敗色情事件一定發生 <Hint text="不擲「敵人起意」的魅力檢定：戰敗、沒有救兵，而且還站著的敵人裡有會起意的（惡人、發情的怪物……），就一定進入戰敗事件。不死這類不會發情的怪物照樣不會。" />
         </label>
@@ -248,6 +253,8 @@ function doReset() {
         </label>
         <label class="check"><input type="checkbox" :checked="!!game.state.options?.tagChange" @change="game.setTagChange(($event.target as HTMLInputElement).checked)" />
           允許在遊戲中更換身分標籤 <Hint text="勾選時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個）。皇族可以直接進出王城。" /></label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.trapLure" @change="game.setTrapLure(($event.target as HTMLInputElement).checked)" />
+          察覺陷阱時可以主動觸發 <Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。" /></label>
         <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
       </div>
     </section>
@@ -272,6 +279,26 @@ function doReset() {
         <label>
           <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
           <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
+        </label>
+        <label class="check">
+          <input v-model="settings.npcLife" type="checkbox" /> NPC 會自己成長
+          <Hint text="你在乎的冒險者不在你身邊時也會過自己的日子：你在人際關係裡「關注」的人、留在家裡或寄放在酒館的夥伴、離隊的夥伴，以及親密度 30 以上的冒險者。每隔幾天擲一次：去了哪裡做什麼、升級（最多到主角的等級，落後越多越容易升；固定 NPC 不升級；夥伴的能力與屬性點留給你選）、換一件比較好的武器或護甲（上鎖的、獨特的不換；夥伴換下的寄回行囊；固定 NPC 不換）、受了點傷去休養（只是近況，隨時可以找他）。近況記在人際關係裡，AI 寫重逢的經過時也會知道。" />
+        </label>
+        <template v-if="settings.npcLife">
+          <label>
+            <span class="lab">每幾天擲一次 <Hint text="1～30，預設 3。間隔越長，每次的變化越多（升級、換裝的機率跟著提高）。" /></span>
+            <input v-model.number="settings.npcLifeDays" type="number" min="1" max="30" style="width: 100px" />
+          </label>
+          <label>
+            <span class="lab">近況交給 AI 寫 <Hint text="AI 依角色的性格、經歷與和你的共同記憶，把擲出來的近況寫成一段（數值照擲出來的，不會改）。每次擲骰時：一次寫完這次有變化的人；重逢時：見到他（或他回到隊上）時才寫，比較省；不用 AI：只有簡短的近況。用的是「模型」頁的「NPC 近況」來源。" /></span>
+            <select v-model="settings.npcLifeAi">
+              <option v-for="o in NPC_LIFE_AI" :key="o.id" :value="o.id">{{ o.name }}</option>
+            </select>
+          </label>
+        </template>
+        <label>
+          <span class="lab">線索池每幾天換一批 <Hint text="每個地區有一池線索（盤踞的強敵、藏寶處、流浪商人、冒險者的遺物），走進那個地區時才擲；過了這麼多天再擲一批。一部分由情報商賣，其他的要解讀情報物品才知道，不知道也可能在近郊或地下城遇到。0 = 關閉（情報商照舊每天隨機賣事件點）。1～30，預設 7。" /></span>
+          <input v-model.number="settings.leadPoolDays" type="number" min="0" max="30" style="width: 100px" />
         </label>
       </div>
     </section>

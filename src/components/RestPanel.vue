@@ -4,7 +4,7 @@ import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
 import { gameRule } from '@/engine/gameRules'
-import { ambushChance, autoHitDice, canCampHere, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, slaveRoomCost, slaveRoomOpen, waitText, type RestPlace } from '@/engine/rest'
+import { ambushChance, autoHitDice, canCampHere, shortRestPreview, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, slaveRoomCost, slaveRoomOpen, waitText, type RestPlace } from '@/engine/rest'
 import { bestTool } from '@/engine/tools'
 import { useGame } from '@/stores/game'
 import JudgeToggle from './JudgeToggle.vue'
@@ -20,6 +20,8 @@ const ambush = computed(() => ambushChance(game.state!))
 // 行囊裡的露營類工具（帳篷）：紮營時的機率已經減半
 const tent = computed(() => bestTool(s.value, 'camp'))
 const shortHours = computed(() => gameRule(game.state, 'shortRestHours'))
+// 短休按鈕的說明：時間・會怎樣・襲擊機率
+const shortNote = computed(() => [`${shortHours.value} 小時`, shortRestPreview(s.value).note, ...(ambush.value ? [`襲擊 ${Math.round(ambush.value * 100)}%`] : [])])
 const longHours = computed(() => gameRule(game.state, 'longRestHours'))
 // 野外與旅途上：隊伍裡有人會紮營（特質【星夜露宿】）時可以紮營長休
 const place = computed<RestPlace | null>(() => (cell.value.kind === 'inn' ? 'inn' : cell.value.kind === 'safe' ? 'safe' : area.value.kind === 'home' ? 'home' : canCampHere(s.value) ? 'camp' : null))
@@ -66,18 +68,18 @@ async function doLongRest(where: RestPlace) {
       ><GameIcon name="heart" :size="12" />{{ m.name }} d{{ hitDie(m) }} × {{ hitDiceLeft(m) }}</span>
     </div>
     <div class="btns">
-      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" />短休 <small>{{ shortHours }} 小時{{ ambush ? `・襲擊 ${Math.round(ambush * 100)}%` : '' }}</small></button>
-      <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" />長休 <small>{{ formatMoney(innCost(s)) }}</small></button>
+      <button @click="game.shortRest()"><GameIcon name="mug" :size="15" /><span class="btn-name">短休</span> <small><span v-for="(part, i) in shortNote" :key="i" class="seg">{{ part }}{{ i < shortNote.length - 1 ? '・' : '' }}</span></small></button>
+      <button v-if="place === 'inn'" :disabled="!!blocked || s.money_cc < innCost(s)" @click="doLongRest('inn')"><GameIcon name="moon" :size="15" /><span class="btn-name">長休</span> <small>{{ formatMoney(innCost(s)) }}</small></button>
       <button
         v-if="place === 'inn' && slaveRoomOpen(s)" :disabled="!!blocked || s.money_cc < slaveRoomCost(s)"
         title="成人向：魅氣濃的城鎮，旅店有便宜的奴房。全隊照樣長休；主角被鎖在床頭過一夜（主角非自願），順從 +1，有機會學會色情技能，醒來時虛脫。"
         @click="doLongRest('slave_room')"
-      ><GameIcon name="moon" :size="15" />住奴房 <small>{{ formatMoney(slaveRoomCost(s)) }}</small></button>
+      ><GameIcon name="moon" :size="15" /><span class="btn-name">住奴房</span> <small>{{ formatMoney(slaveRoomCost(s)) }}</small></button>
       <!-- 旅店的長休在上面（另外可能有奴房）；不在旅店時才是下面這一串，最後一個是「不能長休」 -->
-      <button v-if="place === 'safe'" :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')"><GameIcon name="moon" :size="15" />長休 <small>乾糧 {{ s.party.length }} 份</small></button>
-      <button v-else-if="place === 'home'" :disabled="!!blocked" @click="doLongRest('home')"><GameIcon name="moon" :size="15" />在家長休</button>
-      <button v-else-if="place === 'camp'" :disabled="!!blocked || rations < s.party.length" :title="ambush ? `紮營時有 ${Math.round(ambush * 100)}% 的機率被襲擊（${tent ? `已算進${tent.name}，` : ''}被襲擊就沒睡成，乾糧不扣）` : ''" @click="doLongRest('camp')"><GameIcon name="moon" :size="15" />紮營長休 <small>乾糧 {{ s.party.length }} 份</small></button>
-      <button v-else-if="place !== 'inn'" disabled title="長休要在旅店、地下城的安全房或自己的房子"><GameIcon name="moon" :size="15" />長休 <small>不在旅店</small></button>
+      <button v-if="place === 'safe'" :disabled="!!blocked || rations < s.party.length" @click="doLongRest('safe')"><GameIcon name="moon" :size="15" /><span class="btn-name">長休</span> <small>乾糧 {{ s.party.length }} 份</small></button>
+      <button v-else-if="place === 'home'" :disabled="!!blocked" @click="doLongRest('home')"><GameIcon name="moon" :size="15" /><span class="btn-name">在家長休</span></button>
+      <button v-else-if="place === 'camp'" :disabled="!!blocked || rations < s.party.length" :title="ambush ? `紮營時有 ${Math.round(ambush * 100)}% 的機率被襲擊（${tent ? `已算進${tent.name}，` : ''}被襲擊就沒睡成，乾糧不扣）` : ''" @click="doLongRest('camp')"><GameIcon name="moon" :size="15" /><span class="btn-name">紮營長休</span> <small>乾糧 {{ s.party.length }} 份</small></button>
+      <button v-else-if="place !== 'inn'" disabled title="長休要在旅店、地下城的安全房或自己的房子"><GameIcon name="moon" :size="15" /><span class="btn-name">長休</span> <small>不在旅店</small></button>
     </div>
     <p v-if="blocked && place" class="small muted note">{{ blocked }}</p>
     <p v-else-if="wait > 0" class="small muted note"><GameIcon name="hourglass" :size="12" /> 還要 {{ waitText(wait) }}才能再長休。</p>
@@ -109,9 +111,12 @@ async function doLongRest(where: RestPlace) {
 .head .hint { margin-left: auto; }
 .dice { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .dice .tag :deep(.game-icon) { color: var(--hp); }
-.btns { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.btns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
 .btns button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 8px; }
-.btns small { color: var(--muted); font-size: var(--fs-xs); }
+.btns small { color: var(--muted); font-size: var(--fs-xs); min-width: 0; }
+/* 按鈕的名稱不斷行；說明太長時只在「・」後面換行（「・」前面不能斷行，所以接在前一段的尾巴） */
+.btns .btn-name { white-space: nowrap; flex-shrink: 0; }
+.btns .seg { white-space: nowrap; }
 .note { margin: 6px 0 0; }
 .more { margin-top: 8px; display: inline-flex; align-items: center; gap: 2px; }
 .talk { display: grid; gap: 4px; margin-top: 8px; grid-template-columns: minmax(0, 1fr); }

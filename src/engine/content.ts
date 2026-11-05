@@ -75,6 +75,17 @@ export function setMonsterGirl(m: MonsterGirlMode) {
   monsterGirlMode = m
 }
 
+/** 魔物娘出現的機率（0～100，預設 100）：設定打開、主角符合時，每種怪物每天擲一次（怪物可以自己寫 girl.chance） */
+let monsterGirlChanceValue = 100
+
+export function setMonsterGirlChance(n: number) {
+  monsterGirlChanceValue = Number.isFinite(n) ? Math.max(0, Math.min(100, Math.round(n))) : 100
+}
+
+export function monsterGirlChance(): number {
+  return monsterGirlChanceValue
+}
+
 /** 這位角色（體型）在場時，怪物要不要以魔物娘的樣子交給 AI */
 export function monsterGirlsFor(body: 'masc' | 'fem' | 'andro'): boolean {
   return monsterGirlMode === 'all' || (monsterGirlMode === 'masc' && body === 'masc')

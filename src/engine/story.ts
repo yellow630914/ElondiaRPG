@@ -13,7 +13,7 @@ import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  contentRevision, locationById, npcs as namedNpcs, regionById, specialMaps, stories, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
+  contentRevision, locationById, npcs as namedNpcs, regionById, specialMaps, stories, storyById, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
@@ -22,7 +22,7 @@ import { wearLocks } from './inventory'
 import { formatMoney } from './money'
 import { npcRecord, registerNpc } from './npcs'
 import { joinParty, leaveParty, pcOf } from './party'
-import { nearbyPeople, presentHere } from './population'
+import { nearbyPeople, presentHere, type PresentNpc } from './population'
 import type { Rng } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { applyTimeJump, dayPartOk, DAY_PART_NAME, hoursUntil } from './timeOfDay'
@@ -34,7 +34,7 @@ import { restEventBlock } from './rest'
 import type { GameState, GameTime, NpcRecord, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
-  return stories.find((s) => s.id === id)
+  return storyById(id)
 }
 
 export function storyProgress(state: GameState, id: string): StoryProgress | undefined {
@@ -78,18 +78,44 @@ export function canStart(state: GameState, def: StoryDef): boolean {
   return condMet(state, def.start.requires)
 }
 
-/** 這裡可以接的特殊任務：公會（站在這座城的公會）、固定 NPC（在身邊） */
-export function storyOffersHere(state: GameState): StoryDef[] {
+/**
+ * 這裡可以接的特殊任務：公會（站在這座城的公會）、固定 NPC（在身邊）。
+ * people 是畫面已經算好的「這裡的人」（peopleHere；不給時自己算）。
+ * 每走一步畫面都會問一次：只檢查可能在這裡開頭的任務（站在公會時的公會任務、身邊的人的任務），不逐一檢查全部任務
+ */
+export function storyOffersHere(state: GameState, people?: PresentNpc[]): StoryDef[] {
   const area = currentArea(state)
   const cell = currentCell(state)
-  const present = presence(state)
-  return stories.filter((def) => {
-    if (!canStart(state, def)) return false
-    const s = def.start
-    if (s.kind === 'guild') return area.kind === 'settlement' && cell.kind === 'guild' && (!s.location || s.location === area.location)
-    if (s.kind === 'npc') return !!s.npc && npcFree(state, s.npc) && !npcRecord(state, s.npc)!.hostile && present(s.npc)
-    return false
+  const present = presence(state, people)
+  const { guild, byNpc } = storyStarts()
+  const found: { def: StoryDef; i: number }[] = []
+  if (area.kind === 'settlement' && cell.kind === 'guild') {
+    for (const x of guild) if (!x.def.start.location || x.def.start.location === area.location) found.push(x)
+  }
+  for (const [npc, list] of byNpc) {
+    if (present(npc) && npcFree(state, npc) && !npcRecord(state, npc)!.hostile) found.push(...list)
+  }
+  // 和以前一樣照任務的順序
+  return found.sort((a, b) => a.i - b.i).map((x) => x.def).filter((def) => canStart(state, def))
+}
+
+/**
+ * 任務依開頭分類（公會、固定 NPC 各有哪些，記下在任務清單裡的位置）。
+ * 內容改了（contentRevision）或任務清單換了任何一筆（測試會直接改清單）才重算；開頭的設定只會經過世界設定改
+ */
+type StartIndex = { rev: number; list: StoryDef[]; guild: { def: StoryDef; i: number }[]; byNpc: Map<string, { def: StoryDef; i: number }[]> }
+let startIndex: StartIndex | undefined
+function storyStarts(): StartIndex {
+  const cur = startIndex
+  if (cur && cur.rev === contentRevision() && cur.list.length === stories.length && cur.list.every((d, i) => stories[i] === d)) return cur
+  const guild: { def: StoryDef; i: number }[] = []
+  const byNpc = new Map<string, { def: StoryDef; i: number }[]>()
+  stories.forEach((def, i) => {
+    const st = def.start
+    if (st.kind === 'guild') guild.push({ def, i })
+    else if (st.kind === 'npc' && st.npc) byNpc.set(st.npc, [...(byNpc.get(st.npc) ?? []), { def, i }])
   })
+  return (startIndex = { rev: contentRevision(), list: stories.slice(), guild, byNpc })
 }
 
 /**
@@ -275,12 +301,12 @@ type Presence = (id: string) => boolean
  * 一次查很多任務點時用：身邊的人只算一次（要用到時才算）。
  * 「這裡的人」每算一次要好幾毫秒，進行中的任務一多、每個「找某人」的任務點各算一次，走一步就會卡（docs/plan 的效能紀錄）
  */
-function presence(state: GameState): Presence {
+function presence(state: GameState, people?: PresentNpc[]): Presence {
   let near: Set<string> | undefined
   return (id) => {
     if (state.party.some((m) => m.id === id)) return true
     if (state.captives?.npcs.includes(id) && state.captives.area === currentArea(state).key) return true
-    near ??= new Set(nearbyPeople(state).map((p) => p.rec.id))
+    near ??= new Set((people ? people.filter((p) => p.dist <= 1) : nearbyPeople(state)).map((p) => p.rec.id))
     return near.has(id)
   }
 }
@@ -312,15 +338,16 @@ function nodeIsHereAnyTime(state: GameState, n: ActiveNode, present: Presence = 
   return false
 }
 
-export function nodesHere(state: GameState): ActiveNode[] {
-  const present = presence(state)
-  return activeNodes(state).filter((n) => nodeIsHere(state, n, present))
+/** 這裡的任務點。people、active 是畫面已經算好的「這裡的人」與進行中的任務點（不給時自己算） */
+export function nodesHere(state: GameState, people?: PresentNpc[], active?: ActiveNode[]): ActiveNode[] {
+  const present = presence(state, people)
+  return (active ?? activeNodes(state)).filter((n) => nodeIsHere(state, n, present))
 }
 
 /** 站在任務點上、但時段不對的任務點（地點面板提醒要等到白天或夜裡） */
-export function nodesWaitingForTime(state: GameState): ActiveNode[] {
-  const present = presence(state)
-  return activeNodes(state).filter((n) => !dayPartOk(state.time, nodeHours(n.node)) && nodeIsHereAnyTime(state, n, present))
+export function nodesWaitingForTime(state: GameState, people?: PresentNpc[], active?: ActiveNode[]): ActiveNode[] {
+  const present = presence(state, people)
+  return (active ?? activeNodes(state)).filter((n) => !dayPartOk(state.time, nodeHours(n.node)) && nodeIsHereAnyTime(state, n, present))
 }
 
 /** 在原地等到這個任務點的時段（白天是早上 8 點，夜裡是 20 點）：記一則簡短的日誌 */
@@ -905,34 +932,74 @@ export function refreshStoryMarkers(state: GameState) {
 
 // ---- 在場的友方站在哪裡 ----
 
+/** 任務定義裡列為友方的人（任務點的 allies 合起來；依定義物件記住，自訂內容換掉定義時自然重算） */
+const storyAllyCache = new WeakMap<StoryDef, Set<string>>()
+function storyAllies(def: StoryDef): Set<string> {
+  let set = storyAllyCache.get(def)
+  if (!set) {
+    set = new Set(def.nodes.flatMap((n) => n.allies ?? []))
+    storyAllyCache.set(def, set)
+  }
+  return set
+}
+
+export type AllyPlacements = Map<string, { area: string; x: number; y: number }>
+
 /**
- * 任務點在場的友方固定 NPC 現在站在哪一格：近郊、地下城、臨時地圖的 ⭐ 旁邊，聚落裡任務點的設施上（任何區塊）。
- * 任務點還沒解鎖、已經結束，或那一區還沒生成時為 undefined（照平常的出沒）。
+ * 所有任務點在場的友方固定 NPC 現在站在哪一格（npc id → 位置）：近郊、地下城、臨時地圖的 ⭐ 旁邊，聚落裡任務點的設施上（任何區塊）。
+ * 任務點還沒解鎖、已經結束，或那一區還沒生成的不列（照平常的出沒）。一次算好給一整批 NPC 用（peopleHere），不要每個人各算一次
  */
-export function allyPlacement(state: GameState, npcId: string): { area: string; x: number; y: number } | undefined {
-  // 先便宜地看有沒有進行中的任務把這個人列為友方（每畫一次人群都會叫）
-  if (!Object.values(state.stories ?? {}).some((p) => p.status === 'active' && storyDef(p.id)?.nodes.some((n) => n.allies?.includes(npcId)))) return undefined
+export function allyPlacements(state: GameState): AllyPlacements {
+  const out: AllyPlacements = new Map()
+  // 先便宜地看有沒有進行中的任務有友方
+  const any = Object.values(state.stories ?? {}).some((p) => {
+    if (p.status !== 'active') return false
+    const def = storyDef(p.id)
+    return !!def && storyAllies(def).size > 0
+  })
+  if (!any) return out
   for (const n of activeNodes(state)) {
-    if (!n.node.allies?.includes(npcId)) continue
-    const at = n.node.at
-    if (at.where === 'outskirts' || at.where === 'dungeon' || at.where === 'side' || at.where === 'special') {
-      for (const area of Object.values(state.areas ?? {})) {
-        const i = area.cells.findIndex((c) => c.storyNode === n.ref)
-        if (i < 0) continue
-        return { area: area.key, ...besideCell(area, i) }
-      }
-      continue
+    const allies = n.node.allies?.filter((id) => !out.has(id))
+    if (!allies?.length) continue
+    const at = allyNodePlace(state, n)
+    if (at) for (const id of allies) out.set(id, at)
+  }
+  return out
+}
+
+/** 這個任務點的友方站的地方（找不到時 undefined） */
+function allyNodePlace(state: GameState, n: ActiveNode): { area: string; x: number; y: number } | undefined {
+  const at = n.node.at
+  if (at.where === 'outskirts' || at.where === 'dungeon' || at.where === 'side' || at.where === 'special') {
+    for (const area of Object.values(state.areas ?? {})) {
+      const i = area.cells.findIndex((c) => c.storyNode === n.ref)
+      if (i >= 0) return { area: area.key, ...besideCell(area, i) }
     }
-    if ((at.where === 'cell' || at.where === 'settlement') && at.location) {
-      const kind = (at.where === 'cell' ? at.cell : 'gate') as CellKind
-      for (const key of blockKeys(at.location)) {
-        const area = getArea(state, key)
-        const i = area.cells.findIndex((c) => c.kind === kind)
-        if (i >= 0) return { area: key, x: i % area.width, y: Math.floor(i / area.width) }
-      }
+    return undefined
+  }
+  if ((at.where === 'cell' || at.where === 'settlement') && at.location) {
+    const kind = (at.where === 'cell' ? at.cell : 'gate') as CellKind
+    for (const key of blockKeys(at.location)) {
+      const area = getArea(state, key)
+      const i = area.cells.findIndex((c) => c.kind === kind)
+      if (i >= 0) return { area: key, x: i % area.width, y: Math.floor(i / area.width) }
     }
   }
   return undefined
+}
+
+/**
+ * 一位任務點在場的友方現在站在哪一格（見 allyPlacements）。allies：已經算好的整批（同一次查很多人時傳進來）
+ */
+export function allyPlacement(state: GameState, npcId: string, allies?: AllyPlacements): { area: string; x: number; y: number } | undefined {
+  if (allies) return allies.get(npcId)
+  // 單獨查一個人：先便宜地看有沒有進行中的任務把這個人列為友方
+  const listed = Object.values(state.stories ?? {}).some((p) => {
+    if (p.status !== 'active') return false
+    const def = storyDef(p.id)
+    return !!def && storyAllies(def).has(npcId)
+  })
+  return listed ? allyPlacements(state).get(npcId) : undefined
 }
 
 /** ⭐ 旁邊一格可以站的地方（沒有時就是 ⭐ 本身） */

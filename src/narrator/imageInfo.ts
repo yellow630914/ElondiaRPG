@@ -1,7 +1,7 @@
 // 插圖生成：服務的模板（ChatGPT、NovelAI、ComfyUI）、角色形象插圖的提示詞、生圖提示詞的預處理（交給大語言模型改寫）。
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
-import { className, genderName, lewdRules, raceName } from '@/engine/data'
+import { className, genderName, lewdRules, raceImageName } from '@/engine/data'
 import { currentRegion, exposureAt, lewdOf, npcLewd } from '@/engine/lewd'
 import { gearName, gearRules } from '@/engine/gear'
 import { npcOutfit } from '@/engine/outfits'
@@ -171,13 +171,14 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
   const worn = wornGear(m ? m.gear : rec?.character?.gear)
   const gear = worn.names
   // 還沒有戰鬥資料的人（普通人、還沒登場的冒險者）：內容頁籤指定的裝備，沒有時依身分穿的服裝
-  const defGear = gear.length ? [] : rec?.gear ? Object.values(rec.gear).filter((g) => !!g).map((g) => gearName(g!)) : rec ? wornGear(npcOutfit(rec)).names : []
+  const defGear = gear.length ? [] : rec?.gear ? Object.values(rec.gear).filter((g) => !!g).map((g) => gearName(g!)) : rec ? wornGear(npcOutfit(rec, rec.class ? undefined : state.time.day)).names : []
   const tattoos = tattoosOf(m ?? rec?.character)
   return {
     id,
     name: m?.name ?? rec!.name,
     gender: genderText,
-    race: raceName(m?.race ?? rec!.race),
+    // 種族附上一定要畫出來的特徵（attributes.json 的 image_tags）
+    race: raceImageName(m?.race ?? rec!.race),
     role: m ? className(m.class) : npcTitle(rec!),
     level: m?.level ?? rec?.level,
     appearance: appearanceOf(id, m?.appearance ?? rec?.appearance),
@@ -274,6 +275,7 @@ export const DEFAULT_TAG_INSTRUCTIONS = [
   '4. 不要寫出角色名字或作品名稱。',
   '5. 大約 20～40 個標籤。',
   '6. 刺青、印記與每件裝備都要保留成標籤並寫出部位（例如 butterfly tattoo, thigh tattoo）；構圖照描述的 Composition（upper body、cowboy shot、full body），讓這些部位畫得到。標成「穿在裡面」的內衣不要畫成露出來。',
+  '7. 種族名稱後面括號裡的英文標籤是這個種族一定要畫出來的特徵（例如 fish tail, shark tail），原樣保留，不要省略或改寫。',
 ].join('\n')
 
 /** 內建的預處理指示 */
@@ -290,6 +292,7 @@ export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
       '4. 不要寫出角色名字或作品名稱。',
       '5. 大約 60～120 個英文單字。',
       '6. 刺青、印記與每件裝備都要寫進去並寫出部位；構圖照描述的 Composition，讓這些部位畫得到。標成「穿在裡面」的內衣不要寫成露出來。',
+      '7. 種族名稱後面括號裡的英文標籤是這個種族一定要畫出來的特徵（例如 fish tail, shark tail），照原樣寫進描述。',
     ].join('\n'),
   },
   {
@@ -301,6 +304,7 @@ export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
       '2. 欄位（值都用英文）：{"subject": "人物與性別", "appearance": "髮型、髮色、眼睛、體型、種族特徵", "outfit": "服裝與裝備", "expression": "表情", "pose": "姿勢", "composition": "構圖", "background": "背景", "style": "畫風", "quality": "畫質詞"}。',
       '3. 描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突；不要寫出角色名字或作品名稱。',
       '4. 刺青、印記與每件裝備都要寫進 outfit 或 appearance 並寫出部位；composition 照描述的 Composition。',
+      '5. 種族名稱後面括號裡的英文標籤是這個種族一定要畫出來的特徵（例如 fish tail, shark tail），原樣寫進 appearance。',
     ].join('\n'),
   },
 ]

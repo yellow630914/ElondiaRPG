@@ -21,6 +21,7 @@ import AffinityRows from './AffinityRows.vue'
 import IconField from './IconField.vue'
 import ContentIcon from '../icons/ContentIcon.vue'
 import UsageNote from './UsageNote.vue'
+import SourceNote from './SourceNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
@@ -351,6 +352,7 @@ function setFuel(v: string) {
       @save="save" @discard="reset" @restore="restore" @remove="remove"
     />
     <UsageNote :usage="usage" :deletable="custom" />
+    <SourceNote kind="item" :id="name" />
 
     <FoldSet>
       <template #legend>基本</template>

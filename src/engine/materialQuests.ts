@@ -197,6 +197,8 @@ function dungeonQuest(state: GameState, rng: Rng, kind: MaterialQuestKind, targe
     const goal = qtyFor(rng, r.gather_dungeon.qty)
     const rank = r.gather_dungeon.rank ?? 'E'
     const layer = r.gather_dungeon.layer ?? 'outskirts'
+    // 沒有怪物的層（自建地下城留空的層）不發委託
+    if (!enc[layer]?.length) return undefined
     return {
       ...base(state, kind, target, goal), id: `q-${tag}-gd`, layer,
       title: `採集${dname}${LAYER_NAME[layer]}的${item}（${goal} 份）`, rank, item, reward_cc: reward(rng, rank, item, goal),

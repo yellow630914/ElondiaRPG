@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, provide, ref, watch } from 'vue'
 import { geography, type LocationType, type RouteMode } from '@/engine/data'
 import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
@@ -44,16 +44,22 @@ const edited = computed(() => builtin.value && !!content.mods.travelEvents?.[pro
 const town = computed(() => draft.value.scope === 'town')
 const dungeon = computed(() => draft.value.scope === 'dungeon')
 const parasite = computed(() => draft.value.scope === 'parasite')
-// 發生在主角身上的事件（地下城事件、寄生物的發作）：只有選擇，主角自己擲
-const onPc = computed(() => dungeon.value || parasite.value)
+const lead = computed(() => draft.value.scope === 'lead')
+// 發生在主角身上的事件（地下城事件、線索事件、寄生物的發作）：只有選擇，主角自己擲
+const onPc = computed(() => dungeon.value || parasite.value || lead.value)
+// 線索事件的效果可以指定登場角色（EffectsEditor 的 NPC 選單多出甲、乙）
+provide('eventCast', computed(() => (lead.value ? draft.value.cast ?? 0 : 0)))
 const parasiteIds = Object.keys(parasiteRules.parasites)
+// 選項裡新增寄生物效果時，預設是這件發作事件自己的寄生物（EffectsEditor）
+provide('eventParasite', computed(() => (parasite.value ? draft.value.parasite : undefined)))
 function setScope(v: string) {
-  const scope = (['town', 'dungeon', 'parasite'].includes(v) ? v : undefined) as EventScope | undefined
+  const scope = (['town', 'dungeon', 'parasite', 'lead'].includes(v) ? v : undefined) as EventScope | undefined
   draft.value.scope = scope
   if (scope === 'dungeon') {
     setKind('choice')
     draft.value.triggers ??= ['trap']
   }
+  if (scope === 'lead') setKind('choice')
   if (scope === 'parasite') {
     setKind('choice')
     draft.value.parasite ??= parasiteIds[0]
@@ -126,11 +132,11 @@ function remove() {
 <template>
   <div class="editor">
     <EditorHeader
-      :title="`${town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : '🧭'} ${draft.title || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
+      :title="`${town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : lead ? '🔎' : '🧭'} ${draft.title || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
       @save="save" @discard="reset" @restore="restore" @remove="remove"
     />
     <p class="small muted">
-      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
+      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : lead ? '線索事件：地區的線索池擲到「事件」時，照地點與層抽一件放在地圖上一格，走到那一格時發生。登場角色在擲線索池時決定（一半是這個地區主角認識的冒險者，其他是新生成的）；文字寫 {a}、{b}（名字）與 {a他}、{b他}（照性別換成他或她），效果的角色選「登場角色甲／乙」。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
       {{ onPc ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
     </p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
@@ -145,6 +151,7 @@ function remove() {
             <option value="town">城鎮的設施上</option>
             <option value="dungeon">地下城與近郊</option>
             <option value="parasite">寄生物的發作</option>
+            <option value="lead">線索事件（線索池的事件點）</option>
           </select>
         </label>
         <label v-if="!onPc">種類
@@ -166,14 +173,22 @@ function remove() {
           </select>
         </label>
         <label v-if="town">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.town?.repeat_days ?? 7)" /></label>
+        <label v-if="lead"><span>登場角色 <Hint text="0～2 位：甲是 {a}、乙是 {b}；{a他}、{b他} 照性別換成他或她。" /></span>
+          <select v-model.number="draft.cast">
+            <option :value="undefined">沒有</option>
+            <option :value="1">1 位（甲）</option>
+            <option :value="2">2 位（甲、乙）</option>
+          </select>
+        </label>
         <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
       </div>
       <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" maxlength="400" /></label>
+      <label v-if="lead && draft.cast" class="block"><span>沒人去處理時的近況 <Hint text="線索過期時，主角認識的登場角色記一則近況（NPC 近況）；空著時用預設的一句。" /></span><input v-model="draft.offscreen" maxlength="120" /></label>
     </FoldSet>
 
-    <FoldSet v-if="dungeon">
-      <template #legend>出現的地方 <Hint text="每一項沒勾時不限（觸發點至少勾一個）。" /></template>
-      <div class="row small"><b>觸發點</b>
+    <FoldSet v-if="dungeon || lead">
+      <template #legend>出現的地方 <Hint :text="lead ? '每一項沒勾時不限。近郊與地下城的周邊都是第 0 層。' : '每一項沒勾時不限（觸發點至少勾一個）。'" /></template>
+      <div v-if="dungeon" class="row small"><b>觸發點</b>
         <label v-for="(n, k) in DUNGEON_TRIGGERS" :key="k" class="check">
           <input type="checkbox" :checked="draft.triggers?.includes(k)" @change="toggle<DungeonTrigger>('triggers', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
         </label>
@@ -188,8 +203,8 @@ function remove() {
           <input type="checkbox" :checked="draft.regions?.includes(r.id)" @change="toggle('regions', r.id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}
         </label>
       </div>
-      <div class="row small"><b>只在這些地下城</b> <Hint text="近郊的事件寫那座聚落；這裡只列地下城。" />
-        <label v-for="l in dungeonPlaces" :key="l.id" class="check">
+      <div class="row small"><b>{{ lead ? '只在這些地點' : '只在這些地下城' }}</b> <Hint :text="lead ? '近郊寫那座聚落、地下城寫地下城。' : '近郊的事件寫那座聚落；這裡只列地下城。'" />
+        <label v-for="l in lead ? geography.locations : dungeonPlaces" :key="l.id" class="check">
           <input type="checkbox" :checked="draft.dungeons?.includes(l.id)" @change="toggle('dungeons', l.id, ($event.target as HTMLInputElement).checked)" /> {{ l.name }}
         </label>
       </div>
@@ -199,6 +214,7 @@ function remove() {
       <div class="row small">
         <select v-model="draft.parasite">
           <option v-for="p in parasiteIds" :key="p" :value="p">{{ parasiteRules.parasites[p]!.name }}</option>
+          <option v-if="draft.parasite && !parasiteIds.includes(draft.parasite)" :value="draft.parasite">{{ draft.parasite }}（不存在）</option>
         </select>
       </div>
       <div class="row small"><b>階段</b>
@@ -273,7 +289,7 @@ function remove() {
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
             <CheckRow :check="o.check" />
-            <Hint v-if="onPc" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
+            <Hint v-if="onPc" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : lead ? '事件點所在的層' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
           </template>
           <select v-if="draft.scene" v-model="o.adult_scene" class="small" title="這個選項進入親密場景">
             <option :value="undefined">不進入親密場景</option>

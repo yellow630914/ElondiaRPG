@@ -60,6 +60,8 @@ interface RaceTraits {
   body?: Body
   exclude?: string[]
   features?: Option[]
+  /** 種族特徵一定附上（血統擲到特徵時也一樣），例如玉璘族的魚尾 */
+  always_feature?: boolean
   parts?: Record<string, Option[]>
   force?: Record<string, Option[]>
   personality?: PersonalityOption[]
@@ -240,7 +242,8 @@ export function rollLook(rng: Rng, spec: LookSpec): Look {
   const features: string[] = []
   const lineageFeature = picks.pick(rng, [{ options: lineage?.features ?? [], weight: 1 }])
   if (lineageFeature) features.push(lineageFeature)
-  if (!lineageFeature || rng.next() < 0.6) {
+  // 亂數照舊先擲（其他種族的結果不變），always_feature 的種族不管擲到什麼都附上
+  if (!lineageFeature || rng.next() < 0.6 || race.always_feature) {
     const raceFeature = picks.pick(rng, [{ options: race.features ?? [], weight: 1 }])
     if (raceFeature) features.push(raceFeature)
   }

@@ -5,7 +5,8 @@
 import type { ActionPending } from '@/engine/actions'
 import { monsterLine } from '@/engine/bestiary'
 import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, landmarks, locationById, regionById } from '@/engine/data'
-import { nearbyPlaces } from '@/engine/intel'
+import { intelPlace, nearbyPlaces } from '@/engine/intel'
+import { activeLeads, ensureLeadPool, leadPoolOn } from '@/engine/leads'
 import { ENEMY_KINDS } from '@/engine/mods'
 import type { GameState } from '@/engine/types'
 import { shortestPath } from '@/engine/world'
@@ -53,11 +54,25 @@ export function worldFacts(state: GameState): string {
   const monsters = [...where.entries()].filter(([id]) => enemies[id]).slice(0, MAX_MONSTERS)
     .map(([id, at]) => `- ${monsterLine(enemies[id]!, (k) => ENEMY_KINDS[k] ?? k).replace(/^(\S+)/, `$1 [${id}]`)}｜出沒：${at.slice(0, 4).join('、')}`)
 
+  // 這個地區線索池的線索：主角已經知道的、還不知道的（說出來時用 rumor 的 lead 揭露）
+  let leads = ''
+  if (leadPoolOn()) {
+    ensureLeadPool(state, here.region)
+    const list = activeLeads(state, here.region)
+    const line = (l: (typeof list)[number]) => `- ${l.title} [${l.id}]｜${intelPlace(l)}｜${l.text}`
+    const known = list.filter((l) => l.known)
+    const hidden = list.filter((l) => !l.known && l.visibility === 'hidden')
+    leads = [
+      known.length ? `主角已經知道的線索（可以聊到）：\n${known.map(line).join('\n')}` : '',
+      hidden.length ? `這一帶還有這些傳聞（主角還不知道；對方真的知道而且說出來時，rumor 效果填 lead 的 id）：\n${hidden.map(line).join('\n')}` : '',
+    ].filter(Boolean).join('\n')
+  }
+
   return `<world_facts>
 這一帶真的存在的地方與怪物。提到地點、地下城、怪物時，只能用這裡或世界書裡有的；對方不知道的事就說不知道、只知道大概的方向或記錯了，不要編造新的地名或怪物。玩家說的地點、說法和這裡不符時，以這裡為準（例如對方承認記錯，或那只是謠言）。[ ] 裡是 rumor 效果用的 id。
 所在：${here.name} [${here.id}]（${region.name}・${TYPE_NAME[here.type] ?? here.type}）
 ${places.length ? `附近的地點（路程）：\n${places.join('\n')}` : ''}${marks.length ? `\n城裡的地標：${marks.join('、')}` : ''}
 地下城的層：${DUNGEON_LAYER_IDS.map((l) => `${l}＝${DUNGEON_LAYER_NAME[l]}`).join('、')}
-${monsters.length ? `附近出沒的怪物（怕＝弱點，抗＝抗性）：\n${monsters.join('\n')}` : '附近沒有記錄在案的怪物。'}
+${monsters.length ? `附近出沒的怪物（怕＝弱點，抗＝抗性）：\n${monsters.join('\n')}` : '附近沒有記錄在案的怪物。'}${leads ? `\n${leads}` : ''}
 </world_facts>`
 }

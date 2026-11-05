@@ -13,6 +13,10 @@ import { useContent, VANILLA_NAME } from '@/stores/content'
 import PortraitBox from './PortraitBox.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import { canLive, isFollowed, livingNpcs, newsOf, newsText } from '@/engine/npcLife'
+import { useSettings } from '@/stores/settings'
+import { genderSwapBlock } from '@/engine/genderSwap'
+import { genderName, GENDER_IDS } from '@/engine/data'
 
 const game = useGame()
 const content = useContent()
@@ -65,8 +69,40 @@ function nameOf(id: string): string {
   return npcName(s.value, id)
 }
 
+// ---- 歡愉的惡作劇：改隨機 NPC 的性別（固定 NPC 不開放，見 engine/genderSwap.ts） ----
+const swapping = ref<string | null>(null)
+const swapTo = ref('')
+const swappable = (id: string) => !!game.state && !genderSwapBlock(game.state, id)
+const genderOfNpc = (id: string) => (game.state ? npcRecord(game.state, id)?.gender ?? '' : '')
+const swappedNpc = (id: string) => !!game.state?.npcs?.[id]?.genderSwap
+function startSwap(id: string) {
+  swapping.value = id
+  swapTo.value = GENDER_IDS.find((g) => g !== genderOfNpc(id)) ?? ''
+}
+function doSwap(id: string, name: string) {
+  if (!swapTo.value) return
+  if (!confirm(`歡愉的惡作劇：把「${name}」變成${genderName(swapTo.value)}？\n外貌會照新的性別重新寫一份（之後可以再編輯），預設的內衣跟著換，身上其他的衣服不會換；目前的形象圖會退成舊版。以前的日誌與記憶不會改，交給 AI 時會說明性別改過了。`)) return
+  game.swapNpcGender(id, swapTo.value)
+  swapping.value = null
+}
+
 // ---- 人際關係編輯 ----
 const editing = ref<string | null>(null)
+// NPC 自己的日子（npcLife.ts）：會自己成長的人、近況（新的在前，最多三則）、關注
+const settings = useSettings()
+const living = computed(() => {
+  void game.state?.time.day
+  void game.state?.npcLife
+  return game.state ? new Set(livingNpcs(game.state).map((r) => r.id)) : new Set<string>()
+})
+const news = (id: string) => (game.state ? [...newsOf(game.state, id)].reverse().slice(0, 3) : [])
+const followable = (id: string) => {
+  const rec = game.state ? npcRecord(game.state, id) : undefined
+  return !!rec && !rec.dead && canLive(rec)
+}
+const followed = (id: string) => !!game.state && isFollowed(game.state, id)
+const unpolished = (id: string) => news(id).some((n) => !n.story)
+
 const draft = reactive({ appearance: '', toPlayer: '', aliases: '', others: [] as { id: string; text: string }[] })
 
 function startEdit(r: Relationship) {
@@ -190,6 +226,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 
         <template v-if="editing !== r.id">
           <dl class="small">
+            <template v-if="genderOfNpc(r.id)"><dt>性別</dt><dd>{{ genderName(genderOfNpc(r.id)) }}<span v-if="swappedNpc(r.id)" class="muted">（歡愉的惡作劇改過）</span></dd></template>
             <dt>外貌</dt><dd>{{ r.appearance || '—' }}</dd>
             <dt>與{{ pcName }}</dt><dd>{{ r.toPlayer || '—' }}</dd>
             <template v-if="Object.keys(r.toOthers).length">
@@ -201,14 +238,34 @@ const suggestionDraft = reactive<Record<string, string>>({})
             <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
             <template v-if="whereNow(r.id)"><dt>所在</dt><dd>{{ whereNow(r.id) }}</dd></template>
             <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationName(r.firstMet.location) }}</dd></template>
+            <template v-if="news(r.id).length">
+              <dt>近況</dt>
+              <dd><div v-for="n in news(r.id)" :key="n.day" class="news">第 {{ n.day }} 天：{{ newsText(n) }}</div></dd>
+            </template>
           </dl>
           <div class="row">
             <button class="small" @click="startEdit(r)">編輯</button>
+            <button
+              v-if="settings.npcLife && followable(r.id)" class="small" :class="{ primary: followed(r.id) }"
+              :title="followed(r.id) ? '取消關注（親密度夠高、留在家裡或離隊的夥伴照樣會自己成長）' : '關注：不在你身邊時也會自己成長（升級、換裝、受傷休養），每隔幾天有一則近況'"
+              @click="game.setFollowed(r.id, !followed(r.id))"
+            ><GameIcon name="star" :size="13" /> {{ followed(r.id) ? '已關注' : '關注' }}</button>
+            <span v-if="settings.npcLife && living.has(r.id) && !followed(r.id)" class="small muted">會自己成長</span>
+            <button v-if="settings.npcLife && unpolished(r.id) && settings.ready('life')" class="small" title="請 AI 依他的性格與和你的記憶，把近況寫成一段" @click="game.polishNews([r.id])"><GameIcon name="feather" :size="13" /> 寫成一段</button>
             <button
               v-if="promotable(r.id)" class="small"
               :title="(content.readOnly ? `${VANILLA_NAME}不能直接修改：會自動建立自己的世界，這場遊戲也改用它。` : '') + '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
               @click="promote(r.id, r.name)"
             ><GameIcon name="bookmark" :size="13" /> 存成固定 NPC</button>
+            <button v-if="swappable(r.id) && swapping !== r.id" class="small" title="歡愉的惡作劇：改變這個人的性別（只有隨機產生的人可以；固定 NPC 的劇情照原本的性別寫）" @click="startSwap(r.id)">🎭 歡愉的惡作劇</button>
+          </div>
+          <div v-if="swapping === r.id" class="row small swap">
+            把{{ r.name }}變成
+            <select v-model="swapTo">
+              <option v-for="g in GENDER_IDS" :key="g" :value="g" :disabled="g === genderOfNpc(r.id)">{{ genderName(g) }}</option>
+            </select>
+            <button class="small primary" :disabled="!swapTo" @click="doSwap(r.id, r.name)">施展</button>
+            <button class="small ghost" @click="swapping = null">取消</button>
           </div>
         </template>
 
@@ -307,6 +364,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 .head :deep(.game-icon) { color: var(--accent); }
 .layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.2fr); gap: 14px; align-items: start; }
 .rel { border-top: 1px solid var(--border); padding: 10px 0; display: grid; gap: 6px; }
+.news { margin-bottom: 2px; }
 .affinity { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--danger), #5a4a33 50%, var(--good)); }
 .affinity span { position: absolute; top: -3px; width: 4px; height: 12px; margin-left: -2px; background: var(--text); border-radius: 2px; }
 dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }

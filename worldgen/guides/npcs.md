@@ -22,7 +22,7 @@
 | 欄位 | 型別 | 範圍 | 說明 |
 |---|---|---|---|
 | `custom` | 布林 | 新的角色一律 `true` | 改內建的角色時不寫 |
-| `name` | 字串 | 最多 **12** 字；空的變「未命名」 | 遊戲裡顯示的名字。不要和內建角色同名（檢查會提醒） |
+| `name` | 字串 | 最多 **16** 字；空的變「未命名」 | 遊戲裡顯示的名字。不要和內建角色同名（檢查會提醒） |
 | `gender` | id | `male`、`female`、`femboy`、`ts`、`futa`、`unknown` | 其他值整欄拿掉。來源：`data/world/npc_pool.json` 的 `genders` |
 | `race` | id | `human`、`elf`、`dwarf`、`demon`、`catfolk`、`yulin` | 其他值變 `human`。來源：`data/rules/attributes.json` 的 `races` |
 | `kind` | 字串 | `adventurer` 冒險者、`commoner` 普通人 | 一律明寫。沒寫或寫錯時依 `class`：有戰鬥職業的當冒險者，沒有（或 `noncombatant`）的當普通人 |
@@ -41,7 +41,12 @@
 | `background` | 字串 | 最多 400 字 | 背景 |
 | `tags` | id 陣列 | `data/rules/npc_tags.json` 的 key | `traveler` 旅人、`merchant` 商人、`commoner` 平民、`slave` 奴隸、`noble` 貴族、`royal` 皇族、`priest` 神官、`bishop` 主教、`good` 好人、`villain` 惡人、`prostitute` 娼妓。不存在的拿掉、重複的合併。**不檢查適用的類型與互斥**，自己遵守：`villain` 只給冒險者，`good` 和 `villain` 不能同時有，`merchant`、`commoner`、`royal`、`bishop`、`prostitute` 只給普通人 |
 | `relations` | 物件 | `{ "<角色 id>": "文字" }`，每段最多 160 字 | 和其他角色的關係（給 AI）。空字串的拿掉 |
-| `squad` | 物件 | `{ "name", "members", "together"?, "requires"? }` | 這個人帶著的小隊（寫在**隊長**身上）：`members` 是其他固定 NPC 的 id（1–3 人，不含自己）、`together` 是隊員每天跟著隊長的機率（0–1，預設 1）、`requires` 是小隊成立的條件。隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行（[NPC_SYSTEM](../../docs/NPC_SYSTEM.md) 第 3.1 節）。隊員之間記得也寫 `relations` |
+| `squad` | 物件 | `{ "name", "members", "together"?, "requires"? }` | 這個人帶著的小隊（寫在**隊長**身上）：`members` 是其他固定 NPC 的 id（1–3 人，不含自己）、`together` 是隊員每天跟著隊長的機率（0–1，預設 1）、`requires` 是小隊成立的條件。隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行（[NPC_SYSTEM](../../docs/NPC_SYSTEM.md) 第 3.1 節）。隊員之間記得也寫 `relations`。`name` 最多 16 字，空的變「<隊長>的小隊」 |
+| `adult` | 布林 | `true` 或不寫 | 成人向角色：不佔名單名額，內容編輯器可以依它篩選（[NPC_SYSTEM](../../docs/NPC_SYSTEM.md) 第 3 節） |
+| `adult_appearance` | 字串 | 最多 240 字 | 成人向的外貌細節，接在外貌後面交給 AI |
+| `lewd` | 物件 | `lewdness`、`sensitivity`、`endurance`、`submission`，每項 0～100 | 慾望指標；寫了的才存，沒寫的依標籤與 id 擲（[LEWD_STATS](../../docs/LEWD_STATS.md)） |
+| `teaches` | id 陣列 | 色情技能（`classes` 有 `lewd` 的技能），最多 12 個 | 娼婦光顧時會教的技能；不是色情技能的拿掉 |
+| `mentor` | 物件 | `{ "perks": [...], "affinity": 10, "price_mult": 0.8 }`：`perks` 最多 8 個（不是種族特質、不是缺陷），`affinity` 0～100、`price_mult` 0～3 | 老師：在主角身邊時受訓面板多出這些特質（[LEWD_STATS](../../docs/LEWD_STATS.md) 第 6.1 節）。`perks` 一個都不合時整欄拿掉 |
 
 ### 2.2 能力值、技能、特質、裝備
 
@@ -76,8 +81,8 @@
 | `fixed` | 物件 | `{ "area": "<區塊 key>", "x": 0, "y": 0 }` | **固定在一格**。`area` 是聚落的區塊（`rhineburg/lower`）或固定的特殊地圖（`sm/sm_rhineburg_sewer`）。格子不能是牆或水。有 `fixed` 時不看 `haunts` |
 | `landmark` | 地標 id | `lm_` 開頭，而且這個地標的 `location` 要和角色的 `location` 一樣 | **待在地標**：站在地標那一格，地標搬家時跟著走。有 `landmark` 時不看 `fixed` 與 `haunts` |
 | `keeper` | 店種 | `general` 雜貨店、`temple` 神殿、`tavern` 酒館、`smithy` 鐵匠鋪、`tailor` 裁縫店、`jeweler` 珠寶店、`magic` 魔法物品店、`informant` 情報商，或自建商店的 id（`shop_…`） | **擔任店主**：取代所屬地點那間店生成的店主，平常待在店裡。所屬地點要有這種店（第 3.2 節的表）。同一間店有好幾位時用第一位。流浪商人 `wanderer` 不行 |
-| `requires` | 物件 | `{ "flags": [...], "flags_none": [...] }` | 只在 `flags` 全部成立、`flags_none` 全部不成立時出現。不成立時不在任何地圖上、不能雇用；特殊任務把他列為友方時例外。旗標名稱的規則見 [stories](stories.md) 第 2.6 節 |
-| `stages` | 陣列 | `[{ "requires": {...}, "location": "<聚落 id>", "haunts": [...], "fixed": {...} }]` | **依劇情旗標改變出沒**：由上往下用第一組 `requires` 成立的設定，取代 `location`、`haunts`、`fixed`（和上面的規則一樣）。一組成立時不看 `landmark`。沒有 `requires` 的一組整組拿掉；`location` 不對時用角色本身的 `location`。同一個角色，親密度、記憶、等級、裝備都延續。每一組可以加 `"hours": "day"`／`"night"`：只在白天（6～18 時）或只在夜裡成立 |
+| `requires` | 物件 | 同特殊任務的 `requires`（`{ "flags": [...], "flags_none": [...] }`，也可以寫 `flags_any`、`counters`、`affinity` 等，見 [stories](stories.md) 2.3 節） | 只在條件成立（例如 `flags` 全部成立、`flags_none` 全部不成立）時出現。不成立時不在任何地圖上、不能雇用；特殊任務把他列為友方時例外。旗標名稱的規則見 [stories](stories.md) 第 2.6 節 |
+| `stages` | 陣列 | `[{ "requires": {...}, "location": "<聚落 id>", "haunts": [...], "fixed": {...} }]` | **依劇情旗標改變出沒**：由上往下用第一組 `requires` 成立的設定，取代 `location`、`haunts`、`fixed`（和上面的規則一樣）。一組成立時不看 `landmark`。沒有 `requires` 的一組整組拿掉；`location` 不對時用角色本身的 `location`。同一個角色，親密度、記憶、等級、裝備都延續。每一組可以加 `"hours": "day"`／`"night"`：只在白天（6～18 時）或只在夜裡成立。每一組也可以換身分：`name`（16 字）、`background`（400 字）、`personality`（160 字）、`tags`，有寫的才取代 |
 
 - `x` 是第幾欄、`y` 是第幾列，從 0 開始，對照區塊的 `grid`（每一列是一個字串）。
 - 座標超出區塊時被夾到邊上，再看那一格：是牆或水就整欄拿掉，不是就留下（可能落在通道上）。
@@ -142,7 +147,7 @@ python3 -c "import json;m=json.load(open('data/world/maps.json'))['maps']['rhine
 | `canglue` 滄月闕 | `gate`：城門、公會、旅店、雜貨店、鐵匠鋪、裁縫店、酒館 ／ `market`：娼館、情報商、珠寶店、魔法物品店、刺青店、神殿 ／ `noble`（noble）：刻印師、神殿 ／ `palace`（palace） |
 | `sandcastle` 沙堡營地 | `camp`：城門、公會、旅店、雜貨店、鐵匠鋪、裁縫店、酒館 ／ `bazaar`：娼館、情報商、神殿 |
 
-地下城（`haunts` 的 `zone: "dungeon"` 用）：`whisper_crypt`、`snake_creek`、`mist_abbey`、`redemption_pit`、`echo_rift`、`giants_spine`、`ember_rift`、`bloodrock_cave`、`hell_greenhouse`、`moonshadow_roots`、`thorn_corridor`、`verdant_hollow`、`tidefall_cave`、`skull_isle`、`echo_canyon`、`quicksand_temple`。
+地下城（`haunts` 的 `zone: "dungeon"` 用）：`whisper_crypt`、`snake_creek`、`mist_abbey`、`redemption_pit`、`echo_rift`、`giants_spine`、`ember_rift`、`bloodrock_cave`、`hell_greenhouse`、`moonshadow_roots`、`thorn_corridor`、`verdant_hollow`、`tidefall_cave`、`skull_isle`、`echo_canyon`、`quicksand_temple`、`park_beast`、`park_insect`、`park_aquarium`、`park_garden`、`park_theater`、`history_rift`、`history_corridor`、`forbidden_garden`、`pleasure_palace`，以及同一個包的自建地下城（`loc_…`）。
 
 這張表是目前資料的樣子；以 `maps.json` 為準。
 
@@ -296,7 +301,7 @@ python3 -c "import json;m=json.load(open('data/world/maps.json'))['maps']['rhine
 | 沒寫 `kind` | 有戰鬥職業的變成冒險者，沒有的變成普通人（檢查**不會**提醒，因為 `kind` 是補上的預設值）：冒險者忘了寫 `class` 會變成普通人 |
 | 普通人寫了 `class` | 清成空字串 |
 | 冒險者的 `class` 是 `noncombatant` 或不存在 | 變 `fighter` |
-| `name` 超過 12 字、`occupation` 超過 12 字、`personality` 超過 160 字、`appearance` 超過 240 字、`background` 超過 400 字 | 截斷 |
+| `name` 超過 16 字、`occupation` 超過 12 字、`personality` 超過 160 字、`appearance` 超過 240 字、`background` 超過 400 字 | 截斷 |
 | `race`、`gender` 不存在 | `race` 變 `human`；`gender` 整欄拿掉 |
 | `level` 超過 20、`attrs` 超過 30 | 夾到上限 |
 | `location` 是地下城或不存在 | 變 `soriel` |

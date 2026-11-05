@@ -11,7 +11,7 @@ import { charmLevel } from './charm'
 import { snapshot } from './character'
 import {
   companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, isCustomShopId, shopDef, shopRules, slaveryRules,
-  npcs as namedNpcs, stories, townQuestTemplates, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
+  npcs as namedNpcs, stories, wildEncounters, type DealCost, type Degree, type ItemCategory, type ItemDef, type ShopSpecial, type ShopType, type ShopTypeDef,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { formatMoney } from './money'
@@ -21,7 +21,9 @@ import { askingPrice, generateNpc, npcRecord, slavePrice, weightedPick } from '.
 import { addAffinity, pcOf } from './party'
 import { ensureRelationship } from './social'
 import { reputationBand } from './security'
-import { pointOffers, storyOffers } from './intel'
+import { nearbyPlaces, pointOffers, storyOffers } from './intel'
+import { informantLeads, leadById, leadPoint, leadPoolOn } from './leads'
+import { openFor } from './storyFlags'
 import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { shopTitle } from './shopNames'
@@ -225,7 +227,7 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank && soldHere(i))
       for (const i of pickSome(consumables, r.consumables ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 3)))
       const cap = r.max_material_price?.[Math.min(rank, (r.max_material_price.length ?? 1) - 1)] ?? 300
-      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5 && soldHere(i))
+      const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5 && soldHere(i) && !have.has(i.name))
       for (const i of pickSome(materials, r.materials ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 2), r.material_markup ?? 2))
     }
     // 流浪商人：幾件隨機的優良裝備
@@ -256,18 +258,17 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
 function infoDeals(state: GameState, info: NonNullable<ShopTypeDef['info']>): Deal[] {
   const mult = locationMult(state)
   const deals: Deal[] = []
-  const points = withRng(state, (rng) => pointOffers(state, rng, info.points_per_day, info.point_prices, info.valid_days, mult))
+  // 線索池開著時賣這個地區分給情報商的線索（7 天路程內）；分給他的都賣完了（或關著時）照舊每天隨機
+  const leads = leadPoolOn()
+    ? informantLeads(state, new Set(nearbyPlaces(state.location, openFor(state)).map((p) => p.location))).map((l) => ({
+        id: `info:lead:${l.id}`, title: l.title, desc: `${l.text}（第 ${l.until} 天前有效）`,
+        price: Math.round((info.point_prices[l.tier] ?? info.point_prices.at(-1) ?? 100) * mult),
+        gets: [{ type: 'intel', intel: leadPoint(l), lead: l.id }] as RewardEffect[],
+      }))
+    : []
+  const points = leads.length ? leads : withRng(state, (rng) => pointOffers(state, rng, info.points_per_day, info.point_prices, info.valid_days, mult))
   for (const o of [...points, ...storyOffers(state, mult)]) {
     deals.push({ id: o.id, title: o.title, desc: o.desc, gives: [{ type: 'money', amount: o.price }], gets: o.gets, stock: 1 })
-  }
-  // 只有要檢定的委託用得到線索
-  for (const q of state.quests.filter((x) => x.status === 'accepted' && !x.flags?.lead && x.template && townQuestTemplates[x.template]?.dc !== undefined)) {
-    deals.push({
-      id: `info:quest:${q.id}`, title: `「${q.title}」的線索`, desc: '打聽委託的內幕（委託的檢定 +5）。',
-      gives: [{ type: 'money', amount: Math.round(info.quest_price * mult) }],
-      gets: [{ type: 'quest_flag', quest: q.id, key: 'lead', value: true }, { type: 'memory', summary: `從情報商那裡買到「${q.title}」的線索。`, importance: 1 }],
-      stock: 1,
-    })
   }
   return deals
 }
@@ -284,7 +285,15 @@ export function shopState(state: GameState, type: ShopType): ShopState {
   const key = shopKey(state, type)
   const shops = (state.shops ??= {})
   const cur = shops[key]
-  if (cur && cur.day === state.time.day) return cur
+  if (cur && cur.day === state.time.day) {
+    // 情報商今天的線索：之後自己遇到、打聽到、讀情報物品知道或已經結束的，就不再賣
+    for (const d of cur.deals) {
+      if (!d.id.startsWith('info:lead:') || d.stock <= 0) continue
+      const lead = leadById(state, d.id.slice('info:lead:'.length))
+      if (!lead || lead.status !== 'active' || lead.known) d.stock = 0
+    }
+    return cur
+  }
   const keeper = keeperFor(state, type)
   const shop: ShopState = { day: state.time.day, keeper, deals: rulesDeals(state, type), source: 'rules' }
   shops[key] = shop

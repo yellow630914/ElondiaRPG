@@ -3,7 +3,7 @@
 // 只讀遊戲資料、不改任何東西（用還沒儲存的草稿算）。
 
 import {
-  BOSS_LAYER_IDS, DUNGEON_LAYER_NAME, dungeonEncounters, enemies, geography, regionById, wildEncounters,
+  BOSS_LAYER_IDS, DUNGEON_LAYER_NAME, dungeonEncounters, enemies, geography, regionById, stories, wildEncounters,
   type BossLayerId, type DungeonLayerId, type EncounterGroup,
 } from './data'
 import { dungeonLayersOf, routeTargets, type DungeonMod } from './dungeonMods'
@@ -69,7 +69,7 @@ export function layerPreview(m: Pick<DungeonMod, 'region' | 'layers' | 'bosses' 
     const ref = refs[layer]
     if (ref) out.reference = ref
     if (!levels) {
-      out.warnings.push(layer === 'abyss' ? '勾了底層但還沒有怪物：沒有怪物時只有四層' : `這一層還沒有怪物：會用${regionName}的城郊遭遇表`)
+      out.warnings.push(layer === 'abyss' ? '勾了底層但還沒有怪物：沒有怪物時只有四層' : '這一層沒有怪物：不會遇到怪物，沒設層主時也沒有層主（可以當作休息或獎勵的樓層），公會不發這一層的委託')
     } else {
       if (levels[1] < prevMax) out.warnings.push('比上一層弱')
       if (ref && levels[1] > ref[1] + 2) out.warnings.push(`比${regionName}內建地下城的${DUNGEON_LAYER_NAME[layer]}（${ref[0]}～${ref[1]} 級）強很多`)
@@ -139,9 +139,38 @@ export function regionMonsters(region: string): string[] {
   return [...new Set([...own, ...fromTables(referenceDungeons(''))])]
 }
 
+/** 只在特殊任務出現的敵人（劇情頭目等）：不在任何遭遇表裡、只被特殊任務的戰鬥用到。自動填不挑牠們 */
+export function storyOnlyMonsters(): Set<string> {
+  const placed = new Set<string>()
+  const add = (groups: EncounterGroup[] | undefined) => { for (const g of groups ?? []) for (const [e] of g) placed.add(e) }
+  for (const r of geography.regions) add(wildEncounters(r.id))
+  for (const t of Object.values(dungeonEncounters)) {
+    for (const l of ['outskirts', 'shallow', 'middle', 'deep', 'abyss'] as const) add(t[l])
+    add(Object.values(t.bosses ?? {}).filter((g): g is EncounterGroup => !!g))
+    if (t.boss?.length) add([t.boss])
+  }
+  const out = new Set<string>()
+  for (const s of stories) for (const n of s.nodes) for (const [e] of n.enemies ?? []) if (!placed.has(e)) out.add(e)
+  return out
+}
+
+/** 內建地下城（不含園區）這一層的層主組合（含護衛），同一地區的排前面 */
+function builtinBosses(region: string, layer: BossLayerId): { group: EncounterGroup; level: number; same: boolean }[] {
+  const out: { group: EncounterGroup; level: number; same: boolean }[] = []
+  for (const d of copyableDungeons()) {
+    const t = dungeonEncounters[d.id]
+    const g = t?.bosses?.[layer] ?? (layer === 'deep' && t?.boss?.length ? t.boss : undefined)
+    const head = g?.[0]?.[0]
+    if (!g?.length || !head || !enemies[head]) continue
+    out.push({ group: JSON.parse(JSON.stringify(g)) as EncounterGroup, level: enemies[head]!.level, same: d.region === region })
+  }
+  return out
+}
+
 /**
- * 依等級自動填：每一層從這個地區的怪物裡挑等級在範圍內的（沒有時放寬到所有內建地下城的怪物），
- * 排成 3～4 組（單種一組、兩種混一組），層主挑範圍上限附近最強的一隻、帶兩隻這一層的怪當護衛。
+ * 依等級自動填：每一層從這個地區的怪物裡挑等級在範圍內的（沒有時放寬到所有怪物，只在特殊任務出現的除外），
+ * 排成 3～4 組（單種一組、兩種混一組）。層主照抄內建地下城同一層的層主組合（已經調過平衡）：
+ * 層主等級最接近「這一層上限 +1」的，同一地區優先。
  * ranges 沒給的層照同一地區內建地下城那一層的等級。
  */
 export function autoFillLayers(
@@ -149,7 +178,8 @@ export function autoFillLayers(
 ): Pick<DungeonMod, 'layers' | 'bosses'> {
   const refs = regionLayerLevels(region)
   const pool = regionMonsters(region)
-  const all = Object.keys(enemies).filter((e) => !enemies[e]!.id.startsWith('mod_'))
+  const storyOnly = storyOnlyMonsters()
+  const all = Object.keys(enemies).filter((e) => !enemies[e]!.id.startsWith('mod_') && !storyOnly.has(e))
   const shuffle = <T>(list: T[]) => list.map((v) => ({ v, k: random() })).sort((a, b) => a.k - b.k).map((x) => x.v)
   const layers: DungeonMod['layers'] = {}
   const bosses: Partial<Record<BossLayerId, EncounterGroup>> = {}
@@ -163,10 +193,12 @@ export function autoFillLayers(
     if (picks.length >= 2) groups.push([[picks[0]!, 1], [picks[1]!, 1]])
     layers[layer] = groups
     if (layer === 'outskirts' || !picks.length) continue
-    const strong = [...pool, ...all].filter((e) => enemies[e] && enemies[e]!.level >= hi && enemies[e]!.level <= hi + 2)
-    const head = strong.sort((a, b) => enemies[a]!.level - enemies[b]!.level)[0] ?? [...picks].sort((a, b) => enemies[b]!.level - enemies[a]!.level)[0]!
-    const guard = picks.find((e) => e !== head)
-    bosses[layer as BossLayerId] = guard ? [[head, 1], [guard, 2]] : [[head, 1]]
+    const want = hi + 1
+    const cands = builtinBosses(region, layer as BossLayerId)
+    if (!cands.length) continue
+    const score = (c: { level: number; same: boolean }) => Math.abs(c.level - want) * 2 + (c.same ? 0 : 1)
+    const best = Math.min(...cands.map(score))
+    bosses[layer as BossLayerId] = shuffle(cands.filter((c) => score(c) === best))[0]!.group
   }
   return { layers, bosses }
 }

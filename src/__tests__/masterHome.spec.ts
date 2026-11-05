@@ -298,6 +298,22 @@ describe("the people in the master's house", () => {
     expect([...seen].sort()).toEqual(['child', 'slave', 'spouse'])
   })
 
+  it('a male master never gets a husband; titles follow the gendered occupation list', () => {
+    let spouses = 0
+    for (let seed = 1; seed <= 40; seed++) {
+      const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed, birthplace: 'sunscorch' })
+      enterLocation(state)
+      startAsSlave(state, { master: { type: 'custom', spec: { name: '維克多', level: 5, gender: 'male' } }, mark: 'labor' })
+      for (const r of householdOf(state, currentMasterHome(state)!)) {
+        if (kindOf(r) !== 'spouse') continue
+        spouses++
+        expect(['female', 'ts', 'futa']).toContain(r.gender)
+        expect(r.occupation).toBe('維克多的妻子')
+      }
+    }
+    expect(spouses).toBeGreaterThan(0)
+  })
+
   it('lives in its own city even when every lot there is sold', () => {
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 1, birthplace: 'mosswhisper' })
     enterLocation(state)

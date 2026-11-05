@@ -123,6 +123,7 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
     ...(villain ? { villain } : {}),
     ...(willing ? { willing } : {}),
     ...(mate ? { victim: mate.id } : {}),
+    day: report.time.start.day,
   }
   report.narration = {
     ...report.narration, mode: 'defeat_cliffhanger',
@@ -189,7 +190,7 @@ export function applyDefeatResponse(state: GameState, report: Report, degree: De
   if (extra.length) applyEffects(state, report, extra)
   report.kind = 'event'
   // 隊友：親密場景的主角是那位隊友（淫亂的成長記在隊友身上）
-  report.narration = { ...report.narration, mode: 'defeat_event', length: 'medium', ...(mate ? { defeat_victim: mate.id, adult_actor: mate.id } : {}) }
+  report.narration = { ...report.narration, mode: 'defeat_event', length: 'medium', ...(ev.day !== undefined ? { girl_day: ev.day } : {}), ...(mate ? { defeat_victim: mate.id, adult_actor: mate.id } : {}) }
   report.lore_keys = [...new Set([...(report.lore_keys ?? []), ...ev.foes.map((f) => f.name), regionById(locationById(ev.location).region).name])]
   // 圍上來的怪物記在報告的其他人裡（敘事附上怪物的外觀，魔物娘的設定也照這裡）
   const monsters = ev.foes.filter((f) => f.monster && !(report.others ?? []).some((o) => o.monster === f.monster && o.name === f.name))

@@ -10,8 +10,9 @@ import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, typ
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
   sanitizeItem, sanitizeMaterial, sanitizeNpc, type AbilityMod, type BaseMod, type ContentMods, type EnemyMod, type ItemMod, type MaterialMod, type NpcMod,
-  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, conditionUsage, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
+  builtinStatus, sanitizeStatus, statusUsage, type StatusMod, builtinCondition, sanitizeCondition, conditionUsage, parasiteUsage, type ConditionMod, builtinTattoo, builtinMark, builtinMarkRules,
 } from '@/engine/mods'
+import { builtinParasite, sanitizeParasiteMod, type ParasiteMod } from '@/engine/parasiteMods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
 import { sanitizeIcon, withoutIcons } from '@/engine/itemIcons'
@@ -20,12 +21,14 @@ import { builtinLandmark, landmarkSpotProblem, landmarkUsage, sanitizeLandmarkMo
 import { builtinSpecialMap, sanitizeSpecialMapMod, specialMapUsage, type SpecialMapMod } from '@/engine/specialMapMods'
 import { dungeonUsage, enemyInDungeons, sanitizeDungeonMod, withoutEnemy, type DungeonMod } from '@/engine/dungeonMods'
 import { pruneSpecialMaps } from '@/engine/specialMaps'
-import { pruneLocations } from '@/engine/pruneLocations'
+import { pruneParasites, refreshParasiteMarks, takeParasiteNotice } from '@/engine/parasites'
+import { pruneLocations, takeLocationNotice } from '@/engine/pruneLocations'
 import { pruneRoadEvent } from '@/engine/road'
 import { makeWorldPackage, parseWorldFile } from '@/engine/worldPackage'
 import { usePrompts } from './prompts'
 import { pruneTownEvent } from '@/engine/townEvents'
 import { pruneDungeonEvent } from '@/engine/dungeonEvents'
+import { pruneLeadEvent } from '@/engine/leadEvents'
 import { pruneParasiteEvent } from '@/engine/parasiteEvents'
 import { builtinCounter, counterUsage, sanitizeCounter, type CounterMod } from '@/engine/counterMods'
 import { cleanCounterId } from '@/engine/mods'
@@ -43,6 +46,8 @@ import { storyReach } from '@/engine/storyReach'
 import { GEN_KINDS, genFlagPrefix, type GenKind } from '@/engine/questGen'
 import { buildRefs, closure, contentKeys, fingerprint, pickMods, REF_SECTIONS, splitKey, type RefGraph, type RefKey } from '@/engine/contentRefs'
 import { buildPackage, compareRows, type ImportChoice, type ImportPackage, type ImportRow } from '@/engine/contentImport'
+import { buildBuiltinWorldZip, builtinWorldEntries, diffBuiltinWorld, hasChanges, importReport, readBuiltinWorldZip, type BuiltinImportReport, type BuiltinWorldDiff } from '@/engine/builtinWorld'
+import { builtinWorldReadme } from '@/engine/builtinWorldReadme'
 
 /** 舊版只有一套自訂內容 */
 const LEGACY_KEY = 'elondia.content'
@@ -63,6 +68,8 @@ export interface World {
   promptSet?: string
   /** 局部匯入的紀錄：每一項匯入時的指紋（之後再匯入同一項時，看得出是不是新版本、這裡有沒有改過） */
   imported?: Record<string, string>
+  /** 從「匯入內建世界」建立的：當時的匯入結果（世界管理可以再看一次） */
+  importReport?: BuiltinImportReport
 }
 
 interface WorldsFile {
@@ -74,9 +81,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
+const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'parasites', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城',
+  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', parasites: '寄生物', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城',
 }
 
 export interface ModsDiffEntry {
@@ -115,6 +122,7 @@ function loadWorlds(): WorldsFile {
           // 綁定的提示詞組與匯入紀錄（以前讀回來時漏掉 promptSet：重新整理後綁定就不見了）
           ...(typeof w.promptSet === 'string' ? { promptSet: w.promptSet } : {}),
           ...(w.imported && typeof w.imported === 'object' ? { imported: w.imported } : {}),
+          ...(w.importReport && typeof w.importReport === 'object' && Array.isArray(w.importReport.lines) ? { importReport: w.importReport } : {}),
         }))
       return { active: worlds.some((w) => w.id === f.active) ? f.active! : VANILLA, worlds }
     }
@@ -217,11 +225,20 @@ export const useContent = defineStore('content', () => {
       prunePerks(game.state)
       pruneStories(game.state)
       pruneSpecialMaps(game.state)
+      takeParasiteNotice()
+      if (pruneParasites(game.state.party)) game.flash(takeParasiteNotice() ?? '', 8000)
+      // 身上的淫紋照改過的寄生物更新名稱與外觀
+      refreshParasiteMarks(game.state.party)
       // 拿掉的自建地下城（匯入、全部恢復預設）：人在裡面時送回聚落
-      if (pruneLocations(game.state)) enterLocation(game.state)
+      if (pruneLocations(game.state)) {
+        enterLocation(game.state)
+        const moved = takeLocationNotice()
+        if (moved) game.flash(moved, 8000)
+      }
       pruneRoadEvent(game.state)
       pruneTownEvent(game.state)
       pruneDungeonEvent(game.state)
+      pruneLeadEvent(game.state)
       pruneParasiteEvent(game.state)
     }
     version.value++
@@ -361,7 +378,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap' | 'dungeon'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap' | 'dungeon' | 'parasite'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -383,6 +400,7 @@ export const useContent = defineStore('content', () => {
       case 'landmark': return landmarkUsage(key)
       case 'specialMap': return specialMapUsage(key)
       case 'dungeon': return dungeonUsage(key, state)
+      case 'parasite': return parasiteUsage(key, state)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -477,6 +495,11 @@ export const useContent = defineStore('content', () => {
       if (!m.fixed.length) delete m.fixed
     }
     if (!to) return
+    // 寄生物寄生的物品與馴服後的物品
+    for (const p of Object.values(mods.value.parasites ?? {})) {
+      if (p.item === from) p.item = to
+      if (p.tamed?.item === from) p.tamed.item = to
+    }
     for (const s of Object.values(mods.value.stories)) {
       const lists = [s.rewards, ...s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).map((o) => o?.effects)]
       for (const list of lists) for (const e of list ?? []) if (e.type === 'item' && e.name === from) e.name = to
@@ -684,6 +707,28 @@ export const useContent = defineStore('content', () => {
     if (!mods.value.tattoos?.[id]?.custom) delete mods.value.tattoos?.[id]
     save()
   }
+  // ---- 寄生物 ----
+
+  /** 存一種寄生物：內建的照內建的種類；寄生裝備沒有物品或欄位時丟出錯誤 */
+  function saveParasite(id: string, draft: Partial<ParasiteMod>) {
+    const p = sanitizeParasiteMod(id, draft)
+    const base = builtinParasite(id)
+    // 和內建一模一樣：不記（之後遊戲更新時跟著更新）
+    if (base && JSON.stringify(sanitizeParasiteMod(id, base)) === JSON.stringify(p)) delete mods.value.parasites?.[id]
+    else (mods.value.parasites ??= {})[id] = p
+    save()
+  }
+  function deleteParasite(id: string) {
+    if (!mods.value.parasites?.[id]?.custom) throw new Error('內建的寄生物不能刪除')
+    assertUnused('parasite', id)
+    delete mods.value.parasites[id]
+    save()
+  }
+  function restoreParasite(id: string) {
+    if (!mods.value.parasites?.[id]?.custom) delete mods.value.parasites?.[id]
+    save()
+  }
+
   function saveMark(id: string, draft: Partial<MarkMod>) {
     ;(mods.value.marks ??= {})[id] = sanitizeMarkMod(draft, !builtinMark(id))
     save()
@@ -959,10 +1004,50 @@ export const useContent = defineStore('content', () => {
     return JSON.stringify({ type: 'elondia-content', ...mods.value }, null, 2)
   }
 
+  // ---- 匯出、匯入內建世界（engine/builtinWorld.ts） ----
+
+  /** 匯出內建世界：原版的全部可編輯內容，一種一個 JSON 檔，附 README，包成 zip */
+  function exportBuiltinWorld(date = new Date()): Uint8Array {
+    try {
+      applyContent(emptyMods())
+      const entries = builtinWorldEntries()
+      const day = date.toISOString().slice(0, 10)
+      return buildBuiltinWorldZip(entries, builtinWorldReadme(entries, day), date)
+    } finally {
+      apply()
+    }
+  }
+
   /**
-   * 匯入時（取代全部內容、匯入成新的世界）整理掉的地點引用：不在新內容裡的自建地下城，
-   * 以及所屬地點不存在、被改到別的地點的特殊地圖（docs/CONTENT_DEPENDENCIES.md 第 2 節）。只是提醒：存檔與遊戲都不會壞。
+   * 匯入內建世界：和內建比較，只留改過的與新增的，建立成新的世界（不動原版與其他世界）。
+   * 回傳新世界的 id 與匯入結果（改了哪些、新增哪些、被調整的欄位、整筆略過的、有錯誤沒匯入的特殊任務）；
+   * 匯入結果也記在新世界上。什麼都沒改時（或 dryRun）不建立世界（id 是 undefined）
    */
+  function importBuiltinWorld(bytes: Uint8Array, name: string, file = '', o: { dryRun?: boolean } = {}): { id?: string; diff: BuiltinWorldDiff; report: BuiltinImportReport } {
+    const read = readBuiltinWorldZip(bytes)
+    let diff: BuiltinWorldDiff
+    let incoming: ContentMods
+    let found: string[]
+    try {
+      applyContent(emptyMods())
+      diff = diffBuiltinWorld(read.content, builtinWorldEntries())
+      incoming = normalizeMods(diff.mods)
+      // 有錯誤的特殊任務不匯入（和其他匯入一樣）；套用一次，看看還有什麼問題（引用不存在的東西……）
+      found = [...dropBrokenStories(incoming), ...applyContent(incoming)]
+    } finally {
+      // 整理時自建的狀態、特質會暫時登錄進遊戲資料：恢復成目前的世界
+      apply()
+    }
+    const report = importReport(file, diff, read.errors, [...new Set(found)])
+    // dryRun：只檢查（匯入前先看有沒有改動，有才問世界的名字），不建立世界
+    if (!hasChanges(diff) || o.dryRun) return { diff, report }
+    const id = createWorld(name.trim() || '匯入的內建世界', undefined, incoming)
+    const w = worlds.value.find((x) => x.id === id)!
+    w.importReport = report
+    persist()
+    return { id, diff, report }
+  }
+
   /**
    * 整理要取代全部內容（或建立新世界）的內容：先還原成原版再整理，舊世界的自建項目（例如被拿掉的地下城）
    * 才不會被當成還存在。整理失敗時恢復目前的內容。
@@ -977,6 +1062,10 @@ export const useContent = defineStore('content', () => {
     }
   }
 
+  /**
+   * 匯入時（取代全部內容、匯入成新的世界）整理掉的地點引用：不在新內容裡的自建地下城，
+   * 以及所屬地點不存在、被改到別的地點的特殊地圖（docs/CONTENT_DEPENDENCIES.md 第 2 節）。只是提醒：存檔與遊戲都不會壞。
+   */
   function locationNotes(before: ContentMods, raw: unknown, incoming: ContentMods): string[] {
     const out: string[] = []
     for (const d of Object.values(before.dungeons ?? {})) {
@@ -1213,9 +1302,9 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
-    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveParasite, deleteParasite, restoreParasite, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
-    exportMods, importMods, resetAll, diffMods, mergeMods,
+    exportMods, importMods, resetAll, diffMods, mergeMods, exportBuiltinWorld, importBuiltinWorld,
     importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,
   }
 })

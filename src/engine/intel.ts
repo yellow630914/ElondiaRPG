@@ -15,6 +15,7 @@ import { canStart } from './story'
 import type { GameState, Intel } from './types'
 import { openFor } from './storyFlags'
 import { shortestPath, type LocationOpen } from './world'
+import { ensureLeadPool, finishLead, leadById, leadsAt } from './leads'
 
 const LAYER_NAME = DUNGEON_LAYER_NAME
 const LAYERS = DUNGEON_LAYER_IDS
@@ -43,12 +44,44 @@ function layerOf(area: Area): DungeonLayerId | undefined {
   return area.kind === 'dungeon' ? DUNGEON_LAYERS[area.layer ?? 0]?.id as DungeonLayerId : undefined
 }
 
-/** 這一區該有的事件點 */
-function pointsFor(state: GameState, area: Area): Intel[] {
+/** 這一區該有的事件點：買到的情報，加上這個地區線索池的線索（沒人知道的也放；同一則只放一次） */
+function pointsFor(state: GameState, area: Area): Pick<Intel, 'id' | 'event' | 'group' | 'level'>[] {
   expireIntel(state)
   const layer = layerOf(area)
-  return (state.intel ?? []).filter((it) => it.kind === 'point' && it.status === 'active' && it.location === area.location &&
+  const known = (state.intel ?? []).filter((it) => it.kind === 'point' && it.status === 'active' && it.location === area.location &&
     ((area.kind === 'wild' && !it.layer) || (area.kind === 'dungeon' && it.layer === layer)))
+  ensureLeadPool(state, locationById(area.location).region)
+  const ids = new Set(known.map((it) => it.id))
+  // 已經完成的線索（筆記裡的情報可能還沒結束）不放
+  const leads = leadsAt(state, area.location, area.kind === 'dungeon' ? layer : undefined).filter((l) => !ids.has(l.id))
+  return [...known.filter((it) => leadById(state, it.id)?.status !== 'done'), ...leads]
+}
+
+/** 從入口走得到的空地（不在入口旁邊）：事件點、臨時地圖入口放這裡，才不會放在走不到的地方 */
+export function reachableFloors(area: Area): number[] {
+  const entry = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
+  const start = entry >= 0 ? entry : area.cells.findIndex((c) => c.kind === 'floor')
+  if (start < 0) return []
+  const seen = new Set([start])
+  const queue = [start]
+  const out: number[] = []
+  while (queue.length) {
+    const i = queue.shift()!
+    const x = i % area.width
+    const y = Math.floor(i / area.width)
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+      const nx = x + dx
+      const ny = y + dy
+      if (nx < 0 || ny < 0 || nx >= area.width || ny * area.width + nx >= area.cells.length) continue
+      const j = ny * area.width + nx
+      const c = area.cells[j]!
+      if (seen.has(j) || c.kind === 'wall' || c.kind === 'water' || c.kind === 'manor') continue
+      seen.add(j)
+      queue.push(j)
+      if (c.kind === 'floor' && Math.abs(nx - (entry % area.width)) + Math.abs(ny - Math.floor(entry / area.width)) > 1) out.push(j)
+    }
+  }
+  return out
 }
 
 /** 進入近郊或地下城的一層時放上事件點；已經結束或過期的拿掉 */
@@ -60,17 +93,18 @@ export function ensureIntelPoints(state: GameState, area: Area, rng: Rng) {
     if (c.intel && !ids.has(c.intel)) area.cells[i] = { kind: 'floor' }
   })
   const have = new Set(area.cells.map((c) => c.intel).filter(Boolean))
-  const entry = area.cells.findIndex((c) => c.kind === 'exit' || c.kind === 'stairs_up')
   for (const it of want) {
     if (have.has(it.id)) continue
-    const free = area.cells.map((c, i) => (c.kind === 'floor' && Math.abs(i - entry) > 1 ? i : -1)).filter((i) => i >= 0)
+    const free = reachableFloors(area).filter((i) => area.cells[i]!.kind === 'floor')
     if (!free.length) return
     const i = free[rng.int(0, free.length - 1)]!
     area.cells[i] = it.event === 'combat'
       ? { kind: 'elite', group: it.group ?? [], intel: it.id }
-      : it.event === 'chest'
+      : it.event === 'chest' || it.event === 'relic'
         ? { kind: 'chest', level: it.level ?? 1, intel: it.id }
-        : { kind: 'merchant', intel: it.id }
+        : it.event === 'event'
+          ? { kind: 'event', intel: it.id }
+          : { kind: 'merchant', intel: it.id }
   }
 }
 
@@ -82,6 +116,7 @@ export function intelById(state: GameState, id: string | undefined): Intel | und
 export function finishIntel(state: GameState, id: string | undefined) {
   const it = intelById(state, id)
   if (it && it.status === 'active') it.status = 'done'
+  finishLead(state, id)
 }
 
 /** 打倒情報裡的強敵：額外的報酬 */
@@ -134,7 +169,7 @@ export function placesAt(location: string, layer?: DungeonLayerId): PointPlace[]
   return dungeonPlaces(location).filter((p) => !layer || p.layer === layer)
 }
 
-function dungeonPlaces(d: string): PointPlace[] {
+export function dungeonPlaces(d: string): PointPlace[] {
   const out: PointPlace[] = []
   for (const [i, layer] of LAYERS.entries()) {
     const table = dungeonEncounters[d]?.[layer]
@@ -143,7 +178,7 @@ function dungeonPlaces(d: string): PointPlace[] {
   return out
 }
 
-export type PointEvent = 'combat' | 'chest' | 'merchant'
+export type PointEvent = 'combat' | 'chest' | 'merchant' | 'relic'
 
 /** 一則事件點情報的內容（還沒記進筆記）：盤踞的強敵、藏寶處或流浪商人 */
 export function makePoint(state: GameState, p: PointPlace, event: PointEvent, validDays: number): Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> {
@@ -164,13 +199,16 @@ export function makePoint(state: GameState, p: PointPlace, event: PointEvent, va
   } else if (event === 'chest') {
     title = `${place}的藏寶處`
     text = `有人把一批值錢的東西藏在${place}，還沒來得及取回。`
+  } else if (event === 'relic') {
+    title = `${place}的冒險者遺物`
+    text = `有一隊冒險者在${place}出了事，再也沒有回來。他們的行囊和裝備應該還留在那裡。`
   } else {
     title = `${place}的流浪商人`
     text = `一位流浪商人這幾天會在${place}擺攤，賣的都是城裡少見的東西。`
   }
   return {
     title, text, location: p.location, ...(p.layer ? { layer: p.layer } : {}), event,
-    ...(group ? { group } : {}), level: Math.max(level, pc.level) + (event === 'chest' ? 2 : 0), until,
+    ...(group ? { group } : {}), level: Math.max(level, pc.level) + (event === 'chest' ? 2 : event === 'relic' ? 3 : 0), until,
   }
 }
 
@@ -224,6 +262,11 @@ const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(
 export function rumorFrom(state: GameState, x: Record<string, unknown>, degree: Degree, npc?: string): RewardEffect | undefined {
   const title = clip(x.title, 20)
   const text = clip(x.text, 160)
+  // 線索池裡隱藏的線索（<world_facts> 列出的 id）：成功以上才算真的打聽到
+  const lead = typeof x.lead === 'string' ? leadById(state, x.lead) : undefined
+  if (lead && lead.status === 'active' && !lead.known && lead.region === locationById(state.location).region && (degree === 'success' || degree === 'critical')) {
+    return { type: 'rumor', title: lead.title, text: text || lead.text, lead: lead.id, ...(npc ? { npc } : {}) }
+  }
   if (!title && !text) return undefined
   const location = typeof x.location === 'string' && geography.locations.some((l) => l.id === x.location) ? x.location : undefined
   const monster = typeof x.monster === 'string' && enemies[x.monster] ? x.monster : undefined

@@ -16,7 +16,7 @@ import { characterBody } from '@/engine/look'
 import { continuityBefore, continuityForReport, type NarrationLike } from './continuity'
 import { activeEntries, type PromptConfig, type PromptTarget } from './promptConfig'
 import { toOutputScript } from './script'
-import { monsterGirlsIn, monstersText, reportFocus, reportMonsters } from './monsters'
+import { girlMonsterIds, girlSeed, girlsDownNotDead, monsterGirlsIn, monstersText, reportFocus, reportGirlSeed, reportMonsters } from './monsters'
 
 export interface ComposeOptions {
   config: PromptConfig
@@ -73,7 +73,8 @@ function bodyNoteFor(state: GameState | null, name: string): string | undefined 
   return pc && mascBodyContentOn() && characterBody(pc) === 'masc' ? mascBodyNote(name) : undefined
 }
 
-export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions, narrations?: Record<string, NarrationLike>): Composed {
+/** extra.continuation：續寫（見 PromptOptions.continuation） */
+export function composeNarration(state: GameState | null, report: Report, o: ComposeOptions, narrations?: Record<string, NarrationLike>, extra: { continuation?: { written: string; hint?: string } } = {}): Composed {
   const name = playerName(state)
   const bodyNote = bodyNoteFor(state, name)
   // 分流：帶親密場景的日誌才送成人向的條目（世界書、文風、其他提示詞）
@@ -85,8 +86,11 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)
   // 登場的怪物：外觀與習性（魔物娘的設定打開、這段經過的主角符合時換成魔物娘）
-  const monsters = monstersText(reportMonsters(report), monsterGirlsIn(state, reportFocus(report)))
-  const prompt = buildPrompt(report, lore, {
+  const girls = monsterGirlsIn(state, reportFocus(report))
+  const monsters = monstersText(reportMonsters(report), girls, reportGirlSeed(state, report))
+  // 被打倒的魔物娘在報告裡是「倒下」，不是「死亡」
+  const sent = girlsDownNotDead(report, girlMonsterIds(reportMonsters(report), girls, reportGirlSeed(state, report)))
+  const prompt = buildPrompt(sent, lore, {
     playerName: name,
     language: o.language,
     ...(protagonist ? { protagonist } : {}),
@@ -102,6 +106,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     lengthScale: o.config.lengthScale,
     ...(state && narrations && o.config.continuity ? { continuity: continuityForReport(state, narrations, report) } : {}),
     ...(o.config.variety ? { variety: varietyHint(report.report_id, report.narration?.mode === 'defeat_cliffhanger') } : {}),
+    ...(extra.continuation ? { continuation: extra.continuation } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), lore }
 }
@@ -116,7 +121,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     : undefined
   // 戰敗事件的回應：圍上來的怪物的外觀（魔物娘的設定看被圍住的人）
   const monsters = p.kind === 'defeat_event'
-    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor))
+    ? monstersText([...new Set((state.pendingDefeat?.foes ?? []).map((f) => f.monster).filter((m): m is string => !!m))], monsterGirlsIn(state, p.actor), girlSeed(state, state.pendingDefeat?.day ?? state.time.day))
     : ''
   const prompt = buildActionPrompt(state, p, judgeContext(state, p), {
     language: o.language,

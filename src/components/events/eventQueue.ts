@@ -8,11 +8,12 @@ import { roadTemplate } from '@/engine/road'
 import { blockingNode } from '@/engine/story'
 import { pendingTownEvent } from '@/engine/townEvents'
 import { pendingDungeonEvent } from '@/engine/dungeonEvents'
+import { pendingLeadEvent } from '@/engine/leadEvents'
 import { pendingParasiteEvent } from '@/engine/parasiteEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'parasite' | 'story' | 'join' | 'suggestion' | 'levelup' | 'perk'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'story' | 'join' | 'suggestion' | 'levelup' | 'perk'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -56,6 +57,8 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
       out.push({ id: `master:${hash(pm)}`, kind: 'master', icon: pm.pool?.startsWith('brothel') ? '🌹' : '⛓️', title, blocking: true })
     }
     if (state.dungeonEvent) out.push({ id: `dungeon:${state.dungeonEvent.template}:${state.dungeonEvents?.last ?? 0}`, kind: 'dungeon', icon: '⚠️', title: pendingDungeonEvent(state)?.title ?? '眼前的處境', blocking: true })
+    if (state.leadEvent) out.push({ id: `lead:${state.leadEvent.lead}`, kind: 'lead', icon: '🔎', title: pendingLeadEvent(state)?.title ?? '線索', blocking: true })
+    if (state.trapLure) out.push({ id: `lure:${state.trapLure.area}:${state.time.day}:${state.time.hour}:${state.time.minute ?? 0}`, kind: 'lure', icon: '⚠️', title: '察覺到的陷阱', blocking: true })
     if (state.parasiteEvent) out.push({ id: `parasite:${state.parasiteEvent.template}:${state.parasiteEvents?.last ?? 0}`, kind: 'parasite', icon: '💗', title: pendingParasiteEvent(state)?.title ?? '身上的寄生物', blocking: true })
     if (state.roadEvent) out.push({ id: `road:${state.roadEvent.x}:${state.roadEvent.template}`, kind: 'road', icon: '🧭', title: roadTemplate(state.roadEvent.template)?.title ?? '旅途上的事', blocking: true })
     // 走到特殊任務的任務點：處理、稍候（不緊急的）或放棄（緊急的）

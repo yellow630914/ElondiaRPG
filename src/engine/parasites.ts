@@ -6,7 +6,7 @@
 // 規則與定義在 data/rules/parasites.json；發作事件在 travel_events.json（scope: parasite）。
 
 import parasitesJson from '@data/rules/parasites.json'
-import { itemDef, type AttrId, type CheckFilter } from './data'
+import { itemDef, lewdRules, type AttrId, type CheckFilter, type Mods } from './data'
 import { addLewdStat } from './lewd'
 import { schoolsOf } from './schools'
 import { placeName, tattooAt, tattoosOf } from './tattoos'
@@ -22,6 +22,8 @@ export interface ParasiteStage {
 export interface ParasiteDef {
   name: string
   kind: 'gear' | 'mark' | 'seed'
+  /** 分類：可馴服（任務線把它馴服）、短期寄生（長到最後由發作事件拿掉）；沒寫時有 tamed 是可馴服（parasiteMods.ts 的 parasiteCategory） */
+  category?: 'tameable' | 'short'
   desc: string
   /** 寄生裝備：寄生的物品（items.json）與鎖住的欄位 */
   item?: string
@@ -157,6 +159,34 @@ export function parasiteAbilities(c: Character): string[] {
   return [...new Set(out)].filter((id) => !c.abilities.includes(id))
 }
 
+/**
+ * 寄生類的雙面效應（docs/LEWD_STATS.md 第 14.1 節）：平常是各階段的檢定減值（stage_effects）；戰鬥中，修了任何流派的人，
+ * 還沒馴服、沒有沉睡的寄生物依階段給修正，修了獸蟲派（fit_school）的人 × fit。active 是有效果的寄生物（角色詳情用）
+ */
+export function parasiteTwoFace(c: Character): { mods: Mods; lustBonus: number; active: { name: string; stage: string; mult: number }[] } {
+  const out = { mods: {} as Mods, lustBonus: 0, active: [] as { name: string; stage: string; mult: number }[] }
+  const r = lewdRules.parasite_two_face
+  const schools = schoolsOf(c)
+  if (!r || !schools.length) return out
+  const mult = schools.includes(r.fit_school) ? r.fit : 1
+  for (const p of parasitesOf(c)) {
+    if (p.tamed || p.dormant) continue
+    const stage = stageOf(p.corruption)
+    const row = r.parasites[p.id]?.[stage]
+    if (!row) continue
+    let any = false
+    for (const [k, v] of Object.entries(row)) {
+      const n = Math.round((v ?? 0) * mult)
+      if (!n) continue
+      any = true
+      if (k === 'lust_bonus') out.lustBonus += n
+      else out.mods[k as keyof Mods] = (out.mods[k as keyof Mods] ?? 0) + n
+    }
+    if (any) out.active.push({ name: parasiteDef(p.id)?.name ?? p.id, stage: parasiteRules.stages[stage]?.name ?? '', mult })
+  }
+  return out
+}
+
 /** 失控：還沒馴服的寄生物在高的階段，開戰時帶著慾望（慾望上限的比例） */
 export function parasiteStartLust(c: Character): number {
   return activeParasites(c).filter((p) => !p.tamed).reduce((s, p) => s + (parasiteDef(p.id)?.stage_lust?.[stageOf(p.corruption)] ?? 0), 0)
@@ -210,25 +240,38 @@ export function attachParasite(c: Character, id: string, time: GameTime, by?: st
   return { note: `身上多了${def.name}${cover}`, ...(removed ? { removed } : {}) }
 }
 
-/** 馴服：寄生裝備換成馴服後的物品、淫紋變成已馴服的印記；回傳說明 */
+/** 這個寄生物鎖住的裝備欄位（照鎖找，不照現在的定義：寄生之後改了欄位或種類也找得到） */
+function lockedSlots(c: Character, id: string): GearSlot[] {
+  return (Object.entries(c.gear ?? {}) as [GearSlot, { locked?: string } | undefined][])
+    .filter(([, g]) => g?.locked === `${PARASITE_LOCK}${id}`).map(([slot]) => slot)
+}
+
+/** 這個寄生物的詛咒印記（照寄生物 id 找，不照現在的種類或部位） */
+function curseMarks(c: Character, id: string): Tattoo[] {
+  return tattoosOf(c).filter((t) => t.kind === 'curse' && t.parasite === id)
+}
+
+/**
+ * 馴服：寄生裝備換成馴服後的物品、淫紋變成已馴服的印記；回傳說明。
+ * 鎖住的裝備與印記照寄生時的樣子找（寄生之後在編輯器改了種類或欄位也一樣）：沒有馴服後的物品就只解鎖，
+ * 沒有馴服後的印記就只標成已馴服（可以洗掉）
+ */
 export function tameParasite(c: Character, id: string): string {
   const p = parasiteOf(c, id)
   const def = parasiteDef(id)
   if (!p || !def || p.tamed) return ''
   p.tamed = true
   p.corruption = 0
-  if (def.kind === 'gear' && def.slot) {
-    const g = c.gear?.[def.slot]
-    const item = def.tamed?.item
-    const spec = item ? itemDef(item)?.gear : undefined
-    if (g?.locked === `${PARASITE_LOCK}${id}`) {
-      if (spec) c.gear![def.slot] = { name: item!, spec }
-      else delete g.locked
-    }
-  } else if (def.kind === 'mark') {
-    const m = def.tamed?.mark
-    const t = tattoosOf(c).find((x) => x.kind === 'curse' && x.parasite === id) ?? p.stored
-    if (t && m) applyTamedMark(t, m)
+  const item = def.tamed?.item
+  const spec = item ? itemDef(item)?.gear : undefined
+  for (const slot of lockedSlots(c, id)) {
+    if (spec) c.gear![slot] = { name: item!, spec }
+    else delete c.gear![slot]!.locked
+  }
+  const m = def.tamed?.mark
+  for (const t of [...curseMarks(c, id), ...(p.stored ? [p.stored] : [])]) {
+    if (m) applyTamedMark(t, m)
+    else t.tamed = true
   }
   return `${def.name}被馴服了`
 }
@@ -238,16 +281,40 @@ function applyTamedMark(t: Tattoo, m: NonNullable<NonNullable<ParasiteDef['tamed
   t.name = m.name
   t.desc = m.desc
   if (m.attrs) t.attrs = { ...m.attrs }
+  else delete t.attrs
   if (m.check && m.bonus) t.unique = { check: m.check, bonus: m.bonus }
+  else delete t.unique
 }
 
-/** 拿掉寄生物（解咒成功、種子產下）：寄生裝備消失、淫紋洗掉；回傳說明 */
+/**
+ * 身上的淫紋照現在的定義更新名稱與外觀（世界編輯器改過之後、讀檔時）：還沒馴服的照印記，馴服的照馴服後的印記（含屬性與檢定加值）。
+ * 寄生之後改成別的種類的不動（拿掉時照寄生物 id 清掉）
+ */
+export function refreshParasiteMarks(chars: Character[]) {
+  for (const c of chars) {
+    for (const p of parasitesOf(c)) {
+      const def = parasiteDef(p.id)
+      if (def?.kind !== 'mark') continue
+      for (const t of [...curseMarks(c, p.id), ...(p.stored ? [p.stored] : [])]) {
+        const m = def.tamed?.mark
+        if (t.tamed) {
+          if (m) applyTamedMark(t, m)
+        } else {
+          t.name = def.mark?.name ?? def.name
+          t.desc = def.mark?.desc ?? def.desc
+        }
+      }
+    }
+  }
+}
+
+/** 拿掉寄生物（解咒成功、種子產下）：寄生裝備消失、淫紋洗掉；照寄生時的鎖與印記找，不照現在的定義。回傳說明 */
 export function detachParasite(c: Character, id: string): string {
   const p = parasiteOf(c, id)
   const def = parasiteDef(id)
   if (!p) return ''
-  if (def?.kind === 'gear' && def.slot && c.gear?.[def.slot]?.locked === `${PARASITE_LOCK}${id}`) delete c.gear[def.slot]
-  if (def?.kind === 'mark') c.tattoos = tattoosOf(c).filter((t) => !(t.kind === 'curse' && t.parasite === id))
+  for (const slot of lockedSlots(c, id)) delete c.gear![slot]
+  c.tattoos = tattoosOf(c).filter((t) => !(t.kind === 'curse' && t.parasite === id))
   // 被淫紋蓋掉的刺青留下來，之後還能到刻印師紋回來
   if (p.covered) (c.coveredTattoos ??= []).push({ parasite: id, tattoo: p.covered })
   c.parasites = parasitesOf(c).filter((x) => x !== p)
@@ -310,6 +377,42 @@ export function removalTerms(p: ParasiteState): { dc: number; price: number } | 
   const r = parasiteDef(p.id)?.remove
   if (!r) return undefined
   return { dc: r.dc + Math.floor(p.corruption / 10), price: Math.round(r.price * (1 + p.corruption / 100)) }
+}
+
+/**
+ * 這個世界沒有的寄生物（自建的被刪掉、換了世界）：從角色身上拿掉，寄生裝備的鎖解開（裝備留著）、
+ * 淫紋留下來當普通的刺青、記著的沉睡淫紋與被蓋掉的刺青也一起清掉。回傳拿掉了幾個
+ */
+let pruneNotice: string | null = null
+
+/** 上一次 pruneParasites 拿掉寄生物時的提示（讀檔、世界內容改變之後跳出來）；拿了就清掉 */
+export function takeParasiteNotice(): string | null {
+  const n = pruneNotice
+  pruneNotice = null
+  return n
+}
+
+export function pruneParasites(chars: Character[]): number {
+  let n = 0
+  for (const c of chars) {
+    const gone = parasitesOf(c).filter((p) => !parasiteDef(p.id)).map((p) => p.id)
+    for (const [slot, g] of Object.entries(c.gear ?? {})) {
+      const id = g?.locked?.startsWith(PARASITE_LOCK) ? g.locked.slice(PARASITE_LOCK.length) : undefined
+      if (id && !parasiteDef(id)) delete c.gear![slot as GearSlot]!.locked
+    }
+    for (const t of tattoosOf(c)) {
+      if (t.kind === 'curse' && t.parasite && !parasiteDef(t.parasite)) {
+        t.kind = 'plain'
+        delete t.parasite
+      }
+    }
+    if (c.coveredTattoos) c.coveredTattoos = c.coveredTattoos.filter((k) => parasiteDef(k.parasite))
+    if (!gone.length) continue
+    c.parasites = parasitesOf(c).filter((p) => !gone.includes(p.id))
+    n += gone.length
+  }
+  if (n) pruneNotice = `這個世界已經沒有存檔裡的 ${n} 種寄生物，已經從身上拿掉（鎖住的裝備解鎖、淫紋變成普通的刺青）。`
+  return n
 }
 
 /** 給 AI 的寄生物清單（沒有時為空字串） */

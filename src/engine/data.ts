@@ -128,6 +128,11 @@ export interface NpcDef {
   lewd?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
   /** 娼婦：光顧時可能教主角的色情技能（docs/LEWD_STATS.md 第 10 節；沒寫時用 lewd.json 的 brothel.patron.default） */
   teaches?: string[]
+  /**
+   * 老師（docs/LEWD_STATS.md 第 6.1 節）：在身邊時（隊友，或同一格、相鄰）可以向他受訓這些特質。好感至少 affinity
+   * （沒寫用 perks.json 的 mentor.affinity）；學費 × price_mult、難度 + dc_delta（沒寫用 mentor 的預設）
+   */
+  mentor?: NpcMentor
   /** 初始裝備（取代依等級隨機生成的裝備；沒寫的欄位空著） */
   gear?: Partial<Record<GearSlot, GearSpec>>
   /** 固定站在聚落的某一格（區塊 key 與座標）；有這個欄位時不看活躍地點 */
@@ -143,6 +148,17 @@ export interface NpcDef {
   /** 這個人帶著的小隊（寫在隊長身上，見 engine/squads.ts）：隊員跟著隊長出沒，只能整隊邀請或請他們帶主角同行 */
   squad?: NpcSquad
 }
+
+/** 慾望稱號：五項慾望指標的範圍（曝露名聲看所在地區）、至少有一個身分標籤、所在地勢力的聲望範圍，全部符合才有 */
+export interface LewdTitleDef {
+  id: string
+  name: string
+  desc: string
+  requires: { stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>; pc_tags?: string[]; reputation?: CounterRange }
+}
+
+/** 老師會教的特質與條件 */
+export interface NpcMentor { perks: string[]; affinity?: number; price_mult?: number }
 
 /** 固定 NPC 的小隊（2–4 人，含隊長） */
 export interface NpcSquad {
@@ -389,8 +405,29 @@ export function bumpContentRevision() {
   contentRev++
 }
 
+/**
+ * 依 id 查清單的索引（每走一步會查上千次，線性搜尋太慢）。記下每個 id 的位置，取用時確認那個位置還是同一個 id：
+ * 自訂內容增刪、換掉某一筆時對不上就重建，所以不必跟著內容的版本走，直接改陣列也不會拿到舊的
+ */
+export function indexById<T extends { id: string }>(list: T[]): (id: string) => T | undefined {
+  let pos = new Map<string, number>()
+  const rebuild = () => {
+    pos = new Map()
+    list.forEach((x, i) => { if (!pos.has(x.id)) pos.set(x.id, i) })
+  }
+  return (id) => {
+    const i = pos.get(id)
+    if (i !== undefined && list[i]?.id === id) return list[i]
+    rebuild()
+    const j = pos.get(id)
+    return j === undefined ? undefined : list[j]
+  }
+}
+
 /** 內建的特殊任務；內容頁籤的修改套用在這份清單上 */
 export const stories = (storiesJson as unknown as { stories: StoryDef[] }).stories
+/** 依 id 找特殊任務（索引，見 indexById） */
+export const storyById = indexById(stories)
 
 export type NpcKind = 'commoner' | 'adventurer'
 
@@ -401,6 +438,8 @@ export interface Haunt {
   weight: number
 }
 export const npcs = (npcsJson as unknown as { npcs: NpcDef[] }).npcs
+/** 依 id 找固定 NPC（索引，見 indexById） */
+export const namedNpcById = indexById(npcs)
 
 // ---- 城鎮的特色地標（docs/LANDMARKS.md） ----
 
@@ -669,6 +708,8 @@ export interface RaceDef {
   name: string
   emoji: string
   bonus: Partial<Attrs>
+  /** 生圖時一定要畫出來的種族特徵（英文標籤，例如玉璘族的 fish tail, shark tail） */
+  image_tags?: string
 }
 
 export const attributeRules = attributesJson as unknown as {
@@ -696,6 +737,8 @@ export interface ClassDef {
   hit_die: number
   /** 無法戰鬥：同行但不參與戰鬥、不分經驗（普通人入隊時用） */
   noncombat?: boolean
+  /** 職業本身的受傷倍率加減（武僧的卸力：物理 -0.25），和防具、特質一樣相乘 */
+  resist?: AffinityMap
 }
 export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
 /** 普通人入隊時的職業 */
@@ -974,7 +1017,26 @@ export interface AbilityDef {
   ap_give?: number
   /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
   exposure?: number
+  /** 升環（只有法術）：用比 circle 高的法術環施放時，每高一環多的效果（upcast.ts） */
+  upcast?: UpcastDef
   desc: string
+}
+/** 升環：每高一環多的效果，數值照 D&D 5e 的升環規則 */
+export interface UpcastDef {
+  /** 傷害多擲的骰子，加在 damage 的第 part 筆（預設第一筆） */
+  dice?: string
+  part?: number
+  /** 治療多擲的骰子、多的固定值 */
+  heal?: string
+  heal_flat?: number
+  /** 隨機敵人的次數（魔法飛彈的飛彈、連環閃電的跳躍） */
+  count?: number
+  /** 攻擊次數（灼熱射線的射線） */
+  hits?: number
+  /** 臨時生命 */
+  shield?: number
+  /** 施加的持續傷害、每回合攻擊的狀態（月華光束、靈體武器……）每次多擲的骰子 */
+  status_dice?: string
 }
 const abilityList = (abilitiesJson as unknown as { abilities: AbilityDef[] }).abilities
 /** 所有能力（玩家自訂的內容會改這份：見 mods.ts） */
@@ -1047,10 +1109,16 @@ export interface EnemyDef {
   /** 上傳的圖示（data URL，只給這一隻怪物）；沒有時依種類與等級用內建的圖 */
   icon?: string
 }
-/** 怪物的魔物娘形態：name 是給 AI 的稱呼（例如「狼娘」），desc 是外觀與習性（成年女性的身體，保留原本種族的特徵） */
+/** 怪物的魔物娘形態：name 是給 AI 的稱呼（例如「狼娘」），desc 是外觀（成年女性的身體，保留原本種族的特徵） */
 export interface MonsterGirl {
   name: string
   desc: string
+  /** 性情（給 AI 的敘事，插圖不用） */
+  personality?: string
+  /** 習性（給 AI 的敘事，插圖不用） */
+  habits?: string
+  /** 以魔物娘出現的機率（0～100）；沒寫時照設定的「魔物娘出現機率」 */
+  chance?: number
 }
 export type EncounterGroup = [string, number][]
 export type DungeonLayerId = 'outskirts' | 'shallow' | 'middle' | 'deep' | 'abyss'
@@ -1360,6 +1428,8 @@ export const slaveryRules = slaveryJson as unknown as {
       patterns: Record<HomeDistrict, HouseholdPattern[]>
       spouse_same_race: number
       spouse_inherits: string[]
+      /** 依主人的性別限定伴侶的性別（沒寫的不限定） */
+      spouse_genders?: Record<string, string[]>
       servant_jobs: string[]
       slave_jobs: string[]
     }
@@ -1907,7 +1977,7 @@ export interface ShopTypeDef {
   /** 每天隨機上架：目錄裡任何商店的消耗品與材料（材料的售價 = 收購價 × material_markup） */
   random?: { consumables?: number; materials?: number; material_markup?: number; max_material_price?: number[] }
   /** 情報商：事件點的情報（依層數的價格：近郊、周邊、淺層、中層、深層）、特殊任務的消息、委託的線索 */
-  info?: { point_prices: number[]; points_per_day: number; valid_days: number; quest_price: number }
+  info?: { point_prices: number[]; points_per_day: number; valid_days: number }
   /** 流浪商人：每天幾件隨機的優良裝備 */
   rare_gear?: number
   /** 固定清單：每天一定上架的物品（世界設定加的；price_cc 沒寫照目錄價） */
@@ -2034,6 +2104,12 @@ export function className(id: string): string {
 
 export function raceName(id: string): string {
   return attributeRules.races[id]?.name ?? id
+}
+
+/** 生圖用的種族：名稱後面括號附上一定要畫出來的特徵（英文標籤），例如「玉璘族 (fish tail, shark tail)」 */
+export function raceImageName(id: string): string {
+  const tags = attributeRules.races[id]?.image_tags?.trim()
+  return tags ? `${raceName(id)} (${tags})` : raceName(id)
 }
 
 export function attrName(id: AttrId): string {
@@ -2172,6 +2248,8 @@ export const perkRules = perksJson as unknown as {
   npc: { chances: number[]; flaw_chance: number; tag_mult: number; class_mult: number }
   creation: { slots: number; max_flaws: number; slots_per_flaw: number }
   pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
+  /** 老師（固定 NPC 的 mentor）：預設的好感門檻、學費倍率、難度加減；特質沒有 train 時用 default_train */
+  mentor: { affinity: number; price_mult: number; dc_delta: number; default_train: { price_cc: number; hours: number; attr: AttrId; dc: number } }
   custom: {
     name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number]
     flaw: { check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
@@ -2241,6 +2319,10 @@ export const lewdRules = lewdJson as unknown as {
   }
   schools: Record<string, LewdSchool>
   servitude: { no_master: number }
+  /** 寄生類的雙面效應（docs/LEWD_STATS.md 第 14.1 節）：寄生物 id → 各階段的戰鬥修正（lust_bonus 是造成的慾望 +N） */
+  parasite_two_face?: { fit_school: string; fit: number; parasites: Record<string, (Mods & { lust_bonus?: number })[]> }
+  /** 慾望稱號（docs/LEWD_STATS.md 第 28 節）：只顯示，沒有效果 */
+  titles?: { max: number; list: LewdTitleDef[] }
   outfit_two_face: {
     penalty_tags: string[]; penalty_kinds: string[]; penalty_per: number; penalty_max: number; endurance_per: number; max_pieces: number
     schools: Record<string, { lust_bonus?: number; evade?: number; save?: number }>

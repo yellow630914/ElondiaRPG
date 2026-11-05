@@ -6,6 +6,7 @@
 // - 檢索：事件發生或生成文本時，依「參與人、地點、時間」找出相關的人際關係與記憶，一起交給 AI 參考。
 // 說明見 docs/RELATIONSHIP_MEMORY.md。
 
+import { newsOf, newsText } from './npcLife'
 import { affinityStage } from './character'
 import { genderName, locationById, npcs, progression, type NpcDef } from './data'
 import { appearanceOf, npcIdentity } from './npcs'
@@ -174,7 +175,7 @@ function eventImportance(report: Report): Memory['importance'] | null {
     case 'progress':
       return dramatic || report.changes.affinity?.length ? 2 : 1
   }
-  if (report.narration?.mode === 'defeat_event' || tags.includes('主人') || tags.includes('高階事件')) return 2
+  if (report.narration?.mode === 'defeat_event' || tags.includes('主人') || tags.includes('高階事件') || tags.includes('歡愉的惡作劇')) return 2
   return dramatic ? 2 : 1
 }
 
@@ -393,7 +394,16 @@ function identityOf(state: GameState, id: string): string {
 
 function genderOf(state: GameState, id: string): string {
   const g = state.npcs?.[id]?.gender ?? npcs.find((n) => n.id === id)?.gender
-  return g ? genderName(g) : ''
+  if (!g) return ''
+  // 歡愉的惡作劇改過性別：以前的記憶照新的性別理解
+  return state.npcs?.[id]?.genderSwap ? `${genderName(g)}；性別因為歡愉的惡作劇改過，以前的記憶以這個為準` : genderName(g)
+}
+
+/** 上次見面之後的近況（npcLife.ts，最近兩則；重逢時 AI 會知道他這段時間做了什麼） */
+function recentNews(state: GameState, r: Relationship): string {
+  const seen = r.lastSeen?.time.day ?? 0
+  const list = newsOf(state, r.id).filter((n) => n.day >= seen).slice(-2)
+  return list.length ? `  近況（上次見面之後）：${list.map((n) => `第 ${n.day} 天 ${newsText(n)}`).join('；')}` : ''
 }
 
 export function formatContext(state: GameState, ctx: ContextResult): string {
@@ -408,6 +418,7 @@ export function formatContext(state: GameState, ctx: ContextResult): string {
         r.personality && `  性格：${r.personality}`,
         `  與主角：${r.toPlayer}`,
         others.length ? `  與他人：${others.join('；')}` : '',
+        recentNews(state, r),
       ].filter(Boolean).join('\n')
     })
     parts.push(`<relationships>\n${lines.join('\n')}\n</relationships>`)

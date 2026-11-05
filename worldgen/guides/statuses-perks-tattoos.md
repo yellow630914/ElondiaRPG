@@ -1,8 +1,8 @@
 # 狀態、特質、刺青與奴隸印記
 
-> 這份指南講四種內容怎麼寫：戰鬥中的狀態（`statuses`）、特質與缺陷（`perks`）、刺青圖樣（`tattoos`）、奴隸印記與印記設定（`marks`、`markRules`）。檔案的外層、id 規則、套用順序見 [content-file](content-file.md)；數值該定多少見 [balance/statuses-perks-tattoos](../balance/statuses-perks-tattoos.md)。
+> 這份指南講這幾種內容怎麼寫：戰鬥中的狀態（`statuses`）、特質與缺陷（`perks`）、刺青圖樣（`tattoos`）、奴隸印記與印記設定（`marks`、`markRules`），記在角色身上的非戰鬥狀態（`conditions`，第四部分），以及寄生物（`parasites`，第五部分）。檔案的外層、id 規則、套用順序見 [content-file](content-file.md)；數值該定多少見 [balance/statuses-perks-tattoos](../balance/statuses-perks-tattoos.md)。
 > 系統文件：[COMBAT_SYSTEM](../../docs/COMBAT_SYSTEM.md) 第 8 節（狀態怎麼運作）、[PERKS](../../docs/PERKS.md)、[TATTOOS](../../docs/TATTOOS.md)、[COMPANIONS](../../docs/COMPANIONS.md) 第 4 節（奴隸印記的條款）。
-> 程式：`src/engine/mods.ts`（`sanitizeStatus`、`sanitizePerkMod`、`perkEditorLimits`）、`src/engine/perks.ts`（`cleanPerkEffects`、`perkPower`）、`src/engine/tattooMods.ts`（`sanitizeTattooMod`、`sanitizeMarkMod`、`sanitizeMarkRules`）。
+> 程式：`src/engine/mods.ts`（`sanitizeStatus`、`sanitizePerkMod`、`perkEditorLimits`）、`src/engine/perks.ts`（`cleanPerkEffects`、`perkPower`）、`src/engine/tattooMods.ts`（`sanitizeTattooMod`、`sanitizeMarkMod`、`sanitizeMarkRules`）、`src/engine/parasiteMods.ts`（`sanitizeParasiteMod`、`PARASITE_LIMITS`）。
 
 共通的規則：
 
@@ -23,8 +23,8 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 - 戰鬥中的增益（buff）與減益（debuff）：命中、迴避、減傷的加減，幸運骰、優劣勢、傷害倍率、持續傷害、控制……。
 - 區塊：`statuses`。key：`mod_status_<英文小寫>`，例如 `mod_status_frost_ward`。
 - **項目裡不要寫 `id`**（狀態的資料沒有這一欄，寫了會被當成多出來的欄位拿掉）。
-- 狀態本身**沒有持續回合**：回合數由施加它的技能（`apply[].turns`）或物品（`use.status.turns`、`use.apply.turns`）決定，1～20 回合，在擁有者的回合開始時 -1。
-- 狀態不會自己出現：要有技能或物品施加它（第 1.3 節）。
+- 狀態本身**沒有持續回合**：回合數由施加它的技能（`apply[].turns`）或物品（`use.status.turns`、`use.apply.turns`）決定，1～20 回合（技能的 `apply[].turns` 也可以寫 99＝整場戰鬥），在擁有者的回合開始時 -1。
+- 狀態不會自己出現：要有技能或物品施加它（第 1.3 節）。內容編輯器的狀態頁會列出「🎁 怎麼出現」；一個來源都沒有時顯示 ⚠️。
 - 同一個狀態不會疊加：再被施加一次時，回合數取兩者較長的，次數（`charges`）重設。
 
 ### 1.2 欄位一覽
@@ -51,7 +51,9 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `charges` | 整數 | 1～10 | 生效幾次後消失（例如幸運骰用了一次、命中附加觸發一次）。不寫＝持續到回合用完 |
 | `custom` | `true` | | 新的狀態一定要寫 |
 
-傷害屬性：`bludgeoning` 鈍擊、`piercing` 穿刺、`slashing` 斬擊、`fire` 火焰、`cold` 寒冰、`lightning` 閃電、`thunder` 雷鳴、`acid` 酸蝕、`poison` 毒素、`radiant` 神聖、`necrotic` 暗影、`force` 奧術、`psychic` 心靈。群組（`resist`、`offense` 才能用）：`physical`、`elemental`、`divine`、`arcane`，以及 `all`。
+慾望戰鬥（成人向）的欄位也會保留：`lust_mult`、`convert`、`guard`、`lust_tick`、`struggle`、`lust_max`、`lust_scale`、`convert_low`、`on_release`、`no_climax`、`no_cleanse`、`lust_hold`、`lust_dump`、`climax_guard`。意義與範圍見 [COMBAT_SYSTEM](../../docs/COMBAT_SYSTEM.md) 8.5 節，內建的寫法可以對照 `data/rules/statuses.json`。
+
+傷害屬性：`bludgeoning` 鈍擊、`piercing` 穿刺、`slashing` 斬擊、`fire` 火焰、`cold` 寒冰、`lightning` 閃電、`thunder` 雷鳴、`acid` 酸蝕、`poison` 毒素、`radiant` 神聖、`necrotic` 暗影、`force` 奧術、`psychic` 心靈、`lust` 慾望（成人向）。群組（`resist`、`offense` 才能用）：`physical`、`elemental`、`divine`、`arcane`，以及 `all`。
 
 沒有描述欄位：說明由效果自動產生（戰鬥畫面滑過狀態看得到）。
 
@@ -164,7 +166,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 
 | 寫法 | 結果 |
 |---|---|
-| 寫了 `id`、`desc`、`turns` 或其他不在表上的欄位 | 拿掉 |
+| 寫了 `id`、`desc`、`turns` 或其他不在表上（也不是慾望戰鬥）的欄位 | 拿掉 |
 | `name` 超過 10 字 | 截掉 |
 | `kind` 寫成 `"positive"` 之類 | 變成 `buff` |
 | `mods` 裡寫小數（`1.5`）或 0 | 四捨五入；0 拿掉 |
@@ -204,10 +206,14 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `desc` | 字串 | 最多 120 字 | 描述；不寫時依效果自動產生 |
 | `effects` | 陣列 | 最多 6 個 | 效果（下表）。每個效果**只能是一種**：`check`、`combat`、`resist`、`offense` |
 | `flaw` | `true` | | 缺陷。不是缺陷就**不要寫這一欄**（`false` 也算多寫） |
-| `requires` | `{ "races", "classes" }` | 種族、職業 id | 只有這些種族或職業可以學。沒有限制就不要寫（空陣列也算多寫） |
+| `requires` | `{ "races", "classes", "perks" }` | 種族、職業、特質 id | 只有這些種族或職業可以學；`perks`：要先有的特質（例如流派的進階特質要先入門）。沒有限制就不要寫（空陣列也算多寫） |
 | `exclusive` | 陣列 | 特質 id | 互斥的特質（寫一邊就夠，兩邊都會擋） |
 | `train` | 物件 | 見下表 | 可以在哪裡受訓（缺陷：在哪裡花錢克服） |
-| `npc` | `{ "weight", "tags", "classes" }` | `weight` 整數 1～10 | 生成的 NPC 抽到的權重；`tags`（NPC 標籤）×4、`classes`（職業）×3。不寫＝NPC 不會抽到 |
+| `npc` | `{ "weight", "tags", "classes" }` | `weight` 0.1～10（小數一位） | 生成的 NPC 抽到的權重（例如 0.5＝比一般少見）；`tags`（NPC 標籤）×4、`classes`（職業）×3。不寫＝NPC 不會抽到 |
+| `camp` | `true` | | 能在城外的野外、旅途上紮營長休（隊伍裡有一個人有就可以）；強度 +3 |
+| `category` | 字串 | `social` `explore` `combat` `body` `craft` `bond` `lewd` `other` | 分類（建角時依分類折疊）；不寫時依效果推斷 |
+| `rarity` | 字串 | `common` `uncommon` `rare` `epic` `legendary` | 只決定圖示的顏色；不寫時依強度 |
+| `school`、`lust` | | | 慾望流派與流派的慾望效果（成人向，見 [LEWD_STATS](../../docs/LEWD_STATS.md) 第 6 節）。整理時保留 |
 | `custom` | `true` | | 新的特質一定要寫 |
 
 **效果**：
@@ -217,8 +223,8 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 檢定加值 | `{ "check": { 篩選 }, "bonus": 2 }` | 整數 +1～+5 | -5～+5 |
 | 戰鬥修正 | `{ "combat": { "hit": 1 } }`：`hit` `evade` `save` `damage` `dr` `ap_regen` `crit` | 整數 +1～+3 | -3～+3 |
 | 仇恨 | `{ "combat": { "threat": -0.1 } }` | -0.5～+0.5（小數兩位） | 同左 |
-| 抗性 | `{ "resist": { "fire": -0.25 } }`：key 是傷害屬性、群組或 `all`，一個效果最多 4 個 key | -0.75～+0.5，**0.25 的倍數**（負的是抗性，正的是弱點） | 同左 |
-| 增傷 | `{ "offense": { "radiant": 0.25 } }` | 0～+0.5，0.25 的倍數 | -0.5～+0.5 |
+| 抗性 | `{ "resist": { "fire": -0.25 } }`：key 是傷害屬性、群組、`all` 或 `lust`（慾望），一個效果最多 4 個 key | -0.75～+0.5，**0.05 的倍數**（負的是抗性，正的是弱點） | 同左 |
+| 增傷 | `{ "offense": { "radiant": 0.25 } }` | 0～+0.5，0.05 的倍數 | -0.5～+0.5 |
 
 **檢定的篩選**（`check` 裡的欄位；同一欄是「或」，不同欄是「且」；`"check": {}`＝所有檢定）。每一欄最多 8 個：
 
@@ -226,7 +232,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 |---|---|
 | `attrs` | `str` 力量、`dex` 靈巧、`int` 智力、`fai` 信仰、`cha` 魅力 |
 | `contexts` | `action` 主動行動、`negotiation` 談判、`master_event` 回應主人、`gate` 城門盤查、`trap` 察覺陷阱、`lock` 開鎖、`travel` 旅行途中的危險、`road` 旅途上的事件、`quest` 執行委託、`retreat` 撤出地下城、`stealth` 潛行、`initiative` 戰鬥先攻、`save` 戰鬥中的豁免 |
-| `kinds` | 主動行動的種類（`data/rules/actions.json` 的 `kinds`）：`hire` `haggle` `invite` `squad_join` `propose` `black_market` `negotiate` `escape` `bargain` `negotiation` `rest_talk` `chat` `gift` `flatter` `bluff` `intimidate` `steal` `attack` `master_permit` `master_leave` `marking` `master_event` `master_return` `seek_master` `work` `patron` `unmark` `story` `defeat_event` `craft` `make` `produce` `train` `explore` `perk_pitch` `invent` |
+| `kinds` | 主動行動的種類（`data/rules/actions.json` 的 `kinds`）：`hire` `haggle` `invite` `squad_join` `propose` `black_market` `negotiate` `escape` `bargain` `negotiation` `rest_talk` `chat` `gift` `flatter` `bluff` `intimidate` `steal` `attack` `master_permit` `master_leave` `marking` `master_event` `master_return` `seek_master` `work` `patron` `unmark` `story` `defeat_event` `craft` `make` `produce` `train` `explore` `perk_pitch` `invent` `free` `seduce` `unbind` `palace_gate` |
 | `vs_tags` | 對象的標籤（`data/rules/npc_tags.json`）：`traveler` `merchant` `commoner` `slave` `noble` `royal` `priest` `bishop` `good` `villain` `prostitute` |
 
 **`kinds` 與 `vs_tags` 不會被檢查**：寫錯的值會留著，但永遠不會成立，世界檢查也看不出來。一定照上表抄。
@@ -246,6 +252,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 - 檢定加值 × 範圍：所有檢定 4、每個屬性 1.5、每個情境 0.75、每個行動或標籤 0.5（同一欄寫幾個就乘幾個，最多 4；不同欄取最窄的）。
 - 戰鬥修正：每點 ×2（`ap_regen` 每點 ×4；`threat` 不算）。
 - 抗性、增傷：每 0.25 算 1；弱點、負的加值算負的。
+- `camp` 算 3；流派的慾望效果（`lust`）另外算。
 - **一般特質不能超過 4.5**（內建最強：識途老馬、逆來順受）。世界檢查超過時是錯誤。新特質對準 2～3；缺陷對準 -2.5～-3.5。
 - 例：`{ "check": { "contexts": ["road", "travel"] }, "bonus": 1 }` ＝ 1 × 1.5 ＝ 1.5；`{ "combat": { "hit": 1 } }` ＝ 2；`{ "check": {}, "bonus": 2 }` ＝ 8（太強）。
 
@@ -266,9 +273,12 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 受訓 | 特質的 `train` | 見上表。缺陷有 `train` 時是「克服缺陷」 |
 | 書籍 | 物品的 `use.perks`（[items-gear](items-gear.md)） | `["<id>", ...]`，最多 6 個；讀完得到一次機會 |
 | 固定 NPC | NPC 的 `perks`（[npcs](npcs.md)） | `["<id>", ...]`；空陣列＝沒有特質；不寫＝依 id 隨機抽 |
-| 生成的 NPC | 特質的 `npc` | `weight` 1～10 |
+| 老師 | 固定 NPC 的 `mentor.perks`（[npcs](npcs.md)） | `["<id>", ...]`，最多 8 個（缺陷、種族特質不行）；他在身邊時可以向他受訓 |
+| 生成的 NPC | 特質的 `npc` | `weight` 0.1～10 |
 | 特殊任務、旅途與城鎮事件的結果 | `effects`（[stories](stories.md)、[events](events.md)） | `{ "type": "perk", "perk": "<id>", "options": ["<id>"] }`：一次機會，從這幾個選一個（最多 6 個）；加 `"direct": true` 直接學會。**缺陷一律直接染上** |
 | 失去、克服 | 同上 | `{ "type": "lose_perk", "perk": "<id>" }` |
+
+內容編輯器的特質頁會列出「🎁 怎麼學到」；一個來源都沒有時顯示 ⚠️。
 
 ### 2.4 最小範例
 
@@ -353,7 +363,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 一般特質寫負的 `bonus` 或負的戰鬥修正 | 那個效果拿掉（不會翻成正的）。要負的就加 `"flaw": true` |
 | `bonus` 超過 5、戰鬥修正超過 3 | 夾到 5、3 |
 | 一個效果同時寫 `check` 和 `combat`（或 `resist`……） | 只留第一種（依 `check` → `combat` → `resist` → `offense` 的順序），其他拿掉。拆成兩個效果 |
-| `resist` 寫 `-0.3`、`-0.1` | 變成 0.25 的倍數（-0.25、0 → 拿掉） |
+| `resist`、`offense` 寫 `-0.33`、`0.12` | 變成 0.05 的倍數（-0.35、0.1）；絕對值小於 0.025 的變 0 → 拿掉 |
 | `resist` 寫 `-1`（免疫） | 夾到 -0.75 |
 | 一般特質寫負的 `offense` | 夾到 0 → 拿掉 |
 | 戰鬥修正寫小數（`1.5`） | 四捨五入 |
@@ -361,7 +371,8 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `train.cells` 寫 `gate`、`road` 等不能受訓的地方 | 拿掉 |
 | `train.cells` 寫不存在的 `shop_…`、`lm_…` | **留著**，但沒有地方可以受訓（不會被發現） |
 | `kinds`、`vs_tags` 寫錯 | **留著**，但永遠不成立（不會被發現） |
-| `npc.weight: 0` | 整個 `npc` 拿掉 |
+| `npc.weight: 0`（或小於 0.05） | 整個 `npc` 拿掉 |
+| `npc.weight` 寫兩位小數（`0.45`） | 留一位小數（`0.5`） |
 | `npc.tags`、`requires`、`npc.classes` 寫不存在的標籤、種族、職業 | 那一項拿掉 |
 | 寫 `race` | 自建的特質拿掉 `race` |
 | 一般特質強度超過 4.5 | 不會被改，但世界檢查是**錯誤**：減少效果或縮小範圍 |
@@ -400,7 +411,10 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `name` | 字串 | 最多 12 字 | 名稱 |
 | `desc` | 字串 | 最多 160 字 | 外觀（AI 會讀到） |
 | `places` | 陣列 | `neck` 頸部、`left_arm` 左臂、`right_arm` 右臂、`chest` 胸口、`back` 背部、`belly` 小腹、`hips` 臀部、`left_thigh` 左大腿、`right_thigh` 右大腿、`left_calf` 左小腿、`right_calf` 右小腿 | 建議的部位（效果沒指定部位時，從這裡挑空著的）。不寫＝任何部位 |
-| `attrs` | 物件 | 只有 `oath`：`str` `dex` `int` `fai` `cha`，每項整數 ±1～±3 | 誓約的屬性加減：**最多 3 項、有加也有減、加總為 0**。不合規則時**整筆不收** |
+| `attrs` | 物件 | 只有 `oath`：`str` `dex` `int` `fai` `cha`，每項整數 ±1～±3 | 誓約的屬性加減：**最多 3 項、有加也有減、加總為 0**。超過 ±3 的夾到 ±3、小數四捨五入、其他 key 拿掉；整理後還不合規則時**整筆不收** |
+| `lust` | `{ "max", "bonus" }` | 只有 `plain`：`max` 0～0.5（小數兩位）、`bonus` 整數 0～5 | 淫紋（成人向）：慾望上限的比例、造成的慾望 |
+| `price` | 整數 | 0～10000 | 刺的時候另外加的價錢；0 不寫 |
+| `adult` | `true` | | 成人向的圖樣 |
 | `custom` | `true` | | 新的圖樣一定要寫 |
 
 **奴隸印記**（`marks`）。沒寫的欄位整理時補預設值：
@@ -419,6 +433,7 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | `obedience_penalty` | 整數 | 0～10（2） | 對主人的檢定懲罰 |
 | `side_effects` | 陣列 | 最多 4 項，每項最多 40 字 | 副作用的文字（AI 會讀到） |
 | `spell_cap` | 整數 | 0～9 | 最多施放幾環法術（魔力封印）。沒有封印就不要寫 |
+| `submission_every` | 整數 | 0～7 | 每幾天順從 +1；0 或不寫＝不累積（內建：`labor` 3、`combat` 4、`arcane` 2、`brothel` 1） |
 | `custom` | `true` | | 新的印記一定要寫 |
 
 功能（身分標示、服從、收益歸屬、追蹤、距離束縛、魔力封印）依數值推得，不用另外寫。
@@ -520,7 +535,8 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 | 寫法 | 結果 |
 |---|---|
 | 寫了 `id` 或其他不在表上的欄位（例如印記的 `desc`、`functions`） | 拿掉 |
-| 誓約加總不是 0、只有加沒有減、超過 3 項、某項超過 ±3 或有小數 | **整筆不收**（報告是錯誤「整筆被拿掉」） |
+| 誓約某項超過 ±3 或有小數（`{ "fai": 4, "cha": -4 }`、`1.4`） | 夾到 ±3、四捨五入（`3`／`-3`、`1`），再檢查下一列的規則 |
+| 誓約（整理後）加總不是 0、只有加沒有減、超過 3 項 | **整筆不收**（報告是錯誤「整筆被拿掉」） |
 | 普通刺青寫 `attrs` | 拿掉 |
 | `places`、`place` 寫 `face`、`hand` 等不存在的部位 | 拿掉；印記的 `place` 變成 `neck` |
 | 印記的數值超出範圍（例如 `income_share: 1.5`、`negotiate_dc: 40`） | 夾在範圍內 |
@@ -538,3 +554,135 @@ WORLD=worldgen/worlds/<代號>/world.json WORLD_TRIALS=6 npx vitest run src/__te
 - [COMPANIONS](../../docs/COMPANIONS.md) 第 4 節（奴隸契約印記的條款與功能）、2.4 節（主角作為奴隸）、3.3 節（逃亡與解除印記）。
 - [CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.7 節（刺青頁籤）、[STORY_QUESTS](../../docs/STORY_QUESTS.md)（`enslave_player`）。
 - 內建的資料：`data/rules/tattoos.json`（圖樣）、`data/rules/slavery.json`（`contracts`、`roles`、`market_contracts`、`marking.severity`、`self_sale.contract_weights`）。
+
+---
+
+## 第四部分：非戰鬥狀態（`conditions`）
+
+### 4.1 用途與放在哪裡
+
+- 記在角色身上、戰鬥外也在的狀態：用餐（果腹……傳說料理）、喝酒（興致高昂、微醺）、祝福、受罰……。影響主動行動的檢定與每場戰鬥的開始。
+- 區塊：`conditions`。key：自建的要符合 `/^mod_cond_[a-z0-9]{1,24}$/`：**`mod_cond_` 之後不能再有底線**（`mod_cond_frostbite` 可以，`mod_cond_frost_bite` 整筆不收）。改內建的用原本的 id（`data/rules/companions.json` 的 `conditions`），寫整份。
+- 項目裡不要寫 `id`。
+- 怎麼得到：事件、特殊任務、地標的 `condition` 效果（`{ "type": "condition", "target": "pc", "condition": "<id>", "add": true }`，`add: false` 是拿掉）、物品的 `use.condition`（[items-gear](items-gear.md)）。同一包裡新增的都認得。
+- 系統狀態（`slave_mark` 奴隸印記、`fugitive` 逃亡、`away` 暫時離隊）由遊戲規則加上與解除：只能改名稱、說明與效果，獲得的規則（下表最後四列）照內建；也不能當效果給。
+
+### 4.2 欄位一覽
+
+| 欄位 | 型別 | 範圍 | 說明 |
+|---|---|---|---|
+| `name` | 字串 | 最多 10 字 | 名稱 |
+| `desc` | 字串 | 最多 160 字 | 說明（寫清楚效果與什麼時候解除） |
+| `check_penalty` | 整數 | -5～5 | 主動行動的檢定加減：**負數是加值**（-1＝檢定 +1）。0 拿掉 |
+| `check_attrs` | 陣列 | `str` `dex` `int` `fai` `cha` | `check_penalty` 只作用在這些屬性；不寫或五個都寫＝所有檢定 |
+| `combat_mods` | 物件 | `hit` `evade` `save` `damage` `dr` `ap_regen` `crit`：整數 -5～5；`threat`：-1～2（小數兩位） | 每場戰鬥的修正（幾個狀態相加）。0 拿掉 |
+| `combat_temp_hp` | 整數 | 0～50 | 每場戰鬥開始時的暫時生命（幾個狀態取最高的） |
+| `combat_lust_max` | 數字 | -0.9～2（小數兩位） | 每場戰鬥的慾望上限倍率加減（0.2＝+20%，成人向）。0 拿掉 |
+| `clears` | `"long_rest"` | | 下次長休時解除。不寫＝一直留著，要用效果拿掉 |
+| `group`、`rank` | 字串（小寫英數與底線，最多 16 字）、整數 1～9 | | 同組只留 `rank` 最高的（例如用餐的 `meal`）。`group` 不合時兩個都拿掉 |
+| `stacks_to` | 狀態 id | 別的非戰鬥狀態 | 已經有了、再獲得一次時變成這個（喝酒 → 微醺） |
+| `replaces` | 陣列 | 別的非戰鬥狀態 | 獲得時拿掉這些 |
+| `custom` | `true` | | 新的狀態一定要寫 |
+
+`stacks_to`、`replaces` 不能是自己或系統狀態，要是內建的或同一個檔案裡新增的；不存在的拿掉。
+
+### 4.3 範例
+
+```json
+{
+  "type": "elondia-content",
+  "conditions": {
+    "mod_cond_frostbite": {
+      "name": "凍傷",
+      "desc": "手腳凍得不聽使喚。下次長休前靈巧檢定 -1，戰鬥中迴避 -1。",
+      "check_penalty": 1,
+      "check_attrs": ["dex"],
+      "combat_mods": { "evade": -1 },
+      "clears": "long_rest",
+      "custom": true
+    }
+  }
+}
+```
+
+### 4.4 常見錯誤
+
+| 寫法 | 結果 |
+|---|---|
+| 自建的 id 不是 `mod_cond_` 開頭、之後有底線或大寫 | 整筆不收 |
+| 想要檢定 +1 卻寫 `"check_penalty": 1` | 變成 -1（正負相反） |
+| 數值超出範圍、`combat_mods` 寫小數 | 夾在範圍內、四捨五入 |
+| 只寫 `check_attrs` 沒寫 `check_penalty`，或五個屬性都寫 | `check_attrs` 拿掉 |
+| 只寫 `rank` 沒寫 `group` | `rank` 拿掉 |
+| `stacks_to`、`replaces` 指到自己、系統狀態或不存在的狀態 | 拿掉 |
+| `clears` 寫 `"short_rest"`、`"day"` | 拿掉（只有 `long_rest`） |
+
+系統文件：[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.55 節的「非戰鬥狀態」、[COMPANIONS](../../docs/COMPANIONS.md) 第 4 節的最後一段。
+
+---
+
+## 第五部分：寄生物（`parasites`）
+
+### 5.1 用途與放在哪裡
+
+寄生在主角身上的東西：脫不下來的裝備（`gear`）、小腹的詛咒印記（`mark`，淫紋）、體內的種子（`seed`）。侵蝕度 0～100 分四個階段（潛伏 0+、發作 30+、共生 60+、支配 90+），階段決定被動效果與能出現的發作事件。系統見 [ADULT_EVENTS](../../docs/ADULT_EVENTS.md) 第 6 節，編輯器見 [CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.75 節。
+
+分兩類（`category`）：
+
+- `tameable`（可馴服）：配一條任務線，最後用 `{ "type": "parasite", "parasite": "<id>", "op": "tame" }` 馴服，換成 `tamed` 寫的物品、印記、增益與技能。
+- `short`（短期寄生）：沒有馴服。結局寫在它自己的發作事件裡（高階段的事件用 `"op": "remove"` 拿掉），或靠解咒。
+
+寄生物本身不會出現：要有事件、任務或地標用 `"op": "add"` 寄生它，還要有它的發作事件（`travelEvents` 裡 `"scope": "parasite"`、`"parasite": "<id>"`，可以用 `"stages": [1, 2]` 限定階段，[events](events.md)）。
+
+### 5.2 欄位一覽
+
+| 欄位 | 說明 |
+|---|---|
+| `name`、`desc` | 名稱（16 字）、描述（200 字） |
+| `kind` | `gear`、`mark`、`seed`（沒寫是 `seed`）；內建的不能改 |
+| `category` | `tameable` 或 `short`；沒寫時有 `tamed` 的算可馴服 |
+| `item`、`slot` | 只有 `gear`：鎖住的裝備（物品名稱，要存在）與欄位（例如 `underwear_top`），兩個都要寫 |
+| `place`、`mark` | 只有 `mark`：部位（沒寫是 `belly`）、`{ "name", "desc" }` 印記的名稱與外觀 |
+| `grow_per_day` | 每天侵蝕度增加（0～50） |
+| `stage_effects` | 四個階段各一個陣列：`{ "check": { "attrs": [...], "kinds": [...] }, "bonus": -1 }`（每階段最多 4 項，±5，0 拿掉） |
+| `stage_abilities` | 四個階段各一個技能 id 的陣列（最多 3 個）：還沒馴服時戰鬥中可以用 |
+| `stage_lust` | 四個數字：開戰時帶著的慾望（慾望上限的比例，0～1） |
+| `two_face` | 四個物件：修了流派的人在戰鬥中的修正，`hit`、`evade`、`save`、`damage`、`dr`、`lust_bonus`（整數 ±5） |
+| `remove` | `{ "dc": 8～30, "price": 0～100000 }`：神殿或刻印師解咒的基準；沒寫不能解咒 |
+| `reink_price` | 只對 `mark` 有用：刻印師紋回來的價錢（沒寫是 500） |
+| `stories`、`flag_prefix` | 它的任務線（解咒時中止，最多 12 個）與旗標前綴（`xxx_` 結尾，解咒時清掉） |
+| `tamed` | 只有可馴服的：`scene`（馴服的場景，400 字）與 `text`（一句話，200 字）都要寫才收；`item`（`gear` 換成的物品）、`mark`（`mark` 換成的印記：`name`、`desc`、`attrs` 每項 ±3、`check` 與 `bonus` 0～5）、`buff`（主動喚醒給的非戰鬥狀態）、`ability`（獸蟲派可用的技能） |
+
+### 5.3 最小範例（短期寄生）
+
+```json
+{
+  "type": "elondia-content",
+  "parasites": {
+    "mod_par_spores": {
+      "name": "夜光蘑菇的孢子", "kind": "seed", "category": "short",
+      "desc": "吸進肺裡的孢子，會在體內發光。",
+      "grow_per_day": 25,
+      "stage_effects": [[], [{ "check": { "attrs": ["int"] }, "bonus": -1 }], [{ "check": { "attrs": ["int"] }, "bonus": -1 }], [{ "check": { "attrs": ["int"] }, "bonus": -2 }]],
+      "two_face": [{}, { "dr": 1 }, { "dr": 1 }, { "dr": 2, "save": 1 }],
+      "remove": { "dc": 12, "price": 300 },
+      "custom": true
+    }
+  }
+}
+```
+
+再寫一件會寄生它的事件（`"op": "add"`）與幾件它的發作事件，支配階段的那件用 `"op": "remove"` 讓孢子散掉。
+
+### 5.4 常見錯誤
+
+| 寫法 | 結果 |
+|---|---|
+| 自建的 id 不是 `mod_par_` 開頭 | 整筆不收 |
+| `gear` 沒寫 `item`、`slot`，或物品不存在 | 整筆不收 |
+| 短期寄生寫了 `tamed`，或 `tamed` 少了 `scene`、`text` | `tamed` 拿掉 |
+| 階段的陣列不是四個 | 補成四個（缺的是空的）、多的拿掉 |
+| 技能、物品、任務 id 不存在 | 拿掉 |
+| 沒有任何東西寄生它、沒有發作事件 | 收下，但遊戲裡不會出現或不會發作（編輯器會提醒） |
+| 把雙面效應寫在 `lewd.json` 的 `parasite_two_face` | 內容檔沒有這個區塊：寫在寄生物的 `two_face` |
+

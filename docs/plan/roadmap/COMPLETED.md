@@ -12,6 +12,11 @@
 - 收尾：地下城可以上傳一張圖，在裡面當整頁背景（縮到 1280 以內的 WebP，存在世界裡）；匯入「取代全部內容」先還原成原版再整理新內容，拿掉的自建地下城與改了所屬地點的特殊地圖列在頁面上方，匯入按鈕旁有 ⚠ 說明（存檔照 `pruneLocations` 清理，不會壞）。
 - 規則寫在 [CONTENT_EDITOR](../../CONTENT_EDITOR.md) 3.96 節、[CONTENT_DEPENDENCIES](../../CONTENT_DEPENDENCIES.md) 第 1、2 節、[WORLD](../../WORLD.md) 第 1 節、[DUNGEON_DESIGN](../../DUNGEON_DESIGN.md) 第 2 節、[MONSTERS](../../MONSTERS.md)、[worldgen/guides/dungeons](../../../worldgen/guides/dungeons.md)。測試：`dungeonMods.spec.ts`、`dungeonEditor.spec.ts`、`worldCheckTool.spec.ts`。
 
+### 2026-11-02 慾望戰鬥 S10：流派的老師與秘法書、寄生類的雙面效應、稱號（R8）
+
+- 擁有者的決定：補一定數量的流派老師與秘法書；補寄生類的雙面效應；聲望交叉與身分標籤不只看曝露名聲，也看其他慾望指標，**目前只給稱號、沒有效果**；奧托三世（LOGIC_ISSUES L5）、哥布林左耳（L4）先不動。
+- 老師：固定 NPC 的 `mentor`（`perks.json` 的 `mentor` 預設），在身邊時受訓面板多出他教的特質；8 位流派老師。秘法書 8 本，所有特質書只給現在學得了的特質。寄生類的雙面效應（`lewd.json` 的 `parasite_two_face`）。稱號 15 個（`lewd.json` 的 `titles`）。資料由 `worldgen/scripts/elondia/lust_s10.py` 產生；規則在 [LEWD_STATS](../../LEWD_STATS.md) 第 6.1、14.1、28 節。
+
 ### 2026-11-01 魔物娘與擴大發情（R14）
 
 - 目的：補足陽剛體型主角的成人內容。調查時發現兩個原因：會在戰敗後起意的怪物只有標了 `rut` 的 54 隻（48 隻是野獸），而且怪物的 `desc` 根本沒有送給 AI（只在圖鑑顯示，敘事只拿到名字）。

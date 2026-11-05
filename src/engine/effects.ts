@@ -25,6 +25,7 @@ import { withRng } from './state'
 import { gearKnown, registerGear, syncGear } from './gear'
 import type { Character, GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
+import { discoverLead, leadById } from './leads'
 import { hearOf } from './bestiary'
 import { inActiveSquad } from './squads'
 import { joinGroup, queueJoin } from './away'
@@ -88,12 +89,12 @@ export type RewardEffect =
   /** 認識新的人（例如同旅館的旅客）：登錄 NPC、建立人際關係，平常待在 spot */
   | { type: 'meet'; npc: NpcSpec; affinity?: number; to_player?: string; spot?: string }
   /** 情報：在近郊或地下城的某一層放一個事件點（戰鬥、寶物、流浪商人），記在冒險筆記 */
-  | { type: 'intel'; intel: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> }
+  | { type: 'intel'; intel: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'>; lead?: string }
   /**
    * 向人打聽到的傳聞（AI 判定的 rumor，程式驗證過地點與怪物）：記在冒險筆記的情報頁；
    * point 是驗證過、可以放事件點的傳聞（某處盤踞著某種怪物）；monster 點亮怪物圖鑑
    */
-  | { type: 'rumor'; title: string; text: string; npc?: string; location?: string; monster?: string; point?: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'> }
+  | { type: 'rumor'; title: string; text: string; npc?: string; location?: string; monster?: string; point?: Omit<Intel, 'id' | 'from' | 'time' | 'status' | 'kind'>; lead?: string }
   /** 開始一個特殊任務（情報商賣的任務消息） */
   | { type: 'start_story'; story: string }
   /** 主人把主角帶回主人的家（主人的事件用） */
@@ -550,11 +551,21 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         break
       }
       case 'intel': {
-        const it = addIntel(state, { ...e.intel, kind: 'point' })
+        // 線索池的線索（向情報商買的）：照原本的 id 記進筆記
+        const lead = e.lead ? leadById(state, e.lead) : undefined
+        const it = lead ? discoverLead(state, lead) : addIntel(state, { ...e.intel, kind: 'point' })
         notes.push(`記下情報「${it.title}」`)
         break
       }
       case 'rumor': {
+        // 線索池裡隱藏的線索（AI 照 <world_facts> 說出來的）：照原本的 id 記進筆記
+        const hidden = e.lead ? leadById(state, e.lead) : undefined
+        if (hidden && hidden.status === 'active') {
+          const known = discoverLead(state, hidden)
+          if (e.npc) known.npc = e.npc
+          notes.push(`記下情報「${known.title}」（地圖上會出現事件點）`)
+          break
+        }
         const extra = { ...(e.npc ? { npc: e.npc } : {}), ...(e.monster ? { monster: e.monster } : {}) }
         const it = e.point
           ? addIntel(state, { ...e.point, title: e.title || e.point.title, text: e.text || e.point.text, kind: 'point', ...extra })

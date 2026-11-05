@@ -187,7 +187,8 @@ export interface PerkLimits {
 /** 整理特質的效果：未知的欄位拿掉，數值夾在範圍內；檢定加值與戰鬥修正的正負號不在範圍內的拿掉（不翻成另一邊），0 也拿掉 */
 export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
   const effects: PerkEffect[] = []
-  const quarter = (v: unknown, [lo, hi]: [number, number]) => Math.round(Math.max(lo, Math.min(hi, Number(v) || 0)) * 4) / 4
+  // 抗性、加成以 0.05 為單位（內建的種族特質有 -0.1 這種值）
+  const quarter = (v: unknown, [lo, hi]: [number, number]) => Math.round(Math.max(lo, Math.min(hi, Number(v) || 0)) * 20) / 20
   for (const e of (Array.isArray(raw) ? raw : []) as Record<string, unknown>[]) {
     if (effects.length >= c.effects || !e || typeof e !== 'object') continue
     if (e.check && typeof e.check === 'object') {
@@ -224,7 +225,8 @@ export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
       const resist: AffinityMap = {}
       for (const [k, v] of Object.entries(e.resist as Record<string, unknown>).slice(0, 4)) {
         const n = quarter(v, c.resist)
-        if (n && damageTypeName(k) !== k) resist[k] = n
+        // 慾望（lust）不是傷害類型，但可以抗（例如精靈的種族特質）
+        if (n && (damageTypeName(k) !== k || k === 'lust')) resist[k] = n
       }
       if (Object.keys(resist).length) effects.push({ resist })
     } else if (c.offense && e.offense && typeof e.offense === 'object') {

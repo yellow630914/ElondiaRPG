@@ -6,11 +6,11 @@
 // - 逃亡後被找到、逾期被帶回家：直接回到主人的家，而且「嚴加看管」，之後出門與出城都更難。
 // - 家裡的人（伴侶、子女、僕人、奴隸）依房子的規模生成；同一位主人一直是同一批人，換主人就換一批。
 
-import { homeRules, locationById, npcTags, slaveryRules, type Degree, type HouseholdPattern } from './data'
+import { GENDER_IDS, homeRules, locationById, npcPool, npcTags, slaveryRules, type Degree, type HouseholdPattern } from './data'
 import { currentArea, getArea, placeAt, position, type Area } from './grid'
 import { generateHome, homeOfArea, manorOf } from './homes'
 import { setMasterHomeResolver } from './homeResolver'
-import { generateNpc, npcRecord, weightedPick } from './npcs'
+import { generateNpc, npcRecord, occupationFor, weightedPick } from './npcs'
 import { addAffinity, isBound, pcOf, punish } from './party'
 import { contractTerms } from './slavery'
 import { contractOf } from './tattoos'
@@ -131,11 +131,6 @@ function dropHousehold(state: GameState, household: string[]) {
 
 // ---- 家裡的人 ----
 
-const TITLE: Record<'spouse' | 'child', Record<string, string>> = {
-  spouse: { male: '丈夫', female: '妻子' },
-  child: { male: '兒子', female: '女兒' },
-}
-
 /**
  * 生成主人家裡的人（slavery.json 的 master_home.household）：依房子的規格抽一種組成，再生成伴侶、僕人、奴隸與子女。
  * 子女的種族從家裡的大人（主人、伴侶、僕人、奴隸）之中抽。用主人自己的種子，同一位主人一直是同一批人。
@@ -153,8 +148,12 @@ function generateHousehold(state: GameState, home: Home, master: NpcRecord): str
   const people: { rec: NpcRecord; place: 'family' | 'servant' | 'slave' }[] = []
   if (p.spouse && rng.chance(p.spouse)) {
     const inherit = (master.tags ?? []).filter((t) => h.spouse_inherits.includes(t))
-    const rec = make({ ...(rng.chance(h.spouse_same_race) ? { race: master.race } : {}), tags: inherit.length ? inherit : ['commoner'] })
-    rec.occupation = `${master.name}的${TITLE.spouse[rec.gender ?? ''] ?? '伴侶'}`
+    // 主人的性別限定伴侶的性別（spouse_genders：男性的主人不會有丈夫）
+    const allowed = (h.spouse_genders?.[master.gender ?? ''] ?? []).filter((g) => GENDER_IDS.includes(g))
+    const gender = allowed.length ? weightedPick(rng, Object.fromEntries(allowed.map((g) => [g, npcPool.genders[g]!.weight]))) : undefined
+    const rec = make({ ...(rng.chance(h.spouse_same_race) ? { race: master.race } : {}), ...(gender ? { gender } : {}), tags: inherit.length ? inherit : ['commoner'] })
+    // 稱謂照 npc_tags.json 的 gendered_occupations（妻子／丈夫／伴侶）
+    rec.occupation = occupationFor(`${master.name}的伴侶`, rec.gender)
     people.push({ rec, place: 'family' })
   }
   for (let i = count(p.servants); i > 0; i--) people.push({ rec: make({ tags: ['commoner'], occupation: rng.pick(h.servant_jobs) }), place: 'servant' })
@@ -163,7 +162,7 @@ function generateHousehold(state: GameState, home: Home, master: NpcRecord): str
   const races = [master.race, ...people.map((x) => x.rec.race)]
   for (let i = count(p.children); i > 0; i--) {
     const rec = make({ race: rng.pick(races), level: 1, tags: master.tags?.some((t) => h.spouse_inherits.includes(t)) ? master.tags.filter((t) => h.spouse_inherits.includes(t)) : ['commoner'] })
-    rec.occupation = `${master.name}的${TITLE.child[rec.gender ?? ''] ?? '孩子'}`
+    rec.occupation = occupationFor(`${master.name}的孩子`, rec.gender)
     people.push({ rec, place: 'family' })
   }
   placeHousehold(home, people, rng)

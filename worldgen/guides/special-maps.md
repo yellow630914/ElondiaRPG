@@ -11,7 +11,7 @@
 - 每一筆的 key 就是 id，要符合 `/^sm_[a-z0-9_]+$/`。不合的整筆丟掉。建議加上世界的前綴，例如 `sm_myworld_crypt`。
 - 區域 key 是 `sm/<id>`：通道、固定 NPC 用這個指地圖；特殊任務的 `special_map` 寫的是 id（不加 `sm/`）。
 - **新增**：寫 `"custom": true`。
-- **修改內建**（`sm_rhineburg_sewer`、`sm_rhineburg_cistern`）：用內建的 id、不寫 `custom`，**寫整份**（從 `data/world/special_maps.json` 複製再改）：沒寫的欄位會被拿掉或換成預設。
+- **修改內建**（`data/world/special_maps.json` 的 `maps`，例如 `sm_rhineburg_sewer`）：用內建的 id、不寫 `custom`，**寫整份**（從 `data/world/special_maps.json` 複製再改）：沒寫的欄位會被拿掉或換成預設。
 
 ## 2. 欄位一覽
 
@@ -20,7 +20,7 @@
 | `id` | 字串 | 同 key | 寫和 key 一樣的值 |
 | `custom` | `true` | | 新增的一定要寫 |
 | `name` | 字串 | 1～16 字 | 地圖名稱 |
-| `location` | 地點 id | `geography.json` 的任何地點（聚落或地下城） | 所屬地點；寫錯換成第一個地點（`soriel`） |
+| `location` | 地點 id | `geography.json` 的任何地點（聚落或地下城），或同一個包裡 `dungeons` 新增的地下城（[dungeons.md](dungeons.md)） | 所屬地點；寫錯換成第一個地點（`soriel`） |
 | `desc` | 字串 | ≤ 300 字 | 給 AI 的描述：在裡面時每一則日誌的場景都帶上名稱與描述。寫外觀、氣氛、危險 |
 | `lighting` | `lit`／`daylight`／`dark` | | 一直有光／白天有光／黑暗；沒寫時 `dark` |
 | `layer` | `outskirts`／`shallow`／`middle`／`deep`／`abyss` | | 陷阱的 DC 與傷害、寶箱上鎖比照地下城的哪一層；所屬地點是地下城而且沒寫 `table` 時，也用這一層的遭遇。沒寫時 `shallow` |
@@ -93,9 +93,9 @@
 - `to.area`：
   - **城鎮區塊** `<聚落 id>/<區塊 id>`：那一格要是**牆 `#` 或水 `~`**，而且不是待售房子的格子，不是的話整條通道拿掉。打開時那一格變成通道，關著時還是牆。
   - **別張固定特殊地圖** `sm/<id>`：任何一格都可以（同一個包裡的地圖也認得）。不能接自己。
-  - 近郊、地下城每次重新生成，不能接。
+  - 近郊、地下城每次重新生成，不能接。例外：園區的入口廣場（`geography.json` 裡園區的 `park` 寫的那張地圖）可以接 `dungeon/<園區 id>`，座標換成 (0, 0)，`requires` 照樣保留；只在修改內建的 `sm_lust_park` 時用得到。
 - `to.x`、`to.y`：要在對方地圖內。
-- `requires.flags`、`requires.flags_none`：各最多 4 個劇情旗標；成立時才打開。沒寫時一直開著。
+- `requires.flags`、`requires.flags_none`：各最多 8 個劇情旗標；成立時才打開。沒寫時一直開著。
 - **一條通道只寫一次**（寫在其中一張特殊地圖上），另一頭自動接回來。
 - 走上通道格就站到另一頭的通道格上；從城鎮走進來時記下回程，走回城鎮那一頭就算離開。
 
@@ -139,7 +139,7 @@
 
 | 欄位 | 要先有 |
 |---|---|
-| `location` | `geography.json` 的地點（地點不能從內容包新增） |
+| `location` | `geography.json` 的地點，或同一個包裡 `dungeons` 新增的地下城（聚落不能從內容包新增） |
 | `table` | 內建或同一個包裡的怪物 id（見 2.2） |
 | `resource_items` | 內建或同一個包裡的物品名稱（見 2.2） |
 | `connections[].to.area` | 聚落的區塊（`data/world/maps.json`），或內建、同一個包裡的固定特殊地圖 |
@@ -299,7 +299,7 @@
 | `entry` 在地圖外 | 拿掉 |
 | 隨機地圖（沒有 `grid`）寫了 `connections`、`shops` | 拿掉 |
 | 通道的城鎮那一頭不是牆或水（街道、商店、城門、區塊之間的數字格），或是待售房子的格子 | 整條拿掉 |
-| 通道的 `to.area` 拼錯、接到近郊或地下城、接自己、座標在對方地圖外 | 整條拿掉 |
+| 通道的 `to.area` 拼錯、接到近郊或地下城（園區入口廣場的 `dungeon/<園區 id>` 除外）、接自己、座標在對方地圖外 | 整條拿掉 |
 | `at` 在這張地圖外 | 整條拿掉 |
 | 超過 8 條通道 | 只看前 8 條（不合的也算在內） |
 | `shops` 用了 `shop`（應該是 `general`）、`inn`、`guild`、`wanderer`、不存在的自建商店、格子在地圖外、兩家同一格 | 拿掉那一家 |

@@ -2,20 +2,23 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import worldbook from '../../data/worldbook/elondia.worldbook.json'
 import { finishCombat, startCombat } from '@/engine/combat'
+import { fightToEnd } from './helpers/fight'
 import { combatRules, enemies } from '@/engine/data'
-import { setDefeatAlways, setMonsterGirl } from '@/engine/content'
+import { setDefeatAlways, setMonsterGirl, setMonsterGirlChance } from '@/engine/content'
 import { afterCombat, goOutskirts } from '@/engine/grid'
+import { applyDefeatResponse } from '@/engine/defeat'
 import { sanitizeEnemy } from '@/engine/mods'
 import { prepareAction } from '@/engine/actions'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 import { composeJudge, composeNarration } from '@/narrator/compose'
 import { loreItems, type Worldbook } from '@/narrator/lore'
-import { monstersText } from '@/narrator/monsters'
+import { girlRolled, monsterLines, monstersText } from '@/narrator/monsters'
 import { defaultPromptConfig } from '@/narrator/promptConfig'
 
 afterEach(() => {
   setMonsterGirl('off')
+  setMonsterGirlChance(100)
   setDefeatAlways(false)
 })
 
@@ -90,21 +93,22 @@ describe('rut only in the field', () => {
   })
 })
 
-describe('monster appearance in prompts', () => {
-  /** 和兩隻哥布林打輸（設定一定起意，讓戰敗事件發生） */
-  function lose(state: GameState) {
-    combatRules.defeat_event.check.dc = -100
-    startCombat(state, [['goblin', 2]])
-    for (const c of state.combat!.combatants) {
-      if (c.side === 'party') c.hp = 0
-      else c.traits = [...(c.traits ?? []), 'rut']
-    }
-    state.combat!.status = 'defeat'
-    const report = finishCombat(state)
-    combatRules.defeat_event.check.dc = 12
-    afterCombat(state, report)
-    return report
+/** 和兩隻哥布林打輸（設定一定起意，讓戰敗事件發生） */
+function lose(state: GameState) {
+  combatRules.defeat_event.check.dc = -100
+  startCombat(state, [['goblin', 2]])
+  for (const c of state.combat!.combatants) {
+    if (c.side === 'party') c.hp = 0
+    else c.traits = [...(c.traits ?? []), 'rut']
   }
+  state.combat!.status = 'defeat'
+  const report = finishCombat(state)
+  combatRules.defeat_event.check.dc = 12
+  afterCombat(state, report)
+  return report
+}
+
+describe('monster appearance in prompts', () => {
 
   it('sends the monster description, and the monster girl form when the setting applies', () => {
     const state = game('masc')
@@ -121,6 +125,12 @@ describe('monster appearance in prompts', () => {
     const girl = composeNarration(state, report, options()).prompt.user
     expect(girl).toContain(`哥布林 → ${enemies.goblin!.girl!.name}`)
     expect(girl).toContain(enemies.goblin!.girl!.desc)
+    // 魔物娘的寫法：不寫回動物的稱呼、戰利品是身上帶著或掉下來的、被打倒的是逃跑
+    expect(girl).toContain('不要寫回原本動物的稱呼')
+    expect(girl).toContain('不要寫剝皮、拔牙、割取')
+    expect(girl).toContain('不是被殺死')
+    // 沒有魔物娘時不附
+    expect(plain).not.toContain('魔物娘的寫法')
 
     // 戰敗事件的回應：判定也看得到圍上來的魔物娘
     expect(state.pendingDefeat?.foes[0]?.monster).toBe('goblin')
@@ -142,5 +152,142 @@ describe('monster appearance in prompts', () => {
     expect(text).toContain(`哥布林 → ${enemies.goblin!.girl!.name}`)
     expect(enemies.skeleton!.girl).toBeUndefined()
     expect(monstersText([], true)).toBe('')
+  })
+})
+
+describe('defeated monster girls in the report', () => {
+  /** 和兩隻哥布林打贏（引擎實際打完，戰鬥紀錄有「死亡」） */
+  function win(state: GameState) {
+    startCombat(state, [['goblin', 2]])
+    for (const c of state.combat!.combatants) if (c.side === 'party') { c.hp = 999; c.maxHp = 999 } else c.hp = Math.min(c.hp, 3)
+    const report = fightToEnd(state)
+    afterCombat(state, report)
+    return report
+  }
+  const reportBlock = (user: string) => user.slice(user.indexOf('<report>'), user.indexOf('</report>'))
+
+  it('sends them as 倒下, not 死亡; the log on screen and monsters without the girl form stay as they are', () => {
+    const state = game('masc')
+    const report = win(state)
+    expect(report.others?.every((o) => o.status?.includes('死亡'))).toBe(true)
+    expect(reportBlock(composeNarration(state, report, options()).prompt.user)).toContain('死亡')
+    setMonsterGirl('all')
+    const sent = reportBlock(composeNarration(state, report, options()).prompt.user)
+    expect(sent).not.toContain('死亡')
+    expect(sent).toContain('倒下')
+    // 畫面上的戰報不變
+    expect(report.others?.every((o) => o.status?.includes('死亡'))).toBe(true)
+    // 出現機率 0：照原本的樣子，仍是死亡
+    setMonsterGirlChance(0)
+    expect(reportBlock(composeNarration(state, report, options()).prompt.user)).toContain('死亡')
+  })
+
+  it('tells the AI organ loot belongs to the original monsters', () => {
+    expect(monstersText(['goblin'], true)).toContain('原種魔物')
+    expect(monstersText(['goblin'], false)).not.toContain('原種魔物')
+  })
+})
+
+describe('monster girl chance', () => {
+  it('rolls once per species and day: fixed for the same seed, about the set share over many days', () => {
+    setMonsterGirlChance(30)
+    expect(girlRolled('goblin', 'x:1')).toBe(girlRolled('goblin', 'x:1'))
+    const days = Array.from({ length: 1000 }, (_, d) => girlRolled('goblin', `7:${d}`))
+    const share = days.filter(Boolean).length / days.length
+    expect(share).toBeGreaterThan(0.25)
+    expect(share).toBeLessThan(0.35)
+    setMonsterGirlChance(0)
+    expect(days.some((_, d) => girlRolled('goblin', `7:${d}`))).toBe(false)
+    setMonsterGirlChance(100)
+    expect(days.every((_, d) => girlRolled('goblin', `7:${d}`))).toBe(true)
+    // 沒有魔物娘形態的怪物永遠不是
+    expect(girlRolled('skeleton', '7:1')).toBe(false)
+  })
+
+  it('lets a monster override the setting (0 = never, 100 = always)', () => {
+    const goblin = enemies.goblin!
+    const before = goblin.girl!
+    try {
+      setMonsterGirlChance(100)
+      goblin.girl = { ...before, chance: 0 }
+      expect(monstersText(['goblin'], true, '7:1')).not.toContain('→')
+      setMonsterGirlChance(0)
+      goblin.girl = { ...before, chance: 100 }
+      expect(monstersText(['goblin'], true, '7:1')).toContain(`哥布林 → ${before.name}`)
+    } finally {
+      goblin.girl = before
+    }
+  })
+
+  it('uses the same roll for the narration and the illustration of a report', () => {
+    setMonsterGirl('all')
+    setMonsterGirlChance(50)
+    const state = game()
+    const report = lose(state)
+    // 找一天擲到、一天沒擲到，兩邊都要一致
+    for (const day of [1, 2, 3, 4, 5, 6]) {
+      report.time.start.day = day
+      const narration = composeNarration(state, report, options()).prompt.user
+      const rolled = girlRolled('goblin', `${state.seed}:${day}`)
+      expect(narration.includes(`哥布林 → ${enemies.goblin!.girl!.name}`), `day ${day}`).toBe(rolled)
+    }
+  })
+})
+
+describe('monster girl personality and habits', () => {
+  it('sends personality and habits to the narration but not to the illustration', () => {
+    const goblin = enemies.goblin!
+    const before = goblin.girl!
+    try {
+      goblin.girl = { ...before, personality: '好奇又膽小', habits: '成群住在洞穴深處' }
+      const text = monstersText(['goblin'], true, '7:1')
+      expect(text).toContain('性情：好奇又膽小')
+      expect(text).toContain('習性：成群住在洞穴深處')
+      const scene = monsterLines(['goblin'], true, { seed: '7:1' }).join('\n')
+      expect(scene).toContain(before.desc)
+      expect(scene).not.toContain('好奇又膽小')
+    } finally {
+      goblin.girl = before
+    }
+  })
+
+  it('keeps personality, habits and chance through the editor sanitizer, and drops bad values', () => {
+    const base = { ...enemies.goblin!, girl: { name: '哥布林娘', desc: '綠皮膚的成年女性', personality: '  好奇  ', habits: '群居', chance: 40 } }
+    expect(sanitizeEnemy('goblin', base as never, false).girl).toEqual({ name: '哥布林娘', desc: '綠皮膚的成年女性', personality: '好奇', habits: '群居', chance: 40 })
+    const odd = sanitizeEnemy('goblin', { ...base, girl: { ...base.girl, chance: 250, personality: '' } } as never, false).girl
+    expect(odd?.chance).toBe(100)
+    expect(odd?.personality).toBeUndefined()
+    // 機率空白：照設定（不寫進資料）
+    expect(sanitizeEnemy('goblin', { ...base, girl: { name: 'a', desc: 'b', chance: '' } } as never, false).girl).toEqual({ name: 'a', desc: 'b' })
+  })
+})
+
+describe('monster girls across midnight', () => {
+  it('the defeat event uses the day the fight started, like the narration before it', () => {
+    setMonsterGirl('all')
+    setMonsterGirlChance(50)
+    // 找一個開戰那天擲到、隔天沒擲到的存檔
+    let state: GameState | undefined
+    for (let seed = 1; seed < 200 && !state; seed++) {
+      if (girlRolled('goblin', `${seed}:1`) && !girlRolled('goblin', `${seed}:2`)) {
+        state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed })
+      }
+    }
+    goOutskirts(state!)
+    state!.time = { ...state!.time, day: 1, hour: 23, minute: 59 }
+    const report = lose(state!)
+    expect(report.time.start.day).toBe(1)
+    expect(state!.time.day).toBe(2)
+    expect(state!.pendingDefeat?.day).toBe(1)
+    const girl = `哥布林 → ${enemies.goblin!.girl!.name}`
+    expect(composeNarration(state!, report, options()).prompt.user).toContain(girl)
+    prepareAction(state!, { kind: 'defeat_event', target: 'opt:0', text: '' })
+    expect(composeJudge(state!, state!.pendingAction!, options()).prompt.user).toContain(girl)
+    // 回應的報告（隔天）也照開戰那天
+    const after = JSON.parse(JSON.stringify(report)) as typeof report
+    after.time = { start: { ...state!.time }, end: { ...state!.time } }
+    applyDefeatResponse(state!, after, 'fail')
+    expect(after.narration?.girl_day).toBe(1)
+    expect(composeNarration(state!, after, options()).prompt.user).toContain(girl)
   })
 })
