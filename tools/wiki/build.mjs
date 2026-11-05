@@ -124,11 +124,14 @@ export const GROUPS = [
     { page: '點子：早期設計', src: 'docs/plan/ideas/early-design.md', desc: '早期設計與放比較久的構想', sub: '點子的來源' },
     { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
-    { page: '手機版畫面：剩下的事', src: 'docs/plan/roadmap/MOBILE_UI_PLAN.md', desc: '手機版畫面還沒做的部分（R10）' },
     { page: '角色線計畫', src: 'docs/plan/roadmap/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '高等地下城計畫', src: 'docs/plan/roadmap/HIGH_DUNGEONS_PLAN.md', desc: '歷史裂縫、歷史迴廊、禁果庭園、歡愉秘宮（R12）' },
     { page: '特殊任務時段計畫', src: 'docs/plan/roadmap/STORY_TIME_PLAN.md', desc: '內建特殊任務與事件的時段盤點與套用（R13）' },
+    { page: '小改進計畫', src: 'docs/plan/roadmap/QOL_PLAN.md', desc: '提示詞與正則、戰鬥過回合提醒、首頁版本號、骰面判定、設定匯出與匯入（R17）' },
+    { page: '工藝計畫', src: 'docs/plan/roadmap/CRAFTING_PLAN.md', desc: '打造的連動選單、工藝等級、學費、圖紙與檢定（R18、R21）' },
+    { page: '貿易計畫', src: 'docs/plan/roadmap/TRADE_PLAN.md', desc: '購物車、城鎮標籤、動態狀態與物價（R19）' },
+    { page: '檢定與特質計畫', src: 'docs/plan/roadmap/CHECKS_PERKS_PLAN.md', desc: '檢定分類、特質整併、身分標籤、創角版面（R20）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
@@ -137,7 +140,7 @@ export const GROUPS = [
 ]
 
 /** 不放上 wiki 的文件：素材資料夾的說明（只對改程式的人有用）、引用玩家提供的第三方素材的成人向計畫、生圖提示詞 */
-export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'docs/plan/roadmap/LUST_COMBAT_PLAN.md', 'tools/backgrounds/park_prompts.md']
+export const SKIP = ['src/assets/scenes/README.md', 'src/assets/backgrounds/README.md', 'tools/backgrounds/park_prompts.md']
 
 const srcList = (p) => (Array.isArray(p.src) ? p.src : [p.src])
 const fileOf = (src) => src.split('#')[0]
