@@ -448,7 +448,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
       text: `<action>
 行動：${kind.name}
 場景：${p.scene}（${locationById(p.location).name}）
-${p.offer_cc !== undefined ? `出價：${formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}${extra}
+${p.offer_cc !== undefined ? `出價：${p.kind === 'bargain' ? (p.offer_cc >= 0 ? `想付 ${formatMoney(p.offer_cc)}` : `想收 ${formatMoney(-p.offer_cc)}`) : formatMoney(p.offer_cc)}\n` : ''}${p.item ? `禮物：${p.item}（價值 ${formatMoney(itemValue(state, p.item))}）\n` : ''}玩家描述：${p.text || '（未描述，依一般做法）'}${restNote}${p.usedAbility ? `\n搭配能力：${state.party.find((m) => m.id === p.usedAbility!.member)?.name}使用了【${p.usedAbility.name}】（${p.usedAbility.desc}）${p.usedAbility.cost ? `，花費${p.usedAbility.cost}` : ''}。能力是否真的有幫助由你判斷；資源已經花掉了。` : ''}${sceneNote(p)}${extra}
 </action>`,
     },
     {

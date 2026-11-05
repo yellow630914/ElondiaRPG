@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, Degree, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { BestiaryEntry } from './bestiary'
@@ -1041,6 +1041,11 @@ export interface ShopState {
   source: 'ai' | 'rules'
   /** 今天已經請 AI 生成過（不論成功與否） */
   aiTried?: boolean
+  /**
+   * 今天的整車交涉（每間店每天一次，trade.ts 的購物車）：結果的倍率、成功程度、玩家的出價（正數是付錢、負數是收錢），
+   * 交涉時的購物車內容（內容沒變時出價才算數）；結帳之後 spent
+   */
+  cartBargain?: { degree: Degree; factor: number; offer?: number; cart: string; spent?: boolean }
 }
 
 export interface NegotiationOption {

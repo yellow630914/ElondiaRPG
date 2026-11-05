@@ -2,6 +2,13 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 購物車與整車交涉（R19 的 T1，含原 B21）
+
+- 擁有者看過樣稿（`docs/mockups/trade.html`）後決定先做這項；同時定了 R19 其他的數值（動態狀態每 7 天、最多 2 個；倍率 ×0.4～×2.5；收購遞減每件 −3%、做成存檔規則、最多 −50%；交涉的賣出部分除以倍率），寫在 [TRADE_PLAN](TRADE_PLAN.md) 第 2 節。
+- 引擎：`trade.ts` 的 `Cart`、`cartQuote`、`checkoutCart`、`bargainNet`、`settleNet`、`cartBargainTarget`；`ShopState.cartBargain` 記今天的整車交涉；`bargainSetup`、`applyBargain` 多了出價（`ActionPending.offer_cc`），判定的提示詞寫「想付／想收」。
+- 介面：`ShopDialog.vue` 一般商品與行囊改成加進購物車，`CartPanel.vue`（電腦版在兩欄下面，手機版是第三個分頁）。
+- 原 B21（交涉的成交價不是喊的價）：成交價取出價與能談到的最好價中對店家有利的那個。規則寫在 [TRADE](../../TRADE.md) 4.1、第 5 節，測試在 `cart.spec.ts`。
+
 ### 2026-11-05 依配方製作與自創配方的介面、配方材料當場補買
 
 - 接著 R18：擁有者看過樣稿（`docs/mockups/recipes.html`）後決定照做，配方材料也能當場補買；自創配方的類別規則不放寬。

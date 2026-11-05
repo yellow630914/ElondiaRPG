@@ -708,7 +708,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'palace_gate': return applyPalaceGate(state, degree)
     case 'negotiate': return applyNegotiate(state, report, degree)
     case 'escape': return applyEscape(state, report, degree)
-    case 'bargain': return applyBargain(state, report, p.target!, degree)
+    case 'bargain': return applyBargain(state, report, p.target!, degree, p.offer_cc)
     case 'negotiation': return applyNegotiationOutcome(state, report, p.target!, degree)
     case 'chat':
     case 'gift':

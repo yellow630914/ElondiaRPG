@@ -1277,6 +1277,9 @@ export const useGame = defineStore('game', () => {
     buyDeal: (type: ShopType, id: string, qty = 1) => run((s) => trade.buyDeal(s, type, id, qty)),
     sellItem: (type: ShopType, name: string, qty: number) => run((s) => trade.sellItem(s, type, name, qty)),
     bargain: (type: ShopType, dealId: string, text: string) => perform({ kind: 'bargain', target: trade.bargainTarget(type, dealId), text }),
+    /** 購物車：結帳（一次買賣）、整車交涉（offer：想付多少，負數是想收多少；不填照倍率） */
+    checkout: (type: ShopType, cart: trade.Cart) => run((s) => trade.checkoutCart(s, type, cart)),
+    bargainCart: (type: ShopType, cart: trade.Cart, text: string, offer?: number) => perform({ kind: 'bargain', target: trade.cartBargainTarget(type, cart), text, ...(offer !== undefined ? { offer_cc: offer } : {}) }),
     chooseOption: (id: string, option: string) => run((s) => negotiation.chooseOption(s, id, option)),
     negotiateFreely: (id: string, text: string, use?: { member: string; ability: string }) =>
       perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),

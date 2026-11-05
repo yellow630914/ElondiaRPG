@@ -1033,7 +1033,7 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       }
     }
     case 'bargain': {
-      const b = bargainSetup(state, target ?? '')
+      const b = bargainSetup(state, target ?? '', offer)
       return { dc: b.dc, targetName: `${b.keeper.name}（${b.deal.title}）`, situational: [], scene: `${locationById(state.location).name}・${b.deal.title}`, outcomes: b.outcomes }
     }
     case 'negotiation': {

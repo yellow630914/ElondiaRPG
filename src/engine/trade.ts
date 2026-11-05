@@ -439,10 +439,176 @@ export function sellItem(state: GameState, type: ShopType, name: string, qty: nu
   return commitReport(state, report)
 }
 
+// ---- 購物車（docs/TRADE.md）：一般的商品與賣出的東西放進同一車，一次結帳；整車交涉每間店每天一次 ----
+
+export interface Cart {
+  /** 買入：店裡的一般商品（item: 開頭的交易） */
+  buy: { dealId: string; qty: number }[]
+  /** 賣出：行囊裡的東西 */
+  sell: { name: string; qty: number }[]
+}
+
+export interface CartQuote {
+  buy: { dealId: string; name: string; qty: number; price: number }[]
+  sell: { name: string; qty: number; price: number }[]
+  buyTotal: number
+  sellTotal: number
+  /** 原價的差額（正數是付錢，負數是收錢） */
+  listNet: number
+  /** 實際的差額（套用今天整車交涉的結果） */
+  net: number
+  /** 今天的整車交涉（還沒用掉的） */
+  bargain?: ShopState['cartBargain']
+  /** 交涉時的出價這次算不算數（購物車內容和交涉時一樣） */
+  offerApplies: boolean
+  blockers: string[]
+  blocked?: string
+}
+
+/** 購物車的內容（排序後的 JSON）：比對「交涉時的購物車」用 */
+export function cartKey(cart: Cart): string {
+  const buy = cart.buy.filter((x) => x.qty > 0).map((x) => [x.dealId, x.qty] as const).sort((a, b) => a[0].localeCompare(b[0]))
+  const sell = cart.sell.filter((x) => x.qty > 0).map((x) => [x.name, x.qty] as const).sort((a, b) => a[0].localeCompare(b[0]))
+  return JSON.stringify({ b: buy, s: sell })
+}
+
+/** 這個交涉結果的差額：買入的部分乘倍率、賣出的部分除以倍率 */
+export function bargainNet(buyTotal: number, sellTotal: number, factor: number): number {
+  return Math.round(buyTotal * factor) - Math.round(sellTotal / factor)
+}
+
+/**
+ * 交涉後的成交差額：有出價時取「出價」與「這個結果能談到的最好價」中對店家有利的那個（差額越大對店家越有利），
+ * 但不超過原價；沒談成（失敗、大失敗）照倍率，出價不算數
+ */
+export function settleNet(listNet: number, best: number, degree: Degree, offer?: number): number {
+  if (offer === undefined || !Number.isFinite(offer) || degree === 'fail' || degree === 'fumble') return best
+  return Math.min(listNet, Math.max(best, Math.round(offer)))
+}
+
+/** 今天這間店的商品清單（不建立：打開商店時已經建立） */
+function shopToday(state: GameState, type: ShopType): ShopState {
+  const shop = state.shops?.[shopKey(state, type)]
+  if (!shop || shop.day !== state.time.day) return shopState(state, type)
+  return shop
+}
+
+/** 購物車的報價：各列的單價、總額、套用今天的整車交涉之後的差額，以及不能結帳的原因 */
+export function cartQuote(state: GameState, type: ShopType, cart: Cart): CartQuote {
+  const key = shopKey(state, type)
+  const shop = shopToday(state, type)
+  const blockers: string[] = []
+  const buy: CartQuote['buy'] = []
+  for (const x of cart.buy.filter((y) => y.qty > 0)) {
+    const deal = shop.deals.find((d) => d.id === x.dealId && isItemDeal(d))
+    if (!deal) {
+      blockers.push('購物車裡有今天已經沒有的商品')
+      continue
+    }
+    const qty = Math.floor(x.qty)
+    if (qty > deal.stock) blockers.push(`${deal.title}今天只剩 ${deal.stock} 個`)
+    buy.push({ dealId: deal.id, name: deal.title, qty, price: dealMoney(state, key, deal) })
+  }
+  const sell: CartQuote['sell'] = []
+  for (const x of cart.sell.filter((y) => y.qty > 0)) {
+    const price = sellPrice(state, key, x.name)
+    const qty = Math.floor(x.qty)
+    if (price === null) {
+      blockers.push(`這間店不收${x.name}`)
+      continue
+    }
+    if (haveItem(state, x.name) < qty) blockers.push(`${x.name}只有 ${haveItem(state, x.name)} 個`)
+    sell.push({ name: x.name, qty, price })
+  }
+  const buyTotal = buy.reduce((s, x) => s + x.qty * x.price, 0)
+  const sellTotal = sell.reduce((s, x) => s + x.qty * x.price, 0)
+  const listNet = buyTotal - sellTotal
+  const bargain = shop.cartBargain && !shop.cartBargain.spent ? shop.cartBargain : undefined
+  const offerApplies = !!bargain && bargain.offer !== undefined && bargain.cart === cartKey(cart)
+  const net = bargain
+    ? settleNet(listNet, bargainNet(buyTotal, sellTotal, bargain.factor), bargain.degree, offerApplies ? bargain.offer : undefined)
+    : listNet
+  if (!buy.length && !sell.length) blockers.push('購物車是空的')
+  if (net > state.money_cc) blockers.push(`錢不夠（要付 ${formatMoney(net)}）`)
+  return {
+    buy, sell, buyTotal, sellTotal, listNet, net, ...(bargain ? { bargain } : {}), offerApplies,
+    blockers: [...new Set(blockers)], ...(blockers.length ? { blocked: [...new Set(blockers)].join('；') } : {}),
+  }
+}
+
+/** 結帳：照報價一次買賣，日誌記一筆；今天的整車交涉用掉 */
+export function checkoutCart(state: GameState, type: ShopType, cart: Cart): Report {
+  const q = cartQuote(state, type, cart)
+  if (q.blocked) throw new Error(q.blocked)
+  const key = shopKey(state, type)
+  const shop = shopToday(state, type)
+  const report = tradeReport(state, key, 0.25)
+  const keeperRec = npcRecord(state, shop.keeper)!
+  ensureRelationship(state, keeperRec)
+  // 買到的東西照一般的商品給（和 buyDeal 一樣），賣出的東西與錢記在報告的變化
+  for (const x of q.buy) {
+    const deal = shop.deals.find((d) => d.id === x.dealId)!
+    applyEffects(state, report, expandTokens(state, deal.gets.map((g) => (g.type === 'item' ? { ...g, qty: g.qty * x.qty } : g)), shop.keeper))
+    deal.stock -= x.qty
+  }
+  if (q.sell.length) report.changes.items_lost = q.sell.map((x) => ({ name: x.name, qty: x.qty }))
+  if (q.net) report.changes.money_cc = -q.net
+  if (shop.cartBargain && !shop.cartBargain.spent) shop.cartBargain.spent = true
+  const list = (xs: { name: string; qty: number }[]) => xs.map((x) => (x.qty > 1 ? `${x.name}×${x.qty}` : x.name)).join('、')
+  const deal = q.net !== q.listNet ? `（原價${q.listNet >= 0 ? '要付' : '可收'} ${formatMoney(Math.abs(q.listNet))}，交涉之後）` : ''
+  const money = q.net > 0 ? `付了 ${formatMoney(q.net)}` : q.net < 0 ? `收到 ${formatMoney(-q.net)}` : '剛好抵銷'
+  report.outcome.summary = `在${keeperRec.name}的店裡${q.buy.length ? `買了 ${list(q.buy)}` : ''}${q.buy.length && q.sell.length ? '，' : ''}${q.sell.length ? `賣了 ${list(q.sell)}` : ''}，${money}${deal}。`
+  return commitReport(state, report)
+}
+
 // ---- 交涉（主動行動） ----
 
 export function bargainTarget(type: ShopType, dealId: string): string {
   return `${type}|${dealId}`
+}
+
+/** 整車交涉的 target：「店的種類|cart|購物車的 JSON」 */
+export function cartBargainTarget(type: ShopType, cart: Cart): string {
+  return `${type}|cart|${JSON.stringify(cart)}`
+}
+
+function parseCartTarget(target: string): { type: ShopType; cart: Cart } | undefined {
+  const [type, kind, ...rest] = target.split('|')
+  if (kind !== 'cart') return undefined
+  try {
+    const raw = JSON.parse(rest.join('|')) as Partial<Cart>
+    const cart: Cart = {
+      buy: (Array.isArray(raw.buy) ? raw.buy : []).filter((x) => x && typeof x.dealId === 'string').map((x) => ({ dealId: x.dealId, qty: Math.max(0, Math.floor(Number(x.qty) || 0)) })),
+      sell: (Array.isArray(raw.sell) ? raw.sell : []).filter((x) => x && typeof x.name === 'string').map((x) => ({ name: x.name, qty: Math.max(0, Math.floor(Number(x.qty) || 0)) })),
+    }
+    return { type: type as ShopType, cart }
+  } catch {
+    throw new Error('購物車的內容讀不出來')
+  }
+}
+
+/** 整車交涉：每間店每天一次；各成功程度寫出會成交多少 */
+function cartBargainSetup(state: GameState, type: ShopType, cart: Cart, offer?: number) {
+  const shop = shopToday(state, type)
+  if (shop.cartBargain) throw new Error('今天已經和這間店交涉過了')
+  const q = cartQuote(state, type, cart)
+  if (!q.buy.length && !q.sell.length) throw new Error('購物車是空的')
+  const rec = npcRecord(state, shop.keeper)!
+  ensureRelationship(state, rec)
+  const aff = state.relationships?.[rec.id]?.affinity ?? 0
+  const f = shopRules.bargain.price_factor
+  const money = (n: number) => (n > 0 ? `付 ${formatMoney(n)}` : n < 0 ? `收 ${formatMoney(-n)}` : '不用付錢')
+  const at = (d: Degree) => money(settleNet(q.listNet, bargainNet(q.buyTotal, q.sellTotal, f[d]), d, offer))
+  const offerText = offer !== undefined ? `（玩家出價：${money(offer)}；原價 ${money(q.listNet)}）` : `（原價 ${money(q.listNet)}）`
+  return {
+    dc: shopRules.bargain.base - Math.floor(aff / 25),
+    keeper: rec,
+    title: `整車：${[...q.buy.map((x) => `買 ${x.name}×${x.qty}`), ...q.sell.map((x) => `賣 ${x.name}×${x.qty}`)].join('、')}`,
+    outcomes: {
+      critical: `${at('critical')}${offerText}，店主很欣賞你`, success: `${at('success')}${offerText}`, partial: `${at('partial')}${offerText}`,
+      fail: `不讓價，照原價${money(q.listNet)}`, fumble: `店主不高興，${at('fumble')}（親密度 -3）`,
+    } as Record<Degree, string>,
+  }
 }
 
 function parseBargain(state: GameState, target: string): { type: ShopType; key: string; shop: ShopState; deal: Deal } {
@@ -453,7 +619,12 @@ function parseBargain(state: GameState, target: string): { type: ShopType; key: 
   return { type, key: shopKey(state, type), shop, deal }
 }
 
-export function bargainSetup(state: GameState, target: string) {
+export function bargainSetup(state: GameState, target: string, offer?: number) {
+  const cart = parseCartTarget(target)
+  if (cart) {
+    const c = cartBargainSetup(state, cart.type, cart.cart, offer)
+    return { dc: c.dc, keeper: c.keeper, deal: { title: c.title } as Pick<Deal, 'title'>, outcomes: c.outcomes }
+  }
   const { deal, shop } = parseBargain(state, target)
   if (deal.haggled) throw new Error('這筆交易今天已經交涉過了')
   if (!deal.gives.some((g) => g.type === 'money' && (g.amount ?? 0) > 0)) throw new Error('這筆交易不用付錢')
@@ -473,7 +644,21 @@ export function bargainSetup(state: GameState, target: string) {
   }
 }
 
-export function applyBargain(state: GameState, report: Report, target: string, degree: Degree): string {
+export function applyBargain(state: GameState, report: Report, target: string, degree: Degree, offer?: number): string {
+  const cart = parseCartTarget(target)
+  if (cart) {
+    // 整車交涉：記下結果，結帳時套用（購物車改了，倍率照樣算，出價就不算數了）
+    const shop = shopToday(state, cart.type)
+    const factor = shopRules.bargain.price_factor[degree]
+    shop.cartBargain = { degree, factor, ...(offer !== undefined && Number.isFinite(offer) ? { offer: Math.round(offer) } : {}), cart: cartKey(cart.cart) }
+    if (degree === 'critical') addAffinity(state, report, shop.keeper, 2, '交涉愉快')
+    if (degree === 'fumble') addAffinity(state, report, shop.keeper, -3, '被惹惱')
+    const q = cartQuote(state, cart.type, cart.cart)
+    const money = (n: number) => (n > 0 ? `付 ${formatMoney(n)}` : n < 0 ? `收 ${formatMoney(-n)}` : '不用付錢')
+    if (degree === 'fail') return `店主不肯讓價，這一車照原價（${money(q.listNet)}）。`
+    if (degree === 'fumble') return `店主不高興，這一車改成${money(q.net)}（原價${money(q.listNet)}）。`
+    return `談好了：這一車${money(q.net)}（原價${money(q.listNet)}）。結帳前改了購物車，折扣照算，出價就不算數了。`
+  }
   const { deal, shop } = parseBargain(state, target)
   const factor = shopRules.bargain.price_factor[degree]
   const before = deal.gives.find((g) => g.type === 'money')!.amount ?? 0
