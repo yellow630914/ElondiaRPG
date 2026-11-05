@@ -3,7 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, keeperTitle, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { breakdownText, buyBreakdown, costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
@@ -17,6 +17,7 @@ import { storyDef, storyMaxCost } from '@/engine/story'
 import CartPanel from './CartPanel.vue'
 import MarketBadge from './MarketBadge.vue'
 import MarketTags from './MarketTags.vue'
+import PriceSteps from './PriceSteps.vue'
 
 // 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價），下面是購物車（一般商品與賣出一次結帳，CartPanel）。
 // 特別交易（AI 準備的、情報、服務）照舊一件一件買、一件一件交涉
@@ -114,6 +115,10 @@ const bag = computed(() => s.value.inventory
   .filter((i) => !onlySellable.value || i.price !== null)
   .sort((a, b) => Number(b.price !== null) - Number(a.price !== null)))
 const sellQty = reactive<Record<string, number>>({})
+/** 展開了收購價拆解的物品 */
+const sellWhy = ref<string | null>(null)
+const buyWhy = (d: Deal) => buyBreakdown(s.value, key.value, d)
+const buyWhyText = (d: Deal) => { const b = buyWhy(d); return b ? `${breakdownText(b)}\n（點一下展開）` : undefined }
 const sellLeft = (name: string, have: number) => have - (cart.sell[name] ?? 0)
 const sellN = (name: string, have: number) => Math.max(1, Math.min(sellLeft(name, have), Math.floor(sellQty[name] ?? 1) || 1))
 function addSell(name: string, have: number) {
@@ -205,7 +210,7 @@ function buy(d: Deal) {
                       <MarketBadge :name="itemName(d)" />
                       <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
                     </span>
-                    <span class="price">{{ costText(s, key, d) }}</span>
+                    <span class="price" :title="buyWhyText(d)">{{ costText(s, key, d) }}</span>
                     <span class="stock small muted">{{ d.stock < 20 ? `剩 ${leftOf(d)}` : '' }}</span>
                     <span class="btns" @click.stop>
                       <input v-if="leftOf(d) > 1" v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="leftOf(d)" placeholder="1" />
@@ -217,6 +222,7 @@ function buy(d: Deal) {
                   <div v-if="expanded === d.id" class="more small">
                     <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
                     <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
+                    <PriceSteps v-if="buyWhy(d)" :b="buyWhy(d)!" />
                   </div>
                 </li>
               </ul>
@@ -249,7 +255,7 @@ function buy(d: Deal) {
                 </div>
                 <div class="row actions">
                   <template v-if="i.price !== null">
-                    <span class="small">收購 {{ formatMoney(i.price) }} / 個 <MarketBadge :name="i.name" /></span>
+                    <button class="small ghost why" :title="`看收購價怎麼算`" @click="sellWhy = sellWhy === i.name ? null : i.name">收購 {{ formatMoney(i.price) }} / 個 <MarketBadge :name="i.name" /> <span class="muted">{{ sellWhy === i.name ? '▴' : '▾' }}</span></button>
                     <span class="grow" />
                     <input v-if="sellLeft(i.name, i.qty) > 1" v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="sellLeft(i.name, i.qty)" placeholder="1" />
                     <button class="small" :disabled="sellLeft(i.name, i.qty) <= 0" title="加進購物車（賣出）" @click="addSell(i.name, i.qty)">
@@ -258,6 +264,7 @@ function buy(d: Deal) {
                   </template>
                   <span v-else class="small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
                 </div>
+                <PriceSteps v-if="sellWhy === i.name && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
               </li>
             </ul>
           </section>
@@ -324,4 +331,6 @@ function buy(d: Deal) {
 .effect { color: var(--accent); }
 .actions { margin-top: 2px; }
 .num { width: 58px; }
+.why { padding: 0 4px; border-color: transparent; background: none; color: var(--text); }
+.why:hover { border-color: var(--border); }
 </style>

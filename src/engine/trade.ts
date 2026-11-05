@@ -27,7 +27,7 @@ import { openFor } from './storyFlags'
 import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { shopTitle } from './shopNames'
-import { marketMult } from './market'
+import { marketMult, marketRules, pctText, tradeCategory, tradeCategoryName } from './market'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
@@ -172,6 +172,7 @@ function itemDeal(state: GameState, name: string, stock: number, markup = 1, pri
     gives: [{ type: 'money', amount: Math.max(1, Math.round(price * markup * locationMult(state) * marketMult(state, shopPlace(state).id, name).x)) }],
     gets: [{ type: 'item', name, qty: 1 }],
     stock,
+    basis: { base: price, markup },
   }
 }
 
@@ -329,6 +330,80 @@ export function sellPrice(state: GameState, key: string, name: string): number |
   const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
   const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * marketMult(state, shopPlace(state).id, name).x * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
   return capSale(state, name, price)
+}
+
+// ---- 價格拆解（docs/TRADE.md 3.3 節）：商店清單與行囊的價格是怎麼算出來的 ----
+
+export interface PriceStep {
+  label: string
+  /** 「×1.15」「−50%」「240 白鸛」這類 */
+  text: string
+  kind?: 'base' | 'place' | 'tag' | 'state' | 'clamp' | 'deal' | 'cap'
+}
+export interface PriceBreakdown { steps: PriceStep[]; total: number; category?: string }
+
+const PLACE_NAME: Record<string, string> = { capital: '王都', city: '城市', town: '城鎮', port: '港口', village: '村莊', outpost: '哨站', fortress: '要塞' }
+const times = (x: number) => `×${Math.round(x * 100) / 100}`
+
+/** 聚落、標籤與狀態這幾步（買入、賣出共用） */
+function placeSteps(state: GameState, name: string): PriceStep[] {
+  const place = shopPlace(state)
+  const steps: PriceStep[] = []
+  const pm = shopRules.location_price_mult[place.type] ?? 1
+  if (pm !== 1) steps.push({ label: place.waystation ? '驛站物價' : `${PLACE_NAME[place.type] ?? place.type}物價`, text: times(pm), kind: 'place' })
+  const nm = notorietyMult(state)
+  if (nm !== 1) steps.push({ label: '剛遣散夥伴的漲價', text: times(nm), kind: 'place' })
+  const m = marketMult(state, place.id, name)
+  for (const p of m.parts) steps.push({ label: p.label, text: `${pctText(p.x)}${p.daysLeft ? `（還有 ${p.daysLeft} 天）` : ''}`, kind: p.kind })
+  const raw = m.parts.reduce((a, p) => a * p.x, 1)
+  if (Math.abs(raw - m.x) > 1e-9) steps.push({ label: `類別倍率合計夾在 ×${marketRules.mult_range[0]}～×${marketRules.mult_range[1]}`, text: times(m.x), kind: 'clamp' })
+  return steps
+}
+
+/** 一般商品（item: 開頭的交易）的售價拆解；特別交易沒有 */
+export function buyBreakdown(state: GameState, key: string, deal: Deal): PriceBreakdown | undefined {
+  if (!isItemDeal(deal)) return undefined
+  const name = deal.id.slice('item:'.length)
+  const base = deal.basis?.base ?? itemValue(state, name)
+  if (base === undefined) return undefined
+  const steps: PriceStep[] = [{ label: '基本價', text: formatMoney(base), kind: 'base' }]
+  const markup = deal.basis?.markup ?? 1
+  if (markup !== 1) steps.push({ label: itemCategory(state, name) === 'material' ? '材料加成（目錄價是收購價）' : '店家加成', text: times(markup), kind: 'deal' })
+  steps.push(...placeSteps(state, name))
+  const d = discount(state, key)
+  if (d) steps.push({ label: '折扣（親密度、談來的）', text: `−${Math.round(d * 100)}%`, kind: 'deal' })
+  const rep = reputationBand(state).buy
+  if (rep) steps.push({ label: '勢力聲望', text: pctText(1 + rep), kind: 'deal' })
+  const tag = pcTagMult(pcOf(state), typeOf(key) === 'temple' ? 'service_mult' : 'buy_mult')
+  if (tag !== 1) steps.push({ label: '你的身分', text: times(tag), kind: 'deal' })
+  return { steps, total: dealMoney(state, key, deal), category: tradeCategoryName(tradeCategory(state, name)) }
+}
+
+/** 行囊裡的東西在這間店的收購價拆解；不收時沒有 */
+export function sellBreakdown(state: GameState, key: string, name: string): PriceBreakdown | undefined {
+  const total = sellPrice(state, key, name)
+  const value = itemValue(state, name)
+  if (total === null || value === undefined) return undefined
+  const material = itemCategory(state, name) === 'material'
+  const steps: PriceStep[] = [
+    { label: '基本價', text: formatMoney(value), kind: 'base' },
+    { label: material ? '材料全價收購' : '收購五成', text: times(material ? itemRules.material_sell_ratio : itemRules.sell_ratio), kind: 'deal' },
+    ...placeSteps(state, name),
+  ]
+  const d = discount(state, key)
+  if (d) steps.push({ label: '親密度、談來的折扣（收購加一半）', text: pctText(1 + d / 2), kind: 'deal' })
+  const rep = reputationBand(state).sell
+  if (rep) steps.push({ label: '勢力聲望', text: pctText(1 + rep), kind: 'deal' })
+  const tag = pcTagMult(pcOf(state), 'sell_mult')
+  if (tag !== 1) steps.push({ label: '你的身分', text: times(tag), kind: 'deal' })
+  const cap = gearSellCap(gearSpecOf(state, name))
+  if (cap !== undefined && total >= cap) steps.push({ label: '裝備最多賣到打造成本的 10 倍', text: formatMoney(cap), kind: 'cap' })
+  return { steps, total, category: tradeCategoryName(tradeCategory(state, name)) }
+}
+
+/** 一行文字：「基本價 240 白鸛 × 材料加成 ×2 × …＝ 480 白鸛」 */
+export function breakdownText(b: PriceBreakdown): string {
+  return `${b.steps.map((s) => `${s.label} ${s.text}`).join('、')} ＝ ${formatMoney(b.total)}`
 }
 
 /** 裝備賣出（收購、拿來抵價、寄賣）最多拿到成本的 10 倍（gear.ts 的 gearCost）：打造品與高等地下城的掉落不會變成印鈔機 */

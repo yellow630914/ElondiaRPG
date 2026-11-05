@@ -2,6 +2,12 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-05 價格拆解（R19 的 T5）
+
+- 引擎：`trade.ts` 的 `buyBreakdown`、`sellBreakdown`、`breakdownText`；一般商品記下定價依據（`Deal.basis`：目錄價、店家加成）。
+- 介面：`PriceSteps.vue`，商店清單點開一列、行囊點收購價展開；價格上滑過去也看得到。
+- 規則寫在 [TRADE](../../TRADE.md) 3.3 節，測試在 `market.spec.ts`。
+
 ### 2026-11-05 動態狀態庫（R19 的 T4）
 
 - 資料：`data/rules/market.json` 的 `states`（38 個：商路不安全、豐收、歉收、瘟疫、慶典、戰事、礦坑塌方、商隊抵達……）與 `state_rules`（每 7 天一期、最多 2 個）。

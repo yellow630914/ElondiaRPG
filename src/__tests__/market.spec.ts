@@ -4,7 +4,7 @@ import { enterLocation, standOn } from '@/engine/grid'
 import { categoryMult, marketMult, marketRules, pctText, tagEffectText, townStates, townTags, tradeCategory, TRADE_CATEGORIES, type TradeCategory } from '@/engine/market'
 import { normalizeMods } from '@/engine/mods'
 import { addItem, newGame } from '@/engine/state'
-import { sellPrice, shopKey, shopState } from '@/engine/trade'
+import { breakdownText, buyBreakdown, dealMoney, sellBreakdown, sellPrice, shopKey, shopState, type PriceBreakdown } from '@/engine/trade'
 
 const at = (birthplace: string) => {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace })
@@ -194,5 +194,64 @@ describe('動態狀態（R19 T4）', () => {
       }
     }
     throw new Error('60 天裡鐵爐堡都沒有狀態')
+  })
+})
+
+describe('價格拆解（R19 T5）', () => {
+  const num = (t: string) => {
+    if (t.startsWith('×')) return Number(t.slice(1))
+    const m = /^([+−±])(\d+)%/.exec(t)
+    return m ? 1 + (m[1] === '−' ? -1 : 1) * Number(m[2]) / 100 : NaN
+  }
+  /** 拆解的每一步相乘（夾過的類別倍率以夾過的為準） */
+  function product(b: PriceBreakdown, base: number): number {
+    const clamp = b.steps.find((s) => s.kind === 'clamp')
+    return b.steps.filter((s) => s.kind !== 'base' && s.kind !== 'cap' && !(clamp && (s.kind === 'tag' || s.kind === 'state')))
+      .reduce((a, s) => a * num(s.text), base)
+  }
+
+  it('explains a shop price step by step', () => {
+    const s = at('ironforge')
+    s.time.day = 6 // 鐵爐堡這天有「礦坑塌方」（種子 6）
+    standOn(s, 'smithy')
+    const key = shopKey(s, 'smithy')
+    s.relationships ??= {}
+    s.relationships[shopState(s, 'smithy').keeper] = { ...(s.relationships[shopState(s, 'smithy').keeper] ?? {}), affinity: 25 } as never
+    const deals = shopState(s, 'smithy').deals.filter((d) => d.id.startsWith('item:'))
+    expect(deals.length).toBeGreaterThan(0)
+    for (const d of deals) {
+      const b = buyBreakdown(s, key, d)!
+      expect(b.total).toBe(dealMoney(s, key, d))
+      expect(b.steps[0]!.kind).toBe('base')
+      expect(b.steps.some((x) => x.label === '王都物價' && x.text === '×1.15')).toBe(true)
+      expect(b.steps.some((x) => x.label.startsWith('折扣') && x.text === '−5%')).toBe(true)
+      const p = product(b, d.basis!.base)
+      expect(Math.abs(p - b.total)).toBeLessThanOrEqual(Math.max(1, b.total * 0.02))
+    }
+    const ore = deals.find((d) => d.title === '鐵礦石')
+    if (ore) {
+      const b = buyBreakdown(s, key, ore)!
+      expect(b.steps.map((x) => x.label)).toEqual(expect.arrayContaining(['材料加成（目錄價是收購價）', '礦產豐富', '礦坑塌方']))
+      expect(b.category).toBe('礦石與金屬')
+      expect(breakdownText(b)).toContain('礦坑塌方 +60%（還有 3 天）')
+    }
+  })
+
+  it('explains a buying price, including the cap on gear', () => {
+    const s = at('soriel')
+    standOn(s, 'smithy')
+    const key = shopKey(s, 'smithy')
+    s.inventory = []
+    addItem(s.inventory, '狼皮', 2)
+    const b = sellBreakdown(s, key, '狼皮')!
+    expect(b.total).toBe(sellPrice(s, key, '狼皮'))
+    expect(b.steps.map((x) => x.label)).toContain('材料全價收購')
+    expect(Math.abs(product(b, itemRules.items.find((i) => i.name === '狼皮')!.price_cc) - b.total)).toBeLessThanOrEqual(1)
+    // 這間店不收的東西沒有拆解
+    addItem(s.inventory, '乾糧', 1)
+    expect(sellBreakdown(s, key, '乾糧')).toBeUndefined()
+    // 特別交易沒有拆解
+    const special = shopState(s, 'smithy').deals.find((d) => !d.id.startsWith('item:'))
+    if (special) expect(buyBreakdown(s, key, special)).toBeUndefined()
   })
 })

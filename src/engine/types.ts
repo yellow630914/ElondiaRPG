@@ -1031,6 +1031,8 @@ export interface Deal {
   haggled?: boolean
   /** 氛圍性的交易：給 AI 的提示（見 shops.json 的 flavor） */
   flavor?: string
+  /** 一般商品的定價依據（價格拆解用，trade.ts 的 buyBreakdown）：目錄價（或固定清單寫的價格）與店家加成 */
+  basis?: { base: number; markup: number }
 }
 
 export interface ShopState {
