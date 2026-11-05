@@ -103,7 +103,7 @@ function produce() {
         <tr v-if="plan.fee"><th>花費</th><td>{{ formatMoney(plan.fee) }}<span v-if="plan.rent" class="muted">（含工坊租金 {{ formatMoney(plan.rent) }}）</span></td></tr>
         <tr>
           <th>批數</th>
-          <td><input v-model.number="batches" type="number" min="1" :max="craftRules.recipe.max_batches" class="qty" /> <span class="muted">材料、花費與時間乘批數，只擲一次</span></td>
+          <td><input v-model.number="batches" type="number" min="1" :max="craftRules.recipe.max_batches" class="qty" /> <span class="muted">材料、花費、時間與經驗乘批數，只擲一次</span></td>
         </tr>
         </tbody>
       </table>

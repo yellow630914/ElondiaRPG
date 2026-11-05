@@ -32,7 +32,7 @@
   },
   "companion": { "min_affinity": 30 },
   "recipe": {
-    "$comment": "配方（物品的 recipe，見 docs/CRAFTING.md 第 6 節）：做的人擲工藝的屬性檢定，加工藝等級；DC 依配方等級 dc[等級 - 1]；工具階級依 tool_tier。一次可以做 max_batches 批（材料、費用、時間都乘批數，只擲一次）。成果：大成功多做 critical_bonus 比例（無條件進位，至少 1 份）、成功照配方、部分成功只有 partial_ratio（無條件進位）、失敗材料損失 lost_on_fail（無條件進位）、大失敗材料全部損失；費用不論結果都照付。經驗 = 配方等級 × xp[成功程度]（和打造一樣，不乘批數）。",
+    "$comment": "配方（物品的 recipe，見 docs/CRAFTING.md 第 6 節）：做的人擲工藝的屬性檢定，加工藝等級；DC 依配方等級 dc[等級 - 1]；工具階級依 tool_tier。一次可以做 max_batches 批（材料、費用、時間都乘批數，只擲一次）。成果：大成功多做 critical_bonus 比例（無條件進位，至少 1 份）、成功照配方、部分成功只有 partial_ratio（無條件進位）、失敗材料損失 lost_on_fail（無條件進位）、大失敗材料全部損失；費用不論結果都照付。經驗 = 配方等級 × xp[成功程度] × 批數（和分開做一樣）。",
     "dc": [10, 12, 14, 16, 18],
     "max_batches": 5,
     "critical_bonus": 0.5,

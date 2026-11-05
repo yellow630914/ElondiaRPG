@@ -135,8 +135,9 @@ describe('producing', () => {
     expect(r.check?.degree).toBe('success')
     expect(qty(state, '野莓派')).toBe(4)
     expect(qty(state, '野莓')).toBe(0)
-    expect(r.changes.craft_xp).toEqual([{ actor: 'pc', craft: 'cooking', amount: 2 }])
-    expect(skillOf(pc(state), 'cooking').xp).toBe(2)
+    // 2 批：經驗乘批數（配方 1 級 × 成功 2 × 2 批）
+    expect(r.changes.craft_xp).toEqual([{ actor: 'pc', craft: 'cooking', amount: 4 }])
+    expect(skillOf(pc(state), 'cooking').xp).toBe(4)
   })
 
   it('loses half the materials on a failure and still pays the cost', () => {
