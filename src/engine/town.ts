@@ -195,8 +195,8 @@ export function questScene(quest: Quest): string {
 
 /** 這座城裡符合類型的地標（還沒出現的除外） */
 function landmarksFor(state: GameState, townId: string, types: string[]) {
-  // 成人向的場所（解鎖的特殊區域）不當委託地點
-  return landmarksIn(townId).filter((l) => l.types.some((t) => types.includes(t)) && !l.open?.adult && !landmarkHidden(state, l))
+  // 成人向的場所（解鎖的特殊區域）、擺在特殊地圖裡的（地下街）不當委託地點
+  return landmarksIn(townId).filter((l) => l.types.some((t) => types.includes(t)) && !l.open?.adult && !l.at.area.startsWith('sm/') && !landmarkHidden(state, l))
 }
 
 export function canAcceptRank(state: GameState, rank: GuildRank, quest?: Pick<Quest, 'flags'>): boolean {

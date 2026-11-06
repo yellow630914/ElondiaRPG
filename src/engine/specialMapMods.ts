@@ -93,6 +93,8 @@ export function sanitizeSpecialMapMod(
   }
   if (raw.refresh) out.refresh = true
   if (raw.peaceful) out.peaceful = true
+  // 地下街：一定是固定地圖（酒館打聽到之後從酒館進出，見 underworld.ts）
+  if (raw.underworld && Array.isArray(raw.grid) && raw.grid.length) out.underworld = true
   // 版面：固定地圖（格子）或隨機地圖（大小）
   const rows = (Array.isArray(raw.grid) ? raw.grid : []).filter((r): r is string => typeof r === 'string').slice(0, L.size[1])
   if (rows.length) {
@@ -211,6 +213,7 @@ export function specialMapUsage(id: string): string[] {
   }
   for (const l of Object.values(landmarks)) if (l.interior === id) out.push(`地標「${l.name}」的內部`)
   const key = specialKey(id)
+  for (const l of Object.values(landmarks)) if (l.at.area === key) out.push(`地標「${l.name}」擺在這裡`)
   for (const n of namedNpcs) {
     if (n.fixed?.area === key || n.stages?.some((st) => st.fixed?.area === key)) out.push(`固定 NPC「${n.name}」待在這裡`)
   }

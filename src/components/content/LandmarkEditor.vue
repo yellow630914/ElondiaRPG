@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkRules, specialMaps, type LandmarkScene } from '@/engine/data'
+import { ATTR_IDS, attrName, landmarks, landmarkTypes, locationById, npcs as namedNpcs, perkRules, specialMapOfKey, specialMaps, type LandmarkScene } from '@/engine/data'
 import { settlementArea } from '@/engine/grid'
 import { builtinLandmark, LANDMARK_EFFECTS, LANDMARK_LIMITS, landmarkTraining, landmarkUsage, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinPerk } from '@/engine/mods'
@@ -58,6 +58,9 @@ const usage = computed(() => {
 const typeList = Object.entries(landmarkTypes).map(([k, t]) => [k, t.name] as const)
 
 function placeText(r: CellRef) {
+  // 擺在特殊地圖裡（例如地下街）：小地圖只選得到城鎮區塊，移動的話會搬回街上
+  const sm = specialMapOfKey(r.area)
+  if (sm) return `${locationById(sm.location).name}・${sm.name}（${r.x}, ${r.y}）`
   return `${locationById(r.area.split('/')[0]!).name}・${settlementArea(r.area, false)?.name ?? r.area}（${r.x}, ${r.y}）`
 }
 function toggleType(t: string, on: boolean) {
@@ -222,6 +225,8 @@ const wearOptions = computed(() => wearChoices())
         </select>
       </label>
       <label class="check small"><input type="checkbox" :checked="!!draft.auction" @change="($event.target as HTMLInputElement).checked ? (draft.auction = true) : delete draft.auction" /> 拍賣會（成人向：每天的拍品、出價、寄賣，規則在 lewd.json 的 auction）</label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.black_market" @change="($event.target as HTMLInputElement).checked ? (draft.black_market = true) : delete draft.black_market" /> 黑市（這座聚落不公開的奴隸買賣與今天的珍品；聚落要有黑市，見 slavery.json 的 markets）</label>
+      <label class="check small"><input type="checkbox" :checked="!!draft.arena" @change="($event.target as HTMLInputElement).checked ? (draft.arena = true) : delete draft.arena" /> 淫鬥場（成人向：三種擂臺，規則在 lewd.json 的 arena）</label>
       <HelpText text="條件成立時可以選的固定場景（例如解鎖的特殊區域）：付錢、花時間，在場的人加好感，交給 AI 寫經過；成人向的場景照成人場景規則詳細描寫。預設每 3 天一次，場景之間共用。" />
       <div v-for="(sc, i) in draft.scenes ?? []" :key="i" class="scene-box">
         <div class="row"><b>場景 {{ i + 1 }}</b><span class="spacer" /><button class="small warn" @click="removeScene(i)" title="刪除這一項">✕</button></div>

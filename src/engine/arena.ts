@@ -1,11 +1,10 @@
 // 淫鬥場（成人向，docs/LEWD_STATS.md 第 21 節；規則在 lewd.json 的 arena）：
-// 魅氣濃的城鎮，站在娼館或酒館可以報名三種擂臺——淫物場、拘束戰鬥場（上場前戴一件拘束具）、性戰場（只算慾望）。
+// 擺在地下街（underworld.ts）的淫鬥場地標（landmarks.json 的 arena）上可以報名三種擂臺——淫物場、拘束戰鬥場（上場前戴一件拘束具）、性戰場（只算慾望）。
 // 每贏幾場往上一級對手，輸了連勝歸零；輸了不損失錢、沒有戰敗事件（比賽就是比賽）。
 
-import { charmLevel } from './charm'
 import { startCombat, type CombatState } from './combat'
 import { gameRule } from './gameRules'
-import { itemDef, lewdRules, locationById, type EncounterGroup, type LewdKey } from './data'
+import { itemDef, landmarkDef, lewdRules, locationById, type EncounterGroup, type LewdKey } from './data'
 import { baseSlotsFor, gearRules } from './gear'
 import { applyEffects } from './effects'
 import { currentCell } from './grid'
@@ -18,13 +17,10 @@ import type { GameState, GearSlot, Report } from './types'
 
 export const arenaRules = () => lewdRules.arena
 
-/** 這裡能不能報名：魅氣濃度夠、站在娼館或酒館、慾望戰鬥開著、不在戰鬥中 */
+/** 這裡能不能報名：站在淫鬥場的地標上、慾望戰鬥開著、不在戰鬥中 */
 export function arenaBlocked(state: GameState): string | undefined {
-  const r = arenaRules()
-  const loc = locationById(state.location)
-  if (loc.type === 'dungeon') return '這裡沒有淫鬥場'
-  if (charmLevel(loc.id) < r.charm_min) return '這座城沒有淫鬥場'
-  if (!r.cells.includes(currentCell(state).kind)) return '淫鬥場的入口在娼館或酒館'
+  const l = landmarkDef(currentCell(state).kind)
+  if (!l?.arena || l.location !== state.location) return '這裡沒有淫鬥場（在地下街裡）'
   if (gameRule(state, 'lustMult') <= 0) return '這個存檔關閉了慾望戰鬥'
   if (state.combat || state.pendingAction || state.pendingDefeat) return '現在不能這麼做'
   return undefined

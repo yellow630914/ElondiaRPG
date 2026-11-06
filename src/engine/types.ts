@@ -1007,7 +1007,11 @@ export interface GameState {
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number }; /** 特殊任務帶進來的臨時地圖：離開就放棄這個任務 */ story?: string }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */
-  special?: { back?: { area: string; x: number; y: number }; location: string; visited: string[] }
+  special?: {
+    back?: { area: string; x: number; y: number }; location: string; visited: string[]
+    /** 從特殊地圖裡的地標走進它的內部（例如地下街裡的俱樂部）：從內部的出口離開時回到這些格子（後進先出） */
+    inner?: { area: string; x: number; y: number }[]
+  }
   /** 冒險筆記的情報 */
   intel?: Intel[]
   /** 怪物圖鑑：怪物 id → 聽說、遭遇、擊敗（bestiary.ts） */

@@ -529,7 +529,7 @@ export function applyContent(mods: ContentMods): string[] {
     const l = sanitizeLandmarkMod(id, m, { maps: mods.specialMaps as LandmarkPack['maps'], npcs: Object.keys(mods.npcs ?? {}) })
     applyLandmarkMod(id, l)
     // 擺不上去的照樣套用（引用它的 NPC、任務才不會失效），但要讓作者知道
-    const why = landmarkSpotProblem(id, l.at)
+    const why = landmarkSpotProblem(id, l.at, { maps: mods.specialMaps as LandmarkPack['maps'] })
     if (why) problems.push(`地標「${l.name}」的位置（${l.at.x}, ${l.at.y}）${why}，地圖上不會出現`)
   })
   tryEach('商店', mods.shops ?? {}, (id, m) => applyShopMod(id, m))

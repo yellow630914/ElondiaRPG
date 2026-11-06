@@ -329,6 +329,7 @@ function remove() {
       <label class="block"><span>給 AI 的描述 <Hint text="外觀、氣氛、危險；在裡面的每一則日誌都會帶上。" /></span><textarea v-model="draft.desc" rows="3" :maxlength="L.desc_chars" /></label>
       <label class="check small"><input v-model="draft.refresh" type="checkbox" /> 會刷新：離開這片特殊地圖之後再進來，遭遇、資源與寶箱全部重來 <Hint text="沒勾時打過、採過的一直保持。" /></label>
       <label class="check small"><input v-model="draft.peaceful" type="checkbox" /> 安全的室內：休息不會被襲擊 <Hint text="例如地標的內部（咖啡廳、宴會廳）。" /></label>
+      <label class="check small"><input v-model="draft.underworld" type="checkbox" /> 地下街：這座聚落灰色產業的隱藏地圖 <Hint text="在酒館打聽到之後（主動行動「打聽地下街」），從酒館走進來、從出口回到酒館。只有固定地圖可以；一座聚落一張。黑市、淫鬥場這類地標可以擺在裡面。" /></label>
       <div v-for="l in asInterior" :key="l.id" class="small interior-note">
         <b>{{ l.emoji }} {{ l.name }}的內部</b>：裡面的事件是那個地標的場景（在「地標」頁編輯，條件成立時出現，預設每 3 天一次）。
         <ul v-if="l.scenes?.length">

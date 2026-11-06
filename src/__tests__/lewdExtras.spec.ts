@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { auctionBlocked, auctionLots, consign, consignable, placeBid } from '@/engine/auction'
 import { lewdRules } from '@/engine/data'
 import { travelEvents } from '@/engine/road'
-import { enterLocation, getArea, placeAt, standOn } from '@/engine/grid'
+import { enterLocation, getArea, standOn, type CellKind } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
 import { lewdOf } from '@/engine/lewd'
 import { orderOutfit, outfitOrder, outfitTailorHere } from '@/engine/outfitTailor'
@@ -60,7 +60,8 @@ describe('淫服裁縫鋪', () => {
 describe('拍賣會', () => {
   function atAuction() {
     const state = game()
-    placeAt(state, getArea(state, 'albena/market'), 7, 1)
+    // 月下拍賣會在阿爾貝納的地下街裡
+    expect(standOn(state, 'lm_auction_house' as CellKind)).toBe(true)
     return state
   }
   it('每天固定的拍品；出價不夠被別人標走，夠了就得標、付對手的最高價多一口', () => {

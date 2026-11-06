@@ -724,7 +724,7 @@ function setFuel(v: string) {
         </label>
         <label v-if="draft.gear.unique" class="check small">
           <input type="checkbox" :checked="!!draft.black_market" @change="draft.black_market = ($event.target as HTMLInputElement).checked || undefined" />
-          也會出現在黑市：知道黑市的城鎮每天刷新幾件珍品（件數在遊戲規則），價格是物品價的幾倍，可以殺價
+          也會出現在黑市：地下街裡的黑市每天刷新幾件珍品（件數在遊戲規則），價格是物品價的幾倍，可以殺價
         </label>
         <div v-if="draft.gear.unique" class="unique small">
           <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="1" max="3" class="num" /></label>

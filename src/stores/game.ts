@@ -8,6 +8,7 @@ import { leavePark } from '@/engine/park'
 import { charmGatePass } from '@/engine/charm'
 import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
+import { enterUnderworld } from '@/engine/underworld'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
 import { setPcTags } from '@/engine/pcTags'
@@ -1366,6 +1367,7 @@ export const useGame = defineStore('game', () => {
     visitLandmark: () => run(visitLandmark),
     /** 走進站著的地標的內部（特殊地圖） */
     enterLandmark: () => run(enterLandmark, { onMap: true }),
+    enterUnderworld: () => run(enterUnderworld, { onMap: true }),
     /** 選站著的地標上的場景 */
     playLandmarkScene: (index: number) => run((s) => playLandmarkScene(s, index)),
     /** 把生成的人存成固定 NPC（存進目前的世界） */

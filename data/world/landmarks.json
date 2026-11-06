@@ -1997,9 +1997,9 @@
    "emoji": "🖤",
    "location": "soriel",
    "at": {
-    "area": "soriel/harbor",
+    "area": "sm/sm_uw_soriel",
     "x": 6,
-    "y": 2
+    "y": 1
    },
    "types": [
     "market"
@@ -2336,9 +2336,9 @@
    "emoji": "🕳️",
    "location": "albena",
    "at": {
-    "area": "albena/market",
-    "x": 5,
-    "y": 2
+    "area": "sm/sm_uw_albena",
+    "x": 2,
+    "y": 3
    },
    "types": [
     "market"
@@ -3302,14 +3302,14 @@
    "emoji": "🔨",
    "location": "albena",
    "at": {
-    "area": "albena/market",
-    "x": 7,
-    "y": 1
+    "area": "sm/sm_uw_albena",
+    "x": 6,
+    "y": 3
    },
    "types": [
     "market"
    ],
-   "desc": "市集深處一棟掛著紅絲絨簾幕的樓房，每晚舉行不對外宣傳的拍賣會：色情技能書、稀有的淫具，什麼都有人出價。也收寄賣。",
+   "desc": "地下街深處一間掛著紅絲絨簾幕的廳堂，每晚舉行不對外宣傳的拍賣會：色情技能書、稀有的淫具，什麼都有人出價。也收寄賣。",
    "scene": "拍賣廳裡燈光昏暗，戴著面具的買家們坐在包廂裡舉牌，台上的拍賣官是個笑容玩味的魅魔。",
    "open": {
     "adult": true
@@ -5392,6 +5392,348 @@
      }
     }
    ]
+  },
+  {
+   "id": "lm_uw_black_soriel",
+   "name": "外環的地下奴隸販子",
+   "emoji": "⛓️",
+   "location": "soriel",
+   "at": {
+    "area": "sm/sm_uw_soriel",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_black_albena",
+   "name": "自由集市地下拍賣",
+   "emoji": "⛓️",
+   "location": "albena",
+   "at": {
+    "area": "sm/sm_uw_albena",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_albena",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "albena",
+   "at": {
+    "area": "sm/sm_uw_albena",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_coast_ferry",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "coast_ferry",
+   "at": {
+    "area": "sm/sm_uw_coast_ferry",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_bloodplume",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_uw_bloodplume",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_moltenhold",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "moltenhold",
+   "at": {
+    "area": "sm/sm_uw_moltenhold",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_shadow_vale",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "shadow_vale",
+   "at": {
+    "area": "sm/sm_uw_shadow_vale",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_bone_hills",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "bone_hills",
+   "at": {
+    "area": "sm/sm_uw_bone_hills",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_silent_tomb",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "silent_tomb",
+   "at": {
+    "area": "sm/sm_uw_silent_tomb",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_rotmarsh",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "rotmarsh",
+   "at": {
+    "area": "sm/sm_uw_rotmarsh",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_ashport",
+   "name": "灰港鎮碼頭黑市",
+   "emoji": "⛓️",
+   "location": "ashport",
+   "at": {
+    "area": "sm/sm_uw_ashport",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_ashport",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "ashport",
+   "at": {
+    "area": "sm/sm_uw_ashport",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_tidehaven",
+   "name": "潮汐港走私船艙",
+   "emoji": "⛓️",
+   "location": "tidehaven",
+   "at": {
+    "area": "sm/sm_uw_tidehaven",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_tidehaven",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "tidehaven",
+   "at": {
+    "area": "sm/sm_uw_tidehaven",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_quanzhou",
+   "name": "瑔州港的走私船艙",
+   "emoji": "⛓️",
+   "location": "quanzhou",
+   "at": {
+    "area": "sm/sm_uw_quanzhou",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_quanzhou",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "quanzhou",
+   "at": {
+    "area": "sm/sm_uw_quanzhou",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_yinghe",
+   "name": "鷹河邊的黑市帳",
+   "emoji": "⛓️",
+   "location": "yinghe",
+   "at": {
+    "area": "sm/sm_uw_yinghe",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_yinghe",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "yinghe",
+   "at": {
+    "area": "sm/sm_uw_yinghe",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
   }
  ]
 }

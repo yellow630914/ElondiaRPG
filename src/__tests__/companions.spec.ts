@@ -12,7 +12,8 @@ import { mod, proficiency } from '@/engine/character'
 import { checkBonus } from '@/engine/perks'
 import { withBonus } from '@/engine/rng'
 import { applyEffects } from '@/engine/effects'
-import { enterLocation, standOn } from '@/engine/grid'
+import { currentArea, enterLocation, standOn, type CellKind } from '@/engine/grid'
+import { enterUnderworld, underworldEntryBlocked } from '@/engine/underworld'
 import { generateNpc, npcKind, npcRecord, slavePrice } from '@/engine/npcs'
 import { isFugitive, leaderOf } from '@/engine/party'
 import { autoHitDice, hitDiceLeft, longRest, shortRest, shortRestPreview } from '@/engine/rest'
@@ -378,12 +379,19 @@ describe('slave markets', () => {
     expect(state.relationships![slave.id]!.affinity).toBe(-10 + 15)
   })
 
-  it('finds the black market by asking around', () => {
+  it('finds the underworld by asking around in the tavern, and the black market inside it', () => {
     const state = game(12, { location: 'albena' })
+    expect(() => prepareAction(state, { kind: 'black_market', text: '' })).toThrow('酒館')
+    standOn(state, 'tavern')
+    expect(underworldEntryBlocked(state)).toContain('不知道')
     prepareAction(state, { kind: 'black_market', text: '找看起來最不老實的商人搭話' })
     forceRoll(state, 20)
     resolveAction(state, null)
-    expect(state.flags['black_market:albena']).toBe(true)
+    expect(state.flags['underworld:albena']).toBe(true)
+    expect(() => marketStock(state, 'black')).toThrow('地下街')
+    enterUnderworld(state)
+    expect(currentArea(state).key).toBe('sm/sm_uw_albena')
+    expect(standOn(state, 'lm_uw_black_albena' as CellKind)).toBe(true)
     expect(marketStock(state, 'black').length).toBeGreaterThan(0)
   })
 })
