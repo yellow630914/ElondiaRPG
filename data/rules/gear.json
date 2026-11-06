@@ -348,6 +348,13 @@
     "armed": { "chance": 0.12, "per_level": 0.02, "max_chance": 0.35 },
     "bump": 0.25
   },
+  "chest_forge_high": {
+    "$comment": "高等地下城（Lv.13～20）寶箱的打造材料（R12，2026-11-06）：寶箱的等級（這一層怪物的最高等級）到 min_level 時，用這一組取代 chests 那一層的 forge（由上往下找第一個符合的）。舊的地下城最高到 Lv.12，不受影響。格式同 forge：[材料等級, 機率]；第 6、7 級依地點的 material_series 開歷史或歡愉系列。",
+    "bands": [
+      { "min_level": 17, "outskirts": [[5, 0.15]], "shallow": [[6, 0.2], [7, 0.02]], "middle": [[6, 0.25], [7, 0.04]], "deep": [[6, 0.25], [7, 0.08]] },
+      { "min_level": 13, "outskirts": [[4, 0.15]], "shallow": [[4, 0.3], [5, 0.05]], "middle": [[5, 0.2], [6, 0.03]], "deep": [[5, 0.25], [6, 0.08]] }
+    ]
+  },
   "chests": {
     "$comment": "地下城的寶箱（每層的數量見 maps.json 的 generation.dungeon.layers[].chests）。level 為這一層怪物的最高等級；money 為 [最少, 最多] × level；gear 為裝一件裝備的機率（deep 的 gear_extra 為第二件的機率）；items 為 [物品, 機率]；forge 為 [材料等級, 機率]，依底材隨機挑一種類型。",
     "outskirts": { "money": [5, 20], "gear": 0.4, "items": [["走私客的腳鍊", 0.02], ["老獵人的護身符", 0.02], ["微弱治療藥劑", 0.5], ["解毒劑", 0.3], ["火焰瓶", 0.2], ["懸賞告示", 0.15]], "forge": [[2, 0.15]] },

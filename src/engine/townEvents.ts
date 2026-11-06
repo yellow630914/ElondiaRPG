@@ -16,6 +16,7 @@ import { applyPendingMove, applyRoadOutcome, roll, travelEvents, type RoadTempla
 import { commitReport, newReportId, withRng } from './state'
 import { condMet } from './storyFlags'
 import { exposureAt } from './lewd'
+import { dayPartOk } from './timeOfDay'
 import type { GameState, GameTime, Report } from './types'
 
 /** 可以遇到事件的設施（自建商店另外算） */
@@ -45,6 +46,7 @@ export function townCandidates(state: GameState, area: Area, cellKind: string): 
     && tagsAllowed(t.tags)
     && pcBodyAllowed(t.pc_body, body)
     && condMet(state, t.requires)
+    && dayPartOk(state.time, t.hours)
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }
 

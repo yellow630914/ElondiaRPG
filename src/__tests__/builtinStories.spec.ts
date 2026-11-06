@@ -412,11 +412,11 @@ describe('quests inside a temporary map', () => {
 
   it('gives the non-adult character lines a fourth, adult quest, one per partner, tagging traditional men', () => {
     const fourth = stories.filter((s) => /・四）$/.test(s.summary) && s.nodes.some((n) => n.id === 'night'))
-    // 礁光柱維修沒有：主角是螺鈿婆婆，櫻汐已經有自己的故事線；炎華之地 12 條（燁昭華住在宮裡，從公會開頭）
+    // 礁光柱維修沒有：主角是螺鈿婆婆，櫻汐已經有自己的故事線；炎華之地 12 條（燁昭華住在宮裡，從公會開頭）；R9 的白百合巡禮、琥珀各 1 條
     const partner = (s: (typeof fourth)[number]) => s.start.npc ?? Object.keys(s.start.requires?.affinity ?? {})[0]!
-    expect(fourth.length).toBe(40)
+    expect(fourth.length).toBe(42)
     expect(fourth.filter((s) => s.id.startsWith('yc')).length).toBe(12)
-    expect(new Set(fourth.map(partner)).size).toBe(40)
+    expect(new Set(fourth.map(partner)).size).toBe(42)
     expect(fourth.some((s) => s.summary.includes('礁光柱維修'))).toBe(false)
     for (const s of fourth) {
       expect(s.tags?.[0], s.id).toBe('adult')

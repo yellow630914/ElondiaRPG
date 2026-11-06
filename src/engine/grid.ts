@@ -17,7 +17,7 @@ import {
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
-import { chestForgeCandidates, gearRules, localLootItems, MATERIAL_KINDS, randomGear, registerGear } from './gear'
+import { chestForgeCandidates, chestForgeTable, gearRules, localLootItems, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { blueprintName, blueprintRules, grantBlueprint, randomBlueprint } from './blueprints'
 import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
@@ -1465,7 +1465,7 @@ function openChest(state: GameState, area: Area, level: number, relic = false): 
     if (t.gear_extra && rng.chance(t.gear_extra)) add(registerGear(state, randomGear(rng, level, undefined, series)))
     // 打造材料：那一級的通用材料加上這裡的怪物會掉的，平均抽一種
     let local: Set<string> | undefined
-    for (const [tier, p] of t.forge) {
+    for (const [tier, p] of chestForgeTable(layer, level)) {
       if (!rng.chance(p)) continue
       const pool = chestForgeCandidates(rng.pick(MATERIAL_KINDS), tier, series, (local ??= localLootItems(area.location)))
       if (pool.length) add(rng.pick(pool))

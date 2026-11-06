@@ -46,6 +46,7 @@
 | `location_types` | 陣列 | 只有城鎮：`capital` 主城、`city` 城市、`town` 城鎮、`village` 村莊、`port` 港口、`outpost` 哨站、`fortress` 要塞 | 聚落規模。不寫＝不限 |
 | `locations` | 陣列 | 只有城鎮：聚落的地點 id（`data/world/geography.json`，地下城不行） | 只在這些地點。不寫＝不限 |
 | `cooldown_days` | 整數 | 只有城鎮：0～60 | 同一事件隔幾天才會再出現。不寫＝`eventRules` 的 `repeat_days`（內建 10） |
+| `hours` | `"day"`／`"night"` | 只有城鎮、地下城、寄生物 | 只在白天（6～18 點）或夜裡出現；時段不對時不會抽到。寫著「今晚」「半夜」的場景用 `night`。不寫＝不限 |
 | `category` | 字串 | `social` 人情、`trouble` 麻煩、`opportunity` 機會、`omen` 傳聞與異象、`commerce` 買賣 | 分類。城鎮事件依最近出現過的分類降低權重；旅途上只是標記 |
 | `requires` | `{ "flags", "flags_none" }` | 旗標名稱，最多 40 字 | 這些旗標都成立、那些都不成立時才會出現（第 3 節）。和特殊任務的 `requires` 同一種寫法，也可以寫計數器、慾望指標、主角戴著什麼、身分標籤這類條件（[STORY_QUESTS](../../docs/STORY_QUESTS.md) 1.1 節） |
 | `tags` | 陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling`、`male_partner` | 內容標籤：玩家在設定關掉的標籤不出現 |
@@ -273,6 +274,7 @@
 | `title` 超過 20 字、`label` 超過 30 字、`text` 超過 400 字 | 截掉 |
 | 城鎮事件寫 `tier: "advanced"` | 變成 `normal`（城鎮沒有高階） |
 | 城鎮事件寫 `modes`；旅途事件寫 `cells`、`location_types`、`locations`、`cooldown_days` | 拿掉（`scope` 寫錯是最常見的原因） |
+| 旅途、線索事件寫 `hours`；`hours` 不是 `day`、`night` | 拿掉 |
 | `cells` 寫 `road`、`home`、地標 id | 拿掉 |
 | `cells` 寫不存在的商店（`shop_…` 拼錯） | 拿掉。**全部被拿掉時 `cells` 變空＝任何設施都會發生**：檢查報告裡看到 `cells` 被改就要修 |
 | 結果的效果寫 `enslave_player`、`travel_to` 寫地下城 | 拿掉（世界檢查會提醒） |

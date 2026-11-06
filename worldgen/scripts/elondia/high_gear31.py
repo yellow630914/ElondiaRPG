@@ -1,4 +1,4 @@
-# 高等地下城的裝備（docs/plan/roadmap/HIGH_DUNGEONS_PLAN.md 第 2 節；docs/ITEMS.md 第 4.5 節）：
+# 高等地下城的裝備（R12，見 docs/DUNGEON_DESIGN.md 第 8 節；docs/ITEMS.md 第 4.5 節）：
 #
 # - 第 6、7 級材料分兩套，各五種類型：歷史系列（歷史裂縫第 6 級、歷史迴廊第 7 級）、歡愉系列（禁果庭園第 6 級、歡愉秘宮第 7 級，成人向）。
 #   每一座地下城的層主都掉得到自己那一套、那一級的全部五種。

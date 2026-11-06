@@ -16,6 +16,7 @@ import { checkModifiers, modifierNote } from './perks'
 import { applyPendingMove, applyRoadOutcome, sceneOn, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate } from './road'
 import { commitReport, newReportId, withRng } from './state'
 import { condMet } from './storyFlags'
+import { dayPartOk } from './timeOfDay'
 import type { GameState, GameTime, Report } from './types'
 import { roll as diceRoll, withBonus } from './rng'
 
@@ -76,6 +77,7 @@ export function dungeonCandidates(state: GameState, area: Area, trigger: Dungeon
     && tagsAllowed(t.tags)
     && pcBodyAllowed(t.pc_body, body)
     && condMet(state, t.requires)
+    && dayPartOk(state.time, t.hours)
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }
 

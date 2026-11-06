@@ -1,6 +1,7 @@
 // 材料與討伐委託（系統生成的一般委託，data/rules/town_quests.json 的 material_quests）：
 // - gather_wild：近郊採集點的材料（F 級）；gather_dungeon：地下城周邊採集點的材料（E 級）
 // - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～A 級，依怪物等級）
+// - drop_boss：地下城層主掉落的打造材料（第 4 級以上，F～S 級，依層主等級；材料價值的倍率另訂，R12）
 // - boss_hunt：討伐地下城的層主（F～A 級，依層主等級）
 // 材料委託在公會交付行囊裡的材料，可以過量交付到 max 份；討伐委託記錄打倒的次數，最多算到 max 次。
 // 帶著委託進入近郊或地下城的那一層時，grid.ts 會確保有足量的採集點或戰鬥點（questTargets）。
@@ -13,10 +14,11 @@ import {
 import type { Rng } from './rng'
 import type { GameState, GuildRank, Quest } from './types'
 import { gameRule } from './gameRules'
+import { gearRules } from './gear'
 import mapsJson from '@data/world/maps.json'
 
 export const RANK_ORDER: GuildRank[] = ['F', 'E', 'D', 'C', 'B', 'A', 'S']
-export const MATERIAL_KINDS: MaterialQuestKind[] = ['gather_wild', 'gather_dungeon', 'drop_wild', 'drop_dungeon', 'boss_hunt']
+export const MATERIAL_KINDS: MaterialQuestKind[] = ['gather_wild', 'gather_dungeon', 'drop_wild', 'drop_dungeon', 'drop_boss', 'boss_hunt']
 export const LAYER_IDS: DungeonLayerId[] = DUNGEON_LAYER_IDS
 const LAYER_NAME = DUNGEON_LAYER_NAME
 
@@ -28,7 +30,7 @@ export function isMaterialQuest(q: Pick<Quest, 'kind'>): boolean {
 
 /** 要交材料的委託（採集、掉落） */
 export function isCollectQuest(q: Pick<Quest, 'kind'>): boolean {
-  return q.kind === 'gather_wild' || q.kind === 'gather_dungeon' || q.kind === 'drop_wild' || q.kind === 'drop_dungeon'
+  return q.kind === 'gather_wild' || q.kind === 'gather_dungeon' || q.kind === 'drop_wild' || q.kind === 'drop_dungeon' || q.kind === 'drop_boss'
 }
 
 /**
@@ -104,6 +106,19 @@ function materialLoot(id: string) {
   return (enemies[id]?.loot ?? []).filter((l) => itemDef(l.item)?.category === 'material')
 }
 
+/** 打造材料的等級（items.json 的 forge 對到 gear.json 的材料）；不是打造材料時 0 */
+function forgeTier(item: string): number {
+  const m = itemDef(item)?.forge?.materials[0]
+  return (m && gearRules.materials[m]?.tier) || 0
+}
+
+/** 每一層的層主（舊格式只有 boss 的算深層） */
+function bossesOf(enc: NonNullable<(typeof dungeonEncounters)[string]>): { layer: BossLayerId; id: string }[] {
+  return BOSS_LAYER_IDS
+    .map((layer) => ({ layer, id: (enc.bosses?.[layer] ?? (layer === 'deep' ? enc.boss : undefined))?.[0]?.[0] }))
+    .filter((b): b is { layer: BossLayerId; id: string } => !!b.id && !!enemies[b.id])
+}
+
 function monstersIn(groups: EncounterGroup[]): string[] {
   return [...new Set(groups.flat().map(([id]) => id))].filter((id) => !!enemies[id])
 }
@@ -116,9 +131,9 @@ function qtyFor(rng: Rng, [lo, hi]: [number, number]): number {
   return rng.int(lo, hi)
 }
 
-function reward(rng: Rng, rank: GuildRank, item: string | undefined, goal: number, mult = 1): number {
+function reward(rng: Rng, rank: GuildRank, item: string | undefined, goal: number, mult = 1, valueMult = materialQuestRules.item_value_mult): number {
   const [lo, hi] = rewardRange(rank)
-  const value = item ? (itemDef(item)?.price_cc ?? 0) * goal * materialQuestRules.item_value_mult : 0
+  const value = item ? (itemDef(item)?.price_cc ?? 0) * goal * valueMult : 0
   return Math.round((rng.int(lo, hi) + value) * mult)
 }
 
@@ -218,10 +233,24 @@ function dungeonQuest(state: GameState, rng: Rng, kind: MaterialQuestKind, targe
       title: `收集${dname}${LAYER_NAME[layer]}${enemies[m]!.name}的${item}（${goal} 份）`, rank, item, reward_cc: reward(rng, rank, item, goal),
     }
   }
+  if (kind === 'drop_boss') {
+    const def = r.drop_boss
+    if (!def) return undefined
+    const pairs = bossesOf(enc).flatMap(({ layer, id }) => materialLoot(id)
+      .filter((l) => forgeTier(l.item) >= (def.min_tier ?? 1))
+      .map((l) => ({ layer, id, item: l.item })))
+    if (!pairs.length) return undefined
+    const { layer, id, item } = rng.pick(pairs)
+    const goal = qtyFor(rng, def.qty)
+    const rank = rankForLevel(enemies[id]!.level, def.ranks ?? ['F', 'S'])
+    return {
+      ...base(state, kind, target, goal), id: `q-${tag}-db`, layer, monster: id,
+      title: `收集${dname}${LAYER_NAME[layer]}的層主${enemies[id]!.name}的${item}（${goal} 份）`, rank, item,
+      reward_cc: reward(rng, rank, item, goal, 1, def.item_value_mult ?? r.item_value_mult),
+    }
+  }
   if (kind === 'boss_hunt') {
-    const bosses = BOSS_LAYER_IDS
-      .map((layer) => ({ layer, id: (enc.bosses?.[layer] ?? (layer === 'deep' ? enc.boss : undefined))?.[0]?.[0] }))
-      .filter((b): b is { layer: BossLayerId; id: string } => !!b.id && !!enemies[b.id])
+    const bosses = bossesOf(enc)
     if (!bosses.length) return undefined
     const { layer, id } = rng.pick(bosses)
     const goal = qtyFor(rng, r.boss_hunt.qty)
@@ -274,6 +303,8 @@ export function questTargets(state: GameState, location: string, layer?: Dungeon
   const out: QuestTarget[] = []
   for (const q of state.quests) {
     if (q.target !== location || q.status !== 'accepted' || !isCollectQuest(q) || !q.item) continue
+    // 層主一層只有一隻，不另外放戰鬥點
+    if (q.kind === 'drop_boss') continue
     // 地下城的委託只在指定的那一層；近郊的委託只在近郊
     if (layer ? q.layer !== layer : q.area !== 'outskirts') continue
     const have = questHave(state, q)

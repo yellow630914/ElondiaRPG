@@ -1493,7 +1493,7 @@
 
 ### 4.5 高等地下城的材料與底材
 
-資料由 `worldgen/scripts/elondia/high_gear31.py` 產生（[DUNGEON_DESIGN](DUNGEON_DESIGN.md) 第 8 節、計畫 [HIGH_DUNGEONS_PLAN](plan/roadmap/HIGH_DUNGEONS_PLAN.md)）。
+資料由 `worldgen/scripts/elondia/high_gear31.py` 產生（[DUNGEON_DESIGN](DUNGEON_DESIGN.md) 第 8 節；R12，已完成）。
 
 **第 6、7 級材料**（4.1 節的表）分成兩套，各有五種類型，傳說稀有度，不在商店販售。同一級的兩套加成一樣（第 6 級 +8、寶石 +5，建議 Lv.16；第 7 級 +10、寶石 +6，建議 Lv.19），差在特性：歷史系列厚重（金屬的減傷多、暗影與心靈抗性），歡愉系列輕巧（金屬的迴避多、慾望抗性）。
 

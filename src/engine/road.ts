@@ -21,7 +21,7 @@ import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
 import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
-import { applyTimeJump } from './timeOfDay'
+import { applyTimeJump, type DayPart } from './timeOfDay'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { addCounters, condMet, flagKey, openFor } from './storyFlags'
 import { gateCheck } from './security'
@@ -91,6 +91,8 @@ export interface RoadTemplate {
   pc_body?: Body[]
   /** 成人向的親密場景是什麼：選項帶 adult_scene 時，敘事要詳細描寫 */
   scene?: string
+  /** 城鎮、地下城、寄生物：只在白天或夜裡出現（沒有時不限；旅途、線索不看） */
+  hours?: DayPart
   title: string
   text: string
   check?: StoryCheck

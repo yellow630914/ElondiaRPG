@@ -687,11 +687,12 @@ export interface RelationSuggestion {
  * 材料委託（交付 goal 份，最多 max 份，報酬依交付的份數）：
  * - gather_wild：近郊採集點的材料（F 級）；gather_dungeon：地下城周邊採集點的材料（E 級）
  * - drop_wild：近郊怪物掉落的材料（F～E 級）；drop_dungeon：地下城怪物掉落的材料（F～A 級，依怪物等級）
+ * drop_boss：地下城層主掉落的打造材料（第 4 級以上，F～S 級，依層主等級）。
  * boss_hunt：討伐地下城的層主 goal 次，最多 max 次（F～A 級，依層主等級）。
  */
 export type QuestKind =
   | 'clear_dungeon' | 'pest' | 'hunt' | 'search' | 'gather' | 'patrol' | 'delivery'
-  | 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'boss_hunt'
+  | 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'drop_boss' | 'boss_hunt'
 
 export interface Quest {
   id: string

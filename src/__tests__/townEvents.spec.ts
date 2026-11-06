@@ -36,6 +36,7 @@ describe('town events', () => {
   it('fires a choice event on a matching facility and waits for an answer', () => {
     only('tavern_free_round')
     const state = inTown()
+    state.time.hour = 21 // 熱鬧的晚上只在夜裡
     expect(standOn(state, 'tavern')).toBe(true)
     expect(maybeTownEvent(state)).toEqual({})
     expect(pendingTownEvent(state)?.id).toBe('tavern_free_round')
@@ -85,6 +86,7 @@ describe('town events', () => {
   it('keeps a cooldown between events and does not repeat the same one soon', () => {
     only('tavern_free_round')
     const state = inTown()
+    state.time.hour = 21 // 熱鬧的晚上只在夜裡
     standOn(state, 'tavern')
     maybeTownEvent(state)
     answerTownEvent(state, 1)
@@ -179,6 +181,7 @@ describe('adult town events', () => {
 
   it('only show up for the right body', () => {
     const state = female()
+    state.time.hour = 21 // 賭局的代價只在夜裡
     const ids = () => townCandidates(state, currentArea(state), 'tavern').map((t) => t.id)
     expect(ids()).toContain('town_drugged_drink')
     expect(ids()).toContain('town_gamble_price')
@@ -196,5 +199,25 @@ describe('adult town events', () => {
     const report = answerTownEvent(state, 2)
     expect(report.narration?.adult_scene).toBe(travelEvents.templates.find((x) => x.id === 'town_drugged_drink')!.scene)
     expect(report.changes.conditions?.map((c) => c.condition)).toContain('aroused')
+  })
+})
+
+describe('event time of day (R13)', () => {
+  it('night-only town events are not drawn during the day', () => {
+    const state = inTown()
+    const ids = () => townCandidates(state, currentArea(state), 'tavern').map((t) => t.id)
+    state.time.hour = 10
+    expect(ids()).not.toContain('tavern_free_round')
+    state.time.hour = 21
+    expect(ids()).toContain('tavern_free_round')
+  })
+
+  it('keeps hours only for town, dungeon and parasite events', () => {
+    const base = { kind: 'choice' as const, title: 'a', text: 'b' }
+    expect(sanitizeTravelEvent('x', { ...base, scope: 'town', hours: 'night' }, true).hours).toBe('night')
+    expect(sanitizeTravelEvent('x', { ...base, scope: 'dungeon', hours: 'day' }, true).hours).toBe('day')
+    expect(sanitizeTravelEvent('x', { ...base, hours: 'night' }, true).hours).toBeUndefined()
+    expect(sanitizeTravelEvent('x', { ...base, scope: 'lead', hours: 'night' }, true).hours).toBeUndefined()
+    expect(sanitizeTravelEvent('x', { ...base, scope: 'town', hours: 'noon' as never }, true).hours).toBeUndefined()
   })
 })

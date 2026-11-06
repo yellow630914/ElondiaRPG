@@ -88,8 +88,8 @@ describe('unique gear', () => {
   it('quest gear: every piece is handed out by a special quest, stronger in later level bands', () => {
     const given = storyItems()
     const gear = questGear()
-    // 149 件，加上炎華南域的 5 件（east_p4b.py）與政治線終章的 3 件（east_p5_items.py）
-    expect(gear.length).toBe(163)
+    // 149 件，加上炎華南域的 5 件（east_p4b.py）、政治線終章的 3 件（east_p5_items.py）與琥珀線的霧銀耳墜（char_lines38.py）
+    expect(gear.length).toBe(164)
     for (const i of gear) {
       expect(given.get(i.name)?.length, i.name).toBe(1)
       const sid = given.get(i.name)![0]!
@@ -116,8 +116,8 @@ describe('unique gear', () => {
         expect(weapon, `${c} weapon Lv.${band[0]}`).toBe(true)
         expect(pieces.some((i) => cls.body.includes(i.gear!.base)), `${c} armor Lv.${band[0]}`).toBe(true)
       }
-      // Lv.8～11 多了炎華南域的玉圭、天青盞、瓷佩、文王鼓（east_p4b.py）
-      expect(pieces.filter((i) => !['main_hand', 'body', 'wrists'].includes(slot(i))).length).toBe(band[0] === 5 ? 10 : 16)
+      // Lv.8～11 多了炎華南域的玉圭、天青盞、瓷佩、文王鼓（east_p4b.py）與琥珀線的霧銀耳墜（char_lines38.py）
+      expect(pieces.filter((i) => !['main_hand', 'body', 'wrists'].includes(slot(i))).length).toBe(band[0] === 5 ? 10 : 17)
     }
   })
 

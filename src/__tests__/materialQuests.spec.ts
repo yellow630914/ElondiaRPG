@@ -139,7 +139,7 @@ describe('material quests', () => {
     const gather = take(state, (x) => x.kind === 'gather_dungeon')
     const drop = take(state, (x) => x.kind === 'drop_dungeon')
     for (const q of [gather, drop]) {
-      const layer = ['outskirts', 'shallow', 'middle', 'deep'].indexOf(q.layer!)
+      const layer = ['outskirts', 'shallow', 'middle', 'deep', 'abyss'].indexOf(q.layer!)
       const area = withRng(state, (rng) => generateLayer(state, locationById(q.target), layer, rng))
       const n = area.cells.filter((c) => (q.kind === 'gather_dungeon'
         ? c.kind === 'resource' && c.item === q.item
@@ -158,5 +158,42 @@ describe('material quests', () => {
     const money = state.money_cc
     turnInQuest(state, q.id)
     expect(state.money_cc - money).toBe(rewardFor(q, q.max!))
+  })
+})
+
+describe('high dungeon materials (R12)', () => {
+  it('chests in Lv.13-20 dungeons hold tier 4-7 forging materials; older dungeons keep their table', async () => {
+    const { chestForgeTable, gearRules } = await import('@/engine/gear')
+    expect(chestForgeTable('deep', 16)).toEqual([[5, 0.25], [6, 0.08]])
+    expect(chestForgeTable('shallow', 18)).toEqual([[6, 0.2], [7, 0.02]])
+    expect(chestForgeTable('outskirts', 13)).toEqual([[4, 0.15]])
+    // 舊的地下城最高 Lv.12；底層不在表上，照原本的
+    expect(chestForgeTable('deep', 9)).toEqual(gearRules.chests.deep!.forge)
+    expect(chestForgeTable('abyss', 13)).toEqual(gearRules.chests.abyss!.forge)
+  })
+
+  it('posts boss material quests for tier 4+ forging materials, ranked by the boss, paid at 1.25x the value', async () => {
+    const { postDungeonQuests, questTargets } = await import('@/engine/materialQuests')
+    const { itemDef } = await import('@/engine/data')
+    const { gearRules } = await import('@/engine/gear')
+    const state = game()
+    const found: Quest[] = []
+    for (let i = 0; i < 60 && found.length < 5; i++) {
+      found.push(...withRng(state, (rng) => postDungeonQuests(state, rng, ['history_rift'])).filter((q) => q.kind === 'drop_boss'))
+    }
+    expect(found.length).toBeGreaterThan(0)
+    for (const q of found) {
+      const tier = gearRules.materials[itemDef(q.item!)!.forge!.materials[0]!]!.tier
+      expect(tier, q.item).toBeGreaterThanOrEqual(4)
+      expect(enemies[q.monster!]!.level).toBeGreaterThanOrEqual(14)
+      expect(q.rank).toBe('S')
+      const value = itemDef(q.item!)!.price_cc * q.goal * materialQuestRules.drop_boss!.item_value_mult!
+      expect(q.reward_cc).toBeGreaterThanOrEqual(value)
+      expect(q.reward_cc).toBeLessThan(value + rewardRange('S')[1] + 1)
+      // 層主一層只有一隻：不另外補戰鬥點
+      q.status = 'accepted'
+      state.quests = [q]
+      expect(questTargets(state, 'history_rift', q.layer)).toEqual([])
+    }
   })
 })
