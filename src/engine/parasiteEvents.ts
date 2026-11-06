@@ -42,7 +42,7 @@ export function parasiteTemplates(): RoadTemplate[] {
 }
 
 /** 這個寄生物、這個階段、這個時機能出現的發作事件 */
-export function parasiteCandidates(state: GameState, p: ParasiteState, trigger: ParasiteTrigger): RoadTemplate[] {
+export function parasiteCandidates(state: GameState, p: ParasiteState, trigger: ParasiteTrigger, at: GameTime = state.time): RoadTemplate[] {
   const stage = stageOf(p.corruption)
   const body = characterBody(pcOf(state))
   return parasiteTemplates().filter((t) =>
@@ -52,7 +52,8 @@ export function parasiteCandidates(state: GameState, p: ParasiteState, trigger: 
     && tagsAllowed(t.tags)
     && pcBodyAllowed(t.pc_body, body)
     && condMet(state, t.requires)
-    && dayPartOk(state.time, t.hours))
+    // 時段：長休看入睡的時間（at）；旅途中和旅途事件一樣不看（每一格約一天，鐘點一直停在出發的時候）
+    && (trigger === 'travel' || dayPartOk(at, t.hours)))
 }
 
 /**
@@ -75,7 +76,7 @@ function busy(state: GameState): boolean {
  * 依時機擲發作：先依時間增長侵蝕度（不能發作的不增長），冷卻過了，每個會發作的寄生物各擲一次（機率 × 存檔規則 × 階段倍率），
  * 中了就從候選裡挑一件（避開最近發作過的）。回傳有沒有開始事件。
  */
-export function maybeParasiteEvent(state: GameState, trigger: ParasiteTrigger): boolean {
+export function maybeParasiteEvent(state: GameState, trigger: ParasiteTrigger, at: GameTime = state.time): boolean {
   const pc = pcOf(state)
   if (!parasitesOf(pc).length) return false
   // 發作關掉時也要把日子往前推（不增長），之後恢復才不會一次補上
@@ -88,7 +89,7 @@ export function maybeParasiteEvent(state: GameState, trigger: ParasiteTrigger): 
   if (base <= 0) return false
   const recent = log?.recent ?? []
   for (const p of activeParasites(pc)) {
-    const list = parasiteCandidates(state, p, trigger)
+    const list = parasiteCandidates(state, p, trigger, at)
     if (!list.length) continue
     const chance = Math.min(1, base * (parasiteRules.stages[stageOf(p.corruption)]?.chance_mult ?? 1))
     const fresh = list.filter((t) => !recent.includes(t.id))

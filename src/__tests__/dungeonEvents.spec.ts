@@ -5,7 +5,7 @@ import { companionRules, locationById } from '@/engine/data'
 import { acceptTrapLure, answerDungeonEvent, declineTrapLure, DEFAULT_LAYER_DC, dungeonCandidates, dungeonEventWeight, eventBaseDc, FRESH_DAYS, FULL_POOL, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, findKind, generateLayer, layerEncounters, move, placeAt, storeArea } from '@/engine/grid'
 import { applyContent, emptyMods } from '@/engine/mods'
-import { longRestBlocked } from '@/engine/rest'
+import { longRest, longRestBlocked } from '@/engine/rest'
 import { leaveSide, travelEvents } from '@/engine/road'
 import { newGame, withRng } from '@/engine/state'
 import { arriveAt } from './helpers/travel'
@@ -341,5 +341,31 @@ describe('dungeon adult events', () => {
     // 旅途與城鎮事件不受影響
     expect(eventDc(state, { scope: 'town' }, 13)).toBe(13)
     expect(travelEvents.dungeon?.dc).toEqual([11, 13, 14, 16, 18])
+  })
+})
+
+describe('dungeon event time of day on a long rest', () => {
+  it('draws rest events by the time you went to sleep, not the morning you wake up', () => {
+    const state = inDungeon('fem')
+    // 抽得到的事件湊滿 FULL_POOL 件，機率才不會照比例調低
+    const picks = new Set(dungeonTemplates().filter((t) => !t.triggers?.length || t.triggers.includes('rest')).slice(0, FULL_POOL).map((t) => t.id))
+    const mods = emptyMods()
+    const r = builtinEventRules()
+    mods.eventRules.rules = { ...r, dungeon: { ...r.dungeon, chance: { trap: 1, chest: 1, gather: 1, rest: 1 }, cooldown_hours: 0 } }
+    mods.travelEvents = Object.fromEntries(dungeonTemplates().map((t) => [t.id, picks.has(t.id)
+      ? { ...t, triggers: ['rest'], dungeons: [], regions: [], layers: [], requires: undefined, hours: 'night' }
+      : { ...t, requires: { flags: ['test_never'] } }])) as never
+    applyContent(mods)
+    const area = currentArea(state)
+    const night = { ...state.time, hour: 22, minute: 0 }
+    expect(new Set(dungeonCandidates(state, area, 'rest', night).map((t) => t.id))).toEqual(picks)
+    expect(dungeonCandidates(state, area, 'rest', { ...night, hour: 10 })).toEqual([])
+    const safe = area.cells.findIndex((c) => c.kind === 'safe')
+    expect(safe).toBeGreaterThanOrEqual(0)
+    state.position = { area: area.key, x: safe % area.width, y: Math.floor(safe / area.width) }
+    state.time = night
+    longRest(state, 'safe')
+    expect(state.time.hour).toBeLessThan(18)
+    expect(picks.has(pendingDungeonEvent(state)?.id ?? '')).toBe(true)
   })
 })

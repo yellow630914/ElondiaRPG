@@ -305,3 +305,24 @@ describe('parasites', () => {
     expect(eventBaseDc(state, t)).toBe(12 + 4 + 2)
   })
 })
+
+describe('parasite flare time of day', () => {
+  it('uses the sleep time on a rest and ignores hours on the road', () => {
+    const state = game()
+    const pc = pcOf(state)
+    attachParasite(pc, LIN, state.time)
+    const base = parasiteTemplates().find((t) => t.parasite === LIN)!
+    const night = { ...base, id: 'zz_night_flare', tags: [], pc_body: undefined, stages: undefined, requires: undefined, moments: ['rest', 'travel'] as never, hours: 'night' as const }
+    travelEvents.templates.push(night)
+    try {
+      const p = parasiteOf(pc, LIN)!
+      const ids = (trigger: 'rest' | 'travel', at = state.time) => parasiteCandidates(state, p, trigger, at).map((t) => t.id)
+      state.time = { ...state.time, hour: 8, minute: 0 }
+      expect(ids('rest')).not.toContain(night.id)
+      expect(ids('rest', { ...state.time, hour: 23 })).toContain(night.id)
+      expect(ids('travel')).toContain(night.id)
+    } finally {
+      travelEvents.templates.splice(travelEvents.templates.indexOf(night), 1)
+    }
+  })
+})

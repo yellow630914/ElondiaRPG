@@ -1456,6 +1456,7 @@
           "title": "到晨光城的晨曦聖殿請教大祭司",
           "text": "大祭司艾莉諾帶你走到祭壇前：「晨霧修道院曾是我們的姊妹院，兩百年前被教廷判為異端。據說那裡的聖女能讓人聽見神的聲音——不經過教廷。」她把一串念珠交到你手上：「失蹤的孩子們，是自己想去聽那個聲音的。」",
           "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "hours": "day",
           "requires": { "flags": ["mabb_start"] },
           "kind": "story",
           "success": {
@@ -1567,6 +1568,7 @@
           "title": "把卷宗帶回晨光城的晨曦聖殿",
           "text": "艾莉諾讀完你抄下的判決，雙手在發抖：「他唯一的罪，是對魔族的孩子也伸出了手。」她抬起頭看著你：「你覺得，我該怎麼做？」",
           "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "hours": "day",
           "requires": { "flags": ["mabb_record"] },
           "kind": "choice",
           "options": [
@@ -33084,6 +33086,7 @@
           "title": "在黃金骰子賭場發一整晚的牌",
           "kind": "check",
           "at": { "where": "cell", "location": "albena", "cell": "lm_golden_dice" },
+          "hours": "night",
           "text": "兔女郎裝勒得你幾乎喘不過氣，網襪包著的腿在賭桌之間來回。你一邊發牌一邊笑，貴賓們的眼睛一半在牌上、一半在你的胸口。",
           "check": { "attr": "dex", "dc": 14 },
           "success": {
@@ -33105,6 +33108,7 @@
           "title": "應付把籌碼塞進你胸口的貴賓",
           "kind": "choice",
           "at": { "where": "cell", "location": "albena", "cell": "lm_golden_dice" },
+          "hours": "night",
           "text": "一位胖胖的商會貴賓贏了一大把，抓起一疊籌碼往你兔女郎裝的胸口塞：「賞妳的！」他的手指順著籌碼滑了進去，捏住了你的乳頭，不走了。",
           "options": [
             {
@@ -33169,6 +33173,7 @@
           "title": "走進黃金骰子的貴賓室",
           "kind": "story",
           "at": { "where": "cell", "location": "albena", "cell": "lm_golden_dice" },
+          "hours": "night",
           "text": "貴賓室裡只有一盞燈。子爵癱在絲絨沙發上，領巾扯得歪七扭八，桌上堆滿了空酒瓶。他抬起頭看你，罵了一聲：「維克托派個婊子來就想打發我？」",
           "success": {
             "text": "你關上門，走到他面前。他盯著你的兔女郎裝，褲子已經鼓了起來。",
@@ -33182,6 +33187,7 @@
           "title": "替子爵轉運",
           "kind": "choice",
           "at": { "where": "cell", "location": "albena", "cell": "lm_golden_dice" },
+          "hours": "night",
           "text": "子爵抓住你的手腕，把你拉到兩腿之間：「聽說兔女郎可以替人轉運。來，轉給我看。」",
           "options": [
             {
@@ -33345,6 +33351,7 @@
           "title": "應付把錢塞進舞衣的觀眾",
           "kind": "choice",
           "at": { "where": "cell", "location": "sandcastle", "cell": "lm_tent_ring_bazaar" },
+          "hours": "day",
           "text": "最後一支舞，觀眾們擠了上來。一個駝商把一枚金幣夾在指間，伸向你的腰帶——然後往下，往裡面。娜希拉在旁邊看著，沒有說話。",
           "options": [
             {
@@ -33819,6 +33826,7 @@
           "title": "光著身子從朝聖者澡堂跑回旅店",
           "kind": "check",
           "at": { "where": "cell", "location": "soriel", "cell": "lm_pilgrim_bath" },
+          "hours": "day",
           "text": "你只能光著身子出去。朝聖者區的街上人來人往，你一手遮胸、一手遮下面，貼著牆根往旅店的方向跑。轉角傳來巡邏隊的腳步聲——索里耶爾的審判廷，抓到「有傷風化」的人是要當街鞭笞的。",
           "check": { "attr": "dex", "dc": 13 },
           "success": {
@@ -35217,6 +35225,7 @@
           "title": "在侍寢見習館接受魅魔的檢查",
           "kind": "check",
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_bed_school" },
+          "hours": "night",
           "text": "三個只披著薄紗的魅魔把你剝光，按在軟墊上，像在挑一塊肉：掰開你的嘴看牙齒、捏你的胸、拍你的屁股、手指伸進你的腿間試「手感」。「還行，」帶頭的魅魔說，「就是太僵了。放鬆。」",
           "check": { "attr": "fai", "dc": 14 },
           "success": {
@@ -35236,6 +35245,7 @@
           "title": "上魅魔的示範課",
           "kind": "choice",
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_bed_school" },
+          "hours": "night",
           "text": "帶頭的魅魔拍拍手，隔間的簾子拉開了。一個肥胖的魔族商人躺在床上，已經脫光了。「示範課，」魅魔說，「我們做一遍，你學一遍。客人是付了錢的，別浪費。」",
           "options": [
             {
@@ -35305,6 +35315,7 @@
           "title": "在老領主的寢室讓他簽字",
           "kind": "choice",
           "at": { "where": "cell", "location": "bloodplume", "cell": "lm_bed_school" },
+          "hours": "night",
           "text": "莫爾迦斯領主是個乾瘦的老魔族，躺在一張巨大的床上，眼皮都懶得抬：「新來的？脫了，爬上來。」他把陳情書壓在枕頭底下，「讓我滿意了，就簽。」",
           "options": [
             {
@@ -35657,6 +35668,7 @@
           "title": "在晨曦聖殿的懺悔室說出你的罪",
           "kind": "check",
           "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "hours": "day",
           "text": "懺悔室又窄又暗，格子窗那一邊傳來神父粗重的呼吸聲。「孩子，說吧。你犯了什麼淫邪的罪？說得越詳細越好——跟誰、在哪裡、怎麼弄的、弄了幾次。」格子窗底下有一個拳頭大的洞，洞口磨得很光滑。",
           "check": { "attr": "cha", "dc": 13 },
           "success": {
@@ -35678,6 +35690,7 @@
           "title": "「把手伸過來」",
           "kind": "choice",
           "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "hours": "day",
           "text": "「最後一步，」神父說，「贖罪要用身體。把手從洞裡伸過來。」洞的另一頭，他的褲子已經解開了。",
           "options": [
             {
@@ -35903,6 +35916,7 @@
           "title": "回答審判官的問題",
           "kind": "check",
           "at": { "where": "cell", "location": "soriel", "cell": "lm_holy_ring_cathedral" },
+          "hours": "day",
           "text": "懺悔室沒有格子窗，只有一張刑具一樣的跪凳和三個戴兜帽的審判官。最前面那個翻開一本厚厚的冊子：「巡禮者，你在前三站做了什麼？一件一件說。我們都知道答案。」",
           "check": { "attr": "int", "dc": 15 },
           "success": {
@@ -35923,6 +35937,7 @@
           "title": "審判廷的判決",
           "kind": "choice",
           "at": { "where": "cell", "location": "soriel", "cell": "lm_holy_ring_cathedral" },
+          "hours": "day",
           "text": "三個審判官站了起來，最前面那個解開兜帽下的長袍：「最後一題：你喜歡嗎？說謊，罰；說實話，也罰。」",
           "options": [
             {
@@ -51734,7 +51749,7 @@
                 "text": "格溫德琳把手帳收進懷裡，笑得眼睛彎彎的：「我就說嘛，她還會再弄丟的。」奧菈莉婭哼了一聲，沒有反駁。過了一會兒，她轉向你：「巡禮的規矩，要有一位同行的證人。下一個印在河谷鎮的舊石橋……你願意當我們的證人嗎？」",
                 "set_flags": ["pil_1_done"],
                 "effects": [
-                  { "type": "affinity", "npc": "npc_gwendolyn", "delta": 15, "reason": "把手帳交給他保管" },
+                  { "type": "affinity", "npc": "npc_gwendolyn", "delta": 15, "reason": "把手帳交給她保管" },
                   { "type": "affinity", "npc": "npc_aurelia", "delta": 5, "reason": "幫忙找回手帳" },
                   { "type": "memory", "summary": "替奧菈莉婭追回了輸掉的巡禮手帳，交給格溫德琳保管；兩人請你當巡禮的同行證人。", "importance": 2 }
                 ],
@@ -51758,7 +51773,7 @@
         "min_level": 8,
         "min_affinity": 10,
         "requires": { "flags": ["pil_1_done"] },
-        "text": "格溫德琳抱著巡禮手帳在旅店門口等你：「我們要去河谷鎮了，舊石橋的印。」他壓低聲音，「……河谷鎮的銀鱗旅店有很好的酒。我會看著她的，可是，你也一起看著好不好？」"
+        "text": "格溫德琳抱著巡禮手帳在旅店門口等你：「我們要去河谷鎮了，舊石橋的印。」接著壓低聲音，「……河谷鎮的銀鱗旅店有很好的酒。我會看著她的，可是，你也一起看著好不好？」"
       },
       "start_flags": ["pil_bridge"],
       "nodes": [
@@ -51865,6 +51880,7 @@
           "title": "到晨光城的晨曦聖殿蓋第三個印",
           "text": "晨曦聖殿的老修女替手帳蓋了第三個印，卻沒有放手。她把兩人拉到柱子後面，壓低聲音：「孩子們，回去看看吧。審判廷查封了你們的修道院，罪名是『把男孩當女孩養』。他們要燒掉院長的帳冊。」",
           "at": { "where": "cell", "location": "dawnlight", "cell": "lm_dawn_sanctum" },
+          "hours": "day",
           "requires": { "flags": ["pil_last"] },
           "kind": "story",
           "allies": ["npc_aurelia", "npc_gwendolyn"],
@@ -51948,6 +51964,7 @@
           "title": "到索里耶爾的聖環主殿蓋最後一個印",
           "text": "聖環主殿的主教替手帳蓋了第五個印，接著宣讀任命狀：聖騎士奧菈莉婭，派往東方邊境的分團，即日啟程；牧師格溫德琳，回原修道院服務。兩個人要分開了。格溫德琳低著頭，笑容一點一點碎掉。奧菈莉婭沒有看任命狀，她看著你們兩個。",
           "at": { "where": "cell", "location": "soriel", "cell": "lm_holy_ring_cathedral" },
+          "hours": "day",
           "requires": { "flags": ["pil_judged"] },
           "kind": "choice",
           "options": [

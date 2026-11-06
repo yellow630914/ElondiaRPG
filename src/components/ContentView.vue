@@ -151,6 +151,8 @@ const tattooKind = ref('')
 const statusKind = ref('')
 // 事件：旅途、城鎮（列表的 key 是事件 id，rules 是事件設定）
 const eventScope = ref('')
+// 事件：時段（day、night；none 是不限時段）
+const eventHours = ref('')
 // 主奴與娼館：事件庫
 const masterPool = ref('')
 /** 清單上的效果簡述：第一項效果，太長就截斷（完整的在編輯畫面） */
@@ -323,7 +325,9 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   shops: [],
   events: [
     { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作'], ['lead', '🔎 線索事件']] },
-    placeDef('沒有限制地點'), adultDef, tagDef_, bodyDef, flagDef,
+    placeDef('沒有限制地點'),
+    { model: eventHours, name: '時段', all: '所有時段', options: () => [['day', '☀️ 只在白天'], ['night', '🌙 只在夜裡'], ['none', '不限時段']] },
+    adultDef, tagDef_, bodyDef, flagDef,
   ],
   masterEvents: [
     { model: masterPool, name: '事件庫', all: '所有事件庫', options: () => POOL_IDS.map((p) => [p, MASTER_EVENT_POOLS[p]]) },
@@ -498,11 +502,12 @@ const rows = computed<Row[]>(() => {
         return p.startsWith('r:') ? !!t.regions?.includes(p.slice(2)) : !!t.locations?.includes(p) || !!t.dungeons?.includes(p)
       })
       .filter((t) => adultMatch(!!t.tags?.includes('adult')))
+      .filter((t) => !eventHours.value || (eventHours.value === 'none' ? !t.hours : t.hours === eventHours.value))
       .filter((t) => !tagFilter.value || !!t.tags?.includes(tagFilter.value as never))
       .filter((t) => bodyMatch(t.pc_body))
       .filter((t) => flagMatch(t))
       .map((t) => ({
-        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.scope === 'lead' ? '🔎' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}`,
+        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.scope === 'lead' ? '🔎' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}${t.hours === 'night' ? ' 🌙' : t.hours === 'day' ? ' ☀️' : ''}`,
         note: t.scope === 'town' ? `城鎮・${t.kind === 'check' ? '檢定' : '選擇'}`
           : t.scope === 'parasite' ? `發作・${parasiteRules.parasites[t.parasite ?? '']?.name ?? t.parasite}${t.stages?.length ? `・${t.stages.map((i) => parasiteRules.stages[i]?.name).join('、')}` : ''}`
           : t.scope === 'lead' ? `線索・登場 ${t.cast ?? 0} 人${t.layers?.length ? `・${t.layers.map((i) => EVENT_LAYERS[i]).join('、')}` : ''}`

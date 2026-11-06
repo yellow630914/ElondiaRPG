@@ -325,9 +325,11 @@ export function longRest(state: GameState, place: RestPlace): Report {
   }
   const committed = commitReport(state, report)
   // 安全房醒來之前：夜襲、淫夢（地下城事件）
-  if (place === 'safe') maybeDungeonEvent(state, 'rest')
+  // 時段看入睡的時間（事件在醒來之後才抽，這時時間已經推到早上了）
+  const slept = report.time.start
+  if (place === 'safe') maybeDungeonEvent(state, 'rest', slept)
   // 醒來的時候：寄生物可能發作
-  maybeParasiteEvent(state, 'rest')
+  maybeParasiteEvent(state, 'rest', slept)
   return committed
 }
 

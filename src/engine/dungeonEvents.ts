@@ -61,7 +61,7 @@ function layerOf(area: Area): number | undefined {
 }
 
 /** 這個觸發點、這個地方能出現的事件 */
-export function dungeonCandidates(state: GameState, area: Area, trigger: DungeonTrigger): RoadTemplate[] {
+export function dungeonCandidates(state: GameState, area: Area, trigger: DungeonTrigger, at: GameTime = state.time): RoadTemplate[] {
   const layer = layerOf(area)
   if (layer === undefined) return []
   const loc = locationById(area.location)
@@ -77,7 +77,7 @@ export function dungeonCandidates(state: GameState, area: Area, trigger: Dungeon
     && tagsAllowed(t.tags)
     && pcBodyAllowed(t.pc_body, body)
     && condMet(state, t.requires)
-    && dayPartOk(state.time, t.hours)
+    && dayPartOk(at, t.hours)
     && (seen[t.id] === undefined || day - seen[t.id]! >= (t.cooldown_days ?? repeat)))
 }
 
@@ -97,14 +97,15 @@ export function dungeonEventWeight(state: GameState, id: string): number {
 /**
  * 觸發點發生之後（陷阱沒察覺、打開寶箱、採集、安全房長休）：冷卻過了、機率中了，就遇到一件事，等主角回應。
  * 回傳有沒有開始事件（寶箱：成人向的事件取代寶箱，普通的事件在寶箱打開之後發生，見 grid.ts）。
+ * at：看時段用的時間（長休傳入睡的時間；事件在醒來之後才抽，時間已經往後推了）。
  */
-export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger): boolean {
+export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger, at: GameTime = state.time): boolean {
   const rules = travelEvents.dungeon
   if (!rules || busy(state)) return false
   const area = currentArea(state)
   const last = state.dungeonEvents?.last
   if (last !== undefined && hoursOf(state.time) - last < rules.cooldown_hours) return false
-  const list = dungeonCandidates(state, area, trigger)
+  const list = dungeonCandidates(state, area, trigger, at)
   if (!list.length) return false
   const fresh = list.map((t) => dungeonEventWeight(state, t.id))
   const weights = list.map((t, i) => fresh[i]! * adultBoost(state, t))

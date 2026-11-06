@@ -185,7 +185,7 @@ function remove() {
           </select>
         </label>
         <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
-        <label v-if="town || dungeon || parasite"><span>時段 <Hint text="時段不對時不會抽到這個事件。適合「今晚」「半夜」這類場景；地下城與寄生物也看外面的時間。旅途、線索事件不看時段。" /></span>
+        <label v-if="town || dungeon || parasite"><span>時段 <Hint text="時段不對時不會抽到這個事件。適合「今晚」「半夜」這類場景；地下城與寄生物也看外面的時間，長休時看入睡的時間（醒來時已經是早上）。旅途、線索事件與寄生物在旅途中的發作不看時段。" /></span>
           <select :value="draft.hours ?? ''" @change="setHours(($event.target as HTMLSelectElement).value)">
             <option value="">不限</option>
             <option value="day">只在白天（6～18 點）</option>

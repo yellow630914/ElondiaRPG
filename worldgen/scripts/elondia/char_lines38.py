@@ -106,7 +106,7 @@ pil1 = {
                     "success": {
                         "text": "格溫德琳把手帳收進懷裡，笑得眼睛彎彎的：「我就說嘛，她還會再弄丟的。」奧菈莉婭哼了一聲，沒有反駁。過了一會兒，她轉向你：「巡禮的規矩，要有一位同行的證人。下一個印在河谷鎮的舊石橋……你願意當我們的證人嗎？」",
                         "set_flags": ["pil_1_done"],
-                        "effects": [aff(GWEN, 15, "把手帳交給他保管"), aff(AUR, 5, "幫忙找回手帳"), mem("替奧菈莉婭追回了輸掉的巡禮手帳，交給格溫德琳保管；兩人請你當巡禮的同行證人。")],
+                        "effects": [aff(GWEN, 15, "把手帳交給她保管"), aff(AUR, 5, "幫忙找回手帳"), mem("替奧菈莉婭追回了輸掉的巡禮手帳，交給格溫德琳保管；兩人請你當巡禮的同行證人。")],
                         "complete": True,
                     },
                 },
@@ -124,7 +124,7 @@ pil2 = {
     "merit": 8,
     "start": {
         "kind": "npc", "npc": GWEN, "min_level": 8, "min_affinity": 10, "requires": need("pil_1_done"),
-        "text": "格溫德琳抱著巡禮手帳在旅店門口等你：「我們要去河谷鎮了，舊石橋的印。」他壓低聲音，「……河谷鎮的銀鱗旅店有很好的酒。我會看著她的，可是，你也一起看著好不好？」",
+        "text": "格溫德琳抱著巡禮手帳在旅店門口等你：「我們要去河谷鎮了，舊石橋的印。」接著壓低聲音，「……河谷鎮的銀鱗旅店有很好的酒。我會看著她的，可是，你也一起看著好不好？」",
     },
     "start_flags": ["pil_bridge"],
     "nodes": [
@@ -230,7 +230,7 @@ pil3 = {
         {
             "id": "sanctum", "title": "到晨光城的晨曦聖殿蓋第三個印",
             "text": "晨曦聖殿的老修女替手帳蓋了第三個印，卻沒有放手。她把兩人拉到柱子後面，壓低聲音：「孩子們，回去看看吧。審判廷查封了你們的修道院，罪名是『把男孩當女孩養』。他們要燒掉院長的帳冊。」",
-            "at": at_cell("dawnlight", "lm_dawn_sanctum"), "requires": need("pil_last"), "kind": "story",
+            "at": at_cell("dawnlight", "lm_dawn_sanctum"), "requires": need("pil_last"), "kind": "story", "hours": "day",
             "allies": [AUR, GWEN],
             "success": {
                 "text": "格溫德琳的手在發抖。奧菈莉婭握住了它：「是我們的家。」她轉向你，第一次用懇求的語氣，「第四個印本來就在那裡。」",
@@ -315,7 +315,7 @@ pil3 = {
         {
             "id": "ordain", "title": "到索里耶爾的聖環主殿蓋最後一個印",
             "text": "聖環主殿的主教替手帳蓋了第五個印，接著宣讀任命狀：聖騎士奧菈莉婭，派往東方邊境的分團，即日啟程；牧師格溫德琳，回原修道院服務。兩個人要分開了。格溫德琳低著頭，笑容一點一點碎掉。奧菈莉婭沒有看任命狀，她看著你們兩個。",
-            "at": at_cell("soriel", "lm_holy_ring_cathedral"), "requires": need("pil_judged"), "kind": "choice",
+            "at": at_cell("soriel", "lm_holy_ring_cathedral"), "requires": need("pil_judged"), "kind": "choice", "hours": "day",
             "options": [
                 ending("接受任命，三個人一起去", False, False),
                 ending("放下頭銜，繼續巡禮", False, True),
