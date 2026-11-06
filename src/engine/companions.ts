@@ -554,7 +554,7 @@ export function applyBlackMarket(state: GameState, report: Report, degree: Degre
     if (!map) return '問了一圈，這裡似乎真的沒有見不得光的買賣。'
     ;(report.changes.flags ??= {})[underworldFlag(state.location)] = true
     const inside = underworldLandmarks(map).filter((l) => !l.open?.hidden).map((l) => l.name)
-    return `打聽到了${map.name}的入口（從酒館進去）${inside.length ? `：裡面有${inside.join('、')}` : ''}。`
+    return `打聽到了進${map.name}的路（從酒館進去）${inside.length ? `：裡面有${inside.join('、')}` : ''}。`
   }
   if (degree === 'partial') return '有人暗示了幾句，但還不夠找到地方。'
   if (degree === 'fumble') {
