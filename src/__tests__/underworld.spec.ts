@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
-import { landmarks, specialMaps } from '@/engine/data'
+import { landmarks, npcs, specialMaps, stories, type StoryDef } from '@/engine/data'
+import { activeNodes, nodeIsHere, placeText, startStory } from '@/engine/story'
+import { sourcesOf } from '@/engine/sources'
 import { currentArea, currentCell, enterLocation, getArea, position, standOn, type CellKind } from '@/engine/grid'
 import { enterLandmark, landmarkHere } from '@/engine/landmarks'
 import { leaveSpecial } from '@/engine/specialMaps'
@@ -115,5 +117,47 @@ describe('地下街', () => {
     expect(worldFacts(state)).not.toContain('自由集市地下拍賣')
     state.flags['underworld:albena'] = true
     expect(worldFacts(state)).toContain('自由集市地下拍賣（聯邦市集的地下）')
+  })
+
+  it('AI 的世界資訊不列還沒開放的地標（黑檀之夜要阿雅線、榮譽洞要伊蓮娜線）', () => {
+    const soriel = inTavern('soriel')
+    soriel.flags['underworld:soriel'] = true
+    expect(worldFacts(soriel)).toContain('外環的地下奴隸販子')
+    expect(worldFacts(soriel)).not.toContain('黑檀之夜')
+    setFlag(soriel, 'aya_club')
+    expect(worldFacts(soriel)).toContain('黑檀之夜（港區的地下）')
+    const albena = inTavern('albena')
+    albena.flags['underworld:albena'] = true
+    expect(worldFacts(albena)).not.toContain('榮譽洞')
+  })
+
+  it('任務點可以放在地下街的地標上：站上去就算到了；還不知道地下街時地點提醒先打聽', () => {
+    const state = inTavern('albena')
+    const def = {
+      id: 'zz_uw_node', title: '地下的交易', summary: '', tags: [], start: { kind: 'guild' },
+      nodes: [{ id: 'a', title: '交貨', kind: 'story', text: '', at: { where: 'cell', location: 'albena', cell: 'lm_uw_black_albena' }, requires: {}, success: { complete: true } }],
+    } as unknown as StoryDef
+    ;(stories as StoryDef[]).push(def)
+    try {
+      startStory(state, def.id)
+      const node = () => activeNodes(state).find((n) => n.def.id === def.id)!
+      expect(placeText(node().node, state)).toContain('先到酒館打聽地下街')
+      ask(state, 20)
+      expect(placeText(node().node, state)).toBe('阿爾貝納的自由集市地下拍賣（在聯邦市集的地下裡）')
+      enterUnderworld(state)
+      expect(nodeIsHere(state, node())).toBe(false)
+      expect(standOn(state, 'lm_uw_black_albena' as CellKind)).toBe(true)
+      expect(currentArea(state).kind).toBe('special')
+      expect(nodeIsHere(state, node())).toBe(true)
+    } finally {
+      ;(stories as StoryDef[]).splice((stories as StoryDef[]).indexOf(def), 1)
+    }
+  })
+
+  it('打聽成功的文字、老師的來源寫明在地下街', () => {
+    const state = inTavern('soriel')
+    ask(state, 20)
+    expect(state.reports.at(-1)!.outcome.summary).toContain('打聽到了進港區的地下的路')
+    expect(sourcesOf('perk', npcs.find((n) => n.id === 'npc_mentor_bondage')!.mentor!.perks[0]!).join()).toContain('阿爾貝納地下街的月下拍賣會，在酒館打聽')
   })
 })

@@ -13,7 +13,7 @@ import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  contentRevision, locationById, npcs as namedNpcs, regionById, specialMaps, stories, storyById, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
+  contentRevision, landmarkDef, locationById, npcs as namedNpcs, regionById, specialMaps, stories, storyById, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
@@ -31,6 +31,7 @@ import { pcBodyAllowed, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { applyPendingMove, queueMove } from './road'
 import { restEventBlock } from './rest'
+import { underworldKnown } from './underworld'
 import type { GameState, GameTime, NpcRecord, Report, StoryProgress } from './types'
 
 export function storyDef(id: string): StoryDef | undefined {
@@ -331,7 +332,8 @@ function nodeIsHereAnyTime(state: GameState, n: ActiveNode, present: Presence = 
     case 'side':
     case 'special': return currentCell(state).kind === 'quest' && currentCell(state).storyNode === n.ref
     case 'settlement': return area.kind === 'settlement'
-    case 'cell': return area.kind === 'settlement' && currentCell(state).kind === at.cell
+    // 地標也可能擺在同一個聚落的特殊地圖裡（地下街的黑市、拍賣會……）：站在那張地圖的地標格上也算
+    case 'cell': return currentCell(state).kind === at.cell && (area.kind === 'settlement' || (area.kind === 'special' && landmarkDef(at.cell ?? '')?.at.area === area.key))
     // 先看地點（便宜），再看身邊的人（要算「這裡的人」）
     case 'npc': return !!at.npc && (!at.location || area.location === at.location) && npcFree(state, at.npc) && present(at.npc)
     case 'outskirts':
@@ -391,7 +393,13 @@ function placeName(n: StoryNode, state?: GameState): string {
   const LAYER = DUNGEON_LAYER_NAME
   switch (at.where) {
     case 'settlement': return loc
-    case 'cell': return `${loc}的${at.cell ? cellName(at.cell as CellKind) : '某處'}`
+    case 'cell': {
+      // 擺在地下街裡的地標：還不知道地下街時提醒先到酒館打聽
+      const uw = at.cell ? landmarkDef(at.cell)?.at.area : undefined
+      const map = uw?.startsWith('sm/') ? specialMaps[uw.slice(3)] : undefined
+      const hint = map?.underworld && (!state || !underworldKnown(state, at.location)) ? `（在${map.name}裡，先到酒館打聽地下街）` : map ? `（在${map.name}裡）` : ''
+      return `${loc}的${at.cell ? cellName(at.cell as CellKind) : '某處'}${hint}`
+    }
     case 'npc': return `找${(at.npc && (state ? npcRecord(state, at.npc) : namedNpcs.find((x) => x.id === at.npc))?.name) || '某人'}${loc ? `（${loc}）` : ''}`
     case 'outskirts': return `${loc}近郊（⭐）`
     case 'dungeon': return `${loc}・${LAYER[at.layer ?? 'outskirts']}（⭐）`
