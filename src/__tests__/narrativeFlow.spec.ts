@@ -36,7 +36,7 @@ describe('everyday actions (difficulty)', () => {
     const state = game()
     const p = prepareAction(state, { kind: 'free', text: '去雜貨店買一條麵包' })
     p.natural = 2
-    const j = sanitizeJudgment(state, p, { degree: 'fail', attr: 'cha', dc: 12, difficulty: 'trivial', hours: 9 })
+    const j = sanitizeJudgment(state, p, { degree: 'partial', attr: 'cha', dc: 12, difficulty: 'trivial', hours: 9 })
     expect(j).toMatchObject({ degree: 'success', trivial: true, hours: 4 })
     const start = { ...state.time }
     const r = resolveAction(state, j)
@@ -45,6 +45,18 @@ describe('everyday actions (difficulty)', () => {
     expect(r.check!.reference_degree).toBeUndefined()
     expect(r.outcome.tags).toContain('日常小事')
     expect((r.time.end.hour ?? 0) * 60 + (r.time.end.minute ?? 0) - ((start.hour ?? 0) * 60 + (start.minute ?? 0))).toBe(240)
+  })
+
+  it('keeps the AI\'s failure when it also marks the action trivial (a refusal is not logged as a success)', () => {
+    const state = game()
+    for (const degree of ['fail', 'fumble'] as const) {
+      const p = prepareAction(state, { kind: 'free', text: '要初次見面的人把全部財產送給我' })
+      p.natural = 14
+      const j = sanitizeJudgment(state, p, { degree, attr: 'cha', dc: 12, difficulty: 'trivial' })
+      expect(j.degree).toBe(degree)
+      expect(j.trivial).toBeUndefined()
+      state.pendingAction = undefined
+    }
   })
 
   it('keeps critical results, ignores normal difficulty and rounds hours to quarters', () => {
