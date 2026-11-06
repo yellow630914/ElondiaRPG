@@ -641,7 +641,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     // 非戰鬥狀態與特質（對方的標籤也算）、屈服或抵抗、調教的修正
     const r0 = roles.roller
     const extra = [
-      ...checkModifiers(r0, { context: pool === 'master' ? 'master_event' : 'action', attr: o.check.attr, vsTags: roles.tags }),
+      ...checkModifiers(r0, { context: pool === 'master' ? 'master_event' : 'action', attr: o.check.attr, ...(o.check.skill ? { skill: o.check.skill } : {}), vsTags: roles.tags }),
       ...stanceModifiers(roles.subject, o.stance), ...roles.dcMods,
     ]
     const dice = withBonus('1d20', mod(attrOf(r0, o.check.attr)) + proficiency(r0.level) + extra.reduce((s, x) => s + x.value, 0))

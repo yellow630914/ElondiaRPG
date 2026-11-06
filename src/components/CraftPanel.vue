@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{ mode?: 'commission' | 'make' }>(), { mo
 const make = computed(() => props.mode === 'make')
 // 店裡的委託打造是選單的一列，點了打開對話框；工藝對話框裡直接顯示
 const menuItem = computed<MenuItem>(() => ({
-  id: 'commission', icon: 'tools', label: '委託打造', detail: `${attrName(gearRules.craft.attr)}檢定，約 ${gearRules.craft.hours} 小時`,
+  id: 'commission', icon: 'tools', label: '委託打造', detail: `店主擲工藝檢定，約 ${gearRules.craft.hours} 小時`,
 }))
 const open = ref(false)
 const emit = defineEmits<{ started: [] }>()

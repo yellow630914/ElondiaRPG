@@ -297,7 +297,8 @@ export interface StoryPlace {
  * min：好感不到這個數字就直接算失敗，不擲骰（見 docs/STORY_QUESTS.md 第 2 節）
  */
 export interface StoryAffinity { npc: string; per?: number; max?: number; min?: number }
-export interface StoryCheck { attr: AttrId; dc: number; affinity?: StoryAffinity }
+/** 檢定：屬性、DC；skill 是檢定分類（說服、欺瞞……，沒寫時照屬性推，perks.ts 的 checkSkills） */
+export interface StoryCheck { attr: AttrId; dc: number; skill?: SkillId; affinity?: StoryAffinity }
 
 /** 任務點的結果：旗標、效果、同行的夥伴、任務完成或失敗 */
 export interface StoryOutcome {
@@ -1553,7 +1554,7 @@ export interface MasterEventOption {
   label: string
   /** 沒有檢定時的結果文字 */
   result?: string
-  check?: { attr: AttrId; dc: number }
+  check?: { attr: AttrId; dc: number; skill?: SkillId }
   success?: string
   fail?: string
   effects?: RewardEffect[]
@@ -1595,6 +1596,8 @@ export const actionRules = actionsJson as unknown as {
   skills: Record<SkillId, { name: string; desc: string }>
   /** 情境 → 分類 */
   context_skills: Partial<Record<CheckContext, SkillId>>
+  /** 沒有分類的檢定照屬性推的預設分類 */
+  attr_skills: Partial<Record<AttrId, SkillId>>
   kinds: Record<ActionKind, {
     name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
     /** 這種行動屬於哪個檢定分類（沒有時不分類；自由行動由 AI 判定時選） */

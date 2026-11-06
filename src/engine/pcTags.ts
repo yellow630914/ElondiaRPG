@@ -3,7 +3,8 @@
 // 標籤的效果寫在 npc_tags.json 的 pc_effects（docs/NPC_SYSTEM.md 4.1 節）：不看聲望（security.ts 的 meetsReputation）、
 // 檢定的加減（perks.ts 的 checkModifiers）、商店與神殿的價格（trade.ts、slavery.ts、tattooShop.ts）、
 // 曝露名聲的累積（lewd.ts）、被賣時的身價（companions.ts）、戰鬥中的慾望抗性（combat.ts），以及給 AI 的身分說明。
-import { npcTags, skillName, tagsExclusive, type NpcTagDef, type PcTagEffects } from './data'
+import { craftRules, CRAFT_IDS, npcTags, skillName, tagsExclusive, type CraftId, type NpcTagDef, type PcTagEffects } from './data'
+import { CRAFTER_START_LEVEL } from './crafting'
 import { matches, type CheckCtx } from './perks'
 import type { Character } from './types'
 import { pcOf } from './party'
@@ -85,6 +86,10 @@ export function pcTagEffectLines(id: string): string[] {
   if (e.exposure_mult && e.exposure_mult !== 1) out.push(`曝露名聲累積 ×${e.exposure_mult}（成人向）`)
   if (e.slave_price_mult && e.slave_price_mult !== 1) out.push(`被賣時的身價 ×${e.slave_price_mult}（成人向）`)
   if (e.lust_resist) out.push(`戰鬥中受到的慾望 ${pctText(1 + e.lust_resist)}（成人向）`)
+  // 工匠身分：那一門工藝從 Lv.2 開始（皮匠製革、裁縫兩門；crafting.ts 的 startCrafts）
+  const def = npcTags.tags[id]
+  const crafts = def?.group === 'craft' ? [def.craft, ...(def.also_crafts ?? [])].filter((x): x is CraftId => !!x && (CRAFT_IDS as string[]).includes(x)) : []
+  if (crafts.length) out.push(`${crafts.map((x) => craftRules.skills[x].name).join('、')}從 Lv.${CRAFTER_START_LEVEL} 開始（其他工藝 Lv.0）`)
   if (e.fare_mult && e.fare_mult !== 1) out.push(`海路船資 ${pctText(e.fare_mult)}`)
   if (e.start_items?.length) out.push(`開局帶著 ${e.start_items.map((x) => (x.qty > 1 ? `${x.name}×${x.qty}` : x.name)).join('、')}`)
   return out

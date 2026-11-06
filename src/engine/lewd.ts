@@ -112,9 +112,15 @@ export function vacuumSides(c: Wearer): VacuumSide[] {
   const masc = !!c.race && characterBody(c as Pick<Character, 'race' | 'gender' | 'body'>) === 'masc'
   if (g.body && !g.underwear_top && !masc && flashes(c, 'body', 'top')) out.push('top')
   const relabeled = !!c.race && !!gearRules.races[c.race]?.relabel?.underwear_bottom
-  const cover = g.legs ? 'legs' : g.body ? 'body' : undefined
+  const cover = g.legs ? 'legs' : coversBottom(c) ? 'body' : undefined
   if (cover && !g.underwear_bottom && !relabeled && flashes(c, cover, 'bottom')) out.push('bottom')
   return out
+}
+
+/** 沒穿下身時，上身那件算不算遮住下身：連身類（連身裙、旗袍、長袍、鎧甲……）算，上衣類（top_only）不算 */
+function coversBottom(c: Pick<Character, 'gear'>): boolean {
+  const g = c.gear?.body
+  return !!g && !gearRules.bases[g.spec.base]?.top_only
 }
 
 /** 交給 AI 與畫面的真空說明（只寫會走光的那一側） */
@@ -138,8 +144,9 @@ function levelOf(c: Wearer, withVacuum: boolean): number {
   const top = g.body ? Math.min(naked, slotExposure(c, 'body') + plus('top')) : g.underwear_top ? Math.max(vis, slotExposure(c, 'underwear_top')) : naked
   // 改名的內褲欄（人馬族的後蹄）是鞋子，不算遮住下身
   const pants = !!g.underwear_bottom && !(c.race && gearRules.races[c.race]?.relabel?.underwear_bottom)
+  // 沒穿下身時：連身類的上身那件遮住下身；上衣類不算，看內褲（沒有就是全裸）
   const bottom = g.legs ? Math.min(naked, slotExposure(c, 'legs') + plus('bottom'))
-    : g.body ? Math.min(naked, slotExposure(c, 'body') + plus('bottom'))
+    : coversBottom(c) ? Math.min(naked, slotExposure(c, 'body') + plus('bottom'))
       : pants ? Math.max(vis, slotExposure(c, 'underwear_bottom')) : naked
   return Math.max(top, bottom)
 }

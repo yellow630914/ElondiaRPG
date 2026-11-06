@@ -209,7 +209,7 @@ export function resolvePcOption(state: GameState, report: Report, t: RoadTemplat
   const pc = pcOf(state)
   let ok = true
   if (o.check) {
-    const extra = checkModifiers(pc, { context: 'action', attr: o.check.attr })
+    const extra = checkModifiers(pc, { context: 'action', attr: o.check.attr, ...(o.check.skill ? { skill: o.check.skill } : {}) })
     const dice = withBonus('1d20', mod(attrOf(pc, o.check.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
     const r = withRng(state, (rng) => diceRoll(rng, dice))
     const natural = r.rolls[0] ?? r.total

@@ -34,7 +34,13 @@ export interface CheckCtx {
   skill?: SkillId
 }
 
-/** 這次檢定屬於哪些分類：指定的、行動的、情境的（含 also） */
+/** 不照屬性推預設分類的行動：自由行動（AI 判定時選分類）、受訓 */
+const NO_DEFAULT_SKILL: ActionKind[] = ['free', 'train']
+
+/**
+ * 這次檢定屬於哪些分類：指定的（任務選項、事件寫的 skill）、行動的、情境的（含 also）；
+ * 都沒有時照屬性推一個預設分類（actions.json 的 attr_skills；自由行動、受訓不推）
+ */
 export function checkSkills(ctx: CheckCtx): Set<SkillId> {
   const out = new Set<SkillId>()
   if (ctx.skill) out.add(ctx.skill)
@@ -43,6 +49,10 @@ export function checkSkills(ctx: CheckCtx): Set<SkillId> {
   for (const c of [ctx.context, ...(ctx.also ?? [])]) {
     const x = actionRules.context_skills[c]
     if (x) out.add(x)
+  }
+  if (!out.size && ctx.attr && !(ctx.kind && NO_DEFAULT_SKILL.includes(ctx.kind))) {
+    const d = actionRules.attr_skills?.[ctx.attr]
+    if (d) out.add(d)
   }
   return out
 }

@@ -3,7 +3,7 @@
 // 內建的事件可以改、不能刪；自建的事件隨時可以刪（等待回應中的事件作廢）。id 在所有事件庫裡不能重複。
 
 import {
-  abilities, ATTR_IDS, lewdRules, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterEventDef, type MasterEventOption, type MasterEventPool,
+  abilities, ATTR_IDS, SKILL_IDS, type SkillId, lewdRules, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterEventDef, type MasterEventOption, type MasterEventPool,
 } from './data'
 import { sanitizeEffects } from './storyMods'
 
@@ -57,7 +57,7 @@ function option(raw: Partial<MasterEventOption> | undefined, scene: boolean): Ma
   const o: MasterEventOption = { label: str(raw?.label, L.label_chars) || '回應' }
   const c = raw?.check
   if (c && typeof c === 'object') {
-    o.check = { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr : 'cha', dc: Math.round(num(c.dc, 1, 40, 12)) }
+    o.check = { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr : 'cha', dc: Math.round(num(c.dc, 1, 40, 12)), ...((SKILL_IDS as string[]).includes(c.skill as string) ? { skill: c.skill as SkillId } : {}) }
     const success = str(raw?.success, L.result_chars)
     if (success) o.success = success
     const fail = str(raw?.fail, L.result_chars)

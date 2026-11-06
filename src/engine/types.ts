@@ -133,6 +133,8 @@ export interface CheckInfo {
   attr: AttrId
   /** 檢定分類（說服、欺瞞……，actions.json 的 skills）：行動本身的分類，或自由行動由 AI 選的 */
   skill?: string
+  /** 委託打造：店主擲的檢定（屬性與主角的修正都不算，畫面不列屬性） */
+  keeper?: boolean
   /** 程式算出的參考 DC */
   base_dc: number
   /** 實際使用的 DC（AI 可在 ±dc_adjust 內調整） */

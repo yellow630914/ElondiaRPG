@@ -203,6 +203,9 @@ function remove() {
               <option v-for="n in [0, 1, 2, 3]" :key="n" :value="n">{{ n }}</option>
             </select>
           </label>
+          <label v-if="base.slot === 'body'" class="check">
+            <input type="checkbox" :checked="!!base.top_only" @change="base.top_only = ($event.target as HTMLInputElement).checked || undefined" /> 上衣類 <Hint text="只遮上半身的衣服（襯衫、水手服、束衣）：沒穿下身時不算遮住下身，下身看內褲，連內褲都沒穿就是全裸。不勾的（連身裙、旗袍、長袍、鎧甲）沒穿下身時照樣遮住下身。" />
+          </label>
           <template v-if="base.slot === 'body' || base.slot === 'legs'">
             <span>真空會走光 <Hint text="底下沒穿內衣（上身）或內褲（下身）時，那一側的曝露度 +1（最多 3）。曝露度 1 以上的衣服本來就算，這裡給曝露度 0、卻會走光的衣服勾（裙子、薄襯衫、浴衣）。上身只算陰柔、中性的體型；人馬族的下身不算。" /></span>
             <label v-for="side in VACUUM_SIDES" :key="side" class="check">

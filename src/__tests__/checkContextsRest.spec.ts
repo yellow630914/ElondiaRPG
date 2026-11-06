@@ -14,7 +14,8 @@ function game(perks: string[] = []): GameState {
   return state
 }
 
-const total = (state: GameState, scope: 'road' | 'town') => roll(state, { attr: 'int', dc: 30 }, 10, scope).entry.roll?.value ?? NaN
+// 力量檢定：城鎮事件沒寫分類時照屬性推成「勞動」，野外求生（求生、察覺）不算
+const total = (state: GameState, scope: 'road' | 'town') => roll(state, { attr: 'str', dc: 30 }, 10, scope).entry.roll?.value ?? NaN
 
 describe('旅途事件也算 travel 情境（B15）', () => {
   it('只寫 travel 的加減在旅途事件生效，城鎮事件不算', () => {

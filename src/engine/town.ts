@@ -13,7 +13,7 @@ import {
 } from './data'
 import { roll, withBonus } from './rng'
 import { isFugitive, joinParty, leaveParty, partyMax, partyRoom } from './party'
-import { npcRecord } from './npcs'
+import { ensureGuildClerk, npcRecord } from './npcs'
 import { clearQuestMarkers, landmarkHidden } from './grid'
 import { innCost, longRest } from './rest'
 import { applyEffects, type RewardEffect } from './effects'
@@ -220,6 +220,8 @@ function boardQuests(state: GameState): Quest[] {
 
 export function guildQuests(state: GameState): Quest[] {
   if (locationById(state.location).type === 'dungeon') return []
+  // 公會職員站在櫃台（受訓的親密度門檻看他；可以聊天、送禮）
+  ensureGuildClerk(state)
   const boardKey = `guild_board:${state.location}`
   const posted = Number(state.flags[boardKey] ?? 0)
   // 功績與等級夠了：公會發晉升考核（不會被委託板的更新撤下）

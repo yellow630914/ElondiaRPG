@@ -1079,6 +1079,8 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   // 真空會走光的一側（上身、下身的衣服才有意義）
   const vacuum = VACUUM_SIDES.filter((s) => Array.isArray(raw.vacuum) && raw.vacuum.includes(s))
   if (vacuum.length && (out.slot === 'body' || out.slot === 'legs')) out.vacuum = vacuum
+  // 上衣類：沒穿下身時不算遮住下身（只有上身的衣服有意義）
+  if (raw.top_only && out.slot === 'body') out.top_only = true
   // 雙面效應（docs/LEWD_STATS.md 第 7 節）：拘束的程度與種類
   if (raw.bind && raw.bind_kind && (BIND_KINDS as string[]).includes(raw.bind_kind)) {
     out.bind = int(raw.bind, 1, 3, 1)

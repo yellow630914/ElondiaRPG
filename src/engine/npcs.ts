@@ -284,6 +284,21 @@ export function npcIdentity(rec: Pick<NpcRecord, 'id' | 'kind' | 'class' | 'occu
 }
 
 /** 取得 NPC 的角色資料：之前同行過就沿用，否則依等級生成。 */
+/** 這座城的公會職員（受訓的親密度門檻、公會的談判對象）的 id */
+export function guildClerkId(location: string): string {
+  return `clerk_${location}`
+}
+
+/** 公會職員：還沒有時生成一位（用自己的亂數，不動遊戲的亂數），回傳 id */
+export function ensureGuildClerk(state: GameState, location = state.location): string {
+  const id = guildClerkId(location)
+  if (!npcRecord(state, id)) {
+    const rng = new Rng(hashString(id))
+    generateNpc(state, rng, { id, kind: 'commoner', tags: ['commoner'], occupation: '公會職員', level: rng.int(1, 3), location })
+  }
+  return id
+}
+
 export function characterFor(state: GameState, rec: NpcRecord): Character {
   if (rec.character) return JSON.parse(JSON.stringify(rec.character)) as Character
   // 普通人沒有職業：入隊時用「無法戰鬥」

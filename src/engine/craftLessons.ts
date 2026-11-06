@@ -1,4 +1,5 @@
 // 學工藝（docs/CRAFTING.md 1.1 節，R21 的 K5）：站在對應的店（crafts.json 的 skills.shop）付學費、花時間，工藝升一級。
+// 主角或隊伍裡的夥伴都可以學（學費由隊伍出）。
 // 店裡最多教到 tuition 的長度（Lv.2）；之後只能靠製作升級。不用擲骰，學會的那一級經驗從 0 起算。
 
 import { craftRules, CRAFT_IDS, type CraftId } from './data'
@@ -9,7 +10,7 @@ import { pcOf } from './party'
 import { trainDays } from './perks'
 import { commitReport } from './state'
 import { shopKey, shopTypeForCell, tradeReport } from './trade'
-import type { GameState, Report } from './types'
+import type { Character, GameState, Report } from './types'
 import { craftName, skillOf } from './crafting'
 
 export interface CraftLesson {
@@ -25,13 +26,18 @@ export interface CraftLesson {
   blocked?: string
 }
 
-/** 主角在這裡可以學的工藝（這一格的店教的、還沒到店裡教的上限） */
-export function craftLessons(state: GameState): CraftLesson[] {
+/** 學的人：隊伍裡的這個人（沒給或找不到時是主角） */
+function learnerOf(state: GameState, memberId?: string): Character {
+  return (memberId && state.party.find((m) => m.id === memberId)) || pcOf(state)
+}
+
+/** 這個人（預設主角）在這裡可以學的工藝（這一格的店教的、還沒到店裡教的上限） */
+export function craftLessons(state: GameState, memberId?: string): CraftLesson[] {
   const type = shopTypeForCell(currentCell(state).kind)
   if (!type || closedHere(state)) return []
-  const pc = pcOf(state)
+  const who = learnerOf(state, memberId)
   return CRAFT_IDS.filter((id) => craftRules.skills[id].shop === type).flatMap((id) => {
-    const from = skillOf(pc, id).level
+    const from = skillOf(who, id).level
     const t = craftRules.tuition[from]
     if (!t) return []
     return [{
@@ -41,16 +47,19 @@ export function craftLessons(state: GameState): CraftLesson[] {
   })
 }
 
-/** 學一級工藝：付學費、花時間（每天練 8 小時），等級 +1、經驗從 0 起算 */
-export function learnCraft(state: GameState, id: CraftId): Report {
-  const lesson = craftLessons(state).find((l) => l.craft === id)
+/** 學一級工藝：付學費、花時間（每天練 8 小時），等級 +1、經驗從 0 起算。memberId 是學的人（預設主角） */
+export function learnCraft(state: GameState, id: CraftId, memberId?: string): Report {
+  const lesson = craftLessons(state, memberId).find((l) => l.craft === id)
   if (!lesson) throw new Error(`這裡學不到${craftName(id)}（店裡最多教到 Lv.${craftRules.tuition.length}）`)
   if (lesson.blocked) throw new Error(lesson.blocked)
-  const pc = pcOf(state)
+  const who = learnerOf(state, memberId)
   const report = tradeReport(state, shopKey(state, shopTypeForCell(currentCell(state).kind)!), trainDays(lesson.hours).elapsed)
+  // 學工藝是一則事件，不是交易（勾了「隱藏交易紀錄」也看得到）
+  report.kind = 'event'
   report.changes.money_cc = -lesson.price_cc
-  pc.crafts = { ...pc.crafts, [id]: { level: lesson.to, xp: 0 } }
-  report.outcome.summary = `付了 ${formatMoney(lesson.price_cc)}，花${lesson.days > 1 ? ` ${lesson.days} 天` : ''}練了 ${lesson.hours} 小時，學會了${lesson.name}（Lv.${lesson.from} → Lv.${lesson.to}）。`
+  who.crafts = { ...who.crafts, [id]: { level: lesson.to, xp: 0 } }
+  const time = lesson.days > 1 ? `花 ${lesson.days} 天練了 ${lesson.hours} 小時` : `練了 ${lesson.hours} 小時`
+  report.outcome.summary = `${who.isPlayer ? '' : `替${who.name}`}付了 ${formatMoney(lesson.price_cc)}，${who.isPlayer ? '' : `${who.name}`}${time}，學會了${lesson.name}（Lv.${lesson.from} → Lv.${lesson.to}）。`
   report.outcome.tags = ['學工藝']
   return commitReport(state, report)
 }

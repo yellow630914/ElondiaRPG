@@ -214,8 +214,8 @@
 
     "dress": {"slot": "body", "name": "連身裙", "kind": "cloth", "armor": "cloth", "price": 50, "scale": {"save": "up"}, "outfit": "regular", "desc": "腰身收得剛好的連身裙，城裡的姑娘們最常穿的樣式。", "vacuum": ["bottom"]},
     "gown": {"slot": "body", "name": "禮服", "kind": "cloth", "armor": "cloth", "price": 300, "scale": {"save": "up"}, "outfit": "regular", "desc": "曳地的晚禮服，參加宴會時才捨得拿出來。", "vacuum": ["bottom"]},
-    "shirt": {"slot": "body", "name": "襯衫", "kind": "cloth", "armor": "cloth", "price": 30, "scale": {"save": "up"}, "outfit": "regular", "desc": "領口挺直的襯衫，商人、文書和旅人都穿。", "vacuum": ["top"]},
-    "blouse": {"slot": "body", "name": "荷葉邊上衣", "kind": "cloth", "armor": "cloth", "price": 40, "scale": {"save": "up"}, "outfit": "regular", "desc": "袖口與領口綴著荷葉邊的上衣，輕快又俏麗。", "vacuum": ["top"]},
+    "shirt": {"slot": "body", "name": "襯衫", "kind": "cloth", "armor": "cloth", "price": 30, "scale": {"save": "up"}, "outfit": "regular", "desc": "領口挺直的襯衫，商人、文書和旅人都穿。", "vacuum": ["top"], "top_only": true},
+    "blouse": {"slot": "body", "name": "荷葉邊上衣", "kind": "cloth", "armor": "cloth", "price": 40, "scale": {"save": "up"}, "outfit": "regular", "desc": "袖口與領口綴著荷葉邊的上衣，輕快又俏麗。", "vacuum": ["top"], "top_only": true},
     "long_coat": {"slot": "body", "name": "長大衣", "kind": "cloth", "armor": "cloth", "price": 120, "scale": {"save": "up"}, "outfit": "regular", "desc": "及膝的厚呢大衣，擋得住北方的寒風。"},
     "short_skirt": {"slot": "legs", "name": "短裙", "kind": "cloth", "price": 20, "scale": {"save": "half"}, "exposure": 1, "outfit": "regular", "desc": "剛過大腿的短裙，走路輕快。"},
     "long_skirt": {"slot": "legs", "name": "長裙", "kind": "cloth", "price": 25, "scale": {"save": "half"}, "outfit": "regular", "desc": "垂到腳踝的長裙，裙擺隨步伐輕輕擺動。", "vacuum": ["bottom"]},
@@ -233,7 +233,7 @@
     "nurse_uniform": {"slot": "body", "name": "護士服", "kind": "cloth", "armor": "cloth", "price": 80, "scale": {"save": "up"}, "outfit": "anime", "desc": "潔白合身的護士服，胸前別著紅十字的小徽章。", "vacuum": ["bottom"]},
     "gothic_lolita": {"slot": "body", "name": "哥德蘿莉塔洋裝", "kind": "cloth", "armor": "cloth", "price": 250, "scale": {"save": "up"}, "outfit": "anime", "desc": "層層蕾絲與黑緞堆成的洋裝，裙擺撐得像一朵倒放的黑玫瑰。", "vacuum": ["bottom"]},
     "qipao": {"slot": "body", "name": "旗袍", "kind": "cloth", "armor": "cloth", "price": 150, "scale": {"save": "up"}, "exposure": 1, "outfit": "anime", "desc": "立領盤扣、兩側高衩的貼身長袍，繡著纏枝花紋。"},
-    "sailor_uniform": {"slot": "body", "name": "水手服", "kind": "cloth", "armor": "cloth", "price": 60, "scale": {"save": "up"}, "exposure": 1, "outfit": "anime", "desc": "大翻領配領巾的水手服，據說是某間學院的制服。"},
+    "sailor_uniform": {"slot": "body", "name": "水手服", "kind": "cloth", "armor": "cloth", "price": 60, "scale": {"save": "up"}, "exposure": 1, "outfit": "anime", "desc": "大翻領配領巾的水手服，據說是某間學院的制服。", "top_only": true},
     "yukata": {"slot": "body", "name": "浴衣", "kind": "cloth", "armor": "cloth", "price": 60, "scale": {"save": "up"}, "outfit": "anime", "desc": "輕薄的棉質浴衣，腰間繫著寬寬的布帶。", "vacuum": ["top", "bottom"]},
     "butler_suit": {"slot": "body", "name": "執事服", "kind": "cloth", "armor": "cloth", "price": 150, "scale": {"save": "up"}, "outfit": "anime", "desc": "剪裁筆挺的燕尾服，白手套與懷錶缺一不可。"},
     "magical_girl": {"slot": "body", "name": "魔法少女服", "kind": "cloth", "armor": "cloth", "price": 300, "scale": {"save": "up"}, "exposure": 1, "outfit": "anime", "desc": "緞帶、蝴蝶結與蓬蓬裙堆成的華麗戰鬥服，據說穿上就會充滿勇氣。"},
@@ -291,7 +291,7 @@
     "chronicle_tome": { "slot": "off_hand", "type": "法器", "name": "編年之書", "kind": "cloth", "price": 600, "stats": {"save": 1, "hit": 1}, "scale": {"save": "half", "hit": "half"}, "exclusive": true, "desc": "無名史官的書，字還在一個一個地寫上去——寫的是拿著它的人接下來要做的事。" },
     "chronicle_guard": { "slot": "off_hand", "type": "盾", "name": "編年鱗盾", "kind": "metal", "price": 500, "stats": {"dr": 1, "evade": 1}, "threat": 0.1, "scale": {"dr": "half", "evade": "third"}, "exclusive": true, "desc": "幾片「編年的鱗片」拼成的圓盾，擋下來的每一擊都會在盾面上多刻一道。" },
     "vine_whip": { "slot": "main_hand", "type": "鞭", "name": "禁果藤鞭", "kind": "wood", "weapon": "vine_whip", "price": 400, "stats": {"hit": 1, "crit": 1}, "scale": {"damage": "full", "hit": "half"}, "exclusive": true, "adult": true, "desc": "園丁「蜜之手」的藤鞭，抽過的地方會開出粉紅色的小花，又癢又燙。" },
-    "fruit_corset": { "slot": "body", "name": "禁果束衣", "kind": "leather", "armor": "fruit_corset", "price": 1200, "stats": {"save": 1}, "scale": {"evade": "half", "dr": "third"}, "exclusive": true, "adult": true, "desc": "禁果之樹的樹皮鞣成的束衣，緊得勒出腰身，還帶著一點果香。" },
+    "fruit_corset": {"slot": "body", "name": "禁果束衣", "kind": "leather", "armor": "fruit_corset", "price": 1200, "stats": {"save": 1}, "scale": {"evade": "half", "dr": "third"}, "exclusive": true, "adult": true, "desc": "禁果之樹的樹皮鞣成的束衣，緊得勒出腰身，還帶著一點果香。", "top_only": true},
     "glimmer_veil": { "slot": "body", "name": "鱗光薄紗", "kind": "cloth", "armor": "glimmer_veil", "price": 1500, "scale": {"save": "up", "evade": "third"}, "exclusive": true, "adult": true, "desc": "秘宮寢殿裡飄落的薄紗，鱗光一閃一閃，穿上的人像是站在狂歡的燈影裡。" },
     "first_cry": { "slot": "piercing", "name": "初啼耳墜", "kind": "jewel", "price": 300, "stats": {"save": 1}, "resist_scale": {"lust": "res"}, "exclusive": true, "adult": true, "desc": "最初的魅魔吐出的第一聲嘆息凝成的耳墜，貼著耳垂微微發燙。" }
   },

@@ -13,6 +13,8 @@ import {
   checkBonus, checkModifiers, grantPerk, npcPerksOf, offerPerks, perkPower, perksOf, pitchCap, pitchTarget, rollNpcPerks, sanitizePerk,
 } from '@/engine/perks'
 import { pcOf } from '@/engine/party'
+import { ensureGuildClerk, npcRecord } from '@/engine/npcs'
+import { ensureRelationship } from '@/engine/social'
 import { Rng } from '@/engine/rng'
 import { addItem, newGame, withRng } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
@@ -64,7 +66,9 @@ describe('perks in checks', () => {
     expect(checkBonus(pc, { context: 'retreat', attr: 'dex' })).toBe(2)
     // 檢定分類（R20）：能言善道說服 +2、交易 +1，體面說服 +1、對貴族 +1；城門盤查用說服應付時兩個都算
     expect(checkBonus(pc, { context: 'gate', attr: 'cha', skill: 'persuade' })).toBe(3)
-    expect(checkBonus(pc, { context: 'gate', attr: 'cha' })).toBe(0)
+    // 沒有分類的檢定照屬性推（魅力 → 說服）
+    expect(checkBonus(pc, { context: 'gate', attr: 'cha' })).toBe(3)
+    expect(checkBonus(pc, { context: 'action', attr: 'str' })).toBe(0)
     expect(checkBonus(pc, { context: 'action', kind: 'haggle', attr: 'cha' })).toBe(1)
     expect(checkBonus(pc, { context: 'action', kind: 'chat', attr: 'cha', vsTags: ['noble'] })).toBe(4)
     expect(checkBonus(pc, { context: 'trap', attr: 'dex' })).toBe(0)
@@ -156,11 +160,14 @@ describe('getting perks', () => {
     const state = game()
     standOn(state, 'guild')
     state.money_cc = 5000
-    // 識途老馬（強度 4）：學費、時數、DC 照公式，要角色 Lv.5（公會沒有店主，不看親密度）
+    // 識途老馬（強度 4）：學費、時數、DC 照公式，要角色 Lv.5、和公會職員的親密度 20
     const spec = trainSpec(perkDef('pathfinder')!)
     expect(spec).toMatchObject({ price_cc: 1600, hours: 32, dc: 16, level: 5, affinity: 20 })
     expect(() => prepareAction(state, { kind: 'train', target: 'pathfinder', text: '' })).toThrow('Lv.5')
     pcOf(state).level = 5
+    expect(() => prepareAction(state, { kind: 'train', target: 'pathfinder', text: '' })).toThrow('公會職員的親密度要 20')
+    const clerk = ensureGuildClerk(state)
+    ensureRelationship(state, { id: clerk, name: npcRecord(state, clerk)!.name }).affinity = 20
     const p = prepareAction(state, { kind: 'train', target: 'pathfinder', text: '' })
     // 32 小時：每天練 8 小時，分 4 天（經過 3 天又 8 小時）
     expect(p.hours).toBe(3 * 24 + 8)

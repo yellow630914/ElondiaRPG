@@ -45,6 +45,8 @@
     "escape": { "name": "脫逃", "desc": "掙脫束縛、逃離主人" }
   },
   "context_skills": { "negotiation": "persuade", "stealth": "stealth", "lock": "sleight", "trap": "perception", "initiative": "perception", "travel": "survival", "road": "survival", "retreat": "survival", "master_event": "service" },
+  "$comment_attr_skills": "沒有分類的檢定（特殊任務、事件、打聽……的選項沒寫 skill，行動與情境也沒有分類）照屬性推一個預設分類；自由行動（AI 選）與受訓不推。",
+  "attr_skills": { "str": "labor", "dex": "stealth", "int": "perception", "fai": "perception", "cha": "persuade" },
   "kinds": {
     "free": {
       "name": "自由行動",

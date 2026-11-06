@@ -22,7 +22,7 @@ import { setupDefeatEvent } from './defeat'
 import { attrOf, lifeTier, mod, snapshot } from './character'
 import {
   actionRules, combatRules, companionRules, contractDef, itemDef, itemRules, locationById, npcPool, npcs as namedNpcs, regionById, slaveryRules, lewdRules,
-  tagDcMod, tagDef, type ActionKind, type AttrId, type Degree, type MarketDef, type NpcKind,
+  tagDcMod, tagDef, type ActionKind, type AttrId, type CheckContext, type SkillId, type Degree, type MarketDef, type NpcKind,
 } from './data'
 import type { Rng } from './rng'
 import { formatMoney } from './money'
@@ -45,7 +45,6 @@ import { setupWork } from './work'
 import { setupExplore } from './landmarks'
 import { currentArea, currentCell, palaceGateName } from './grid'
 import { assertMayPersuadePalace, palacePersuadeDc, settlePalacePersuasion } from './security'
-import { checkModifiers } from './perks'
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
@@ -866,6 +865,10 @@ export interface ActionSetup {
    * 'keeper' 委託打造由店主擲，屬性不算（店主的等級在 situational）
    */
   craftCheck?: 'self' | 'keeper'
+  /** 檢定分類（特殊任務選項寫的 skill）；沒有時照行動、情境，再沒有照屬性推（perks.ts 的 checkSkills） */
+  skill?: SkillId
+  /** 檢定的情境（預設 action；王城大門是 gate） */
+  context?: CheckContext
 }
 
 export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string, others: string[] = []): ActionSetup {
@@ -942,7 +945,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       assertMayPersuadePalace(state)
       return {
         dc: palacePersuadeDc(state), targetName: `${palace}的衛兵`, attr: 'cha', hours: 0.25,
-        situational: checkModifiers(pc, { context: 'gate', attr: 'cha' }).filter((x) => x.value !== 0),
+        // 特質、身分在 prepareAction 照「城門盤查」情境與說服分類算（不在這裡另外加，免得重複）
+        situational: [], context: 'gate',
         scene: `${locationById(state.location).name}・${palace}的大門`,
         outcomes: { critical: '今天放行', success: '今天放行', partial: '不放行，今天不會再聽你說', fail: '不放行，今天不會再聽你說', fumble: '起了疑心，這裡的警戒上升' },
       }

@@ -9,7 +9,7 @@ import { cellName, currentArea, currentCell } from './grid'
 import { closedHere } from './landmarks'
 import { formatMoney } from './money'
 import { pcOf } from './party'
-import { npcRecord } from './npcs'
+import { guildClerkId, npcRecord } from './npcs'
 import { shopKey, shopTypeForCell } from './trade'
 import { presentHere } from './population'
 import { snapshot } from './character'
@@ -30,12 +30,17 @@ function memberOf(state: GameState, id: string): Character {
 /** 可以受訓的一項：在這個設施，或向身邊的老師（mentor）；blocked 是還不能學的原因（例如好感、等級不夠） */
 export interface TrainOption { def: PerkDef; train: TrainSpec; mentor?: { id: string; name: string }; blocked?: string }
 
-/** 這一格的店主和主角的親密度（設施不是商店、或還沒見過店主時是 undefined） */
+/**
+ * 這一格的負責人和主角的親密度（受訓的親密度門檻）：商店看店主、公會看公會職員、地標看待在那裡的固定 NPC。
+ * 沒有負責人的設施（例如神殿以外沒有人顧的地方）是 undefined，不看親密度
+ */
 function keeperHere(state: GameState, cell: string): { name: string; affinity: number } | undefined {
+  const who = (id: string | undefined, fallback: string) => ({ name: (id && npcRecord(state, id)?.name) || fallback, affinity: (id && state.relationships?.[id]?.affinity) || 0 })
+  if (cell === 'guild') return who(guildClerkId(state.location), '公會職員')
   const type = shopTypeForCell(cell)
-  if (!type) return undefined
-  const keeper = state.shops?.[shopKey(state, type)]?.keeper
-  return { name: (keeper && npcRecord(state, keeper)?.name) || '店主', affinity: (keeper && state.relationships?.[keeper]?.affinity) || 0 }
+  if (type) return who(state.shops?.[shopKey(state, type)]?.keeper, '店主')
+  const host = namedNpcs.find((n) => n.landmark === cell)
+  return host ? who(host.id, host.name) : undefined
 }
 
 /** 強的特質的門檻（perks.json 的 training.gates）：角色等級、老師或店主的親密度 */

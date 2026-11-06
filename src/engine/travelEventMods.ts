@@ -2,7 +2,7 @@
 // 內建的事件可以改、不能刪；自建的事件沒有被用到的地方，隨時可以刪（等待中的事件會作廢）。
 // 另外一筆「事件設定」（key 是 rules）：旅途各種路段的機率、事件種類的權重，城鎮事件與地下城事件的機率與冷卻。
 
-import { ATTR_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
+import { ATTR_IDS, SKILL_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { sanitizeCond } from './mods'
 import { parasiteDef, parasiteRules } from './parasites'
 import { DEFAULT_LAYER_DC } from './dungeonEvents'
@@ -70,7 +70,11 @@ export function townEventCells(): string[] {
 function check(v: unknown): StoryCheck | undefined {
   if (!v || typeof v !== 'object') return undefined
   const c = v as Partial<StoryCheck>
-  return { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: Math.round(num(c.dc, 1, 40, 12)) }
+  return {
+    attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: Math.round(num(c.dc, 1, 40, 12)),
+    // 檢定分類（說服、欺瞞……）：認得的才留，沒寫時照屬性推
+    ...((SKILL_IDS as string[]).includes(c.skill as string) ? { skill: c.skill } : {}),
+  }
 }
 
 /** 事件的結果：特殊任務的結果，拿掉只有任務用得到的（完成、失敗、再來一次、任務同行）。

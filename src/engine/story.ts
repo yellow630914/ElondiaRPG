@@ -568,7 +568,7 @@ export function setupStoryCheck(state: GameState, target?: string) {
   const relText = a ? `${a.name}對主角的好感 ${a.affinity}（${affinityStage(a.affinity)}）${rel?.toPlayer ? `，${a.name}眼中的主角：${rel.toPlayer}` : ''}。` : ''
   const targetName = (n.node.at.npc && npcRecord(state, n.node.at.npc)?.name) || a?.name
   return {
-    attr: c.check.attr, dc: c.check.dc, hours: 1,
+    attr: c.check.attr, dc: c.check.dc, hours: 1, ...(c.check.skill ? { skill: c.check.skill } : {}),
     situational: a?.bonus ? [{ label: `${a.name}的好感（${a.affinity}）`, value: a.bonus }] : [],
     ...(targetName ? { targetName } : {}),
     scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${c.label}）。${n.node.text}${allyNames(state, n.node) ? `在場的友方：${allyNames(state, n.node)}。` : ''}${relText}`,

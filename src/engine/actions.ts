@@ -13,7 +13,7 @@ import { applyUnbind } from './restraints'
 import { applyExplore, withLandmark } from './landmarks'
 import { applyPitch, applyTrain, pruneOffers } from './perkActions'
 import { parsePitchTarget } from './perks'
-import { checkModifiers, type CheckCtx } from './perks'
+import { checkModifiers, checkSkills, type CheckCtx } from './perks'
 import { attrOf, mod, proficiency, snapshot } from './character'
 import { clampDegree, computeDegree, DEGREE_NAME, naturalCritOnly } from './checks'
 import {
@@ -195,9 +195,11 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
   const vsTags = (input.target && npcRecord(state, input.target)?.tags) || undefined
-  const ctx = { context: 'action' as const, kind: input.kind, attr: setup.attr ?? kind.attr, ...(vsTags ? { vsTags } : {}) }
-  const base = checkModifiers(pc, ctx)
-  const situational = [...setup.situational, ...base, ...lewdModifiers(state, pc, input.kind, vsTags)].filter((x) => x.value !== 0)
+  const ctx: CheckCtx = { context: setup.context ?? 'action', kind: input.kind, attr: setup.attr ?? kind.attr, ...(setup.skill ? { skill: setup.skill } : {}), ...(vsTags ? { vsTags } : {}) }
+  // 委託打造由店主擲（craftCheck: 'keeper'）：主角的特質、身分、狀態都不算，只看店主的手藝
+  const keeper = setup.craftCheck === 'keeper'
+  const base = keeper ? [] : checkModifiers(pc, ctx)
+  const situational = [...setup.situational, ...base, ...(keeper ? [] : lewdModifiers(state, pc, input.kind, vsTags))].filter((x) => x.value !== 0)
   // 自由行動：判定時才知道是哪個分類，先替每個分類算好多出來的修正（同一個來源只算差額）
   const skillMods = input.kind === 'free' ? freeSkillMods(pc, ctx, base) : undefined
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
@@ -231,7 +233,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     ...(setup.craftCheck ? { craftCheck: setup.craftCheck } : {}),
     ...(setup.actor && !pc.isPlayer ? { actor: pc.id } : {}),
     situational,
-    ...(kind.skill ? { skill: kind.skill } : {}),
+    // 顯示的分類：任務選項寫的、行動的，或照屬性推的（自由行動由 AI 選）
+    ...(() => { const sk = input.kind === 'free' ? undefined : setup.skill ?? kind.skill ?? [...checkSkills(ctx)][0]; return sk ? { skill: sk } : {} })(),
     ...(skillMods && Object.keys(skillMods).length ? { skillMods } : {}),
     outcomes: setup.outcomes,
     ...(setup.targetName ? { targetName: setup.targetName } : {}),
@@ -650,7 +653,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
 
   const report = actionReport(state, p, judgment?.hours ?? p.hours ?? kind.hours)
   const check: CheckInfo = {
-    action: kind.name, attr, ...(skill ? { skill } : {}), base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(situational.length ? { situational } : {}), total, degree,
+    action: kind.name, attr, ...(p.craftCheck === 'keeper' ? { keeper: true } : {}), ...(skill ? { skill } : {}), base_dc: p.base_dc, dc, natural: p.natural, modifier, ...(situational.length ? { situational } : {}), total, degree,
     ...(judgment?.trivial ? { trivial: true } : {}),
     // 日常小事的骰值只決定過程順不順，不算「和骰值不同」
     ...(degree !== reference && !judgment?.trivial ? { reference_degree: reference } : {}),

@@ -5,7 +5,7 @@ import { parasiteDef } from './parasites'
 import { LEWD_KEYS } from './lewd'
 import { LOCK_GRADES, type LewdKey, type LockGrade, type MasterEventPool } from './data'
 import {
-  abilities, ATTR_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
+  abilities, ATTR_IDS, SKILL_IDS, companionRules, specialMaps, storyCounters, enemies, isCustomShopId, isLandmarkId, landmarks, shopRules, type ShopType, geography, itemDef, npcs as namedNpcs, isChoosablePerk, perkDef, slaveryRules, stories, type AttrId, type EncounterGroup, type StoryCheck, type StoryCond,
   type StoryDef, type StoryNode, type StoryOption, type StoryOutcome, type StoryPlace, type StoryStart, type StoryStartKind, type StoryWhere, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, MASTER_EVENT_POOLS, PARK_STAMP_PREFIX,
 } from './data'
 import type { RewardEffect } from './effects'
@@ -93,6 +93,8 @@ function check(v: unknown): StoryCheck | undefined {
   if (!v || typeof v !== 'object') return undefined
   const c = v as Partial<StoryCheck>
   const out: StoryCheck = { attr: ATTR_IDS.includes(c.attr as AttrId) ? c.attr! : 'int', dc: int(c.dc, 1, 40, 12) }
+  // 檢定分類（說服、欺瞞……）：認得的才留，沒寫時照屬性推
+  if ((SKILL_IDS as string[]).includes(c.skill as string)) out.skill = c.skill
   // 參考好感：角色、每幾點 +1、加值上限、門檻
   const a = c.affinity
   if (a && typeof a === 'object' && str(a.npc, 60)) {

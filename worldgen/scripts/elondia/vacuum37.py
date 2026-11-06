@@ -21,6 +21,9 @@ VACUUM = {
 
 DAILY_VACUUM = {'lewdness': 1}
 
+# 上衣類（top_only）：沒穿下身時不算遮住下身，下身看內褲（沒有就是全裸）
+TOP_ONLY = ['shirt', 'blouse', 'sailor_uniform', 'fruit_corset']
+
 
 def main():
     p = 'data/rules/gear.json'
@@ -28,16 +31,19 @@ def main():
     done = set()
     for i, line in enumerate(lines):
         m = re.match(r'^(\s*)"([a-z0-9_]+)": (\{.*\})(,?)$', line)
-        if not m or m.group(2) not in VACUUM:
+        if not m or (m.group(2) not in VACUUM and m.group(2) not in TOP_ONLY):
             continue
         indent, key, body, comma = m.groups()
         base = json.loads(body)
         if 'slot' not in base:
             continue
-        base['vacuum'] = VACUUM[key]
+        if key in VACUUM:
+            base['vacuum'] = VACUUM[key]
+        if key in TOP_ONLY:
+            base['top_only'] = True
         lines[i] = f'{indent}"{key}": {json.dumps(base, ensure_ascii=False)}{comma}'
         done.add(key)
-    assert done == set(VACUUM), set(VACUUM) - done
+    assert done == set(VACUUM) | set(TOP_ONLY), (set(VACUUM) | set(TOP_ONLY)) - done
     t = '\n'.join(lines)
     json.loads(t)
     open(p, 'w').write(t)

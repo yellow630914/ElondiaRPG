@@ -96,7 +96,7 @@
 | `hours` | 時段：`day` 只在白天（6～18 點）、`night` 只在夜裡（18～6 點），不寫＝不限。見下面的「時段」 |
 | `wear` | 限定穿著：每一項是物品名稱，或裝備底材的 id（例如 `bunny_suit`：任何一件兔女郎裝都算）；主角全部穿在身上才能進行。任務點照樣出現，沒穿好時按鈕停用並說明要穿什麼（戰鬥也一樣）。常和 `start.items` 一起用：接任務時發制服，上工時要穿著 |
 | `allies` | 在場的友方固定 NPC（id 的清單，任何種類的任務點都可以用）：解鎖之後站在 ⭐ 旁邊，或站在設施上（`cell`；`settlement` 在城門），不管他平常的出沒與出現條件；戰鬥時站在你這邊（由你操作，生命值不留到戰鬥之後）；AI 判定與寫經過時知道他們在場（`report.others`） |
-| `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc }`，可以參考好感，見下面）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定與出現條件 `requires`） |
+| `kind` | `story` 劇情（直接發生）、`check` 判定（`check: { attr, dc, skill? }`，`skill` 是檢定分類，空著照屬性推（[ACTIONS](ACTIONS.md) 2.1 節），可以參考好感，見下面）、`combat` 戰鬥（`enemies` 怪物、`foes` 固定 NPC）、`choice` 選擇（`options`，每個選項可以有自己的檢定與出現條件 `requires`） |
 | `success`、`fail` | 結果（劇情只有 success；判定與戰鬥沒寫 fail 時，失敗可以再試） |
 
 ### 參考好感的檢定

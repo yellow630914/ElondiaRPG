@@ -70,6 +70,8 @@ export interface BaseDef {
   exposure?: number
   /** 真空會走光的一側（曝露度 0 也算，例如裙子、薄襯衫）：底下沒穿內衣（top）或內褲（bottom）時那一側曝露度 +1。曝露度 1 以上的不用寫 */
   vacuum?: VacuumSide[]
+  /** 上衣類（襯衫、水手服……，只放上身）：沒穿下身時不算遮住下身，下身看內褲（docs/LEWD_STATS.md 第 3 節） */
+  top_only?: boolean
   /** 雙面效應（lewd.json 的 two_face）：拘束的程度 1～3 與種類；平常是檢定減值，修了流派、鎖上時戰鬥中反轉成增益 */
   bind?: number
   bind_kind?: BindKind

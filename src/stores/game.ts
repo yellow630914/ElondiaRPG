@@ -1438,7 +1438,7 @@ export const useGame = defineStore('game', () => {
     pitchPerk: (member: string, offer: string, text: string) => perform({ kind: 'perk_pitch', target: pitchTarget(member, offer), text }),
     train: (perk: string, text: string) => perform({ kind: 'train', target: perk, text }),
     /** 學工藝（R21）：付學費、花時間，工藝升一級（店裡最多教到 Lv.2） */
-    learnCraft: (id: CraftId) => run((s) => learnCraft(s, id)),
+    learnCraft: (id: CraftId, member?: string) => run((s) => learnCraft(s, id, member)),
     forgetInvention: (name: string) => run((s) => invention.forgetInvention(s, name)),
     /** 自創物品改名（回傳新的名字） */
     renameInvention: (from: string, to: string) => run((s) => invention.renameInvention(s, from, to)),
