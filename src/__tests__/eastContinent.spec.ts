@@ -130,7 +130,8 @@ describe('炎華之地', () => {
 
   it('gives every southern landmark a place on the map and a person, and offers the first errand at 龍安府 guild', () => {
     const lms = Object.values(landmarks).filter((l) => l.id.startsWith('lm_yh_'))
-    expect(lms.length).toBe(19)
+    // 19 個，加上 R26 打工線的狀元客舍、畫舫碼頭、珠船塢、大車店的大炕
+    expect(lms.length).toBe(23)
     const s = newGame({ name: '測試者', race: 'hualong', classId: 'fighter', seed: 2, birthplace: 'longan' })
     for (const l of lms) {
       // 地標要擺得上地圖（站得上去）
@@ -139,7 +140,8 @@ describe('炎華之地', () => {
       if (l.interior) expect(specialMaps[l.interior]?.location, l.id).toBe(l.location)
     }
     const yh = (namedNpcs as { npcs: { id: string; landmark?: string; location: string }[] }).npcs.filter((n) => n.id.startsWith('npc_yh_'))
-    expect(yh.length).toBe(36)
+    // 36 位，加上 R26 打工、巡禮與祭典的委託人 8 位
+    expect(yh.length).toBe(44)
     for (const l of lms.filter((x) => !['lm_yh_rainbow_bridge'].includes(x.id))) expect(yh.some((n) => n.landmark === l.id), `${l.id} 沒有人`).toBe(true)
     for (const n of yh) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)
     // 新手的第一條委託：龍安府公會
@@ -172,7 +174,8 @@ describe('炎華之地', () => {
     // 地標的場景：旗標由這些任務設定
     const sets = new Set(stories.flatMap((s) => s.nodes.flatMap((n) => [n.success, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).flatMap((o) => o?.set_flags ?? [])))
     const scenes = Object.values(landmarks).filter((l) => l.id.startsWith('lm_yh_')).flatMap((l) => l.scenes ?? [])
-    expect(scenes.length).toBe(10)
+    // 成人向角色與多人任務的 10 個，加上 R26 打工線回去上工的 8 個
+    expect(scenes.length).toBe(18)
     for (const sc of scenes) {
       expect(sc.tags, sc.title).toContain('adult')
       for (const f of sc.requires!.flags!) expect(sets.has(f), `${sc.title} ${f}`).toBe(true)
@@ -233,9 +236,10 @@ describe('炎華之地', () => {
       if (l.interior) expect(specialMaps[l.interior]?.location, l.id).toBe(l.location)
     }
     const td = (namedNpcs as { npcs: { id: string; landmark?: string; location: string; race: string }[] }).npcs.filter((n) => n.id.startsWith('npc_td_'))
-    expect(td.length).toBe(18)
-    // 外地人四位（化龍族三位、靈狐族一位），其他都是人馬族
-    expect(td.filter((n) => n.race !== 'centaur').length).toBe(4)
+    // 18 位，加上 R26 的委託人孫舌頭（靈狐族）與烏力吉（人馬族）
+    expect(td.length).toBe(20)
+    // 外地人五位（化龍族三位、靈狐族兩位），其他都是人馬族
+    expect(td.filter((n) => n.race !== 'centaur').length).toBe(5)
     for (const n of td) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)
     expect(specialMaps.sm_td_inner_tent?.location).toBe('jinzhang')
   })

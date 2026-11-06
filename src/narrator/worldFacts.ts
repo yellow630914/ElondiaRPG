@@ -4,7 +4,8 @@
 
 import type { ActionPending } from '@/engine/actions'
 import { monsterLine } from '@/engine/bestiary'
-import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, landmarks, locationById, regionById } from '@/engine/data'
+import { DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, enemies, geography, landmarks, locationById, regionById, specialMapOfKey } from '@/engine/data'
+import { underworldKnown } from '@/engine/underworld'
 import { intelPlace, nearbyPlaces } from '@/engine/intel'
 import { activeLeads, ensureLeadPool, leadPoolOn } from '@/engine/leads'
 import { tagEffectText, townStates, townTags } from '@/engine/market'
@@ -40,7 +41,11 @@ export function worldFacts(state: GameState): string {
     .sort((a, b) => a.path.days[0] - b.path.days[0])
     .slice(0, MAX_PLACES)
     .map(({ l, path }) => `- ${l.name} [${l.id}]｜${TYPE_NAME[l.type] ?? l.type}｜${regionById(l.region).name}｜${path.days[1] === 0 ? '就在附近' : `約 ${path.days[0] === path.days[1] ? path.days[0] : `${path.days[0]}～${path.days[1]}`} 天`}`)
-  const marks = Object.values(landmarks).filter((l) => l.location === here.id).map((l) => l.name)
+  // 地下街裡的地標：主角知道地下街之後才列（AI 不會提前說出黑市、淫鬥場在哪）
+  const known = underworldKnown(state, here.id)
+  const marks = Object.values(landmarks)
+    .filter((l) => l.location === here.id && (!l.at.area.startsWith('sm/') || known))
+    .map((l) => (l.at.area.startsWith('sm/') ? `${l.name}（${specialMapOfKey(l.at.area)?.name ?? '地下'}）` : l.name))
   // 這裡的行情（城鎮的固定標籤）：讓對方聊得出「這裡礦石便宜」；價格只由程式算
   const market = [
     ...townTags(here.id).map((t) => `${t.def.name}（${t.def.desc}；${tagEffectText(t.def)}）`),

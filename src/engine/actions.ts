@@ -362,7 +362,7 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
       }
       case 'flag': {
         const key = clipText(x.key, 40).replace(/[^\w:\-\u4e00-\u9fff]/g, '_')
-        if (!key || flags >= caps.flags || key.startsWith('black_market:') || key.startsWith('invite_wait:') || key === 'negotiate_bonus') break
+        if (!key || flags >= caps.flags || key.startsWith('black_market:') || key.startsWith('underworld:') || key.startsWith('invite_wait:') || key === 'negotiate_bonus') break
         const value = typeof x.value === 'boolean' || typeof x.value === 'number' ? x.value : clipText(x.value, 60) || true
         effects.push({ type, key: `ai:${key}`, value })
         flags++

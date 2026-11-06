@@ -4,7 +4,7 @@
 > 依賴：[EFFECTS](EFFECTS.md)（後果用的效果）、[RELATIONSHIP_MEMORY](RELATIONSHIP_MEMORY.md)（交給 AI 的關係與記憶）、[PROMPTS](PROMPTS.md) 第 4 節（判定請求的格式）。
 > 程式：`src/engine/actions.ts`、`src/engine/checks.ts`、`src/narrator/judge.ts`；資料：`data/rules/actions.json`。
 
-主角主動發起的事（交談、說服、送禮、雇傭談判、殺價、邀請入隊、打聽黑市、身為奴隸時的談判與逃離……）不是「先寫好各種結果再擲骰選一條」，而是**擲骰先發生，AI 看骰值直接決定結果並寫出經過**，數值後果由程式夾在上限內。
+主角主動發起的事（交談、說服、送禮、雇傭談判、殺價、邀請入隊、打聽地下街、身為奴隸時的談判與逃離……）不是「先寫好各種結果再擲骰選一條」，而是**擲骰先發生，AI 看骰值直接決定結果並寫出經過**，數值後果由程式夾在上限內。
 
 ## 1. 流程
 
@@ -61,7 +61,7 @@
 |---|---|
 | 一般 | 自由行動 `free`、長休時的互動 `rest_talk` |
 | 交流 | 聊天 `chat`、送禮 `gift`、獻媚 `flatter`、誘惑 `seduce`（[LEWD_STATS](LEWD_STATS.md) 第 15 節）、雇傭談判 `hire`、邀請入隊 `invite`（固定 NPC 小隊整隊邀請）、請小隊帶你同行 `squad_join`、向主人提議雇人或買奴隸 `propose` |
-| 交易 | 殺價 `haggle`（奴隸市場）、交涉價格 `bargain`、談判 `negotiation`、打聽黑市 `black_market` |
+| 交易 | 殺價 `haggle`（奴隸市場）、交涉價格 `bargain`、談判 `negotiation`、打聽地下街 `black_market`（[SPECIAL_MAPS](SPECIAL_MAPS.md) 第 9 節） |
 | 犯罪與對峙 | 偷竊 `steal`、偷襲 `attack`、蒙混過關 `bluff`、威嚇 `intimidate`、說服王城的衛兵 `palace_gate`（[NPC_SYSTEM](NPC_SYSTEM.md) 的王城） |
 | 奴隸 | 刻印 `marking`、請求主人同意出城 `master_permit`、請求主人讓你出門 `master_leave`、回應主人 `master_event`、談判解除契約 `negotiate`、逃離主人 `escape`、回到主人身邊 `master_return`、投靠新主人 `seek_master`、解除印記 `unmark` |
 | 拘束具 | 嘗試脫縛 `unbind`（[LEWD_STATS](LEWD_STATS.md) 第 16 節） |
@@ -84,7 +84,7 @@
 | 說服 `persuade` | 講道理、拉關係、談條件：聊天、送禮、雇傭與邀請、談判 | 雇傭談判 `hire`、邀請入隊 `invite`、請小隊帶你同行 `squad_join`、談判解除契約 `negotiate`、談判 `negotiation`、長休時的互動 `rest_talk`、聊天 `chat`、送禮 `gift`、向主人提議 `propose`、投靠新主人 `seek_master`、說服王城的衛兵 `palace_gate`、爭取特質 `perk_pitch` | 談判（委託報酬、交易條件） `negotiation` |
 | 欺瞞 `deceive` | 說謊、裝傻、蒙混過關 | 蒙混過關 `bluff` | — |
 | 威嚇 `intimidate` | 用氣勢、武力或身分壓人 | 威嚇 `intimidate` | — |
-| 交易 `trade` | 殺價、談價錢、打聽黑市 | 殺價 `haggle`、打聽黑市 `black_market`、交涉價格 `bargain` | — |
+| 交易 `trade` | 殺價、談價錢、打聽地下街 | 殺價 `haggle`、打聽地下街 `black_market`、交涉價格 `bargain` | — |
 | 魅惑 `charm` | 獻媚、誘惑、討好客人 | 獻媚 `flatter`、誘惑 `seduce`、消費 `patron` | — |
 | 潛行 `stealth` | 躲藏、跟蹤、偷襲 | 偷襲 `attack` | 潛行（避開敵人、偷偷離隊） `stealth` |
 | 巧手 `sleight` | 偷竊、開鎖這類手上功夫 | 偷竊 `steal` | 開鎖 `lock` |

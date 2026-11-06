@@ -2,13 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { buyCurio, curioStock } from '@/engine/companions'
 import { itemRules } from '@/engine/data'
-import { enterLocation } from '@/engine/grid'
+import { enterLocation, standOn, type CellKind } from '@/engine/grid'
 import { newGame } from '@/engine/state'
 
 function atBlackMarket() {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'rogue', seed: 9, birthplace: 'soriel' })
   enterLocation(state)
+  // 黑市在地下街裡：知道地下街（舊存檔打聽到黑市的旗標也算）、站在黑市的地標上
   state.flags['black_market:soriel'] = true
+  standOn(state, 'lm_uw_black_soriel' as CellKind)
   state.money_cc = 1e6
   return state
 }
@@ -47,9 +49,10 @@ describe('black market curios', () => {
     expect(after.haggled).toBe(true)
   })
 
-  it('needs a known black market', () => {
-    const state = atBlackMarket()
-    delete state.flags['black_market:soriel']
+  it('needs to stand at the black market in the underworld', () => {
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'rogue', seed: 9, birthplace: 'soriel' })
+    enterLocation(state)
+    standOn(state, 'tavern')
     expect(() => curioStock(state)).toThrow('黑市')
   })
 })
