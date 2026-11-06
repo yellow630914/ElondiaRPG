@@ -428,7 +428,7 @@ export function setupInvent(state: GameState, target?: string) {
   const used = plan.inputs.map((x) => `${x.name}×${x.need}`).join('、')
   return {
     actor: crafter.id,
-    attr: skill.attr, dc: plan.dc, hours: plan.hours,
+    attr: skill.attr, dc: plan.dc, hours: plan.hours, craftCheck: 'self' as const,
     situational: [{ label: `${crafter.name}的${skill.name}（Lv.${plan.skill}）`, value: plan.skill * craftRules.level_bonus }],
     scene: `${locationById(state.location).name}・${crafter.isPlayer ? '' : `由${crafter.name}`}自創${skill.name} Lv.${req.level} 的${INVENT_CATEGORY_NAME[req.category]}（${plan.tool.source}，材料 ${used}）`,
     targetName: `自創的${INVENT_CATEGORY_NAME[req.category]}`,

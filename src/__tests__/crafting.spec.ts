@@ -114,7 +114,8 @@ describe('making it yourself', () => {
     const plan = craftPlan(state, 'longsword', 'iron', [], pc(state))
     const money = state.money_cc
     prepareAction(state, { kind: 'make', target: makeTarget('pc', 'longsword', 'iron'), text: '' })
-    expect(state.pendingAction!.situational).toContainEqual({ label: '艾倫的鍛造（Lv.1）', value: 1 })
+    // 工藝檢定（R21）：工藝等級 × 2，屬性調整值 ÷ 3、不加熟練
+    expect(state.pendingAction!.situational).toContainEqual({ label: '艾倫的鍛造（Lv.1）', value: 2 })
     state.pendingAction!.natural = 20
     const r = resolveAction(state, null)
     valid(r)
@@ -144,8 +145,9 @@ describe('making it yourself', () => {
     const p = prepareAction(state, { kind: 'make', target: makeTarget(friend.id, 'leather_armor', 'leather'), text: '' })
     expect(p.actor).toBe(friend.id)
     expect(p.attr).toBe('dex')
-    expect(p.modifiers.dex).toBeGreaterThan(2)
-    expect(p.situational).toContainEqual({ label: `${friend.name}的製革（Lv.2）`, value: 2 })
+    // 靈巧 18（調整值 +4）÷ 3 = +1，不加熟練
+    expect(p.modifiers.dex).toBe(1)
+    expect(p.situational).toContainEqual({ label: `${friend.name}的製革（Lv.2）`, value: 4 })
     p.natural = 15
     const r = resolveAction(state, null)
     valid(r)
@@ -168,7 +170,9 @@ describe('shopkeepers', () => {
     expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('工匠（鍛造 Lv.2）')
     state.npcs!['keeper_soriel_smithy']!.crafts = { smithing: { level: 5, xp: 0 } }
     const p = prepareAction(state, { kind: 'craft', target: 'dagger:iron', text: '' })
-    expect(p.situational).toContainEqual({ label: '工匠的手藝（鍛造 Lv.5）', value: 4 })
+    // 委託打造由店主擲：店主的等級 × 2，屬性不算
+    expect(p.situational).toContainEqual({ label: '工匠的手藝（鍛造 Lv.5）', value: 10 })
+    expect(p.modifiers.int).toBe(0)
   })
 
   it('cannot be invited away from the shop', () => {

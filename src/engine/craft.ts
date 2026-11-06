@@ -269,11 +269,10 @@ export function setupCraft(state: GameState, target?: string) {
   const at = (d: Degree) => rarityName(craftRarity(material, d)!)
   const used = plan.uses.map((u) => `${u.name}×${u.qty}`).join('、')
   const auxText = aux.map((x) => `${x.name}×${x.qty}`).join('、')
-  // 工匠的手藝比需要的高：做得更好
-  const skill = plan.level - plan.tier
+  // 委託打造由店主擲：d20 + 店主的工藝等級 × 2（docs/CRAFTING.md 第 3 節）
   return {
-    attr: craftRules().attr, dc: plan.dc, hours: craftRules().hours,
-    situational: skill > 0 ? [{ label: `工匠的手藝（${craftName(plan.craft)} Lv.${plan.level}）`, value: skill }] : [],
+    attr: craftSkillRules.skills[plan.craft].attr, dc: plan.dc, hours: craftRules().hours, craftCheck: 'keeper' as const,
+    situational: [{ label: `工匠的手藝（${craftName(plan.craft)} Lv.${plan.level}）`, value: plan.level * craftSkillRules.level_bonus }],
     scene: `${locationById(state.location).name}・委託打造${name}（工錢 ${formatMoney(plan.fee)}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
     targetName: name,
     outcomes: {
@@ -383,7 +382,7 @@ export function setupMake(state: GameState, target?: string) {
   const auxText = aux.map((x) => `${x.name}×${x.qty}`).join('、')
   return {
     actor: crafter.id,
-    attr: skill.attr, dc: plan.dc, hours: craftSkillRules.self.hours,
+    attr: skill.attr, dc: plan.dc, hours: craftSkillRules.self.hours, craftCheck: 'self' as const,
     situational: [{ label: `${crafter.name}的${skill.name}（Lv.${plan.level}）`, value: plan.level * craftSkillRules.level_bonus }],
     scene: `${locationById(state.location).name}・${crafter.isPlayer ? '親手' : `由${crafter.name}`}打造${name}（${plan.tool!.source}${plan.fee ? `，工坊租金 ${formatMoney(plan.fee)}` : ''}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
     targetName: name,

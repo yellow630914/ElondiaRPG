@@ -861,6 +861,11 @@ export interface ActionSetup {
   adultScene?: AdultScene
   /** 擲檢定的人（沒有時是主角；例如由夥伴動手製作） */
   actor?: string
+  /**
+   * 工藝檢定（docs/CRAFTING.md 第 3 節）：'self' 屬性調整值 ÷ crafts.json 的 attr_div、不加熟練加值（工藝等級在 situational）；
+   * 'keeper' 委託打造由店主擲，屬性不算（店主的等級在 situational）
+   */
+  craftCheck?: 'self' | 'keeper'
 }
 
 export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string, others: string[] = []): ActionSetup {

@@ -294,7 +294,7 @@ function craft() {
       </table>
       <div class="kv">
         <span>{{ skill.name }} <b>{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}</b><span class="muted">（這個材料要 Lv.{{ plan.tier }}）</span></span>
-        <span>檢定 <b>{{ attrName(make ? skill.attr : gearRules.craft.attr) }}<template v-if="make"> +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
+        <span>檢定 <b><template v-if="make">工藝 +{{ plan.level * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}</template><template v-else>店主擲：手藝 +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
         <span>時間 <b>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</b></span>
         <span v-if="make">工具 <b>要{{ toolTierName(toolTierFor(plan.tier)) }}</b> <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></span>
         <span>{{ make ? '工坊租金' : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>

@@ -215,8 +215,9 @@ describe('inventing', () => {
     expect(crit.degree).toBe('critical')
     const ref = itemDef(crit.def!.name.replace('特製', ''))!
     expect(ref.recipe!.level).toBe(2)
-    // 部分成功：DC 12 差一點（總值 10）
-    const weak = run(7, 10)
+    // 部分成功：差 DC 一點（R21 的公式：自然骰 + 智力 10 的 0 + 工藝 Lv.1 × 2）
+    const dc = craftRules.recipe.dc[0]! + craftRules.invention.dc_bonus
+    const weak = run(dc - 3, 10)
     expect(weak.degree).toBe('partial')
     const caps = inventCaps('alchemy', 1, 'consumable', 'partial')!
     const u = weak.def!.use!

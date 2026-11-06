@@ -145,9 +145,10 @@ describe('producing', () => {
     addItem(state.inventory, '藥草', 6)
     const money = state.money_cc
     const plan = recipePlan(state, '微弱治療藥劑', 2, pc(state))
+    // 智力 4（−3 ÷ 3 = −1）：2 − 1 + 工藝 Lv.1 × 2 = 3，對 DC 7 是失敗
+    pc(state).attrs.int = 4
     prepareAction(state, { kind: 'produce', target: produceTarget('pc', '微弱治療藥劑', 2), text: '' })
     state.pendingAction!.natural = 2
-    pc(state).attrs.int = 8
     const r = resolveAction(state, null)
     valid(r)
     expect(r.check?.degree).toBe('fail')
@@ -168,7 +169,7 @@ describe('producing', () => {
     expect(recipePlan(state, '獵人燉肉', 1, pc(state)).blocked).toContain('Lv.1')
     const p = prepareAction(state, { kind: 'produce', target: produceTarget(m.id, '獵人燉肉'), text: '' })
     expect(p.actor).toBe(m.id)
-    expect(p.situational).toContainEqual({ label: `${m.name}的烹飪（Lv.2）`, value: 2 })
+    expect(p.situational).toContainEqual({ label: `${m.name}的烹飪（Lv.2）`, value: 4 })
     p.natural = 20
     const r = resolveAction(state, null)
     valid(r)

@@ -2171,7 +2171,10 @@ export interface CraftSkillDef {
 export const craftRules = craftsJson as unknown as {
   skills: Record<CraftId, CraftSkillDef>
   max_level: number
+  /** 工藝檢定：每一級工藝 + 幾點 */
   level_bonus: number
+  /** 工藝檢定：屬性調整值除以多少（向零捨去） */
+  attr_div: number
   xp_to_next: number[]
   xp: Record<Degree, number>
   tool_tier: number[]

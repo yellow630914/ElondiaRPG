@@ -10,7 +10,9 @@
     "cooking": { "name": "烹飪", "kinds": [], "attr": "dex", "shop": "tavern" }
   },
   "max_level": 7,
-  "level_bonus": 1,
+  "level_bonus": 2,
+  "$comment_check": "工藝檢定（docs/CRAFTING.md 第 3 節，R21）：d20 + 工藝等級 × level_bonus + 屬性調整值 ÷ attr_div（向零捨去，不加熟練加值）+ 特質、圖紙等修正。委託打造由店主擲：d20 + 店主的工藝等級 × level_bonus。",
+  "attr_div": 3,
   "xp_to_next": [6, 15, 30, 50, 80, 110],
   "xp": { "critical": 3, "success": 2, "partial": 1, "fail": 1, "fumble": 0 },
   "tool_tier": [1, 1, 2, 3, 3, 3, 3],
@@ -33,7 +35,7 @@
   "companion": { "min_affinity": 30 },
   "recipe": {
     "$comment": "配方（物品的 recipe，見 docs/CRAFTING.md 第 6 節）：做的人擲工藝的屬性檢定，加工藝等級；DC 依配方等級 dc[等級 - 1]；工具階級依 tool_tier。一次可以做 max_batches 批（材料、費用、時間都乘批數，只擲一次）。成果：大成功多做 critical_bonus 比例（無條件進位，至少 1 份）、成功照配方、部分成功只有 partial_ratio（無條件進位）、失敗材料損失 lost_on_fail（無條件進位）、大失敗材料全部損失；費用不論結果都照付。經驗 = 配方等級 × xp[成功程度]（和打造一樣，不乘批數）。",
-    "dc": [10, 12, 14, 16, 18],
+    "dc": [7, 9, 11, 13, 15],
     "max_batches": 5,
     "critical_bonus": 0.5,
     "partial_ratio": 0.5,

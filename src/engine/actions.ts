@@ -20,7 +20,7 @@ import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
-  abilities, actionRules, ATTR_IDS, attrName, SKILL_IDS, type SkillId, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
+  abilities, actionRules, ATTR_IDS, attrName, craftRules, SKILL_IDS, type SkillId, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -93,6 +93,8 @@ export interface ActionPending extends ActionInput {
   situational: { label: string; value: number }[]
   /** 這次行動的檢定分類（actions.json 的 skill）；自由行動沒有，由 AI 判定時選 */
   skill?: SkillId
+  /** 工藝檢定的算法（見 companions.ts 的 ActionSetup） */
+  craftCheck?: 'self' | 'keeper'
   /** 自由行動：選了某個分類時額外的情境修正（特質、身分、裝備……寫在分類上的加值） */
   skillMods?: Partial<Record<SkillId, { label: string; value: number }[]>>
   outcomes: Partial<Record<Degree, string>>
@@ -221,7 +223,12 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     base_dc: setup.dc,
     attr: setup.attr ?? kind.attr,
     ...(setup.hours ? { hours: setup.hours } : {}),
-    modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a, mod(attrOf(pc, a)) + proficiency(pc.level)])) as Record<AttrId, number>,
+    // 工藝檢定：屬性的影響縮小、不加熟練（工藝等級 × 2 在情境修正）；委託打造由店主擲，屬性不算
+    modifiers: Object.fromEntries(ATTR_IDS.map((a) => [a,
+      setup.craftCheck === 'keeper' ? 0
+        : setup.craftCheck === 'self' ? Math.trunc(mod(attrOf(pc, a)) / craftRules.attr_div)
+        : mod(attrOf(pc, a)) + proficiency(pc.level)])) as Record<AttrId, number>,
+    ...(setup.craftCheck ? { craftCheck: setup.craftCheck } : {}),
     ...(setup.actor && !pc.isPlayer ? { actor: pc.id } : {}),
     situational,
     ...(kind.skill ? { skill: kind.skill } : {}),

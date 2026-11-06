@@ -136,7 +136,7 @@ export function setupProduce(state: GameState, target?: string) {
   const paid = `${plan.fee ? `，花費 ${formatMoney(plan.fee)}` : ''}${plan.buys.length ? `，當場買了 ${plan.buys.map((b) => `${b.name}×${b.qty}`).join('、')}（${formatMoney(plan.buyCost)}）` : ''}`
   return {
     actor: crafter.id,
-    attr: skill.attr, dc: plan.dc, hours: plan.hours,
+    attr: skill.attr, dc: plan.dc, hours: plan.hours, craftCheck: 'self' as const,
     situational: [{ label: `${crafter.name}的${skill.name}（Lv.${plan.level}）`, value: plan.level * craftRules.level_bonus }],
     scene: `${locationById(state.location).name}・${crafter.isPlayer ? '' : `由${crafter.name}`}依配方製作${name}×${plan.qty}（${plan.tool.source}，材料 ${used}${paid}）`,
     targetName: name,

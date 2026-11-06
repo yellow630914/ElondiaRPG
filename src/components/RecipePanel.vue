@@ -200,7 +200,7 @@ function produce() {
       </table>
       <div class="kv">
         <span>{{ skill.name }} <b>{{ crafter.name }} Lv.{{ plan.level }}</b><span class="muted">（這個配方要 Lv.{{ plan.recipe.level }}）</span></span>
-        <span>檢定 <b>{{ attrName(skill.attr) }} +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}</b></span>
+        <span>檢定 <b>工藝 +{{ plan.level * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}・DC {{ plan.dc }}</b></span>
         <span>時間 <b>約 {{ plan.hours }} 小時</b></span>
         <span>工具 <b>要{{ toolTierName(toolTierFor(plan.recipe.level)) }}</b> <Hint :text="toolWhere(plan.recipe.craft, toolTierFor(plan.recipe.level))" /><span class="muted">・現在 {{ plan.tool.source }}</span></span>
         <span v-if="plan.fee || plan.buyCost">花費 <b>{{ formatMoney(plan.fee) }}</b><span v-if="plan.rent" class="muted">（含工坊租金 {{ formatMoney(plan.rent) }}）</span><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
