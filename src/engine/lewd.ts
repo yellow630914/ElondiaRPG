@@ -6,7 +6,9 @@ import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey, type LewdTitleDef } from './data'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
-import { gearLewdOf, gearRules } from './gear'
+import { gearLewdOf, gearRules, type VacuumSide } from './gear'
+import { gameRule } from './gameRules'
+import { characterBody } from './look'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
 import type { Character, GameState, LewdStat, LewdStats, Report } from './types'
@@ -91,19 +93,60 @@ function slotExposure(c: Pick<Character, 'gear'>, slot: string): number {
   return base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0
 }
 
+type Wearer = Pick<Character, 'gear'> & Partial<Pick<Character, 'race' | 'gender' | 'body'>>
+
+/** 這件會不會在真空時走光：曝露度 1 以上，或底材寫了這一側（gear.json 的 vacuum） */
+function flashes(c: Pick<Character, 'gear'>, slot: 'body' | 'legs', side: VacuumSide): boolean {
+  const g = c.gear?.[slot]
+  if (!g) return false
+  return slotExposure(c, slot) >= 1 || !!gearRules.bases[g.spec.base]?.vacuum?.includes(side)
+}
+
+/**
+ * 真空（docs/LEWD_STATS.md 第 3 節）：外衣底下沒穿內衣（top）或內褲（bottom），而外面那件會走光的一側。
+ * 上身只算陰柔、中性的體型；下身的內褲欄被種族改名的（人馬族的後蹄）不算。
+ */
+export function vacuumSides(c: Wearer): VacuumSide[] {
+  const g = c.gear ?? {}
+  const out: VacuumSide[] = []
+  const masc = !!c.race && characterBody(c as Pick<Character, 'race' | 'gender' | 'body'>) === 'masc'
+  if (g.body && !g.underwear_top && !masc && flashes(c, 'body', 'top')) out.push('top')
+  const relabeled = !!c.race && !!gearRules.races[c.race]?.relabel?.underwear_bottom
+  const cover = g.legs ? 'legs' : g.body ? 'body' : undefined
+  if (cover && !g.underwear_bottom && !relabeled && flashes(c, cover, 'bottom')) out.push('bottom')
+  return out
+}
+
+/** 交給 AI 與畫面的真空說明（只寫會走光的那一側） */
+export const VACUUM_TEXT: Record<VacuumSide, string> = { top: '沒穿內衣', bottom: '沒穿內褲' }
+
 /**
  * 曝露度 0～3：上身與下身看得到的那一層。上身穿著就看上身那件，沒有時看內衣（只穿內衣至少算 underwear_visible），
  * 什麼都沒穿是 naked；下身看下身那件，沒有時上身那件也算遮住，再沒有才看內褲。頭飾、鞋子、飾品不算。
+ * 真空的一側 +1（最多 naked）。
  */
-export function exposureLevel(c: Pick<Character, 'gear'> & { race?: string }): number {
+export function exposureLevel(c: Wearer): number {
+  return levelOf(c, true)
+}
+
+function levelOf(c: Wearer, withVacuum: boolean): number {
   const g = c.gear ?? {}
   const vis = lewdRules.gear.underwear_visible
   const naked = lewdRules.gear.naked
-  const top = g.body ? slotExposure(c, 'body') : g.underwear_top ? Math.max(vis, slotExposure(c, 'underwear_top')) : naked
+  const vac = withVacuum ? vacuumSides(c) : []
+  const plus = (side: VacuumSide) => (vac.includes(side) ? 1 : 0)
+  const top = g.body ? Math.min(naked, slotExposure(c, 'body') + plus('top')) : g.underwear_top ? Math.max(vis, slotExposure(c, 'underwear_top')) : naked
   // 改名的內褲欄（人馬族的後蹄）是鞋子，不算遮住下身
   const pants = !!g.underwear_bottom && !(c.race && gearRules.races[c.race]?.relabel?.underwear_bottom)
-  const bottom = g.legs ? slotExposure(c, 'legs') : g.body ? slotExposure(c, 'body') : pants ? Math.max(vis, slotExposure(c, 'underwear_bottom')) : naked
+  const bottom = g.legs ? Math.min(naked, slotExposure(c, 'legs') + plus('bottom'))
+    : g.body ? Math.min(naked, slotExposure(c, 'body') + plus('bottom'))
+      : pants ? Math.max(vis, slotExposure(c, 'underwear_bottom')) : naked
   return Math.max(top, bottom)
+}
+
+/** 這一側真空讓曝露度多了多少（角色詳情的說明）：沒有真空時 0 */
+export function vacuumBonus(c: Wearer): number {
+  return levelOf(c, true) - levelOf(c, false)
 }
 
 // ---- 曝露名聲（依地區） ----
@@ -214,8 +257,8 @@ const wears = (c: Character, test: (base: NonNullable<(typeof gearRules.bases)[s
 
 /**
  * 跨過幾天（from 天到 to 天之間的每一天）：曝露名聲每天淡掉；在聚落裡穿著曝露的服裝會累積；
- * 穿成人向服裝淫亂成長、穿束縛用的底材忍耐成長、被主人鎖上的裝備順從成長；沒有契約的日子順從慢慢降；
- * 太久沒有親密場景，淫亂慢慢降回預設。只看隊伍裡的人；不寫進報告。
+ * 穿成人向服裝淫亂成長、在聚落裡真空淫亂成長、穿束縛用的底材忍耐成長、被主人鎖上的裝備順從成長；沒有契約的日子順從慢慢降；
+ * 太久沒有親密場景，淫亂慢慢降回預設。三種下跌（曝露名聲、順從、淫亂）乘上存檔規則的倍率。只看隊伍裡的人；不寫進報告。
  */
 export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   const days = Math.min(30, toDay - fromDay)
@@ -223,27 +266,43 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   const d = lewdRules.daily
   const loc = locationById(state.location)
   const inTown = d.settlements.includes(loc.type)
+  // 下跌的倍率（存檔規則）：這一天跌幾次（0 不跌、0.5 隔天一次、2 一天兩次；固定的算法，不用記零頭）
+  const steps = (day: number, perDay: number) => Math.floor(day * perDay) - Math.floor((day - 1) * perDay)
+  const exposureDecay = gameRule(state, 'exposureDecay')
+  const submissionDecay = gameRule(state, 'submissionDecay')
+  const lewdnessDecay = gameRule(state, 'lewdnessDecay')
   for (let i = 1; i <= days; i++) {
     const day = fromDay + i
     for (const m of state.party) {
       const map = state.exposure?.[m.id]
       // 還在追相鄰地區目標的地區這一天不淡掉（charm.ts 的 spreadExposure）
       const chasing = map ? chasingRegions(state, m.id) : undefined
-      if (map) for (const r of Object.keys(map)) if (!chasing!.has(r)) addLewd(state, m, 'exposure', -d.exposure_decay, undefined, r)
+      const fade = steps(day, exposureDecay) * d.exposure_decay
+      if (map && fade) for (const r of Object.keys(map)) if (!chasing!.has(r)) addLewd(state, m, 'exposure', -fade, undefined, r)
       const level = exposureLevel(m)
       // 魅氣濃度越高累積得越快（charm.ts）
       if (inTown && level > 0) addLewd(state, m, 'exposure', Math.round(level * d.exposure_per_level * charmExposureMult(loc.id)), undefined, loc.region)
       const bonus = (b: Partial<Record<LewdKey, number>>) => { for (const [k, v] of Object.entries(b)) if (v) addLewd(state, m, k as LewdKey, v) }
       if (wears(m, (b) => b.outfit === 'adult')) bonus(d.adult_outfit)
       if (wears(m, (b) => !!b.restraint)) bonus(d.restraint)
+      // 在聚落裡真空的日子
+      if (inTown && d.vacuum && vacuumSides(m).length) bonus(d.vacuum)
       // 被鎖住的拘束具：主人鎖上的（契約還在時）或陷阱鎖住的
       if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || g.locked.startsWith(TRAP_LOCK)))) bonus(d.locked)
       // 奴隸印記的順從累積（條款的 submission_every）
       const every = contractOf(m)?.terms.submission_every
       if (every && day % every === 0) addLewd(state, m, 'submission', 1)
-      if (!contractOf(m) && d.free_submission_every > 0 && day % d.free_submission_every === 0) addLewd(state, m, 'submission', -1)
+      // 沒有契約的日子順從慢慢降（每 free_submission_every 天 1 點，乘上存檔規則的倍率）
+      if (!contractOf(m) && d.free_submission_every > 0) {
+        const drop = steps(day, submissionDecay / d.free_submission_every)
+        if (drop) addLewd(state, m, 'submission', -drop)
+      }
+      // 太久沒有親密場景，淫亂慢慢降回預設（不會降到預設以下）
       const stats = baseLewd(m)
-      if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) addLewd(state, m, 'lewdness', -1)
+      if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) {
+        const drop = Math.min(steps(day, lewdnessDecay), stats.lewdness - lewdRules.defaults.lewdness)
+        if (drop) addLewd(state, m, 'lewdness', -drop)
+      }
     }
     // 淫器：記下穿著的日子（fusion.ts）
     recordFusedWear(state, day)

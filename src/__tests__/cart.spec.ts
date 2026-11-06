@@ -70,9 +70,10 @@ describe('購物車與整車交涉（R19 T1）', () => {
     expect(settleNet(330, bargainNet(330, 0, 0.85), 'success', 400)).toBe(330)
     // 沒談成：出價不算數
     expect(settleNet(330, bargainNet(330, 0, 1.1), 'fumble', 300)).toBe(363)
-    // 只賣東西（想收錢）：賣出的部分除以倍率，出價是負數
-    expect(bargainNet(0, 100, 0.85)).toBe(-118)
-    expect(settleNet(-100, bargainNet(0, 100, 0.85), 'success', -110)).toBe(-110)
+    // 賣出的部分照原價（不然同一間店低買高賣就穩賺），只有買的部分打折
+    expect(bargainNet(0, 100, 0.85)).toBe(-100)
+    expect(bargainNet(200, 100, 0.85)).toBe(70)
+    expect(settleNet(100, bargainNet(200, 100, 0.85), 'success', 90)).toBe(90)
   })
 
   it('bargains the whole cart once a day; the offer counts only for the same cart', () => {
@@ -92,16 +93,38 @@ describe('購物車與整車交涉（R19 T1）', () => {
     const q = cartQuote(state, 'smithy', cart)
     expect(q.offerApplies).toBe(true)
     expect(q.net).toBe(Math.min(list, Math.max(bargainNet(q.buyTotal, q.sellTotal, shopRules.bargain.price_factor.critical), offer)))
-    // 改了購物車：倍率照算，出價不算數
+    expect(q.held).toBe(true)
+    // 改了購物車：談好的價就不算了，照原價交易
     const changed: Cart = { ...cart, buy: [...cart.buy, { dealId: b.id, qty: 1 }] }
     const q2 = cartQuote(state, 'smithy', changed)
+    expect(q2.held).toBe(false)
     expect(q2.offerApplies).toBe(false)
-    expect(q2.net).toBe(bargainNet(q2.buyTotal, q2.sellTotal, shopRules.bargain.price_factor.critical))
+    expect(q2.net).toBe(q2.listNet)
     // 一天一次
     expect(() => prepareAction(state, { kind: 'bargain', target: cartBargainTarget('smithy', cart), text: '' })).toThrow('今天已經和這間店交涉過了')
     // 結帳後用掉
     checkoutCart(state, 'smithy', cart)
     expect(shop.cartBargain?.spent).toBe(true)
     expect(cartQuote(state, 'smithy', { buy: [{ dealId: b.id, qty: 1 }], sell: [] }).bargain).toBeUndefined()
+  })
+
+  it('needs something to buy: selling is never haggled up', () => {
+    const state = game()
+    expect(() => prepareAction(state, { kind: 'bargain', target: cartBargainTarget('smithy', { buy: [], sell: [{ name: '狼皮', qty: 3 }] }), text: '' })).toThrow('沒有要買的東西')
+  })
+
+  it('a changed cart after the bargain checks out at the list price', () => {
+    const state = game()
+    const { a, b } = pick(state)
+    const cart: Cart = { buy: [{ dealId: a.id, qty: 1 }], sell: [] }
+    const p = prepareAction(state, { kind: 'bargain', target: cartBargainTarget('smithy', cart), text: '' })
+    p.natural = 20
+    resolveAction(state, null)
+    const big: Cart = { buy: [{ dealId: a.id, qty: 3 }, { dealId: b.id, qty: 2 }], sell: [{ name: '狼皮', qty: 3 }] }
+    const q = cartQuote(state, 'smithy', big)
+    const money = state.money_cc
+    const r = checkoutCart(state, 'smithy', big)
+    expect(state.money_cc).toBe(money - q.listNet)
+    expect(r.outcome.summary).toContain('照原價')
   })
 })

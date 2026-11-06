@@ -4,7 +4,7 @@ import { download, dateStamp } from './download'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import {
-  applySettingsFile, buildSettingsFile, hasKeys, parseSettingsFile, SETTINGS_PARTS,
+  applySettingsFile, buildSettingsFile, hasKeys, keysNotCarried, parseSettingsFile, SETTINGS_PARTS,
   type SettingsFile, type SettingsPartId,
 } from '@/stores/settingsFile'
 
@@ -53,7 +53,9 @@ const exportedAt = computed(() => {
 function applyFile() {
   if (!pending.value || !picked.value.length) return
   const names = SETTINGS_PARTS.filter((p) => picked.value.includes(p.id)).map((p) => p.name).join('、')
-  if (!confirm(`用檔案裡的設定取代這台電腦上的「${names}」？取代後頁面會重新整理（進行中的遊戲已經自動保存）。`)) return
+  const dropped = pending.value.keys ? 0 : keysNotCarried(pending.value, picked.value)
+  const keyNote = dropped ? `\n\n注意：有 ${dropped} 個 AI 或生圖來源的網址和這台電腦的不同，為了不把你的金鑰送到別的伺服器，這些來源的金鑰不沿用，匯入後要重新填。` : ''
+  if (!confirm(`用檔案裡的設定取代這台電腦上的「${names}」？取代後頁面會重新整理（進行中的遊戲已經自動保存）。${keyNote}`)) return
   applySettingsFile(pending.value, picked.value)
   location.reload()
 }

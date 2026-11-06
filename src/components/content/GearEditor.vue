@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { ATTR_IDS, attrName, attributeRules, BIND_KINDS, damageTypeName, damageTypes, equipment, itemRules, lewdRules, type BindKind } from '@/engine/data'
-import { baseSlots, BASE_TYPE_ORDER, defaultBaseType, gearRules, gearSummary, OUTFIT_KINDS, rarityName, RARITY_ORDER, type OutfitKind } from '@/engine/gear'
+import { baseSlots, BASE_TYPE_ORDER, defaultBaseType, gearRules, gearSummary, OUTFIT_KINDS, rarityName, RARITY_ORDER, VACUUM_SIDES, type OutfitKind, type VacuumSide } from '@/engine/gear'
 import { builtinBase, builtinMaterial, type BaseMod, type MaterialMod } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import type { GearSlot } from '@/engine/types'
@@ -57,6 +57,13 @@ function setOutfit(v: string) {
   if (v) base.value.outfit = v as OutfitKind
   else delete base.value.outfit
   if (v === 'adult') base.value.adult = true
+}
+function setVacuum(side: VacuumSide, on: boolean) {
+  const set = new Set(base.value.vacuum ?? [])
+  if (on) set.add(side)
+  else set.delete(side)
+  if (set.size) base.value.vacuum = VACUUM_SIDES.filter((s) => set.has(s))
+  else delete base.value.vacuum
 }
 function setExposure(v: string) {
   if (v === '') delete base.value.exposure
@@ -196,6 +203,12 @@ function remove() {
               <option v-for="n in [0, 1, 2, 3]" :key="n" :value="n">{{ n }}</option>
             </select>
           </label>
+          <template v-if="base.slot === 'body' || base.slot === 'legs'">
+            <span>真空會走光 <Hint text="底下沒穿內衣（上身）或內褲（下身）時，那一側的曝露度 +1（最多 3）。曝露度 1 以上的衣服本來就算，這裡給曝露度 0、卻會走光的衣服勾（裙子、薄襯衫、浴衣）。上身只算陰柔、中性的體型；人馬族的下身不算。" /></span>
+            <label v-for="side in VACUUM_SIDES" :key="side" class="check">
+              <input type="checkbox" :checked="base.vacuum?.includes(side)" @change="setVacuum(side, ($event.target as HTMLInputElement).checked)" /> {{ side === 'top' ? '上身（沒穿內衣）' : '下身（沒穿內褲）' }}
+            </label>
+          </template>
           <template v-if="base.restraint">
             <label>拘束
               <select :value="base.bind_kind ?? ''" @change="setBindKind(($event.target as HTMLSelectElement).value)">

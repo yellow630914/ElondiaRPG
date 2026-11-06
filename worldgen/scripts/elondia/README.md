@@ -13,6 +13,7 @@
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
 | `lust_gather34.py` | `data/rules/travel_events.json` | 成人向的採集事件 12 件（不限地下城 8 件、地區限定 4 件；接在「遺落的春宮書」後面）。可以重跑 |
 | `dungeon_events33.py` | `data/rules/travel_events.json` | 普通（非成人向）的地下城與近郊事件 54 件：採集 19、陷阱 13、寶箱 11、安全房長休 11（接在成人向的「遺落的春宮書」後面）。可以重跑 |
+| `vacuum37.py` | `data/rules/gear.json`、`data/rules/lewd.json` | 真空會走光的常規服裝（底材的 `vacuum`：裙子、薄襯衫、浴衣）與在聚落裡真空的淫亂成長（`daily.vacuum`）。可以重跑 |
 | `lead_events35.py` | `data/rules/travel_events.json` | 線索事件 12 件（`scope: lead`，有登場角色 `{a}`、`{b}`；接在旅途事件的「神父的告解」後面）。可以重跑 |
 | `parasites25.py` | `data/rules/parasites.json`、`items.json`、`companions.json`、`travel_events.json` | 寄生物的規則、物品、發作事件 |
 | `work26.py` | `data/rules/items.json`、`data/world/npcs.json`、`landmarks.json` | 打工任務線（成人向）的獨特色情裝備、委託人與地標：自己的五條線，加上 `story_batch27.py`、`story_batch28.py` 匯出的 `ITEMS27`～`30`、`NPCS27`～`30`、`LANDMARKS27`～`30`（任務本身在 `story_batch26`～`30`；制服的表在 `story_batch26.py` 的 `DRESS` 與 `DRESS29`、`DRESS30`） |

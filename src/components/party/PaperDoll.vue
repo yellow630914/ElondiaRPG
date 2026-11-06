@@ -12,6 +12,7 @@ import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import { characterBody } from '@/engine/look'
+import { VACUUM_TEXT, vacuumSides } from '@/engine/lewd'
 import GameIcon from '../ui/GameIcon.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
@@ -23,6 +24,11 @@ const props = defineProps<{ member: Character }>()
 const game = useGame()
 const s = computed(() => game.state!)
 const m = computed(() => props.member)
+// 真空：內衣、內褲欄空著、外衣又會走光時，那一格寫「沒穿內衣／沒穿內褲」
+const vacuumSlot = computed<Partial<Record<GearSlot, string>>>(() => {
+  const v = vacuumSides(m.value)
+  return { ...(v.includes('top') ? { underwear_top: VACUUM_TEXT.top } : {}), ...(v.includes('bottom') ? { underwear_bottom: VACUUM_TEXT.bottom } : {}) }
+})
 const inCombat = computed(() => !!s.value.combat)
 
 const LEFT: GearSlot[] = ['head', 'accessory', 'body', 'underwear_top', 'wrists', 'main_hand', 'belt', 'legs', 'extra_1']
@@ -129,14 +135,14 @@ const totals = computed(() => {
         <button
           v-for="slot in col" :key="slot" class="slot ghost"
           :class="[{ sel: selected === slot, filled: m.gear?.[slot], blocked: blocked(slot), locked: lockedGear(m, slot) }, m.gear?.[slot] ? `r-${rarityOf(m.gear[slot]!.spec)}` : '']"
-          :title="blocked(slot) ? `${slotName(slot)}：這個種族無法使用` : m.gear?.[slot] ? `${m.gear[slot]!.name}\n${gearSummary(m.gear[slot]!.spec)}` : slotName(slot)"
+          :title="blocked(slot) ? `${slotName(slot)}：這個種族無法使用` : m.gear?.[slot] ? `${m.gear[slot]!.name}\n${gearSummary(m.gear[slot]!.spec)}` : vacuumSlot[slot] ? `${slotName(slot)}：真空（${vacuumSlot[slot]}，外面那件會走光，曝露度 +1）` : slotName(slot)"
           @click="selected = slot"
         >
           <span class="box">
             <ItemIcon v-if="m.gear?.[slot] && !lockedGear(m, slot)" :name="m.gear[slot]!.name" :spec="m.gear[slot]!.spec" :size="24" />
             <GameIcon v-else :name="lockedGear(m, slot) ? 'lock' : slotIcon(slot)" :size="20" />
           </span>
-          <span class="txt"><span class="sn">{{ slotName(slot) }}</span><span class="in">{{ blocked(slot) ? '無法使用' : m.gear?.[slot]?.name ?? '—' }}</span></span>
+          <span class="txt"><span class="sn">{{ slotName(slot) }}</span><span class="in" :class="{ vacuum: !m.gear?.[slot] && vacuumSlot[slot] }">{{ blocked(slot) ? '無法使用' : m.gear?.[slot]?.name ?? (vacuumSlot[slot] ? '真空' : '—') }}</span></span>
         </button>
       </div>
       <div class="fig">
@@ -270,4 +276,5 @@ const totals = computed(() => {
 .warn { color: var(--danger); margin-top: 2px; }
 @media (max-width: 1000px) { .equip { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 520px) { .doll { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); padding: 10px 4px; } }
+.in.vacuum { color: var(--accent); }
 </style>

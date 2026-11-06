@@ -13,7 +13,7 @@
 
 ## 2. 全部點子
 
-編號在整個點子庫裡不重複（不分來源），新點子接著往下編；做完、放棄或搬到 ROADMAP 的編號空著不再用（I10、I15、I16、I18、I21、I22 已做；I13 淫氣世界世界書已經用在 R8；I14 搬到 R8，2026-11-05 以 I24 搬回點子庫；I5 的前半搬到 R11）。
+編號在整個點子庫裡不重複（不分來源），新點子接著往下編；做完、放棄或搬到 ROADMAP 的編號空著不再用（I10、I15、I16、I18、I21、I22、I26 已做；I13 淫氣世界世界書已經用在 R8；I14 搬到 R8，2026-11-05 以 I24 搬回點子庫；I5 的前半搬到 R11）。
 
 | # | 點子 | 分類 | 來源 |
 |---|---|---|---|
@@ -32,6 +32,7 @@
 | I19 | 模組化像素立繪 | 介面、美術 | [early-design](early-design.md#i19) |
 | I20 | 地圖格改用生成的 tileset | 介面、美術 | [early-design](early-design.md#i20) |
 | I23 | 自建聚落與自建地區（自建地下城之後） | 自訂內容 | [dev-discussion](dev-discussion.md#i23) |
-| I26 | 工藝的延伸：NPC 隨機帶工匠身分、老師教工藝與圖紙 | 玩法 | [dev-discussion](dev-discussion.md#i26) |
 | I25 | 貿易的延伸：事件改變行情、世界編輯器編輯標籤與狀態 | 玩法、自訂內容 | [dev-discussion](dev-discussion.md#i25) |
 | I24 | 慾望戰鬥的收尾：神殿的淨化、園區規則的編輯器、新園區、防具的淫器合煉（成人向，原 R8） | 玩法 | [dev-discussion](dev-discussion.md#i24) |
+| I27 | 真空的延伸：不准穿內衣褲的條款、盤查時被發現（成人向） | 玩法 | [player-feedback](player-feedback.md#i27) |
+| I28 | 工藝的延伸：NPC 隨機帶工匠身分、老師教工藝與圖紙 | 玩法 | [dev-discussion](dev-discussion.md#i28) |

@@ -2,7 +2,7 @@
 import { blueprintName, blueprintRules } from '@/engine/blueprints'
 import { computed, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
-import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, forgeOf, makeTarget, type AuxItem } from '@/engine/craft'
+import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, forgeOf, makeTarget, selfFeeName, type AuxItem } from '@/engine/craft'
 import { craftForKind, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import {
   baseShown, baseSlotName, baseType, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, MATERIAL_KIND_NAME, rarityName, rarityPoints, sortBaseTypes, type BaseSlot,
@@ -299,7 +299,7 @@ function craft() {
         <span v-if="make">圖紙 <b :class="plan.blueprint ? '' : 'warn-text'">{{ plan.blueprint ? `有${blueprintName(plan.base)}` : `沒有（DC +${blueprintRules().dc_without}）` }}</b> <Hint text="每個底材一張圖紙，不會用掉、任何材料都適用。鐵匠鋪、裁縫店、珠寶店有賣，寶箱與人形的敵人身上也可能找到。委託店家打造不需要。" /></span>
         <span>時間 <b>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</b></span>
         <span v-if="make">工具 <b>要{{ toolTierName(toolTierFor(plan.tier)) }}</b> <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></span>
-        <span>{{ make ? '工坊租金' : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
+        <span>{{ make ? selfFeeName(plan) : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><Hint v-if="plan.materialCost" text="第 1 級材料：材料費照底材的價格算（底材價格的一半，乘這裡的物價），用掉的打造材料抵掉它們的價值。" /><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
       </div>
       <div class="aux-row">
         <span>輔料 <Hint :text="`選填，最多 ${auxRules.max_kinds} 種；不論結果都會用掉。價值越高越可能讓稀有度再高一級（部分成功時照成功做）；名稱與描述決定附魔偏向的屬性。`" /></span>

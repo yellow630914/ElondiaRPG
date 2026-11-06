@@ -8,7 +8,7 @@
 - K4：工藝檢定改成 d20 + 工藝等級 × 2 + 屬性調整值 ÷ 3（不加熟練），委託打造由店主擲；DC = 等級 × 2 + 5（打造 7～19、配方 7～15）。行動設定的 `craftCheck`。
 - K5：新角色、第一次入隊的同伴工藝從 0 級開始，工匠身分那一門 Lv.2（`startCrafts`）；舊存檔算 Lv.1；學工藝（`craftLessons.ts`）：0→1 200 白鸛 8 小時、1→2 800 白鸛 24 小時，店裡最多教到 Lv.2，在受訓面板。
 - K6：圖紙（`blueprints.ts`）：每個底材一張、記在存檔的 `blueprints`；自己打造沒有圖紙 DC +5；價格 = 底材 × 1.5，鐵匠鋪、裁縫店、珠寶店每天上架 3～5 張，寶箱 3～8%、人形敵人 2%；效果 `blueprint`；打造畫面與行囊顯示。
-- 規則寫在 [CRAFTING](../../CRAFTING.md) 1.1、2.2 節與 [ITEMS](../../ITEMS.md) 第 5 節，測試在 `craftLessons.spec.ts`、`blueprints.spec.ts` 與工藝相關的測試。計畫檔 CRAFTING_PLAN 整份做完，刪掉；沒決定的延伸放在點子庫 [I26](../ideas/dev-discussion.md#i26)。
+- 規則寫在 [CRAFTING](../../CRAFTING.md) 1.1、2.2 節與 [ITEMS](../../ITEMS.md) 第 5 節，測試在 `craftLessons.spec.ts`、`blueprints.spec.ts` 與工藝相關的測試。計畫檔 CRAFTING_PLAN 整份做完，刪掉；沒決定的延伸放在點子庫 [I28](../ideas/dev-discussion.md#i28)。
 
 ### 2026-11-06 受訓的價格與門檻（R20 的 C4）；R20 檢定與特質全部完成
 
@@ -41,6 +41,12 @@
 - 引擎：檢定篩選多了 `skills`（`perks.ts` 的 `checkSkills`、`matches`，強度算 1）；自由行動先替每個分類算好多出來的修正（`ActionPending.skillMods`），AI 判定時選 `skill`；城門盤查在說服、欺瞞、潛行裡挑總值最高的；報告的 `check.skill`。
 - 介面：等待判定的卡片與日誌寫「說服檢定」；特質編輯器、獨特裝備的檢定加值、創角的自訂特質可以選分類。
 - 規則寫在 [ACTIONS](../../ACTIONS.md) 2.1 節，測試在 `skills.spec.ts`。特質本身的效果還沒改（C2）。
+
+### 2026-11-06 真空與慾望指標下跌的存檔規則（點子庫 I26）
+
+- 真空：外衣底下沒穿內衣或內褲、外面那件會走光時，那一側曝露度 +1；底材多了 `vacuum`（內建 10 件，`worldgen/scripts/elondia/vacuum37.py`）；在城裡真空的日子淫亂 +1。規則寫在 [LEWD_STATS](../../LEWD_STATS.md) 第 3、4 節。
+- 存檔規則「曝露名聲的淡化」「順從的回落」「淫亂的回落」（0～3 倍），「經驗值倍率」改成 0.1～5（[SAVES](../../SAVES.md) 第 7 節）。
+- 沒做的延伸（不准穿內衣褲的條款、盤查時被發現）記成點子庫 I27。
 
 ### 2026-11-05 基本價格依據表（R19 的 T7）；R19 貿易全部完成
 

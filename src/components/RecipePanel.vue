@@ -167,7 +167,7 @@ function produce() {
       <div class="kv">
         批數
         <button v-for="n in craftRules.recipe.max_batches" :key="n" class="small" :class="{ primary: plan.batches === n }" @click="batches = n">{{ n }}</button>
-        <span class="muted">材料、花費與時間乘批數，只擲一次</span>
+        <span class="muted">材料、花費、時間與經驗乘批數，只擲一次</span>
       </div>
       <table v-if="plan.inputs.length" class="mats">
         <thead><tr><th>材料</th><th>需要</th><th>持有</th><th>這裡賣</th><th>當場買</th></tr></thead>

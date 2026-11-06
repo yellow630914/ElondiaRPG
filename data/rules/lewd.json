@@ -141,6 +141,7 @@
     "adult_outfit": { "lewdness": 1 },
     "restraint": { "endurance": 1 },
     "locked": { "submission": 1 },
+    "vacuum": { "lewdness": 1 },
     "free_submission_every": 3,
     "idle_days": 7,
     "exposure_decay": 1,

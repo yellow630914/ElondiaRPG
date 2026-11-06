@@ -584,10 +584,30 @@ export interface CartQuote {
   net: number
   /** 今天的整車交涉（還沒用掉的） */
   bargain?: ShopState['cartBargain']
-  /** 交涉時的出價這次算不算數（購物車內容和交涉時一樣） */
+  /** 今天的交涉還算數：購物車內容和交涉時一樣（改了就照原價交易） */
+  held: boolean
+  /** 交涉時的出價這次算不算數（購物車內容和交涉時一樣，而且有出價） */
   offerApplies: boolean
   blockers: string[]
   blocked?: string
+}
+
+/** 商店視窗的購物車（交易 id、物品名稱 → 數量）轉成 Cart */
+export function cartFromRecords(c: { buy: Record<string, number>; sell: Record<string, number> }): Cart {
+  return {
+    buy: Object.entries(c.buy).filter(([, q]) => q > 0).map(([dealId, qty]) => ({ dealId, qty })),
+    sell: Object.entries(c.sell).filter(([, q]) => q > 0).map(([name, qty]) => ({ name, qty })),
+  }
+}
+
+/** 改購物車前的提醒 */
+export const CART_CHANGE_WARNING = '今天和店主談好的價格只算這一車。改了購物車，談好的價就不算了，照原價交易（今天也不能再交涉）。要改嗎？'
+
+/** 今天談好、還沒結帳、購物車也沒改過的整車交涉：改購物車前要提醒（改了就照原價） */
+export function cartBargainHeld(state: GameState, type: ShopType, cart: Cart): boolean {
+  const b = state.shops?.[shopKey(state, type)]?.cartBargain
+  const shop = state.shops?.[shopKey(state, type)]
+  return !!b && !b.spent && shop?.day === state.time.day && b.cart === cartKey(cart)
 }
 
 /** 購物車的內容（排序後的 JSON）：比對「交涉時的購物車」用 */
@@ -597,9 +617,9 @@ export function cartKey(cart: Cart): string {
   return JSON.stringify({ b: buy, s: sell })
 }
 
-/** 這個交涉結果的差額：買入的部分乘倍率、賣出的部分除以倍率 */
+/** 這個交涉結果的差額：只有買入的部分乘倍率，賣出的部分照原價（賣出也加價的話，同一間店低買高賣就穩賺） */
 export function bargainNet(buyTotal: number, sellTotal: number, factor: number): number {
-  return Math.round(buyTotal * factor) - Math.round(sellTotal / factor)
+  return Math.round(buyTotal * factor) - sellTotal
 }
 
 /**
@@ -655,14 +675,16 @@ export function cartQuote(state: GameState, type: ShopType, cart: Cart): CartQuo
   const sellTotal = sell.reduce((s, x) => s + x.total, 0)
   const listNet = buyTotal - sellTotal
   const bargain = shop.cartBargain && !shop.cartBargain.spent ? shop.cartBargain : undefined
-  const offerApplies = !!bargain && bargain.offer !== undefined && bargain.cart === cartKey(cart)
-  const net = bargain
-    ? settleNet(listNet, bargainNet(buyTotal, sellTotal, bargain.factor), bargain.degree, offerApplies ? bargain.offer : undefined)
+  // 交涉之後改了購物車：談好的價就不算了，照原價交易
+  const held = !!bargain && bargain.cart === cartKey(cart)
+  const offerApplies = held && bargain!.offer !== undefined
+  const net = held
+    ? settleNet(listNet, bargainNet(buyTotal, sellTotal, bargain!.factor), bargain!.degree, offerApplies ? bargain!.offer : undefined)
     : listNet
   if (!buy.length && !sell.length) blockers.push('購物車是空的')
   if (net > state.money_cc) blockers.push(`錢不夠（要付 ${formatMoney(net)}）`)
   return {
-    buy, sell, buyTotal, sellTotal, listNet, net, ...(bargain ? { bargain } : {}), offerApplies,
+    buy, sell, buyTotal, sellTotal, listNet, net, ...(bargain ? { bargain } : {}), held, offerApplies,
     blockers: [...new Set(blockers)], ...(blockers.length ? { blocked: [...new Set(blockers)].join('；') } : {}),
   }
 }
@@ -687,7 +709,7 @@ export function checkoutCart(state: GameState, type: ShopType, cart: Cart): Repo
   if (shop.cartBargain && !shop.cartBargain.spent) shop.cartBargain.spent = true
   for (const x of q.sell) recordSale(state, key, x.name, x.qty)
   const list = (xs: { name: string; qty: number }[]) => xs.map((x) => (x.qty > 1 ? `${x.name}×${x.qty}` : x.name)).join('、')
-  const deal = q.net !== q.listNet ? `（原價${q.listNet >= 0 ? '要付' : '可收'} ${formatMoney(Math.abs(q.listNet))}，交涉之後）` : ''
+  const deal = q.net !== q.listNet ? `（原價${q.listNet >= 0 ? '要付' : '可收'} ${formatMoney(Math.abs(q.listNet))}，交涉之後）` : q.bargain && !q.held ? '（交涉之後改了購物車，照原價）' : ''
   const money = q.net > 0 ? `付了 ${formatMoney(q.net)}` : q.net < 0 ? `收到 ${formatMoney(-q.net)}` : '剛好抵銷'
   report.outcome.summary = `在${keeperRec.name}的店裡${q.buy.length ? `買了 ${list(q.buy)}` : ''}${q.buy.length && q.sell.length ? '，' : ''}${q.sell.length ? `賣了 ${list(q.sell)}` : ''}，${money}${deal}。`
   return commitReport(state, report)
@@ -725,6 +747,7 @@ function cartBargainSetup(state: GameState, type: ShopType, cart: Cart, offer?: 
   if (shop.cartBargain) throw new Error('今天已經和這間店交涉過了')
   const q = cartQuote(state, type, cart)
   if (!q.buy.length && !q.sell.length) throw new Error('購物車是空的')
+  if (!q.buy.length) throw new Error('整車交涉只會讓買的東西便宜，購物車裡沒有要買的東西')
   const rec = npcRecord(state, shop.keeper)!
   ensureRelationship(state, rec)
   const aff = state.relationships?.[rec.id]?.affinity ?? 0
@@ -789,7 +812,7 @@ export function applyBargain(state: GameState, report: Report, target: string, d
     const money = (n: number) => (n > 0 ? `付 ${formatMoney(n)}` : n < 0 ? `收 ${formatMoney(-n)}` : '不用付錢')
     if (degree === 'fail') return `店主不肯讓價，這一車照原價（${money(q.listNet)}）。`
     if (degree === 'fumble') return `店主不高興，這一車改成${money(q.net)}（原價${money(q.listNet)}）。`
-    return `談好了：這一車${money(q.net)}（原價${money(q.listNet)}）。結帳前改了購物車，折扣照算，出價就不算數了。`
+    return `談好了：這一車${money(q.net)}（原價${money(q.listNet)}）。`
   }
   const { deal, shop } = parseBargain(state, target)
   const factor = shopRules.bargain.price_factor[degree]

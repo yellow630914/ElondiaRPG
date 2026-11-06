@@ -3,7 +3,7 @@ import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
-import { breakdownText, buyBreakdown, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { breakdownText, buyBreakdown, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
 import { pctText, tradeCategory } from '@/engine/market'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -84,8 +84,10 @@ const buyQty = reactive<Record<string, number>>({})
 /** 還沒放進購物車的存貨 */
 const leftOf = (d: Deal) => d.stock - (cart.buy[d.id] ?? 0)
 const qtyOf = (d: Deal) => Math.max(1, Math.min(leftOf(d), Math.floor(buyQty[d.id] ?? 1) || 1))
+/** 談好價之後要改購物車：先提醒（改了就照原價交易） */
+const okToChange = () => !cartBargainHeld(s.value, props.type, cartFromRecords(cart)) || confirm(CHANGE_WARNING)
 function addBuy(d: Deal) {
-  if (leftOf(d) <= 0) return
+  if (leftOf(d) <= 0 || !okToChange()) return
   cart.buy[d.id] = (cart.buy[d.id] ?? 0) + qtyOf(d)
   buyQty[d.id] = 1
 }
@@ -125,7 +127,7 @@ const buyWhyText = (d: Deal) => { const b = buyWhy(d); return b ? `${breakdownTe
 const sellLeft = (name: string, have: number) => have - (cart.sell[name] ?? 0)
 const sellN = (name: string, have: number) => Math.max(1, Math.min(sellLeft(name, have), Math.floor(sellQty[name] ?? 1) || 1))
 function addSell(name: string, have: number) {
-  if (sellLeft(name, have) <= 0) return
+  if (sellLeft(name, have) <= 0 || !okToChange()) return
   cart.sell[name] = (cart.sell[name] ?? 0) + sellN(name, have)
   sellQty[name] = 1
 }

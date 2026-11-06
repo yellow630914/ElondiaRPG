@@ -69,16 +69,21 @@ describe('匯入 SillyTavern 的 regex', () => {
       extensions: {
         regex_scripts: [
           { scriptName: '去思考', findRegex: '/<think_nya>[\\s\\S]*?<\\/think_nya>/g', replaceString: '', placement: [2], disabled: false, markdownOnly: true, minDepth: 0 },
-          { scriptName: '加粗', findRegex: '/重要/g', replaceString: '**{{match}}**', placement: [1, 2], trimStrings: ['（OOC）'] },
+          { scriptName: '加粗', findRegex: '/重要(先生)?/g', replaceString: '**{{match}}**', placement: [1, 2], trimStrings: ['先生'] },
           { scriptName: '只改輸入', findRegex: '/x/g', placement: [1] },
           { scriptName: '只改送出', findRegex: '/y/g', placement: [2], promptOnly: true },
           { scriptName: '壞掉', findRegex: '/(/g', placement: [2] },
         ],
       },
     })
-    expect(res.rules.map((r) => r.name)).toEqual(['去思考', '加粗', '加粗（刪掉 trimStrings）'])
+    expect(res.rules.map((r) => r.name)).toEqual(['去思考', '加粗'])
     expect(res.rules[1]!.replace).toBe('**$&**')
-    expect(applyRegex('這很重要（OOC）', res.rules, 'narration')).toBe('這很**重要**')
+    expect(res.rules[1]!.trim).toEqual(['先生'])
+    // trimStrings 只從比對到的文字裡去掉，其他地方的「先生」不動（和酒館一樣）
+    expect(applyRegex('重要先生說：先生請慢走', res.rules, 'narration')).toBe('**重要**說：先生請慢走')
+    // 自己展開取代字串：$1、$$、$<name> 照 JS 的規則
+    const rule = { id: 'x', name: 'x', enabled: true, find: '(?<who>艾倫)(先生)', flags: 'g', replace: '[$1|$2|$<who>|$$|$&]', scopes: ['narration' as const], trim: ['先生'] }
+    expect(applyRegex('艾倫先生', [rule], 'narration')).toBe('[艾倫|先生|艾倫|$|艾倫]')
     expect(res.skipped.map((s) => s.name)).toEqual(['只改輸入', '只改送出', '壞掉'])
     expect(res.notes.join()).toContain('markdownOnly')
     expect(res.notes.join()).toContain('minDepth')

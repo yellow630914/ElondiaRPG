@@ -136,6 +136,9 @@ async function importFile(e: Event) {
           <input v-model="r.replace" class="mono" spellcheck="false" />
         </label>
       </div>
+      <label v-if="r.trim?.length" class="small trim">取代時，<code>$&amp;</code> 先去掉這些字（酒館的 trimStrings，用「｜」分隔）
+        <input :value="r.trim.join('｜')" class="mono" spellcheck="false" @change="r.trim = ($event.target as HTMLInputElement).value.split('｜').filter(Boolean)" />
+      </label>
       <div class="row small">
         套用到：
         <label v-for="s in REGEX_SCOPES" :key="s" class="check">

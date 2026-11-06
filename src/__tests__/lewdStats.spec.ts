@@ -83,6 +83,9 @@ describe('慾望指標：增減與每天的變化', () => {
     state.location = 'rhineburg'
     wear(pc, 'body', 'bunny_suit')
     wear(pc, 'accessory', 'slave_collar')
+    // 穿著內衣褲（沒穿時是真空，曝露度另外 +1：vacuum.spec.ts）
+    wear(pc, 'underwear_top', 'undershirt')
+    wear(pc, 'underwear_bottom', 'briefs')
     lewdDaily(state, 1, 4)
     // 每天 +曝露度 2 × 2，再淡掉 1（第一天還沒有可以淡掉的）
     expect(exposureAt(state, pc.id, 'central')).toBe(4 + 3 + 3)
@@ -94,6 +97,7 @@ describe('慾望指標：增減與每天的變化', () => {
     const { state, pc } = game()
     state.location = 'soriel'
     wear(pc, 'body', 'dress')
+    wear(pc, 'underwear_bottom', 'briefs')
     addLewd(state, pc, 'exposure', 10, undefined, 'central')
     const day = state.time.day
     advanceTime(state, 24 * 3)

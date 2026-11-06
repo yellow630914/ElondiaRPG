@@ -166,7 +166,8 @@ export function applyProduce(state: GameState, report: Report, target: string, d
   applyEffects(state, report, effects)
   const paid = plan.fee ? `花了 ${formatMoney(plan.fee)}（${[plan.cost ? '材料費' : '', plan.rent ? '工坊租金' : ''].filter(Boolean).join('、')}），` : ''
   let text = made ? `${paid}做出 ${made} 份${name}。` : `${paid}${degree === 'fail' ? '沒做成，損失了一半的材料' : '搞砸了，材料全部損失'}。`
-  const xp = craftXpFor(plan.recipe.level, degree)
+  // 經驗乘批數：一次做 N 批和分開做 N 次的經驗一樣（批量製作不吃虧）
+  const xp = craftXpFor(plan.recipe.level, degree) * plan.batches
   if (xp) {
     const level = gainCraftXp(crafter, plan.recipe.craft, xp)
     ;(report.changes.craft_xp ??= []).push({ actor: crafter.id, craft: plan.recipe.craft, amount: xp, ...(level ? { level } : {}) })
