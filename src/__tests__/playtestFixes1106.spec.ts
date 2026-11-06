@@ -70,8 +70,8 @@ describe('上衣類不遮下身', () => {
     expect(exposureLevel(dressed({ body: 'chain', underwear_top: 'undershirt', underwear_bottom: 'briefs' }))).toBe(0)
   })
   it('keeps top_only on custom body bases only', () => {
-    expect(sanitizeBase({ ...gearRules.bases.shirt, top_only: true } as never, 'my_top')?.top_only).toBe(true)
-    expect(sanitizeBase({ ...gearRules.bases.trousers, top_only: true } as never, 'my_legs')?.top_only).toBeUndefined()
+    expect(sanitizeBase({ ...gearRules.bases.shirt, top_only: true } as never, true, 'my_top')?.top_only).toBe(true)
+    expect(sanitizeBase({ ...gearRules.bases.trousers, top_only: true } as never, true, 'my_legs')?.top_only).toBeUndefined()
   })
 })
 

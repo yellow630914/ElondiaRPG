@@ -16,6 +16,7 @@ import { isBound, isEnslaved, joinParty, leaderOf, pcOf, playerEscapes, recaptur
 import { isHostile, pickTags } from '@/engine/population'
 import { changeMaster } from '@/engine/party'
 import { Rng } from '@/engine/rng'
+import { startJourney } from '@/engine/road'
 import { answerMasterEvent, eventFits, masterCandidates, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
 import { addHours, migrate, newGame, withRng } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
@@ -421,5 +422,28 @@ describe('the good-person tag', () => {
     const good = slave(4)
     const noble = slave(0)
     expect(negotiateDc(good.state)).toBe(negotiateDc(noble.state) - 3)
+  })
+})
+
+describe('called home while travelling', () => {
+  it('ends the journey so the slave can set out again later', () => {
+    const { state } = slave()
+    const dest = 'soriel'
+    // 主人同意出城（請求主人同意出城的結果）
+    const pass = () => { state.masterPass = { [state.location]: state.time.day } }
+    pass()
+    startJourney(state, dest)
+    expect(state.road).toBeTruthy()
+    const d = homeDeadline(state)!
+    state.time = addHours(d.due, 48)
+    startMasterEvent(state, slaveryRules.master_events.events.find((e) => e.id === 'call_home')!)
+    answerMasterEvent(state, 0)
+    expect(state.road).toBeUndefined()
+    expect(state.roadEvent).toBeUndefined()
+    expect(atMasterHome(state)).toBe(true)
+    expect(currentArea(state).kind).not.toBe('road')
+    // 之後可以再出發（不會再說「已經在旅途中了」）
+    pass()
+    expect(() => startJourney(state, dest)).not.toThrow()
   })
 })

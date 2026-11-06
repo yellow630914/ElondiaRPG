@@ -348,8 +348,18 @@ export function addStrict(state: GameState, n: number) {
 export function sendToMasterHome(state: GameState, report: Report): string {
   const home = syncMasterHome(state)
   if (!home) return ''
+  // 在旅途上（或旅途的臨時地圖裡）被帶回去：旅途就此中斷。不然一直算在旅途中，之後再也不能出發
+  const onRoad = !!state.road
+  if (onRoad) {
+    if (state.side && state.areas) delete state.areas[state.side.area]
+    if (state.areas) delete state.areas.road
+    delete state.road
+    delete state.roadEvent
+    delete state.side
+    delete state.pendingMove
+  }
   let hours = 0
-  if (state.location !== home.location) {
+  if (state.location !== home.location || onRoad) {
     const path = shortestPath(state.location, home.location)
     hours = path ? daysToHours((path.days[0] + path.days[1]) / 2) : 0
     state.location = home.location

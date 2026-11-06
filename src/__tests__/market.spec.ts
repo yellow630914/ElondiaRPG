@@ -310,7 +310,7 @@ describe('收購遞減（R19 T6）', () => {
   it('follows the save rule (0 turns it off)', () => {
     const { s, key } = smithy()
     sellItem(s, 'smithy', '狼皮', 10)
-    s.options = { ...(s.options ?? {}), sellGlutPct: 5 }
+    s.options = { defeatLoot: 'half', ...s.options, sellGlutPct: 5 }
     expect(glutMult(s, key, 'leather')).toBeCloseTo(0.5)
     s.options.sellGlutPct = 0
     expect(glutMult(s, key, 'leather')).toBe(1)

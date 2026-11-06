@@ -45,7 +45,7 @@ function simulate(glutPct: number): Run[] {
   const runs: Run[] = []
   for (const seed of SEEDS) {
     const s = newGame({ name: '商人', race: 'human', classId: 'fighter', seed })
-    s.options = { ...(s.options ?? {}), sellGlutPct: glutPct }
+    s.options = { defeatLoot: 'half', ...s.options, sellGlutPct: glutPct }
     for (const day of DAYS) {
       for (const a of towns) {
         // 整批買下今天各店的一般商品
