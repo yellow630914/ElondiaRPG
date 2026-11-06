@@ -47,6 +47,10 @@ const parasite = computed(() => draft.value.scope === 'parasite')
 const lead = computed(() => draft.value.scope === 'lead')
 // 發生在主角身上的事件（地下城事件、線索事件、寄生物的發作）：只有選擇，主角自己擲
 const onPc = computed(() => dungeon.value || parasite.value || lead.value)
+function setHours(v: string) {
+  if (v === 'day' || v === 'night') draft.value.hours = v
+  else delete draft.value.hours
+}
 // 線索事件的效果可以指定登場角色（EffectsEditor 的 NPC 選單多出甲、乙）
 provide('eventCast', computed(() => (lead.value ? draft.value.cast ?? 0 : 0)))
 const parasiteIds = Object.keys(parasiteRules.parasites)
@@ -181,6 +185,13 @@ function remove() {
           </select>
         </label>
         <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
+        <label v-if="town || dungeon || parasite"><span>時段 <Hint text="時段不對時不會抽到這個事件。適合「今晚」「半夜」這類場景；地下城與寄生物也看外面的時間。旅途、線索事件不看時段。" /></span>
+          <select :value="draft.hours ?? ''" @change="setHours(($event.target as HTMLSelectElement).value)">
+            <option value="">不限</option>
+            <option value="day">只在白天（6～18 點）</option>
+            <option value="night">只在夜裡（18～6 點）</option>
+          </select>
+        </label>
       </div>
       <label class="block">描述（給玩家與 AI）<textarea v-model="draft.text" rows="3" maxlength="400" /></label>
       <label v-if="lead && draft.cast" class="block"><span>沒人去處理時的近況 <Hint text="線索過期時，主角認識的登場角色記一則近況（NPC 近況）；空著時用預設的一句。" /></span><input v-model="draft.offscreen" maxlength="120" /></label>

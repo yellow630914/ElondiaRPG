@@ -164,6 +164,8 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   if (bodies.length && bodies.length < BODIES.length) out.pc_body = bodies
   const scene = str(raw.scene, L.scene_chars)
   if (scene) out.scene = scene
+  // 時段：城鎮、地下城、寄生物才有（旅途照天數走；線索在生成地圖時就放好了）
+  if ((scope === 'town' || scope === 'dungeon' || scope === 'parasite') && (raw.hours === 'day' || raw.hours === 'night')) out.hours = raw.hours
   if (kind === 'check') {
     out.check = check(raw.check) ?? { attr: 'int', dc: 12 }
     const s = outcome(raw.success)

@@ -28,6 +28,7 @@ import { commitReport, withRng } from './state'
 import { condMet, flagKey } from './storyFlags'
 import { shopRefusal, tattooShopHere } from './tattooShop'
 import { baseReport } from './town'
+import { dayPartOk } from './timeOfDay'
 import type { GameState, GameTime, ParasiteState, Report } from './types'
 
 /** 發作的時機：走動一步（城鎮、地下城、近郊、臨時地圖）、旅途的一天、長休之後 */
@@ -50,7 +51,8 @@ export function parasiteCandidates(state: GameState, p: ParasiteState, trigger: 
     && (!t.moments?.length || t.moments.includes(trigger))
     && tagsAllowed(t.tags)
     && pcBodyAllowed(t.pc_body, body)
-    && condMet(state, t.requires))
+    && condMet(state, t.requires)
+    && dayPartOk(state.time, t.hours))
 }
 
 /**

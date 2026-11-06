@@ -129,7 +129,6 @@ export const GROUPS = [
     { page: '角色線計畫', src: 'docs/plan/roadmap/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '高等地下城計畫', src: 'docs/plan/roadmap/HIGH_DUNGEONS_PLAN.md', desc: '歷史裂縫、歷史迴廊、禁果庭園、歡愉秘宮（R12）' },
-    { page: '特殊任務時段計畫', src: 'docs/plan/roadmap/STORY_TIME_PLAN.md', desc: '內建特殊任務與事件的時段盤點與套用（R13）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
     { page: '材料資訊計畫', src: 'docs/plan/roadmap/MATERIALS_PLAN.md', desc: '行囊的材料分類、材料的等級與用途（R24）' },
