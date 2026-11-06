@@ -64,7 +64,7 @@ describe('adult appearance', () => {
   it('adds the adult details', async () => {
     const { appearanceOf } = await import('@/engine/npcs')
     expect(appearanceOf('npc_aurelia', '金髮。')).toMatch(/^金髮。陰唇/)
-    expect(appearanceOf('npc_amber', '黑髮。')).toBe('黑髮。')
+    expect(appearanceOf('npc_lina', '黑髮。')).toBe('黑髮。')
   })
   it('keeps the field through the content editor', () => {
     expect(sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), adult_appearance: '細節' }, true).adult_appearance).toBe('細節')

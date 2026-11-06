@@ -116,7 +116,7 @@ def ending(label, text, flags, *, reform=0, balance=0, effects=(), **kw):
     return {'label': label, 'success': s}
 
 
-# ---------------- 角色線（CHARACTER_LINES_PLAN 第 2 節的規格） ----------------
+# ---------------- 角色線（R9 的規格，見 worldgen/design/elondia-storylines.md 第 5 節第三十八批） ----------------
 def romance(prefix, npc, line, q1, q2, q3, q4, *, start=None):
     """一條角色線：一～三 D／C／B（Lv.5／8／11，好感 0／20／30），四是成人向（好感 40、Lv.11）。
     q1～q3：{'id','title','summary','text','nodes'}，nodes 的最後一個要設 f'{prefix}_N_done'（三是 f'{prefix}_lover'）。

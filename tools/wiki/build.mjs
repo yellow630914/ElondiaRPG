@@ -126,7 +126,6 @@ export const GROUPS = [
     { page: '點子：早期設計', src: 'docs/plan/ideas/early-design.md', desc: '早期設計與放比較久的構想', sub: '點子的來源' },
     { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
-    { page: '角色線計畫', src: 'docs/plan/roadmap/CHARACTER_LINES_PLAN.md', desc: '白百合巡禮與琥珀的角色線（R9）' },
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '高等地下城計畫', src: 'docs/plan/roadmap/HIGH_DUNGEONS_PLAN.md', desc: '歷史裂縫、歷史迴廊、禁果庭園、歡愉秘宮（R12）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
