@@ -19,6 +19,7 @@ import { pcOf } from './party'
 import { roll } from './rng'
 import { ensureRelationship } from './social'
 import { currentCell } from './grid'
+import { canAcceptRank } from './town'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { expandTokens, shopKey, shopState } from './trade'
 import type { CheckInfo, GameState, Negotiation, NegotiationOption, Quest, Report } from './types'
@@ -71,6 +72,8 @@ function validate(state: GameState, template: string, ctx: NegotiationContext): 
     if (quest.giver !== state.location) throw new Error('要在發布委託的城鎮談')
     if (quest.status !== 'available' && quest.status !== 'accepted') throw new Error('這個委託已經不能談了')
     if (quest.flags?.negotiated !== undefined) throw new Error('報酬已經談過了')
+    // 接不了的委託（階級不足）不能先談報酬
+    if (quest.status === 'available' && !canAcceptRank(state, quest.rank, quest)) throw new Error('階級不足，接不了這個委託')
     if (currentCell(state).kind !== 'guild') throw new Error('要在冒險者公會談')
     return { tpl, quest }
   }

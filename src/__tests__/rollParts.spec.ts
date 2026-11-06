@@ -6,7 +6,7 @@ import { roll as eventRoll } from '@/engine/road'
 import { sumParts } from '@/engine/rollParts'
 import { newGame } from '@/engine/state'
 import type { GameState, TimelineEntry, TimelineRoll } from '@/engine/types'
-import { rollDetail } from '@/narrator/describe'
+import { describeEntry, rollDetail } from '@/narrator/describe'
 import { fightToEnd } from './helpers/fight'
 
 function game(seed = 4): GameState {
@@ -32,6 +32,41 @@ describe('擲骰的加值拆解', () => {
     expect(rollDetail({ value: 17, dc: 15, natural: 15, parts: [{ label: '熟練', value: 2 }], dc_name: '迴避' })).toBe('骰 15 + 熟練 +2 = 17，對迴避 15')
     // 拆解對不上總值：差額列成「其他」
     expect(rollDetail({ value: 16, dc: 12, natural: 11, parts: [{ label: '魅力', value: 1 }] })).toBe('骰 11 + 魅力 +1 + 其他 +4 = 16，對 DC 12')
+  })
+
+  it('calls a critical check outside combat 大成功, and 幸運一擊 in combat', () => {
+    const names = { pc: '莉雅' }
+    expect(describeEntry({ seq: 1, actor: 'pc', action: '自由行動（魅力）', roll: { value: 23, dc: 12 }, result: 'critical' }, names)).toBe('莉雅：自由行動（魅力）（23 vs 12） 大成功！')
+    expect(describeEntry({ seq: 1, round: 2, actor: 'pc', action: '長劍', roll: { value: 23, dc: 12 }, result: 'critical' }, names)).toContain('幸運一擊！')
+  })
+
+  it('records both dice and the status name when a fight roll has advantage or a luck die', () => {
+    let both = 0
+    let named = 0
+    for (const seed of [1, 2, 3, 4, 5, 6]) {
+      const state = game(seed)
+      startCombat(state, [['goblin', 2]])
+      // 祝福（幸運骰）＋目標被定身類的攻擊優勢：讓攻擊擲兩次、帶狀態名字的加值
+      const c = state.combat!
+      for (const x of c.combatants) {
+        if (x.side === 'party') x.statuses.push({ id: 'blessed', turns: 9, source: x.id } as never)
+        else x.statuses.push({ id: 'blinded', turns: 9, source: x.id } as never)
+      }
+      const report = fightToEnd(state)
+      for (const t of report.timeline ?? []) {
+        if (t.roll?.natural === undefined) continue
+        expectConsistent(t.roll)
+        if (t.roll.naturals) {
+          both++
+          expect(t.roll.naturals).toContain(t.roll.natural)
+          expect(rollDetail(t.roll)).toMatch(/^(豁免：)?骰 \d+、\d+ 取 \d+/)
+        }
+        if (t.roll.parts?.some((p) => p.label === '祝福')) named++
+        expect(t.roll.parts?.some((p) => p.label === '運氣')).toBeFalsy()
+      }
+    }
+    expect(both).toBeGreaterThan(0)
+    expect(named).toBeGreaterThan(0)
   })
 
   it('shows nothing for old saves without the breakdown', () => {

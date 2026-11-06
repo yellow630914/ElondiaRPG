@@ -36,6 +36,11 @@ const RESULT_TEXT: Record<TimelineEntry['result'], string> = {
   success: '成功', critical: '幸運一擊！', fail: '失敗', fumble: '大失敗', partial: '部分成功', none: '',
 }
 
+/** 結果的字：戰鬥裡（有回合數）的會心叫「幸運一擊」，戰鬥以外的檢定叫「大成功」 */
+function resultText(t: TimelineEntry): string {
+  return t.result === 'critical' && !t.round ? '大成功！' : RESULT_TEXT[t.result]
+}
+
 const signedPart = (p: RollPart) => `${p.label} ${p.value >= 0 ? '+' : ''}${p.value}`
 
 /**
@@ -65,7 +70,7 @@ export function describeEntry(t: TimelineEntry, names: Record<string, string>): 
     : `（${t.roll.value}${t.roll.dc !== undefined ? ` vs ${t.roll.dc}` : ''}）`
   const effects = (t.effects ?? []).map((e) => describeEffect(e, names)).filter(Boolean).join('，')
   const head = t.round ? `第${t.round}回合 ` : ''
-  return `${head}${actor}：${t.action}${target}${rollText} ${RESULT_TEXT[t.result]}${effects ? `｜${effects}` : ''}`.trim()
+  return `${head}${actor}：${t.action}${target}${rollText} ${resultText(t)}${effects ? `｜${effects}` : ''}`.trim()
 }
 
 /** 戰鬥畫面的紀錄行：主句、細節（滑過才看到的倍率與減傷），一個動作打到多個目標時每個目標一行 */

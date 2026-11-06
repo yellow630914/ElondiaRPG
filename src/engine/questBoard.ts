@@ -72,7 +72,7 @@ export function parseBoardView(raw: unknown): BoardView {
   return {
     onlyOpen: typeof v.onlyOpen === 'boolean' ? v.onlyOpen : DEFAULT_BOARD_VIEW.onlyOpen,
     area: v.area === 'town' || v.area === 'outskirts' || v.area === 'dungeon' ? v.area : '',
-    group: typeof v.group === 'string' && v.group in QUEST_GROUP_NAME ? v.group as QuestGroup : '',
-    sort: typeof v.sort === 'string' && v.sort in BOARD_SORT_NAME ? v.sort as BoardSort : DEFAULT_BOARD_VIEW.sort,
+    group: typeof v.group === 'string' && Object.hasOwn(QUEST_GROUP_NAME, v.group) ? v.group as QuestGroup : '',
+    sort: typeof v.sort === 'string' && Object.hasOwn(BOARD_SORT_NAME, v.sort) ? v.sort as BoardSort : DEFAULT_BOARD_VIEW.sort,
   }
 }

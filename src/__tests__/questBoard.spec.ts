@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { playerRank } from '@/engine/guild'
 import { arrangeBoard, DEFAULT_BOARD_VIEW, parseBoardView, questGroup, type BoardView } from '@/engine/questBoard'
 import { newGame } from '@/engine/state'
+import { standOn } from '@/engine/grid'
+import { canNegotiate } from '@/engine/negotiation'
 import type { GameState, Quest } from '@/engine/types'
 
 function game(): GameState {
@@ -80,5 +82,18 @@ describe('委託板的篩選與排序', () => {
     expect(parseBoardView({ onlyOpen: false, area: 'dungeon', group: 'fight', sort: 'deadline' }))
       .toEqual({ onlyOpen: false, area: 'dungeon', group: 'fight', sort: 'deadline' })
     expect(parseBoardView({ onlyOpen: 'yes', area: 'moon', group: 'x', sort: 'price' })).toEqual(DEFAULT_BOARD_VIEW)
+    // 物件原型上的名字不算合法的選項
+    expect(parseBoardView({ group: 'toString', sort: '__proto__' })).toEqual(DEFAULT_BOARD_VIEW)
+    expect(parseBoardView({ group: 'constructor', sort: 'hasOwnProperty' })).toEqual(DEFAULT_BOARD_VIEW)
+  })
+
+  it('does not let the player negotiate a quest above their rank', () => {
+    const state = game()
+    standOn(state, 'guild')
+    const high = quest({ rank: 'A' })
+    const low = quest({ rank: 'F' })
+    state.quests.push(high, low)
+    expect(canNegotiate(state, 'quest_reward', { quest: high.id })).toMatch(/階級不足/)
+    expect(canNegotiate(state, 'quest_reward', { quest: low.id })).toBeNull()
   })
 })

@@ -100,7 +100,7 @@ export type MaterialTierSource = 'manual' | 'forge' | 'recipe' | 'drop'
 
 /**
  * 材料的等級（推不出來時 undefined）：
- * 手動填的（items.json、世界編輯器的 tier）→ 能打造的材料的等級 → 用到它的配方裡最低的配方等級 → 會掉它的怪物等級換算。
+ * 手動填的（items.json、世界編輯器的 tier）→ 能打造的材料的等級 → 用到它的配方裡最低的配方等級（怪物也會掉的，和掉落換算取較低的）→ 會掉它的怪物等級換算。
  */
 export function materialTier(state: Pick<GameState, 'customItems'> | undefined, name: string): { tier: number; source: MaterialTierSource } | undefined {
   if (!isMaterial(state, name)) return undefined
@@ -114,9 +114,15 @@ export function inferMaterialTier(name: string): { tier: number; source: Exclude
   const forges = materialForges(name)
   if (forges.length) return { tier: Math.min(...forges.map((f) => f.tier)), source: 'forge' }
   const recipes = materialRecipes(name)
-  if (recipes.length) return { tier: recipes[0]!.level, source: 'recipe' }
   const drop = index().map.get(name)?.dropLevel
-  if (drop !== undefined) return { tier: tierForMonsterLevel(drop), source: 'drop' }
+  const dropTier = drop !== undefined ? tierForMonsterLevel(drop) : undefined
+  // 配方等級是工藝等級（1～5），和材料等級不是同一套刻度：怪物也會掉的，取兩者較低的
+  // （例如 Lv.2 冰嶺熊掉的熊掌雖然只有烹飪 Lv.4 的配方用得到，仍算第 1 級）
+  if (recipes.length) {
+    const tier = recipes[0]!.level
+    return dropTier !== undefined && dropTier < tier ? { tier: dropTier, source: 'drop' } : { tier, source: 'recipe' }
+  }
+  if (dropTier !== undefined) return { tier: dropTier, source: 'drop' }
   return undefined
 }
 
@@ -174,25 +180,37 @@ export function materialRecipesFull(name: string): string {
  * - 能打造的：照貿易類別（礦石與金屬、皮革與毛皮、布料、木材、奢侈品）
  * - 配方原料：照用到它的配方裡最低等級那個的工藝（`craft:alchemy`「煉金原料」……）
  * - 其他：照貿易類別（怪物素材……），推不出來的是 other
+ * - 怪物素材件數最多（內建約 300 件），再照等級分成「怪物素材・第 N 級」（`monster:N`），推不出等級的留在 monster
  */
-export type MaterialGroup = TradeCategory | `craft:${CraftId}` | 'other'
+export type MaterialGroup = TradeCategory | `craft:${CraftId}` | `monster:${number}` | 'other'
 
 export function materialGroup(state: Pick<GameState, 'customItems'> | undefined, name: string): MaterialGroup {
   if (!materialForges(name).length) {
     const r = materialRecipes(name)[0]
     if (r) return `craft:${r.craft}`
   }
-  return tradeCategory(state, name) ?? 'other'
+  const trade = tradeCategory(state, name)
+  if (trade === 'monster') {
+    const t = materialTier(state, name)
+    if (t) return `monster:${t.tier}`
+  }
+  return trade ?? 'other'
 }
 
 export function materialGroupName(g: MaterialGroup): string {
   if (g === 'other') return '其他材料'
   if (g.startsWith('craft:')) return `${craftRules.skills[g.slice(6) as CraftId]?.name ?? g.slice(6)}原料`
+  if (g.startsWith('monster:')) return `${tradeCategoryName('monster')}・第 ${g.slice(8)} 級`
   return tradeCategoryName(g)
 }
 
-/** 小類的順序：打造材料、配方原料（照工藝）、怪物素材與其他貿易類別、其他 */
+/** 小類的順序：打造材料、配方原料（照工藝）、怪物素材（等級高的先，推不出等級的最後）與其他貿易類別、其他 */
 export function materialGroupOrder(): MaterialGroup[] {
   const forge: TradeCategory[] = ['metal', 'leather', 'cloth', 'wood', 'luxury']
-  return [...forge, ...CRAFT_IDS.map((c) => `craft:${c}` as const), ...TRADE_CATEGORIES.filter((c) => !forge.includes(c)), 'other']
+  const monsterTiers = Array.from({ length: maxMaterialTier() }, (_, i) => `monster:${maxMaterialTier() - i}` as const)
+  return [
+    ...forge, ...CRAFT_IDS.map((c) => `craft:${c}` as const),
+    ...TRADE_CATEGORIES.filter((c) => !forge.includes(c)).flatMap((c) => (c === 'monster' ? [...monsterTiers, c] : [c])),
+    'other',
+  ]
 }

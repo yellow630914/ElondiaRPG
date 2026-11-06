@@ -893,14 +893,15 @@ function modsOf(c: Combatant): Required<Mods> {
 function rollFactors(c: Combatant, kind: LuckRoll) {
   let adv = 0
   let dis = 0
-  const luck: string[] = []
+  /** 幸運骰：骰子與給它的狀態名字（加值拆解用） */
+  const luck: { dice: string; name: string }[] = []
   const used: StatusInstance[] = []
   for (const s of c.statuses) {
     const def = statusDef(s.id)
     let touched = false
     if (def.advantage?.includes(kind)) { adv++; touched = true }
     if (def.disadvantage?.includes(kind)) { dis++; touched = true }
-    if (def.luck && def.luck_on?.includes(kind)) { luck.push(def.luck); touched = true }
+    if (def.luck && def.luck_on?.includes(kind)) { luck.push({ dice: def.luck, name: def.name }); touched = true }
     if (touched && def.charges !== undefined) used.push(s)
   }
   return { adv, dis, luck, used }
@@ -914,20 +915,26 @@ function consume(c: Combatant, used: StatusInstance[]) {
   }
 }
 
-function rollLuck(rng: Rng, luck: string[]): number {
-  return luck.reduce((sum, l) => {
-    const negative = l.startsWith('-')
-    const value = roll(rng, negative ? l.slice(1) : l).total
-    return sum + (negative ? -value : value)
-  }, 0)
+/** 擲幸運骰：總和與每個狀態各自擲出的值（加值拆解寫狀態名字，例如「祝福 +3」） */
+function rollLuck(rng: Rng, luck: { dice: string; name: string }[]): { total: number; parts: RollPart[] } {
+  const parts = luck.map((l) => {
+    const negative = l.dice.startsWith('-')
+    const value = roll(rng, negative ? l.dice.slice(1) : l.dice).total
+    return { label: l.name, value: negative ? -value : value }
+  })
+  return { total: sumParts(parts), parts }
 }
 
-/** 擲 1d20：adv > 0 取高、< 0 取低。 */
-function d20(rng: Rng, adv: number): number {
+/** 擲 1d20：adv > 0 取高、< 0 取低；naturals 是擲兩次時的兩個骰面（加值拆解用） */
+function d20Roll(rng: Rng, adv: number): { natural: number; naturals?: number[] } {
   const a = rng.int(1, 20)
-  if (adv === 0) return a
+  if (adv === 0) return { natural: a }
   const b = rng.int(1, 20)
-  return adv > 0 ? Math.max(a, b) : Math.min(a, b)
+  return { natural: adv > 0 ? Math.max(a, b) : Math.min(a, b), naturals: [a, b] }
+}
+
+function d20(rng: Rng, adv: number): number {
+  return d20Roll(rng, adv).natural
 }
 
 /** 加成與抗性要看的鍵：屬性本身、所屬群組、全部（魅惑自成一組，不受「全部」影響） */
@@ -1585,15 +1592,15 @@ function attackRoll(rng: Rng, actor: Combatant, target: Combatant, a?: AbilityDe
     if (def.attacked_advantage) { adv += 1; if (def.charges !== undefined) consumedOnTarget.push(s) }
     if (def.attacked_disadvantage) adv -= 1
   }
-  const natural = d20(rng, Math.sign(adv))
+  const { natural, naturals } = d20Roll(rng, Math.sign(adv))
   const mods = modsOf(actor)
   const atkAttr = attrFor(actor, a)
   const bonus = actor.prof + mod(actor.attrs[atkAttr]) + mods.hit + (a?.hit ?? 0)
   const luck = rollLuck(rng, atk.luck)
-  const total = natural + bonus + luck
+  const total = natural + bonus + luck.total
   const parts: RollPart[] = [
     { label: '熟練', value: actor.prof }, { label: attrName(atkAttr), value: mod(actor.attrs[atkAttr]) },
-    { label: '命中加成', value: mods.hit }, ...(a ? [{ label: a.name, value: a.hit ?? 0 }] : []), { label: '運氣', value: luck },
+    { label: '命中加成', value: mods.hit }, ...(a ? [{ label: a.name, value: a.hit ?? 0 }] : []), ...luck.parts,
   ]
   consume(actor, atk.used)
   consume(target, consumedOnTarget)
@@ -1605,18 +1612,25 @@ function attackRoll(rng: Rng, actor: Combatant, target: Combatant, a?: AbilityDe
     evade = 0
   } else {
     const ev = rollFactors(target, 'evade')
-    const evNatural = Math.max(evadeFloor(target.attrs), d20(rng, Math.sign(ev.adv - ev.dis)))
+    const evRoll = d20Roll(rng, Math.sign(ev.adv - ev.dis))
+    const floor = evadeFloor(target.attrs)
+    const evNatural = Math.max(floor, evRoll.natural)
     const evLuck = rollLuck(rng, ev.luck)
+    // 迴避骰擲兩次（優勢、劣勢）或被下限墊高時，寫在標籤裡
+    const evNote = [
+      ...(evRoll.naturals ? [`${evRoll.naturals.join('、')} 取 ${evRoll.natural}`] : []),
+      ...(evNatural > evRoll.natural ? [`下限 ${floor}`] : []),
+    ]
     evadeParts = [
-      { label: '迴避骰', value: evNatural }, { label: '靈巧 ÷ 2', value: Math.floor(mod(target.attrs.dex) / 2) },
-      { label: '防具', value: target.armorEvade }, { label: '迴避加成', value: modsOf(target).evade }, { label: '運氣', value: evLuck },
+      { label: evNote.length ? `迴避骰（${evNote.join('，')}）` : '迴避骰', value: evNatural }, { label: '靈巧 ÷ 2', value: Math.floor(mod(target.attrs.dex) / 2) },
+      { label: '防具', value: target.armorEvade }, { label: '迴避加成', value: modsOf(target).evade }, ...evLuck.parts,
     ]
     evade = sumParts(evadeParts)
     consume(target, ev.used)
   }
   const hit = lucky || (natural !== 1 && total >= evade)
   const result: RollResult = lucky ? 'critical' : natural === 1 ? 'fumble' : hit ? 'success' : 'fail'
-  return { hit, lucky, result, roll: { dice: withBonus('1d20', bonus), value: total, dc: evade, ...rollBreakdown(natural, parts, { dcParts: evadeParts, dcName: '迴避' }) } }
+  return { hit, lucky, result, roll: { dice: withBonus('1d20', bonus), value: total, dc: evade, ...rollBreakdown(natural, parts, { ...(naturals ? { naturals } : {}), dcParts: evadeParts, dcName: '迴避' }) } }
 }
 
 function saveDc(actor: Combatant, a: AbilityDef): number {
@@ -1625,13 +1639,13 @@ function saveDc(actor: Combatant, a: AbilityDef): number {
 
 function savingThrow(rng: Rng, target: Combatant, attr: AttrId, dc: number) {
   const f = rollFactors(target, 'save')
-  const natural = d20(rng, Math.sign(f.adv - f.dis))
+  const { natural, naturals } = d20Roll(rng, Math.sign(f.adv - f.dis))
   const bonus = mod(target.attrs[attr]) + modsOf(target).save + (target.saveBonus?.[attr] ?? 0)
   const luck = rollLuck(rng, f.luck)
-  const total = natural + bonus + luck
+  const total = natural + bonus + luck.total
   consume(target, f.used)
-  const parts = [{ label: attrName(attr), value: mod(target.attrs[attr]) }, { label: '豁免加成', value: modsOf(target).save + (target.saveBonus?.[attr] ?? 0) }, { label: '運氣', value: luck }]
-  return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc, save: true, ...rollBreakdown(natural, parts) } }
+  const parts = [{ label: attrName(attr), value: mod(target.attrs[attr]) }, { label: '豁免加成', value: modsOf(target).save + (target.saveBonus?.[attr] ?? 0) }, ...luck.parts]
+  return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc, save: true, ...rollBreakdown(natural, parts, naturals ? { naturals } : {}) } }
 }
 
 // ---- 武器攻擊與能力 ----

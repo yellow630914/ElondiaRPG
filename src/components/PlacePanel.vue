@@ -354,6 +354,7 @@ const shopDesc = computed(() => {
             <select v-model="boardView.sort" aria-label="排序">
               <option v-for="[id, name] in BOARD_SORTS" :key="id" :value="id">{{ name }}</option>
             </select>
+            <button v-if="filtered" class="small ghost" @click="boardView.area = ''; boardView.group = ''">清除篩選</button>
             <Hint text="已接下、可以交付的委託固定排在最上面。「可以接的」會把階級不足的委託收到最下面，點一下才展開；選擇會記在這個瀏覽器裡。" />
           </div>
           <ul class="plain board">

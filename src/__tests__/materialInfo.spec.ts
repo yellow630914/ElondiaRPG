@@ -36,11 +36,19 @@ describe('材料的等級、用途與小類（R24）', () => {
     const drop = materials().find((m) => !m.forge && !materialRecipes(m.name).length && Object.values(enemies).some((e) => e.loot?.some((l) => l.item === m.name)))!
     const lowest = Math.min(...Object.values(enemies).filter((e) => e.loot?.some((l) => l.item === drop.name)).map((e) => e.level))
     expect(materialTier(undefined, drop.name)).toEqual({ tier: tierForMonsterLevel(lowest), source: 'drop' })
-    expect(materialGroup(undefined, drop.name)).toBe('monster')
+    expect(materialGroup(undefined, drop.name)).toBe(`monster:${tierForMonsterLevel(lowest)}`)
     expect(materialLabel(undefined, drop.name)).toBe(`怪物素材・第 ${tierForMonsterLevel(lowest)} 級`)
     // 不是材料：沒有等級、沒有用途
     expect(materialTier(undefined, '乾糧')).toBeUndefined()
     expect(materialUses(undefined, '乾糧')).toBe('')
+  })
+
+  it('takes the lower of the recipe level and the drop tier for materials monsters drop', () => {
+    // 冰嶺熊掌：只有烹飪 Lv.4 的配方用得到，但 Lv.2 的冰嶺熊會掉
+    expect(materialTier(undefined, '冰嶺熊掌')).toEqual({ tier: 1, source: 'drop' })
+    expect(materialLabel(undefined, '冰嶺熊掌')).toBe('烹飪材料・第 1 級')
+    // 沒有怪物掉的配方原料照舊用配方等級
+    expect(materialTier(undefined, '夜光蘑菇')?.source).toBe('recipe')
   })
 
   it('groups materials by what they are for', () => {
@@ -48,8 +56,13 @@ describe('材料的等級、用途與小類（R24）', () => {
     expect(materialGroup(undefined, '硬化獸皮')).toBe('leather')
     expect(materialGroup(undefined, '夜光蘑菇')).toBe('craft:alchemy')
     expect(materialGroupName('craft:alchemy')).toBe('煉金原料')
-    expect(materialGroup(undefined, '史萊姆凝膠')).toBe('monster')
+    // 怪物素材再照等級分段，推不出等級的留在 monster
+    expect(materialGroup(undefined, '史萊姆凝膠')).toBe('monster:1')
+    expect(materialGroupName('monster:1')).toBe('怪物素材・第 1 級')
+    expect(materialGroup(undefined, '哥布林左耳')).toBe('monster')
     const order = materialGroupOrder()
+    expect(order.indexOf('monster:7')).toBeLessThan(order.indexOf('monster:1'))
+    expect(order.indexOf('monster:1')).toBeLessThan(order.indexOf('monster'))
     expect(order.indexOf('leather')).toBeLessThan(order.indexOf('craft:alchemy'))
     expect(order.indexOf('craft:alchemy')).toBeLessThan(order.indexOf('monster'))
     expect(order.at(-1)).toBe('other')
