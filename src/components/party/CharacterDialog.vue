@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import {
-  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, combatBonuses, countsForLoadout, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
+  abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, combatBonuses, countsForLoadout, evadeFloor, gearAffinities, hasRerollPool, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
 import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, genderName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
 import PcTagPicker from '../PcTagPicker.vue'
@@ -340,7 +340,8 @@ function saveTags() {
           <div v-if="m.pendingAbilityChoices?.length" class="choose">
             <div class="row head">
               <b><GameIcon name="sparkles" :size="15" /> 升級！請選擇一項能力</b>
-              <button class="small" :disabled="inCombat || rerollsLeft(m, settings.rerollLimit()) <= 0" @click="game.rerollAbility(m.id)">重抽（剩 {{ rerollsLeft(m, settings.rerollLimit()) }} 次）</button>
+              <button v-if="hasRerollPool(m)" class="small" :disabled="inCombat || rerollsLeft(m, settings.rerollLimit()) <= 0" @click="game.rerollAbility(m.id)">重抽（剩 {{ rerollsLeft(m, settings.rerollLimit()) }} 次）</button>
+              <button v-else class="small" disabled title="能學的能力都已經列在選項裡了">重抽（沒有其他能力可換）</button>
             </div>
             <div class="options">
               <button v-for="id in m.pendingAbilityChoices[0]" :key="id" class="option" :disabled="inCombat" @click="pick($event, id)">

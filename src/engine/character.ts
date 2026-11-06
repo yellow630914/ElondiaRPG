@@ -302,7 +302,7 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   while (c.level < def.level) {
     c.level += 1
     c.attrs[classDef(c.class).priority[0]!] += attributeRules.level_up_points
-    const choice = abilityChoices(c, rng)[0]
+    const choice = npcAbilityPick(c, rng)
     if (choice) c.abilities.push(choice)
   }
   // 夥伴與敵對冒險者：依等級即時生成裝備
@@ -358,6 +358,22 @@ export function learnable(c: Character): AbilityDef[] {
   })
 }
 
+/** 能力的層級：技能看解鎖等級，法術看環數（換算成全施法者拿到該環的等級），戲法最低 */
+function abilityTier(a: AbilityDef): number {
+  if (a.type === 'skill') return a.unlock ?? 1
+  if (a.type === 'spell') return 2 * (a.circle ?? 1) - 1
+  return 0
+}
+
+/** NPC 自動成長：學能學的能力裡層級最高的（同層級隨機），跟上新解鎖的能力，不會因為能力池變大就停在低階 */
+function npcAbilityPick(c: Character, rng: Rng): string | undefined {
+  const pool = learnable(c)
+  if (!pool.length) return undefined
+  const top = Math.max(...pool.map(abilityTier))
+  const best = pool.filter((a) => abilityTier(a) === top)
+  return best[rng.int(0, best.length - 1)]!.id
+}
+
 /** 升級時的能力三選一 */
 export function abilityChoices(c: Character, rng: Rng, count = 3): string[] {
   const pool = learnable(c)
@@ -373,13 +389,19 @@ export function rerollsLeft(c: Character, max = progression.ability_rerolls): nu
   return c.pendingAbilityChoices?.length ? Math.max(0, max - (c.abilityRerollsUsed ?? 0)) : 0
 }
 
+/** 重抽這組選項時還有沒有別的能力可換（可學的能力都已經列在選項裡時就沒有） */
+export function hasRerollPool(c: Character): boolean {
+  const current = c.pendingAbilityChoices?.[0]
+  return !!current && learnable(c).some((a) => !current.includes(a.id))
+}
+
 /** 重抽升級時的能力三選一：盡量換成目前沒出現的能力。 */
 export function rerollAbilityChoices(c: Character, rng: Rng, max = progression.ability_rerolls): string[] {
   const current = c.pendingAbilityChoices?.[0]
   if (!current) throw new Error('沒有待選的能力')
   if (rerollsLeft(c, max) <= 0) throw new Error('這次升級已經不能再重抽了')
   const fresh = learnable(c).filter((a) => !current.includes(a.id))
-  if (!fresh.length) throw new Error('沒有其他可以學的能力了')
+  if (!fresh.length) throw new Error('沒有其他能力可換了')
   const picked: string[] = []
   while (picked.length < current.length && fresh.length) picked.push(fresh.splice(rng.int(0, fresh.length - 1), 1)[0]!.id)
   // 新的能力不夠三個時，用原本的選項補上
