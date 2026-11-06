@@ -8,7 +8,7 @@ import { locationById, slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, goOutskirts, move, standOn } from '@/engine/grid'
 import { isBound, isEnslaved, isFugitive, isNoncombatant, leaderOf } from '@/engine/party'
-import { characterFor, generateNpc, registerNpc } from '@/engine/npcs'
+import { characterFor, generateNpc, registerNpc, npcRecord } from '@/engine/npcs'
 import { Rng } from '@/engine/rng'
 import {
   answerMasterEvent, chooseMark, contractTerms, markSummary, masterCandidates, maybeMasterEvent, permitDc, sanitizeTerms, startAsSlave,
@@ -452,5 +452,15 @@ describe('who becomes the new master depends on who they are', () => {
       return
     }
     throw new Error('nobody bought')
+  })
+})
+
+describe('奴隸市場', () => {
+  it('市場的奴隸帶奴隸標籤', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 3, birthplace: 'albena' })
+    enterLocation(state)
+    const stock = marketStock(state, 'public')
+    expect(stock.length).toBeGreaterThan(0)
+    for (const l of stock) expect(npcRecord(state, l.npc)?.tags).toContain('slave')
   })
 })

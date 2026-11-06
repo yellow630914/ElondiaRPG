@@ -9,7 +9,7 @@ import { craftRules } from '@/engine/data'
 import { gearSpecOf } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
-import { joinParty } from '@/engine/party'
+import { joinParty, pcOf } from '@/engine/party'
 import { addItem, newGame, withRng } from '@/engine/state'
 import { setAffinity } from '@/engine/social'
 import { dismiss } from '@/engine/town'
@@ -214,5 +214,25 @@ describe('dismissing someone right after they join', () => {
     const later = companion(state, 'hired', 20)
     state.time.day += craftRules.dismiss_penalty.days + 1
     expect(dismiss(state, later.id).outcome.tags).not.toContain('用完就丟')
+  })
+})
+
+describe('委託打造由店主擲：不加主角的修正', () => {
+  function game(tags: string[]) {
+    const s = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel', tags } as Parameters<typeof newGame>[0])
+    enterLocation(s)
+    s.money_cc = 50000
+    return s
+  }
+
+  it('leaves out the protagonist perks and tags', () => {
+    const s = game(['blacksmith'])
+    pcOf(s).perks = [...(pcOf(s).perks ?? []), 'artisan']
+    standOn(s, 'smithy')
+    addItem(s.inventory, '鐵礦石', 5)
+    const p = prepareAction(s, { kind: 'craft', text: '', target: 'dagger:iron' })
+    expect(p.situational.map((x) => x.label)).toEqual([expect.stringContaining('工匠的手藝')])
+    const r = resolveAction(s, null)
+    expect(r.check?.keeper).toBe(true)
   })
 })

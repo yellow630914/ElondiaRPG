@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { enterLocation } from '@/engine/grid'
 import { applyContent, emptyMods, newNpc, sanitizeNpc } from '@/engine/mods'
-import { hireable } from '@/engine/population'
+import { hireable, isUnhireable } from '@/engine/population'
 import { newGame } from '@/engine/state'
 import { recruitableHere } from '@/engine/town'
 import { hireAtAsking } from '@/engine/companions'
@@ -80,5 +80,11 @@ describe('adult-only fixed NPCs', () => {
   })
   it('keeps the flag through the content editor', () => {
     expect(sanitizeNpc('mod_npc_x', { ...newNpc('mod_npc_x'), adult: true }, true).adult).toBe(true)
+  })
+})
+
+describe('蜜菈', () => {
+  it('蜜菈不受雇用', () => {
+    expect(isUnhireable('npc_park_greeter')).toBe(true)
   })
 })

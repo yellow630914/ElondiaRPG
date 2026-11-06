@@ -154,3 +154,20 @@ describe('主人是工具人', () => {
     expect(contractOf(pc)).toBeUndefined()
   })
 })
+
+describe('雙面效應的免疫', () => {
+  it('程度 1 的腕鐐不免疫繳械，程度 3 的單手套才免疫', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    const pc = pcOf(state)
+    pc.perks = ['school_bondage']
+    const put = (base: string, material: string) => {
+      const spec = { base, material }
+      ;(pc.gear ??= {} as Character['gear'])!.wrists = { name: gearName(spec), spec, lock: 'white' }
+    }
+    put('manacles', 'iron')
+    expect(twoFaceCombat(pc).active).toHaveLength(1)
+    expect(twoFaceCombat(pc).immune).toEqual([])
+    put('armbinder', 'leather')
+    expect(twoFaceCombat(pc).immune).toEqual(['disarmed'])
+  })
+})

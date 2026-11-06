@@ -99,3 +99,21 @@ describe('lewd decay rules', () => {
     expect(sanitizeRules({ xpMult: 0.15, lewdnessDecay: 0 })).toEqual({ xpMult: 0.15, lewdnessDecay: 0 })
   })
 })
+
+describe('上衣類不遮下身', () => {
+  it('looks at the panties when only a top is worn', () => {
+    // 襯衫＋內衣、沒穿下身也沒穿內褲：全裸
+    expect(exposureLevel(dressed({ body: 'shirt', underwear_top: 'undershirt' }))).toBe(3)
+    // 穿著內褲：看得到內褲
+    expect(exposureLevel(dressed({ body: 'shirt', underwear_top: 'undershirt', underwear_bottom: 'briefs' }))).toBeGreaterThan(0)
+    expect(vacuumSides(dressed({ body: 'shirt', underwear_top: 'undershirt' }))).toEqual([])
+    // 連身裙照樣遮住下身
+    expect(exposureLevel(dressed({ body: 'dress', underwear_top: 'undershirt', underwear_bottom: 'briefs' }))).toBe(0)
+    // 鎧甲沒穿下身也照舊
+    expect(exposureLevel(dressed({ body: 'chain', underwear_top: 'undershirt', underwear_bottom: 'briefs' }))).toBe(0)
+  })
+  it('keeps top_only on custom body bases only', () => {
+    expect(sanitizeBase({ ...gearRules.bases.shirt, top_only: true } as never, true, 'my_top')?.top_only).toBe(true)
+    expect(sanitizeBase({ ...gearRules.bases.trousers, top_only: true } as never, true, 'my_legs')?.top_only).toBeUndefined()
+  })
+})

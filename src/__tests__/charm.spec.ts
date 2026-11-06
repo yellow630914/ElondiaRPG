@@ -68,3 +68,18 @@ describe('魅氣濃度', () => {
     setContentFilters({ pc_unwilling: true })
   })
 })
+
+describe('曝露名聲傳到相鄰地區', () => {
+  it('來源地區一直維持 80，20 天後鄰區追到 20 以上', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    const pc = pcOf(state)
+    const src = 'south'
+    const n = neighborRegions(src)
+    expect(n.length).toBeGreaterThan(0)
+    for (let d = 0; d < 20; d++) {
+      state.exposure = { ...state.exposure, [pc.id]: { ...(state.exposure?.[pc.id] ?? {}), [src]: 80 } }
+      lewdDaily(state, d, d + 1)
+    }
+    for (const r of n) expect(state.exposure![pc.id]![r]).toBeGreaterThanOrEqual(20)
+  })
+})

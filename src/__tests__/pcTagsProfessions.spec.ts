@@ -53,3 +53,10 @@ describe('新的身分標籤（R20 C3）', () => {
     expect(plain.inventory).toEqual([{ name: '乾糧', qty: 5 }])
   })
 })
+
+describe('建角說明：工匠身分的開局工藝', () => {
+  it('says which crafts start at Lv.2', () => {
+    expect(pcTagEffectLines('leatherworker').join('；')).toContain('製革、裁縫從 Lv.2 開始')
+    expect(pcTagEffectLines('hunter').join('；')).not.toContain('Lv.2')
+  })
+})

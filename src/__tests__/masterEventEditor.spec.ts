@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { lewdRules, masterEventPool, slaveryRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation } from '@/engine/grid'
-import { allMasterEvents, builtinMasterEvent, newMasterEvent, sanitizeMasterEvent } from '@/engine/masterEventMods'
+import { allMasterEvents, builtinMasterEvent, newMasterEvent, sanitizeMasterEvent, masterEventWarnings } from '@/engine/masterEventMods'
 import { applyContent, emptyMods, normalizeMods } from '@/engine/mods'
 import { pcOf } from '@/engine/party'
 import { answerMasterEvent, masterCandidates, stanceModifiers, startAsSlave, startMasterEvent } from '@/engine/slavery'
@@ -96,5 +96,20 @@ describe('屈服與抵抗、事件庫的技能', () => {
     const before = pc.lewd?.lewdness ?? lewdRules.defaults.lewdness
     applyEffects(state, baseReport(state, 'event', 0), effects)
     expect(pc.lewd!.lewdness).toBe(before + 3)
+  })
+})
+
+describe('主奴與娼館的編輯器警告', () => {
+  it('調教、娼館事件不再有 S5 警告；調教事件沒有課程時警告', () => {
+    const w = newMasterEvent('mod_mevent_t', 'brothel_work')
+    w.text = '接客'
+    expect(masterEventWarnings(w).join()).not.toContain('S5')
+    const o = newMasterEvent('mod_mevent_o', 'owner')
+    o.text = '調教'
+    expect(masterEventWarnings(o)).toContain('調教事件沒有選課程：不會被抽到')
+    o.course = 'nope'
+    expect(masterEventWarnings(o).join()).toContain('沒有「nope」這個課程')
+    o.course = 'serve'
+    expect(masterEventWarnings(o).join()).not.toContain('課程')
   })
 })

@@ -175,7 +175,7 @@ commit 標題有「修、fix、review、實測、白箱、revert」或問題編�
 - 偶發失敗：形象圖同一毫秒的兩版互相蓋掉（B14，2026-11-05 修好）。
 - 模擬器本身有錯（e30bcca）；世界檢查的勝率雜訊（W22）。
 
-**為了不再發生而加的測試**：`lustFixes.spec`、`lewdFixes2.spec`、`contentCache.spec`、`aiJoin.spec`、`storyEdges.spec`、`campRest.spec`。
+**為了不再發生而加的測試**：`lustFixes.spec`、`lewdFixes2.spec`、`contentCache.spec`、`aiJoin.spec`、`storyEdges.spec`、`campRest.spec`。（2026-11-06 起 `lustFixes`、`lewdFixes2` 的測試依主題併進 `lustCombat`、`arena`、`unhireable`、`uniqueGear`、`charm`、`slavery`、`lewdSchools`、`masterEventEditor`）
 
 ## 10. 內容邊界（年幼、成人向、死亡）
 

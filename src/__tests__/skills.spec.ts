@@ -4,11 +4,12 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
 import { actionRules, perkRules, SKILL_IDS, skillOfAction, type PerkDef } from '@/engine/data'
 import { enterLocation, standOn } from '@/engine/grid'
-import { checkModifiers, checkSkills, describeEffects, matches, perkCategory, perkPower, sanitizePerk } from '@/engine/perks'
+import { checkModifiers, checkSkills, describeEffects, matches, perkCategory, perkPower, sanitizePerk, checkBonus } from '@/engine/perks'
 import { gateCheck, raiseAlert } from '@/engine/security'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 import { buildActionPrompt } from '@/narrator/judge'
+import { pcOf } from '@/engine/party'
 
 const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
 
@@ -104,5 +105,17 @@ describe('檢定分類（R20 C1）', () => {
     const pc2 = game().party[0]!
     pc2.customPerks = [perk('talk', [{ check: { skills: ['persuade'] }, bonus: 1 }])]
     expect(checkModifiers(pc2, { context: 'gate', kind: 'palace_gate', attr: 'cha' })).toEqual([{ label: '特質【talk】', value: 1 }])
+  })
+})
+
+describe('檢定分類：任務選項可以寫，沒寫時照屬性推', () => {
+  it('defaults by attribute, but not for free actions or training', () => {
+    expect([...checkSkills({ context: 'action', attr: 'cha' })]).toEqual(['persuade'])
+    expect([...checkSkills({ context: 'action', attr: 'cha', skill: 'deceive' })]).toEqual(['deceive'])
+    expect([...checkSkills({ context: 'action', kind: 'free', attr: 'cha' })]).toEqual([])
+    expect([...checkSkills({ context: 'action', kind: 'train', attr: 'cha' })]).toEqual([])
+    const s = game()
+    pcOf(s).perks = ['silver_tongue']
+    expect(checkBonus(pcOf(s), { context: 'action', attr: 'cha' })).toBe(2)
   })
 })

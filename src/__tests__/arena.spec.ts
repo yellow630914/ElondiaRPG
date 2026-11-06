@@ -1,11 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, afterEach } from 'vitest'
 import { arenaBlocked, arenaPurse, arenaRules, arenaTier, startArena } from '@/engine/arena'
-import { act, currentActor, effectiveLustMax, finishCombat } from '@/engine/combat'
+import { act, currentActor, effectiveLustMax, finishCombat, type Combatant } from '@/engine/combat'
 import { enterLocation, standOn } from '@/engine/grid'
 import { lewdOf } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
 import { addItem, newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
+import { setContentFilters } from '@/engine/content'
 
 function game(location = 'albena'): GameState {
   const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 9, birthplace: location })
@@ -106,5 +107,51 @@ describe('淫鬥場', () => {
     expect(foe.hp).toBe(0)
     expect(foe.lustDefeated).toBe(true)
     expect(combat.status).toBe('victory')
+  })
+})
+
+describe('性戰場', () => {
+  function myTurn(state: GameState, me: Combatant) {
+    for (let i = 0; i < 20 && state.combat?.status === 'ongoing' && currentActor(state.combat)?.id !== me.id; i++) act(state, { type: 'end_turn' })
+  }
+  afterEach(() => setContentFilters({ pc_unwilling: true }))
+
+  function arena() {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 9, birthplace: 'albena' })
+    enterLocation(state)
+    standOn(state, 'tavern')
+    state.money_cc = 10000
+    const pc = pcOf(state)
+    pc.level = 17
+    pc.loadout = undefined
+    pc.abilities.push('power_word_kill')
+    startArena(state, 'lust')
+    const me = state.combat!.combatants.find((c) => c.id === pc.id)!
+    const foe = state.combat!.combatants.find((c) => c.side === 'enemy')!
+    myTurn(state, me)
+    return { state, me, foe }
+  }
+
+  it('律令：死不殺人，改成讓對手立刻高潮一次', () => {
+    const { state, me, foe } = arena()
+    me.slots = [9, 9, 9, 9, 9, 9, 9, 9, 9]
+    const hp = foe.hp
+    act(state, { type: 'ability', ability: 'power_word_kill', target: foe.id })
+    expect(foe.hp).toBe(hp)
+    expect(foe.climaxes).toBe(1)
+  })
+
+  it('對手第三次高潮倒下，不標「隊員倒下」', () => {
+    const { state, foe } = arena()
+    foe.climaxes = 2
+    foe.lust = effectiveLustMax(foe) - 1
+    const me = state.combat!.combatants.find((c) => c.side === 'party')!
+    me.slots = [9, 9, 9, 9, 9, 9, 9, 9, 9]
+    act(state, { type: 'ability', ability: 'power_word_kill', target: foe.id })
+    expect(state.combat!.status).toBe('victory')
+    expect(foe.lustDefeated).toBe(true)
+    const report = finishCombat(state)
+    expect(report.outcome.tags).not.toContain('隊員倒下')
+    expect(report.outcome.tags).toContain('慾望勝利')
   })
 })

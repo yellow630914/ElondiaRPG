@@ -3,7 +3,7 @@ import { craftLessons, learnCraft } from '@/engine/craftLessons'
 import { skillOf } from '@/engine/crafting'
 import { enterLocation, standOn } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
-import { joinParty } from '@/engine/party'
+import { joinParty, pcOf } from '@/engine/party'
 import { newGame, withRng } from '@/engine/state'
 
 function game() {
@@ -55,5 +55,21 @@ describe('學工藝（R21 K5）', () => {
     crafter.tags = [...(crafter.tags ?? []), 'cook']
     const c = joinParty(s, crafter, 'voluntary')
     expect(skillOf(c, 'cooking').level).toBe(2)
+  })
+})
+
+describe('學工藝：隊伍裡的夥伴也能學', () => {
+  it('teaches the chosen member and logs it as an event', () => {
+    const s = game()
+    const rec = withRng(s, (rng) => generateNpc(s, rng, { level: 3, kind: 'adventurer', location: s.location }))
+    const m = joinParty(s, rec, 'voluntary')
+    standOn(s, 'smithy')
+    expect(craftLessons(s, m.id).map((l) => [l.craft, l.from])).toEqual([['smithing', 0], ['woodworking', 0]])
+    const r = learnCraft(s, 'smithing', m.id)
+    expect(skillOf(m, 'smithing').level).toBe(1)
+    expect(skillOf(pcOf(s), 'smithing').level).toBe(0)
+    expect(r.kind).toBe('event')
+    expect(r.outcome.summary).toContain(`替${m.name}付了`)
+    expect(r.outcome.summary).not.toContain('花練了')
   })
 })

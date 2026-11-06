@@ -1,12 +1,19 @@
 import { describe, expect, it } from 'vitest'
 import { baseSlotsFor, creationCatalog, generateLoadout, gearRules, slotNameFor } from '@/engine/gear'
-import { putOn } from '@/engine/inventory'
+import { putOn, equipItem, unequipItem } from '@/engine/inventory'
 import { builtinBase, sanitizeBase } from '@/engine/mods'
 import { exposureLevel } from '@/engine/lewd'
 import { npcOutfit } from '@/engine/outfits'
 import { Rng } from '@/engine/rng'
-import { newGame } from '@/engine/state'
-import type { GearSpec } from '@/engine/types'
+import { newGame, addItem } from '@/engine/state'
+import type { GearSpec, GameState } from '@/engine/types'
+import { restrainPc } from '@/engine/forcedGear'
+import { enterLocation } from '@/engine/grid'
+import { pcOf } from '@/engine/party'
+import { canStart, storyWearUnfit } from '@/engine/story'
+import { baseReport } from '@/engine/town'
+import { portraitSubject } from '@/narrator/imageInfo'
+import storiesJson from '@data/rules/stories.json'
 
 // 人馬族的裝備欄（docs/ITEMS.md 第 2 節）：內褲那一格是「後蹄」（鞋子類），下身、鞋子、後蹄、腿部飾品只能穿人馬族的底材
 const RESTRICTED = ['legs', 'feet', 'underwear_bottom', 'leg_accessory'] as const
@@ -88,5 +95,60 @@ describe('centaur gear slots', () => {
     const gear = { underwear_top: top, underwear_bottom: { name: '蹄靴', spec: spec('hoof_boots', 'leather') } }
     const human = exposureLevel({ gear: { underwear_top: top, underwear_bottom: { name: '亞麻內褲', spec: spec('panties', 'linen') } } })
     expect(exposureLevel({ gear, race: 'centaur' })).toBeGreaterThan(human)
+  })
+})
+
+describe('炎華之地：人馬族與限定穿著', () => {
+  type Story = { id: string; tags?: string[]; start: { min_level?: number; requires?: Record<string, unknown> }; nodes: { id: string; at?: Record<string, unknown>; options?: { tags?: string[]; requires?: unknown }[] }[] }
+  const stories = (storiesJson as unknown as { stories: Story[] }).stories
+  const by = (id: string) => stories.find((s) => s.id === id)!
+  function game(race: string): GameState {
+    const s = newGame({ name: '測試者', race, classId: 'fighter', seed: 3, birthplace: 'quanzhou' })
+    enterLocation(s)
+    return s
+  }
+
+  it('不發限定穿著有主角種族穿不了的任務（打工線要腳鍊、網襪、丁字褲）', () => {
+    const centaur = game('centaur')
+    const human = game('human')
+    const work = ['dance_bazaar', 'dance_chief', 'dance_night', 'expo_parade', 'bath_scrub', 'bath_vip', 'bath_deep', 'mate_paint', 'mate_chase', 'mate_bonfire', 'brine_bride', 'brine_parade', 'brine_spring']
+    for (const id of work) {
+      const def = by(id) as never
+      expect(storyWearUnfit(centaur, def).length, id).toBeGreaterThan(0)
+      expect(storyWearUnfit(human, def), id).toEqual([])
+      expect(canStart(centaur, def), id).toBe(false)
+    }
+    // 全部任務裡，人馬族穿不了的就是這 13 條
+    const unfit = stories.filter((s) => storyWearUnfit(centaur, s as never).length).map((s) => s.id)
+    expect(unfit.sort()).toEqual([...work].sort())
+  })
+
+  it('穿不了的原因照種族寫，日誌的欄位照種族叫', () => {
+    const s = game('centaur')
+    const pc = pcOf(s)
+    expect(() => putOn(pc, '皮靴', { base: 'boots', material: 'leather' })).toThrow(/人馬族穿不了一般的鞋子，只能穿人馬族的蹄鐵、蹄靴/)
+    expect(() => putOn(pc, '綁帶內褲', { base: 'panties', material: 'cotton' })).toThrow(/人馬族沒有穿內褲的地方（那一格是後蹄/)
+    delete pc.gear!.feet
+    delete pc.gear!.underwear_bottom
+    addItem(s.inventory, '鐵蹄鐵', 2)
+    s.customItems = { ...(s.customItems ?? {}), 鐵蹄鐵: { gear: { base: 'horseshoe', material: 'iron' } } as never }
+    expect(equipItem(s, '鐵蹄鐵', pc.id, 'underwear_bottom').outcome.summary).toContain('在後蹄裝上了鐵蹄鐵')
+    unequipItem(s, pc.id, 'underwear_bottom')
+    expect(() => unequipItem(s, pc.id, 'underwear_bottom')).toThrow('後蹄沒有裝備')
+  })
+
+  it('步鍊：人馬族戴不上', () => {
+    const s = game('centaur')
+    expect(restrainPc(s, baseReport(s, 'event', 0), '步鍊')).toBe('人馬族戴不上步鍊')
+  })
+
+  it('形象圖把人馬族的後蹄當鞋子：不算穿在裡面、不拉成腰部的構圖', () => {
+    const s = game('centaur')
+    const pc = pcOf(s)
+    pc.gear = { body: pc.gear!.body!, underwear_bottom: { name: '蹄靴', spec: { base: 'hoof_boots', material: 'leather' } } }
+    const p = portraitSubject(s, pc.id)!
+    expect(p.gear).toContain('蹄靴')
+    expect(p.gear.join()).not.toContain('穿在裡面')
+    expect(p.composition).toBe('upper body')
   })
 })

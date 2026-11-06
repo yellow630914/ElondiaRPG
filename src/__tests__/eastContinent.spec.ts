@@ -10,7 +10,7 @@ import { dungeonEncounters } from '@/engine/data'
 import { layerRanks } from '@/engine/materialQuests'
 import { QUEST_RANGE_DAYS } from '@/engine/town'
 import { npcTags, landmarks, specialMaps } from '@/engine/data'
-import { standOn } from '@/engine/grid'
+import { standOn, enterLocation } from '@/engine/grid'
 import { storyOffersHere } from '@/engine/story'
 import { stories, storyCounters } from '@/engine/data'
 import { palaceNeedsPersuading } from '@/engine/security'
@@ -21,6 +21,7 @@ import { itemDef } from '@/engine/data'
 import namedNpcs from '../../data/world/npcs.json'
 import mapsData from '../../data/world/maps.json'
 import travelEventsData from '../../data/rules/travel_events.json'
+import { roadEventFits, travelEvents } from '@/engine/road'
 
 // 炎華之地 P1（docs/plan/roadmap/EAST_CONTINENT_PLAN.md）：兩個種族、炎華南域的四座聚落、航線與野外
 describe('炎華之地', () => {
@@ -428,5 +429,46 @@ describe('炎華之地', () => {
     const s = newGame({ name: '測試者', race: 'linghu', classId: 'cleric', seed: 4, birthplace: 'qingqiu' })
     const races = ensureRoster(s, 'qingqiu')!.members.map((m) => npcRecord(s, m)!.race)
     expect(races.filter((r) => r === 'linghu').length).toBeGreaterThan(races.length / 2)
+  })
+})
+
+describe('炎華之地：任務與事件資料', () => {
+  const by = (id: string) => stories.find((s) => s.id === id)!
+  function game(race: string) {
+    const s = newGame({ name: '測試者', race, classId: 'fighter', seed: 3, birthplace: 'quanzhou' })
+    enterLocation(s)
+    return s
+  }
+
+  it('繡娘的手：工單照陸青禾在哪就在哪交', () => {
+    expect(by('yhw_seamstress').nodes.find((n) => n.id === 'give')!.at).toEqual({ where: 'npc', npc: 'npc_yh_lu_qinghe' })
+  })
+
+  it('那達慕之後的夜：非人馬族另一條、整條標 NTR', () => {
+    const pure = by('tdwn_after_naadam')
+    const other = by('tdwn_after_naadam_other')
+    expect(pure.start.requires).toEqual({ flags: ['tdwn_1_done'], pc_races: ['centaur'] })
+    expect(other.start.requires).toEqual({ flags: ['tdwn_1_done'], pc_races_none: ['centaur'] })
+    expect(pure.tags).toEqual(['adult'])
+    expect(other.tags).toEqual(['adult', 'ntr'])
+    expect(other.nodes.find((n) => n.id === 'want')!.options!.length).toBe(1)
+  })
+
+  it('五席的夜宴：等級照立憲（Lv.15）', () => {
+    expect(by('yg_five_seats').start.min_level).toBe(15)
+  })
+
+  it('遠洋事件去程回程都會遇到；受傷的旅人只在陸路', () => {
+    const s = game('human')
+    const tpl = (id: string) => travelEvents.templates.find((t) => t.id === id)!
+    // 瑔州港 → 潮汐港：要去的是東海群島，出發的是炎華南域
+    expect(roadEventFits(s, tpl('yhe_whales'), 'sea', ['east_sea', 'yanhua_south'])).toBe(true)
+    expect(roadEventFits(s, tpl('yhe_whales'), 'sea', ['yanhua_south', 'east_sea'])).toBe(true)
+    // 潮汐港 ↔ 珊瑚灣不會遇到
+    expect(roadEventFits(s, tpl('yhe_whales'), 'sea', ['east_sea', 'east_sea'])).toBe(false)
+    expect(roadEventFits(s, tpl('wounded_traveler'), 'sea', 'central')).toBe(false)
+    expect(roadEventFits(s, tpl('wounded_traveler'), 'road', 'central')).toBe(true)
+    const stow = (travelEventsData as unknown as { templates: { id: string; text: string }[] }).templates.find((t) => t.id === 'yhe_stowaway')!
+    expect(stow.text).toContain('瑔州港')
   })
 })

@@ -8,6 +8,7 @@ import { checkModifiers } from '@/engine/perks'
 import { addItem, newGame } from '@/engine/state'
 import { applyAiDeals, sellPrice, shopKey, shopState } from '@/engine/trade'
 import { defenseMult, startCombat } from '@/engine/combat'
+import { consignable } from '@/engine/auction'
 
 // 內建的獨特物品（寶箱、黑市）；任務的獨特裝備另外測（不進寶箱、不上黑市）
 const uniques = () => itemRules.items.filter((i) => i.gear?.unique && i.black_market)
@@ -173,5 +174,15 @@ describe('unique gear', () => {
       expect(gearSummary(i.gear!), i.name).toContain('獨特：')
       expect(i.black_market, i.name).toBeFalsy()
     }
+  })
+})
+
+describe('拍賣會', () => {
+  it('拍賣會和商店一樣不收獨特裝備', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    addItem(state.inventory, '看板娘的圍裙', 1)
+    addItem(state.inventory, '媚藥瓶', 1)
+    expect(consignable(state)).not.toContain('看板娘的圍裙')
+    expect(consignable(state)).toContain('媚藥瓶')
   })
 })

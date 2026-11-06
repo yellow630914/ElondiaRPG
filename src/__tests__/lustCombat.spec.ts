@@ -6,6 +6,7 @@ import { useItem } from '@/engine/inventory'
 import { pcOf } from '@/engine/party'
 import { addItem, newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
+import { npcRecord } from '@/engine/npcs'
 
 /** 主角一個人、會指定的色情技能，打一隻怪；回合輪到主角為止 */
 function fight(abilities: string[], group: [string, number][] = [['goblin', 1]], lustMult?: number) {
@@ -247,5 +248,63 @@ describe('技能書', () => {
     expect(pc.abilities).toContain('lust_tease')
     addItem(state.inventory, '《情焰秘法》', 1)
     expect(() => useItem(state, '《情焰秘法》', pc.id)).toThrow('5 級')
+  })
+})
+
+describe('慾望戰鬥的修正', () => {
+  function fight(abilities: string[], group: [string, number][]) {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    const pc = pcOf(state)
+    pc.abilities.push(...abilities)
+    pc.loadout = undefined
+    pc.level = 13
+    pc.hp = pc.maxHp = 200
+    const combat = startCombat(state, group)
+    const me = combat.combatants.find((c) => c.id === pc.id)!
+    return { state, combat, me }
+  }
+
+  it('獻祭的契紋：多目標的引爆只放一次', () => {
+    const { state, combat, me } = fight(['lust_sacrifice_sigil', 'burst_bliss'], [['goblin', 4]])
+    myTurn(state, me)
+    for (const c of combat.combatants) if (c.side === 'enemy') c.hp = c.maxHp = 9999
+    act(state, { type: 'ability', ability: 'lust_sacrifice_sigil' })
+    me.lust = effectiveLustMax(me) - 1
+    const n0 = combat.timeline.length
+    act(state, { type: 'ability', ability: 'burst_bliss' })
+    expect(combat.timeline.slice(n0).filter((t) => t.action === '獻祭的契紋')).toHaveLength(1)
+  })
+
+  it('緋夢樂園的怪與魔族不會擲到年幼', () => {
+    for (let seed = 1; seed <= 40; seed++) {
+      const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed })
+      const combat = startCombat(state, [['lp_succ_dancer', 3], ['lp_lewd_cat', 3]])
+      for (const c of combat.combatants.filter((x) => x.side === 'enemy')) expect(c.traits ?? []).not.toContain('young')
+    }
+  })
+
+  it('層主的慾望上限照生命比例放大，一般怪物不變', () => {
+    const { combat } = fight([], [['lp_boss_queen', 1], ['lp_succ_dancer', 1]])
+    const boss = combat.combatants.find((c) => c.defId === 'lp_boss_queen')!
+    const minion = combat.combatants.find((c) => c.defId === 'lp_succ_dancer')!
+    expect(boss.boss).toBe(true)
+    // 1170 HP 對同等級一般怪物（約 87 HP）
+    expect(boss.lustMax!).toBeGreaterThan(lustMaxFor(enemies.lp_boss_queen!.level) * 10)
+    expect(minion.lustMax).toBe(lustMaxFor(minion.level))
+  })
+})
+
+describe('任務戰鬥的慾望勝利', () => {
+  it('被慾望勝利打倒的具名 NPC 不會死，戰報寫被制伏', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    const id = 'npc_lina'
+    const combat = startCombat(state, [], { npcs: [id], story: { id: 'none', node: 'none' } })
+    const foe = combat.combatants.find((c) => c.npcId === id)!
+    foe.hp = 0
+    foe.lustDefeated = true
+    combat.status = 'victory'
+    const report = finishCombat(state)
+    expect(npcRecord(state, id)?.dead).toBeFalsy()
+    expect(report.others?.find((o) => o.name === foe.name)?.status).toContain('在高潮中屈服、被制伏')
   })
 })
