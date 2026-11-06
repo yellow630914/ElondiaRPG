@@ -3,15 +3,16 @@
 // 戰敗掉落（defeatLoot）另外在 expedition.ts；難度（difficulty）的係數在下面。說明見 docs/SAVES.md 第 7 節。
 
 import type { Difficulty, GameOptions, GameState } from './types'
-import { companionRules, combatRules, enemies, isLayerBoss, MINION_TIERS, minionTier, type MinionTier } from './data'
+import { className, companionRules, combatRules, enemies, isLayerBoss, MINION_TIERS, minionTier, type MinionTier } from './data'
 // 直接讀 JSON：security.ts 會用到這裡，避免循環引用
 import securityJson from '@data/rules/security.json'
 import slaveryJson from '@data/rules/slavery.json'
 import parasitesJson from '@data/rules/parasites.json'
 import lewdJson from '@data/rules/lewd.json'
+import gearJson from '@data/rules/gear.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit'>
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
 
 export interface RuleDef {
   label: string
@@ -36,7 +37,7 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   longRestHours: { label: '長休的時間', hint: `長休花幾小時（預設 ${companionRules.rest.long_hours}）。住旅店照樣住到隔天早上。`, default: companionRules.rest.long_hours, min: 2, max: 12, step: 1, unit: '小時' },
   alertDecayDays: { label: '衛兵警戒多久降一級', hint: `犯案被目擊後，城裡的警戒每隔幾天降 1（預設 ${securityJson.alert.decay_days}）。`, default: securityJson.alert.decay_days, min: 1, max: 30, step: 1, unit: '天' },
   sellGlutPct: { label: '收購遞減', hint: '同一間店收購同一類東西（礦石與金屬、皮革與毛皮……）時，每收一件，下一件的收購價降這麼多（最多降 50%），每天慢慢回復，讓跑商不會無限賺。0 表示不遞減。', default: 3, min: 0, max: 10, step: 1, unit: '%', zero: '不遞減' },
-  blackMarketGear: { label: '黑市每天的珍品', hint: '知道黑市的城鎮，黑市每天刷新幾件獨特裝備（物品勾了「也會出現在黑市」的）。0 表示黑市不賣裝備。', default: 3, min: 0, max: 10, step: 1, unit: '件', zero: '不賣裝備' },
+  blackMarketGear: { label: '黑市每天的珍品', hint: '地下街裡的黑市每天刷新幾件獨特裝備（物品勾了「也會出現在黑市」的）。0 表示黑市不賣裝備。', default: 3, min: 0, max: 10, step: 1, unit: '件', zero: '不賣裝備' },
   masterEventMult: { label: '主人事件的機率', hint: `被主人帶著時，主人突發事件的機率乘上這個倍率（預設：走動每一步 ${pct(slaveryJson.master_events.step_chance)}、旅行每趟 ${pct(slaveryJson.master_events.travel_chance)}）。0 表示主人不會突然提出要求（離家逾期的「主人要回家」照樣會發生）。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   parasiteMult: { label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
   dungeonEventMult: { label: '地下城事件的機率', hint: '地下城與近郊的事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率，普通與成人向的事件都算。0 表示不會發生。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
@@ -51,6 +52,11 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   gatherMult: { label: '採集量', hint: '近郊、地下城與特殊地圖的採集點，每一格採到幾份材料（小數的部分是機率，例如 1.5 是一半的機會多 1 份）。古錢的金額不受影響（看「報酬與戰利品的錢」）。', default: 2, min: 1, max: 5, step: 0.5, unit: '份' },
   escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
+
+/** 存檔規則「職業武器限制」的說明（新遊戲與設定共用；清單在 gear.json 的 classes[].weapons） */
+export const CLASS_WEAPONS_HINT = `勾選時，主手只能拿職業能用的武器類型（${Object.entries(gearJson.classes as Record<string, { weapons?: string[] }>)
+  .filter(([, c]) => c && typeof c === 'object' && c.weapons)
+  .map(([id, c]) => `${className(id)}：${c.weapons!.length ? c.weapons!.join('、') : '不拿武器'}`).join('；')}）。這樣職業技能不會配到說不通的武器，例如拿著鎚子放箭雨。盾牌、法器這類副手不受限制。`
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`

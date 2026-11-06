@@ -846,6 +846,8 @@ export interface GameOptions {
   tagChange?: boolean
   /** 大成功、大失敗只看骰面：只有骰出 20 才大成功、骰出 1 才大失敗（engine/checks.ts） */
   naturalCrit?: boolean
+  /** 職業武器限制：主手只能拿職業能用的武器類型（gear.json 的 classes[].weapons；inventory.ts 的 enforceClassWeapons）。新遊戲預設打開，舊存檔沒有這一項＝關閉 */
+  classWeapons?: boolean
 }
 
 /** 這一趟地下城探索（進入地下城時開始，離開時結束） */
@@ -1007,7 +1009,11 @@ export interface GameState {
   /** 在臨時地圖裡：離開時回到的位置 */
   side?: { area: string; back: { area: string; x: number; y: number }; /** 特殊任務帶進來的臨時地圖：離開就放棄這個任務 */ story?: string }
   /** 在特殊地圖裡：從外面進來前的位置與地點（從出口離開時回到那裡），走過的需要刷新的地圖 */
-  special?: { back?: { area: string; x: number; y: number }; location: string; visited: string[] }
+  special?: {
+    back?: { area: string; x: number; y: number }; location: string; visited: string[]
+    /** 從特殊地圖裡的地標走進它的內部（例如地下街裡的俱樂部）：從內部的出口離開時回到這些格子（後進先出） */
+    inner?: { area: string; x: number; y: number }[]
+  }
   /** 冒險筆記的情報 */
   intel?: Intel[]
   /** 怪物圖鑑：怪物 id → 聽說、遭遇、擊敗（bestiary.ts） */

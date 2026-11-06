@@ -8,6 +8,7 @@ import { leavePark } from '@/engine/park'
 import { charmGatePass } from '@/engine/charm'
 import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
+import { enterUnderworld } from '@/engine/underworld'
 import * as perkActions from '@/engine/perkActions'
 import * as townEvents from '@/engine/townEvents'
 import { setPcTags } from '@/engine/pcTags'
@@ -201,7 +202,7 @@ let repairNotice: string | null = null
 function load(s: GameState): GameState {
   migrate(s)
   // 壞檔救濟：被帶回主人的家時沒有結束的旅途（v0.5.1 以前）
-  repairNotice = road.repairStrandedRoad(s)
+  repairNotice = [road.repairStrandedRoad(s), ...inventory.enforceClassWeapons(s).map((x) => `${x}。`)].filter(Boolean).join(' ') || null
   // 自訂內容刪掉的特殊任務：中斷，任務同行的夥伴離隊
   story.pruneStories(s)
   // 自訂內容刪掉的事件：等待中的作廢
@@ -1366,6 +1367,7 @@ export const useGame = defineStore('game', () => {
     visitLandmark: () => run(visitLandmark),
     /** 走進站著的地標的內部（特殊地圖） */
     enterLandmark: () => run(enterLandmark, { onMap: true }),
+    enterUnderworld: () => run(enterUnderworld, { onMap: true }),
     /** 選站著的地標上的場景 */
     playLandmarkScene: (index: number) => run((s) => playLandmarkScene(s, index)),
     /** 把生成的人存成固定 NPC（存進目前的世界） */
@@ -1496,6 +1498,15 @@ export const useGame = defineStore('game', () => {
       const { trapLure: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
       state.value.options = { ...rest, ...(on ? { trapLure: true } : {}) }
       if (!on) delete state.value.trapLure
+      save()
+    },
+    /** 這個存檔的職業武器限制（打開時，主手拿著職業不能用的武器的人卸下武器，見 inventory.ts 的 enforceClassWeapons） */
+    setClassWeapons: (on: boolean) => {
+      if (!state.value) return
+      const { classWeapons: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
+      state.value.options = { ...rest, ...(on ? { classWeapons: true } : {}) }
+      const moved = inventory.enforceClassWeapons(state.value)
+      if (moved.length) flash(`${moved.join('；')}。`, 8000)
       save()
     },
     /** 這個存檔的大成功、大失敗只看骰面（20 與 1，見 engine/checks.ts） */

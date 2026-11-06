@@ -53,6 +53,15 @@ function currentMaterial(): MaterialMod {
 }
 const base = ref<BaseMod>(props.kind === 'base' ? currentBase() : ({} as BaseMod))
 const defaultType = computed(() => (base.value.slot ? defaultBaseType(base.value as Parameters<typeof defaultBaseType>[0]) : ''))
+/** 類型的選項：依欄位只列主手、副手或護甲衣物的類型；以前手打、不在清單裡的類型保留在最後 */
+const typeOptions = computed(() => {
+  const slot = base.value.slot
+  const off = BASE_TYPE_ORDER.indexOf('盾')
+  const wear = BASE_TYPE_ORDER.indexOf('金屬護甲')
+  const list = slot === 'main_hand' ? BASE_TYPE_ORDER.slice(0, off) : slot === 'off_hand' ? BASE_TYPE_ORDER.slice(off, wear) : BASE_TYPE_ORDER.slice(wear)
+  const cur = base.value.type
+  return cur && !list.includes(cur) ? [...list, cur] : list
+})
 function setOutfit(v: string) {
   if (v) base.value.outfit = v as OutfitKind
   else delete base.value.outfit
@@ -172,9 +181,11 @@ function remove() {
           <label>仇恨（0.1 = +10%）<input v-model.number="base.threat" type="number" step="0.05" /></label>
         </div>
         <label v-if="base.slot === 'main_hand'" class="check small"><input v-model="base.two_handed" type="checkbox" :disabled="builtin" /> 雙手武器（空出副手）</label>
-        <label class="block"><span>打造時的類型 <Hint text="打造裝備時「部位 → 類型 → 底材」的類型（例如刀劍、盾、皮革護甲）。留空時：主手、副手是「其他武器」「其他副手」，成人向服裝一類，有減傷的是護甲，寶石是飾品，其他照材料是衣物。" /></span>
-          <input v-model="base.type" maxlength="8" list="gear-base-types" :placeholder="`留空：${defaultType}`" />
-          <datalist id="gear-base-types"><option v-for="t in BASE_TYPE_ORDER" :key="t" :value="t" /></datalist>
+        <label class="block"><span>類型 <Hint text="打造裝備時「部位 → 類型 → 底材」的類型（例如刀劍、盾、皮革護甲）。自動：主手、副手是「其他武器」「其他副手」，成人向服裝一類，有減傷的是護甲，寶石是飾品，其他照材料是衣物。主手武器的類型也決定存檔規則「職業武器限制」打開時哪些職業能拿（例如遊俠只能拿弓弩）；「其他武器」哪個職業都不能拿。" /></span>
+          <select :value="base.type ?? ''" @change="base.type = ($event.target as HTMLSelectElement).value || undefined">
+            <option value="">自動（{{ defaultType }}）</option>
+            <option v-for="t in typeOptions" :key="t" :value="t">{{ t }}</option>
+          </select>
         </label>
         <label class="block">描述 <input v-model="base.desc" maxlength="120" /></label>
         <div class="block icon-row"><span>圖示</span><IconField v-model="base.icon" :fallback="baseFallback" hint="用這個底材做的裝備都用這張圖（物品自己有上傳圖時用物品的）。上傳的圖會縮到 48×48 以內，存在這個世界裡。" /></div>

@@ -8,7 +8,7 @@
 
 import gearJson from '@data/rules/gear.json'
 import {
-  armorDef, attrName, raceName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
+  armorDef, attrName, className, raceName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
   type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type Mods,
 } from './data'
 import { describeEffects } from './perks'
@@ -157,6 +157,8 @@ export interface ClassGearTemplate {
   off: string[]
   body: string[]
   pieces: MaterialKind
+  /** 存檔規則「職業武器限制」打開時，主手能拿的武器類型（底材的 type）；空陣列＝只能空手，沒寫＝不限（docs/ITEMS.md 第 2.2 節） */
+  weapons?: string[]
 }
 
 /** 種族的裝備模板（gear.json 的 races） */
@@ -627,7 +629,7 @@ export interface CreationSlot {
  */
 const ARMOR_WEIGHT: Record<string, number> = { cloth: 0, leather: 1, metal: 2 }
 
-export function creationSlots(classId: string, race?: string): CreationSlot[] {
+export function creationSlots(classId: string, race?: string, classWeapons = false): CreationSlot[] {
   const t = gearRules.classes[classId] ?? gearRules.classes.fighter!
   const blocked = new Set(race ? gearRules.races[race]?.blocked ?? [] : [])
   // 種族限定的底材與欄位（沒給種族時照底材本來的位置，種族限定的底材不列）
@@ -649,7 +651,8 @@ export function creationSlots(classId: string, race?: string): CreationSlot[] {
       const outfits = slot === 'body' && fromClass.length
         ? Object.entries(gearRules.bases).filter(([id, b]) => b.outfit && b.slot === 'body' && fits(id, b, 'body') && ARMOR_WEIGHT[b.kind]! <= (ARMOR_WEIGHT[t.pieces] ?? 2)).map(([id]) => id)
         : []
-      const bases = [...new Set([...fromClass, ...custom, ...outfits])].filter((b) => baseShown(b) && fits(b, gearRules.bases[b]!, slot))
+      // 職業武器限制打開時，主手不列職業不能拿的武器（自建的底材）
+      const bases = [...new Set([...fromClass, ...custom, ...outfits])].filter((b) => baseShown(b) && fits(b, gearRules.bases[b]!, slot) && !(classWeapons && classWeaponBlock(classId, { base: b, material: '' })))
       if (bases.length) out.push({ slot, template: !!t.start[slot], bases })
       continue
     }
@@ -684,9 +687,9 @@ export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> =
 }
 
 /** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */
-export function creationCatalog(classId: string, race?: string): { slot: GearSlot; template: boolean; options: CreationOption[] }[] {
+export function creationCatalog(classId: string, race?: string, classWeapons = false): { slot: GearSlot; template: boolean; options: CreationOption[] }[] {
   const maxTier = gearRules.creation.max_tier
-  return creationSlots(classId, race).map((s) => ({
+  return creationSlots(classId, race, classWeapons).map((s) => ({
     slot: s.slot,
     template: s.template,
     options: [
@@ -726,8 +729,8 @@ export function creationCost(classId: string, choice: CreationGear): number {
  * 依建角的選擇產生起始裝備：檢查底材在這個欄位的清單裡、材料等級在 1～max_tier、雙手武器不帶副手、
  * 花費不超過預算。模板欄位沒選時用職業的起始底材（第一級材料）。不合法時丟錯
  */
-export function creationGear(classId: string, choice: CreationGear, budget: number, race?: string): Partial<Record<GearSlot, EquippedGear>> {
-  const slots = creationSlots(classId, race)
+export function creationGear(classId: string, choice: CreationGear, budget: number, race?: string, classWeapons = false): Partial<Record<GearSlot, EquippedGear>> {
+  const slots = creationSlots(classId, race, classWeapons)
   const t = gearRules.classes[classId] ?? gearRules.classes.fighter!
   const maxTier = gearRules.creation.max_tier
   const picks: CreationGear = {}
@@ -1125,3 +1128,21 @@ export function chestForgeTable(layer: string, level: number): [number, number][
 
 /** 材料等級的上限（第 6、7 級只從 Lv.13～20 的地下城取得；打造的工錢、DC 與工藝等級都到這一級） */
 export const MAX_TIER = 7
+
+// ---- 職業武器限制（存檔規則 classWeapons，docs/ITEMS.md 第 2.2 節） ----
+
+/** 這件裝備是不是主手的武器（盾、法器、副手短劍不算） */
+export function isMainWeapon(spec: GearSpec): boolean {
+  const b = gearRules.bases[spec.base]
+  return !!b?.weapon && b.slot === 'main_hand'
+}
+
+/** 職業不能拿這件武器的原因；能拿、不是主手武器、職業沒有限制時是 null */
+export function classWeaponBlock(classId: string, spec: GearSpec): string | null {
+  const allowed = gearRules.classes[classId]?.weapons
+  if (!allowed || !isMainWeapon(spec)) return null
+  const type = gearRules.bases[spec.base]?.type ?? ''
+  if (allowed.includes(type)) return null
+  const who = className(classId)
+  return allowed.length ? `${who}只能拿${allowed.join('、')}類的武器` : `${who}不拿武器，只用拳腳`
+}

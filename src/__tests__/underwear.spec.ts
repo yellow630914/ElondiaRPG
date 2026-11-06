@@ -26,7 +26,8 @@ describe('underwear slots', () => {
   it('does not change the rest of a generated loadout', () => {
     const a = createNpc(npc('female'), new Rng(7))
     const b = createNpc(npc('male'), new Rng(7))
-    const strip = (g: typeof a.gear) => Object.fromEntries(Object.entries(g ?? {}).filter(([k]) => !k.startsWith('underwear')))
+    // 腿飾空著時依體型補服裝（女性體型有長襪、男性沒有），和內衣一樣不比
+    const strip = (g: typeof a.gear) => Object.fromEntries(Object.entries(g ?? {}).filter(([k]) => !k.startsWith('underwear') && k !== 'leg_accessory'))
     expect(strip(a.gear)).toEqual(strip(b.gear))
   })
 

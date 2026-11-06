@@ -2,7 +2,7 @@
 // 內建的地標每一項都可以改（位置只能在同一個聚落裡移動），不能刪除；自建的地標可以擺在任何聚落，沒有被用到時可以刪除。
 
 import {
-  ATTR_IDS, geography, isLandmarkId, specialMapLegend, specialMaps, type LandmarkScene, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
+  ATTR_IDS, geography, isLandmarkId, specialMapLegend, specialMaps, type LandmarkScene, type SpecialMapDef, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
 } from './data'
 import { cleanFlag } from './storyFlags'
 import { sanitizeEffects } from './storyMods'
@@ -17,7 +17,20 @@ export interface LandmarkMod extends LandmarkDef {
 }
 
 /** 地標的格子有什麼問題：要是道路（或已經是這個地標），而且不能是待售的空地；沒問題時回傳 undefined */
-export function landmarkSpotProblem(id: string, at: { area: string; x: number; y: number }): string | undefined {
+export function landmarkSpotProblem(id: string, at: { area: string; x: number; y: number }, pack?: LandmarkPack): string | undefined {
+  // 擺在特殊地圖裡（例如地下街）：要是地圖上畫的空地，不能是入口、通道或商店的格子
+  if (at.area.startsWith('sm/')) {
+    const id2 = at.area.slice(3)
+    const map = mapOf(id2, pack)
+    if (!map) return '特殊地圖不存在或不是固定地圖'
+    const legend = { ...specialMapLegend, ...(map.legend ?? {}) }
+    if (legend[map.grid![at.y]?.[at.x] ?? '#'] !== 'floor') return '不是空地'
+    const def = specialMaps[id2] ?? (pack?.maps?.[id2] as unknown as SpecialMapDef | undefined)
+    if (def?.entry && def.entry.x === at.x && def.entry.y === at.y) return '是地圖的入口'
+    if (def?.shops?.some((s) => s.x === at.x && s.y === at.y)) return '擺了商店'
+    if (def?.connections?.some((c) => c.at.x === at.x && c.at.y === at.y)) return '是通道的端點'
+    return undefined
+  }
   const area = settlementArea(at.area)
   const kind = area?.cells[at.y * area.width + at.x]?.kind
   if (kind !== 'floor' && kind !== id) return '不是空地（道路）'
@@ -81,11 +94,18 @@ function mapOf(id: string, pack?: LandmarkPack): MapLike | undefined {
   return { grid: m.grid as string[], location: typeof m.location === 'string' ? m.location : undefined, legend: m.legend }
 }
 
+/** 地標可以擺進去的特殊地圖（固定地圖）：大小與所屬地點 */
+function specialSpotArea(key: string, pack?: LandmarkPack): { key: string; location: string; width: number; height: number } | undefined {
+  const map = mapOf(key.slice(3), pack)
+  if (!map?.grid?.length || !map.location) return undefined
+  return { key, location: map.location, width: Math.max(...map.grid.map((r) => [...r].length)), height: map.grid.length }
+}
+
 export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>, pack?: LandmarkPack): LandmarkMod {
   if (!isLandmarkId(id)) throw new Error('地標的 id 要是 lm_ 開頭')
   const base = builtinLandmark(id)
   const L = LANDMARK_LIMITS
-  const area = typeof raw.at?.area === 'string' ? settlementArea(raw.at.area, false) : undefined
+  const area = typeof raw.at?.area === 'string' ? (raw.at.area.startsWith('sm/') ? specialSpotArea(raw.at.area, pack) : settlementArea(raw.at.area, false)) : undefined
   const location = base?.location ?? area?.location ?? ''
   if (!geography.locations.some((l) => l.id === location && l.type !== 'dungeon')) throw new Error('地標要擺在聚落裡')
   const at = area && area.location === location
@@ -159,8 +179,10 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>, pack?
   // 內部：同一個聚落的固定特殊地圖
   const inner = typeof raw.interior === 'string' ? mapOf(raw.interior, pack) : undefined
   if (inner?.grid?.length && inner.location === location) out.interior = raw.interior
-  // 拍賣會（成人向，auction.ts）
+  // 拍賣會（成人向，auction.ts）、黑市（slavery.json 的 markets）、淫鬥場（成人向，arena.ts）
   if (raw.auction) out.auction = true
+  if (raw.black_market) out.black_market = true
+  if (raw.arena) out.arena = true
   // 場景：要有名稱與經過；內部的格子要在地圖裡、走得進去
   const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map((x) => sanitizeScene(x, out.interior, pack)).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
   if (scenes.length) out.scenes = scenes

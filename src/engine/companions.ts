@@ -6,7 +6,7 @@
 // 4. 作為奴隸：主角在市場登記出售自己，被別人買入隊伍；主要看魅力與等級，很難主動影響。
 // 5. 事件入隊：事件報酬（效果 companion，自願或奴隸），或主動邀請認識的人（需要親密度與魅力檢定）。
 //
-// 需要檢定的部分（雇傭談判、殺價、邀請、打聽黑市、談判解除契約、逃離）走主動行動（actions.ts），
+// 需要檢定的部分（雇傭談判、殺價、邀請、打聽地下街、談判解除契約、逃離）走主動行動（actions.ts），
 // 這裡提供參考 DC、各成功程度的機制結果，以及套用結果的函式。
 
 import { pcTagMult } from './pcTags'
@@ -52,6 +52,7 @@ import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report,
 import { contractOf, placeName } from './tattoos'
 import { lewdOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { gameRule } from './gameRules'
+import { blackMarketHere, underworldAskBlocked, underworldFlag, underworldLandmarks, underworldOf } from './underworld'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
@@ -418,13 +419,14 @@ export function marketsHere(state: GameState): { kind: MarketKind; def: MarketDe
   const m = slaveryRules.markets[state.location]
   const list: { kind: MarketKind; def: MarketDef }[] = []
   if (m?.public) list.push({ kind: 'public', def: m.public })
-  if (m?.black && state.flags[`black_market:${state.location}`]) list.push({ kind: 'black', def: m.black })
+  // 黑市在地下街裡：站在黑市的地標上才找得到（underworld.ts）
+  if (m?.black && blackMarketHere(state)) list.push({ kind: 'black', def: m.black })
   return list
 }
 
 function marketDef(state: GameState, kind: MarketKind): MarketDef {
   const def = marketsHere(state).find((m) => m.kind === kind)?.def
-  if (!def) throw new Error(kind === 'black' ? '你不知道這裡的黑市在哪' : '這裡沒有奴隸市場')
+  if (!def) throw new Error(kind === 'black' ? '黑市在地下街裡' : '這裡沒有奴隸市場')
   return def
 }
 
@@ -545,13 +547,14 @@ export function applyPalaceGate(state: GameState, degree: Degree): string {
   return settlePalacePersuasion(state, degree === 'critical' || degree === 'success', degree === 'fumble', palaceGateName(state))
 }
 
-/** 黑市的打聽：不管這裡有沒有黑市都可以試；沒有黑市時成功也找不到。 */
+/** 在酒館打聽地下街（主動行動 black_market）：這座城有地下街才能打聽（underworld.ts）；成功以上知道入口 */
 export function applyBlackMarket(state: GameState, report: Report, degree: Degree): string {
-  const exists = !!slaveryRules.markets[state.location]?.black
+  const map = underworldOf(state.location)
   if (degree === 'critical' || degree === 'success') {
-    if (!exists) return '問了一圈，這裡似乎真的沒有地下的奴隸買賣。'
-    ;(report.changes.flags ??= {})[`black_market:${state.location}`] = true
-    return `打聽到了${slaveryRules.markets[state.location]!.black!.name}的位置。`
+    if (!map) return '問了一圈，這裡似乎真的沒有見不得光的買賣。'
+    ;(report.changes.flags ??= {})[underworldFlag(state.location)] = true
+    const inside = underworldLandmarks(map).filter((l) => !l.open?.hidden).map((l) => l.name)
+    return `打聽到了進${map.name}的路（從酒館進去）${inside.length ? `：裡面有${inside.join('、')}` : ''}。`
   }
   if (degree === 'partial') return '有人暗示了幾句，但還不夠找到地方。'
   if (degree === 'fumble') {
@@ -933,11 +936,13 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       }
     }
     case 'black_market': {
-      assertFree(state, '自己打聽黑市')
+      assertFree(state, '自己打聽地下街')
+      const why = underworldAskBlocked(state)
+      if (why) throw new Error(why)
       const r = slaveryRules.black_market_search
       return {
         dc: r.dc, situational: [], scene: tavernScene(state),
-        outcomes: { critical: '找到黑市（如果這裡有）', success: '找到黑市（如果這裡有）', partial: '得到一點線索', fail: '沒人透露', fumble: '被衛兵盯上（聲望 -1）' },
+        outcomes: { critical: '知道地下街的入口', success: '知道地下街的入口', partial: '得到一點線索', fail: '沒人透露', fumble: '被衛兵盯上（聲望 -1）' },
       }
     }
     case 'palace_gate': {

@@ -87,7 +87,7 @@ export function newGame(opts: NewGameOptions): GameState {
   const background = clip(opts.background, 800)
   // 建角時挑的裝備：不合法時（例如預算不夠）丟錯，畫面上會先擋下來
   if (opts.gear) {
-    pc.gear = creationGear(opts.classId, opts.gear, Math.max(0, opts.gearBudget ?? gearRules.creation.default_budget), opts.race)
+    pc.gear = creationGear(opts.classId, opts.gear, Math.max(0, opts.gearBudget ?? gearRules.creation.default_budget), opts.race, !!opts.options?.classWeapons)
     syncGear(pc, classDef(opts.classId).weapon)
   }
   if (gender) pc.gender = gender

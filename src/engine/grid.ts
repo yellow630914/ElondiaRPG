@@ -16,7 +16,7 @@ import {
   attrName, contentRevision, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
-import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
+import { endpointsIn, enterSpecial, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { chestForgeCandidates, chestForgeTable, gearRules, localLootItems, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { blueprintName, blueprintRules, grantBlueprint, randomBlueprint } from './blueprints'
 import { isMaterialQuest, questTargets } from './materialQuests'
@@ -359,7 +359,7 @@ function findChar(block: BlockDef, ch: string): { x: number; y: number } | null 
 /** 取得區域：固定地圖即時建立，隨機區域從存檔讀取。 */
 export function getArea(state: GameState, key: string): Area {
   // 特殊地圖：存在存檔裡（定義改過時重新生成），每次都依旗標套上通道
-  if (key.startsWith('sm/')) return overlayConnections(state, specialArea(state, key.slice(3)))
+  if (key.startsWith('sm/')) return placeLandmarks(state, overlayConnections(state, specialArea(state, key.slice(3))))
   const stored = state.areas?.[key]
   if (stored) return stored
   // 玩家的房子：存在房子的資料裡
@@ -389,6 +389,27 @@ export function landmarkHidden(state: GameState, l: LandmarkDef): boolean {
   if (namedNpcs.some((n) => n.landmark === l.id && n.mentor?.perks.length)) return false
   // 沒勾的（打工線的委託人所在、完成之後才有場景的地標）：還有接得到或進行中的任務要用到時留著，任務點才走得到
   return !!o?.hidden || !storyNeedsLandmark(state, l.id)
+}
+
+/**
+ * 特殊地圖裡的地標（例如地下街的黑市）：特殊地圖存在存檔裡，每次讀取時依現在的設定擺上或拿掉；
+ * 只擺在空地上，還沒出現的還原成空地（地標搬走、刪掉時也還原）
+ */
+function placeLandmarks(state: GameState, area: Area): Area {
+  for (let i = 0; i < area.cells.length; i++) {
+    const kind = area.cells[i]!.kind
+    if (!kind.startsWith('lm_')) continue
+    const l = landmarkDef(kind)
+    if (!l || l.at.area !== area.key || l.at.y * area.width + l.at.x !== i) area.cells[i] = { kind: 'floor' }
+  }
+  for (const l of Object.values(landmarks)) {
+    if (l.at.area !== area.key || l.at.x >= area.width || l.at.y >= area.height) continue
+    const i = l.at.y * area.width + l.at.x
+    const kind = area.cells[i]?.kind
+    if (kind === 'floor' && !landmarkHidden(state, l)) area.cells[i] = { kind: l.id as CellKind }
+    else if (kind === l.id && landmarkHidden(state, l)) area.cells[i] = { kind: 'floor' }
+  }
+  return area
 }
 
 /** 還沒出現的地標還原成道路 */
@@ -493,6 +514,15 @@ export function standOn(state: GameState, kind: CellKind): boolean {
       placeAt(state, area, i % area.width, Math.floor(i / area.width))
       return true
     }
+  }
+  // 擺在特殊地圖裡的地標（例如地下街的黑市）：走進那張地圖、站上去
+  const l = landmarkDef(kind)
+  if (l && l.location === state.location && l.at.area.startsWith('sm/')) {
+    const area = getArea(state, l.at.area)
+    if (cellAt(area, l.at.x, l.at.y)?.kind !== kind) return false
+    enterSpecial(state, l.at.area.slice(3))
+    placeAt(state, getArea(state, l.at.area), l.at.x, l.at.y)
+    return true
   }
   return false
 }
@@ -938,6 +968,8 @@ export function generateSpecial(state: GameState, def: SpecialMapDef, rng: Rng):
     ...endpointsIn(area.key).map((e) => e.y * width + e.x),
     ...(def.entry ? [def.entry.y * width + def.entry.x] : []),
     ...cells.map((c, i) => (c.kind === 'exit' ? i : -1)).filter((i) => i >= 0),
+    // 擺在這張地圖上的地標（讀取時才擺上去，見 placeLandmarks）
+    ...Object.values(landmarks).filter((l) => l.at.area === area.key).map((l) => l.at.y * width + l.at.x),
   ])
   const scatter = (count: number, kind: string) => {
     for (const i of randomCells(rng, area, count, used)) {

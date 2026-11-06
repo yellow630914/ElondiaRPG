@@ -12,12 +12,12 @@ import AppDialog from './AppDialog.vue'
 import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
 
-const props = defineProps<{ open: boolean; classId: string; race: string; budget: number; spent: number }>()
+const props = defineProps<{ open: boolean; classId: string; race: string; classWeapons?: boolean; budget: number; spent: number }>()
 const emit = defineEmits<{ close: [] }>()
 /** 各欄位的選擇（基本配備欄位一定有東西；其他欄位可以是 undefined） */
 const picks = defineModel<CreationGear>({ required: true })
 
-const catalog = computed(() => creationCatalog(props.classId, props.race))
+const catalog = computed(() => creationCatalog(props.classId, props.race, props.classWeapons))
 const slotName = (slot: GearSlot) => slotNameFor(slot, props.race)
 const CATEGORIES = [
   { id: 'weapon', name: '武器' },

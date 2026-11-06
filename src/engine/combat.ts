@@ -24,7 +24,7 @@ import {
   itemRules, mulResist,
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
-import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
+import { classWeaponBlock, gearBonuses, gearRules, randomGear, registerGear } from './gear'
 import { blueprintName, blueprintRules, grantBlueprint, randomBlueprint } from './blueprints'
 import { rollDefeatEvent } from './defeat'
 import { inPark, parkDefeat, parkLust, parkStamps, saveParkLust } from './park'
@@ -157,6 +157,8 @@ export interface Combatant {
   releaseQueued?: number
   /** 身上有「束縛雙手」的拘束具：掙脫戰鬥中的拘束比較難（lewd.json 的 unbind.combat.hands） */
   handsBound?: boolean
+  /** 存檔規則「職業武器限制」：主手沒拿職業能用的武器時，用到武器傷害的技能不能用（原因） */
+  weaponBlock?: string
   /** 身上有奴隸印記：驅奴術這類能力比較有效 */
   slave?: boolean
   /** 淫器展開的武器傷害倍率（fusion.ts；穿著的天數決定） */
@@ -280,11 +282,16 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')
     // 淫器：戰鬥時展開成合煉的武器（穿夠天數才行；docs/LEWD_STATS.md 第 22 節）
     for (const f of fighters) {
-      const fw = fusedWeapon(state, state.party.find((m) => m.id === f.id)!)
+      const member = state.party.find((m) => m.id === f.id)!
+      const fw = fusedWeapon(state, member)
       if (fw) {
         f.weapon = { ...fw.weapon, name: fw.weapon.name || fw.name }
         f.weaponMult = fw.mult
       }
+      // 存檔規則「職業武器限制」：沒拿職業能用的武器（空手、或是規則打開前就拿著的）時，武器技能不能用
+      const need = state.options?.classWeapons ? gearRules.classes[member.class]?.weapons : undefined
+      const main = member.gear?.main_hand
+      if (need?.length && !fw && (!main || classWeaponBlock(member.class, main.spec))) f.weaponBlock = `要拿${need.join('、')}類的武器`
     }
     const counts: Record<string, number> = {}
     for (const [id, n] of enemyGroup) counts[id] = (counts[id] ?? 0) + n
@@ -818,6 +825,7 @@ export function unusableReason(combat: CombatState, actor: Combatant, abilityId:
   if (a.uses?.per_turn !== undefined && (actor.usedTurn[a.id] ?? 0) >= a.uses.per_turn) return '本回合已使用'
   if (a.uses?.per_combat !== undefined && (actor.usedCombat[a.id] ?? 0) >= a.uses.per_combat) return '本場戰鬥已使用'
   if (a.uses?.per_rest !== undefined && (actor.usedRest[a.id] ?? 0) >= a.uses.per_rest) return '需要休息'
+  if (actor.weaponBlock && a.damage?.some((d) => d.weapon)) return actor.weaponBlock
   if (abilityApCost(a) > actor.ap) return '行動點不足'
   if (a.type === 'spell' && castCircle(actor, a, circle) === null) return circle !== undefined && circle > (a.circle ?? 1) ? `沒有 ${circle} 環的法術環` : '沒有法術環'
   if (a.recover_slot && recoverableSlot(actor) === null) return '沒有可回復的法術環'

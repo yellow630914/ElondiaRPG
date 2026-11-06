@@ -4,7 +4,7 @@
 
 import { weaponFor } from './character'
 import { itemDef, lewdRules, type WeaponDef } from './data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, registerGear } from './gear'
+import { classWeaponBlock, gearKnown, gearRules, gearSpecOf, gearStats, registerGear } from './gear'
 import { formatMoney } from './money'
 import { commitReport } from './state'
 import { baseReport } from './town'
@@ -100,10 +100,12 @@ export function fusionMult(days: number): number {
 }
 
 /** 戰鬥時展開的淫器：身上第一件穿夠天數的，回傳展開的武器與倍率 */
-export function fusedWeapon(state: Pick<GameState, 'time'>, c: Character): { name: string; weapon: WeaponDef; mult: number } | undefined {
+export function fusedWeapon(state: Pick<GameState, 'time' | 'options'>, c: Character): { name: string; weapon: WeaponDef; mult: number } | undefined {
   for (const g of Object.values(c.gear ?? {})) {
     const f = g?.spec.fused
     if (!f || !gearKnown(f.weapon)) continue
+    // 存檔規則「職業武器限制」：合煉的是職業不能拿的武器時不展開（照原本的武器打）
+    if (state.options?.classWeapons && classWeaponBlock(c.class, f.weapon)) continue
     const mult = fusionMult(wornDaysOf(state, c, g!.name))
     const id = gearStats(f.weapon).weapon
     if (mult > 0 && id) return { name: g!.name, weapon: weaponFor({ weapon: id, level: c.level }), mult }

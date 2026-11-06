@@ -217,7 +217,7 @@ function build(): Index {
   }
   for (const i of itemRules.items) for (const p of i.use?.perks ?? []) add('perk', p, `書籍「${i.name}」`)
   for (const n of npcs) {
-    for (const p of n.mentor?.perks ?? []) add('perk', p, `老師：${n.name}（${n.landmark && landmarks[n.landmark] ? `${locName(n.location)}的${landmarks[n.landmark]!.name}` : locName(n.location)}）`)
+    for (const p of n.mentor?.perks ?? []) add('perk', p, `老師：${n.name}（${mentorPlace(n.location, n.landmark)}）`)
   }
   for (const [tag, t] of Object.entries(lewdRules.npc_schools.tags)) for (const p of t.schools) add('perk', p, `${npcTags.tags[tag]?.name ?? tag}身分的 NPC 可能有`)
 
@@ -277,3 +277,12 @@ const CELL_NAME: Record<string, string> = {
 
 const locName = (id: string) => geography.locations.find((l) => l.id === id)?.name ?? id
 const regionName = (id: string) => geography.regions.find((r) => r.id === id)?.name ?? (id === 'default' ? '其他地區' : id)
+
+/** 老師待的地方：地標在地下街裡時寫明，並提醒先到酒館打聽 */
+function mentorPlace(location: string, landmark?: string): string {
+  const l = landmark ? landmarks[landmark] : undefined
+  if (!l) return locName(location)
+  const map = l.at.area.startsWith('sm/') ? specialMaps[l.at.area.slice(3)] : undefined
+  if (map?.underworld) return `${locName(location)}地下街的${l.name}，在酒館打聽`
+  return `${locName(location)}的${l.name}`
+}

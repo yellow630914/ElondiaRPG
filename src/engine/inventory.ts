@@ -8,7 +8,7 @@ import {
   abilities, attrName, classDef, raceName, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK,
   type ItemIntel, type ItemUse, type LockGrade,
 } from './data'
-import { gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, slotNameFor, slotsFor, syncGear, wearName } from './gear'
+import { classWeaponBlock, gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, registerGear, slotNameFor, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
 import { discoverLead, hiddenLeadFor, leadPoolOn } from './leads'
 import type { Lead } from './types'
@@ -16,7 +16,7 @@ import { openFor } from './storyFlags'
 import { gainCondition, pcOf } from './party'
 import { toolDef } from './tools'
 import { roll } from './rng'
-import { addHours, commitReport, newReportId, withRng } from './state'
+import { addHours, addItem, commitReport, newReportId, withRng } from './state'
 import { startStory } from './story'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
 import { contractOf } from './tattoos'
@@ -279,6 +279,9 @@ export function equipItem(state: GameState, name: string, memberId: string, slot
   if (!spec) throw new Error('這個東西不能裝備')
   if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料已經不存在，不能裝備')
   const m = member(state, memberId)
+  // 存檔規則「職業武器限制」：主手只能拿職業能用的武器類型
+  const block = state.options?.classWeapons ? classWeaponBlock(m.class, spec) : null
+  if (block) throw new Error(`${block}，${m.name}不能裝備${name}`)
   const report = itemReport(state, 0.1)
   const { target, back } = putOn(m, name, spec, slot)
   report.changes.items_lost = [{ name, qty: 1 }]
@@ -369,4 +372,25 @@ export function unlockGear(state: GameState, memberId: string, slot: GearSlot): 
   if (name) report.changes.items_gained = [{ name, qty: 1, owner: 'pc' }]
   report.outcome.summary = `${m.name}打開了${g.name}上的${name ?? '鎖'}。`
   return commitReport(state, report)
+}
+
+/**
+ * 存檔規則「職業武器限制」（docs/ITEMS.md 第 2.2 節）：主手拿著職業不能用的武器時卸下、放回行囊。
+ * 打開規則時、讀檔時、有人入隊時呼叫；規則關著或沒有人要卸時回傳空陣列。被鎖住的（主人強迫的）不動。
+ */
+export function enforceClassWeapons(state: GameState, members: Character[] = state.party): string[] {
+  if (!state.options?.classWeapons) return []
+  const out: string[] = []
+  for (const m of members) {
+    const g = m.gear?.main_hand
+    if (!g || g.lock || g.locked || !gearKnown(g.spec)) continue
+    const block = classWeaponBlock(m.class, g.spec)
+    if (!block) continue
+    delete m.gear!.main_hand
+    syncGear(m, classDef(m.class).weapon)
+    recalc(m)
+    addItem(state.inventory, gearSpecOf(state, g.name) ? g.name : registerGear(state, g.spec, g.name), 1)
+    out.push(`${m.name}的${g.name}收進了行囊（${block}）`)
+  }
+  return out
 }

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
+import { classWeaponBlock, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
@@ -92,6 +92,11 @@ const candidates = computed(() =>
     .map((i) => ({ ...i, slots: slotsFor(i.spec, m.value.race) }))
     .filter((i) => i.slots.length && (!onlySlot.value || i.slots.includes(selected.value))),
 )
+
+/** 存檔規則「職業武器限制」打開時，職業不能拿的武器：灰掉按鈕並寫原因 */
+function weaponBlock(spec: GearSpec): string | null {
+  return s.value.options?.classWeapons ? classWeaponBlock(m.value.class, spec) : null
+}
 
 /** 和目前這一格的裝備比較：武器骰的變化（中性），數值變化（正的綠色、負的紅色） */
 function diff(spec: GearSpec): { text: string; up?: boolean }[] {
@@ -214,8 +219,9 @@ const totals = computed(() => {
               <span v-for="d in (onlySlot ? diff(c.spec) : [])" :key="d.text" class="delta" :class="d.up === undefined ? '' : d.up ? 'up' : 'down'">{{ d.text }}</span>
             </div>
             <div v-if="warning(c.spec)" class="warn small">{{ warning(c.spec) }}</div>
+            <div v-if="weaponBlock(c.spec)" class="warn small">{{ weaponBlock(c.spec) }}（存檔規則「職業武器限制」）</div>
           </div>
-          <button class="small" :disabled="inCombat || (onlySlot && !!lockedGear(m, selected))" @click="equip(c.name, c.slots)">{{ current && onlySlot ? '換上' : '裝備' }}</button>
+          <button class="small" :disabled="inCombat || (onlySlot && !!lockedGear(m, selected)) || !!weaponBlock(c.spec)" @click="equip(c.name, c.slots)">{{ current && onlySlot ? '換上' : '裝備' }}</button>
         </div>
         <p v-if="!candidates.length" class="muted small empty">行囊裡沒有{{ onlySlot ? `可以放在${slotName(selected)}的` : '可以裝備的' }}東西。</p>
       </div>

@@ -136,7 +136,7 @@
     { "id": "respectable", "name": "體面", "category": "social", "desc": "說服檢定 +1；對貴族、皇族的檢定 +1。",
       "effects": [{ "check": { "skills": ["persuade"] }, "bonus": 1 }, { "check": { "vs_tags": ["noble",  "royal"] }, "bonus": 1 }],
       "npc": { "weight": 1, "tags": ["noble", "merchant", "priest"] } },
-    { "id": "streetwise", "name": "江湖老手", "category": "social", "desc": "打聽黑市 +3；對惡人的檢定 +2。",
+    { "id": "streetwise", "name": "江湖老手", "category": "social", "desc": "打聽地下街 +3；對惡人的檢定 +2。",
       "effects": [{ "check": { "kinds": ["black_market"] }, "bonus": 3 }, { "check": { "vs_tags": ["villain"] }, "bonus": 2 }],
       "train": { "cells": ["informant"], "attr": "cha" }, "npc": { "weight": 1, "tags": ["villain", "traveler"] } },
     { "id": "temple_friend", "name": "神職人緣", "category": "social", "desc": "對神官、主教的檢定 +2；對好人的檢定 +1。",

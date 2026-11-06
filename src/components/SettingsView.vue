@@ -12,7 +12,7 @@ import { AI_FEATURES, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/sett
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
-import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultySummary, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
+import { CLASS_WEAPONS_HINT, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultySummary, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 import SettingsFilePanel from './SettingsFilePanel.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -261,6 +261,8 @@ function doReset() {
           察覺陷阱時可以主動觸發 <Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。" /></label>
         <label class="check"><input type="checkbox" :checked="!!game.state.options?.naturalCrit" @change="game.setNaturalCrit(($event.target as HTMLInputElement).checked)" />
           大成功、大失敗只看骰面 <Hint text="勾選時，只有骰出 20 才是大成功、骰出 1 才是大失敗；總和比 DC 高或低 10 以上不再算（最多是成功或失敗）。AI 判定也照這條規則。不勾時維持原本的規則：骰出 20 或總和 ≥ DC+10 大成功，骰出 1 或總和 ≤ DC−10 大失敗。" /></label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.classWeapons" @change="game.setClassWeapons(($event.target as HTMLInputElement).checked)" />
+          職業武器限制 <Hint :text="CLASS_WEAPONS_HINT + '打開時，主手拿著職業不能用的武器的人會卸下武器、放回行囊。'" /></label>
         <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
       </div>
     </section>

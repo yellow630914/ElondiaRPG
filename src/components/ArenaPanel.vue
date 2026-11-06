@@ -7,7 +7,7 @@ import { isBound } from '@/engine/party'
 import { useGame } from '@/stores/game'
 import FoldMenu from './ui/FoldMenu.vue'
 
-// 淫鬥場（成人向，docs/LEWD_STATS.md 第 21 節）：魅氣濃的城鎮，娼館或酒館的地下
+// 淫鬥場（成人向，docs/LEWD_STATS.md 第 21 節）：地下街（underworld.ts）裡的淫鬥場地標
 const game = useGame()
 const s = computed(() => game.state!)
 const open = computed(() => arenaHere(s.value) && !isBound(s.value))

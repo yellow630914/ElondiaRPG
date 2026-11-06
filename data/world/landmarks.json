@@ -1997,9 +1997,9 @@
    "emoji": "🖤",
    "location": "soriel",
    "at": {
-    "area": "soriel/harbor",
+    "area": "sm/sm_uw_soriel",
     "x": 6,
-    "y": 2
+    "y": 1
    },
    "types": [
     "market"
@@ -2336,9 +2336,9 @@
    "emoji": "🕳️",
    "location": "albena",
    "at": {
-    "area": "albena/market",
-    "x": 5,
-    "y": 2
+    "area": "sm/sm_uw_albena",
+    "x": 2,
+    "y": 3
    },
    "types": [
     "market"
@@ -3302,14 +3302,14 @@
    "emoji": "🔨",
    "location": "albena",
    "at": {
-    "area": "albena/market",
-    "x": 7,
-    "y": 1
+    "area": "sm/sm_uw_albena",
+    "x": 6,
+    "y": 3
    },
    "types": [
     "market"
    ],
-   "desc": "市集深處一棟掛著紅絲絨簾幕的樓房，每晚舉行不對外宣傳的拍賣會：色情技能書、稀有的淫具，什麼都有人出價。也收寄賣。",
+   "desc": "地下街深處一間掛著紅絲絨簾幕的廳堂，每晚舉行不對外宣傳的拍賣會：色情技能書、稀有的淫具，什麼都有人出價。也收寄賣。",
    "scene": "拍賣廳裡燈光昏暗，戴著面具的買家們坐在包廂裡舉牌，台上的拍賣官是個笑容玩味的魅魔。",
    "open": {
     "adult": true
@@ -4612,7 +4612,83 @@
     "dc": 12,
     "rate_cc": 4,
     "desc": "替商人當通譯、點貨、牽馬過秤。"
-   }
+   },
+   "scenes": [
+    {
+     "title": "翻一天的話",
+     "desc": "站在茶商和馬販中間翻一天的話，兩邊的手一邊一隻。",
+     "scene": "主角站在化龍族茶商和人馬族馬販中間翻了一整天的話，兩邊的手一邊一隻地摸，談僵了的買賣就把主角拉到貨堆後面用嘴「添頭」。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 200
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "tdtongue_done"
+      ]
+     }
+    },
+    {
+     "title": "秋市的添頭",
+     "desc": "大買賣談不攏，添頭還是你。",
+     "scene": "一筆大買賣又談不攏了，{cast}把主角當成添頭推進帳篷，先讓化龍族的茶商們驗貨，再讓人馬族的馬販們輪流上，兩邊都點頭才放主角出來。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_td_sun_shetou"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 380
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "tdtongue_done"
+      ]
+     }
+    }
+   ]
   },
   {
    "id": "lm_td_falconry",
@@ -4863,6 +4939,801 @@
      ]
     }
    ]
+  },
+  {
+   "id": "lm_yh_scholar_inn",
+   "name": "狀元客舍",
+   "emoji": "📜",
+   "location": "longan",
+   "at": {
+    "area": "longan/yujie",
+    "x": 3,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "御街上專做舉子生意的客舍，門口掛著一塊「三元及第」的舊匾，說是出過三個狀元。秋闈前後整間店住滿了來應考的書生。",
+   "scene": "廊下一排排的房門都開著，書生們搖頭晃腦地背書，墨香和線香混在一起；掌櫃坐在櫃檯後面，一邊翻《登科錄》一邊打量每一個進門的人。",
+   "visit": {
+    "title": "在客舍喝一盞茶",
+    "desc": "坐在廊下聽書生們背書，討個好兆頭。",
+    "money_cc": 5,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "relaxed",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "int",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替書生抄書、跑腿、送茶水。"
+   },
+   "scenes": [
+    {
+     "title": "秋闈的夜課",
+     "desc": "替溫書的舉子研墨點香，他念到哪裡就摸到哪裡。",
+     "scene": "主角穿著褙子替溫書的舉子研了一整夜的墨，每一間的書生都把主角拉到腿上念艷詩，念一句摸一處，最後用嘴替他們「解乏」收尾。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 4,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 130
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "yhink_done"
+      ]
+     },
+     "wear": [
+      "beizi"
+     ]
+    },
+    {
+     "title": "謝恩的包場",
+     "desc": "新科進士回來謝恩，整桌輪流題詩再幹。",
+     "scene": "一桌新科進士回到狀元客舍謝恩，把主角剝光了放上酒桌，輪流用毛筆在主角身上題詩，題完一首幹一回，{cast}在旁邊收錢、記下每一首詩。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_yh_fan_zhanggui"
+      }
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 280
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "yhink_done"
+      ]
+     },
+     "wear": [
+      "beizi"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lm_yh_pleasure_boat",
+   "name": "畫舫碼頭",
+   "emoji": "🛶",
+   "location": "pingjiang",
+   "at": {
+    "area": "pingjiang/shuixiang",
+    "x": 1,
+    "y": 2
+   },
+   "types": [
+    "harbor"
+   ],
+   "desc": "水巷邊停著一排畫舫的小碼頭，柳三篙的「三篙畫舫」漆得最紅、燈籠掛得最多。白天載人遊河，夜裡載鹽商喝酒。",
+   "scene": "船娘們坐在船頭梳頭、唱小曲，船老大赤著膀子在岸邊罵人；運河上的燈影一晃一晃，船艙的簾子底下傳出笑聲。",
+   "visit": {
+    "title": "坐畫舫遊一趟運河",
+    "desc": "從碼頭搖到虹橋再搖回來。",
+    "money_cc": 15,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "str",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替畫舫撐篙、擦船、搬酒罈。"
+   },
+   "scenes": [
+    {
+     "title": "搖一趟櫓",
+     "desc": "穿著旗袍搖一趟櫓，客人在船上隨便摸，回碼頭前吹一曲。",
+     "scene": "主角穿著高衩旗袍在船尾搖了一趟櫓，船上的客人從背後掀開開衩摸個夠，回碼頭前把主角叫進船艙「吹簫」，一人一曲。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 3,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 140
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "yhboat_done"
+      ]
+     },
+     "wear": [
+      "qipao"
+     ]
+    },
+    {
+     "title": "包船的夜",
+     "desc": "鹽商包下整艘畫舫，船娘只有你一個。",
+     "scene": "一群鹽商包下三篙畫舫遊了一整夜的運河，主角被放上船艙的長桌輪流幹，船搖一下頂一下，{cast}在船尾撐篙、收錢。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_yh_liu_sangao"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 300
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "yhboat_done"
+      ]
+     },
+     "wear": [
+      "qipao"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lm_yh_pearl_dock",
+   "name": "珠船塢",
+   "emoji": "🦪",
+   "location": "quanzhou",
+   "at": {
+    "area": "quanzhou/fanfang",
+    "x": 9,
+    "y": 2
+   },
+   "types": [
+    "harbor"
+   ],
+   "desc": "蕃坊碼頭最東邊的船塢，泊著蚌老大的三條珠船；塢邊堆滿了開過的蚌殼，曬著一排排采珠用的繩索與鉛墜。",
+   "scene": "船工們圍著炭盆喝燒酒，一邊撬蚌殼一邊說葷話；船塢邊的木桶裡泡著今天撈上來的老蚌，海風裡全是腥味。",
+   "visit": {
+    "title": "看船工開蚌",
+    "desc": "蹲在塢邊看他們一個個撬開蚌殼，等著看有沒有珠。",
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "cheered",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "str",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替珠船收繩、撬蚌、曬網。"
+   },
+   "scenes": [
+    {
+     "title": "冬天的珠船",
+     "desc": "纏著裹胸下海采珠，上來讓船工們取暖。",
+     "scene": "主角只纏著裹胸下了一整天的海，每次凍得發抖地爬上船，就被赤膊的船工們夾在中間搓揉取暖，搓到最後總有人要主角用嘴謝他。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 180
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "yhpearl_done"
+      ]
+     },
+     "wear": [
+      "breast_band"
+     ]
+    },
+    {
+     "title": "船艙的取暖",
+     "desc": "收工之後，全船的人在船艙裡替你「取暖」。",
+     "scene": "收工後珠船的船艙裡燒著炭盆，船工們把主角剝光了一個一個「取暖」，{cast}在一旁開蚌數珠，誰幹完了誰就去撬下一個蚌。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_yh_bang_laoda"
+      }
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 320
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "yhpearl_done"
+      ]
+     },
+     "wear": [
+      "breast_band"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "lm_yh_big_kang",
+   "name": "大車店的大炕",
+   "emoji": "🔥",
+   "location": "qingqiu",
+   "at": {
+    "area": "qingqiu/main",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "大車店後屋那條通鋪大炕：從牆這頭砌到牆那頭，睡得下二十個人。趕大車的、木把、採參人，加上往北原去的馬幫，冬天都擠在這裡。",
+   "scene": "炕燒得燙手，一排靴子和綁腿掛在炕沿上，屋裡全是旱菸、燒酒和汗的味道；老闆娘黃二嫂叼著菸袋，在灶口添柴。",
+   "visit": {
+    "title": "上炕歇歇腳",
+    "desc": "脫了鞋在熱炕上躺一會兒。",
+    "money_cc": 3,
+    "hours": 1,
+    "effects": [
+     {
+      "type": "condition",
+      "target": "pc",
+      "condition": "relaxed",
+      "add": true
+     }
+    ]
+   },
+   "work": {
+    "attr": "str",
+    "dc": 12,
+    "rate_cc": 4,
+    "desc": "替大車店劈柴、餵牲口、燒炕。"
+   },
+   "scenes": [
+    {
+     "title": "燒一夜的炕",
+     "desc": "光著身子燒炕、焐被窩，一個被窩一份錢。",
+     "scene": "主角光著身子在大車店燒了一夜的炕，半夜添柴時被一路摸過去，再一個被窩一個被窩地鑽進去焐熱，焐著焐著就被摟住不放，用手和嘴才脫得了身。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "hours": 5,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 150
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "aroused",
+       "add": true
+      }
+     ],
+     "requires": {
+      "flags": [
+       "yhkang_done"
+      ]
+     }
+    },
+    {
+     "title": "貓冬的夜",
+     "desc": "大雪封山，一整炕的人都在等燒炕丫頭。",
+     "scene": "大雪又封了山，大車店的一整條炕上擠滿了走不了的男人，主角被放到炕中央輪著來，{cast}在灶口一邊添柴一邊收雙倍的炕錢。",
+     "tags": [
+      "adult",
+      "male_partner"
+     ],
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_yh_huang_ersao"
+      }
+     ],
+     "hours": 6,
+     "effects": [
+      {
+       "type": "money",
+       "amount": 300
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "drained",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "disheveled",
+       "add": true
+      }
+     ],
+     "affinity": 1,
+     "requires": {
+      "flags": [
+       "yhkang_done"
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "lm_uw_black_soriel",
+   "name": "外環的地下奴隸販子",
+   "emoji": "⛓️",
+   "location": "soriel",
+   "at": {
+    "area": "sm/sm_uw_soriel",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_black_albena",
+   "name": "自由集市地下拍賣",
+   "emoji": "⛓️",
+   "location": "albena",
+   "at": {
+    "area": "sm/sm_uw_albena",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_albena",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "albena",
+   "at": {
+    "area": "sm/sm_uw_albena",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_coast_ferry",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "coast_ferry",
+   "at": {
+    "area": "sm/sm_uw_coast_ferry",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_bloodplume",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_uw_bloodplume",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_moltenhold",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "moltenhold",
+   "at": {
+    "area": "sm/sm_uw_moltenhold",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_shadow_vale",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "shadow_vale",
+   "at": {
+    "area": "sm/sm_uw_shadow_vale",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_bone_hills",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "bone_hills",
+   "at": {
+    "area": "sm/sm_uw_bone_hills",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_silent_tomb",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "silent_tomb",
+   "at": {
+    "area": "sm/sm_uw_silent_tomb",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_arena_rotmarsh",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "rotmarsh",
+   "at": {
+    "area": "sm/sm_uw_rotmarsh",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_ashport",
+   "name": "灰港鎮碼頭黑市",
+   "emoji": "⛓️",
+   "location": "ashport",
+   "at": {
+    "area": "sm/sm_uw_ashport",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_ashport",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "ashport",
+   "at": {
+    "area": "sm/sm_uw_ashport",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_tidehaven",
+   "name": "潮汐港走私船艙",
+   "emoji": "⛓️",
+   "location": "tidehaven",
+   "at": {
+    "area": "sm/sm_uw_tidehaven",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_tidehaven",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "tidehaven",
+   "at": {
+    "area": "sm/sm_uw_tidehaven",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_quanzhou",
+   "name": "瑔州港的走私船艙",
+   "emoji": "⛓️",
+   "location": "quanzhou",
+   "at": {
+    "area": "sm/sm_uw_quanzhou",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_quanzhou",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "quanzhou",
+   "at": {
+    "area": "sm/sm_uw_quanzhou",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
+  },
+  {
+   "id": "lm_uw_black_yinghe",
+   "name": "鷹河邊的黑市帳",
+   "emoji": "⛓️",
+   "location": "yinghe",
+   "at": {
+    "area": "sm/sm_uw_yinghe",
+    "x": 2,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "不公開的奴隸買賣：價格比公開市場低，也有精靈這類在公開市場買不到的人，但風險自負；另外每天賣幾件來路不明的獨特裝備（今天的珍品）。",
+   "scene": "燭光下一排鐵籠，販子壓低聲音報價，戴兜帽的買家掀開籠子的布簾打量貨色。",
+   "black_market": true
+  },
+  {
+   "id": "lm_uw_arena_yinghe",
+   "name": "地下淫鬥場",
+   "emoji": "🥊",
+   "location": "yinghe",
+   "at": {
+    "area": "sm/sm_uw_yinghe",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "military"
+   ],
+   "desc": "地下的擂臺：淫物場、拘束戰鬥場、性戰場。每贏兩場換更強的對手，輸了連勝歸零；輸了不損失錢，也不會有戰敗事件。",
+   "scene": "火把圍成一圈，看臺上擠滿下注的人，擂臺的沙地被汗水與體液浸得發黑，叫好聲震得頂上落灰。",
+   "open": {
+    "adult": true
+   },
+   "arena": true
   }
  ]
 }
