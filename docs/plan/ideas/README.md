@@ -36,3 +36,4 @@
 | I24 | 慾望戰鬥的收尾：神殿的淨化、園區規則的編輯器、新園區、防具的淫器合煉（成人向，原 R8） | 玩法 | [dev-discussion](dev-discussion.md#i24) |
 | I27 | 真空的延伸：不准穿內衣褲的條款、盤查時被發現（成人向） | 玩法 | [player-feedback](player-feedback.md#i27) |
 | I28 | 工藝的延伸：NPC 隨機帶工匠身分、老師教工藝與圖紙 | 玩法 | [dev-discussion](dev-discussion.md#i28) |
+| I29 | 新增職業（給不給 NPC）；職業放進世界編輯器 | 玩法、自訂內容 | [dev-discussion](dev-discussion.md#i29) |
