@@ -25,11 +25,13 @@ const skillHint = computed(() => {
   const lines = (Object.keys(m) as SkillId[]).map((k) => `${skillName(k)}：${m[k]!.map((x) => `${x.label} ${signed(x.value)}`).join('、')}`)
   return `AI 判定時依你的做法選一個檢定分類（說服、欺瞞、潛行……）。${lines.length ? `選到這些分類時另外有修正：\n${lines.join('\n')}` : '你身上沒有寫在分類上的加成。'}`
 })
+/** 自由行動交給 AI 判定時，屬性由 AI 依做法選：不標預設的魅力（預設只用在依規則判定） */
+const freeAi = computed(() => pending.value?.kind === 'free' && !pending.value.skill && settings.ready('judge'))
 const totals = computed(() => {
   const p = pending.value
   if (!p) return []
   const sit = situationalTotal(p)
-  return ATTR_IDS.map((a) => ({ attr: a, total: p.natural + p.modifiers[a] + sit, isDefault: a === p.attr }))
+  return ATTR_IDS.map((a) => ({ attr: a, total: p.natural + p.modifiers[a] + sit, isDefault: a === p.attr && !freeAi.value }))
 })
 </script>
 

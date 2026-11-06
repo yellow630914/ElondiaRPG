@@ -79,12 +79,18 @@ describe('檢定分類（R20 C1）', () => {
     const user = prompt.user ?? JSON.stringify(prompt)
     expect(user).toContain('deceive（欺瞞')
     expect(user).toContain('選這一類時另外 特質【liar2】 +2')
+    // 自由行動不暗示魅力：不給魅力的參考結果，格式範例也不寫 cha
+    expect(user).not.toContain('依預設屬性')
+    expect(user).toContain('依玩家的做法選 attr')
+    expect(JSON.stringify(prompt)).not.toContain('"attr":"cha"')
     const j = sanitizeJudgment(s, p, { degree: 'success', attr: 'cha', skill: 'deceive', effects: [] })
     expect(j.skill).toBe('deceive')
     const r = resolveAction(s, j)
     expect(r.check?.skill).toBe('deceive')
     expect(r.check?.situational).toEqual(expect.arrayContaining([{ label: '特質【liar2】', value: 2 }]))
     expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
+    // 其他行動照舊給預設屬性的參考結果
+    expect(JSON.stringify(buildActionPrompt(s, { ...p, kind: 'bluff', skill: 'deceive' }, ''))).toContain('依預設屬性（魅力）')
   })
 
   it('ignores an unknown category, and records the category of fixed actions', () => {
