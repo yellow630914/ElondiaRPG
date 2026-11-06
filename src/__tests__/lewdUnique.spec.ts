@@ -12,6 +12,8 @@ const UNIQUE: Record<string, string> = {
   expo_parade: 'lust_center_stage', bath_deep: 'lust_back_scrub', onsen_dawn: 'lust_hot_spring', massage_last: 'lust_ten_fingers', paint_brush: 'lust_frozen_pose',
   horn_trophy: 'lust_spoils', court_banquet: 'lust_kiss', pyre_offering: 'lust_sacrifice_sigil', conf_last: 'burst_release', fert_rite: 'burst_bliss',
   mate_bonfire: 'lust_courtship_mark', brine_spring: 'lust_tide_bride',
+  // 炎華之地的打工線（R26）
+  yhink_list: 'lust_red_sleeve', yhboat_charter: 'lust_boat_song', yhpearl_big: 'lust_breath_share', yhkang_winter: 'lust_warm_kang', tdtongue_market: 'lust_two_tongues',
 }
 
 function game(): GameState {
@@ -30,7 +32,7 @@ function abilityEffects(o: unknown, out: string[] = []): string[] {
 }
 
 describe('打工線的獨特技能', () => {
-  it('17 條線的結局都給那條線的技能；技能都是色情技能，新的 12 個有技能書', () => {
+  it('22 條線的結局都給那條線的技能；技能都是色情技能，新的 17 個有技能書', () => {
     for (const [id, ability] of Object.entries(UNIQUE)) {
       const def = stories.find((s) => s.id === id)
       expect(def, id).toBeDefined()
@@ -38,7 +40,7 @@ describe('打工線的獨特技能', () => {
       expect(abilities[ability]?.classes, ability).toContain('lewd')
     }
     const books = itemRules.items.filter((i) => i.use?.abilities?.length === 1 && Object.values(UNIQUE).includes(i.use.abilities[0]!))
-    expect(books.length).toBeGreaterThanOrEqual(12)
+    expect(books.length).toBeGreaterThanOrEqual(17)
     for (const b of books.filter((x) => x.tags.length === 0)) expect(b.adult).toBe(true)
   })
 

@@ -29,6 +29,7 @@
 | `high_gear31.py` | `data/rules/gear.json`、`crafts.json`、`equipment.json`、`items.json` | 高等地下城的裝備（[ITEMS](../../../docs/ITEMS.md) 第 4.5 節）：第 6、7 級材料與打造材料、打造延伸到第 7 級、一般底材 9 種與地下城專屬的底材 10 種（新的武器與防具類型）、制式裝備、專屬底材的裝備與傳說的獨特裝備；層主的掉落（`DROPS`）由 `high_dungeons31.py` 讀進去。要排在 `high_dungeons31.py` 之前。可以重跑 |
 | `lust_s10.py` | `data/world/npcs.json`、`data/rules/items.json`、`lewd.json`、`perks.json` | 慾望戰鬥 S10 的資料（[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 6.1、14.1、28 節）：8 位流派的老師與 `perks.json` 的 `mentor` 預設、8 本秘法書（商店、拍賣會、園區寶箱）、寄生類的雙面效應（`parasite_two_face`）、稱號（`titles`）。要排在 `lust_s9.py`、`material_drops31.py` 之後。可以重跑 |
 | `char_lines38.py` | `data/rules/stories.json`、`enemies.json`、`items.json`、`data/world/npcs.json` | 角色線（R9）：白百合巡禮、全城跑最快的精靈各四個任務（用 `east_story_io.write_stories` 就地換掉同 id 的任務）、捕奴隊的打手與頭目灰狗、霧銀耳墜、奧菈莉婭、格溫德琳、琥珀的 `no_attack`、結局之後的 `stages` 與琥珀的成人向外貌。可以重跑 |
+| `east_p9_work.py` | `data/rules/stories.json`、`items.json`、`gear.json`、`abilities.json`、`lewd.json`、`data/world/npcs.json`、`landmarks.json` | 炎華之地的打工線（R26 第一批，成人向）：五條線 15 個任務、五位委託人、四個新地標與上工的場景、五件獨特裝備、五個獨特技能與技能書（加進淫鬥場、拍賣會、園區寶箱）、新底材肚兜與它的制式品。要排在 `east_p3_places.py`、`east_p7_people.py` 之後（它們整筆重寫地標）。可以重跑 |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 | `../../tools/guide/guide.py` | `docs/guide/` | 給玩家的遊戲攻略，同步到 wiki（`data/` 改過之後都要重跑；沒重跑時測試 `guide.spec.ts` 會失敗） |

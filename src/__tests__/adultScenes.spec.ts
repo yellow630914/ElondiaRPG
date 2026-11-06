@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { itemRules, stories, type StoryDef } from '@/engine/data'
+import { gearRules } from '@/engine/gear'
 import { enterLocation } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
 import { joinParty } from '@/engine/party'
@@ -81,6 +82,12 @@ describe('work quest lines', () => {
     fert: ['fert_chosen', 'fert_dance', 'fert_rite', '豐饒祭的花冠'],
     mate: ['mate_paint', 'mate_chase', 'mate_bonfire', '求偶祭的獸牙項鍊'],
     brine: ['brine_bride', 'brine_parade', 'brine_spring', '潮汐祭的貝殼腰鍊'],
+    // 炎華之地的打工線（R26）
+    yhink: ['yhink_grind', 'yhink_ease', 'yhink_list', '紅袖的墨香褙子'],
+    yhboat: ['yhboat_oar', 'yhboat_flute', 'yhboat_charter', '畫舫的鴛鴦旗袍'],
+    yhpearl: ['yhpearl_dive', 'yhpearl_heat', 'yhpearl_big', '夜明珠的臍環'],
+    yhkang: ['yhkang_fire', 'yhkang_quilt', 'yhkang_winter', '大車店的紅肚兜'],
+    tdtongue: ['tdtongue_hands', 'tdtongue_extra', 'tdtongue_market', '通譯的雙語耳墜'],
   }
 
   it('run their stages in order, only for feminine and androgynous heroes, and end with the line gear in every branch', () => {
@@ -107,13 +114,22 @@ describe('work quest lines', () => {
   it('hand out the work uniform and ask for it on the job', () => {
     // 有制服的線：第一個限定的任務接下時發制服，之後每個非戰鬥的任務點都要穿著；結局的獨特裝備也算
     const dressed = stories.filter((s) => s.start.items?.length)
-    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'brine_bride', 'conf_lattice', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'fert_chosen', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'mate_paint', 'onsen_mixed'])
+    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'brine_bride', 'conf_lattice', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'fert_chosen', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'mate_paint', 'onsen_mixed', 'yhboat_oar', 'yhink_grind', 'yhpearl_dive'])
     for (const s of dressed) {
       const wear = s.nodes.find((n) => n.wear)!.wear!
       for (const name of s.start.items!) expect(itemRules.items.find((i) => i.name === name), `${s.id} ${name}`).toBeTruthy()
       // 發的衣服穿得上限定的每一項
       for (const w of wear) expect(s.start.items!.some((name) => itemRules.items.find((i) => i.name === name)!.gear!.base === w), `${s.id} ${w}`).toBe(true)
       for (const n of s.nodes) if (n.kind !== 'combat') expect(n.wear, `${s.id} ${n.id}`).toEqual(wear)
+    }
+  })
+
+  it('keeps the 炎華 work uniforms off the slots a centaur hero cannot fill (R26)', () => {
+    // 人馬族不能穿一般的下身、鞋子、腿部飾品，內褲那一格是後蹄：炎華的打工線只能要求其他欄位
+    const restricted = gearRules.races.centaur?.restricted ?? []
+    expect(restricted.length).toBeGreaterThan(0)
+    for (const s of stories.filter((x) => /^(yh|td)[a-z]+_/.test(x.id) && x.start.items?.length)) {
+      for (const n of s.nodes) for (const w of n.wear ?? []) expect(restricted, `${s.id} ${w}`).not.toContain(gearRules.bases[w]!.slot)
     }
   })
 })

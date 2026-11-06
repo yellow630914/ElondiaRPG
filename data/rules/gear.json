@@ -204,6 +204,7 @@
 
     "undershirt":   { "slot": "underwear_top", "name": "汗衫", "kind": "cloth", "price": 8, "scale": { "dr": "third" }, "desc": "貼身的短袖內衫，吸汗，穿在盔甲底下不會磨傷。" },
     "breast_band":  { "slot": "underwear_top", "name": "裹胸", "kind": "cloth", "price": 8, "scale": { "save": "third" }, "desc": "一圈纏在胸口的軟布，活動時不晃。" },
+    "dudou": { "slot": "underwear_top", "name": "肚兜", "kind": "cloth", "price": 12, "scale": {"save": "third"}, "desc": "一塊菱形的布，細帶繫在頸後與腰後，遮住胸口和肚子，背上什麼也沒有；大燁的女人貼身穿，北方的人說穿紅的暖肚子。" },
     "bodice":       { "slot": "underwear_top", "name": "束腰馬甲", "kind": "cloth", "price": 120, "scale": { "evade": "third_up" }, "desc": "以鯨骨撐出線條的束腰，穿上之後站姿自然挺拔。" },
     "lace_bra":     { "slot": "underwear_top", "name": "蕾絲胸衣", "kind": "cloth", "price": 100, "scale": { "crit": "third_up" }, "desc": "綴著細蕾絲的胸衣，做工精緻，貴族小姐們的最愛。" },
     "loincloth":    { "slot": "underwear_bottom", "name": "兜襠布", "kind": "cloth", "price": 6, "scale": { "damage": "third" }, "desc": "一條長布纏成的襠布，戰士們穿慣了的老樣式。" },
