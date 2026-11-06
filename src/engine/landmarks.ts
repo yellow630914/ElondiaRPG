@@ -23,7 +23,7 @@ import type { GameState, Report } from './types'
 /** 主角現在站的地標（聚落裡的地標格，或在地標的內部） */
 export function landmarkHere(state: GameState): LandmarkDef | undefined {
   const area = currentArea(state)
-  if (area.kind === 'special') return landmarkOfInterior(area.special)
+  if (area.kind === 'special') return landmarkDef(currentCell(state).kind) ?? landmarkOfInterior(area.special)
   if (area.kind !== 'settlement') return undefined
   return landmarkDef(currentCell(state).kind)
 }
@@ -51,7 +51,11 @@ export function interiorBlocked(state: GameState): string | undefined {
 export function enterLandmark(state: GameState) {
   const why = interiorBlocked(state)
   if (why) throw new Error(why)
+  // 地標本身在特殊地圖裡（例如地下街的俱樂部）：記下地標格，從內部出來時回到這裡
+  const p = position(state)
+  const from = state.special && p.area.startsWith('sm/') ? { area: p.area, x: p.x, y: p.y } : undefined
   enterSpecial(state, landmarkHere(state)!.interior!)
+  if (from) (state.special!.inner ??= []).push(from)
 }
 
 /** 站在地標上行動時，場景帶上地標與它的氛圍（交給 AI） */

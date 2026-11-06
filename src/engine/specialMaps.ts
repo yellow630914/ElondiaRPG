@@ -160,6 +160,14 @@ export function pruneSpecialMaps(state: GameState) {
 export function leaveSpecial(state: GameState) {
   const def = specialMapOfKey(state.position?.area)
   const sp = state.special
+  // 從特殊地圖裡的地標走進來的內部：回到那個地標格（還在外面那張特殊地圖裡）
+  const inner = sp?.inner?.pop()
+  if (sp && inner && specialMapOfKey(inner.area)) {
+    if (!sp.inner!.length) delete sp.inner
+    state.location = specialMapOfKey(inner.area)!.location
+    state.position = { ...inner }
+    return
+  }
   closeOut(state)
   if (sp?.back) {
     state.location = sp.location

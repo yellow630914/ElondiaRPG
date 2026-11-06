@@ -485,6 +485,10 @@ export interface LandmarkDef {
   interior?: string
   /** 拍賣會（成人向，auction.ts；規則在 lewd.json 的 auction） */
   auction?: boolean
+  /** 黑市：這座聚落不公開的奴隸買賣與今天的珍品（slavery.json 的 markets[地點].black） */
+  black_market?: boolean
+  /** 淫鬥場（成人向，arena.ts；規則在 lewd.json 的 arena） */
+  arena?: boolean
 }
 /** 地標的場景（docs/LANDMARKS.md 第 6 節） */
 export interface LandmarkScene {
@@ -622,6 +626,11 @@ export interface SpecialMapDef {
   bosses?: SpecialBoss[]
   /** 安全的室內（例如地標的內部）：休息不會被襲擊 */
   peaceful?: boolean
+  /**
+   * 地下街（docs/SPECIAL_MAPS.md 第 9 節）：這座聚落灰色產業的隱藏地圖。
+   * 在酒館打聽到之後，從酒館走進來、從出口回到酒館；一座聚落一張（多張時用第一張）
+   */
+  underworld?: boolean
 }
 /** 格子種類的名稱（和 grid.ts 的 CellKind 相同，這裡用字串避免循環引用） */
 export type CellKindName = string
