@@ -1036,6 +1036,8 @@ export interface GameState {
   standoff?: Standoff
   /** 打贏冒險者後被制伏、等主角處置的人（見 engine/captives.ts） */
   captives?: Captives
+  /** 新職業（武夫、仙術師）的一次性調整：炎華之地已經生成的冒險者要不要改一批（classRebalance.ts） */
+  classRebalance?: import('./classRebalance').ClassRebalanceState
   /** 今天已經避開或談妥的敵對 NPC：id → 日期 */
   avoided?: Record<string, number>
   /** 各地點的衛兵警戒：等級與最後一次犯案的日期 */

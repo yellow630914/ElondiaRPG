@@ -13,7 +13,7 @@ import { pendingParasiteEvent } from '@/engine/parasiteEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'story' | 'join' | 'suggestion' | 'levelup' | 'perk'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'story' | 'join' | 'suggestion' | 'levelup' | 'perk' | 'classes'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -71,6 +71,8 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     }
     if (state.townEvent) out.push({ id: `town:${state.townEvent.template}:${state.townEvents?.last ?? 0}`, kind: 'town', icon: '🏘️', title: pendingTownEvent(state)?.title ?? '城裡的事', blocking: true })
   }
+  // 新職業（武夫、仙術師）之前的存檔：要不要把炎華之地的一批冒險者改成新職業（只問一次，可以稍後）
+  if (state.classRebalance?.offer && !state.classRebalance.done) out.push({ id: 'classes:rebalance', kind: 'classes', icon: '🎓', title: '炎華之地的新職業', blocking: false })
   for (const s of state.suggestions ?? []) {
     const name = state.relationships?.[s.npc]?.name ?? s.npc
     out.push({ id: `suggestion:${s.id}`, kind: 'suggestion', icon: '💞', title: `${name}和你的關係有了變化`, blocking: false, ref: s.id })

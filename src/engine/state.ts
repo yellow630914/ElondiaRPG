@@ -136,6 +136,8 @@ export function newGame(opts: NewGameOptions): GameState {
     guild: { rank: 'F', merit: 0 },
     homes: {},
     options: { ...defaultOptions(), ...opts.options },
+    // 新遊戲的 NPC 一開始就照新的職業生成：不用問「炎華之地要不要改一批職業」（classRebalance.ts）
+    classRebalance: { done: 'skipped' },
   }
 }
 
