@@ -17,7 +17,7 @@ import {
   apMaxFor, apRegenFor, attrOf, attrsOf, carriedAbilities, castingAttr, evadeFloor, gearAffinities, luckyThreshold, mod, proficiency, slotMaxFor, slotsLeft, snapshot, weaponFor,
 } from './character'
 import {
-  abilities, abilityDef, armorDef, ATTR_IDS, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
+  abilities, abilityDef, armorDef, ATTR_IDS, attrName, PARK_STAMP_PREFIX, townQuestTemplates, classDef, combatRules, companionRules, contractDef, damageType, damageTypeName, damageTypes, dungeonEncounters, DUNGEON_LAYER_IDS, enemies, isLayerBoss, itemDef,
   contentRevision, geography, lewdRules, locationById, monsterTraits, population, regionById, statusDef, wildEncounters, type EnemyDef,
   type AbilityDef, type AffinityMap, type ApplyDef, type AttrId, type Attrs, type DamagePart, type DungeonLayerId, type EncounterGroup,
   type ItemDef, type LockGrade, type LuckRoll, type Mods, type MonsterAi, type WeaponDef,
@@ -44,7 +44,7 @@ import { applyEffects } from './effects'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newReportId, player, withRng } from './state'
 import type {
-  ActorState, Character, Difficulty, Effect, GameState, GameTime, GearSlot, ItemDelta, NpcRecord, Report, RollResult, TimelineEntry,
+  ActorState, Character, Difficulty, Effect, GameState, GameTime, GearSlot, ItemDelta, NpcRecord, Report, RollPart, RollResult, TimelineEntry,
 } from './types'
 import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
@@ -52,6 +52,7 @@ import { flagKey, hasFlag } from './storyFlags'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
 import { bindsOf, lockedBound, lustTotals, outfitCombat, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
+import { rollBreakdown, sumParts } from './rollParts'
 
 export interface StatusInstance {
   id: string
@@ -1058,12 +1059,15 @@ function perform(combat: CombatState, actor: Combatant, action: CombatAction, rn
     case 'flee': {
       if (actor.ap < costs.flee) throw new Error('行動點不足')
       actor.ap -= costs.flee
-      const dice = withBonus('1d20', proficiency(actor.level) + mod(actor.attrs.dex))
+      const parts = [{ label: '熟練', value: proficiency(actor.level) }, { label: '靈巧', value: mod(actor.attrs.dex) }]
+      const dice = withBonus('1d20', sumParts(parts))
       const r = roll(rng, dice)
-      const fleeDc = combatRules.flee_dc + (actor.side === 'party' ? combat.fleeDcMod ?? 0 : 0)
+      const fleeMod = actor.side === 'party' ? combat.fleeDcMod ?? 0 : 0
+      const fleeDc = combatRules.flee_dc + fleeMod
       const ok = r.total >= fleeDc
       push(combat, {
-        actor: actor.id, action: '撤退', roll: { dice, value: r.total, dc: fleeDc },
+        actor: actor.id, action: '撤退',
+        roll: { dice, value: r.total, dc: fleeDc, ...rollBreakdown(r.rolls[0]!, parts, { dcParts: [{ label: '基礎', value: combatRules.flee_dc }, { label: '這場戰鬥', value: fleeMod }] }) },
         result: ok ? 'success' : 'fail',
         effects: ok ? [{ type: 'move', target: actor.id, text: actor.side === 'party' ? '全隊脫離戰鬥' : '逃離戰場' }] : [],
       })
@@ -1125,13 +1129,16 @@ function struggle(combat: CombatState, rng: Rng, actor: Combatant, targetId: str
   if (!target || !inst) throw new Error('沒有可以掙脫的拘束')
   actor.ap -= r.ap
   const dc = struggleDc(combat, actor, target)
-  const dice = withBonus('1d20', proficiency(actor.level) + Math.max(mod(actor.attrs.str), mod(actor.attrs.dex)))
-  const total = roll(rng, dice).total
+  const useStr = mod(actor.attrs.str) >= mod(actor.attrs.dex)
+  const parts = [{ label: '熟練', value: proficiency(actor.level) }, { label: useStr ? '力量' : '靈巧', value: useStr ? mod(actor.attrs.str) : mod(actor.attrs.dex) }]
+  const dice = withBonus('1d20', sumParts(parts))
+  const rolled = roll(rng, dice)
+  const total = rolled.total
   const ok = total >= dc
   const name = statusDef(inst.id).name
   if (ok) target.statuses = target.statuses.filter((s) => s !== inst)
   push(combat, {
-    actor: actor.id, action: target === actor ? '掙脫' : '撕開', target: target.id, roll: { dice, value: total, dc },
+    actor: actor.id, action: target === actor ? '掙脫' : '撕開', target: target.id, roll: { dice, value: total, dc, ...rollBreakdown(rolled.rolls[0]!, parts) },
     result: ok ? 'success' : 'fail',
     effects: ok ? [{ type: 'status_remove', target: target.id, text: name }] : [{ type: 'note', target: target.id, text: `${name}紋絲不動` }],
   })
@@ -1580,24 +1587,36 @@ function attackRoll(rng: Rng, actor: Combatant, target: Combatant, a?: AbilityDe
   }
   const natural = d20(rng, Math.sign(adv))
   const mods = modsOf(actor)
-  const bonus = actor.prof + mod(actor.attrs[attrFor(actor, a)]) + mods.hit + (a?.hit ?? 0)
-  const total = natural + bonus + rollLuck(rng, atk.luck)
+  const atkAttr = attrFor(actor, a)
+  const bonus = actor.prof + mod(actor.attrs[atkAttr]) + mods.hit + (a?.hit ?? 0)
+  const luck = rollLuck(rng, atk.luck)
+  const total = natural + bonus + luck
+  const parts: RollPart[] = [
+    { label: '熟練', value: actor.prof }, { label: attrName(atkAttr), value: mod(actor.attrs[atkAttr]) },
+    { label: '命中加成', value: mods.hit }, ...(a ? [{ label: a.name, value: a.hit ?? 0 }] : []), { label: '運氣', value: luck },
+  ]
   consume(actor, atk.used)
   consume(target, consumedOnTarget)
 
   const lucky = natural >= luckyThreshold(actor.attrs, mods.crit + (a?.crit ?? 0))
   let evade: number
+  let evadeParts: RollPart[] = []
   if (controls(target).has('stun')) {
     evade = 0
   } else {
     const ev = rollFactors(target, 'evade')
     const evNatural = Math.max(evadeFloor(target.attrs), d20(rng, Math.sign(ev.adv - ev.dis)))
-    evade = evNatural + Math.floor(mod(target.attrs.dex) / 2) + target.armorEvade + modsOf(target).evade + rollLuck(rng, ev.luck)
+    const evLuck = rollLuck(rng, ev.luck)
+    evadeParts = [
+      { label: '迴避骰', value: evNatural }, { label: '靈巧 ÷ 2', value: Math.floor(mod(target.attrs.dex) / 2) },
+      { label: '防具', value: target.armorEvade }, { label: '迴避加成', value: modsOf(target).evade }, { label: '運氣', value: evLuck },
+    ]
+    evade = sumParts(evadeParts)
     consume(target, ev.used)
   }
   const hit = lucky || (natural !== 1 && total >= evade)
   const result: RollResult = lucky ? 'critical' : natural === 1 ? 'fumble' : hit ? 'success' : 'fail'
-  return { hit, lucky, result, roll: { dice: withBonus('1d20', bonus), value: total, dc: evade } }
+  return { hit, lucky, result, roll: { dice: withBonus('1d20', bonus), value: total, dc: evade, ...rollBreakdown(natural, parts, { dcParts: evadeParts, dcName: '迴避' }) } }
 }
 
 function saveDc(actor: Combatant, a: AbilityDef): number {
@@ -1608,9 +1627,11 @@ function savingThrow(rng: Rng, target: Combatant, attr: AttrId, dc: number) {
   const f = rollFactors(target, 'save')
   const natural = d20(rng, Math.sign(f.adv - f.dis))
   const bonus = mod(target.attrs[attr]) + modsOf(target).save + (target.saveBonus?.[attr] ?? 0)
-  const total = natural + bonus + rollLuck(rng, f.luck)
+  const luck = rollLuck(rng, f.luck)
+  const total = natural + bonus + luck
   consume(target, f.used)
-  return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc, save: true } }
+  const parts = [{ label: attrName(attr), value: mod(target.attrs[attr]) }, { label: '豁免加成', value: modsOf(target).save + (target.saveBonus?.[attr] ?? 0) }, { label: '運氣', value: luck }]
+  return { success: total >= dc, roll: { dice: withBonus('1d20', bonus), value: total, dc, save: true, ...rollBreakdown(natural, parts) } }
 }
 
 // ---- 武器攻擊與能力 ----
@@ -2416,7 +2437,9 @@ export function finishCombat(state: GameState): Report {
     if (m && !x.rescue) addCondition(m, 'away', report)
     report.timeline = [...(report.timeline ?? []), {
       seq: (report.timeline?.length ?? 0) + 1, time: combat.startTime, actor: x.id,
-      action: `${x.name}：救助或逃跑（親密度）`, roll: { dice: '1d20', value: x.total, dc: nc.defeat_check.dc }, result: x.rescue ? 'success' : 'fail',
+      action: `${x.name}：救助或逃跑（親密度）`,
+      roll: { dice: '1d20', value: x.total, dc: nc.defeat_check.dc, ...rollBreakdown(x.natural, [{ label: `親密度 ÷ ${nc.defeat_check.affinity_step}`, value: x.total - x.natural }]) },
+      result: x.rescue ? 'success' : 'fail',
     }]
   }
   // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）

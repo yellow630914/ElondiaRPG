@@ -2,7 +2,7 @@
 
 import { tagsAllowed } from './content'
 import { condMet, openFor } from './storyFlags'
-import { checkBonus } from './perks'
+import { checkModifiers } from './perks'
 import { abilityQuality, carryLearned, proficiency, rerollAbilityChoices, setCarried, snapshot } from './character'
 import { setQuestDeadline } from './deadlines'
 import { acceptExam, dropExam, examQuest, isExam, playerRank, postExam, promotionStatus, questMerit, questXp } from './guild'
@@ -27,6 +27,7 @@ import type { GameState, GuildRank, Quest, Report } from './types'
 import { shortestPath } from './world'
 import { gameRule, rewardMoney } from './gameRules'
 import { squadMates } from './squads'
+import { rollBreakdown, sumParts } from './rollParts'
 
 export { INN_CC_PER_PERSON } from './rest'
 export const RATION_CC = 5
@@ -325,13 +326,13 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   if (tpl.dc !== undefined && !retried) {
     const pc = player(state)
     // 任務旗標：打聽到線索 +5，消息走漏 -2
-    const bonus = (quest.flags?.lead ? 5 : 0) + checkBonus(pc, { context: 'quest' })
-    const dice = withBonus('1d20', proficiency(pc.level) + bonus)
+    const parts = [{ label: '熟練', value: proficiency(pc.level) }, ...(quest.flags?.lead ? [{ label: '打聽到的線索', value: 5 }] : []), ...checkModifiers(pc, { context: 'quest' })]
+    const dice = withBonus('1d20', sumParts(parts))
     const r = withRng(state, (rng) => roll(rng, dice))
     success = r.total >= tpl.dc
     report.timeline = [{
       seq: 1, time: report.time.start, actor: pc.id, action: quest.title,
-      roll: { dice, value: r.total, dc: tpl.dc }, result: success ? 'success' : 'fail',
+      roll: { dice, value: r.total, dc: tpl.dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: success ? 'success' : 'fail',
     }]
   }
   if (success) {

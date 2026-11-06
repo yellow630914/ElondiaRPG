@@ -5,7 +5,8 @@ import { abilities, attrName, className, companionRules, conditionName, geograph
 import { lewdName } from '@/engine/lewd'
 import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
-import type { Effect, Report, TimelineEntry } from '@/engine/types'
+import { sumParts } from '@/engine/rollParts'
+import type { Effect, Report, RollPart, TimelineEntry, TimelineRoll } from '@/engine/types'
 
 export function locationName(id: string): string {
   return geography.locations.find((l) => l.id === id)?.name ?? id
@@ -35,6 +36,26 @@ const RESULT_TEXT: Record<TimelineEntry['result'], string> = {
   success: '成功', critical: '幸運一擊！', fail: '失敗', fumble: '大失敗', partial: '部分成功', none: '',
 }
 
+const signedPart = (p: RollPart) => `${p.label} ${p.value >= 0 ? '+' : ''}${p.value}`
+
+/**
+ * 擲骰的加值拆解（「經過」與戰鬥紀錄滑鼠移上去看）：「骰 11 + 魅力 +1 + 熟練 +2 = 14，對 DC 12」。
+ * 只有記了骰面（natural）的擲骰才有；舊存檔與沒有拆解的擲骰回傳 undefined（畫面就不顯示）。
+ */
+export function rollDetail(roll: TimelineRoll | undefined): string | undefined {
+  if (!roll || roll.natural === undefined || roll.value === undefined) return undefined
+  const parts = roll.parts ?? []
+  // 防呆：拆解的總和對不上總值時，差額列成「其他」，不讓顯示的算式算錯
+  const rest = roll.value - roll.natural - sumParts(parts)
+  const all = rest ? [...parts, { label: '其他', value: rest }] : parts
+  const dice = roll.naturals ? `骰 ${roll.naturals.join('、')} 取 ${roll.natural}` : `骰 ${roll.natural}`
+  const sum = [dice, ...all.map(signedPart)].join(' + ')
+  const head = roll.save ? `豁免：${sum}` : sum
+  if (roll.dc === undefined) return `${head} = ${roll.value}`
+  const dcParts = roll.dc_parts?.length ? `（${roll.dc_parts.map((p, i) => (i === 0 ? `${p.label} ${p.value}` : signedPart(p))).join(' + ')}）` : ''
+  return `${head} = ${roll.value}，${roll.dc_name ? `對${roll.dc_name} ` : '對 DC '}${roll.dc}${dcParts}`
+}
+
 export function describeEntry(t: TimelineEntry, names: Record<string, string>): string {
   const actor = names[t.actor] ?? t.actor
   const target = t.target ? ` → ${names[t.target] ?? t.target}` : ''
@@ -48,7 +69,8 @@ export function describeEntry(t: TimelineEntry, names: Record<string, string>): 
 }
 
 /** 戰鬥畫面的紀錄行：主句、細節（滑過才看到的倍率與減傷），一個動作打到多個目標時每個目標一行 */
-export interface CombatLogLine { text: string; detail?: string; targets?: { text: string; detail?: string }[] }
+/** roll：擲骰的加值拆解（rollDetail），電腦版放進滑鼠提示，手機版點一下展開 */
+export interface CombatLogLine { text: string; detail?: string; roll?: string; targets?: { text: string; detail?: string }[] }
 
 export function describeCombatLine(t: TimelineEntry, names: Record<string, string>): CombatLogLine {
   const actor = names[t.actor] ?? t.actor
@@ -68,10 +90,12 @@ export function describeCombatLine(t: TimelineEntry, names: Record<string, strin
       const mine = effects.filter((e) => (e.target ?? '') === id)
       return { text: mine.map(plain).join('，'), detail: joinDetail(mine) }
     })
-    return { text: head, targets }
+    const roll = rollDetail(t.roll)
+    return { text: head, targets, ...(roll ? { roll } : {}) }
   }
   const body = effects.map(plain).join('，')
-  return { text: body ? `${head}｜${body}` : head, detail: joinDetail(effects) }
+  const roll = rollDetail(t.roll)
+  return { text: body ? `${head}｜${body}` : head, detail: joinDetail(effects), ...(roll ? { roll } : {}) }
 }
 
 export function describeChanges(report: Report): string[] {

@@ -8,8 +8,8 @@
 
 import { maybeDungeonEvent } from './dungeonEvents'
 import { maybeParasiteEvent } from './parasiteEvents'
-import { checkBonus, perksOf } from './perks'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { perksOf } from './perks'
+import { attrOf, mod, snapshot } from './character'
 import { encounterFor, startCombat, type CombatState } from './combat'
 import { abilities, classDef, companionRules, homeRules, lewdRules, locationById, regionById, slaveryRules, specialMaps, wildEncounters, type DungeonLayerId } from './data'
 import { charmLevel } from './charm'
@@ -30,6 +30,7 @@ import { contractOf } from './tattoos'
 import { gameRule } from './gameRules'
 import { squadMates } from './squads'
 import { blockingNode } from './story'
+import { checkParts, rollBreakdown, sumParts } from './rollParts'
 
 export const INN_CC_PER_PERSON = 15
 
@@ -412,13 +413,16 @@ function leaveOthersParty(state: GameState, report: Report, head: Character, gro
     delta = rules.affinity.formal
     line = `你向${head.name}正式道別，離開了這支隊伍。`
   } else {
-    const dice = withBonus('1d20', mod(attrOf(pc, 'dex')) + proficiency(pc.level) + checkBonus(pc, { context: 'stealth', attr: 'dex' }))
+    const parts = checkParts(pc, { context: 'stealth', attr: 'dex' })
+    const dice = withBonus('1d20', sumParts(parts))
     const r = roll(rng, dice)
     const dc = rules.sneak_base + Math.floor(head.level / 2)
     const ok = r.total >= dc
     ;(report.timeline ??= []).push({
       seq: (report.timeline?.length ?? 0) + 1, time: report.time.end, actor: pc.id, action: '趁夜偷偷離開',
-      target: head.id, roll: { dice, value: r.total, dc }, result: ok ? 'success' : 'fail',
+      target: head.id,
+      roll: { dice, value: r.total, dc, ...rollBreakdown(r.rolls[0]!, parts, { dcParts: [{ label: '基礎', value: rules.sneak_base }, { label: `${head.name}的等級 ÷ 2`, value: Math.floor(head.level / 2) }] }) },
+      result: ok ? 'success' : 'fail',
     })
     delta = ok ? rules.affinity.sneak_success : rules.affinity.sneak_fail
     line = ok ? `你趁著${head.name}睡著，悄悄離開了隊伍。` : `你想偷偷離開，卻被${head.name}撞見，只好在尷尬中分道揚鑣。`

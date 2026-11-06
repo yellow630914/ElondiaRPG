@@ -2,6 +2,14 @@
 
 > 上層：[計畫與追蹤](../README.md)。做完的計畫在這裡記一段：做了什麼、規則寫在哪份系統文件。細節以系統文件為準，這裡只是索引。新的紀錄加在最上面。
 
+### 2026-11-06 小改進（第二輪）：委託板、規則判定提醒、擲骰的加值拆解（R25）；R25 完成
+
+- 依 2026-11-05 Discord 第二輪玩家回饋（Tirpitz）做的三項：
+  - 委託板的篩選與排序（`questBoard.ts`）：規則寫在 [GUILD](../../GUILD.md) 第 0 節。
+  - 自由行動在規則判定時的提醒：規則不改，固定用魅力；寫在 [ACTIONS](../../ACTIONS.md) 第 3 節。
+  - 擲骰的加值拆解：時間軸 roll 的 `natural`、`parts`、`dc_parts`（`rollParts.ts`，約 20 處擲骰），日誌「經過」與戰鬥紀錄滑鼠移上去或點一下看；寫在 [ACTIONS](../../ACTIONS.md) 第 6 節與 [COMBAT_SYSTEM](../../COMBAT_SYSTEM.md) 8.3 節。舊存檔不顯示。
+- 測試在 `questBoard.spec.ts`、`rollParts.spec.ts`。計畫檔 QOL2_PLAN 刪掉。
+
 ### 2026-11-06 高等地下城的寶箱與材料委託（R12 的剩餘部分）；R12 完成
 
 - 寶箱：`gear.json` 的 `chest_forge_high`，寶箱等級到 13、17 時取代那一層的打造材料（Lv.13～16：第 4～6 級；Lv.17～20：第 5～7 級；原本深層只有第 3、4 級）。`gear.ts` 的 `chestForgeTable`；物品來源也列出來。

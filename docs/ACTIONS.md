@@ -116,6 +116,8 @@ AI 關閉時（也是給 AI 的參考結果，`actions.json` 的 `degrees`）：
 
 存檔規則「大成功、大失敗只看骰面」（`options.naturalCrit`，[SAVES](SAVES.md) 第 7 節）打開時，拿掉「總值 ≥ DC + 10」與「總值 ≤ DC − 10」兩條：只有自然 20 大成功、自然 1 大失敗（`checks.ts` 的 `computeDegree`）。AI 判定也照這條：判定的骰值段落寫明這條規則，AI 給的大成功（骰面不是 20）改成成功、大失敗（骰面不是 1）改成失敗（`clampDegree`）。談判、撤出地下城、打聽消息、提議夥伴去娼館的檢定也一樣；戰鬥的幸運一擊本來就只看骰面。
 
+**自由行動的屬性**：規則判定時固定用魅力（`actions.json` 的 `free.attr`），不看玩家寫的內容，也不分類；AI 判定時由 AI 依內容選屬性（`attr`）與分類（2.1 節）。規則判定時，主動行動的標題旁有一個警告圖示提醒這件事，並指向旁邊的「規則判定」按鈕打開 AI 判定（還沒設定模型來源時，改成說明要先設定，`ActionPanel.vue`）。
+
 主角對自己的奴隸做主動行動時有優勢（擲兩次 d20 取高，報告與判定資料都標示兩個骰值）。
 
 ## 4. AI 效果的上限
@@ -142,6 +144,9 @@ AI 關閉時（也是給 AI 的參考結果，`actions.json` 的 `degrees`）：
 花掉的資源記在報告的 `changes.resources`；AI 會看到用了什麼能力，並自行判斷它有沒有幫助。
 
 ## 6. 報告
+
+**擲骰的加值拆解**：報告時間軸上的擲骰（`TimelineEntry.roll`）除了 `dice`、`value`、`dc`，還記下骰面 `natural`（擲兩次時兩個骰面記在 `naturals`）、骰面以外的各項加值 `parts`（屬性、熟練、特質、狀態、身分、裝備、工具、線索……，總和 = `value − natural`），DC 有好幾項組成時記在 `dc_parts`（例如城門盤查的「基礎 + 警戒」、AI 調整過的「參考 DC + AI 調整」），攻擊的 DC 是目標的迴避（`dc_name: "迴避"`，組成是迴避骰、靈巧 ÷ 2、防具、迴避加成、運氣）。各處用 `rollParts.ts` 的 `rollBreakdown` 寫進去，加值和原本算總值的是同一批（`checkParts`、`attrParts`、`toolParts`）。
+日誌的「經過」（`ReportCard.vue`）與戰鬥紀錄：有拆解的那一行滑鼠移上去看「骰 11 + 魅力 +1 + 熟練 +2 = 14，對 DC 12」（`describe.ts` 的 `rollDetail`），點一下在下面展開（手機版沒有滑鼠提示）。拆解加起來對不上總值時，差額列成「其他」。**舊存檔**的紀錄沒有這些欄位，維持原樣、不顯示拆解。
 
 自由行動與工藝（`free`、`craft`、`make`、`produce`、`invent`）的報告類型是 `action`，特殊任務的判定（`story`）是 `event`（和任務的其他日誌一樣），其他主動行動是 `social`（`actions.ts` 的 `actionReport`）；各類型的記憶規則不同，見 [RELATIONSHIP_MEMORY](RELATIONSHIP_MEMORY.md) 第 2 節。
 

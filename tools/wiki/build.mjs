@@ -130,7 +130,6 @@ export const GROUPS = [
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
     { page: '材料資訊計畫', src: 'docs/plan/roadmap/MATERIALS_PLAN.md', desc: '行囊的材料分類、材料的等級與用途（R24）' },
-    { page: '小改進計畫（第二輪）', src: 'docs/plan/roadmap/QOL2_PLAN.md', desc: '委託板的篩選與排序、自由行動的提醒、判定的加值拆解（R25）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
     { page: '已完成', src: 'docs/plan/roadmap/COMPLETED.md', desc: '做完的計畫：做了什麼、規則寫在哪份文件' },
   ] },

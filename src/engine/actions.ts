@@ -51,7 +51,8 @@ import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { useAbilityOutOfCombat, type AbilityUse } from './resources'
 import { formatMoney } from './money'
-import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange } from './types'
+import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange, RollPart } from './types'
+import { rollBreakdown } from './rollParts'
 import { contractOf } from './tattoos'
 import { canonicalName } from './script'
 
@@ -635,6 +636,20 @@ function actionReport(state: GameState, p: ActionPending, hours: number): Report
 }
 
 /** 依判定（AI 或規則）結算等待中的行動。 */
+/**
+ * 拆解等待中行動的屬性加值（modifiers[attr] 是屬性調整值 + 熟練）：分成「屬性」「熟練」兩項。
+ * 工藝檢定只有縮小的屬性、委託打造由店主擲（屬性不算）；找不到擲骰的人時合成一項。
+ */
+function attrModParts(state: GameState, p: ActionPending, attr: AttrId): RollPart[] {
+  const m = p.modifiers[attr]
+  if (p.craftCheck === 'keeper') return []
+  if (p.craftCheck === 'self') return [{ label: `${attrName(attr)}（工藝檢定）`, value: m }]
+  const actor = p.actor ? memberOrResident(state, currentArea(state), p.actor) : pcOf(state)
+  if (!actor) return [{ label: `${attrName(attr)}與熟練`, value: m }]
+  const prof = proficiency(actor.level)
+  return [{ label: attrName(attr), value: m - prof }, { label: '熟練', value: prof }]
+}
+
 export function resolveAction(state: GameState, judgment: Judgment | null): Report {
   const p = state.pendingAction
   if (!p) throw new Error('沒有等待判定的行動')
@@ -686,7 +701,13 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   report.timeline = [{
     seq: 1, time: report.time.start, actor: p.actor ?? 'pc', action: `${kind.name}（${attrName(attr)}${p.rolls ? `・優勢 ${p.rolls.join('、')}` : ''}）`,
     ...(p.target && !p.target.includes(':') ? { target: p.target } : {}),
-    roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc },
+    roll: {
+      dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc,
+      ...rollBreakdown(p.natural, [...attrModParts(state, p, attr), ...situational], {
+        ...(p.rolls ? { naturals: p.rolls } : {}),
+        ...(dc !== p.base_dc ? { dcParts: [{ label: '參考 DC', value: p.base_dc }, { label: 'AI 調整', value: dc - p.base_dc }] } : {}),
+      }),
+    },
     result: degree === 'fail' ? 'fail' : degree,
   }]
 

@@ -91,7 +91,12 @@
               "dice": { "type": "string", "examples": ["1d20+5"] },
               "value": { "type": "integer" },
               "dc": { "type": "integer" },
-              "save": { "type": "boolean", "description": "豁免：value 是目標的豁免，dc 是施放者的豁免難度" }
+              "save": { "type": "boolean", "description": "豁免：value 是目標的豁免，dc 是施放者的豁免難度" },
+              "natural": { "type": "integer", "description": "加值拆解：採用的骰面（d20）；舊存檔沒有" },
+              "naturals": { "type": "array", "items": { "type": "integer" }, "description": "擲兩次取高或取低時的兩個骰面" },
+              "parts": { "type": "array", "items": { "$ref": "#/$defs/rollPart" }, "description": "骰面以外的加值（屬性、熟練、特質、工具……），總和 = value − natural" },
+              "dc_parts": { "type": "array", "items": { "$ref": "#/$defs/rollPart" }, "description": "DC 的組成，總和 = dc" },
+              "dc_name": { "type": "string", "description": "DC 不叫 DC 時的名稱（例如攻擊對的「迴避」）" }
             }
           },
           "result": { "enum": ["success", "critical", "fail", "fumble", "partial", "none"] },
@@ -310,6 +315,11 @@
     }
   },
   "$defs": {
+    "rollPart": {
+      "type": "object",
+      "required": ["label", "value"],
+      "properties": { "label": { "type": "string" }, "value": { "type": "integer" } }
+    },
     "game_time": {
       "type": "object",
       "required": ["day"],

@@ -7,7 +7,7 @@
 
 import { pcTagMult } from './pcTags'
 import { checkModifiers, modifierNote } from './perks'
-import { attrOf, lifeTier, mod, proficiency, snapshot } from './character'
+import { lifeTier, snapshot } from './character'
 import { abilities, contractDef, lewdRules, locationById, masterEventPool, type MasterEventPool, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type MasterEventOption, type UnmarkServiceDef } from './data'
 import { isMadam, madamHere, nearBrothel } from './brothel'
 import { adultScene, tagsAllowed } from './content'
@@ -32,6 +32,7 @@ import { growLewd, addLewd, lewdOf } from './lewd'
 import type { Character, ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 import { gameRule } from './gameRules'
+import { attrParts, rollBreakdown, sumParts } from './rollParts'
 
 // ---- 印記條款 ----
 
@@ -644,10 +645,11 @@ export function answerMasterEvent(state: GameState, index: number): Report {
       ...checkModifiers(r0, { context: pool === 'master' ? 'master_event' : 'action', attr: o.check.attr, ...(o.check.skill ? { skill: o.check.skill } : {}), vsTags: roles.tags }),
       ...stanceModifiers(roles.subject, o.stance), ...roles.dcMods,
     ]
-    const dice = withBonus('1d20', mod(attrOf(r0, o.check.attr)) + proficiency(r0.level) + extra.reduce((s, x) => s + x.value, 0))
+    const parts = [...attrParts(r0, o.check.attr), ...extra]
+    const dice = withBonus('1d20', sumParts(parts))
     const r = withRng(state, (rng) => roll(rng, dice))
     ok = r.total >= o.check.dc
-    report.timeline = [{ seq: 1, time: start, actor: r0.id, action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc }, result: ok ? 'success' : 'fail' }]
+    report.timeline = [{ seq: 1, time: start, actor: r0.id, action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }]
     effects = [...effects, ...forEvent(ok ? o.effects_success : o.fail_effects, roles, pc)]
     report.outcome.result = ok ? 'success' : 'failure'
     const after = ok ? o.success : o.fail

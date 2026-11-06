@@ -51,6 +51,33 @@ export interface Effect {
   text?: string
 }
 
+/** 檢定總值或 DC 的一項組成（屬性、熟練、特質、工具……；DC 的基礎、層級差……） */
+export interface RollPart {
+  label: string
+  value: number
+}
+
+/**
+ * 時間軸上的一次擲骰。natural、parts、dc_parts 是加值拆解（日誌「經過」滑鼠移上去看），
+ * 舊存檔與沒有拆解的擲骰沒有這些欄位，畫面就不顯示拆解。
+ */
+export interface TimelineRoll {
+  dice?: string
+  value?: number
+  dc?: number
+  save?: boolean
+  /** 採用的骰面（d20） */
+  natural?: number
+  /** 擲兩次取高或取低時，兩個骰面都記下來（natural 是採用的那個） */
+  naturals?: number[]
+  /** 骰面以外的加值，總和 = value − natural */
+  parts?: RollPart[]
+  /** DC 的組成（有的話），總和 = dc */
+  dc_parts?: RollPart[]
+  /** DC 不叫 DC 時的名稱（例如攻擊對的是目標的「迴避」） */
+  dc_name?: string
+}
+
 export interface TimelineEntry {
   seq: number
   round?: number
@@ -59,7 +86,7 @@ export interface TimelineEntry {
   action: string
   target?: string
   /** save：value 是目標的豁免、dc 是施放者的豁免難度（其他時候 value 是行動者的骰值） */
-  roll?: { dice?: string; value?: number; dc?: number; save?: boolean }
+  roll?: TimelineRoll
   result: RollResult
   effects?: Effect[]
 }
