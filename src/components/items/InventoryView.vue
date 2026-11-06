@@ -6,6 +6,7 @@ import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
 import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
+import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
 import { blueprintName } from '@/engine/blueprints'
@@ -40,18 +41,34 @@ const shown = computed(() => {
   if (sort.value === 'qty') return [...list].sort((a, b) => b.qty - a.qty)
   return list
 })
-// 「全部」依類別分段，每段可以收合；材料預設收合（搜尋時全部展開）
+// 材料再依小類（貿易類別，materialInfo.ts）分段；照類別排序時，同一段裡等級高的在前
+const tierOf = (name: string) => materialTier(s.value, name)?.tier ?? 0
+function materialSections(list: typeof items.value, nameOf: (g: ReturnType<typeof materialGroup>) => string) {
+  return materialGroupOrder().map((g) => {
+    const mine = list.filter((i) => materialGroup(s.value, i.name) === g)
+    return { id: `material:${g}`, icon: 'material' as ItemCategory | 'other', name: nameOf(g), items: sort.value === 'category' ? [...mine].sort((a, b) => tierOf(b.name) - tierOf(a.name)) : mine }
+  }).filter((x) => x.items.length)
+}
+// 「全部」依類別分段，每段可以收合；材料的小段預設收合（搜尋時全部展開）
 const sections = computed(() => {
-  if (filter.value !== 'all') return [{ id: filter.value, name: '', items: shown.value }]
-  const out = CATEGORY_ORDER.map((c) => ({ id: c as ItemCategory | 'other', name: itemRules.categories[c], items: shown.value.filter((i) => categoryOf(s.value, i.name) === c) }))
-  out.push({ id: 'other', name: '其他', items: shown.value.filter((i) => !categoryOf(s.value, i.name)) })
+  if (filter.value === 'material') return materialSections(shown.value, materialGroupName)
+  if (filter.value !== 'all') return [{ id: filter.value, icon: filter.value as ItemCategory | 'other', name: '', items: shown.value }]
+  const out = CATEGORY_ORDER.flatMap((c) => {
+    const list = shown.value.filter((i) => categoryOf(s.value, i.name) === c)
+    if (c === 'material') return materialSections(list, (g) => `${itemRules.categories.material}・${materialGroupName(g)}`)
+    return [{ id: c as string, icon: c as ItemCategory | 'other', name: itemRules.categories[c], items: list }]
+  })
+  out.push({ id: 'other', icon: 'other', name: '其他', items: shown.value.filter((i) => !categoryOf(s.value, i.name)) })
   return out.filter((x) => x.items.length)
 })
-const folded = reactive(new Set<string>(['material']))
-const isFolded = (id: string) => filter.value === 'all' && !query.value.trim() && folded.has(id)
+const folded = reactive(new Set<string>())
+const unfoldedMaterials = reactive(new Set<string>())
+// 材料的小段預設收起（只看到小類與件數）；其他類別預設展開
+const isFolded = (id: string) => filter.value === 'all' && !query.value.trim() && (id.startsWith('material:') ? !unfoldedMaterials.has(id) : folded.has(id))
 function fold(id: string) {
-  if (folded.has(id)) folded.delete(id)
-  else folded.add(id)
+  const set = id.startsWith('material:') ? unfoldedMaterials : folded
+  if (set.has(id)) set.delete(id)
+  else set.add(id)
 }
 const expanded = ref<string | null>(null)
 const target = reactive<Record<string, string>>({})
@@ -85,7 +102,7 @@ const target = reactive<Record<string, string>>({})
     <section v-for="sec in sections" :key="sec.id" class="sec">
       <button v-if="sec.name" class="sec-head ghost" @click="fold(sec.id)">
         <GameIcon :name="isFolded(sec.id) ? 'right' : 'down'" :size="13" />
-        <ItemIcon v-if="sec.id !== 'other'" :category="sec.id" :size="14" />{{ sec.name }}<span class="muted small">{{ sec.items.length }}</span>
+        <ItemIcon v-if="sec.icon !== 'other'" :category="sec.icon" :size="14" />{{ sec.name }}<span class="muted small">{{ sec.items.length }}</span>
       </button>
       <ul v-if="!isFolded(sec.id)" class="plain rows unfold">
         <li v-for="i in sec.items" :key="i.name" class="item-row" :class="{ open: expanded === i.name }">
@@ -94,7 +111,7 @@ const target = reactive<Record<string, string>>({})
             <span class="what">
               <strong>{{ i.name }}</strong>
               <span class="small muted">{{ categoryName(s, i.name) }}</span>
-              <span v-if="itemEffect(s, i.name)" class="small effect">{{ itemEffect(s, i.name) }}</span>
+              <span v-if="itemEffect(s, i.name)" class="small effect" :title="materialRecipesFull(i.name) || undefined">{{ itemEffect(s, i.name) }}</span>
             </span>
             <span class="small muted val">{{ value(i.name) !== undefined ? `約 ${formatMoney(value(i.name)!)}` : '' }}</span>
             <span class="qty">×{{ i.qty }}</span>
@@ -111,6 +128,7 @@ const target = reactive<Record<string, string>>({})
           </div>
           <div v-if="expanded === i.name" class="more small">
             <div v-if="itemEffect(s, i.name)" class="effect">{{ itemEffect(s, i.name) }}</div>
+            <div v-if="materialRecipesFull(i.name)" class="effect full">{{ materialRecipesFull(i.name) }}</div>
             <div v-if="itemText(s, i.name)" class="muted">{{ itemText(s, i.name) }}</div>
           </div>
         </li>
@@ -136,6 +154,7 @@ const target = reactive<Record<string, string>>({})
 .grow { flex: 1; min-width: 0; }
 .qty { font-weight: 600; color: var(--accent-2); text-align: right; white-space: nowrap; }
 .effect { color: var(--accent); }
+.more .effect.full { white-space: pre-line; }
 .sec { display: grid; gap: 4px; }
 .sec-head { justify-self: start; display: inline-flex; align-items: center; gap: 6px; padding: 2px 6px; border: none; color: var(--accent-2); font-weight: 700; }
 /* 一列一件：圖示、名稱、類別、效果摘要、估價、數量、動作；點一下展開描述 */

@@ -1858,6 +1858,8 @@ export interface ItemDef {
   min_location?: string
   /** 貿易類別（data/rules/market.json 的 categories）；沒寫時照其他欄位推（market.ts 的 tradeCategory） */
   trade_category?: string
+  /** 材料的等級（1～7，手動填）；沒寫時照用途推（materialInfo.ts 的 materialTier） */
+  tier?: number
   /** 只在這些地區的商店賣（地方的特產，例如炎華之地的茶餅、朴刀）；沒有時哪裡都賣 */
   regions?: string[]
   /** 魅氣濃度至少這麼高的聚落才買得到（淫市的貨，docs/LEWD_STATS.md 第 20 節） */
@@ -1956,9 +1958,13 @@ export function itemDef(name: string): ItemDef | undefined {
 
 // 這個存檔自創的物品（自創配方，見 invention.ts）：不在物品目錄裡，讀檔、開新遊戲時換成那個存檔的
 const saveItemIndex = new Map<string, ItemDef>()
+let saveItemsRev = 0
+/** 存檔自創物品換過幾次（反查索引判斷要不要重建，見 materialInfo.ts） */
+export const saveItemsRevision = () => saveItemsRev
 export function setSaveItems(items: ItemDef[]) {
   saveItemIndex.clear()
   for (const i of items) saveItemIndex.set(i.name, i)
+  saveItemsRev++
 }
 export function saveItems(): ItemDef[] {
   return [...saveItemIndex.values()]

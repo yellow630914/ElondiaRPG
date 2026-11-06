@@ -3,10 +3,11 @@
 import { craftRules, itemDef, itemRules, type ItemCategory } from '@/engine/data'
 import { seedSummary } from '@/engine/garden'
 import { furnitureSummary } from '@/engine/homes'
-import { gearKnown, gearRules, gearSpecOf, gearStats, gearSummary } from '@/engine/gear'
+import { gearKnown, gearSpecOf, gearStats, gearSummary } from '@/engine/gear'
 import { intelSummary, isIntelItem, useSummary } from '@/engine/inventory'
 import { toolSummary } from '@/engine/tools'
 import { itemCategory } from '@/engine/trade'
+import { materialLabel, materialUses } from '@/engine/materialInfo'
 import type { GameState, GearSpec } from '@/engine/types'
 
 /** 篩選分頁的順序 */
@@ -25,17 +26,18 @@ export function itemRarity(state: GameState, name: string): string {
   return specRarity(gearSpecOf(state, name))
 }
 
+/** 類別欄：材料寫種類與等級（「煉金材料・第 2 級」，materialInfo.ts），其他寫類別 */
 export function categoryName(state: GameState, name: string): string {
   const c = categoryOf(state, name)
+  if (c === 'material') return materialLabel(state, name)
   return c ? itemRules.categories[c] : '其他'
 }
 
-/** 一行效果說明：裝備的數值、使用效果、工具模板、可打造的材料 */
+/** 一行效果說明：裝備的數值、使用效果、工具模板；材料寫能做什麼（可打造、可以做的配方、輔料） */
 export function itemEffect(state: GameState, name: string): string {
   const def = itemDef(name)
   const spec = gearSpecOf(state, name)
-  const forgeNames = [...new Set((def?.forge?.materials ?? []).map((m) => gearRules.materials[m]?.name).filter(Boolean))]
-  const forge = forgeNames.length ? `可打造${forgeNames.join('、')}` : ''
+  const forge = materialUses(state, name)
   const recipe = def?.recipe ? `配方：${craftRules.skills[def.recipe.craft].name} Lv.${def.recipe.level}` : ''
   return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), isIntelItem(state, name) ? intelSummary(def?.intel) : '', forge,
     furnitureSummary(def?.furniture), seedSummary(def?.seed), recipe]

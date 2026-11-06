@@ -12,6 +12,7 @@ import { intelSummary, useSummary } from '@/engine/inventory'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod, SYSTEM_CONDITIONS } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { inferTradeCategory, marketRules, tradeCategoryName } from '@/engine/market'
+import { inferMaterialTier, maxMaterialTier } from '@/engine/materialInfo'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
 import { PLACE_NAME } from '@/engine/homes'
@@ -71,6 +72,11 @@ const edited = computed(() => !custom.value && !!content.mods.items[props.name])
 const CATS = itemRules.categories
 // 貿易類別（城鎮標籤的價格倍率看這個，docs/TRADE.md 3.1 節）：沒填時照其他欄位推
 const inferredTrade = computed(() => tradeCategoryName(inferTradeCategory({ ...draft.value, name: newName.value })))
+// 材料等級沒填時照用途推（用目前套用中的內容推：剛改的配方、掉落要存檔之後才算進去）
+const inferredTier = computed(() => {
+  const t = inferMaterialTier(custom.value ? newName.value : props.name)
+  return t ? `第 ${t.tier} 級` : '推不出來，不顯示'
+})
 const damageIds = damageTypes.types.map((t) => t.id)
 const statusList = Object.entries(statuses).map(([id, s]) => ({ id, ...s }))
 const debuffs = statusList.filter((s) => s.kind === 'debuff')
@@ -375,6 +381,12 @@ function setFuel(v: string) {
           <select :value="draft.trade_category ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.trade_category = ($event.target as HTMLSelectElement).value) : delete draft.trade_category">
             <option value="">（照推的：{{ inferredTrade }}）</option>
             <option v-for="(n, k) in marketRules.categories" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
+        <label v-if="draft.category === 'material'" title="行囊、商店顯示的材料等級；沒填時照用途推（打造材料的等級、用到它的配方、會掉它的怪物等級）">材料等級
+          <select :value="draft.tier ?? ''" @change="($event.target as HTMLSelectElement).value ? (draft.tier = Number(($event.target as HTMLSelectElement).value)) : delete draft.tier">
+            <option value="">（照推的：{{ inferredTier }}）</option>
+            <option v-for="t in maxMaterialTier()" :key="t" :value="t">第 {{ t }} 級</option>
           </select>
         </label>
       </div>

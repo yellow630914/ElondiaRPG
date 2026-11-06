@@ -916,6 +916,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (raw.adult) out.adult = true
   // 貿易類別：沒寫（或寫了不認得的）照其他欄位推
   if (isTradeCategory(raw.trade_category)) out.trade_category = raw.trade_category
+  // 材料的等級：手動填的才記（沒填照用途推）
+  if (category === 'material' && raw.tier != null && String(raw.tier) !== '') out.tier = int(raw.tier, 1, Math.max(...Object.values(gearRules.materials).map((m) => m.tier)), 1)
   // 鎖（雙面效應）：替身上的拘束具上鎖
   if (category === 'gear' && raw.lock && (LOCK_GRADES as string[]).includes(raw.lock)) out.lock = raw.lock
   // 淫市的貨：魅氣濃度至少多少才買得到
