@@ -76,6 +76,8 @@ describe('crafting', () => {
   const validate = new Ajv2020({ allErrors: true, strict: false }).compile(schema)
   function game(location = 'soriel'): GameState {
     const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 5, birthplace: location })
+    // 舊存檔的角色（沒有工藝資料）算 Lv.1；新角色的 0 級規則在 crafting.spec 另外測
+    delete state.party[0]!.crafts
     enterLocation(state)
     return state
   }
@@ -126,7 +128,7 @@ describe('crafting', () => {
     standOn(state, 'smithy')
     state.money_cc = 50000
     state.inventory.push({ name: '秘銀礦石', qty: 4 })
-    const failed = craft(state, 'longsword:mithril', 8)
+    const failed = craft(state, 'longsword:mithril', 7)
     expect(failed.check?.degree).toBe('fail')
     expect(state.inventory.find((i) => i.name === '秘銀礦石')?.qty).toBe(3)
     prepareAction(state, { kind: 'craft', target: 'longsword:mithril', text: '劍身刻著火焰紋路' })

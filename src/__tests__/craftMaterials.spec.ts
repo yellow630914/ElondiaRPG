@@ -11,6 +11,8 @@ import type { GameState } from '@/engine/types'
 
 function game(): GameState {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel' })
+  // 舊存檔的角色（沒有工藝資料）算 Lv.1；新角色的 0 級規則在 crafting.spec 另外測
+  delete state.party[0]!.crafts
   enterLocation(state)
   state.money_cc = 20000
   state.inventory = []

@@ -13,6 +13,8 @@
   "level_bonus": 2,
   "$comment_check": "工藝檢定（docs/CRAFTING.md 第 3 節，R21）：d20 + 工藝等級 × level_bonus + 屬性調整值 ÷ attr_div（向零捨去，不加熟練加值）+ 特質、圖紙等修正。委託打造由店主擲：d20 + 店主的工藝等級 × level_bonus。",
   "attr_div": 3,
+  "$comment_tuition": "學工藝（docs/CRAFTING.md 第 1 節，R21）：新角色、新加入的同伴工藝從 0 級開始（工匠身分那一門 Lv.2）；在對應的店（skills 的 shop）付學費學，tuition[i] 是從 Lv.i 學到 Lv.i+1 的學費與時數（每天練 8 小時）。店裡最多教到 tuition 的長度（Lv.2），之後靠製作升級。舊存檔沒有工藝資料的角色算 Lv.1。",
+  "tuition": [{ "price_cc": 200, "hours": 8 }, { "price_cc": 800, "hours": 24 }],
   "xp_to_next": [6, 15, 30, 50, 80, 110],
   "xp": { "critical": 3, "success": 2, "partial": 1, "fail": 1, "fumble": 0 },
   "tool_tier": [1, 1, 2, 3, 3, 3, 3],

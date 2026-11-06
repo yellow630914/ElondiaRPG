@@ -1,3 +1,4 @@
+import { startCrafts } from '@/engine/crafting'
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -20,6 +21,8 @@ const valid = (r: Report) => expect(validate(r), JSON.stringify(validate.errors)
 
 function game(): GameState {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel' })
+  // 舊存檔的角色（沒有工藝資料）算 Lv.1；新角色的 0 級規則在 crafting.spec 另外測
+  delete state.party[0]!.crafts
   enterLocation(state)
   state.money_cc = 20000
   return state
@@ -35,7 +38,16 @@ function companion(state: GameState, bond: 'hired' | 'voluntary' | 'slave', affi
 }
 
 describe('craft skills', () => {
-  it('starts every craft at level 1 and levels up with experience', () => {
+  it('starts a new character at level 0 (a crafter at Lv.2), an old one at level 1', () => {
+    // 新角色：全部 0 級；工匠身分那一門 Lv.2（皮匠製革、裁縫兩門）
+    const fresh = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, tags: ['leatherworker'] })
+    expect(skillOf(fresh.party[0]!, 'smithing')).toEqual({ level: 0, xp: 0 })
+    expect(skillOf(fresh.party[0]!, 'leatherwork').level).toBe(2)
+    expect(skillOf(fresh.party[0]!, 'tailoring').level).toBe(2)
+    expect(startCrafts(['blacksmith']).smithing).toEqual({ level: 2, xp: 0 })
+  })
+
+  it('starts every craft at level 1 for an old save and levels up with experience', () => {
     const state = game()
     expect(skillOf(pc(state), 'smithing')).toEqual({ level: 1, xp: 0 })
     expect(gainCraftXp(pc(state), 'smithing', 5)).toBeUndefined()

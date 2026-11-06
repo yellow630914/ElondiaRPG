@@ -458,7 +458,7 @@ export function capSale(state: GameState, name: string, price: number): number {
 
 // ---- 交易 ----
 
-function tradeReport(state: GameState, key: string, hours: number): Report {
+export function tradeReport(state: GameState, key: string, hours: number): Report {
   const start = { ...state.time }
   const loc = locationById(state.location)
   const place = shopPlace(state)

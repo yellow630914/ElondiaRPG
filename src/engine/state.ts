@@ -17,6 +17,7 @@ import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
 import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
 import { pcTagStartItems, sanitizePcTags } from './pcTags'
+import { startCrafts } from './crafting'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
@@ -92,6 +93,8 @@ export function newGame(opts: NewGameOptions): GameState {
   if (gender) pc.gender = gender
   const tags = sanitizePcTags(opts.tags)
   if (tags.length) pc.tags = tags
+  // 工藝從 0 級開始，工匠身分那一門 Lv.2（docs/CRAFTING.md 第 1 節）
+  pc.crafts = startCrafts(tags)
   if (appearance) pc.appearance = appearance
   if (body) pc.body = body
   // 依性別（體型）預設穿上內衣、內褲；建角時自己挑了的欄位不動
