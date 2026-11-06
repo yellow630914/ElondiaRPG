@@ -258,7 +258,7 @@ const wears = (c: Character, test: (base: NonNullable<(typeof gearRules.bases)[s
 /**
  * 跨過幾天（from 天到 to 天之間的每一天）：曝露名聲每天淡掉；在聚落裡穿著曝露的服裝會累積；
  * 穿成人向服裝淫亂成長、在聚落裡真空淫亂成長、穿束縛用的底材忍耐成長、被主人鎖上的裝備順從成長；沒有契約的日子順從慢慢降；
- * 太久沒有親密場景，淫亂慢慢降回預設。三種下跌（曝露名聲、順從、淫亂）乘上存檔規則的倍率。只看隊伍裡的人；不寫進報告。
+ * 太久沒有親密場景，淫亂慢慢降回預設。三種下跌（曝露名聲、順從、淫亂）每次幾點照存檔規則，頻率不變。只看隊伍裡的人；不寫進報告。
  */
 export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   const days = Math.min(30, toDay - fromDay)
@@ -266,18 +266,17 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   const d = lewdRules.daily
   const loc = locationById(state.location)
   const inTown = d.settlements.includes(loc.type)
-  // 下跌的倍率（存檔規則）：這一天跌幾次（0 不跌、0.5 隔天一次、2 一天兩次；固定的算法，不用記零頭）
-  const steps = (day: number, perDay: number) => Math.floor(day * perDay) - Math.floor((day - 1) * perDay)
-  const exposureDecay = gameRule(state, 'exposureDecay')
-  const submissionDecay = gameRule(state, 'submissionDecay')
-  const lewdnessDecay = gameRule(state, 'lewdnessDecay')
+  // 每次下跌幾點（存檔規則；頻率照舊，0 不跌）
+  const exposureDecay = Math.round(gameRule(state, 'exposureDecay'))
+  const submissionDecay = Math.round(gameRule(state, 'submissionDecay'))
+  const lewdnessDecay = Math.round(gameRule(state, 'lewdnessDecay'))
   for (let i = 1; i <= days; i++) {
     const day = fromDay + i
     for (const m of state.party) {
       const map = state.exposure?.[m.id]
       // 還在追相鄰地區目標的地區這一天不淡掉（charm.ts 的 spreadExposure）
       const chasing = map ? chasingRegions(state, m.id) : undefined
-      const fade = steps(day, exposureDecay) * d.exposure_decay
+      const fade = exposureDecay
       if (map && fade) for (const r of Object.keys(map)) if (!chasing!.has(r)) addLewd(state, m, 'exposure', -fade, undefined, r)
       const level = exposureLevel(m)
       // 魅氣濃度越高累積得越快（charm.ts）
@@ -292,15 +291,12 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       // 奴隸印記的順從累積（條款的 submission_every）
       const every = contractOf(m)?.terms.submission_every
       if (every && day % every === 0) addLewd(state, m, 'submission', 1)
-      // 沒有契約的日子順從慢慢降（每 free_submission_every 天 1 點，乘上存檔規則的倍率）
-      if (!contractOf(m) && d.free_submission_every > 0) {
-        const drop = steps(day, submissionDecay / d.free_submission_every)
-        if (drop) addLewd(state, m, 'submission', -drop)
-      }
+      // 沒有契約的日子順從慢慢降（每 free_submission_every 天一次，每次幾點照存檔規則）
+      if (!contractOf(m) && d.free_submission_every > 0 && day % d.free_submission_every === 0 && submissionDecay) addLewd(state, m, 'submission', -submissionDecay)
       // 太久沒有親密場景，淫亂慢慢降回預設（不會降到預設以下）
       const stats = baseLewd(m)
       if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) {
-        const drop = Math.min(steps(day, lewdnessDecay), stats.lewdness - lewdRules.defaults.lewdness)
+        const drop = Math.min(lewdnessDecay, stats.lewdness - lewdRules.defaults.lewdness)
         if (drop) addLewd(state, m, 'lewdness', -drop)
       }
     }

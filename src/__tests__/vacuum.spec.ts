@@ -84,9 +84,13 @@ describe('lewd decay rules', () => {
     expect(after(game(), 12)).toEqual({ exposure: 38, submission: 26, lewdness: 28 })
   })
 
-  it('slows down or stops each drop', () => {
+  it('changes how much each drop takes, not how often, and 0 stops it', () => {
     expect(after(game({ exposureDecay: 0, submissionDecay: 0, lewdnessDecay: 0 }), 12)).toEqual({ exposure: 50, submission: 30, lewdness: 40 })
-    expect(after(game({ exposureDecay: 0.5, submissionDecay: 0.5, lewdnessDecay: 0.5 }), 12)).toEqual({ exposure: 44, submission: 28, lewdness: 34 })
+    // 每次 2 點：曝露名聲每天 −2、順從每 3 天 −2、淫亂每天 −2（第 1 天起已經超過 7 天沒有親密場景）
+    expect(after(game({ exposureDecay: 2, submissionDecay: 2, lewdnessDecay: 2 }), 12)).toEqual({ exposure: 26, submission: 22, lewdness: 16 })
+    // 只能是整數
+    expect(gameRule({ options: { defeatLoot: 'half', lewdnessDecay: 0.5 } }, 'lewdnessDecay')).toBe(1)
+    expect(sanitizeRules({ submissionDecay: 2.4 })).toEqual({ submissionDecay: 2 })
   })
 
   it('lets the experience multiplier go from 0.1 to 5', () => {

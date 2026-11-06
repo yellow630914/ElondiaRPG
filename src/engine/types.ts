@@ -805,7 +805,7 @@ export interface GameOptions {
   /** 每個角色戰鬥時最多攜帶幾個技能與法術（戲法不算）；0 = 不限 */
   skillLoadout?: number
   /** 慾望戰鬥：所有慾望增加的倍率；0 = 關閉 */
-  /** 慾望指標每天的下跌倍率（曝露名聲的淡化、沒有契約時順從的回落、太久沒有親密場景時淫亂的回落；lewd.ts 的 lewdDaily） */
+  /** 慾望指標每次下跌幾點（曝露名聲每天淡掉、沒有契約時順從的回落、太久沒有親密場景時淫亂的回落；頻率不變；lewd.ts 的 lewdDaily） */
   exposureDecay?: number
   submissionDecay?: number
   lewdnessDecay?: number
