@@ -52471,6 +52471,2690 @@
         }
       ],
       "rewards": [{ "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "yhink_grind",
+      "title": "研墨",
+      "summary": "秋闈前，狀元客舍住滿了來應考的舉子。范掌櫃雇你當「紅袖」，替書生研墨點香——書生要什麼就給什麼。（狀元客舍的紅袖添香・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_fan_zhanggui",
+        "min_level": 6,
+        "pc_body": ["fem", "andro"],
+        "text": "范掌櫃把一件素色的褙子塞進你手裡，順手捏了捏你的腰：「紅袖添香夜讀書。書生們熬夜溫書，就缺一個添香的人。研墨、點香、端茶，他念詩你就聽著，他摸你你就讓他摸——讀書人手不重。中了的，回來的賞錢夠你吃半年。」",
+        "items": ["絲綢褙子"]
+      },
+      "start_flags": ["yhink_grind_start"],
+      "nodes": [
+        {
+          "id": "grind",
+          "title": "替舉子研墨點香",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_scholar_inn" },
+          "text": "廊下第一間房的舉子點了你。你跪坐在書案邊研墨，他一邊念「玉臂清輝寒」一邊把手伸進褙子裡，念到哪一個字就摸到哪裡。念完他停下來：「對下一句。對不出來，罰。」",
+          "check": { "attr": "int", "dc": 13 },
+          "success": {
+            "text": "你對上了下一句，還對得比他的工整。他愣了一下，臉紅到耳根，把手縮了回去，乖乖寫了一整夜的文章，天亮時在你手心塞了一把銅錢。",
+            "effects": [{ "type": "money", "amount": 40 }],
+            "set_flags": ["yhink_grind_grind"]
+          },
+          "fail": {
+            "text": "你對不上來。他笑著說「罰」，把你拉到腿上，一句詩一句詩地念，念一句摸一處，一首《長恨歌》念完，你的褙子裡沒有一處沒被摸過。",
+            "scene": "舉子把主角拉到腿上，一邊念《長恨歌》一邊把手伸進褙子裡，念一句揉一處胸口、念一句摳一下腿間，整首詩念完，主角被摸得渾身發軟。",
+            "effects": [{ "type": "money", "amount": 60 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhink_grind_grind"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhink_grind_start"] },
+          "wear": ["beizi"]
+        },
+        {
+          "id": "row",
+          "title": "整條廊的書生",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_scholar_inn" },
+          "text": "第一間房的事傳開了。整條廊的房門一扇扇打開，書生們探出頭來：「紅袖，這邊也要添香。」范掌櫃在櫃檯後面撥算盤，頭也不抬：「一間一錢，添到天亮。」",
+          "options": [
+            {
+              "label": "一間一間去添香",
+              "success": {
+                "text": "你一間一間地進去研墨，每一間的書生都念一首詩、摸一首詩的時間。到最後一間，墨研完了，你的褙子也被扯得只剩一邊袖子。范掌櫃數著錢，笑得眼睛都瞇了：「好丫頭，明年還來。」",
+                "scene": "主角一間一間替舉子們研墨，每一間的書生都把主角拉到身邊，邊念艷詩邊把手伸進褙子裡揉捏，有人把主角按在書案上摸到腿間濕透才放人。",
+                "effects": [
+                  { "type": "money", "amount": 100 },
+                  { "type": "affinity", "npc": "npc_yh_fan_zhanggui", "delta": 5, "reason": "一間不落地添完了香" },
+                  { "type": "memory", "summary": "在狀元客舍當紅袖，替整條廊的舉子研墨點香，被一間一間摸過。", "importance": 2 }
+                ],
+                "set_flags": ["yhink_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只替第一間的書生添一夜的香",
+              "success": {
+                "text": "你搖頭回到第一間，把門關上。那個書生一夜沒寫字，只顧著念詩和摸，天亮時他說今晚是他這輩子讀得最好的一夜書。",
+                "scene": "第一間的舉子摟著主角念了一整夜的艷詩，手從褙子的開衩伸進去，一首一首地摸遍主角全身，摸到主角在他懷裡發抖。",
+                "effects": [
+                  { "type": "money", "amount": 70 },
+                  { "type": "affinity", "npc": "npc_yh_fan_zhanggui", "delta": 2, "reason": "只做了一間的生意" },
+                  { "type": "memory", "summary": "在狀元客舍當紅袖，陪一個舉子念了一整夜的艷詩。", "importance": 2 }
+                ],
+                "set_flags": ["yhink_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhink_grind_grind"] },
+          "wear": ["beizi"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 150 }, { "type": "xp", "amount": 300 }]
+    },
+    {
+      "id": "yhink_ease",
+      "title": "考前的解乏",
+      "summary": "離考試只剩三天，舉子們緊張得睡不著。范掌櫃說，紅袖的差事多了一樣：替書生「解乏」。（狀元客舍的紅袖添香・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_fan_zhanggui",
+        "min_level": 7,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhink_1_done"] },
+        "text": "范掌櫃把你叫到櫃檯後面，壓低聲音：「三天後就進貢院了。書生們睡不著，睡不著就考不好，考不好就不回來謝恩。」他在帳本上記了一筆，「從今晚起，解乏另外算錢。用手一錢，用嘴三錢。你自己看著辦。」"
+      },
+      "start_flags": ["yhink_ease_start"],
+      "nodes": [
+        {
+          "id": "ease",
+          "title": "替睡不著的舉子解乏",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_scholar_inn" },
+          "text": "第三間房的舉子在床上翻來覆去，一看到你進來就掀開了被子：「紅袖姊姊，我……我睡不著。」他的褲子已經頂起來了，眼睛卻不敢看你。",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": {
+            "text": "你哄著他躺好，用手慢慢替他解乏，一邊在他耳邊背他明天要考的經義。他射完沒多久就睡著了，打起了呼。范掌櫃在門外豎起大拇指。",
+            "scene": "主角坐在舉子的床邊，一邊在他耳邊背經義一邊用手替他套弄，慢慢加快，直到他射在主角手心裡，喘著氣睡著。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhink_ease_ease"]
+          },
+          "fail": {
+            "text": "他太緊張，你的手怎麼弄都弄不出來。最後他抓著你的頭按下去，你用嘴替他弄了半個時辰才算完事。",
+            "scene": "緊張的舉子怎麼都射不出來，最後抓著主角的頭按到胯下，主角用嘴吞吐了半個時辰，他才終於抖著射進主角的嘴裡。",
+            "effects": [{ "type": "money", "amount": 80 }, { "type": "condition", "target": "pc", "condition": "disheveled", "add": true }],
+            "set_flags": ["yhink_ease_ease"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhink_ease_start"] },
+          "wear": ["beizi"]
+        },
+        {
+          "id": "corridor",
+          "title": "最後一晚",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_scholar_inn" },
+          "text": "考前最後一晚，整條廊的房門都開著，每一間的書生都在等。范掌櫃把一盞燈塞進你手裡：「一間一間解，解到天亮。明天一早他們就進貢院，誰中了，都算你一份。」",
+          "options": [
+            {
+              "label": "整條廊一間一間解",
+              "success": {
+                "text": "你提著燈從第一間走到最後一間，用手、用嘴，一間一間地替他們解乏。走到最後一間時天已經亮了，貢院的鐘響了，書生們一個個精神抖擻地出門，你跪在走廊上起不來。范掌櫃把錢袋塞進你懷裡：「今年一定出狀元。」",
+                "scene": "主角提著燈一間一間進去，替整條廊的舉子用手和嘴解乏：有人躺著讓主角吞吐，有人站著按住主角的頭抽送，一個射完換下一間，主角的嘴角和褙子都沾滿了精液，一直弄到天亮的鐘聲響起。",
+                "effects": [
+                  { "type": "money", "amount": 160 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_fan_zhanggui", "delta": 5, "reason": "替整條廊解了乏" },
+                  { "type": "memory", "summary": "在狀元客舍的考前最後一晚，用手和嘴替整條廊的舉子解乏到天亮。", "importance": 2 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhink_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只替看起來會中的那幾個解",
+              "success": {
+                "text": "你挑了三個看起來最有把握的，一個晚上輪流替他們用嘴解了三次乏。范掌櫃看著你挑的人點頭：「眼光比我還準。」",
+                "scene": "主角在三個舉子的房間之間來回，輪流跪在他們床邊用嘴替他們解乏，一個晚上每人三次，最後一次三個人擠在同一間房裡等著。",
+                "effects": [
+                  { "type": "money", "amount": 120 },
+                  { "type": "affinity", "npc": "npc_yh_fan_zhanggui", "delta": 3, "reason": "挑人挑得準" },
+                  { "type": "memory", "summary": "在狀元客舍的考前最後一晚，挑了三個最有把握的舉子，輪流用嘴替他們解乏。", "importance": 2 }
+                ],
+                "set_flags": ["yhink_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhink_ease_ease"] },
+          "wear": ["beizi"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 600 }]
+    },
+    {
+      "id": "yhink_list",
+      "title": "杏榜的那一夜",
+      "summary": "放榜了。中了的進士們包下狀元客舍慶功，說要「題詩」謝恩；落第的在樓下買醉。（狀元客舍的紅袖添香・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_fan_zhanggui",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhink_2_done"] },
+        "text": "范掌櫃拿著抄回來的杏榜，手都在抖：「七個！我們客舍中了七個！」他把一支狼毫筆塞給你，「新科進士們說要題詩謝恩——題在哪裡你應該猜得到。樓下還有一屋子落第的在灌酒，你去哪邊都行，兩邊都會給錢。」"
+      },
+      "start_flags": ["yhink_list_start"],
+      "nodes": [
+        {
+          "id": "toast",
+          "title": "慶功宴上的酒令",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_scholar_inn" },
+          "text": "樓上的雅間裡，七個新科進士已經喝得滿臉通紅。為首的探花郎拍著桌子：「行酒令！紅袖接不上的，脫一件！」桌上擺著筆墨，誰都知道等一下要寫在哪裡。",
+          "check": { "attr": "int", "dc": 15 },
+          "success": { "text": "你一連接了七輪酒令，七個進士輪流被罰酒，探花郎笑著說你若是男人，今年的狀元就輪不到他們了。", "effects": [{ "type": "money", "amount": 40 }], "set_flags": ["yhink_list_toast"] },
+          "fail": {
+            "text": "你接到第三輪就接不上了。褙子、裙子、肚兜，一件一件地被他們笑著剝下來，最後你光著身子坐在桌上，等他們的筆。",
+            "scene": "新科進士們行酒令，主角每接不上一句就被剝掉一件衣服，最後光著身子坐在酒桌上，七個人藉著酒意輪流伸手揉捏主角的胸口和腿間。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhink_list_toast"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhink_list_start"] },
+          "wear": ["beizi"]
+        },
+        {
+          "id": "poem",
+          "title": "題詩",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_scholar_inn" },
+          "text": "探花郎提起筆，蘸滿了墨：「今夜以紅袖為紙，每人題一首，題完了……」他沒說完，其他人已經在解衣帶了。樓梯口傳來樓下落第書生的哭聲和罵聲，范掌櫃在中間探頭探腦。",
+          "options": [
+            {
+              "label": "陪新科進士們題滿全身的詩",
+              "success": {
+                "text": "你躺在酒桌上，讓七個進士在你身上題詩：胸口一首、肚子一首、大腿內側一首，題完一首就幹你一回。天亮的時候你從頭到腳都是墨字，連自己也念不完。范掌櫃把一件熏過墨香的褙子披在你身上：「這件給你。你是我們客舍的第八首詩。」",
+                "scene": "主角光著身子躺在酒桌上，七個新科進士輪流用毛筆在主角的胸口、肚子、大腿內側題詩，每題完一首就壓上來幹主角一回，墨跡被汗水和精液暈開，一直輪到天亮，主角全身都是墨字。",
+                "effects": [
+                  { "type": "item", "name": "紅袖的墨香褙子", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_red_sleeve" },
+                  { "type": "affinity", "npc": "npc_yh_fan_zhanggui", "delta": 10, "reason": "替客舍留住了七個進士" },
+                  { "type": "memory", "summary": "杏榜那一夜，在狀元客舍讓七個新科進士在身上題滿了詩，題一首幹一回。范掌櫃把紅袖的墨香褙子給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhink_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "下樓陪落第的整排客房",
+              "success": {
+                "text": "你提著筆下了樓。落第的書生們紅著眼睛看你，你一間一間地進去「安慰」他們：有的哭著幹你、有的罵著幹你，有的幹完了說明年還要來考。天亮時你在最後一間的床上睡著了，范掌櫃把一件熏過墨香的褙子蓋在你身上：「樓上的錢我收了，樓下的也收了。這件給你。」",
+                "scene": "主角一間一間走進落第舉子的房間，讓他們把怨氣發洩在自己身上：有人哭著從後面猛幹、有人罵著把主角按在書案上，一間接一間，一直被輪到天亮，主角在最後一間的床上動也動不了。",
+                "effects": [
+                  { "type": "item", "name": "紅袖的墨香褙子", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_red_sleeve" },
+                  { "type": "affinity", "npc": "npc_yh_fan_zhanggui", "delta": 8, "reason": "把落第的也留住了" },
+                  { "type": "memory", "summary": "杏榜那一夜，在狀元客舍一間一間地「安慰」落第的舉子到天亮。范掌櫃把紅袖的墨香褙子給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhink_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhink_list_toast"] },
+          "wear": ["beizi"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "yhboat_oar",
+      "title": "搖櫓",
+      "summary": "萍江的畫舫缺一個搖櫓唱曲的船娘。船老大柳三篙說，船上的規矩只有一條：客人給錢就給客人。（運河畫舫的船娘・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_sangao",
+        "min_level": 7,
+        "pc_body": ["fem", "andro"],
+        "text": "柳三篙把一件高衩的旗袍丟給你：「船娘穿這個。衩開得高，客人看得到腿，搖起櫓來才好看。」他把一根櫓塞進你手裡，「記住，手不能離櫓，船不能撞橋。客人愛摸就讓他摸——撞了橋，賠的是你的工錢。」",
+        "items": ["絲綢旗袍"]
+      },
+      "start_flags": ["yhboat_oar_start"],
+      "nodes": [
+        {
+          "id": "oar",
+          "title": "在船尾搖櫓",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_pleasure_boat" },
+          "text": "你站在船尾搖櫓，畫舫慢慢往虹橋搖去。船上的三個客人看膩了風景，開始看你：一個掀開你的開衩、一個從背後摟住你的腰，第三個把手伸到你的胸口。前面就是虹橋的橋墩了。",
+          "check": { "attr": "dex", "dc": 13 },
+          "success": {
+            "text": "你兩手穩穩地握著櫓，任他們怎麼摸也沒讓船偏一寸，船頭從橋墩邊擦過去。客人們拍手叫好，賞錢丟了一船頭。",
+            "effects": [{ "type": "money", "amount": 50 }],
+            "set_flags": ["yhboat_oar_oar"]
+          },
+          "fail": {
+            "text": "你一分神，船頭撞上了橋墩，整艘畫舫晃了一下。客人們趁亂把你按在船尾，三雙手把你的旗袍摸了個透。柳三篙在岸上罵：「工錢扣一半！」",
+            "scene": "畫舫撞上橋墩，三個客人趁亂把主角按在船尾，一個掀起旗袍揉捏主角的屁股，一個從前面把手伸進領口，一個把手指伸進主角的腿間，主角握著櫓動彈不得。",
+            "effects": [{ "type": "money", "amount": 30 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhboat_oar_oar"]
+          },
+          "requires": { "flags": ["yhboat_oar_start"] },
+          "wear": ["qipao"]
+        },
+        {
+          "id": "tip",
+          "title": "客人的賞錢",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_pleasure_boat" },
+          "text": "回到碼頭，最胖的那個客人把一串銅錢晃了晃：「船娘，賞錢在這裡。自己來拿——用嘴叼。」銅錢掛在他的腰帶上，就在褲襠的位置。",
+          "options": [
+            {
+              "label": "跪下來用嘴叼",
+              "success": {
+                "text": "你跪在船板上，用嘴去叼那串銅錢，叼了三次都叼不下來——因為他每次都往前頂。最後你叼到的不只是銅錢。柳三篙在岸上笑：「這丫頭上道。」",
+                "scene": "主角跪在船板上用嘴去叼掛在客人褲襠前的銅錢，客人每次都挺腰往前頂，最後解開褲子把陰莖塞進主角嘴裡，按著主角的頭射完才把銅錢給主角。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_yh_liu_sangao", "delta": 5, "reason": "懂船上的規矩" },
+                  { "type": "memory", "summary": "在萍江的畫舫上，跪在船板上用嘴替客人「叼賞錢」。", "importance": 2 }
+                ],
+                "set_flags": ["yhboat_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用手拿，再多收他一份船錢",
+              "success": {
+                "text": "你伸手把銅錢摘下來，順手在他的褲襠上捏了一把：「船錢另算。」他愣了一下，大笑著又加了一串。",
+                "effects": [
+                  { "type": "money", "amount": 60 },
+                  { "type": "affinity", "npc": "npc_yh_liu_sangao", "delta": 3, "reason": "會做生意" },
+                  { "type": "memory", "summary": "在萍江的畫舫上，從客人褲襠前摘了賞錢，又多收了一份船錢。", "importance": 1 }
+                ],
+                "set_flags": ["yhboat_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["yhboat_oar_oar"] },
+          "wear": ["qipao"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 150 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "yhboat_flute",
+      "title": "船艙的小曲",
+      "summary": "畫舫的小曲唱完了，客人要聽的是「吹簫」。柳三篙說，船娘的錢都是在船艙裡賺的。（運河畫舫的船娘・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_sangao",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhboat_1_done"] },
+        "text": "柳三篙灌了一口黃酒，把一支竹簫拍在你面前：「萍江的船娘都會吹簫。不是這根——」他朝船艙努了努嘴，「是客人的那根。今晚四個鹽商包了船艙，一人一曲，吹完了再唱。」"
+      },
+      "start_flags": ["yhboat_flute_start"],
+      "nodes": [
+        {
+          "id": "song",
+          "title": "在船艙裡唱小曲",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_pleasure_boat" },
+          "text": "船艙裡四個鹽商圍著一桌酒菜，叫你唱《十八摸》。你唱一句，他們就照著詞摸一處；唱到第十八摸，四雙手已經都在你的旗袍裡了。",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": {
+            "text": "你唱得又軟又媚，唱到哪裡就讓他們摸到哪裡，摸完了還要他們給錢才唱下一句。一曲唱完，桌上的賞錢堆得像一座小山。",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["yhboat_flute_song"]
+          },
+          "fail": {
+            "text": "你唱到一半就被摸得唱不下去，聲音全變成了喘。鹽商們哈哈大笑，說這一段唱得最好。",
+            "scene": "船艙裡主角唱著《十八摸》，四個鹽商照著曲詞一處一處地摸，唱到一半主角就被揉得說不出話，只剩喘息，旗袍的開衩被扯到腰上。",
+            "effects": [{ "type": "money", "amount": 60 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhboat_flute_song"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhboat_flute_start"] },
+          "wear": ["qipao"]
+        },
+        {
+          "id": "flute",
+          "title": "吹簫",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_pleasure_boat" },
+          "text": "小曲唱完，四個鹽商一起解開了褲帶。為首的那個拍了拍大腿：「該吹簫了。一人一曲，誰先吹完，誰多給一兩。」簾子外是整條運河的燈。",
+          "options": [
+            {
+              "label": "一個一個吹",
+              "success": {
+                "text": "你跪在船艙的地板上，一個一個地吹，吹完一曲換下一曲。船搖一下，嘴裡的就往深處頂一下。四曲吹完，你的嘴又麻又酸，賞錢倒是一兩一兩地多了。",
+                "scene": "主角跪在畫舫的船艙裡，輪流替四個鹽商口交，一個射進嘴裡就換下一個，畫舫一搖晃，嘴裡的陰莖就頂得更深，四個人輪完，主角的嘴角和下巴都是精液。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_yh_liu_sangao", "delta": 5, "reason": "一曲不落" },
+                  { "type": "memory", "summary": "在萍江的畫舫船艙裡，跪著替四個鹽商一人一曲地「吹簫」。", "importance": 2 }
+                ],
+                "set_flags": ["yhboat_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "撩起簾子，讓運河兩岸聽",
+              "success": {
+                "text": "你把簾子撩起來，跪在船艙口吹，讓運河兩岸的人都聽得到聲音。鹽商們興奮得要命，兩岸的人吹起口哨，船老大在船尾罵罵咧咧地多收了一份看船錢。",
+                "scene": "主角撩起船艙的簾子跪在艙口，當著運河兩岸看熱鬧的人輪流替鹽商們口交，兩岸有人吹口哨叫好，鹽商們越發興奮，抓著主角的頭髮射在主角臉上。",
+                "effects": [
+                  { "type": "money", "amount": 180 },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_sangao", "delta": 5, "reason": "多收了一份看船錢" },
+                  { "type": "memory", "summary": "在萍江的畫舫上撩起簾子，當著運河兩岸替鹽商們「吹簫」。", "importance": 2 }
+                ],
+                "set_flags": ["yhboat_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhboat_flute_song"] },
+          "wear": ["qipao"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "yhboat_charter",
+      "title": "包船的夜",
+      "summary": "中秋夜，萍江最大的幾個鹽商包下整艘畫舫，從虹橋遊到竹湖口，遊一整夜。柳三篙說，船娘只有你一個。（運河畫舫的船娘・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_sangao",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhboat_2_done"] },
+        "text": "柳三篙把船擦得發亮，燈籠掛了三排，難得地沒有喝酒：「今晚是萍江最大的鹽商們包船，十二個人，一整夜。」他看了你一眼，「船娘只有你一個。你要是撐不住，跳下水游回來也行——不過工錢就沒了。」"
+      },
+      "start_flags": ["yhboat_charter_start"],
+      "nodes": [
+        {
+          "id": "moon",
+          "title": "月下遊河",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_pleasure_boat" },
+          "text": "畫舫離了碼頭，月亮升到運河正上方。十二個鹽商喝了三巡酒，開始輪流叫你過去坐大腿、灌你喝酒，每個人都要你唱一段，唱完了手就伸進來。",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你一個一個地應付，坐一個人的大腿唱一段、喝一杯，誰也沒讓他先動真格，十二個人被你撩得坐立不安。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhboat_charter_moon"]
+          },
+          "fail": {
+            "text": "酒喝得太急，你坐到第五個人腿上時已經暈了，被他們傳來傳去地摸，旗袍不知道什麼時候被解開了一半。",
+            "scene": "喝醉的主角被十二個鹽商傳來傳去地抱在腿上，一雙雙手解開旗袍的盤扣，揉捏主角的胸口、伸進腿間，主角暈乎乎地任他們擺弄。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }],
+            "set_flags": ["yhboat_charter_moon"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhboat_charter_start"] },
+          "wear": ["qipao"]
+        },
+        {
+          "id": "charter",
+          "title": "包船的價錢",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_pleasure_boat" },
+          "text": "畫舫搖到竹湖口，柳三篙把船停了，自己跳上岸抽菸。為首的鹽商把一錠銀子放在桌上：「船錢付過了。現在付的是你。」十二個人一起站了起來。",
+          "options": [
+            {
+              "label": "在船艙裡讓他們輪著來",
+              "success": {
+                "text": "你躺上船艙的長桌，十二個鹽商輪著來，船搖一下就頂一下，整艘畫舫晃了一整夜。天快亮時柳三篙回到船上，看了一眼船艙，把一件繡著鴛鴦的旗袍丟在你身上：「拿去。三篙畫舫的頭牌，就是你了。」",
+                "scene": "畫舫的船艙裡，十二個鹽商輪流把主角壓在長桌上幹，船身一晃就頂得更深，一個射完換下一個，有時前後兩個一起、嘴裡再塞一個，一直被輪到天快亮，船艙裡全是酒氣和精液的味道。",
+                "effects": [
+                  { "type": "item", "name": "畫舫的鴛鴦旗袍", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_boat_song" },
+                  { "type": "affinity", "npc": "npc_yh_liu_sangao", "delta": 10, "reason": "撐過了整條船的客人" },
+                  { "type": "memory", "summary": "中秋夜在萍江的畫舫船艙裡，讓十二個鹽商輪了一整夜。柳三篙把畫舫的鴛鴦旗袍給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhboat_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "被抬到船頭，讓整條運河看",
+              "success": {
+                "text": "你讓他們把你抬到船頭，在燈籠底下、運河中央，十二個人一個接一個。兩岸的燈一盞盞亮起來，看熱鬧的人擠滿了岸邊，有人往船上丟銅錢。天快亮時柳三篙撐著篙把船搖回碼頭，把一件繡著鴛鴦的旗袍丟在你身上：「拿去。整條運河都認得你了。」",
+                "scene": "中秋夜的運河中央，主角被抬到畫舫船頭的燈籠底下，十二個鹽商當著兩岸的人輪流幹主角：趴在船頭、被抱起來、仰躺在甲板上，兩岸的人擠著看、吹口哨、往船上丟銅錢，一直到天快亮。",
+                "effects": [
+                  { "type": "item", "name": "畫舫的鴛鴦旗袍", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_boat_song" },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_sangao", "delta": 10, "reason": "整條運河都來看船" },
+                  { "type": "memory", "summary": "中秋夜在萍江的畫舫船頭，當著整條運河讓十二個鹽商輪流幹。柳三篙把畫舫的鴛鴦旗袍給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhboat_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhboat_charter_moon"] },
+          "wear": ["qipao"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1200 }]
+    },
+    {
+      "id": "yhpearl_dive",
+      "title": "下水",
+      "summary": "蚌老大的珠船缺采珠女。化龍族怕冷，冬天的海要命，所以他出價比別家高一倍。（瑔州港的采珠女・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bang_laoda",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "text": "蚌老大把一條粗布的裹胸丟給你：「采珠女下水只纏這個，衣服泡了水會把人拖下去。」他舉起少了兩根指頭的左手晃了晃，「老蚌會咬人，船工會摸人，你兩樣都得忍。采不到珠的，船工要搜身——看你是不是把珠藏起來了。」",
+        "items": ["亞麻裹胸"]
+      },
+      "start_flags": ["yhpearl_dive_start"],
+      "nodes": [
+        {
+          "id": "dive",
+          "title": "下海采珠",
+          "kind": "check",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_pearl_dock" },
+          "text": "珠船開到外海，你只纏著一條裹胸，抱著鉛墜跳下水。海水冷得像刀子，海底的老蚌一張一合。等你憋著氣爬上船梯，十幾個船工圍在梯子口，伸手來「拉」你。",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": {
+            "text": "你從海底撬上來三顆珠子，爬上船梯時把珠子往船板上一撒，船工們都去搶珠，沒人顧得上摸你。蚌老大笑得合不攏嘴。",
+            "effects": [{ "type": "money", "amount": 70 }],
+            "set_flags": ["yhpearl_dive_dive"]
+          },
+          "fail": {
+            "text": "你只撬上來一個空蚌。船工們說要搜身，七手八腳地把你的裹胸扯開，從胸口搜到腿間，搜了很久，什麼也沒搜到，手卻一直沒停。",
+            "scene": "采珠失手的主角被船工們按在船板上「搜身」，裹胸被扯開，十幾隻手從胸口一路摸到腿間，有人把手指伸進主角體內說要搜珠，一邊搜一邊笑。",
+            "effects": [{ "type": "money", "amount": 40 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhpearl_dive_dive"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhpearl_dive_start"] },
+          "wear": ["breast_band"]
+        },
+        {
+          "id": "warm",
+          "title": "凍得發紫",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_pearl_dock" },
+          "text": "連下了五次水，你的嘴唇凍得發紫，手指都伸不直了。船工們圍過來，把一件濕透的裹胸從你身上剝下來：「凍成這樣要出人命。珠船的規矩，大夥兒替你暖暖。」",
+          "options": [
+            {
+              "label": "讓他們摟著暖",
+              "success": {
+                "text": "你被夾在幾個赤膊的船工中間，他們用胸膛和大腿把你夾得緊緊的，手在你身上搓來搓去，搓得你又熱又軟。等你暖過來，蚌老大說：「明天接著下。」",
+                "scene": "凍僵的主角被幾個赤膊的船工夾在中間，前後貼著主角的身體磨蹭，粗糙的手搓遍主角的胸口、屁股和腿間，越搓越用力，直到主角暖得發燙、喘個不停。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_yh_bang_laoda", "delta": 5, "reason": "懂珠船的規矩" },
+                  { "type": "memory", "summary": "在瑔州港的珠船上，凍僵之後被赤膊的船工們夾在中間「取暖」。", "importance": 2 }
+                ],
+                "set_flags": ["yhpearl_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "裹著毯子自己縮在船艙裡",
+              "success": {
+                "text": "你搖頭，裹著毯子縮進船艙，抖了一個時辰才暖過來。船工們在外面罵你不懂規矩，蚌老大只說：「明天要是再這樣，就自己游回去。」",
+                "effects": [{ "type": "money", "amount": 50 }],
+                "set_flags": ["yhpearl_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhpearl_dive_dive"] },
+          "wear": ["breast_band"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
+    },
+    {
+      "id": "yhpearl_heat",
+      "title": "取暖",
+      "summary": "冬天的海越來越冷，船工們說，光用摟的已經暖不過來了。（瑔州港的采珠女・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bang_laoda",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhpearl_1_done"] },
+        "text": "蚌老大把一壺燒酒塞給你：「入冬了，海底的水能把人凍死。」他朝船上努了努嘴，「船工們說，摟著暖太慢。你上來的時候他們會替你暖——用他們的法子。暖過來了，你也得謝謝他們。」"
+      },
+      "start_flags": ["yhpearl_heat_start"],
+      "nodes": [
+        {
+          "id": "cold",
+          "title": "撐過冬天的海",
+          "kind": "check",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_pearl_dock" },
+          "text": "海面上結了一層薄霜。你下水撬蚌，一口氣憋到胸口快炸開才浮上來，全身凍得像一塊冰，連船梯都抓不住。",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": { "text": "你咬著牙撐住了，自己爬上船、自己擦乾、自己灌了一大口燒酒。船工們有點失望。", "effects": [{ "type": "money", "amount": 80 }], "set_flags": ["yhpearl_heat_cold"] },
+          "fail": {
+            "text": "你在船梯上凍得失去知覺，被船工們拖上船板。等你醒過來，已經被他們脫光了夾在中間，用身子和手替你搓。",
+            "scene": "凍昏的主角被船工們拖上船板、剝光了衣服，幾個赤膊的漢子用身體前後夾住主角取暖，手在主角全身上下搓揉，主角醒來時身體已經被搓得發燙。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }],
+            "set_flags": ["yhpearl_heat_cold"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhpearl_heat_start"] },
+          "wear": ["breast_band"]
+        },
+        {
+          "id": "thanks",
+          "title": "謝謝他們",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_pearl_dock" },
+          "text": "你暖過來了。替你取暖的五個船工還光著膀子圍在身邊，褲子都撐得老高。領頭的那個咧嘴一笑：「暖過來了吧？該你替我們暖暖了。」",
+          "options": [
+            {
+              "label": "用嘴一個一個謝",
+              "success": {
+                "text": "你跪在船板上，一個一個地用嘴謝他們。海風很冷，嘴裡很熱，五個人輪完，你的膝蓋凍得發紅，嘴裡全是鹹的。蚌老大在船頭數珠子：「今天的珠，你分兩成。」",
+                "scene": "主角跪在結霜的船板上，輪流替五個光膀子的船工口交，一個射進嘴裡就換下一個，海風吹得主角發抖，嘴裡卻被塞得滿滿的，五個人輪完主角的嘴角全是鹹腥的精液。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_yh_bang_laoda", "delta": 5, "reason": "謝得很周到" },
+                  { "type": "memory", "summary": "在瑔州港的珠船上，跪在船板上用嘴一個一個「謝」替你取暖的船工。", "importance": 2 }
+                ],
+                "set_flags": ["yhpearl_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用手，一次兩個",
+              "success": {
+                "text": "你一手握一個，兩個兩個地謝，最後一個讓他自己來。船工們罵你偷懶，可也沒少給錢。",
+                "scene": "主角坐在船板上，一手握著一個船工的陰莖套弄，兩個兩個地輪，船工們射在主角的手上和胸口，最後一個等不及，自己抓著主角的手弄到射。",
+                "effects": [
+                  { "type": "money", "amount": 110 },
+                  { "type": "affinity", "npc": "npc_yh_bang_laoda", "delta": 3, "reason": "謝得快" },
+                  { "type": "memory", "summary": "在瑔州港的珠船上，用手兩個兩個地「謝」替你取暖的船工。", "importance": 2 }
+                ],
+                "set_flags": ["yhpearl_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhpearl_heat_cold"] },
+          "wear": ["breast_band"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "yhpearl_big",
+      "title": "大珠",
+      "summary": "船工們說，深溝裡有一顆老蚌，殼比磨盤還大，裡面的珠子夜裡會發光。蚌老大說，誰撈上來，珠船就開一場慶功宴。（瑔州港的采珠女・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_bang_laoda",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhpearl_2_done"] },
+        "text": "蚌老大把三條珠船都開了出來，船工們擠滿了甲板：「深溝的那顆老蚌，我爹沒撈上來，我也沒撈上來。」他把一把撬刀塞給你，「你撈上來，珠船上的人都歸你——不對，是你歸珠船上的人。慶功宴就是這個意思。」"
+      },
+      "start_flags": ["yhpearl_big_start"],
+      "nodes": [
+        {
+          "id": "deep",
+          "title": "深溝裡的老蚌",
+          "kind": "check",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_pearl_dock" },
+          "text": "深溝的水黑得看不見底。那顆老蚌半埋在沙裡，殼縫裡透出一點青光。你把撬刀插進去，老蚌猛地合上，夾住了你的手腕。",
+          "check": { "attr": "str", "dc": 16 },
+          "success": {
+            "text": "你硬是把殼撬開，挖出一顆拳頭大的夜明珠，抱著它浮上海面。三條船上的人一起歡呼，蚌老大跪在船頭磕了三個頭。",
+            "effects": [{ "type": "money", "amount": 100 }],
+            "set_flags": ["yhpearl_big_deep"]
+          },
+          "fail": {
+            "text": "你被夾了很久才掙脫，手腕腫了一圈，珠子還是挖出來了。爬上船時你凍得發抖，船工們一擁而上替你「取暖」，取著取著就不只是取暖了。",
+            "scene": "凍得發抖的主角一爬上船就被船工們一擁而上，剝光了按在船板上，好幾雙手同時搓揉主角的身體，有人已經把手指插進主角腿間，說要先替主角暖暖裡面。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhpearl_big_deep"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhpearl_big_start"] },
+          "wear": ["breast_band"]
+        },
+        {
+          "id": "feast",
+          "title": "珠船的慶功宴",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_pearl_dock" },
+          "text": "珠船回到船塢，夜明珠擺在船艙的正中央，三條船的船工喝得東倒西歪。蚌老大舉起酒碗：「今晚珠船開宴！夜明珠給大家看，采珠女——也給大家。」二十幾個人一起看著你。",
+          "options": [
+            {
+              "label": "全船的人在船艙裡輪流取暖",
+              "success": {
+                "text": "你躺在夜明珠的光底下，二十幾個船工一個一個來替你「取暖」，取到後來船艙裡熱得像蒸籠，誰也不記得是第幾個了。天亮時蚌老大把一枚鑲著碎珠的臍環扣在你的肚臍上：「那顆大的要上貢，這顆小的給你。」",
+                "scene": "珠船的船艙裡，主角光著身子躺在夜明珠的青光底下，二十幾個船工輪流壓上來幹主角，有人從後面、有人塞進嘴裡，一個射完換下一個，船艙熱得像蒸籠，一直輪到天亮。",
+                "effects": [
+                  { "type": "item", "name": "夜明珠的臍環", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_breath_share" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_bang_laoda", "delta": 10, "reason": "撈上了深溝的老蚌" },
+                  { "type": "memory", "summary": "在瑔州港的珠船慶功宴上，讓二十幾個船工在夜明珠的光底下輪了一整夜。蚌老大把夜明珠的臍環給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhpearl_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "躺在甲板上，讓整個碼頭來看",
+              "success": {
+                "text": "你抱著夜明珠躺到甲板上，讓整個碼頭的人都來看。船工們一個接一個上你，碼頭上的水手、腳夫、蕃商擠在岸邊，有的看完了也跳上船來排隊。天亮時蚌老大把一枚鑲著碎珠的臍環扣在你的肚臍上：「整個瑔州港都知道我的珠船有夜明珠了——兩顆。」",
+                "scene": "主角抱著夜明珠躺在珠船的甲板上，船工們當著擠滿碼頭的人一個接一個幹主角，岸上的水手、腳夫、蕃商看得眼紅，有人跳上船來排隊，主角被翻來覆去地幹了一整夜，夜明珠的光照著滿身的精液。",
+                "effects": [
+                  { "type": "item", "name": "夜明珠的臍環", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_breath_share" },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_bang_laoda", "delta": 10, "reason": "讓整個碼頭都來看" },
+                  { "type": "memory", "summary": "在瑔州港的珠船慶功宴上，抱著夜明珠躺在甲板上，讓整個碼頭的人看著、排隊上了一整夜。蚌老大把夜明珠的臍環給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhpearl_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["yhpearl_big_deep"] },
+          "wear": ["breast_band"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
+    },
+    {
+      "id": "yhkang_fire",
+      "title": "燒炕",
+      "summary": "青丘屯的大車店缺一個燒炕的丫頭。老闆娘黃二嫂說，活不累，就是半夜得在炕上走一趟。（大車店的燒炕丫頭・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huang_ersao",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "text": "黃二嫂叼著菸袋上下打量你，噴了一口菸：「燒炕、倒尿壺、暖被窩，管吃管住。」她用菸袋鍋子敲了敲炕沿，「屯裡的規矩，上炕的都光著睡，你也一樣。半夜添柴得從炕頭走到炕梢——黑燈瞎火的，誰的手伸過來，你也看不見是誰。」"
+      },
+      "start_flags": ["yhkang_fire_start"],
+      "nodes": [
+        {
+          "id": "fire",
+          "title": "半夜添柴",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "半夜，炕涼了。你光著身子從被窩裡爬出來，摸黑從炕頭往灶口走。二十個男人睡得東倒西歪，一路上不知道有多少隻手伸過來：摸腿的、捏屁股的，還有一隻直接往你腿間掏。",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": {
+            "text": "你踩著炕沿一路閃過去，添完柴又一路閃回來，誰也沒抓住你。只是炕梢那個趕大車的，在你經過的時候吹了一聲口哨。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhkang_fire_fire"]
+          },
+          "fail": {
+            "text": "你被一隻大手攔腰抱住，拖進了某個人的被窩。你不知道他是誰，他也沒說話，就這樣摸了你到天亮，才放你去添柴。",
+            "scene": "黑暗裡主角被一隻大手攔腰拖進陌生男人的被窩，他從背後緊緊貼著主角，粗糙的手揉遍主角的胸口和腿間，一句話也不說，就這樣在被窩裡摸了主角一整夜。",
+            "effects": [{ "type": "money", "amount": 40 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhkang_fire_fire"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhkang_fire_start"] }
+        },
+        {
+          "id": "pot",
+          "title": "倒尿壺",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "天快亮時，炕頭的木把叫你：「丫頭，尿壺滿了。」你過去拿尿壺，他卻一把掀開了被子，底下那根東西直挺挺地翹著：「先別急著倒，這個也替我倒一倒。」",
+          "options": [
+            {
+              "label": "用手替他倒",
+              "success": {
+                "text": "你跪在炕沿替他用手弄，他舒服得直哼哼，旁邊幾個醒來的也湊過來看。弄完了他塞給你兩個銅板，旁邊那幾個也把手伸了過來。",
+                "scene": "主角跪在炕沿上用手替炕頭的木把套弄，他舒服得直哼，旁邊醒來的幾個男人湊過來看，一個接一個把陰莖塞到主角手裡，主角兩隻手輪流弄，弄到每個人都射在主角的手上和胸口。",
+                "effects": [
+                  { "type": "money", "amount": 70 },
+                  { "type": "affinity", "npc": "npc_yh_huang_ersao", "delta": 5, "reason": "上道" },
+                  { "type": "memory", "summary": "在青丘屯的大車店，天亮前跪在炕沿上用手替木把們「倒一倒」。", "importance": 2 }
+                ],
+                "set_flags": ["yhkang_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "把尿壺塞給他，自己去倒",
+              "success": {
+                "text": "你把尿壺往他懷裡一塞：「自己倒。」整炕的人哄堂大笑。黃二嫂在灶口罵：「這丫頭嘴硬，看能硬幾天。」",
+                "effects": [{ "type": "money", "amount": 40 }],
+                "set_flags": ["yhkang_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhkang_fire_fire"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
+    },
+    {
+      "id": "yhkang_quilt",
+      "title": "暖被窩",
+      "summary": "天越來越冷了，大車店的被子凍得像鐵板。黃二嫂說，從今晚起，丫頭得先鑽進去把被窩焐熱，客人再鑽進來。（大車店的燒炕丫頭・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huang_ersao",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhkang_1_done"] },
+        "text": "黃二嫂把一摞被子拍在炕上：「焐一個被窩一份錢。你先鑽進去焐熱，客人再鑽進來——進來了以後怎麼樣，那是你們倆的事。」她咧嘴一笑，露出一顆金牙，「不過我得提醒你，往北原去的馬幫今天也住進來了，那些人馬族的被窩，可是得焐上好一陣子。」"
+      },
+      "start_flags": ["yhkang_quilt_start"],
+      "nodes": [
+        {
+          "id": "quilt",
+          "title": "一個一個焐被窩",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "你光著身子鑽進第一個被窩，焐了一會兒，趕大車的老漢就鑽了進來，從背後一把摟住你：「熱乎！丫頭別走，再焐一會兒。」他的手已經往下摸了。",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": { "text": "你哄得他心花怒放，讓他摸夠了才鑽出去焐下一個，一個晚上焐了十個被窩，錢收得滿滿的。", "effects": [{ "type": "money", "amount": 100 }], "set_flags": ["yhkang_quilt_quilt"] },
+          "fail": {
+            "text": "他不讓你走，在被窩裡把你翻過來壓住，你只好用手、用嘴把他弄完了才脫身。下一個被窩的人等得不耐煩，你還沒焐熱他就鑽了進來。",
+            "scene": "趕大車的老漢在被窩裡把主角翻過來壓住不放，主角只好鑽進被子底下用嘴替他弄到射，才爬出來去焐下一個被窩，下一個男人等不及，主角一鑽進去就被他從後面抱住磨蹭。",
+            "effects": [{ "type": "money", "amount": 80 }, { "type": "condition", "target": "pc", "condition": "disheveled", "add": true }],
+            "set_flags": ["yhkang_quilt_quilt"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhkang_quilt_start"] }
+        },
+        {
+          "id": "caravan",
+          "title": "馬幫的被窩",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "炕梢那一頭，北原來的馬幫在地上鋪了氈子——人馬族的身子上不了炕。領頭的人馬族漢子掀開一條大氈毯，朝你招手：「龍人的炕太小，來這裡焐。」他的下身是一副栗色的馬身，那東西也是馬的尺寸。",
+          "options": [
+            {
+              "label": "留在炕上，用嘴焐完炕上的人",
+              "success": {
+                "text": "你搖搖頭，回到炕上，一個被窩一個被窩地用嘴焐，焐到天亮炕上沒有一個人是冷的。黃二嫂點頭：「炕上的錢夠多了，地上的留給下一個丫頭。」",
+                "scene": "主角一個被窩一個被窩地鑽進去，在被子底下用嘴替炕上的男人們口交，有人在被窩裡按著主角的頭抽送，有人等主角舔硬了就把主角拉上來磨蹭，一直焐到天亮。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_yh_huang_ersao", "delta": 5, "reason": "焐熱了整條炕" },
+                  { "type": "memory", "summary": "在青丘屯的大車店，一個被窩一個被窩地用嘴替炕上的客人「焐被窩」。", "importance": 2 }
+                ],
+                "set_flags": ["yhkang_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "鑽進人馬族的氈毯（人馬族，人外）",
+              "success": {
+                "text": "你鑽進了那條大氈毯。馬身的熱氣把你整個裹住，他用兩隻手把你抱在胸前，你用手、用嘴，好不容易才把那根馬的東西焐到射——射得你滿身都是。黃二嫂探頭看了一眼：「好傢伙，這份錢得算三份。」",
+                "scene": "主角鑽進人馬族漢子的大氈毯，被他用手抱在人身的胸前，栗色的馬身熱氣騰騰地包著主角；主角兩手握著那根馬一樣粗長的陰莖套弄、用嘴含著前端吞吐，弄了很久他才噴射出來，濃稠的精液澆了主角滿頭滿身。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_huang_ersao", "delta": 5, "reason": "連馬幫都焐熱了" },
+                  { "type": "memory", "summary": "在青丘屯的大車店，鑽進北原人馬族的氈毯，用手和嘴替他焐熱了被窩。", "importance": 2 }
+                ],
+                "set_flags": ["yhkang_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhkang_quilt_quilt"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "yhkang_winter",
+      "title": "貓冬",
+      "summary": "臘月的大雪封了山，大車店的客人走不了，一整條炕的男人困在店裡三天三夜。（大車店的燒炕丫頭・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_huang_ersao",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhkang_2_done"] },
+        "text": "黃二嫂把門閂插上，往灶裡塞了滿滿一灶柴：「雪封山了，三天之內誰也出不去。」她把菸袋往腰上一別，「一屋子的男人，三天沒事幹——你知道他們會想幹什麼。這三天的炕錢我收雙倍，一半分你。」"
+      },
+      "start_flags": ["yhkang_winter_start"],
+      "nodes": [
+        {
+          "id": "snow",
+          "title": "封山的第一夜",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "第一夜就沒人睡得著。燒酒一罈一罈地開，有人提議「抓鬮」：抓到誰，誰就跟燒炕丫頭睡一個被窩。二十隻手同時伸進了碗裡。",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": {
+            "text": "你搶過那碗鬮，說要照炕上的位子一個一個來，誰也不許插隊。男人們嘟囔著答應了，你總算替自己爭到了一點喘氣的空檔。",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["yhkang_winter_snow"]
+          },
+          "fail": {
+            "text": "鬮還沒抓完，喝醉的人已經等不及了，好幾個人同時把你往自己的被窩裡拖，你被拉來拉去，被子底下全是手。",
+            "scene": "喝醉的男人們等不及抓鬮，好幾個人同時把光著身子的主角往自己的被窩裡拖，主角被拉來拉去，被子底下每一隻手都在揉捏主角的胸口、屁股和腿間。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhkang_winter_snow"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhkang_winter_start"] }
+        },
+        {
+          "id": "winter",
+          "title": "貓冬的三天",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "第三天，炕燒得燙手，屋裡的人都脫光了。炕上是十幾個趕大車的、木把和採參人，地上的氈子裡是北原的馬幫。黃二嫂坐在灶口抽菸：「還剩一夜。丫頭，你挑吧。」",
+          "options": [
+            {
+              "label": "一整炕輪著來",
+              "success": {
+                "text": "你躺到炕中央，讓炕上的人輪著來。炕燒得比人還熱，汗水把炕蓆都濕透了，一個下去一個上來，三天三夜沒停過。雪停的那天早上，黃二嫂把一件繡著胖娃娃的紅肚兜扔給你：「穿上，別凍著。這三天你是整條炕上最暖的那一個。」",
+                "scene": "大雪封山的大車店裡，主角躺在燒得燙手的炕中央，十幾個趕大車的、木把和採參人輪流壓上來幹主角，炕蓆被汗水濕透，一個射完下一個就爬上來，有時兩三個一起，三天三夜都沒停過。",
+                "effects": [
+                  { "type": "item", "name": "大車店的紅肚兜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_warm_kang" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_huang_ersao", "delta": 10, "reason": "撐過了貓冬的三天" },
+                  { "type": "memory", "summary": "臘月大雪封山，在青丘屯的大車店讓一整炕的男人輪了三天三夜。黃二嫂把大車店的紅肚兜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhkang_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "跟北原的馬幫走進馬棚（人馬族，人外）",
+              "success": {
+                "text": "你披著被子跟馬幫的人進了後頭的馬棚。乾草上鋪著氈子，人馬族的漢子們圍成一圈，一個一個用他們的尺寸讓你知道北原的冬天有多長。雪停的那天早上，黃二嫂把一件繡著胖娃娃的紅肚兜扔給你：「穿上，別凍著。你是我這店開了十年，頭一個從馬棚裡走出來的。」",
+                "scene": "大車店後頭的馬棚裡，主角躺在鋪著氈子的乾草上，北原馬幫的人馬族漢子們圍成一圈，一個接一個用馬身壓住主角，把馬一樣粗長的陰莖頂進主角體內，撐得主角哭叫出聲，每一個都射得又多又燙，三天三夜輪了一遍又一遍。",
+                "effects": [
+                  { "type": "item", "name": "大車店的紅肚兜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_warm_kang" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_huang_ersao", "delta": 10, "reason": "從馬棚裡走了出來" },
+                  { "type": "memory", "summary": "臘月大雪封山，在青丘屯大車店的馬棚裡，讓北原馬幫的人馬族們輪了三天三夜。黃二嫂把大車店的紅肚兜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhkang_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhkang_winter_snow"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
+    },
+    {
+      "id": "tdtongue_hands",
+      "title": "兩邊的手",
+      "summary": "鷹河榷場的通譯行缺人。牙人孫舌頭說，好的通譯不只會翻話，還要讓兩邊都滿意。（茶馬市的通譯・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_sun_shetou",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "text": "孫舌頭搖著一把摺扇，狐耳上的銅耳環叮噹響：「茶商說大燁的官話，馬販說媞丹的話，你站在中間，兩邊的話都要翻。」他用扇子點了點你的胸口，「站在中間的人，兩邊的手都會伸過來。翻錯一句，兩邊都罰你——罰什麼，你自己猜。」"
+      },
+      "start_flags": ["tdtongue_hands_start"],
+      "nodes": [
+        {
+          "id": "translate",
+          "title": "站在兩邊中間",
+          "kind": "check",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "text": "左邊是化龍族的茶商，一身綢衫，手指頭上全是金戒指；右邊是人馬族的馬販，比你高出兩個頭，馬身上的汗味撲鼻。你翻一句，茶商的手就往你的腰上放一寸；再翻一句，馬販的手就從後面摸上你的屁股。",
+          "check": { "attr": "int", "dc": 15 },
+          "success": {
+            "text": "你一句也沒翻錯，還替兩邊各多爭了一點好處。茶商和馬販都覺得自己賺了，摸你的手也客氣了不少。孫舌頭在一旁抽成，笑得像隻偷到雞的狐狸。",
+            "effects": [{ "type": "money", "amount": 90 }],
+            "set_flags": ["tdtongue_hands_translate"]
+          },
+          "fail": {
+            "text": "你被摸得分了心，把「十匹馬」翻成了「十頭牛」。兩邊同時罰你：茶商從前面、馬販從後面，一邊罵一邊摸，直到你把話翻對為止。",
+            "scene": "翻錯話的主角被夾在化龍族茶商和人馬族馬販中間受罰，茶商從前面把手伸進主角的衣襟揉捏，馬販從後面用大手搓揉主角的屁股、手指伸進腿間，兩人一邊罵一邊摸，直到主角喘著把話翻對。",
+            "effects": [{ "type": "money", "amount": 60 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["tdtongue_hands_translate"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["tdtongue_hands_start"] }
+        },
+        {
+          "id": "split",
+          "title": "孫舌頭的抽成",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "text": "買賣談成了。孫舌頭把錢分成三份，最小的那一份推給你：「這是你的。」他舔了舔嘴唇，那根舌頭長得嚇人，「想要大一點的那份？晚上來通譯行，我教你兩國的『床上話』。」",
+          "options": [
+            {
+              "label": "晚上去通譯行學",
+              "success": {
+                "text": "你晚上去了通譯行。孫舌頭教得很仔細，一句大燁話、一句媞丹話，每一句都要你用嘴「念」給他聽。學到半夜，他把大的那一份推給了你。",
+                "scene": "通譯行的帳篷裡，孫舌頭一句一句教主角兩國的淫話，每教一句就要主角跪下來用嘴「念」給他聽，主角含著他吞吐，他用那根長得嚇人的舌頭舔遍主角的耳朵和脖子，學到半夜才射在主角嘴裡。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_td_sun_shetou", "delta": 5, "reason": "學得很認真" },
+                  { "type": "memory", "summary": "在鷹河榷場的通譯行，跟牙人孫舌頭學兩國的「床上話」，學到半夜。", "importance": 2 }
+                ],
+                "set_flags": ["tdtongue_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "拿小的那份就好",
+              "success": {
+                "text": "你把小的那份收進懷裡：「話我會自己學。」孫舌頭聳聳肩：「明天還有買賣，你會回來的。」",
+                "effects": [{ "type": "money", "amount": 60 }],
+                "set_flags": ["tdtongue_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["tdtongue_hands_translate"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "tdtongue_extra",
+      "title": "成交的添頭",
+      "summary": "一筆茶換戰馬的大買賣談僵了。孫舌頭說，談不成的買賣，就加一個「添頭」——這次的添頭是你。（茶馬市的通譯・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_sun_shetou",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["tdtongue_1_done"] },
+        "text": "孫舌頭把你拉到帳後，摺扇在手心敲得飛快：「兩百塊茶磚換二十匹馬，茶商嫌馬瘦，馬販嫌茶舊，已經吵了三天。」他瞇起眼睛，「添頭一加，兩邊都會點頭。先茶商、再馬販，兩邊都滿意了才算成交。」"
+      },
+      "start_flags": ["tdtongue_extra_start"],
+      "nodes": [
+        {
+          "id": "tea_side",
+          "title": "先讓茶商滿意",
+          "kind": "check",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "text": "茶商的帳篷裡鋪著大燁的絲綢，四個化龍族的茶商坐成一排，尾巴在身後一甩一甩。為首的那個說：「添頭？先驗貨。」",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": {
+            "text": "你讓他們一個一個「驗貨」，驗完了用嘴一個一個收尾，收得又快又乾淨。茶商們點頭：「這添頭不錯，馬瘦就瘦吧。」",
+            "scene": "茶商的帳篷裡，四個化龍族茶商輪流「驗貨」，把主角翻來覆去地摸遍、手指插進主角體內試試鬆緊，驗完了主角跪在絲綢上一個一個替他們口交收尾。",
+            "effects": [{ "type": "money", "amount": 100 }],
+            "set_flags": ["tdtongue_extra_tea_side"]
+          },
+          "fail": {
+            "text": "他們驗貨驗得太仔細，四個人把你按在絲綢上翻來覆去地驗，驗到最後乾脆一起上了，你用手、用嘴都忙不過來。",
+            "scene": "四個化龍族茶商把主角按在帳篷裡的絲綢上「驗貨」，驗著驗著就一起上了，主角兩手各握一根、嘴裡含著一根，另一個從後面頂進來，被四個人輪番弄得說不出話。",
+            "effects": [{ "type": "money", "amount": 80 }, { "type": "condition", "target": "pc", "condition": "disheveled", "add": true }],
+            "set_flags": ["tdtongue_extra_tea_side"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["tdtongue_extra_start"] }
+        },
+        {
+          "id": "horse_side",
+          "title": "再讓馬販滿意",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "text": "馬販的帳篷外拴著那二十匹馬，帳裡是三個人馬族的馬販。他們看了你一眼，用媞丹話說了一句什麼，三個人一起大笑。孫舌頭在你耳邊翻：「他們說，龍人的茶磚太小，不知道龍人的添頭夠不夠大。」",
+          "options": [
+            {
+              "label": "讓三個馬販輪流（人馬族，人外）",
+              "success": {
+                "text": "你走進帳篷，讓三個人馬族的馬販輪流來。他們的東西大得嚇人，一個比一個久，你撐著帳篷的柱子撐到天黑。出來的時候孫舌頭在帳外喊：「成交！」",
+                "scene": "馬販的帳篷裡，主角扶著帳篷的柱子彎下腰，三個人馬族馬販輪流用馬身罩住主角，把馬一樣粗長的陰莖一寸寸頂進主角體內，一個比一個久，射得又多又燙，主角撐著柱子一直被輪到天黑。",
+                "effects": [
+                  { "type": "money", "amount": 250 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_td_sun_shetou", "delta": 5, "reason": "談成了一筆大買賣" },
+                  { "type": "memory", "summary": "在鷹河榷場當「添頭」，先讓化龍族的茶商驗貨，再讓三個人馬族的馬販輪流上，談成了茶換戰馬的買賣。", "importance": 2 }
+                ],
+                "set_flags": ["tdtongue_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用手和嘴打發他們",
+              "success": {
+                "text": "你跪在氈子上，用手和嘴一個一個地打發他們，三根東西輪流塞滿你的嘴和手。他們滿意地拍了拍馬身。孫舌頭在帳外喊：「成交！」",
+                "scene": "主角跪在馬販帳篷的氈子上，雙手握著人馬族馬販粗得握不攏的陰莖套弄，嘴裡含著另一根的前端，三個人輪流換，射得主角滿臉滿身都是。",
+                "effects": [
+                  { "type": "money", "amount": 180 },
+                  { "type": "affinity", "npc": "npc_td_sun_shetou", "delta": 3, "reason": "談成了買賣" },
+                  { "type": "memory", "summary": "在鷹河榷場當「添頭」，用手和嘴打發了三個人馬族的馬販，談成了茶換戰馬的買賣。", "importance": 2 }
+                ],
+                "set_flags": ["tdtongue_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["tdtongue_extra_tea_side"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1400 }]
+    },
+    {
+      "id": "tdtongue_market",
+      "title": "秋市",
+      "summary": "一年最大的秋市到了，大燁的茶商隊和媞丹的馬群同一天進了榷場。孫舌頭說，這種日子，通譯比黃金還值錢。（茶馬市的通譯・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_sun_shetou",
+        "min_level": 12,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["tdtongue_2_done"] },
+        "text": "孫舌頭換了一身新長衫，耳環擦得發亮：「秋市三天，兩邊的人加起來上百個。每一筆買賣都要通譯，每一筆都要添頭。」他把一對金耳墜在你眼前晃了晃，「撐完三天，這對耳墜就是你的——左邊刻大燁字、右邊刻媞丹字。」"
+      },
+      "start_flags": ["tdtongue_market_start"],
+      "nodes": [
+        {
+          "id": "fair",
+          "title": "秋市的第一天",
+          "kind": "check",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "text": "整個茶馬市擠得水洩不通。你從一筆買賣翻到下一筆，一邊翻話一邊被兩邊的手從頭摸到腳，有時候一筆買賣還沒談完，下一筆的人已經在後面排隊了。",
+          "check": { "attr": "int", "dc": 16 },
+          "success": {
+            "text": "你一口氣翻了三十筆買賣，一句也沒翻錯，連監官斡勒都過來看是誰這麼能幹。孫舌頭笑得合不攏嘴。",
+            "effects": [{ "type": "money", "amount": 120 }],
+            "set_flags": ["tdtongue_market_fair"]
+          },
+          "fail": {
+            "text": "翻到第二十筆時你的嗓子啞了，兩邊的人等得不耐煩，乾脆不要你翻話了，直接要添頭。",
+            "scene": "嗓子啞了的主角被等得不耐煩的茶商和馬販圍住，兩邊的人不要主角翻話了，直接把主角拉到貨堆後面，一邊揉捏一邊把手指伸進主角體內，說這筆買賣就用添頭抵。",
+            "effects": [{ "type": "money", "amount": 80 }, { "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["tdtongue_market_fair"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["tdtongue_market_start"] }
+        },
+        {
+          "id": "market",
+          "title": "秋市的最後一夜",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_tea_horse" },
+          "text": "秋市的最後一夜，茶商隊和馬幫在茶馬市中央各點了一堆篝火，兩邊的人都喝醉了。左邊的化龍族茶商朝你招手，右邊的人馬族馬販朝你吹口哨。孫舌頭搖著扇子：「最後一筆買賣，你自己挑。」",
+          "options": [
+            {
+              "label": "跟茶商們（化龍族）",
+              "success": {
+                "text": "你走向左邊的篝火。化龍族的茶商們把你按在茶磚堆上，一個接一個，尾巴纏著你的腿，直到篝火燒成灰。天亮時孫舌頭把那對金耳墜掛在你的耳朵上：「左邊那隻刻的是大燁字。你今晚說的，全是大燁話。」",
+                "scene": "秋市最後一夜的篝火邊，化龍族的茶商們把主角按在堆成小山的茶磚上，一個接一個從後面幹主角，長尾纏著主角的腿不放，有人塞進主角嘴裡，一直輪到篝火燒成灰燼。",
+                "effects": [
+                  { "type": "item", "name": "通譯的雙語耳墜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_two_tongues" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_td_sun_shetou", "delta": 10, "reason": "撐完了秋市" },
+                  { "type": "memory", "summary": "鷹河榷場的秋市最後一夜，在篝火邊的茶磚堆上讓化龍族的茶商們輪了一整夜。孫舌頭把通譯的雙語耳墜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["tdtongue_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "跟馬販們（人馬族，人外）",
+              "success": {
+                "text": "你走向右邊的篝火。人馬族的馬販們圍成一圈，把你抱上一張馬鞍，一個接一個用他們的尺寸讓你叫到嗓子全啞。天亮時孫舌頭把那對金耳墜掛在你的耳朵上：「右邊那隻刻的是媞丹字。你今晚叫的，他們全聽得懂。」",
+                "scene": "秋市最後一夜，人馬族的馬販們圍著篝火把主角抱上一張馬鞍，一個接一個用馬身壓上來，把馬一樣粗長的陰莖頂進主角體內，撐得主角哭叫到嗓子全啞，每一個都射得又多又燙，從鞍上流到地上。",
+                "effects": [
+                  { "type": "item", "name": "通譯的雙語耳墜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_two_tongues" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_td_sun_shetou", "delta": 10, "reason": "撐完了秋市" },
+                  { "type": "memory", "summary": "鷹河榷場的秋市最後一夜，在篝火邊讓人馬族的馬販們輪了一整夜。孫舌頭把通譯的雙語耳墜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["tdtongue_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "兩邊一起，翻話翻到說不出話",
+              "success": {
+                "text": "你站到兩堆篝火中間，讓兩邊的人一起來：化龍族的從前面、人馬族的從後面，你一邊被幹一邊替他們翻彼此的葷話，翻到最後一句話也說不出來，只剩兩國都聽得懂的聲音。天亮時孫舌頭把那對金耳墜掛在你的耳朵上：「兩國的話，你都說得比我好了。」",
+                "scene": "秋市最後一夜，主角站在兩堆篝火中間，化龍族的茶商從前面、人馬族的馬販從後面同時幹主角，主角一邊被前後夾著頂一邊替兩邊翻彼此的淫話，翻到最後只剩呻吟，兩邊的人輪流換位置，一直弄到天亮。",
+                "effects": [
+                  { "type": "item", "name": "通譯的雙語耳墜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_two_tongues" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_td_sun_shetou", "delta": 15, "reason": "讓兩邊都滿意了" },
+                  { "type": "memory", "summary": "鷹河榷場的秋市最後一夜，站在兩堆篝火中間讓化龍族的茶商和人馬族的馬販一起上了一整夜。孫舌頭把通譯的雙語耳墜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["tdtongue_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["tdtongue_market_fair"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 700 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yhinc_lot",
+      "title": "求籤",
+      "summary": "香頭劉嬤嬤說，走完五座龍母祠、借齊五方的龍種，求什麼都有。第一站是龍安府御街的龍母殿。（龍母祠的求子香・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_mama",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "text": "劉嬤嬤把一件紅肚兜塞進你懷裡，又在你手腕上繫了一根紅繩：「求子的人穿紅。外面罩什麼都行，裡面就這一件。」她拍拍你的肚子，笑得慈眉善目，「第一站先求籤。籤怎麼說，咱們就怎麼做——龍母說了算。」",
+        "items": ["絲綢肚兜"]
+      },
+      "start_flags": ["yhinc_lot_start"],
+      "nodes": [
+        {
+          "id": "lot",
+          "title": "在龍母殿求籤",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "temple" },
+          "text": "龍母殿在神殿的偏殿，供桌上擺滿了泥娃娃和紅雞蛋。你跪在蒲團上搖籤筒，掉出來一支下下籤。廟祝拿著籤看了半天：「『五方借種，方得麟兒』……得先看看施主宜不宜子。」他的眼睛落在你的紅肚兜上。",
+          "check": { "attr": "fai", "dc": 13 },
+          "success": { "text": "你虔誠地又搖了一次，搖出一支上上籤。廟祝有點失望，只照規矩摸了摸你的肚子：「宜子，宜子。」", "effects": [{ "type": "money", "amount": 30 }], "set_flags": ["yhinc_lot_lot"] },
+          "fail": {
+            "text": "廟祝說要「看手相」，看完手相看面相，看完面相掀開肚兜看「腹相」，最後手伸到你的腿間看了很久：「宜子，就是門還得開一開。」",
+            "scene": "龍母殿的廟祝藉口替主角看相，從手摸到臉，再掀開紅肚兜揉捏主角的胸口和肚子，最後把手伸進主角腿間摳弄了很久，說是在看「宜不宜子」。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhinc_lot_lot"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhinc_lot_start"] },
+          "wear": ["dudou"]
+        },
+        {
+          "id": "first",
+          "title": "先借一方",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "temple" },
+          "text": "廟祝把偏殿的門閂上，指了指龍母像前的蒲團：「籤上說五方借種，龍安府是中央，這一方由貧道先借。」劉嬤嬤在門外咳了一聲，算盤響了兩下。",
+          "options": [
+            {
+              "label": "跪在龍母像前讓他借",
+              "success": {
+                "text": "你跪在蒲團上，撩起裙子。廟祝一邊念求子的經，一邊從後面借了一回，借完了還在你的肚子上按了一個紅手印。劉嬤嬤進來數錢：「中央這一方，借到了。」",
+                "scene": "主角跪在龍母像前的蒲團上撩起裙子，廟祝一邊念求子經一邊從後面插進主角體內，每念一句頂一下，最後射在主角裡面，還在主角的肚子上按了一個紅手印。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 5, "reason": "第一站就很虔誠" },
+                  { "type": "memory", "summary": "在龍安府的龍母殿求子香，跪在龍母像前讓廟祝「借種」。", "importance": 2 }
+                ],
+                "set_flags": ["yhinc_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只讓他用嘴「借」",
+              "success": {
+                "text": "你搖頭：「籤上說的是借，沒說怎麼借。」你跪下來用嘴替他借了一回。廟祝咂咂嘴：「也算，也算。」劉嬤嬤在門外撇嘴：「下一站可沒這麼便宜。」",
+                "scene": "主角跪在龍母殿的蒲團上，解開廟祝的道袍用嘴替他吞吐，廟祝按著主角的頭念求子經，最後射進主角嘴裡，說這也算借過了。",
+                "effects": [
+                  { "type": "money", "amount": 50 },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 2, "reason": "討價還價" },
+                  { "type": "memory", "summary": "在龍安府的龍母殿求子香，跪著用嘴替廟祝「借」了一回。", "importance": 2 }
+                ],
+                "set_flags": ["yhinc_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhinc_lot_lot"] },
+          "wear": ["dudou"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 150 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "yhinc_doll",
+      "title": "拴娃娃",
+      "summary": "第二站是萍江府水巷的龍母祠。萍江的規矩是「拴娃娃」：用紅繩拴一個泥娃娃回家。（龍母祠的求子香・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_mama",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhinc_1_done"] },
+        "text": "劉嬤嬤在水巷的橋頭等你，香籃裡多了一捆紅繩：「萍江的廟祝要拴娃娃，紅繩一頭拴娃娃，一頭拴你。」她壓低聲音，「捐了香油錢的船工也在排隊，他們說，替人拴娃娃的人，自己也會得子。」"
+      },
+      "start_flags": ["yhinc_doll_start"],
+      "nodes": [
+        {
+          "id": "string",
+          "title": "拴紅繩",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "temple" },
+          "text": "廟祝把一個胖嘟嘟的泥娃娃放在你手心，紅繩的另一頭卻在你身上繞：繞過胸口、繞過腰、從腿間穿過去，最後在背後打了一個結。「拴得越緊越靈。」他一邊說一邊拉了拉繩子。",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": { "text": "你自己把繩結鬆了鬆，拴得端端正正，泥娃娃抱在懷裡一點也沒歪。廟祝只好點頭說靈。", "effects": [{ "type": "money", "amount": 40 }], "set_flags": ["yhinc_doll_string"] },
+          "fail": {
+            "text": "繩子越拉越緊，從腿間勒過去的那一段磨得你站都站不穩。廟祝說這叫「拴住了」，又拉了好幾下。",
+            "scene": "廟祝用紅繩把主角從胸口纏到腰、再從腿間勒過去打結，一邊說拴得越緊越靈一邊反覆拉扯繩子，紅繩在主角腿間來回磨蹭，磨得主角腿軟。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "sensitive", "add": true }],
+            "set_flags": ["yhinc_doll_string"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhinc_doll_start"] },
+          "wear": ["dudou"]
+        },
+        {
+          "id": "boatmen",
+          "title": "捐了香油錢的船工",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "temple" },
+          "text": "祠門外排了一長串捐過香油錢的船工，每個人手上都拿著一張香油錢的收據。廟祝把收據收齊了：「一張收據，借一次。萍江這一方是水，水要多才靈。」",
+          "options": [
+            {
+              "label": "照收據一個一個借",
+              "success": {
+                "text": "你被紅繩拴在供桌邊，船工們拿著收據一個一個進來，一張收據借一次。借到天黑，廟祝的收據疊了一尺高，你懷裡的泥娃娃滾到了地上。劉嬤嬤在門外點錢：「水這一方，借足了。」",
+                "scene": "主角被紅繩拴在龍母祠的供桌邊，捐了香油錢的船工拿著收據一個接一個進來，把主角按在供桌上從後面幹，一個射完換下一個，紅繩勒進主角的皮肉裡，一直借到天黑。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 5, "reason": "借足了水這一方" },
+                  { "type": "memory", "summary": "在萍江府的龍母祠拴娃娃，被紅繩拴在供桌邊，讓捐了香油錢的船工照收據一個一個「借種」。", "importance": 2 }
+                ],
+                "set_flags": ["yhinc_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只讓廟祝一個人借，船工們用手",
+              "success": {
+                "text": "你只讓廟祝在供桌上借了一回，門外的船工一個一個進來，你用手打發他們。劉嬤嬤嘖了一聲：「省力氣，也省了錢。」",
+                "scene": "廟祝把被紅繩拴著的主角放上供桌幹了一回，接著船工們一個個進來，主角用手替他們套弄，一個個射在主角的手上和紅肚兜上。",
+                "effects": [
+                  { "type": "money", "amount": 100 },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 2, "reason": "省力氣" },
+                  { "type": "memory", "summary": "在萍江府的龍母祠拴娃娃，讓廟祝在供桌上「借」了一回，再用手打發了排隊的船工。", "importance": 2 }
+                ],
+                "set_flags": ["yhinc_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhinc_doll_string"] },
+          "wear": ["dudou"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 700 }]
+    },
+    {
+      "id": "yhinc_sea",
+      "title": "海裡的龍母",
+      "summary": "第三站是瑔州港碼頭邊的凤母小祠。水手們說，玉璘族的凤母就是海裡的龍母，出海前要沾一沾求子人的福氣。（龍母祠的求子香・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_mama",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhinc_2_done"] },
+        "text": "劉嬤嬤站在碼頭邊，海風把她的紅頭巾吹得獵獵作響：「瑔州港的水手出海前都要拜凤母。凤母是海裡的龍母，求子人是她的使者——水手們沾了你的福氣，出海才會平安回來。」她數了數碼頭上的桅杆，「今天有七條船要出海。」"
+      },
+      "start_flags": ["yhinc_sea_start"],
+      "nodes": [
+        {
+          "id": "bless",
+          "title": "替水手賜福",
+          "kind": "check",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "text": "小祠就在蕃坊的碼頭邊，供著一尊半人半魚的凤母像。第一條船的水手們圍過來，一個個伸手摸你的肚子「沾福氣」，摸著摸著就往上、往下摸了。",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你端端正正地站在凤母像前，讓每個水手摸一下肚子就走，誰也沒敢多摸。老水手說這是真的使者，往你的香籃裡丟了一把銅錢。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhinc_sea_bless"]
+          },
+          "fail": {
+            "text": "水手們越摸越多，有人把手伸進紅肚兜裡，有人把你抱起來轉了一圈，說這樣福氣沾得多。",
+            "scene": "凤母小祠前，一群水手圍著主角「沾福氣」，先摸肚子，接著有人把手伸進紅肚兜裡揉捏主角的胸口，有人從後面摸進主角腿間，說這樣沾得多。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhinc_sea_bless"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhinc_sea_start"] },
+          "wear": ["dudou"]
+        },
+        {
+          "id": "ships",
+          "title": "七條船的福氣",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "quanzhou", "cell": "lm_yh_fanfang" },
+          "text": "七條船的水手都到齊了。船老大們商量好了：「沾福氣要沾到裡面才算數。」劉嬤嬤的算盤響個不停。",
+          "options": [
+            {
+              "label": "一條船一條船地沾",
+              "success": {
+                "text": "你在凤母像前讓七條船的水手一條船一條船地沾，沾完一條船，那條船就鳴鑼出海。等最後一條船出了港，碼頭上只剩你和劉嬤嬤。她說：「海這一方，借了七條船。」",
+                "scene": "瑔州港的凤母小祠前，七條船的水手一條船一條船地輪流幹主角，每條船的人輪完就鳴鑼出海，下一條船的水手接著上，主角被按在凤母像的基座上，一直被輪到最後一條船出港。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 5, "reason": "借了七條船" },
+                  { "type": "memory", "summary": "在瑔州港的凤母小祠，讓出海前的七條船的水手一條船一條船地「沾福氣」。", "importance": 2 }
+                ],
+                "set_flags": ["yhinc_3_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只讓七個船老大沾",
+              "success": {
+                "text": "你說福氣只給船老大。七個船老大輪流在小祠裡沾了一回，水手們在外面眼巴巴地看。劉嬤嬤嘆氣：「七個也是七條船，算你聰明。」",
+                "scene": "凤母小祠裡，七個船老大輪流把主角壓在供桌上幹，一個射完換下一個，水手們擠在門口看，主角的紅肚兜被扯到腰上。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 3, "reason": "聰明" },
+                  { "type": "memory", "summary": "在瑔州港的凤母小祠，讓七條船的船老大輪流「沾福氣」。", "importance": 2 }
+                ],
+                "set_flags": ["yhinc_3_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhinc_sea_bless"] },
+          "wear": ["dudou"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "yhinc_elm",
+      "title": "老榆樹的紅布",
+      "summary": "第四站是青丘屯的老榆樹。屯裡的規矩是在樹上繫一條紅布，再在樹下「野合」，才算數。（龍母祠的求子香・四）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_mama",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhinc_3_done"] },
+        "text": "劉嬤嬤坐在屯口的石墩上喝燒酒，臉喝得紅撲撲的：「這一方是山。靈狐族不拜龍母，可是老榆樹靈得很，屯裡沒生的媳婦都來這裡。」她朝樹下努了努嘴，幾個獵戶正蹲在那裡抽旱菸，「紅布要繫得越高越靈。繫完了，下來，樹下有人等。」"
+      },
+      "start_flags": ["yhinc_elm_start"],
+      "nodes": [
+        {
+          "id": "cloth",
+          "title": "爬上老榆樹繫紅布",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_old_elm" },
+          "text": "老榆樹的低枝上已經繫滿了紅布條，要繫得高，就得往上爬。你只穿著紅肚兜爬上樹，樹下的獵戶們仰著頭看，有人吹口哨，有人說「再往上一點，看得到了」。",
+          "check": { "attr": "dex", "dc": 15 },
+          "success": { "text": "你一口氣爬到最高的枝頭，把紅布繫在全屯最高的地方。獵戶們在底下鼓掌，說這下一定靈。", "effects": [{ "type": "money", "amount": 60 }], "set_flags": ["yhinc_elm_cloth"] },
+          "fail": {
+            "text": "你爬到一半腳下一滑，被樹下的獵戶們接住，七手八腳地「扶」了半天才放你下來，每一隻手都扶在不該扶的地方。",
+            "scene": "主角從老榆樹上滑下來，被樹下的靈狐族獵戶們接住，好幾雙手托著主角的屁股和胸口，藉著扶人揉捏個不停，有人的手指已經伸進了主角腿間。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhinc_elm_cloth"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhinc_elm_start"] },
+          "wear": ["dudou"]
+        },
+        {
+          "id": "tree",
+          "title": "樹下野合",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_old_elm" },
+          "text": "紅布在月光下飄著。樹下的獵戶們把皮襖鋪在樹根上，領頭的那個尾巴一甩：「山這一方，我們替胡家的仙借。」劉嬤嬤裹著棉襖回大車店去了，臨走前說：「天亮來接你。」",
+          "options": [
+            {
+              "label": "躺在皮襖上，一個一個來",
+              "success": {
+                "text": "你躺在樹根的皮襖上，獵戶們一個一個來，狐尾掃過你的腿，紅布在頭頂上飄。天亮時劉嬤嬤來接你，你身上蓋著好幾件皮襖。她說：「山這一方，借到了。」",
+                "scene": "老榆樹下，主角躺在鋪在樹根上的皮襖上，靈狐族的獵戶們一個接一個壓上來幹主角，毛茸茸的狐尾掃過主角的大腿，紅布條在頭頂飄著，一直輪到天亮。",
+                "effects": [
+                  { "type": "money", "amount": 220 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 5, "reason": "借到了山這一方" },
+                  { "type": "memory", "summary": "在青丘屯的老榆樹下求子香，躺在皮襖上讓屯裡的獵戶們一個一個「野合」到天亮。", "importance": 2 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhinc_4_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "抱著樹，讓他們一起",
+              "success": {
+                "text": "你抱著老榆樹的樹幹，讓獵戶們一起來：一個在後面、一個在嘴裡，換了一輪又一輪，樹皮把你的胸口磨得通紅。天亮時劉嬤嬤來接你：「老榆樹都被你們搖鬆了。」",
+                "scene": "主角抱著老榆樹粗大的樹幹，靈狐族獵戶們前後一起上：一個從後面幹、一個塞進主角嘴裡，輪了一輪又一輪，樹皮把主角的胸口磨得通紅，樹上的紅布被搖得亂飄，一直到天亮。",
+                "effects": [
+                  { "type": "money", "amount": 260 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 5, "reason": "把老榆樹都搖鬆了" },
+                  { "type": "memory", "summary": "在青丘屯的老榆樹下求子香，抱著樹幹讓屯裡的獵戶們一起「野合」到天亮。", "importance": 2 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhinc_4_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhinc_elm_cloth"] },
+          "wear": ["dudou"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1300 }]
+    },
+    {
+      "id": "yhinc_ovoo",
+      "title": "北原的敖包",
+      "summary": "最後一站是鷹河榷場驛站旁的敖包：繞敖包三圈、往上添石，每添一塊石頭，就讓一個牧人「添」一次。這一站的對象是人馬族。（龍母祠的求子香・五）",
+      "tags": ["adult", "non_virgin", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_liu_mama",
+        "min_level": 12,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhinc_4_done"] },
+        "text": "劉嬤嬤在驛站門口等你，難得地沒有笑：「北原不拜龍母，拜長生天。可是敖包添石，求什麼都靈。」她把香籃放下，從底下抽出一疊借據，「最後一方是草原。人馬族的牧人……你走過來就知道了。」"
+      },
+      "start_flags": ["yhinc_ovoo_start"],
+      "nodes": [
+        {
+          "id": "circle",
+          "title": "繞敖包三圈",
+          "kind": "check",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_post_station" },
+          "text": "驛站旁的敖包是一座石堆，插滿了藍色的哈達與經幡。你抱著石頭繞敖包，一圈一圈地繞；人馬族的牧人們站在圈外看，每繞過一個，就有一隻大手在你屁股上拍一下。",
+          "check": { "attr": "str", "dc": 16 },
+          "success": { "text": "你抱著石頭穩穩地繞完三圈，把石頭添上敖包的最頂端。牧人們用媞丹話喊了一聲好。", "effects": [{ "type": "money", "amount": 80 }], "set_flags": ["yhinc_ovoo_circle"] },
+          "fail": {
+            "text": "你繞到第二圈就抱不動了，石頭掉在地上。牧人們大笑，一個個上來「幫你」抱，抱著抱著就把你整個人抱了起來。",
+            "scene": "繞敖包繞到抱不動石頭的主角，被人馬族的牧人們輪流抱起來，大手托著主角的屁股、揉著主角的胸口，馬身的熱氣貼著主角，傳來傳去。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhinc_ovoo_circle"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhinc_ovoo_start"] },
+          "wear": ["dudou"]
+        },
+        {
+          "id": "ovoo",
+          "title": "添石",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "yinghe", "cell": "lm_td_post_station" },
+          "text": "三圈繞完了。劉嬤嬤坐在敖包旁的石頭上，把那疊借據攤開：「五座祠的廟祝、萍江的船工、瑔州港的船老大、屯裡的獵戶，每一站都分我錢。求子香從頭到尾就是門生意。」她看著你，「最後一方，你還添不添？」牧人們已經圍成了一圈。",
+          "options": [
+            {
+              "label": "讓整個驛站的牧人把敖包添滿（人馬族，人外）",
+              "success": {
+                "text": "你把紅肚兜解下來繫在敖包上。牧人們一個一個來，每來一個，就往敖包上添一塊石頭；石頭添了一層又一層，敖包高了一尺。天亮時劉嬤嬤把一根打了五個結的紅繩繫在你的手腕上：「五方都借齊了。生不生我不知道，這根繩子，你帶著。」",
+                "scene": "鷹河榷場的敖包前，人馬族的牧人們一個接一個用馬身罩住趴在石堆邊的主角，把馬一樣粗長的陰莖頂進主角體內，每射完一個就往敖包上添一塊石頭，石頭添了一層又一層，主角被輪到天亮。",
+                "effects": [
+                  { "type": "item", "name": "龍母的紅繩", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dragon_seed" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 10, "reason": "五方都借齊了" },
+                  { "type": "memory", "summary": "龍母祠求子香的最後一站，在鷹河榷場的敖包前讓人馬族的牧人們一個一個「添石」到天亮。劉嬤嬤把龍母的紅繩給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhinc_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "把劉嬤嬤也拉下來一起添（人馬族，人外）",
+              "success": {
+                "text": "你一把把劉嬤嬤從石頭上拉下來：「五方都借了，嬤嬤自己不借？」牧人們哄笑著把兩個人都圍住。劉嬤嬤罵了兩句，紅頭巾一扯，比你還熟練。天亮時她一邊繫衣帶一邊把一根打了五個結的紅繩繫在你的手腕上：「三十年沒這麼借過了。這根繩子，你帶著。」",
+                "scene": "敖包前，主角和劉嬤嬤並排趴在石堆上，人馬族的牧人們輪流從後面用馬身壓上來幹她們，豐腴的劉嬤嬤一邊叫一邊罵，比主角還迎合，兩個人被輪到天亮，牧人們每射完一個就添一塊石頭。",
+                "effects": [
+                  { "type": "item", "name": "龍母的紅繩", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dragon_seed" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 15, "reason": "拉她一起借了" },
+                  { "type": "memory", "summary": "龍母祠求子香的最後一站，在鷹河榷場的敖包前把香頭劉嬤嬤也拉下來，兩個人一起讓人馬族的牧人們「添石」到天亮。她把龍母的紅繩給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhinc_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "跟劉嬤嬤分帳，從此自己當香頭（人馬族，人外）",
+              "success": {
+                "text": "你蹲下來翻她的借據：「下一個求子的，我帶。分我一半。」劉嬤嬤愣了一下，笑了。那一夜你還是讓牧人們添了石，只是這次每一個都先付錢，劉嬤嬤在旁邊替你記帳。天亮時她把一根打了五個結的紅繩繫在你的手腕上：「香頭的繩子。以後這條香路，算你一份。」",
+                "scene": "敖包前，先付了錢的人馬族牧人們一個一個用馬身壓住主角，把粗長的陰莖頂進主角體內，劉嬤嬤坐在旁邊的石頭上一邊數錢一邊記帳，牧人們射完一個就添一塊石頭，一直到天亮。",
+                "effects": [
+                  { "type": "item", "name": "龍母的紅繩", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_dragon_seed" },
+                  { "type": "money", "amount": 300 },
+                  { "type": "affinity", "npc": "npc_yh_liu_mama", "delta": 10, "reason": "成了合夥的香頭" },
+                  { "type": "memory", "summary": "龍母祠求子香的最後一站，在鷹河榷場的敖包前跟劉嬤嬤分帳，讓先付了錢的人馬族牧人們「添石」。她把龍母的紅繩給了你，說這條香路算你一份。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhinc_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhinc_ovoo_circle"] },
+          "wear": ["dudou"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 700 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yhlantern_walk",
+      "title": "走百病",
+      "summary": "上元夜金吾不禁，御街的燈一夜不熄。燈棚的周燈頭說，今年舞龍隊的龍珠要找一個外地人——先跟著人潮走一趟百病。（上元夜的龍珠・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "D",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_zhou_dengtou",
+        "min_level": 7,
+        "pc_body": ["fem", "andro"],
+        "text": "周燈頭把一件紅紗的衣裳丟給你，薄得透光：「龍珠穿紅紗，燈一照，整條街都看得見。」他把篾刀往腰上一插，「上元夜走百病，從御街走過七座橋，一年不生病。人擠人，手擠手——摸到誰算誰的。」",
+        "items": ["絲綢舞孃紗衣"]
+      },
+      "start_flags": ["yhlantern_walk_start"],
+      "nodes": [
+        {
+          "id": "bridges",
+          "title": "擠過七座橋",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "text": "整條御街擠得水洩不通，燈籠從街頭掛到宣德樓下。你穿著紅紗被人潮推著走，前胸貼著一個人的背，後背貼著另一個人的胸，不知道多少隻手趁著擠在你身上亂摸。",
+          "check": { "attr": "dex", "dc": 13 },
+          "success": {
+            "text": "你像條魚一樣在人縫裡鑽，七座橋一口氣走完，紅紗連一道皺褶都沒有。周燈頭在橋頭看得直點頭：「這身手，當龍珠正好。」",
+            "effects": [{ "type": "money", "amount": 40 }],
+            "set_flags": ["yhlantern_walk_bridges"]
+          },
+          "fail": {
+            "text": "你被人潮卡在第三座橋上動彈不得，前後左右的人貼著你，手從紅紗的縫裡伸進來，摸了一整座橋。",
+            "scene": "上元夜的人潮把主角卡在橋上，前後左右的男人緊貼著主角磨蹭，好幾隻手從紅紗的縫裡伸進來揉捏主角的胸口和屁股，有人的手指伸進主角腿間，擠了一整座橋。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhlantern_walk_bridges"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhlantern_walk_start"] },
+          "wear": ["dancer_veils"]
+        },
+        {
+          "id": "riddle",
+          "title": "猜燈謎",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "text": "走完百病，周燈頭領你到燈棚猜燈謎。出謎的是個胖鹽商，謎面是「上元夜裡兩顆珠，摸得著來看不得」。你猜不出來，他笑著伸出手：「猜不出，要罰。」",
+          "options": [
+            {
+              "label": "讓出謎的人摸個夠",
+              "success": {
+                "text": "你站著不動，讓胖鹽商照謎面摸了個夠，他把燈謎的答案寫在你的紅紗上才放你走。周燈頭哈哈大笑：「答案就是你自己。」",
+                "scene": "燈棚底下，猜不出燈謎的主角被胖鹽商拉到燈籠下面，他照著謎面隔著紅紗揉捏主角的胸口，揉夠了又把手伸進紅紗裡，周圍看燈的人起鬨叫好。",
+                "effects": [
+                  { "type": "money", "amount": 60 },
+                  { "type": "affinity", "npc": "npc_yh_zhou_dengtou", "delta": 5, "reason": "沒掃大家的興" },
+                  { "type": "memory", "summary": "上元夜在御街的燈棚猜燈謎猜不出來，讓出謎的鹽商照謎面摸了個夠。", "importance": 2 }
+                ],
+                "set_flags": ["yhlantern_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用嘴換一個提示",
+              "success": {
+                "text": "你湊到他耳邊：「給個提示，我用嘴換。」他把你拉到燈棚後面，提示給了，答案也給了，你嘴裡也多了一樣東西。",
+                "scene": "燈棚後面，主角跪在胖鹽商面前用嘴替他吞吐，他一邊喘一邊說燈謎的提示，最後射進主角嘴裡，才把答案說出來。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_yh_zhou_dengtou", "delta": 3, "reason": "會做生意" },
+                  { "type": "memory", "summary": "上元夜在御街的燈棚後面，用嘴向出謎的鹽商換了燈謎的提示。", "importance": 2 }
+                ],
+                "set_flags": ["yhlantern_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhlantern_walk_bridges"] },
+          "wear": ["dancer_veils"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 150 }, { "type": "xp", "amount": 400 }]
+    },
+    {
+      "id": "yhlantern_pearl",
+      "title": "龍珠",
+      "summary": "舞龍隊開始了。你披著紅紗當龍珠，在龍頭前面跑；被整條龍追上一次，就鑽進龍身底下侍奉一節。（上元夜的龍珠・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_zhou_dengtou",
+        "min_level": 8,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhlantern_1_done"] },
+        "text": "周燈頭把一顆紅琉璃的大珠子塞進你手裡，又在你的紅紗上繫了一串鈴鐺：「龍珠在前面跑，龍在後面追。舞龍的九個人都是我的徒弟，每追上你一次，你就鑽進龍身底下，侍奉追上你的那一節。」他咧嘴一笑，「跑得越久，侍奉得越少。」"
+      },
+      "start_flags": ["yhlantern_pearl_start"],
+      "nodes": [
+        {
+          "id": "chase",
+          "title": "被整條龍追",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "text": "鑼鼓一響，金色的長龍從燈棚裡竄出來，龍頭張著大嘴朝你撲過來。你抱著龍珠在御街上跑，鈴鐺響成一片，兩旁看燈的人拍手叫好。",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": {
+            "text": "你左閃右躲，龍頭撲了七八次都沒撲到，一整條街的人都在喊「好龍珠」。到最後龍只追上了你兩次。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhlantern_pearl_chase"]
+          },
+          "fail": {
+            "text": "你跑了沒幾步就被龍頭一口「叼住」，舞龍頭的徒弟把你拖進龍身底下，在一片金色的龍布裡摸了個夠才放你出來。",
+            "scene": "舞龍頭的徒弟追上主角，把主角拖進金色的龍身底下，在龍布的遮掩下揉捏主角的胸口、把手伸進紅紗裡摳弄，外面的人只看見龍身一陣亂動。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhlantern_pearl_chase"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhlantern_pearl_start"] },
+          "wear": ["dancer_veils"]
+        },
+        {
+          "id": "caught",
+          "title": "被追上的那幾節",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "text": "舞完一趟，長龍停在燈棚前喘氣。龍身底下九雙腳，追上過你的那幾節已經在解褲帶了。周燈頭敲了一下鑼：「規矩是規矩，龍珠被追上幾次，就侍奉幾節。」",
+          "options": [
+            {
+              "label": "鑽進龍身底下，一節一節侍奉",
+              "success": {
+                "text": "你鑽進龍布底下，在一雙雙腳之間爬過去，一節一節地用嘴侍奉。外面的人只看見金龍的身子一節一節地抖。爬到龍尾時，周燈頭在外面數：「一、二、三……今年的龍抖得真好看。」",
+                "scene": "主角鑽進金色的龍布底下，在舞龍隊員的雙腿之間一節一節爬過去，跪著替每一節的人口交，射完一節就爬向下一節，外面看燈的人只看見龍身一節一節地抖動。",
+                "effects": [
+                  { "type": "money", "amount": 120 },
+                  { "type": "affinity", "npc": "npc_yh_zhou_dengtou", "delta": 5, "reason": "一節不落" },
+                  { "type": "memory", "summary": "上元夜在御街，鑽進舞龍的龍身底下，一節一節地替舞龍隊的人用嘴侍奉。", "importance": 2 }
+                ],
+                "set_flags": ["yhlantern_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "只侍奉龍頭",
+              "success": {
+                "text": "你直接走到龍頭底下：「龍珠是給龍頭的。」舞龍頭的大徒弟把你抱進龍頭裡，在那顆大龍頭的遮掩下要了你一回。其他八節在後面罵了一晚上。",
+                "scene": "舞龍頭的大徒弟把主角抱進巨大的龍頭底下，在龍頭的遮掩下把主角頂在龍頭的竹架上幹，外面的人只看見龍頭一下一下地點頭。",
+                "effects": [
+                  { "type": "money", "amount": 90 },
+                  { "type": "affinity", "npc": "npc_yh_zhou_dengtou", "delta": 3, "reason": "只給了龍頭" },
+                  { "type": "memory", "summary": "上元夜在御街，被舞龍頭的人抱進龍頭底下要了一回。", "importance": 2 }
+                ],
+                "set_flags": ["yhlantern_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhlantern_pearl_chase"] },
+          "wear": ["dancer_veils"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 800 }]
+    },
+    {
+      "id": "yhlantern_night",
+      "title": "金吾不禁",
+      "summary": "燈會散了，舞龍隊把龍珠帶回燈棚。化龍族說，被龍追上的龍珠一年都有福氣——追上了以後的事，舞龍的九個人說了算。（上元夜的龍珠・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_zhou_dengtou",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhlantern_2_done"] },
+        "text": "周燈頭把燈棚的簾子放下來，九個徒弟已經把金龍盤在燈棚中央：「今晚金吾不禁，誰也不會來管。」他把一顆小小的紅琉璃珠舉到燈下，「龍珠最後要被龍吞下去，龍才算圓滿。你自己選，是一口吞，還是一節一節吞。」"
+      },
+      "start_flags": ["yhlantern_night_start"],
+      "nodes": [
+        {
+          "id": "shed",
+          "title": "燈棚裡的酒",
+          "kind": "check",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "text": "燈棚裡點滿了燈，九個舞龍的漢子圍著你喝慶功酒，一人敬你一杯，敬完一杯就在你身上摸一把，紅紗被摸得一縷一縷地散開。",
+          "check": { "attr": "cha", "dc": 15 },
+          "success": {
+            "text": "你一杯一杯地喝，一個一個地哄，讓九個人都覺得自己是最先追上龍珠的那個。周燈頭在旁邊看得直搖頭：「這龍珠，比龍還會繞。」",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhlantern_night_shed"]
+          },
+          "fail": {
+            "text": "你喝到第五杯就醉了，紅紗散了一地，九個人輪流把你抱到腿上喝酒，手在你身上沒停過。",
+            "scene": "喝醉的主角在燈棚裡被九個舞龍的漢子輪流抱到腿上灌酒，紅紗散了一地，一雙雙手揉捏主角的胸口、伸進主角的腿間，主角暈乎乎地任他們傳來傳去。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }],
+            "set_flags": ["yhlantern_night_shed"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhlantern_night_start"] },
+          "wear": ["dancer_veils"]
+        },
+        {
+          "id": "swallow",
+          "title": "龍吞珠",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "text": "燈棚裡的燈一盞一盞熄了，只剩鰲山燈還亮著。九個人站成一條龍，從龍頭排到龍尾。周燈頭說：「龍珠，該讓龍吞了。」",
+          "options": [
+            {
+              "label": "讓九節一節一節來",
+              "success": {
+                "text": "你躺在盤起來的金龍布上，九個人從龍頭到龍尾一節一節地來，每一節都比上一節久。天亮時鰲山燈熄了，周燈頭把一顆紅琉璃珠串成墜子掛在你的胸口：「龍吞了珠，珠也吞了龍。今年龍安府一定順。」",
+                "scene": "燈棚裡，主角躺在盤起來的金龍布上，舞龍隊的九個漢子從龍頭到龍尾排著隊一節一節地幹主角，一個射完下一個接上，每一個都比上一個久，鰲山燈的光照著主角滿身的汗和精液，一直到天亮。",
+                "effects": [
+                  { "type": "item", "name": "上元的龍珠墜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_play_pearl" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_zhou_dengtou", "delta": 10, "reason": "讓龍圓滿了" },
+                  { "type": "memory", "summary": "上元夜在御街的燈棚裡，讓舞龍隊九個人從龍頭到龍尾一節一節地幹到天亮。周燈頭把上元的龍珠墜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhlantern_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓整條龍一口吞下，九個人一起",
+              "success": {
+                "text": "你走進九個人中間，讓整條龍一口把你吞下去：前後、嘴裡、兩隻手，九個人輪著換位置，誰也分不清哪一節是哪一節。天亮時周燈頭把一顆紅琉璃珠串成墜子掛在你的胸口：「一口吞下去的龍珠，我紮了三十年燈第一次見。」",
+                "scene": "燈棚裡，舞龍隊的九個漢子把主角圍在中間一起上：前後兩個同時插入、嘴裡含著一個、兩手各握一個，九個人輪流換位置，主角被夾在中間翻來覆去，誰也分不清是哪一節，一直被幹到天亮。",
+                "effects": [
+                  { "type": "item", "name": "上元的龍珠墜", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_play_pearl" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_zhou_dengtou", "delta": 10, "reason": "讓龍一口吞了" },
+                  { "type": "memory", "summary": "上元夜在御街的燈棚裡，讓舞龍隊九個人一起「一口吞下」，輪到天亮。周燈頭把上元的龍珠墜給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhlantern_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhlantern_night_shed"] },
+          "wear": ["dancer_veils"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1200 }]
+    },
+    {
+      "id": "yhqiqiao_needle",
+      "title": "穿針",
+      "summary": "七夕夜，萍江的繡娘們向織女乞巧。織坊街的老規矩：每年選一個外地人當「織女」，織坊的男人們當牛郎。（乞巧節的織女・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_suo_ye",
+        "min_level": 9,
+        "pc_body": ["fem", "andro"],
+        "text": "梭爺把一件薄得像霧的紗衣披在你身上，手在你的肩上多停了一下：「織女穿的是天衣，透得見才是天衣。」他把一根七孔針和一束五色線放在你手心，「月亮底下穿七孔針，穿過去了，一年手巧；穿不過去——」他朝繡坊門口那群光著膀子的漢子努努嘴，「牛郎們有牛郎們的罰法。」",
+        "items": ["絲綢透視薄紗睡衣"]
+      },
+      "start_flags": ["yhqiqiao_needle_start"],
+      "nodes": [
+        {
+          "id": "needle",
+          "title": "月下穿七孔針",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "tailor" },
+          "text": "繡坊的院子裡擺著供桌，月光從天井照下來。你捏著七孔針對著月亮穿線，身後的牛郎們一邊看一邊起鬨，有人故意在你耳邊吹氣，有人的手從紗衣的下襬伸了進來。",
+          "check": { "attr": "dex", "dc": 14 },
+          "success": {
+            "text": "你一口氣把五色線穿過七個針孔，繡娘們一起歡呼，說今年的織女是真織女。牛郎們悻悻地把手縮了回去。",
+            "effects": [{ "type": "money", "amount": 50 }],
+            "set_flags": ["yhqiqiao_needle_needle"]
+          },
+          "fail": {
+            "text": "你穿到第四孔手一抖，線斷了。牛郎們歡呼一聲圍了上來：「罰！」",
+            "scene": "穿針失手的主角被一群光著膀子的牛郎圍在繡坊的院子裡，你一手我一手地隔著薄紗揉捏主角的胸口和屁股，有人把手伸進紗衣底下，說這是織女的罰。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhqiqiao_needle_needle"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhqiqiao_needle_start"] },
+          "wear": ["sheer_negligee"]
+        },
+        {
+          "id": "cowherds",
+          "title": "牛郎的罰法",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "tailor" },
+          "text": "罰完了第一輪，梭爺搬了一罈酒出來：「織女要罰酒，牛郎也要罰。」牛郎們排成一排，每人手裡一杯酒，一杯酒換一樣東西。",
+          "options": [
+            {
+              "label": "讓每個牛郎摸一處",
+              "success": {
+                "text": "你站在供桌前，讓牛郎們一人一杯酒、一人摸一處：胸口、腰、屁股、大腿內側……排到最後一個，已經沒有地方可以摸了，他只好把手伸到最裡面。",
+                "scene": "主角站在乞巧的供桌前，牛郎們排著隊一人喝一杯酒、一人摸主角身上一處，從胸口、腰到大腿內側，最後一個把手指伸進主角體內攪弄，整排的人看得哈哈大笑。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_yh_suo_ye", "delta": 5, "reason": "是個好織女" },
+                  { "type": "memory", "summary": "乞巧節在萍江府的繡坊，讓織坊的牛郎們一人一杯酒、一人摸一處。", "importance": 2 }
+                ],
+                "set_flags": ["yhqiqiao_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "坐到梭爺腿上，替他喝",
+              "success": {
+                "text": "你一屁股坐到梭爺的腿上，牛郎們的酒全由你替他喝，喝一杯他就摸一把。老傢伙的手比牛郎們還不老實，喝到最後你在他腿上動來動去，他的褲子也撐了起來。",
+                "scene": "主角坐在梭爺的腿上替他喝罰酒，喝一杯他就把手伸進薄紗裡揉捏一把，老人粗糙的手指在主角腿間來回磨蹭，主角在他腿上扭動，感覺到他褲子裡的東西越頂越硬。",
+                "effects": [
+                  { "type": "money", "amount": 70 },
+                  { "type": "affinity", "npc": "npc_yh_suo_ye", "delta": 8, "reason": "坐在他腿上替他喝酒" },
+                  { "type": "memory", "summary": "乞巧節在萍江府的繡坊，坐在老機戶梭爺的腿上替他喝罰酒，被他摸了一整晚。", "importance": 2 }
+                ],
+                "set_flags": ["yhqiqiao_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhqiqiao_needle_needle"] },
+          "wear": ["sheer_negligee"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
+    },
+    {
+      "id": "yhqiqiao_bridge",
+      "title": "鵲橋",
+      "summary": "七夕夜裡，織坊的男人們在虹橋上排成一座「鵲橋」，織女要從橋頭走到橋尾，每過一隻喜鵲，付一次過路錢。（乞巧節的織女・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_suo_ye",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhqiqiao_1_done"] },
+        "text": "梭爺拄著拐杖在虹橋頭等你，橋上已經躺滿了光著膀子的漢子，從橋頭排到橋尾：「喜鵲搭橋，織女過橋。一隻喜鵲收一次過路錢——織女身上沒有錢，你知道用什麼付。」他把木梭在手上轉了一圈，「走到橋尾，牛郎在等你。」"
+      },
+      "start_flags": ["yhqiqiao_bridge_start"],
+      "nodes": [
+        {
+          "id": "walk",
+          "title": "走過鵲橋",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "text": "你光著腳踩上第一隻「喜鵲」的胸口，他的手立刻抓住了你的腳踝往上摸。整座虹橋上躺著二十幾個人，每走一步，就有一雙手從下面伸上來，運河兩岸擠滿了看熱鬧的人。",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你咬著牙一步一步往前走，任下面的手怎麼摸也沒停下來，走到橋中間時兩岸的人都在喊「織女！織女！」",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["yhqiqiao_bridge_walk"]
+          },
+          "fail": {
+            "text": "你走到一半腿一軟，跌坐在一隻喜鵲的身上。下面的人哄笑著把你按住不讓起來，好幾雙手同時從下面伸了上來。",
+            "scene": "走鵲橋走到一半的主角腿一軟，跌坐在躺著的漢子身上，周圍的「喜鵲」們哄笑著把主角按住，好幾雙手從下面伸進薄紗，揉捏主角的胸口、摳弄主角的腿間。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhqiqiao_bridge_walk"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhqiqiao_bridge_start"] },
+          "wear": ["sheer_negligee"]
+        },
+        {
+          "id": "toll",
+          "title": "過路錢",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "lm_yh_rainbow_bridge" },
+          "text": "走到虹橋的最高處，喜鵲們坐了起來，每個人都把褲子解開了：「織女，過路錢。」橋尾的燈下，梭爺抱著手看。",
+          "options": [
+            {
+              "label": "跪下來，每隻喜鵲用嘴付",
+              "success": {
+                "text": "你跪在虹橋上，一隻喜鵲一隻喜鵲地用嘴付過路錢，從橋中央付到橋尾，兩岸的人看得一清二楚。付完最後一隻，月亮已經偏西了。梭爺扶你起來：「好織女，過路錢一文都沒少。」",
+                "scene": "主角跪在虹橋上，從橋中央一路爬到橋尾，一個一個替坐起來的「喜鵲」們口交付過路錢，射完一個爬向下一個，運河兩岸看熱鬧的人看得一清二楚，主角的下巴和薄紗都沾滿了精液。",
+                "effects": [
+                  { "type": "money", "amount": 180 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_suo_ye", "delta": 5, "reason": "過路錢一文都沒少" },
+                  { "type": "memory", "summary": "乞巧節在萍江府的虹橋上走鵲橋，跪著用嘴替每一隻「喜鵲」付了過路錢。", "importance": 2 }
+                ],
+                "set_flags": ["yhqiqiao_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓喜鵲們在橋上一起收",
+              "success": {
+                "text": "你站在橋中央：「一起收吧，不然走到天亮也走不完。」喜鵲們一擁而上，你被圍在虹橋最高的地方，手、嘴、身子都被收了過路錢。梭爺在橋尾大笑：「這座鵲橋，今年塌了。」",
+                "scene": "虹橋最高處，二十幾隻「喜鵲」一擁而上圍住主角，有人塞進主角嘴裡、有人讓主角用手套弄、有人把主角按在橋欄上從後面插入，所有人輪流換位置收過路錢，兩岸的人吹著口哨。",
+                "effects": [
+                  { "type": "money", "amount": 200 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_suo_ye", "delta": 5, "reason": "鵲橋都塌了" },
+                  { "type": "memory", "summary": "乞巧節在萍江府的虹橋上，讓所有「喜鵲」一起收了過路錢。", "importance": 2 }
+                ],
+                "set_flags": ["yhqiqiao_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhqiqiao_bridge_walk"] },
+          "wear": ["sheer_negligee"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "yhqiqiao_meet",
+      "title": "七夕會",
+      "summary": "牛郎織女一年只見一次。織坊街的牛郎不止一個，所以織女這一夜，要一次見完。（乞巧節的織女・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_suo_ye",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhqiqiao_2_done"] },
+        "text": "梭爺把繡坊的大門關上，院子裡的織機上還掛著織到一半的錦：「牛郎織女一年只見一次。織坊街的牛郎——」他朝門外排隊的漢子們揮揮手，「有三十個。」他把一束五色絲線放在織機上，「織女要怎麼見牛郎，自己挑。要是見不完，就把自己織進錦裡，讓他們慢慢見。」"
+      },
+      "start_flags": ["yhqiqiao_meet_start"],
+      "nodes": [
+        {
+          "id": "loom",
+          "title": "織機前的酒宴",
+          "kind": "check",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "tailor" },
+          "text": "三十個牛郎擠在繡坊的院子裡，一人捧一碗酒敬織女，每敬一碗，就有人在你的天衣上撕開一道口子，說這樣「看得見織女」。",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": {
+            "text": "你一碗一碗地喝，一個一個地笑，三十個牛郎被你撩得坐立難安，誰也不敢先動手，都在等你點名。梭爺在旁邊直說：「這才是織女。」",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["yhqiqiao_meet_loom"]
+          },
+          "fail": {
+            "text": "酒喝得太急，天衣被撕成了一條一條的，你站在院子中央幾乎什麼都沒穿，牛郎們的手已經等不及了。",
+            "scene": "喝醉的主角站在繡坊的院子中央，身上的薄紗被牛郎們一道一道撕開，三十個男人圍著主角伸手揉捏，有人已經把主角拉進懷裡磨蹭。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "dazed", "add": true }],
+            "set_flags": ["yhqiqiao_meet_loom"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhqiqiao_meet_start"] },
+          "wear": ["sheer_negligee"]
+        },
+        {
+          "id": "meet",
+          "title": "一年一次的相會",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "pingjiang", "cell": "tailor" },
+          "text": "子時到了，梭爺敲響了乞巧的鑼。三十個牛郎排成一排，織機上的五色絲線在月光下發亮。",
+          "options": [
+            {
+              "label": "讓所有牛郎輪流相會到天亮",
+              "success": {
+                "text": "你躺在乞巧的供桌上，讓三十個牛郎一個一個來相會，一年的份一次見完。天亮時供桌上的瓜果都滾到了地上，梭爺把一支七孔的金針插在你的頭髮上：「好織女，今年織坊街每個人都會手巧。」",
+                "scene": "乞巧的供桌上，主角仰躺著讓織坊街的三十個牛郎一個接一個幹，一個射完下一個接上，供桌被撞得瓜果滾落一地，主角從子時被輪到天亮，身上滿是精液和撕碎的薄紗。",
+                "effects": [
+                  { "type": "item", "name": "乞巧的七孔針簪", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_magpie_bridge" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_suo_ye", "delta": 10, "reason": "一年的份一次見完" },
+                  { "type": "memory", "summary": "乞巧節在萍江府的繡坊，躺在供桌上讓三十個「牛郎」輪流相會到天亮。梭爺把乞巧的七孔針簪給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhqiqiao_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用絲線把自己綁在織機上",
+              "success": {
+                "text": "你讓梭爺用五色絲線把你綁在織機上，手腳張開，像一匹還沒織完的錦。牛郎們一個一個走過來「織」你，織了一整夜，絲線勒出了一道道紅痕。天亮時梭爺解開絲線，把一支七孔的金針插在你的頭髮上：「這是我織了五十年最好的一匹錦。」",
+                "scene": "主角被五色絲線綁在織機上，手腳張開動彈不得，織坊街的牛郎們一個接一個走上來幹主角，有人從前面、有人繞到織機後面，絲線勒進主角的皮肉，主角像一匹錦一樣被「織」了一整夜。",
+                "effects": [
+                  { "type": "item", "name": "乞巧的七孔針簪", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_magpie_bridge" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "sensitive", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_suo_ye", "delta": 10, "reason": "最好的一匹錦" },
+                  { "type": "memory", "summary": "乞巧節在萍江府的繡坊，用五色絲線把自己綁在織機上，讓三十個「牛郎」織了一整夜。梭爺把乞巧的七孔針簪給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhqiqiao_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhqiqiao_meet_loom"] },
+          "wear": ["sheer_negligee"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
+    },
+    {
+      "id": "yhfoxwed_sit",
+      "title": "坐福",
+      "summary": "出太陽又下雨的日子，是狐狸娶親。青丘屯每年辦一場「狐嫁女」敬胡家的仙，要找一個外姓的女人當狐新娘。「大了」胡二爺找上了你。（狐嫁女・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_erye",
+        "min_level": 10,
+        "pc_body": ["fem", "andro"],
+        "text": "胡二爺敲了一下銅鑼，把一件大紅的禮服和一塊紅蓋頭塞進你懷裡：「狐新娘就穿這個。新郎是一根掛紅綢的狐尾，誰也不是，所以——」他笑得兩條尾巴直晃，「誰都可以。」他領你進大車店的後屋，炕上鋪著大紅的被褥，「出嫁前先坐福，蓋著蓋頭在炕上坐一整天，屯裡的親戚都要來看新娘。」",
+        "items": ["絲綢紅蓋頭", "絲綢禮服"]
+      },
+      "start_flags": ["yhfoxwed_sit_start"],
+      "nodes": [
+        {
+          "id": "sit",
+          "title": "蓋著蓋頭坐一整天",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "你蓋著紅蓋頭坐在炕中央，什麼也看不見。門簾一掀一放，屯裡的「親戚」一個接一個進來「看新娘」：有人掀你的裙角，有人摸你的腳，有人隔著禮服在你胸口捏了一把，說這是「添福」。",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": { "text": "你端端正正地坐著，一動也不動，誰來摸都不出聲。胡二爺說這是坐得最穩的一個新娘，福氣一定大。", "effects": [{ "type": "money", "amount": 50 }], "set_flags": ["yhfoxwed_sit_sit"] },
+          "fail": {
+            "text": "你坐到一半就忍不住扭了起來，看新娘的人越來越大膽，蓋頭底下的手也越來越多。",
+            "scene": "蓋著紅蓋頭的主角坐在炕上什麼也看不見，屯裡的「親戚」一個接一個進來，掀開禮服的下襬摸主角的腿，伸手進衣襟揉捏主角的胸口，有人的手指已經伸進了主角的腿間。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhfoxwed_sit_sit"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhfoxwed_sit_start"] },
+          "wear": ["red_veil", "gown"]
+        },
+        {
+          "id": "look",
+          "title": "看新娘",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "天快黑了，屯裡的年輕小伙子們擠進後屋，說還沒看夠：「新娘子，掀開讓我們看看嫁妝！」胡二爺在門口抽旱菸，裝作沒聽見。",
+          "options": [
+            {
+              "label": "掀開禮服讓他們看",
+              "success": {
+                "text": "你把禮服的前襟解開，讓小伙子們看了個夠，看完了一個一個伸手摸，摸完了說「嫁妝真好」。胡二爺敲了一下鑼：「看完了，明天迎親！」",
+                "scene": "蓋著紅蓋頭的主角解開禮服的前襟，屯裡的靈狐族小伙子們擠在炕邊看了個夠，接著一個一個伸手揉捏主角的胸口，有人把主角的腿分開往裡看，說嫁妝真好。",
+                "effects": [
+                  { "type": "money", "amount": 60 },
+                  { "type": "affinity", "npc": "npc_yh_hu_erye", "delta": 5, "reason": "大方" },
+                  { "type": "memory", "summary": "在青丘屯的狐嫁女坐福時，解開禮服讓屯裡的小伙子們「看嫁妝」。", "importance": 2 }
+                ],
+                "set_flags": ["yhfoxwed_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "蓋頭不掀，用嘴打發他們",
+              "success": {
+                "text": "你說蓋頭要等新郎掀。小伙子們不甘心，你就隔著蓋頭用嘴一個一個打發，誰也沒看到你的臉。胡二爺嘖嘖兩聲：「這新娘，懂規矩。」",
+                "scene": "主角蓋著紅蓋頭跪在炕沿，屯裡的小伙子們一個一個掀起蓋頭的下緣把陰莖塞進主角嘴裡，主角看不見是誰，只能一個一個吞吐，射完一個換下一個，蓋頭的流蘇都沾濕了。",
+                "effects": [
+                  { "type": "money", "amount": 80 },
+                  { "type": "affinity", "npc": "npc_yh_hu_erye", "delta": 5, "reason": "懂規矩" },
+                  { "type": "memory", "summary": "在青丘屯的狐嫁女坐福時，蓋頭不掀，用嘴一個一個打發了屯裡的小伙子。", "importance": 2 }
+                ],
+                "set_flags": ["yhfoxwed_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhfoxwed_sit_sit"] },
+          "wear": ["red_veil", "gown"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 200 }, { "type": "xp", "amount": 600 }]
+    },
+    {
+      "id": "yhfoxwed_bride",
+      "title": "迎親",
+      "summary": "太陽雨來了。迎親的花轎抬著狐新娘從大車店出發，繞屯子一圈，到仙堂前拜堂。（狐嫁女・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "C",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_erye",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhfoxwed_1_done"] },
+        "text": "天上出著太陽，雨點卻一顆一顆往下掉。胡二爺樂得直敲鑼：「狐狸娶親的天！」他把你扶上一頂紅花轎，「轎夫要顛轎，顛得越狠越吉利；下了轎跨火盆、拜堂，伴郎們要先試新娘——試試胡家的仙收不收你。」"
+      },
+      "start_flags": ["yhfoxwed_bride_start"],
+      "nodes": [
+        {
+          "id": "sedan",
+          "title": "顛轎",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "text": "四個轎夫抬著花轎繞屯子，一邊走一邊顛，顛得你在轎子裡東倒西歪。轎簾一掀一放，每顛一下，就有一隻手伸進來在你身上抓一把。",
+          "check": { "attr": "dex", "dc": 15 },
+          "success": {
+            "text": "你兩手撐著轎壁坐得穩穩的，伸進來的手一隻也沒抓到。轎夫們顛到沒力氣了，只好老老實實把轎子抬到仙堂前。",
+            "effects": [{ "type": "money", "amount": 60 }],
+            "set_flags": ["yhfoxwed_bride_sedan"]
+          },
+          "fail": {
+            "text": "你被顛得滾來滾去，轎簾一掀，四個轎夫輪流伸手進來，把你的禮服揉得亂七八糟。",
+            "scene": "花轎被轎夫們故意顛得劇烈搖晃，主角在轎子裡東倒西歪，四個轎夫輪流掀開轎簾伸手進來，抓著主角的胸口、伸進禮服的下襬裡摳弄，把主角揉得衣衫凌亂。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "disheveled", "add": true }],
+            "set_flags": ["yhfoxwed_bride_sedan"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["yhfoxwed_bride_start"] },
+          "wear": ["red_veil", "gown"]
+        },
+        {
+          "id": "groomsmen",
+          "title": "伴郎試新娘",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_xiantang" },
+          "text": "跨過火盆、對著掛紅綢的狐尾拜完堂，四個伴郎把你圍在仙堂門口：「胡家的仙收不收這個新娘，我們先試試。」仙堂裡傳出文王鼓的聲音，沒有人出來看。",
+          "options": [
+            {
+              "label": "讓伴郎一個一個試",
+              "success": {
+                "text": "你被帶到仙堂後面的柴房，四個伴郎一個一個試，試完一個就出去跟胡二爺說「收了」。四個都說收了，胡二爺敲鑼：「胡家的仙收了！晚上鬧洞房！」",
+                "scene": "仙堂後面的柴房裡，四個靈狐族伴郎一個一個把蓋著紅蓋頭的主角按在柴堆上，掀起禮服從後面幹主角，試完一個換下一個，柴房外傳來文王鼓的聲音。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_yh_hu_erye", "delta": 5, "reason": "仙家收了" },
+                  { "type": "memory", "summary": "在青丘屯的狐嫁女拜完堂，被四個伴郎帶到仙堂後面的柴房一個一個「試新娘」。", "importance": 2 }
+                ],
+                "set_flags": ["yhfoxwed_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "回花轎裡讓他們一起試",
+              "success": {
+                "text": "你掀開轎簾坐回花轎裡：「要試就一起試，別讓仙家等。」四個伴郎擠進轎子，轎子在仙堂前晃個不停，屯裡的人都說這頂花轎今年顛得最兇。",
+                "scene": "四個伴郎擠進狹小的花轎裡，主角被夾在中間，前後各一個插進主角體內、另外兩個讓主角用手和嘴輪流服侍，花轎在仙堂前劇烈晃動，外面的人笑著喊顛得好。",
+                "effects": [
+                  { "type": "money", "amount": 180 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_hu_erye", "delta": 5, "reason": "花轎顛得最兇" },
+                  { "type": "memory", "summary": "在青丘屯的狐嫁女拜完堂，在花轎裡讓四個伴郎一起「試新娘」。", "importance": 2 }
+                ],
+                "set_flags": ["yhfoxwed_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["yhfoxwed_bride_sedan"] },
+          "wear": ["red_veil", "gown"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "yhfoxwed_chamber",
+      "title": "鬧洞房",
+      "summary": "洞房就是大車店的後屋。新郎是一根狐尾，誰也不是——所以屯裡的年輕人全擠了進來。（狐嫁女・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_hu_erye",
+        "min_level": 12,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["yhfoxwed_2_done"] },
+        "text": "胡二爺把洞房的門簾掀開，炕上鋪著大紅的喜被，被子上撒滿了紅棗和花生：「不鬧不發，越鬧越發！」他把一根毛茸茸的狐尾塞進你手裡，尾巴根上連著一個圓頭的玉塞，「狐新娘今晚要像真的狐狸一樣——戴不戴，你自己決定。」屯裡的小伙子們已經擠滿了屋子。"
+      },
+      "start_flags": ["yhfoxwed_chamber_start"],
+      "nodes": [
+        {
+          "id": "games",
+          "title": "鬧洞房的花樣",
+          "kind": "check",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "鬧洞房的花樣一個接一個：吊在樑上的蘋果要新娘和小伙子一起啃、紅棗要用嘴從小伙子的褲襠裡叼出來、「過橋」要新娘從一排小伙子的身上爬過去。胡二爺在旁邊敲鑼喊：「下一個！」",
+          "check": { "attr": "cha", "dc": 16 },
+          "success": {
+            "text": "你把每一個花樣都玩得又快又漂亮，小伙子們笑成一團，誰也沒佔到太多便宜。胡二爺說這是他見過最會鬧的新娘。",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["yhfoxwed_chamber_games"]
+          },
+          "fail": {
+            "text": "你叼紅棗叼到第三個就叼出了別的東西，爬「橋」爬到一半就被按住了，洞房裡的笑聲一陣比一陣大。",
+            "scene": "鬧洞房的小伙子們讓主角用嘴從他們的褲襠裡叼紅棗，叼著叼著就叼到了別的東西；主角從一排躺著的小伙子身上爬過去，爬到一半被按住，好幾雙手扒開了禮服。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["yhfoxwed_chamber_games"]
+          },
+          "hours": "night",
+          "requires": { "flags": ["yhfoxwed_chamber_start"] },
+          "wear": ["red_veil", "gown"]
+        },
+        {
+          "id": "chamber",
+          "title": "洞房花燭夜",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "qingqiu", "cell": "lm_yh_big_kang" },
+          "text": "花樣鬧完了，胡二爺把紅燭點上，自己退到門外：「新郎是狐尾，狐尾不會動，剩下的你們看著辦。」炕上的喜被已經被掀開了，屋裡的小伙子們一個個解開了大褂。",
+          "options": [
+            {
+              "label": "讓整屯的小伙子鬧到天亮",
+              "success": {
+                "text": "你掀開紅蓋頭躺到喜被上，讓屯裡的小伙子們一個一個鬧，鬧到紅燭燒完，又點了一對。天亮時胡二爺掀開門簾，把那塊紅蓋頭疊好放在你手裡：「狐新娘的蓋頭，給你。今年青丘屯一定越鬧越發。」",
+                "scene": "大車店後屋的洞房裡，主角躺在撒滿紅棗花生的喜被上，青丘屯的靈狐族小伙子們一個接一個壓上來幹主角，狐尾掃過主角的身子，紅燭燒完了又點一對，主角被輪流鬧到天亮。",
+                "effects": [
+                  { "type": "item", "name": "狐新娘的紅蓋頭", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_bridal_chamber" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_hu_erye", "delta": 10, "reason": "讓屯子越鬧越發" },
+                  { "type": "memory", "summary": "在青丘屯的狐嫁女，洞房花燭夜讓整屯的小伙子鬧到天亮。胡二爺把狐新娘的紅蓋頭給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhfoxwed_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "戴上狐尾，當一夜真正的狐新娘",
+              "success": {
+                "text": "你把狐尾的玉塞慢慢塞了進去，毛茸茸的尾巴垂在身後，跪在喜被上搖了一下。小伙子們看傻了，接著一擁而上，說今晚要跟真的狐新娘洞房。天亮時胡二爺掀開門簾，把那塊紅蓋頭疊好放在你手裡：「胡家的仙看了也要臉紅。這塊蓋頭，給你。」",
+                "scene": "主角把連著狐尾的玉塞塞進後穴，毛茸茸的尾巴垂在身後，跪在喜被上搖尾巴，屯裡的小伙子們一擁而上，有人抓著狐尾從前面幹主角、有人塞進主角嘴裡，狐尾隨著每一下撞擊晃動，一直洞房到天亮。",
+                "effects": [
+                  { "type": "item", "name": "狐新娘的紅蓋頭", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_bridal_chamber" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "sensitive", "add": true },
+                  { "type": "affinity", "npc": "npc_yh_hu_erye", "delta": 10, "reason": "當了真正的狐新娘" },
+                  { "type": "memory", "summary": "在青丘屯的狐嫁女，戴上連著玉塞的狐尾當了一夜真正的狐新娘，讓屯裡的小伙子們洞房到天亮。胡二爺把狐新娘的紅蓋頭給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["yhfoxwed_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["yhfoxwed_chamber_games"] },
+          "wear": ["red_veil", "gown"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 1500 }]
+    },
+    {
+      "id": "tdnaadam_target",
+      "title": "靶子",
+      "summary": "那達慕的男兒三藝：射箭、賽馬、摔跤。司儀烏力吉說，今年的彩頭是一個外地人，三藝的優勝者都有份。第一藝是射箭。對象都是人馬族。（那達慕的彩頭・一）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_wuliji",
+        "min_level": 11,
+        "pc_body": ["fem", "andro"],
+        "text": "烏力吉把一條藍色的哈達披在你肩上，大手順勢在你的背上拍了拍：「彩頭只披哈達，別的都不用穿——草原上的漢子要看清楚他們在搶什麼。」他用馬鞭指了指射箭場，「先當靶子。頭上頂一個皮囊，射中的上來摸一把。手一抖、皮囊掉了，全場的射手一起摸。」"
+      },
+      "start_flags": ["tdnaadam_target_start"],
+      "nodes": [
+        {
+          "id": "target",
+          "title": "頭頂皮囊當靶子",
+          "kind": "check",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "text": "你披著哈達站在靶場的盡頭，頭上頂著一個裝滿馬奶酒的皮囊。人馬族的射手們在百步外拉開角弓，一箭一箭從你頭頂、耳邊、腰邊擦過去。射中皮囊的人一個個奔過來，在你身上摸一把。",
+          "check": { "attr": "fai", "dc": 15 },
+          "success": {
+            "text": "你一動也不動，皮囊被射穿了七次，馬奶酒淋了你一身，你還是站得筆直。射手們用媞丹話喊你「有膽量的彩頭」。",
+            "effects": [{ "type": "money", "amount": 80 }],
+            "set_flags": ["tdnaadam_target_target"]
+          },
+          "fail": {
+            "text": "一支箭擦著你的耳朵飛過，你一縮脖子，皮囊掉在地上。全場的射手歡呼著奔過來，把你圍在靶場中央。",
+            "scene": "皮囊掉在地上，全場的人馬族射手歡呼著奔過來把主角圍在中間，一雙雙大手扯開藍哈達，揉捏主角淋滿馬奶酒的胸口和屁股，馬身擠成一圈，主角被摸得站都站不穩。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["tdnaadam_target_target"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["tdnaadam_target_start"] }
+        },
+        {
+          "id": "archers",
+          "title": "射中的人",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "text": "射箭比完了，射得最準的七個射手站成一排，烏力吉宣布：「射中的上來領彩頭——今天只准摸，摸夠了明天才有更多。」",
+          "options": [
+            {
+              "label": "讓七個射手一個一個摸個夠",
+              "success": {
+                "text": "你站在靶場中央，七個射手一個一個上來，用他們拉弓的手從頭摸到腳。最後一個把你抱到馬背上，摸了一圈才放下來。烏力吉大笑：「好彩頭，明天賽馬！」",
+                "scene": "那達慕的靶場中央，七個人馬族射手一個一個走上前，用拉弓的粗糙大手從主角的臉摸到胸口、腰、屁股和腿間，最後一個把主角抱上自己的馬背，一邊小跑一邊揉捏主角。",
+                "effects": [
+                  { "type": "money", "amount": 120 },
+                  { "type": "affinity", "npc": "npc_td_wuliji", "delta": 5, "reason": "好彩頭" },
+                  { "type": "memory", "summary": "那達慕的射箭比完，讓七個人馬族射手一個一個上來把自己摸個夠。", "importance": 2 }
+                ],
+                "set_flags": ["tdnaadam_1_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "用嘴替射得最準的那個領彩頭",
+              "success": {
+                "text": "你走到射得最準的那個射手面前，跪下來用嘴替他「領彩頭」。他的東西大得你兩手都握不住，全場的人都在看。烏力吉吹了一聲口哨：「只准摸——這不算摸，算了！」",
+                "scene": "主角跪在射得最準的人馬族射手的馬身前，雙手握著他粗得握不攏的陰莖，用嘴含住前端吞吐，全場的人馬族圍著看、吹口哨，他最後噴射出大量的精液，澆得主角滿臉滿身。",
+                "effects": [
+                  { "type": "money", "amount": 150 },
+                  { "type": "affinity", "npc": "npc_td_wuliji", "delta": 5, "reason": "不按規矩的彩頭" },
+                  { "type": "memory", "summary": "那達慕的射箭比完，當著全場跪下來用嘴替射得最準的人馬族射手「領彩頭」。", "importance": 2 }
+                ],
+                "set_flags": ["tdnaadam_1_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "day",
+          "requires": { "flags": ["tdnaadam_target_target"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 1000 }]
+    },
+    {
+      "id": "tdnaadam_race",
+      "title": "賽馬的彩頭",
+      "summary": "第二藝是賽馬。冠軍把彩頭帶回營帳，前三名都進帳。對象都是人馬族。（那達慕的彩頭・二）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_wuliji",
+        "min_level": 12,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["tdnaadam_1_done"] },
+        "text": "烏力吉在賽馬場的終點等你，身後是一頂掛著藍哈達的營帳：「賽馬的冠軍把彩頭帶回營帳。不是人馬族的彩頭騎在他背上回去，是人馬族的彩頭就跟他並肩跑回去——跑輸了，路上就是他的。」他拍了拍營帳，「前三名都進帳。」"
+      },
+      "start_flags": ["tdnaadam_race_start"],
+      "nodes": [
+        {
+          "id": "ride",
+          "title": "騎在冠軍背上回營帳",
+          "kind": "check",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "text": "賽馬的冠軍是一個年輕的人馬族，渾身是汗地奔到你面前，一把把你抱上他的馬背。他一路小跑回營帳，兩隻手往後伸，在你的大腿上、腰上、胸口上摸個不停，你只能抓著他的肩膀不讓自己掉下去。",
+          "check": { "attr": "dex", "dc": 15 },
+          "success": {
+            "text": "你騎得穩穩的，抓著他的頭髮讓他乖乖跑，一路上他的手只摸到了你的大腿。到了營帳，他喘著氣說你是他騎過最好的彩頭——雖然是你騎他。",
+            "effects": [{ "type": "money", "amount": 100 }],
+            "set_flags": ["tdnaadam_race_ride"]
+          },
+          "fail": {
+            "text": "你在馬背上被顛得東倒西歪，他乾脆停下來，把你轉過來面對著他，一邊慢慢走一邊把你摸了個遍。",
+            "scene": "人馬族的賽馬冠軍把主角轉過來面對面抱在馬背上，一邊慢慢走回營帳一邊揉捏主角的胸口，把手伸到主角的腿間摳弄，主角抓著他的肩膀喘個不停。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["tdnaadam_race_ride"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["tdnaadam_race_start"], "pc_races_none": ["centaur"] }
+        },
+        {
+          "id": "run",
+          "title": "跟冠軍並肩跑回營帳",
+          "kind": "check",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "hours": "day",
+          "text": "賽馬的冠軍是一個年輕的人馬族，渾身是汗地奔到你身邊，用媞丹話笑著說：「彩頭也是匹好馬。比一比，輸的人這一路歸贏的人。」你們並肩往營帳跑，他一邊跑一邊伸手撈你的腰、拍你的馬臀。",
+          "check": { "attr": "str", "dc": 15 },
+          "success": { "text": "你四蹄翻飛，一路領先他半個身子跑到營帳，他喘著氣認輸，說你是他見過跑得最快的彩頭。", "effects": [{ "type": "money", "amount": 100 }], "set_flags": ["tdnaadam_race_ride"] },
+          "fail": {
+            "text": "你跑輸了半個身子。他從後面追上來，一把摟住你的人身，兩副馬身擠在一起，一邊慢慢走一邊把你摸了個遍。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "scene": "賽馬的冠軍從後面追上人馬族的主角，兩副馬身並排擠在一起，他摟住主角的人身揉捏主角的胸口，另一隻手往後撫過主角的馬背和馬臀，一路慢慢走回營帳。",
+            "set_flags": ["tdnaadam_race_ride"]
+          },
+          "requires": { "flags": ["tdnaadam_race_start"], "pc_races": ["centaur"] }
+        },
+        {
+          "id": "tent",
+          "title": "營帳裡的前三名",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "text": "營帳裡鋪滿了羊毛氈，賽馬的前三名都進來了，三副汗淋淋的馬身把營帳擠得滿滿的。冠軍坐在中間：「彩頭，先伺候我們三個。」",
+          "options": [
+            {
+              "label": "用手和嘴伺候三個",
+              "success": {
+                "text": "你跪在羊毛氈上，用兩隻手和嘴輪流伺候三個人馬族，三根東西一根比一根大，伺候完了你的手臂都酸得抬不起來。冠軍滿意地拍了拍你的頭：「明天摔跤，看誰能贏你。」",
+                "scene": "營帳的羊毛氈上，主角跪在三副汗淋淋的馬身之間，雙手各握一根粗得握不攏的陰莖套弄、嘴裡含著第三根吞吐，三個人輪流換，射得主角滿臉滿身都是。",
+                "effects": [
+                  { "type": "money", "amount": 180 },
+                  { "type": "affinity", "npc": "npc_td_wuliji", "delta": 5, "reason": "伺候好了前三名" },
+                  { "type": "memory", "summary": "那達慕的賽馬比完，在營帳裡用手和嘴伺候人馬族的前三名。", "importance": 2 }
+                ],
+                "set_flags": ["tdnaadam_2_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓三個人輪流上（人馬族，人外）",
+              "success": {
+                "text": "你趴在羊毛氈上，讓前三名一個一個用馬身壓上來。冠軍先、亞軍次、季軍最後，一個比一個久，營帳的柱子被撞得咯咯響。烏力吉在帳外喊：「彩頭還活著嗎？」",
+                "scene": "主角趴在營帳的羊毛氈上，賽馬的前三名輪流用馬身罩住主角，把馬一樣粗長的陰莖一寸寸頂進主角體內，冠軍、亞軍、季軍一個比一個久，射得又多又燙，營帳的柱子被撞得咯咯響。",
+                "effects": [
+                  { "type": "money", "amount": 240 },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_td_wuliji", "delta": 5, "reason": "撐過了前三名" },
+                  { "type": "memory", "summary": "那達慕的賽馬比完，在營帳裡讓人馬族的前三名輪流用馬身壓上來。", "importance": 2 }
+                ],
+                "set_flags": ["tdnaadam_2_done"],
+                "complete": true
+              }
+            }
+          ],
+          "requires": { "flags": ["tdnaadam_race_ride"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 500 }, { "type": "xp", "amount": 1400 }]
+    },
+    {
+      "id": "tdnaadam_wrestle",
+      "title": "摔跤的冠軍",
+      "summary": "第三藝是摔跤。冠軍跳完鷹舞，就來領最後的彩頭。對象都是人馬族。（那達慕的彩頭・三）",
+      "tags": ["adult", "male_partner"],
+      "rank": "B",
+      "merit": 5,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_td_wuliji",
+        "min_level": 13,
+        "pc_body": ["fem", "andro"],
+        "requires": { "flags": ["tdnaadam_2_done"] },
+        "text": "烏力吉把那條藍哈達重新繫在你的脖子上，在中間掛了一枚金護符：「最後一藝。摔跤的冠軍跳完鷹舞，要先把彩頭摔倒在地上，才算領了彩頭。」他看著場中那個比所有人都高一個頭的人馬族漢子，「今年的冠軍連摔了三十二個人。你要是能讓他摔不倒你，草原上的人會記你一輩子。」"
+      },
+      "start_flags": ["tdnaadam_wrestle_start"],
+      "nodes": [
+        {
+          "id": "throw",
+          "title": "被冠軍抱摔",
+          "kind": "check",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "text": "冠軍張開雙臂、學著老鷹的樣子跳完鷹舞，全場的人都在歡呼。他走到你面前，一把抓住你的腰，要把你摔倒在場中央。",
+          "check": { "attr": "str", "dc": 16 },
+          "success": {
+            "text": "你抱住他的腰死不鬆手，他連摔了三次都沒把你摔倒，最後兩個人一起滾倒在草地上。全場的人笑得前仰後合，說這是那達慕有史以來最好看的一摔。",
+            "effects": [{ "type": "money", "amount": 120 }],
+            "set_flags": ["tdnaadam_wrestle_throw"]
+          },
+          "fail": {
+            "text": "他一抱一甩就把你摔在草地上，大手按住你的肩膀，整副馬身壓了下來，全場的人都在叫好。",
+            "scene": "摔跤冠軍一把把主角摔倒在那達慕場的草地上，用大手按住主角的肩膀，整副馬身壓下來把主角罩在身下，粗大的陰莖在主角的腿間磨蹭，全場的人馬族在叫好。",
+            "effects": [{ "type": "condition", "target": "pc", "condition": "aroused", "add": true }],
+            "set_flags": ["tdnaadam_wrestle_throw"]
+          },
+          "hours": "day",
+          "requires": { "flags": ["tdnaadam_wrestle_start"] }
+        },
+        {
+          "id": "prize",
+          "title": "最後的彩頭",
+          "kind": "choice",
+          "at": { "where": "cell", "location": "jinzhang", "cell": "lm_td_naadam" },
+          "text": "天黑了，那達慕場中央點起了篝火。摔跤的冠軍、賽馬的冠軍、射箭最準的射手站在火邊，烏力吉舉起馬奶酒：「三藝都比完了，彩頭歸誰？」全場的人都看著你。",
+          "options": [
+            {
+              "label": "只給摔跤的冠軍一個人（人馬族，人外）",
+              "success": {
+                "text": "你走到摔跤冠軍面前，把藍哈達解下來繫在他的脖子上。他把你抱進火光照不到的草地上，用他的尺寸讓你知道為什麼他能連摔三十二個人。天亮時你在他的馬腹底下醒來，烏力吉把藍哈達重新繫回你的脖子上：「冠軍說，這彩頭他領不完，還給你。」",
+                "scene": "篝火照不到的草地上，比所有人都高一個頭的人馬族摔跤冠軍用整副馬身壓住主角，把粗大得嚇人的陰莖一點一點頂進主角體內，撐得主角哭叫出聲，他一整夜一次又一次地要主角，粗暴又持久，主角在他的馬腹底下被幹到天亮。",
+                "effects": [
+                  { "type": "item", "name": "彩頭的藍哈達", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_steppe_prize" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "affinity", "npc": "npc_td_wuliji", "delta": 10, "reason": "當了冠軍的彩頭" },
+                  { "type": "memory", "summary": "那達慕的最後一夜，只給摔跤的冠軍一個人，被他幹到天亮。烏力吉把彩頭的藍哈達給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["tdnaadam_done"],
+                "complete": true
+              }
+            },
+            {
+              "label": "被抬到場中央，三藝的優勝者一起（人馬族，人外）",
+              "success": {
+                "text": "你讓他們把你抬到篝火邊的場中央，三藝的優勝者一起上，全場的人馬族圍成一圈看著、喊著、跺著蹄子。輪完了優勝者，還有人在排隊。天亮時篝火熄了，烏力吉把藍哈達重新繫回你的脖子上：「那達慕辦了一百年，從來沒有一個彩頭被這麼多人搶過。」",
+                "scene": "那達慕場中央的篝火邊，摔跤、賽馬、射箭的優勝者一起上：一個用馬身從後面壓住主角插入、一個讓主角含著、一個讓主角用手套弄，全場的人馬族圍成一圈跺著蹄子叫好，輪完了優勝者還有人排隊，一直到篝火熄滅、天亮。",
+                "effects": [
+                  { "type": "item", "name": "彩頭的藍哈達", "qty": 1 },
+                  { "type": "ability", "target": "pc", "ability": "lust_steppe_prize" },
+                  { "type": "condition", "target": "pc", "condition": "drained", "add": true },
+                  { "type": "condition", "target": "pc", "condition": "disheveled", "add": true },
+                  { "type": "affinity", "npc": "npc_td_wuliji", "delta": 10, "reason": "被所有人搶過的彩頭" },
+                  { "type": "memory", "summary": "那達慕的最後一夜，在篝火邊的場中央讓三藝的優勝者一起上，全場的人馬族圍著看。烏力吉把彩頭的藍哈達給了你。", "importance": 3 }
+                ],
+                "time": { "until": "morning" },
+                "set_flags": ["tdnaadam_done"],
+                "complete": true
+              }
+            }
+          ],
+          "hours": "night",
+          "requires": { "flags": ["tdnaadam_wrestle_throw"] }
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 700 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }
