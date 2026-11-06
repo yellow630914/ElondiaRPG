@@ -20,10 +20,11 @@ import { parasiteRules } from './parasites'
 import { currentParasite } from './parasiteMods'
 import { currentMarkRules } from './tattooMods'
 import { editableOf } from './npcTagMods'
+import { classModOf, editableClassIds } from './classMods'
 import { builtinEventRules } from './travelEventMods'
 
 export type BuiltinSection =
-  | 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'npcTags' | 'statuses' | 'conditions' | 'tattoos' | 'marks' | 'markRules' | 'parasites'
+  | 'enemies' | 'classes' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'npcTags' | 'statuses' | 'conditions' | 'tattoos' | 'marks' | 'markRules' | 'parasites'
   | 'npcs' | 'stories' | 'landmarks' | 'specialMaps' | 'shops' | 'travelEvents' | 'eventRules' | 'bindRules' | 'masterEvents' | 'counters'
 
 export interface SectionInfo {
@@ -39,6 +40,7 @@ export interface SectionInfo {
 /** 匯出的種類（照編輯器的順序）；類別圖示（上傳的圖）不在裡面 */
 export const BUILTIN_SECTIONS: SectionInfo[] = [
   { key: 'enemies', name: '怪物', guide: '怪物（製作指南）' },
+  { key: 'classes', name: '職業', guide: '技能（製作指南）' },
   { key: 'abilities', name: '技能', guide: '技能（製作指南）' },
   { key: 'statuses', name: '戰鬥狀態', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
   { key: 'items', name: '物品', guide: '物品、底材與材料（製作指南）' },
@@ -84,6 +86,8 @@ function shopView(id: string): Entries {
 function rawEntries(): SectionEntries {
   return clone({
     enemies, abilities, statuses,
+    // 職業：定義、裝備模板與 NPC 的倍率合成一份（和職業編輯器存的一樣）
+    classes: Object.fromEntries(editableClassIds().map((id) => [id, classModOf(id)])),
     items: Object.fromEntries(itemRules.items.map((i) => [i.name, i])),
     bases: gearRules.bases, materials: gearRules.materials,
     perks: Object.fromEntries(perkRules.perks.map((p) => [p.id, p])),

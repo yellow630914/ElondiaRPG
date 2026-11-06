@@ -311,6 +311,8 @@
     "cleric":    { "start": { "main_hand": "mace", "off_hand": "shield", "body": "chain" }, "main": ["mace", "warhammer"], "off": ["shield"], "body": ["chain"], "pieces": "metal", "weapons": ["鎚斧", "法杖"] },
     "druid":     { "start": { "main_hand": "quarterstaff", "body": "leather_armor" }, "main": ["quarterstaff", "spellstaff"], "off": [], "body": ["leather_armor"], "pieces": "leather", "weapons": ["法杖", "長柄", "鞭"] },
     "wizard":    { "start": { "main_hand": "quarterstaff", "body": "robe" }, "main": ["spellstaff", "quarterstaff"], "off": [], "body": ["robe"], "pieces": "cloth", "weapons": ["法杖", "長柄"] },
+    "wufu":      { "start": { "main_hand": "podao", "body": "leather_armor" }, "main": ["podao", "spear", "halberd", "scimitar", "longsword"], "off": [], "body": ["leather_armor"], "pieces": "leather", "weapons": ["刀劍", "長柄"] },
+    "xianshi":   { "start": { "main_hand": "quarterstaff", "body": "robe" }, "main": ["spellstaff", "quarterstaff", "longsword", "shortsword"], "off": ["focus"], "body": ["robe"], "pieces": "cloth", "weapons": ["法杖", "長柄", "刀劍"] },
     "noncombatant": { "start": { "body": "robe" }, "main": [], "off": [], "body": ["robe"], "pieces": "cloth" }
   },
 

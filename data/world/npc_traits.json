@@ -1049,7 +1049,8 @@
             "classes": [
               "wizard",
               "cleric",
-              "bard"
+              "bard",
+              "xianshi"
             ]
           }
         },
@@ -1094,7 +1095,8 @@
             "classes": [
               "fighter",
               "paladin",
-              "barbarian"
+              "barbarian",
+              "wufu"
             ]
           }
         },
@@ -1143,7 +1145,8 @@
             "classes": [
               "ranger",
               "rogue",
-              "monk"
+              "monk",
+              "wufu"
             ]
           }
         },
@@ -1633,7 +1636,8 @@
             "classes": [
               "fighter",
               "barbarian",
-              "ranger"
+              "ranger",
+              "wufu"
             ]
           }
         },

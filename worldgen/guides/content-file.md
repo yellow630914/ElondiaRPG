@@ -14,7 +14,7 @@
   "content": {
     "statuses": {}, "conditions": {}, "tattoos": {}, "marks": {}, "markRules": {}, "parasites": {},
     "dungeons": {}, "landmarks": {}, "specialMaps": {}, "shops": {},
-    "abilities": {}, "perks": {}, "materials": {}, "bases": {}, "items": {},
+    "classes": {}, "abilities": {}, "perks": {}, "materials": {}, "bases": {}, "items": {},
     "enemies": {}, "npcs": {}, "stories": {}, "travelEvents": {}, "eventRules": {}, "bindRules": {}, "masterEvents": {}, "categoryIcons": {}, "counters": {}
   },
   "prompts": { "lore": {}, "customLore": [] }
@@ -48,6 +48,7 @@
 | `landmarks` | 地標 | `lm_<英文>`（`/^lm_[a-z0-9_]+$/`） | [landmarks](landmarks.md) |
 | `specialMaps` | 特殊地圖 | `sm_<英文>`（`/^sm_[a-z0-9_]+$/`） | [special-maps](special-maps.md) |
 | `shops` | 商店（內建店種的修改、自建的店） | 內建的店種 id，或 `shop_<英文數字>`（`/^shop_[a-z0-9]+$/`，前綴之後不能有底線） | [shops](shops.md) |
+| `classes` | 職業（內建職業的修改、自建的職業：定義、裝備模板、NPC 的權重與身分標籤倍率） | 內建的職業 id，或 `mod_cls_<英文數字>`（`/^mod_cls_[a-z0-9]{1,24}$/`） | [abilities](abilities.md) 1.2 節 |
 | `abilities` | 技能、法術、怪物的能力 | `mod_ability_<英文>` | [abilities](abilities.md) |
 | `perks` | 特質與缺陷 | `mod_perk_<英文>` | [statuses-perks-tattoos](statuses-perks-tattoos.md) |
 | `materials` | 裝備材料 | `mod_mat_<英文>` | [items-gear](items-gear.md) |

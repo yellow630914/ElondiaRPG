@@ -119,7 +119,7 @@
     },
     "villains": {
       "$comment": "敵人的類型決定戰敗事件的走向（第一位起意的 NPC；依標籤或職業，都不符合時是 default 的那一種；怪物沒有類型）：hint 交給 AI 寫後續，effects 是沒能脫身（fail / fumble）時另外的結果，money 是再搜走的錢的比例",
-      "knowledge": { "name": "知識型", "classes": ["wizard", "bard"], "hint": "用契約的陷阱、握在手上的把柄與咒術要脅主角，讓主角自己開口答應",
+      "knowledge": { "name": "知識型", "classes": ["wizard", "bard", "xianshi"], "hint": "用契約的陷阱、握在手上的把柄與咒術要脅主角，讓主角自己開口答應",
         "effects": { "fail": [{ "type": "lewd", "stat": "exposure", "delta": 3 }], "fumble": [{ "type": "lewd", "stat": "exposure", "delta": 5 }, { "type": "lewd", "stat": "submission", "delta": 1 }] } },
       "martial": { "name": "武鬥型", "default": true, "hint": "用繩索、拘束具與刑罰讓主角屈服，享受主角掙扎的樣子",
         "effects": { "fail": [{ "type": "condition", "target": "pc", "condition": "drained", "add": true }], "fumble": [{ "type": "condition", "target": "pc", "condition": "drained", "add": true }, { "type": "lewd", "stat": "sensitivity", "delta": 1 }] } },

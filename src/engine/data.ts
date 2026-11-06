@@ -751,12 +751,29 @@ export interface ClassDef {
   noncombat?: boolean
   /** 職業本身的受傷倍率加減（武僧的卸力：物理 -0.25），和防具、特質一樣相乘 */
   resist?: AffinityMap
+  /** 隨機生成的 NPC 抽到這個職業的權重（沒寫是 1；0 = NPC 不會隨機抽到，只有主角與指定的人用） */
+  npc_weight?: number
 }
 export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
 /** 普通人入隊時的職業 */
 export const NONCOMBAT_CLASS = 'noncombatant'
-/** 可以選、可以隨機抽到的職業（不含「無法戰鬥」） */
-export const combatClasses: Record<string, ClassDef> = Object.fromEntries(Object.entries(classes).filter(([, c]) => !c.noncombat))
+/** 可以選、可以隨機抽到的職業（不含「無法戰鬥」）；世界管理改了職業時由 refreshClassLists 重建 */
+export const combatClasses: Record<string, ClassDef> = {}
+/** 依目前的 classes 重建 combatClasses（套用世界、還原成內建、登錄自建職業之後呼叫） */
+export function refreshClassLists() {
+  for (const k of Object.keys(combatClasses)) delete combatClasses[k]
+  for (const [k, c] of Object.entries(classes)) if (!c.noncombat) combatClasses[k] = c
+}
+refreshClassLists()
+/** NPC 隨機抽職業的權重（npc_weight，沒寫是 1） */
+export function npcClassWeight(id: string): number {
+  const c = combatClasses[id]
+  return c ? Math.max(0, c.npc_weight ?? 1) : 0
+}
+/** NPC 會隨機抽到的職業（權重大於 0） */
+export function npcClassIds(): string[] {
+  return Object.keys(combatClasses).filter((k) => npcClassWeight(k) > 0)
+}
 
 export function classDef(id: string): ClassDef {
   const c = classes[id]

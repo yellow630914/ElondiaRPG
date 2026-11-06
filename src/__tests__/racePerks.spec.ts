@@ -29,7 +29,8 @@ describe('race talents as race perks', () => {
     let n = 0
     // 快照是改成種族特質之前存的：之後才加的種族（化龍族、靈狐族）沒有「之前」，不比
     for (const race of Object.keys(attributeRules.races).filter((r) => Object.keys(snapshot).some((k) => k.startsWith(`${r}/`)))) {
-      for (const cls of Object.keys(classes)) {
+      // 之後才加的職業（武夫、仙術師）也沒有「之前」，不比
+      for (const cls of Object.keys(classes).filter((k) => `${race}/${k}` in snapshot)) {
         const s = newGame({ name: 'x', race, classId: cls, seed: 1, birthplace: 'soriel' })
         const c = s.party[0]!
         const g = gearAffinities(c)

@@ -6,11 +6,11 @@
 //   不需要另外存檔，重新整理也不會變。
 // - 店主、公會職員等職員沒有活躍地點，固定待在自己的設施；舊資料（沒有活躍地點）沿用同樣的規則。
 
-import { combatClasses, geography, landmarkDef, landmarkTypes, locationById, namedNpcById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
+import { geography, npcClassWeight, landmarkDef, landmarkTypes, locationById, namedNpcById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
 import {
   currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
-import { generateNpc, hashString, inLeadEvent, npcKind, npcRecord, npcSpot, occupationFor, registerNpc, weightedPick } from './npcs'
+import { generateNpc, hashString, inLeadEvent, npcKind, npcRecord, npcSpot, occupationFor, pickNpcClass, registerNpc, weightedPick } from './npcs'
 import { lineageJobs } from './traits'
 import { Rng } from './rng'
 import { condMet } from './storyFlags'
@@ -109,7 +109,7 @@ function round(n: number): number {
 /** 生成一位名單上的居民 */
 export function generateResident(state: GameState, rng: Rng, loc: Location, kind: NpcKind, prefix?: string): NpcRecord {
   // 冒險者先決定職業，標籤的機率依職業調整
-  const cls = kind === 'adventurer' ? rng.pick(Object.keys(combatClasses)) : undefined
+  const cls = kind === 'adventurer' ? pickNpcClass(rng) : undefined
   const tags = pickTags(rng, kind, loc, cls)
   const occupations = tags.flatMap((t) => npcTags.tags[t]?.occupations ?? [])
   let level: number
@@ -147,7 +147,7 @@ function applyLineageJobs(rng: Rng, rec: NpcRecord, loc: Location) {
   const jobs = lineageJobs(rec.race, rec.lineage)
   if (!jobs || rng.next() >= jobs.chance) return
   if (rec.kind === 'adventurer') {
-    const classes = (jobs.classes ?? []).filter((c) => combatClasses[c])
+    const classes = (jobs.classes ?? []).filter((c) => npcClassWeight(c) > 0)
     if (classes.length) rec.class = rng.pick(classes)
     return
   }
