@@ -1,5 +1,5 @@
 {
-  "$comment": "職業。priority 為建角時基礎陣列 [15,14,13,12,10] 的分配順序。caster：full = 全施法者（1-9 環）、half = 半施法者（以 ceil(等級/2) 查表，最高 5 環）、none = 不施法。casting 為施法屬性（法術命中與豁免 DC）。start 為初始能力，其餘在升級時三選一（清單見 abilities.json）。hit_die 為生命骰：短休時花費以回復生命值（依 D&D 5e）。resist 為職業本身的受傷倍率加減（和防具、特質一樣相乘，例如武僧的卸力 physical -0.25）。",
+  "$comment": "職業。priority 為建角時基礎陣列 [15,14,13,12,10] 的分配順序。caster：full = 全施法者（1-9 環）、half = 半施法者（以 ceil(等級/2) 查表，最高 5 環）、none = 不施法。casting 為施法屬性（法術命中與豁免 DC）。start 為初始能力，其餘在升級時三選一（清單見 abilities.json）。hit_die 為生命骰：短休時花費以回復生命值（依 D&D 5e）。resist 為職業本身的受傷倍率加減（和防具、特質一樣相乘，例如武僧的卸力 physical -0.25）。npc_weight 為隨機 NPC 抽到這個職業的權重（沒寫是 1）；region_mult 為地區職業倍率，在那個地區生成的 NPC 權重再乘上它（other＝沒列出的地區，都沒寫是 1）。",
   "version": 1,
   "classes": {
     "fighter": {
@@ -65,13 +65,13 @@
     },
     "wufu": {
       "name": "武夫", "emoji": "🥋", "hit_die": 10, "threat": { "start": 6, "mult": 1.2 }, "priority": ["str", "dex", "fai", "cha", "int"], "caster": "none",
-      "weapon": "podao", "armor": "leather",
+      "weapon": "podao", "armor": "leather", "region_mult": { "yanhua_south": 3, "yanhua_north": 3, "other": 0.3 },
       "start": ["heavy_chop", "breath_cycle", "chain_kicks"],
       "role": "刀槍與拳腳並用的近戰：外功壓制、吐納回行動點，兼顧控制與自保"
     },
     "xianshi": {
       "name": "仙術師", "emoji": "☯️", "hit_die": 6, "threat": { "start": 1, "mult": 0.9 }, "priority": ["int", "fai", "dex", "cha", "str"], "caster": "full", "casting": "int",
-      "weapon": "quarterstaff", "armor": "cloth",
+      "weapon": "quarterstaff", "armor": "cloth", "region_mult": { "yanhua_south": 3, "yanhua_north": 3, "other": 0.3 },
       "start": ["fire_talisman", "sword_qi", "five_thunder_talisman", "golden_light_spell", "gather_qi"],
       "role": "符籙、五行與御劍：五行的範圍傷害、飛劍的持續輸出，兼有一點治療與護身"
     },

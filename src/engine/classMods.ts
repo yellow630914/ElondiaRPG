@@ -3,7 +3,7 @@
 // 編輯器把它們合成一份 ClassMod，套用時再拆回去。「無法戰鬥」不開放編輯。
 
 import {
-  abilities, ATTR_IDS, classes, damageTypes, equipment, NONCOMBAT_CLASS, npcs, npcTags, perkRules, refreshClassLists,
+  abilities, ATTR_IDS, classes, damageTypes, equipment, geography, NONCOMBAT_CLASS, npcs, npcTags, perkRules, refreshClassLists,
   type AffinityMap, type AttrId, type CasterType, type ClassDef,
 } from './data'
 import { createPlayer, learnable, recalc } from './character'
@@ -31,6 +31,8 @@ export interface ClassMod {
   gear: ClassGearTemplate
   /** 隨機生成的 NPC 抽到這個職業的權重（1 是一般；0 = NPC 不會隨機抽到） */
   npc_weight: number
+  /** 地區職業倍率（classes.json 的 region_mult：地區 id 或 other → 倍率；沒寫的是 1） */
+  region_mult?: Record<string, number>
   /** 冒險者帶某個身分標籤的機率倍率（npc_tags.json 的 class_mult；沒寫的是 1） */
   tag_mult?: Record<string, number>
   custom?: boolean
@@ -39,7 +41,7 @@ export interface ClassMod {
 export const CLASS_ID = /^mod_cls_[a-z0-9]{1,24}$/
 export const CLASS_LIMITS = {
   name_chars: 8, emoji_chars: 4, role_chars: 80, hit_die: [4, 12] as const, threat_start: [0, 20] as const, threat_mult: [0.3, 2] as const,
-  start: 6, npc_weight: [0, 5] as const, tag_mult: [0, 10] as const, resist: [-0.5, 0.5] as const, bases: 8,
+  start: 6, npc_weight: [0, 5] as const, region_mult: [0, 10] as const, tag_mult: [0, 10] as const, resist: [-0.5, 0.5] as const, bases: 8,
 }
 export const CASTER_NAME: Record<CasterType, string> = { none: '不施法', half: '半施法者（1～5 環）', full: '全施法者（1～9 環）' }
 export const PIECE_NAME: Record<string, string> = { metal: '金屬（重甲）', leather: '皮革（輕甲）', cloth: '布' }
@@ -89,6 +91,7 @@ function compose(id: string, def: ClassDef, gear: ClassGearTemplate | undefined,
   if (def.casting) out.casting = def.casting
   if (def.resist && Object.keys(def.resist).length) out.resist = clone(def.resist)
   if (Object.keys(tm).length) out.tag_mult = tm
+  if (def.region_mult && Object.keys(def.region_mult).length) out.region_mult = clone(def.region_mult)
   return out
 }
 
@@ -144,6 +147,10 @@ export function sanitizeClassMod(raw: Partial<ClassMod> | undefined, custom: boo
   if (Object.keys(res).length) out.resist = res
   const tm = Object.fromEntries(Object.entries(r.tag_mult ?? {}).filter(([t]) => known.tags.has(t)).map(([t, v]) => [t, num(v, CLASS_LIMITS.tag_mult, 1)] as const).filter(([, v]) => v !== 1))
   if (Object.keys(tm).length) out.tag_mult = tm
+  // 地區倍率：認得的地區或 other，1 不記
+  const regionKeys = new Set([...geography.regions.map((g) => g.id), 'other'])
+  const rm = Object.fromEntries(Object.entries(r.region_mult ?? {}).filter(([k]) => regionKeys.has(k)).map(([k, v]) => [k, num(v, CLASS_LIMITS.region_mult, 1)] as const).filter(([, v]) => v !== 1))
+  if (Object.keys(rm).length) out.region_mult = rm
   if (custom) out.custom = true
   return out
 }
@@ -182,6 +189,8 @@ export function applyClassMod(id: string, m: ClassMod) {
   else delete def.resist
   if (m.npc_weight !== 1) def.npc_weight = m.npc_weight
   else delete def.npc_weight
+  if (m.region_mult && Object.keys(m.region_mult).length) def.region_mult = clone(m.region_mult)
+  else delete def.region_mult
   classes[id] = def
   gearRules.classes[id] = clone(m.gear)
   for (const [t, tag] of Object.entries(npcTags.tags)) {
@@ -209,7 +218,8 @@ export function newClassMod(): ClassMod {
     name: '新的職業', emoji: '🎓', role: '', hit_die: 8, threat: { start: 2, mult: 1 }, priority: ['str', 'dex', 'fai', 'cha', 'int'], caster: 'none',
     weapon: 'unarmed', armor: 'leather', start: [],
     gear: { start: { main_hand: 'shortsword', body: 'leather_armor' }, main: ['shortsword'], off: [], body: ['leather_armor'], pieces: 'leather' },
-    npc_weight: 1,
+    // 還沒有能力：NPC 先不抽到（第一次存好初始能力時編輯器改回 1）
+    npc_weight: 0,
   }, true)
 }
 

@@ -51,7 +51,8 @@ describe('新職業的一次性調整（炎華之地）', () => {
     const caster = east(s).find((r) => r.class === 'wizard')!
     s.relationships = { [caster.id]: { id: caster.id, name: caster.name } as never }
     const before = Object.fromEntries(east(s).map((r) => [r.id, r.class]))
-    const plan = s.classRebalance!.offer!.plan
+    // 答應時照當下重算（認識的人不算進可以改的人）
+    const plan = planClassRebalance(s)!.plan
     const msg = applyClassRebalance(s)
     expect(msg).toContain('武夫')
     expect(count(s, 'wufu')).toBe(plan.wufu)

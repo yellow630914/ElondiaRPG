@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, ATTR_IDS, attrName, className, combatClasses, equipment, npcTags, type AbilityDef, type AttrId } from '@/engine/data'
+import { abilities, ATTR_IDS, attrName, className, classRegionMult, combatClasses, equipment, geography, npcClassWeight, npcTags, type AbilityDef, type AttrId } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import {
   builtinClassMod, CASTER_NAME, CLASS_LIMITS, classModOf, levelPoolSizes, PIECE_NAME, START_SLOTS, weaponTypes, type ClassMod,
@@ -41,6 +41,11 @@ const edited = computed(() => !!builtin.value && !!content.mods.classes?.[props.
 const usage = computed(() => {
   void content.version
   return content.usageOf('class', props.id)
+})
+/** 存好的版本有初始能力（沒有的話建角與 NPC 都不會用到這個職業） */
+const savedStart = computed(() => {
+  void content.version
+  return !!classModOf(props.id).start.length
 })
 const blocked = computed(() => (!draft.value.start.length ? '至少要有一個初始能力' : ''))
 
@@ -149,9 +154,38 @@ const weightShare = computed(() => {
   return w + others > 0 ? Math.round((w / (w + others)) * 1000) / 10 : 0
 })
 
+// ---- 地區職業倍率 ----
+const regionOptions = [...geography.regions.map((r) => [r.id, r.name] as const), ['other', '其他地區'] as const]
+function setRegionMult(k: string, v: string) {
+  const rm = { ...(draft.value.region_mult ?? {}) }
+  const n = Number(v)
+  if (v === '' || !Number.isFinite(n) || n === 1) delete rm[k]
+  else rm[k] = n
+  if (Object.keys(rm).length) draft.value.region_mult = rm
+  else delete draft.value.region_mult
+}
+/** 有寫倍率的地區（加上「其他地區」）各有大約多少冒險者是這個職業 */
+const regionShares = computed(() => {
+  const rm = draft.value.region_mult ?? {}
+  if (!Object.keys(rm).length) return []
+  const w = Math.max(0, Number(draft.value.npc_weight) || 0)
+  const keys = [...geography.regions.map((r) => r.id).filter((r) => rm[r] !== undefined)]
+  const otherRegion = geography.regions.find((r) => rm[r.id] === undefined)?.id
+  const rows = keys.map((r) => ({ name: geography.regions.find((g) => g.id === r)?.name ?? r, region: r }))
+  if (otherRegion) rows.push({ name: '其他地區', region: otherRegion })
+  return rows.map(({ name, region }) => {
+    const mine = w * classRegionMult(draft.value, region)
+    const others = Object.keys(combatClasses).filter((k) => k !== props.id).reduce((s, k) => s + npcClassWeight(k, region), 0)
+    return { name, share: mine + others > 0 ? Math.round((mine / (mine + others)) * 1000) / 10 : 0 }
+  })
+})
+
 function save() {
   try {
     const name = draft.value.name
+    // 剛新增的職業（還沒有初始能力、權重 0）第一次存好初始能力時，沒動過權重就改回一般的 1
+    const was = content.mods.classes?.[props.id]
+    if (was?.custom && !was.start.length && was.npc_weight === 0 && draft.value.npc_weight === 0 && draft.value.start.length) draft.value.npc_weight = 1
     content.saveClass(props.id, draft.value)
     content.setClassAbilities(props.id, learn.value)
     // 只能學的能力才能當初始能力：取消勾選的能力已經從初始能力拿掉，這裡再存一次對齊
@@ -169,7 +203,7 @@ function restore() {
   reset()
 }
 function remove() {
-  if (!confirm(`刪除「${draft.value.name}」？能力的「誰可以學」會拿掉這個職業。`)) return
+  if (!confirm(`刪除「${draft.value.name}」？能力的「誰可以學」會拿掉這個職業。用到這個職業的存檔之後會讀不了（重新新增的職業代號不同，加不回來）。`)) return
   try {
     if (usage.value.length) throw new Error(`還有地方用到，不能刪除：${usage.value.slice(0, 3).join('、')}`)
     content.setClassAbilities(props.id, [])
@@ -275,11 +309,16 @@ function remove() {
     </FoldSet>
 
     <FoldSet>
-      <template #legend>NPC 怎麼生成 <Hint text="隨機生成的冒險者照權重抽職業（內建職業都是 1）。身分標籤的倍率乘在「冒險者帶上這個標籤的機率」上：例如聖騎士的惡人 ×0.1、牧師的神官 ×4。" /></template>
+      <template #legend>NPC 怎麼生成 <Hint text="隨機生成的冒險者照權重抽職業（內建職業都是 1）；地區的倍率再乘在權重上，在那個地區生成的人才算（沒列出的地區用「其他地區」，空白是 1），例如武夫、仙術師在炎華之地 ×3、其他地區 ×0.3。身分標籤的倍率乘在「冒險者帶上這個標籤的機率」上：例如聖騎士的惡人 ×0.1、牧師的神官 ×4。" /></template>
       <div class="grid">
         <label>出現的權重 <input v-model.number="draft.npc_weight" type="number" step="0.1" :min="CLASS_LIMITS.npc_weight[0]" :max="CLASS_LIMITS.npc_weight[1]" /></label>
       </div>
-      <p class="small muted">{{ draft.npc_weight > 0 ? `大約 ${weightShare}% 的冒險者是這個職業。` : 'NPC 不會隨機抽到這個職業（主角、固定 NPC 與指定職業的人還是可以用）。' }}</p>
+      <div class="grid">
+        <label v-for="[k, n] in regionOptions" :key="k">{{ n }}的倍率 <input type="number" step="0.1" :min="CLASS_LIMITS.region_mult[0]" :max="CLASS_LIMITS.region_mult[1]" :value="draft.region_mult?.[k] ?? ''" placeholder="1" @input="setRegionMult(k, ($event.target as HTMLInputElement).value)" /></label>
+      </div>
+      <p v-if="savedStart && draft.npc_weight > 0 && regionShares.length" class="small muted">各地區大約：{{ regionShares.map((x) => `${x.name} ${x.share}%`).join('、') }}。</p>
+      <p v-if="!savedStart" class="small warn">還沒存好初始能力：建角選單與 NPC 都還不會用到這個職業。{{ draft.npc_weight === 0 ? '第一次存好初始能力時，出現的權重會改成 1（之後可以再改）。' : '' }}</p>
+      <p v-else-if="!(draft.npc_weight > 0 && regionShares.length)" class="small muted">{{ draft.npc_weight > 0 ? `大約 ${weightShare}% 的冒險者是這個職業。` : 'NPC 不會隨機抽到這個職業（主角、固定 NPC 與指定職業的人還是可以用）。' }}</p>
       <div class="grid">
         <label v-for="[k, n] in advTags" :key="k">{{ n }}的倍率 <input type="number" step="0.1" :min="CLASS_LIMITS.tag_mult[0]" :max="CLASS_LIMITS.tag_mult[1]" :value="draft.tag_mult?.[k] ?? ''" placeholder="1" @input="setTagMult(k, ($event.target as HTMLInputElement).value)" /></label>
       </div>

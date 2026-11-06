@@ -109,7 +109,7 @@ function round(n: number): number {
 /** 生成一位名單上的居民 */
 export function generateResident(state: GameState, rng: Rng, loc: Location, kind: NpcKind, prefix?: string): NpcRecord {
   // 冒險者先決定職業，標籤的機率依職業調整
-  const cls = kind === 'adventurer' ? pickNpcClass(rng) : undefined
+  const cls = kind === 'adventurer' ? pickNpcClass(rng, loc.region) : undefined
   const tags = pickTags(rng, kind, loc, cls)
   const occupations = tags.flatMap((t) => npcTags.tags[t]?.occupations ?? [])
   let level: number

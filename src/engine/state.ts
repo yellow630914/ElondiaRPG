@@ -331,7 +331,7 @@ export function assertClasses(state: Pick<GameState, 'party' | 'npcs'>) {
     if (r.class && !classes[r.class]) missing.add(r.class)
     if (r.character && !classes[r.character.class]) missing.add(r.character.class)
   }
-  if (missing.size) throw new Error(`這個存檔用到目前的世界沒有的職業（${[...missing].join('、')}），不能讀取。請在世界管理把這個職業加回來，或改用存檔原本的世界`)
+  if (missing.size) throw new Error(`這個存檔用到目前的世界沒有的職業（${[...missing].join('、')}），不能讀取。如果還有這個世界的匯出檔，匯入就能把職業加回來；或改用存檔原本的世界`)
 }
 
 export function migrate(state: GameState): GameState {
