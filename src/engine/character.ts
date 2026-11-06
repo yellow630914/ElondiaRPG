@@ -373,13 +373,19 @@ export function rerollsLeft(c: Character, max = progression.ability_rerolls): nu
   return c.pendingAbilityChoices?.length ? Math.max(0, max - (c.abilityRerollsUsed ?? 0)) : 0
 }
 
+/** 重抽這組選項時還有沒有別的能力可換（可學的能力都已經列在選項裡時就沒有） */
+export function hasRerollPool(c: Character): boolean {
+  const current = c.pendingAbilityChoices?.[0]
+  return !!current && learnable(c).some((a) => !current.includes(a.id))
+}
+
 /** 重抽升級時的能力三選一：盡量換成目前沒出現的能力。 */
 export function rerollAbilityChoices(c: Character, rng: Rng, max = progression.ability_rerolls): string[] {
   const current = c.pendingAbilityChoices?.[0]
   if (!current) throw new Error('沒有待選的能力')
   if (rerollsLeft(c, max) <= 0) throw new Error('這次升級已經不能再重抽了')
   const fresh = learnable(c).filter((a) => !current.includes(a.id))
-  if (!fresh.length) throw new Error('沒有其他可以學的能力了')
+  if (!fresh.length) throw new Error('沒有其他能力可換了')
   const picked: string[] = []
   while (picked.length < current.length && fresh.length) picked.push(fresh.splice(rng.int(0, fresh.length - 1), 1)[0]!.id)
   // 新的能力不夠三個時，用原本的選項補上
