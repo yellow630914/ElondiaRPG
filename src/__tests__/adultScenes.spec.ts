@@ -88,6 +88,11 @@ describe('work quest lines', () => {
     yhpearl: ['yhpearl_dive', 'yhpearl_heat', 'yhpearl_big', '夜明珠的臍環'],
     yhkang: ['yhkang_fire', 'yhkang_quilt', 'yhkang_winter', '大車店的紅肚兜'],
     tdtongue: ['tdtongue_hands', 'tdtongue_extra', 'tdtongue_market', '通譯的雙語耳墜'],
+    yhinc: ['yhinc_lot', 'yhinc_doll', 'yhinc_sea', 'yhinc_elm', 'yhinc_ovoo', '龍母的紅繩'],
+    yhlantern: ['yhlantern_walk', 'yhlantern_pearl', 'yhlantern_night', '上元的龍珠墜'],
+    yhqiqiao: ['yhqiqiao_needle', 'yhqiqiao_bridge', 'yhqiqiao_meet', '乞巧的七孔針簪'],
+    yhfoxwed: ['yhfoxwed_sit', 'yhfoxwed_bride', 'yhfoxwed_chamber', '狐新娘的紅蓋頭'],
+    tdnaadam: ['tdnaadam_target', 'tdnaadam_race', 'tdnaadam_wrestle', '彩頭的藍哈達'],
   }
 
   it('run their stages in order, only for feminine and androgynous heroes, and end with the line gear in every branch', () => {
@@ -114,7 +119,7 @@ describe('work quest lines', () => {
   it('hand out the work uniform and ask for it on the job', () => {
     // 有制服的線：第一個限定的任務接下時發制服，之後每個非戰鬥的任務點都要穿著；結局的獨特裝備也算
     const dressed = stories.filter((s) => s.start.items?.length)
-    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'brine_bride', 'conf_lattice', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'fert_chosen', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'mate_paint', 'onsen_mixed', 'yhboat_oar', 'yhink_grind', 'yhpearl_dive'])
+    expect(dressed.map((s) => s.id).sort()).toEqual(['bath_scrub', 'brine_bride', 'conf_lattice', 'court_demo', 'dance_bazaar', 'dice_dealer', 'expo_parade', 'fert_chosen', 'inn_skirt', 'maid_skirt', 'massage_lesson', 'mate_paint', 'onsen_mixed', 'yhboat_oar', 'yhfoxwed_sit', 'yhinc_lot', 'yhink_grind', 'yhlantern_walk', 'yhpearl_dive', 'yhqiqiao_needle'])
     for (const s of dressed) {
       const wear = s.nodes.find((n) => n.wear)!.wear!
       for (const name of s.start.items!) expect(itemRules.items.find((i) => i.name === name), `${s.id} ${name}`).toBeTruthy()
@@ -131,5 +136,17 @@ describe('work quest lines', () => {
     for (const s of stories.filter((x) => /^(yh|td)[a-z]+_/.test(x.id) && x.start.items?.length)) {
       for (const n of s.nodes) for (const w of n.wear ?? []) expect(restricted, `${s.id} ${w}`).not.toContain(gearRules.bases[w]!.slot)
     }
+  })
+
+  it('splits the 那達慕 race into a ride for two-legged heroes and a run for centaur heroes (R26)', () => {
+    const race = story('tdnaadam_race')
+    const ride = race.nodes.find((n) => n.id === 'ride')!
+    const run = race.nodes.find((n) => n.id === 'run')!
+    expect(ride.requires?.pc_races_none).toEqual(['centaur'])
+    expect(run.requires?.pc_races).toEqual(['centaur'])
+    // 兩個版本設同一個旗標，營帳那一步接得上
+    expect(run.success!.set_flags).toEqual(ride.success!.set_flags)
+    expect(run.fail!.set_flags).toEqual(ride.fail!.set_flags)
+    expect(race.nodes.find((n) => n.id === 'tent')!.requires?.flags).toEqual(ride.success!.set_flags)
   })
 })

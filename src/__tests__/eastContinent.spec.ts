@@ -139,8 +139,8 @@ describe('炎華之地', () => {
       if (l.interior) expect(specialMaps[l.interior]?.location, l.id).toBe(l.location)
     }
     const yh = (namedNpcs as { npcs: { id: string; landmark?: string; location: string }[] }).npcs.filter((n) => n.id.startsWith('npc_yh_'))
-    // 36 位，加上 R26 打工線的委託人 4 位
-    expect(yh.length).toBe(40)
+    // 36 位，加上 R26 打工、巡禮與祭典的委託人 8 位
+    expect(yh.length).toBe(44)
     for (const l of lms.filter((x) => !['lm_yh_rainbow_bridge'].includes(x.id))) expect(yh.some((n) => n.landmark === l.id), `${l.id} 沒有人`).toBe(true)
     for (const n of yh) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)
     // 新手的第一條委託：龍安府公會
@@ -235,8 +235,8 @@ describe('炎華之地', () => {
       if (l.interior) expect(specialMaps[l.interior]?.location, l.id).toBe(l.location)
     }
     const td = (namedNpcs as { npcs: { id: string; landmark?: string; location: string; race: string }[] }).npcs.filter((n) => n.id.startsWith('npc_td_'))
-    // 18 位，加上 R26 打工線的委託人孫舌頭（靈狐族）
-    expect(td.length).toBe(19)
+    // 18 位，加上 R26 的委託人孫舌頭（靈狐族）與烏力吉（人馬族）
+    expect(td.length).toBe(20)
     // 外地人五位（化龍族三位、靈狐族兩位），其他都是人馬族
     expect(td.filter((n) => n.race !== 'centaur').length).toBe(5)
     for (const n of td) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)

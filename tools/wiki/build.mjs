@@ -129,7 +129,6 @@ export const GROUPS = [
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
-    { page: '炎華之地的打工、巡禮與祭典', src: 'docs/plan/roadmap/EAST_ADULT_WORK_PLAN.md', desc: '炎華之地的成人向打工、巡禮與祭典任務線（R26）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
     { page: '已完成', src: 'docs/plan/roadmap/COMPLETED.md', desc: '做完的計畫：做了什麼、規則寫在哪份文件' },
   ] },

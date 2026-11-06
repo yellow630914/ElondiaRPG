@@ -1,4 +1,4 @@
-"""R26 第一批：炎華之地的打工線（docs/plan/roadmap/EAST_ADULT_WORK_PLAN.md 第 2 節；成人向，只給女性形象與中性的主角）。
+"""R26 第一批：炎華之地的打工線（docs/ADULT_EVENTS.md 第 8 節「炎華之地的打工線」；成人向，只給女性形象與中性的主角）。
 規格照中央平原的打工線（docs/ADULT_EVENTS.md 第 8 節、story_batch26.py）：三階段 性騷擾 → 性侍奉 → 性交，
 第三個任務的結局（每個選項）拿到獨特色情裝備與獨特技能；完成之後委託人的地標有回去上工的場景。
 氣氛粗俗、不談感情；每個任務都標 male_partner。
@@ -534,9 +534,9 @@ DRESS = {
 }
 
 
-def apply_dress(batch):
+def apply_dress(batch, table=None):
     by_id = {q['id']: q for q in batch}
-    for pre, (first, items, wear, ids) in DRESS.items():
+    for pre, (first, items, wear, ids) in (table or DRESS).items():
         by_id[first]['start']['items'] = items
         for sid in ids:
             for n in by_id[sid]['nodes']:
@@ -594,31 +594,30 @@ SCENES = {
 }
 
 
-# ================================================================ 寫檔 ================================================================
+# ================================================================ 寫檔（east_p9_fest.py 也用這些） ================================================================
 def flat(obj):
     return '{ ' + json.dumps(obj, ensure_ascii=False)[1:-1] + ' }'
 
 
-def write_gear_base():
-    """肚兜接在裹胸那一行後面（同 key 先拿掉）"""
+def write_gear_bases(bases, after='breast_band'):
+    """新底材一行一個，接在 after 那一行後面（同 key 先拿掉）"""
     p = 'data/rules/gear.json'
     lines = open(p, encoding='utf-8').read().split('\n')
-    lines = [l for l in lines if not l.startswith('    "dudou":')]
-    at = next(i for i, l in enumerate(lines) if l.startswith('    "breast_band":'))
-    lines.insert(at + 1, '    "dudou": ' + flat(DUDOU_BASE) + ',')
+    lines = [l for l in lines if not any(l.startswith(f'    "{k}":') for k in bases)]
+    at = next(i for i, l in enumerate(lines) if l.startswith(f'    "{after}":'))
+    lines[at + 1:at + 1] = ['    "%s": %s,' % (k, flat(v)) for k, v in bases.items()]
     out = '\n'.join(lines)
     json.loads(out)
     open(p, 'w', encoding='utf-8').write(out)
 
 
-def dudou_catalog():
-    """肚兜的制式品：每一種布料各一件（照 east_p5_items.py 的 catalog；第 4 級以下炎華的裁縫店賣）"""
+def catalog(base_id, b):
+    """制式品：每一種布料各一件（照 east_p5_items.py 的 catalog；第 4 級以下炎華的裁縫店賣）"""
     g = json.load(open('data/rules/gear.json', encoding='utf-8'))
-    b = DUDOU_BASE
     rows = []
-    for mid, m in sorted(((k, v) for k, v in g['materials'].items() if v['kind'] == 'cloth'), key=lambda x: (x[1]['tier'], x[1].get('series') == 'pleasure')):
+    for mid, m in sorted(((k, v) for k, v in g['materials'].items() if v['kind'] == b['kind']), key=lambda x: (x[1]['tier'], x[1].get('series') == 'pleasure')):
         d = {"name": m['name'] + b['name'], "category": "equipment", "price_cc": round(b['price'] * m['price']),
-             "tags": ['tailor'] if m['tier'] <= 4 else [], "gear": {"base": "dudou", "material": mid}}
+             "tags": ['tailor'] if m['tier'] <= 4 else [], "gear": {"base": base_id, "material": mid}}
         if m['tier'] == 3:
             d['min_location'] = 'city'
         if m['tier'] == 4:
@@ -632,16 +631,17 @@ def dudou_catalog():
     return rows
 
 
-def write_items():
-    """獨特裝備接在潮汐祭的貝殼腰鍊後面、技能書接在《潮之新娘》後面、肚兜的制式品接在裹胸的制式品後面（同名的先拿掉）"""
+def write_items(uniques, books, catalogs, after_unique='潮汐祭的貝殼腰鍊', after_book='《潮之新娘》'):
+    """獨特裝備接在 after_unique 後面、技能書接在 after_book 後面、制式品各自接在 after_base 那種底材的制式品後面（同名的先拿掉）。
+    catalogs：[(after_base, rows)]"""
     p = 'data/rules/items.json'
-    books = [book(*b) for b in BOOKS]
-    cat = dudou_catalog()
     lines = open(p, encoding='utf-8').read().split('\n')
-    names = {i['name'] for i in ITEMS + books + cat}
+    names = {i['name'] for i in uniques + books + [r for _, rows in catalogs for r in rows]}
     lines = [l for l in lines if not (m := re.match(r'    \{ ?"name": "([^"]+)"', l)) or m.group(1) not in names]
 
     def after(pred, rows, style):
+        if not rows:
+            return
         at = max(i for i, l in enumerate(lines) if pred(l))
         new = [('    ' + (flat(r) if style == 'flat' else json.dumps(r, ensure_ascii=False)) + ',') for r in rows]
         if not lines[at].rstrip().endswith(','):
@@ -649,25 +649,26 @@ def write_items():
             new[-1] = new[-1][:-1]
         lines[at + 1:at + 1] = new
 
-    after(lambda l: '"name": "潮汐祭的貝殼腰鍊"' in l, ITEMS, 'json')
-    after(lambda l: '"name": "《潮之新娘》"' in l, books, 'json')
-    after(lambda l: '"base": "breast_band", "material"' in l and '"tags": ["unique"]' not in l, cat, 'flat')
+    after(lambda l: f'"name": "{after_unique}"' in l, uniques, 'json')
+    after(lambda l: f'"name": "{after_book}"' in l, books, 'json')
+    for base, rows in catalogs:
+        after(lambda l: re.search(r'"base": "%s", "material"' % base, l) is not None and '"tags": ["unique"]' not in l, rows, 'flat')
     out = '\n'.join(lines)
     data = json.loads(out)
     all_names = [i['name'] for i in data['items']]
     assert len(all_names) == len(set(all_names)), '重複的物品名稱'
     open(p, 'w', encoding='utf-8').write(out)
-    print('物品', len(ITEMS), '技能書', len(books), '肚兜', len(cat))
+    print('物品', len(uniques), '技能書', len(books), '制式品', sum(len(r) for _, r in catalogs))
 
 
-def write_abilities():
-    """接在潮之新娘（lust_tide_bride）後面（同 id 先拿掉）"""
+def write_abilities(abilities, after_id='lust_tide_bride'):
+    """接在 after_id 後面（同 id 先拿掉）"""
     p = 'data/rules/abilities.json'
     lines = open(p, encoding='utf-8').read().split('\n')
-    ids = {a['id'] for a in ABILITIES}
+    ids = {a['id'] for a in abilities}
     lines = [l for l in lines if not (m := re.match(r'    \{"id": "([^"]+)"', l)) or m.group(1) not in ids]
-    at = next(i for i, l in enumerate(lines) if l.startswith('    {"id": "lust_tide_bride"'))
-    new = ['    ' + json.dumps(a, ensure_ascii=False) + ',' for a in ABILITIES]
+    at = next(i for i, l in enumerate(lines) if l.startswith(f'    {{"id": "{after_id}"'))
+    new = ['    ' + json.dumps(a, ensure_ascii=False) + ',' for a in abilities]
     if not lines[at].rstrip().endswith(','):
         lines[at] = lines[at].rstrip() + ','
         new[-1] = new[-1][:-1]
@@ -677,48 +678,49 @@ def write_abilities():
     all_ids = [a['id'] for a in (data['abilities'] if isinstance(data, dict) else data)]
     assert len(all_ids) == len(set(all_ids)), '重複的技能 id'
     open(p, 'w', encoding='utf-8').write(out)
-    print('技能', len(ABILITIES))
+    print('技能', len(abilities))
 
 
-def write_lewd():
-    """技能書加進淫鬥場的獎勵、拍賣會的拍品、園區的寶箱（已經有的不重複加）"""
+def write_lewd(names, after='《潮之新娘》', chest_after='《獻祭的契紋》'):
+    """技能書加進淫鬥場的獎勵（接在 after 後面）、拍賣會的拍品（after 後面，權重 1）、園區的寶箱（chest_after 後面，0.012）；已經有的不重複加"""
     p = 'data/rules/lewd.json'
     s = open(p, encoding='utf-8').read()
-    names = [b[0] for b in BOOKS]
+    q = lambda n: json.dumps(n, ensure_ascii=False)
+    prev = after
     for n in names:
-        q = json.dumps(n, ensure_ascii=False)
-        if f'{q}, 1]' not in s:
-            s = s.replace('["《潮之新娘》", 1]', '["《潮之新娘》", 1], [%s, 1]' % q, 1) if n == names[0] else s.replace(
-                '[%s, 1]' % json.dumps(names[names.index(n) - 1], ensure_ascii=False), '[%s, 1], [%s, 1]' % (json.dumps(names[names.index(n) - 1], ensure_ascii=False), q), 1)
-        if f'{q}, 0.012]' not in s:
-            prev = '"《獻祭的契紋》"' if n == names[0] else json.dumps(names[names.index(n) - 1], ensure_ascii=False)
-            s = s.replace(f'[{prev}, 0.012]', f'[{prev}, 0.012], [{q}, 0.012]', 1)
-    d = json.loads(s)
-    books = d['arena']['books']
+        if f'[{q(n)}, 1]' not in s:
+            s = s.replace(f'[{q(prev)}, 1]', f'[{q(prev)}, 1], [{q(n)}, 1]', 1)
+        prev = n
+    prev = chest_after
+    for n in names:
+        if f'[{q(n)}, 0.012]' not in s:
+            s = s.replace(f'[{q(prev)}, 0.012]', f'[{q(prev)}, 0.012], [{q(n)}, 0.012]', 1)
+        prev = n
+    books = json.loads(s)['arena']['books']
     for n in names:
         if n not in books:
-            prev = books[-1]
-            s = s.replace(json.dumps(prev, ensure_ascii=False) + '], "wager"', json.dumps(prev, ensure_ascii=False) + ', ' + json.dumps(n, ensure_ascii=False) + '], "wager"', 1)
+            s = s.replace(q(books[-1]) + '], "wager"', q(books[-1]) + ', ' + q(n) + '], "wager"', 1)
             books.append(n)
     d = json.loads(s)
     assert all(n in d['arena']['books'] for n in names)
     assert all(any(x[0] == n for x in d['auction']['pool']) for n in names)
+    assert all(any(x[0] == n for x in d['park']['chest_items']) for n in names)
     open(p, 'w', encoding='utf-8').write(s)
 
 
-def write_npcs():
+def write_npcs(npcs):
     """接在 npcs 陣列的最後（同 id 先拿掉），一行一位"""
     p = 'data/world/npcs.json'
-    for n in NPCS:
+    for n in npcs:
         n.setdefault('relations', {})
         assert len(n['personality']) <= 160 and len(n['appearance']) <= 240 and len(n['background']) <= 400, n['id']
-    ids = {n['id'] for n in NPCS}
+    ids = {n['id'] for n in npcs}
     lines = open(p, encoding='utf-8').read().rstrip('\n').split('\n')
     lines = [l for l in lines if not any(l.startswith(f'    {{"id": "{i}"') for i in ids)]
     close = max(i for i, l in enumerate(lines) if l == '  ]')
     if not lines[close - 1].rstrip().endswith(','):
         lines[close - 1] = lines[close - 1] + ','
-    new = ['    ' + json.dumps(n, ensure_ascii=False) + ',' for n in NPCS]
+    new = ['    ' + json.dumps(n, ensure_ascii=False) + ',' for n in npcs]
     new[-1] = new[-1][:-1]
     lines[close:close] = new
     out = '\n'.join(lines) + '\n'
@@ -726,38 +728,38 @@ def write_npcs():
     all_ids = [n['id'] for n in data['npcs']]
     assert len(all_ids) == len(set(all_ids)), '重複的 NPC id'
     open(p, 'w', encoding='utf-8').write(out)
-    print('NPC', len(NPCS))
+    print('NPC', len(npcs))
 
 
-def write_landmarks():
-    """新地標加在最後（同 id 整筆換掉）；上工的場景放上地標（茶馬市保留原本的其他場景）"""
+def write_landmarks(landmarks, scenes, dress):
+    """新地標加在最後（同 id 整筆換掉）；上工的場景放上地標（地標原本的其他場景保留）"""
     p = 'data/world/landmarks.json'
     d = json.load(open(p, encoding='utf-8'))
-    ids = {l['id'] for l in LANDMARKS}
-    d['landmarks'] = [l for l in d['landmarks'] if l['id'] not in ids] + [dict(l) for l in LANDMARKS]
+    ids = {l['id'] for l in landmarks}
+    d['landmarks'] = [l for l in d['landmarks'] if l['id'] not in ids] + [dict(l) for l in landmarks]
     by_id = {l['id']: l for l in d['landmarks']}
-    dress = {pre: v[2] for pre, v in DRESS.items()}
+    wear = {pre: v[2] for pre, v in dress.items()}
     n = 0
-    for lid, (pre, scenes) in SCENES.items():
+    for lid, (pre, lst) in scenes.items():
         mine = []
-        for sc in scenes:
+        for sc in lst:
             sc = {**sc, "requires": {"flags": [f"{pre}_done"]}}
-            if pre in dress:
-                sc["wear"] = dress[pre]
+            if pre in wear:
+                sc["wear"] = wear[pre]
             mine.append(sc)
         titles = {s['title'] for s in mine}
         by_id[lid]['scenes'] = [s for s in by_id[lid].get('scenes', []) if s['title'] not in titles] + mine
         n += len(mine)
     open(p, 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, indent=1))
-    print('地標', len(LANDMARKS), '場景', n)
+    print('地標', len(landmarks), '場景', n)
 
 
 if __name__ == '__main__':
     apply_dress(STORIES)
-    write_gear_base()
-    write_items()
-    write_abilities()
-    write_lewd()
-    write_npcs()
-    write_landmarks()
+    write_gear_bases({'dudou': DUDOU_BASE})
+    write_items(ITEMS, [book(*b) for b in BOOKS], [('breast_band', catalog('dudou', DUDOU_BASE))])
+    write_abilities(ABILITIES)
+    write_lewd([b[0] for b in BOOKS])
+    write_npcs(NPCS)
+    write_landmarks(LANDMARKS, SCENES, DRESS)
     write_stories(STORIES)
