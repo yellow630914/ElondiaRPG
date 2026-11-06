@@ -8,7 +8,7 @@ import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
-import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles } from '@/engine/lewd'
+import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
 import { MOD_NAME } from '@/engine/gear'
@@ -94,7 +94,9 @@ const lewdItems = computed<StatItem[]>(() => {
   }))
   const region = locationById(s.value.location).region
   const exp = exposureAt(s.value, x.id, region)
-  items.push({ label: lewdName('exposure'), value: exp, note: `${bandName('exposure', exp)}・身上的曝露度 ${exposureLevel(x)}` })
+  const vac = vacuumSides(x)
+  const vacNote = vac.length ? `（真空${vacuumBonus(x) ? ` +${vacuumBonus(x)}` : ''}：${vac.map((v) => VACUUM_TEXT[v]).join('、')}）` : ''
+  items.push({ label: lewdName('exposure'), value: exp, note: `${bandName('exposure', exp)}・身上的曝露度 ${exposureLevel(x)}${vacNote}` })
   // 流派與雙面效應（docs/LEWD_STATS.md 第 6、7 節）
   const schools = schoolsOf(x)
   items.push({ label: '流派', value: schools.length ? schools.map(schoolName).join('、') : '沒有', note: schools.includes('servitude') ? (hasMaster(x) ? '有主人：隸從派全效' : '沒有主人：隸從派一半效果') : '' })

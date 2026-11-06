@@ -27,7 +27,7 @@ export interface RuleDef {
 }
 
 export const RULE_DEFS: Record<NumericRule, RuleDef> = {
-  xpMult: { label: '經驗值倍率', hint: '所有經驗值（戰鬥、委託、事件）乘上這個倍率。', default: 1, min: 0.25, max: 5, step: 0.25, unit: '倍' },
+  xpMult: { label: '經驗值倍率', hint: '所有經驗值（戰鬥、委託、事件）乘上這個倍率。', default: 1, min: 0.1, max: 5, step: 0.05, unit: '倍' },
   moneyMult: { label: '報酬與戰利品的錢', hint: '委託報酬、特殊任務與事件給的錢、戰鬥與寶箱撿到的錢乘上這個倍率；賣東西與打工的收入、物價不變。', default: 1, min: 0.25, max: 5, step: 0.25, unit: '倍' },
   ambushMult: { label: '休息時被襲擊的機率', hint: `在野外、地下城、旅途上休息時被魔物襲擊的機率乘上這個倍率（預設：近郊 ${pct(companionRules.rest.ambush.wild)}、冒險區域 ${pct(companionRules.rest.ambush.dungeon)}、旅途 ${pct(companionRules.rest.ambush.road)}）。0 表示不會被襲擊；安全房與城裡一直是 0。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會被襲擊' },
   travelEventMult: { label: '旅途事件的頻率', hint: '旅途上每天發生事件的機率乘上這個倍率（預設依路況 25%～55%，最高 100%）。0 表示一路平安。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '一路平安' },
@@ -41,6 +41,9 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   parasiteMult: { label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
   dungeonEventMult: { label: '地下城事件的機率', hint: '地下城與近郊的事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率，普通與成人向的事件都算。0 表示不會發生。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   adultDungeonMult: { label: '成人地下城事件的比重', hint: '地下城與近郊的成人向事件（色情陷阱、擬態寶箱、花粉、夜襲……）比普通的事件更容易遇到：抽事件時的權重，以及遇到事件的機率裡成人向的那一份，乘上這個倍率。1 表示和普通事件一樣。成人向內容。', default: 1, min: 1, max: 8, step: 0.5, unit: '倍' },
+  exposureDecay: { label: '曝露名聲的淡化', hint: `曝露名聲每天淡掉的量乘上這個倍率（預設每個地區每天 −${lewdJson.daily.exposure_decay}）。0.5 是隔天淡一次，0 表示不會淡掉。在城裡穿著曝露的服裝累積、相鄰地區的傳播照舊。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會淡掉' },
+  submissionDecay: { label: '順從的回落', hint: `沒有奴隸契約時，順從每 ${lewdJson.daily.free_submission_every} 天 −1；回落的量乘上這個倍率。0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會回落' },
+  lewdnessDecay: { label: '淫亂的回落', hint: `${lewdJson.daily.idle_days} 天以上沒有親密場景時，淫亂每天 −1，直到回到預設；回落的量乘上這個倍率。0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會回落' },
   brothelEventMult: { label: '娼館事件的機率', hint: `在娼館打工（接客）結束時發生事件的機率乘上這個倍率（預設 ${pct(lewdJson.brothel.work_event.base)}，淫亂越高越容易，最高 ${pct(lewdJson.brothel.work_event.max)}）。0 表示不會發生。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   eventDc: { label: '事件檢定的難度', hint: '地下城事件（普通與成人向的都算）與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
   lustMult: { label: '慾望戰鬥', hint: '戰鬥中所有慾望增加的倍率（慾望攻擊、媚毒、自己增加的慾望……）。慾望滿了會高潮：我方停止行動一回合、失去三分之一的生命（不會因此死亡，一場高潮三次倒下）；敵方受到三分之一生命的傷害。0 表示關閉：沒有慾望條，色情技能不能用，敵人也不用慾望攻擊。成人向內容。', default: 1, min: 0, max: 2, step: 0.25, unit: '倍', zero: '關閉' },

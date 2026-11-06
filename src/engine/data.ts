@@ -2361,6 +2361,8 @@ export const lewdRules = lewdJson as unknown as {
   growth: Record<'adult_scene' | 'climax' | 'climax_won' | 'brothel_work' | 'obedience' | 'disrobe', Partial<Record<LewdKey, number>>>
   daily: {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus
+    /** 在聚落裡真空（外衣底下沒穿內衣褲、會走光）的日子 */
+    vacuum?: LewdBonus
     free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
   }
   park: ParkRules

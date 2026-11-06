@@ -1,7 +1,7 @@
 # 慾望指標、流派與雙面效應（成人向）
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 8.5 節（慾望戰鬥）、[ITEMS](ITEMS.md)（服裝的底材）、[COMPANIONS](COMPANIONS.md)（奴隸契約）、[WORK](WORK.md)（娼館）。被依賴：[PERKS](PERKS.md)（流派特質）、[ITEMS](ITEMS.md)（拘束具與鎖）、[EFFECTS](EFFECTS.md)（`lewd` 效果）、[STORY_QUESTS](STORY_QUESTS.md)（`stats` 條件）、[ACTIONS](ACTIONS.md)（情境修正、AI 判定的效果）、[TRAVEL_EVENTS](TRAVEL_EVENTS.md) 第 6 節（城鎮事件）、[PROMPTS](PROMPTS.md)（給 AI 的資料）。
-> 資料：`data/rules/lewd.json`（分段、預設、成長量、服裝的預設、流派、雙面效應、鎖、主人工具人）；底材的曝露度與拘束在 `gear.json` 的 `bases`（`exposure`、`bind`、`bind_kind`）；流派特質在 `perks.json`（`school`、`lust`）。程式：`src/engine/lewd.ts`（指標）、`src/engine/schools.ts`（流派、雙面效應、鎖）、`src/engine/masterTool.ts`（主人工具人）。還沒做的構想：[點子庫 I24](plan/ideas/dev-discussion.md#i24)。
+> 資料：`data/rules/lewd.json`（分段、預設、成長量、服裝的預設、流派、雙面效應、鎖、主人工具人）；底材的曝露度、真空與拘束在 `gear.json` 的 `bases`（`exposure`、`vacuum`、`bind`、`bind_kind`）；流派特質在 `perks.json`（`school`、`lust`）。程式：`src/engine/lewd.ts`（指標）、`src/engine/schools.ts`（流派、雙面效應、鎖）、`src/engine/masterTool.ts`（主人工具人）。還沒做的構想：[點子庫 I24](plan/ideas/dev-discussion.md#i24)。
 
 每個角色有四項長期指標，加上依地區記的曝露名聲，合計五項。它們隨經歷慢慢改變，影響慾望戰鬥與 AI 的描寫。角色詳情的「屬性與戰鬥」頁最下面顯示目前的值、分段與裝備的加減。
 
@@ -51,6 +51,11 @@
   - 下身看下身那件；沒有時上身那件也算遮住；再沒有才看內褲；什麼都沒穿是 3。
   - 頭飾、鞋子、腿飾、飾品不算。
   - 寫了曝露度的底材：短裙、旗袍、魔法少女服、水手服、皮緊身衣 1；比基尼鎧甲、舞孃紗衣、超短裙、開胸晚禮服 2；逆兔女郎裝、透視薄紗睡衣、乳貼、開檔內褲、開胸胸罩、無襠皮褲、微比基尼、吊帶泳衣 3。
+- **真空**（`vacuumSides`）：外衣底下沒穿內衣或內褲，而外面那件會走光時，那一側曝露度 +1（最多 3）。
+  - 「會走光」：外衣本身曝露度 1 以上，或底材的 `vacuum` 寫了那一側（`top` 上身、`bottom` 下身）。內建寫了的：百褶裙、長裙、連身裙、禮服、女僕裝、護士服、哥德蘿莉塔洋裝（下身），襯衫、荷葉邊上衣（上身），浴衣（兩邊）。鎧甲、長褲、長袍這類曝露度 0 又沒寫的不受影響。
+  - 上身沒穿內衣只算陰柔、中性的體型；下身看遮住下身的那件（沒穿下身時是上身那件，例如連身裙、旗袍）；內褲欄被種族改名的（人馬族的「後蹄」）下身不算真空。
+  - 例：水手服＋短裙都沒穿內衣褲 → 2；連身裙沒穿內褲 → 1；比基尼鎧甲沒穿內衣 → 3。
+  - 角色詳情的曝露度後面寫「真空 +1：沒穿內褲」；紙娃娃空著的內衣、內褲欄寫「真空・沒穿內褲」。交給 AI 的角色資料只寫會走光的那一側（「沒穿內衣」「沒穿內褲」），生圖也是（no bra、no panties）。
 - 內容編輯器的底材可以設曝露度、拘束，物品可以設慾望指標的加減與鎖（[CONTENT_EDITOR](CONTENT_EDITOR.md)）。
 
 ## 4. 怎麼漲、怎麼降
@@ -70,9 +75,10 @@
 **每天**（`lewd.json` 的 `daily`；跨日時結算，只看隊伍裡的人，不寫進報告）
 
 - 曝露名聲：每個地區每天淡掉 1；人在聚落裡（城市、城鎮、村落、港口、哨站、要塞）時，加上身上的曝露度 × 2。
-- 穿著成人向服裝：淫亂 +1。穿著束縛用的底材：忍耐 +1。身上有被主人鎖上的裝備：順從 +1。
+- 穿著成人向服裝：淫亂 +1。人在聚落裡真空：淫亂 +1（`daily.vacuum`）。穿著束縛用的底材：忍耐 +1。身上有被主人鎖上的裝備：順從 +1。
 - 沒有奴隸契約的日子：每 3 天順從 −1。
 - 超過 7 天沒有親密場景：淫亂每天 −1，降到預設為止。
+- 三種下跌（曝露名聲的淡化、順從的回落、淫亂的回落）乘上存檔規則的倍率（`exposureDecay`、`submissionDecay`、`lewdnessDecay`，0～3 倍；[SAVES](SAVES.md) 第 7 節）：0.5 是隔天跌一次，0 是不會跌，2 是一天跌兩次。用固定的算法（第 n 天跌 ⌊n×倍率⌋ − ⌊(n−1)×倍率⌋ 次），不用記零頭。
 - 走格子、旅途、開寶箱這類不產生報告的時間推進也會結算（`state.ts` 的 `advanceTime`）；一次最多結算 30 天。
 
 ## 5. 其他的連動

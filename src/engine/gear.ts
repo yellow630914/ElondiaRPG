@@ -36,6 +36,9 @@ export interface MaterialDef {
 /** 底材放的位置：一個欄位，或一組欄位（ring 兩個戒指、piercing 兩個穿孔飾品，見 gear.json 的 slot_groups） */
 export type BaseSlot = GearSlot | 'ring' | 'piercing'
 
+export type VacuumSide = 'top' | 'bottom'
+export const VACUUM_SIDES: VacuumSide[] = ['top', 'bottom']
+
 export interface BaseDef {
   slot: BaseSlot
   /** 打造時的類型（刀劍、鎚斧、盾……）；沒寫時依欄位與材料推（baseType） */
@@ -65,6 +68,8 @@ export interface BaseDef {
   races?: string[]
   /** 曝露度 0～3（慾望指標的曝露名聲用）；沒寫時依服裝種類（lewd.json 的 gear.outfit） */
   exposure?: number
+  /** 真空會走光的一側（曝露度 0 也算，例如裙子、薄襯衫）：底下沒穿內衣（top）或內褲（bottom）時那一側曝露度 +1。曝露度 1 以上的不用寫 */
+  vacuum?: VacuumSide[]
   /** 雙面效應（lewd.json 的 two_face）：拘束的程度 1～3 與種類；平常是檢定減值，修了流派、鎖上時戰鬥中反轉成增益 */
   bind?: number
   bind_kind?: BindKind

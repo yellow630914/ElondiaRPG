@@ -13,7 +13,7 @@ import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGe
 import { bodyOf } from './traits'
 import { dressNpc } from './outfits'
 import { tattoosOf, tattooSummary } from './tattoos'
-import { npcLewd } from './lewd'
+import { npcLewd, VACUUM_TEXT, vacuumSides } from './lewd'
 import type { Rng } from './rng'
 import type { ActorState, Character, GuildRank, SkillQuality } from './types'
 
@@ -514,7 +514,8 @@ export function snapshot(c: Character, before?: Character, player?: Character): 
     rank: guildRankFor(c.level),
     hp: [b.hp, c.hp, c.maxHp],
     status: [...c.status],
-    equipment: c.gear ? Object.values(c.gear).filter((g) => !!g).map((g) => g!.name) : [weaponDef(c.weapon).name, armorDef(c.armor).name],
+    // 真空（外衣底下沒穿內衣褲、會走光的那一側）也寫進去，敘事才會寫到
+    equipment: c.gear ? [...Object.values(c.gear).filter((g) => !!g).map((g) => g!.name), ...vacuumSides(c).map((v) => VACUUM_TEXT[v])] : [weaponDef(c.weapon).name, armorDef(c.armor).name],
   }
   if (c.personality) state.personality = c.personality
   // 報告的角色快照交給 AI：偽娘、TS、扶她附上身體的說明

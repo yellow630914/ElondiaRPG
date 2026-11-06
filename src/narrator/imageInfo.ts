@@ -2,7 +2,7 @@
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
 import { className, genderName, lewdRules, raceImageName } from '@/engine/data'
-import { currentRegion, exposureAt, lewdOf, npcLewd } from '@/engine/lewd'
+import { currentRegion, exposureAt, lewdOf, npcLewd, vacuumSides } from '@/engine/lewd'
 import { gearName, gearRules } from '@/engine/gear'
 import { npcOutfit } from '@/engine/outfits'
 import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
@@ -144,6 +144,9 @@ export function portraitComposition(places: string[], slots: string[]): string {
   return 'upper body'
 }
 
+/** 真空的一側給生圖的寫法 */
+const VACUUM_IMAGE: Record<'top' | 'bottom', string> = { top: '沒穿內衣（no bra）', bottom: '沒穿內褲（no panties）' }
+
 /**
  * 身上的裝備（名稱）：內衣、內褲被上身、下身的衣物蓋住時標「穿在裡面」；回傳露在外面的欄位。
  * 種族改名的欄位照它收的部位算（人馬族的「後蹄」是鞋子：不會被蓋住，也不會拉成腰部的構圖）
@@ -174,7 +177,8 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
   // 主角的性別是自由輸入的文字；NPC 是性別 id
   const genderText = !gender ? '' : m?.isPlayer ? gender : genderName(gender)
   const worn = wornGear(m ? m.gear : rec?.character?.gear, m?.race ?? rec?.race)
-  const gear = worn.names
+  // 真空：只寫會走光的那一側（no bra / no panties）
+  const gear = [...worn.names, ...(m ? vacuumSides(m).map((v) => VACUUM_IMAGE[v]) : [])]
   // 還沒有戰鬥資料的人（普通人、還沒登場的冒險者）：內容頁籤指定的裝備，沒有時依身分穿的服裝
   const defGear = gear.length ? [] : rec?.gear ? Object.values(rec.gear).filter((g) => !!g).map((g) => gearName(g!)) : rec ? wornGear(npcOutfit(rec, rec.class ? undefined : state.time.day), rec.race).names : []
   const tattoos = tattoosOf(m ?? rec?.character)

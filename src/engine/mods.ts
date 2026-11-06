@@ -17,7 +17,7 @@ import {
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
   type Control, type LuckRoll, type StatusDef, type ConditionDef, slaveryRules, lewdRules, type ContractDef, isKeeperShop, isCustomShopId, isLandmarkId, landmarks, specialMaps, shopRules, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME, BOSS_LAYER_IDS, type DungeonLayerId, BIND_KINDS, type BindKind, LOCK_GRADES,
 } from './data'
-import { baseFits, baseSlots, baseSlotsFor, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS, MAX_TIER } from './gear'
+import { baseFits, baseSlots, baseSlotsFor, gearName, gearPrice, gearRules, RARITY_ORDER, setCustomGear, type BaseDef, type MaterialDef, OUTFIT_KINDS, MAX_TIER, VACUUM_SIDES } from './gear'
 import { settlementArea, ZONES } from './grid'
 import { cleanFlag } from './storyFlags'
 import { TOOL_KINDS } from './tools'
@@ -1060,6 +1060,9 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   if (raw.adult || out.outfit === 'adult') out.adult = true
   // 曝露度（慾望指標的曝露名聲）：只有上身、下身與內衣有意義
   if (raw.exposure !== undefined && raw.exposure !== null && String(raw.exposure) !== '') out.exposure = int(raw.exposure, 0, 3, 0)
+  // 真空會走光的一側（上身、下身的衣服才有意義）
+  const vacuum = VACUUM_SIDES.filter((s) => Array.isArray(raw.vacuum) && raw.vacuum.includes(s))
+  if (vacuum.length && (out.slot === 'body' || out.slot === 'legs')) out.vacuum = vacuum
   // 雙面效應（docs/LEWD_STATS.md 第 7 節）：拘束的程度與種類
   if (raw.bind && raw.bind_kind && (BIND_KINDS as string[]).includes(raw.bind_kind)) {
     out.bind = int(raw.bind, 1, 3, 1)
