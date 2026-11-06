@@ -753,22 +753,37 @@ export interface ClassDef {
   resist?: AffinityMap
   /** 隨機生成的 NPC 抽到這個職業的權重（沒寫是 1；0 = NPC 不會隨機抽到，只有主角與指定的人用） */
   npc_weight?: number
+  /**
+   * 地區職業倍率：在某個地區生成的 NPC 抽職業時，出現權重再乘上這個倍率（鍵是地區 id；other＝沒列出的地區；都沒寫是 1）。
+   * 武夫、仙術師在炎華之地多、其他地區少
+   */
+  region_mult?: Record<string, number>
 }
 export const classes = (classesJson as unknown as { classes: Record<string, ClassDef> }).classes
 /** 普通人入隊時的職業 */
 export const NONCOMBAT_CLASS = 'noncombatant'
-/** 可以選、可以隨機抽到的職業（不含「無法戰鬥」）；世界管理改了職業時由 refreshClassLists 重建 */
+/**
+ * 可以選、可以隨機抽到的職業（不含「無法戰鬥」，也不含還沒有初始能力的職業：世界管理剛新增、還沒存好的自建職業）；
+ * 世界管理改了職業時由 refreshClassLists 重建
+ */
 export const combatClasses: Record<string, ClassDef> = {}
 /** 依目前的 classes 重建 combatClasses（套用世界、還原成內建、登錄自建職業之後呼叫） */
 export function refreshClassLists() {
   for (const k of Object.keys(combatClasses)) delete combatClasses[k]
-  for (const [k, c] of Object.entries(classes)) if (!c.noncombat) combatClasses[k] = c
+  for (const [k, c] of Object.entries(classes)) if (!c.noncombat && c.start?.length) combatClasses[k] = c
 }
 refreshClassLists()
 /** NPC 隨機抽職業的權重（npc_weight，沒寫是 1） */
-export function npcClassWeight(id: string): number {
+export function npcClassWeight(id: string, region?: string): number {
   const c = combatClasses[id]
-  return c ? Math.max(0, c.npc_weight ?? 1) : 0
+  if (!c) return 0
+  const base = Math.max(0, c.npc_weight ?? 1)
+  return region ? base * classRegionMult(c, region) : base
+}
+/** 職業在某個地區的出現倍率（region_mult：列出的地區、沒列出的用 other，都沒寫是 1） */
+export function classRegionMult(c: Pick<ClassDef, 'region_mult'>, region: string): number {
+  const m = c.region_mult
+  return Math.max(0, m?.[region] ?? m?.other ?? 1)
 }
 /** NPC 會隨機抽到的職業（權重大於 0） */
 export function npcClassIds(): string[] {

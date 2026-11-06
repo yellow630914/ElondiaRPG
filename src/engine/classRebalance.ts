@@ -57,7 +57,7 @@ function knownIds(state: GameState): Set<string> {
 }
 
 /**
- * 算出要改幾位：每個新職業照目前的權重算應有的人數（權重 0 的不算），
+ * 算出要改幾位：每個新職業照目前的權重（含地區職業倍率）算應有的人數（權重 0 的不算），
  * 實際人數不到一半、而且差兩位以上時才改，改到應有的人數（能改的人不夠時改少一點）
  */
 export function planClassRebalance(state: GameState): ClassRebalanceState['offer'] | null {
@@ -65,15 +65,23 @@ export function planClassRebalance(state: GameState): ClassRebalanceState['offer
   if (list.length < MIN_ADVENTURERS) return null
   const known = knownIds(state)
   const total = list.length
-  const weights = Object.keys(classes).map(npcClassWeight)
-  const sum = weights.reduce((a, b) => a + b, 0)
+  // 每位冒險者照他所在地區的權重（含地區職業倍率）算抽到這個職業的機率，加起來是應有的人數
+  const regionOf = (r: NpcRecord) => findLocation(r.location)?.region ?? ''
+  const sums = new Map<string, number>()
+  const sumIn = (region: string) => {
+    if (!sums.has(region)) sums.set(region, Object.keys(classes).reduce((a, id) => a + npcClassWeight(id, region), 0))
+    return sums.get(region)!
+  }
   const current: Record<string, number> = {}
   const plan: Record<string, number> = {}
   for (const [cls, sources] of Object.entries(NEW_CLASS_SOURCES)) {
     current[cls] = list.filter((r) => r.class === cls).length
-    const w = classes[cls] ? npcClassWeight(cls) : 0
-    if (!w || !sum) continue
-    const target = Math.round((total * w) / sum)
+    if (!classes[cls] || !npcClassWeight(cls)) continue
+    const target = Math.round(list.reduce((a, r) => {
+      const region = regionOf(r)
+      const sum = sumIn(region)
+      return a + (sum ? npcClassWeight(cls, region) / sum : 0)
+    }, 0))
     const need = target - current[cls]!
     if (current[cls]! >= target / 2 || need < 2) continue
     const pool = list.filter((r) => sources.includes(r.class) && convertible(state, r, known)).length

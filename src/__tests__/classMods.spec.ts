@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { abilities, classes, combatClasses, npcClassIds, npcs, npcTags } from '@/engine/data'
+import { abilities, classes, combatClasses, npcClassIds, npcClassWeight, npcs, npcTags } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { applyContent, emptyMods, normalizeMods, type ContentMods } from '@/engine/mods'
 import {
@@ -39,6 +39,21 @@ describe('新職業：武夫、仙術師', () => {
     const seen = new Set(Array.from({ length: 400 }, () => pickNpcClass(rng)))
     expect(seen.has('wufu')).toBe(true)
     expect(seen.has('xianshi')).toBe(true)
+  })
+
+  it('地區職業倍率：炎華之地多、其他地區少', () => {
+    const rng = new Rng(4)
+    const share = (region: string) => {
+      const picks = Array.from({ length: 3000 }, () => pickNpcClass(rng, region))
+      return picks.filter((c) => c === 'wufu' || c === 'xianshi').length / picks.length
+    }
+    // 炎華：(3+3)/(10+6) ≈ 37.5%；其他地區：0.6/10.6 ≈ 5.7%
+    expect(share('yanhua_south')).toBeGreaterThan(0.3)
+    expect(share('central')).toBeLessThan(0.1)
+    expect(npcClassWeight('wufu')).toBe(1)
+    expect(npcClassWeight('wufu', 'yanhua_north')).toBe(3)
+    expect(npcClassWeight('wufu', 'north')).toBeCloseTo(0.3)
+    expect(npcClassWeight('fighter', 'yanhua_north')).toBe(1)
   })
 })
 
@@ -97,6 +112,24 @@ describe('職業的編輯', () => {
     applyContent(emptyMods())
     expect(classes.mod_cls_talisman).toBeUndefined()
     expect(combatClasses.mod_cls_talisman).toBeUndefined()
+  })
+
+  it('剛新增、還沒有初始能力的職業：權重 0，不進建角選單、NPC 不會抽到', () => {
+    const c = newClassMod()
+    expect(c.npc_weight).toBe(0)
+    applyContent(normalizeMods(mods({ mod_cls_blank: c })))
+    expect(classes.mod_cls_blank).toBeTruthy()
+    expect(combatClasses.mod_cls_blank).toBeUndefined()
+    expect(npcClassIds()).not.toContain('mod_cls_blank')
+    // 就算權重寫成 1，沒有初始能力還是不會抽到
+    applyContent(normalizeMods(mods({ mod_cls_blank: { ...c, npc_weight: 1 } })))
+    expect(npcClassIds()).not.toContain('mod_cls_blank')
+  })
+
+  it('地區倍率的整理：認得的地區與 other，夾在 0～10，1 不記', () => {
+    const c = sanitizeClassMod({ ...newClassMod(), region_mult: { yanhua_south: 30, other: 1, nowhere: 2, north: -1 } as never }, true)
+    expect(c.region_mult).toEqual({ yanhua_south: 10, north: 0 })
+    expect(classModOf('wufu').region_mult).toEqual({ yanhua_south: 3, yanhua_north: 3, other: 0.3 })
   })
 
   it('整理：數值夾在範圍內，不認得的能力、底材、標籤拿掉，屬性順序補齊', () => {
