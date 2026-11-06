@@ -195,8 +195,13 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
 }
 
 /** 讀入存檔：補上新欄位，舊存檔沒有格子位置時放到目前地點的入口。 */
+/** 讀檔時修好的壞檔（repairStrandedRoad）：給玩家的說明，enter 拿了就清掉 */
+let repairNotice: string | null = null
+
 function load(s: GameState): GameState {
   migrate(s)
+  // 壞檔救濟：被帶回主人的家時沒有結束的旅途（v0.5.1 以前）
+  repairNotice = road.repairStrandedRoad(s)
   // 自訂內容刪掉的特殊任務：中斷，任務同行的夥伴離隊
   story.pruneStories(s)
   // 自訂內容刪掉的事件：等待中的作廢
@@ -774,7 +779,9 @@ export const useGame = defineStore('game', () => {
     error.value = null
     // 存檔所在的自建地下城已經不在這個世界：送回聚落時說明（pruneLocations.ts）
     // 存檔裡的寄生物已經不在這個世界：拿掉時說明（parasites.ts 的 pruneParasites）
-    const moved = [takeLocationNotice(), takeParasiteNotice()].filter(Boolean).join(' ') || null
+    // 修好的壞檔（還留著中斷的旅途）也說明
+    const moved = [takeLocationNotice(), takeParasiteNotice(), repairNotice].filter(Boolean).join(' ') || null
+    repairNotice = null
     const note = [world.note, moved].filter(Boolean).join(' ')
     if (note) flash(note, moved ? 8000 : 2500)
     save()

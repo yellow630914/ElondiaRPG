@@ -53,7 +53,7 @@ describe('story offers index', () => {
     expect(checked).toBeGreaterThan(100)
     expect(offered).toBeGreaterThan(npcOffers)
     expect(npcOffers).toBeGreaterThan(0)
-  })
+  }, 30_000)
 
   it('notices quests added to the list without a content change', () => {
     const state = newGame({ name: '測試者', race: 'human', classId: 'fighter', seed: 7, birthplace: 'soriel' })

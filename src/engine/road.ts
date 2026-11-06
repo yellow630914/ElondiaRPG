@@ -133,6 +133,24 @@ export function roadTemplate(id: string): RoadTemplate | undefined {
   return travelEvents.templates.find((t) => t.id === id)
 }
 
+/**
+ * 壞檔救濟（v0.5.1 以前）：還記著旅途，人卻不在旅途的地圖上（也不在旅途的臨時地圖、特殊地圖裡）。
+ * 例如主角是奴隸、在旅途中被主人叫回家時旅途沒有結束，之後再也不能出發。把殘留的旅途清掉；回傳給玩家的說明（沒有問題時 null）
+ */
+export function repairStrandedRoad(state: GameState): string | null {
+  if (!state.road || state.side || state.special || !state.position || state.position.area === ROAD_KEY) return null
+  const to = state.road.to
+  delete state.road
+  delete state.roadEvent
+  delete state.pendingMove
+  if (state.areas) delete state.areas[ROAD_KEY]
+  let name = to
+  try {
+    name = locationById(to).name
+  } catch { /* 地點已經不在 */ }
+  return `存檔裡還留著一段沒有結束的旅途（往${name}，被帶回家時中斷了），已經清掉，現在可以再出發了。`
+}
+
 /** 自訂內容拿掉的事件：旅途上等待中的事件作廢（那一格算是過了） */
 export function pruneRoadEvent(state: GameState) {
   if (!state.roadEvent || roadTemplate(state.roadEvent.template)) return

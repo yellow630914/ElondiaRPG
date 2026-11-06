@@ -16,7 +16,7 @@ import { isBound, isEnslaved, joinParty, leaderOf, pcOf, playerEscapes, recaptur
 import { isHostile, pickTags } from '@/engine/population'
 import { changeMaster } from '@/engine/party'
 import { Rng } from '@/engine/rng'
-import { startJourney } from '@/engine/road'
+import { repairStrandedRoad, startJourney } from '@/engine/road'
 import { answerMasterEvent, eventFits, masterCandidates, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
 import { addHours, migrate, newGame, withRng } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
@@ -445,5 +445,24 @@ describe('called home while travelling', () => {
     // 之後可以再出發（不會再說「已經在旅途中了」）
     pass()
     expect(() => startJourney(state, dest)).not.toThrow()
+  })
+
+  it('repairs a save stuck on the road from before the fix, and leaves real journeys alone', () => {
+    const { state } = slave()
+    state.masterPass = { [state.location]: state.time.day }
+    startJourney(state, 'soriel')
+    // 正在旅途上：不動
+    expect(repairStrandedRoad(state)).toBeNull()
+    expect(state.road).toBeTruthy()
+    // 舊的壞檔：人已經在主人的家，旅途還留著
+    const home = currentMasterHome(state)!
+    state.position = { area: Object.keys(home.areas)[0]!, x: 1, y: 1 }
+    const note = repairStrandedRoad(state)
+    expect(note).toContain('已經清掉')
+    expect(state.road).toBeUndefined()
+    expect(state.areas?.road).toBeUndefined()
+    expect(repairStrandedRoad(state)).toBeNull()
+    state.masterPass = { [state.location]: state.time.day }
+    expect(() => startJourney(state, 'soriel')).not.toThrow()
   })
 })
