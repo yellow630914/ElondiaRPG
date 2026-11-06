@@ -374,6 +374,28 @@ export function unlockGear(state: GameState, memberId: string, slot: GearSlot): 
   return commitReport(state, report)
 }
 
+/** 存檔規則「職業武器限制」打開時，這個人不能裝備這件東西的原因（行囊的「裝備」按鈕灰掉用）；可以裝備時是 null */
+export function classWeaponBlockFor(state: GameState, name: string, memberId: string): string | null {
+  if (!state.options?.classWeapons) return null
+  const m = state.party.find((x) => x.id === memberId)
+  const spec = gearSpecOf(state, name)
+  return m && spec ? classWeaponBlock(m.class, spec) : null
+}
+
+/**
+ * 切換這個存檔的職業武器限制。打開時有人卸下武器的話，寫一筆日誌說明誰的什麼收進了行囊（回傳那筆報告）
+ */
+export function setClassWeapons(state: GameState, on: boolean): Report | null {
+  const { classWeapons: _, ...rest } = state.options ?? { defeatLoot: 'half' }
+  state.options = { ...rest, ...(on ? { classWeapons: true } : {}) }
+  const moved = enforceClassWeapons(state)
+  if (!moved.length) return null
+  const report = itemReport(state, 0)
+  report.outcome.summary = `打開了存檔規則「職業武器限制」：${moved.join('；')}。`
+  report.outcome.tags = ['職業武器限制']
+  return commitReport(state, report)
+}
+
 /**
  * 存檔規則「職業武器限制」（docs/ITEMS.md 第 2.2 節）：主手拿著職業不能用的武器時卸下、放回行囊。
  * 打開規則時、讀檔時、有人入隊時呼叫；規則關著或沒有人要卸時回傳空陣列。被鎖住的（主人強迫的）不動。

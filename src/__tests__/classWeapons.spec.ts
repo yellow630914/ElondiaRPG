@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { classWeaponBlock, creationCatalog, gearRules, registerGear } from '@/engine/gear'
 import { startCombat, unusableReason } from '@/engine/combat'
 import { enterLocation } from '@/engine/grid'
-import { enforceClassWeapons, equipItem } from '@/engine/inventory'
+import { classWeaponBlockFor, enforceClassWeapons, equipItem, setClassWeapons } from '@/engine/inventory'
+import { parkMember, unparkMember } from '@/engine/homes'
 import { npcRecord } from '@/engine/npcs'
 import { joinParty, pcOf } from '@/engine/party'
 import { addItem, newGame } from '@/engine/state'
@@ -95,5 +96,44 @@ describe('職業武器限制', () => {
     expect(fight(true, true)).toBe('要拿弓弩類的武器')
     expect(fight(true, false)).not.toBe('要拿弓弩類的武器')
     expect(fight(false, true)).not.toBe('要拿弓弩類的武器')
+  })
+
+  it('checks parked companions when they come back, and says so in the log', () => {
+    const s = game('fighter', false)
+    const name = give(s, 'warhammer')
+    const m = JSON.parse(JSON.stringify(pcOf(s))) as ReturnType<typeof pcOf>
+    Object.assign(m, { id: 'npc_park_probe', name: '寄放的遊俠', class: 'ranger', isPlayer: false, gear: {} })
+    s.party.push(m)
+    equipItem(s, name, m.id)
+    s.party = s.party.filter((x) => x.id !== m.id)
+    ;(s.npcs ??= {})[m.id] = { id: m.id, name: m.name, race: 'human', class: 'ranger', level: 1, location: s.location, hire_cc: 0, personality: '' } as never
+    parkMember(s, m, s.location, 'tavern:probe', { area: 'x', x: 0, y: 0 })
+    expect(setClassWeapons(s, true)).toBeNull()
+    const stowed: string[] = []
+    const back = unparkMember(s, m.id, stowed)
+    expect(back.gear?.main_hand).toBeUndefined()
+    expect(stowed).toEqual([`寄放的遊俠的${name}收進了行囊（遊俠只能拿弓弩類的武器）`])
+  })
+
+  it('writes a log entry when turning the rule on takes weapons away', () => {
+    const s = game('ranger', false)
+    const name = give(s, 'warhammer')
+    equipItem(s, name, pcOf(s).id)
+    const r = setClassWeapons(s, true)!
+    expect(s.options?.classWeapons).toBe(true)
+    expect(r.outcome.summary).toContain(`北眺的${name}收進了行囊`)
+    expect(s.reports.at(-1)?.report_id).toBe(r.report_id)
+    expect(setClassWeapons(s, false)).toBeNull()
+    expect(s.options?.classWeapons).toBeUndefined()
+  })
+
+  it('tells the pack which items a member cannot equip', () => {
+    const s = game('ranger', true)
+    const hammer = give(s, 'warhammer')
+    const bow = give(s, 'crossbow')
+    expect(classWeaponBlockFor(s, hammer, pcOf(s).id)).toBe('遊俠只能拿弓弩類的武器')
+    expect(classWeaponBlockFor(s, bow, pcOf(s).id)).toBeNull()
+    s.options = { defeatLoot: 'half' }
+    expect(classWeaponBlockFor(s, hammer, pcOf(s).id)).toBeNull()
   })
 })

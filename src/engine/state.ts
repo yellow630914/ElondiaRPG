@@ -526,6 +526,11 @@ export function removeItem(inv: InventoryItem[], name: string, qty: number): num
  */
 export function commitReport(state: GameState, report: Report): Report {
   const c = report.changes
+  // 存檔規則「職業武器限制」：入隊、歸隊時收進行囊的武器寫在摘要後面
+  if (report.stowed?.length) {
+    const s = report.outcome.summary?.trim()
+    report.outcome.summary = `${s ? `${s} ` : ''}${report.stowed.join('；')}。`
+  }
   // 在特殊地圖裡：場景帶上地圖的描述（給 AI）
   const special = specialMapOfKey(state.position?.area)
   if (special && report.kind !== 'travel' && !(report.location.scene ?? '').includes(special.desc.slice(0, 20))) {

@@ -10,7 +10,7 @@ import {
   abilities as abilityTable, ATTR_IDS, attrName, attributeRules, classAbilities, className, combatClasses, GENDER_IDS, genderName, geography,
   locationById, npcs as namedNpcs, npcTags, raceName, regionById,
 } from '@/engine/data'
-import { baseFits, baseSlotsFor, gearName, gearRules, rarityName, RARITY_ORDER, slotName } from '@/engine/gear'
+import { baseFits, baseSlotsFor, classWeaponBlock, gearName, gearRules, rarityName, RARITY_ORDER, slotName } from '@/engine/gear'
 import { blockKeys, CELL_ICON, cellName, settlementArea, ZONES, type Zone } from '@/engine/grid'
 import { builtinNpc, type NpcMod } from '@/engine/mods'
 import { Rng } from '@/engine/rng'
@@ -490,6 +490,8 @@ const occupations = computed(() => {
             </select>
             <span class="small muted">{{ gearName(draft.gear[slot]!) }}</span>
           </template>
+          <span v-if="slot === 'main_hand' && draft.gear[slot] && classWeaponBlock(draft.class || 'noncombatant', draft.gear[slot]!)" class="small warn">
+            {{ classWeaponBlock(draft.class || 'noncombatant', draft.gear[slot]!) }}：存檔規則「職業武器限制」打開時，入隊會把它收進行囊、戰鬥中用不了武器技能。</span>
         </div>
       </template>
       <p v-else class="small muted">裝備（隨機）：{{ Object.values(preview.gear ?? {}).map((g) => g!.name).join('、') || '無' }}</p>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue'
 import { itemRules, type ItemCategory } from '@/engine/data'
-import { canEquip, canUse, isIntelItem } from '@/engine/inventory'
+import { canEquip, canUse, classWeaponBlockFor, isIntelItem } from '@/engine/inventory'
 import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
@@ -122,7 +122,7 @@ const target = reactive<Record<string, string>>({})
                   <option v-for="m in s.party" :key="m.id" :value="m.id">{{ m.name }}</option>
                 </select>
                 <button v-if="canUse(i.name)" class="small" :disabled="inCombat" @click="game.useItem(i.name, target[i.name] ?? s.party[0]!.id)">使用</button>
-                <button v-if="canEquip(s, i.name)" class="small" :disabled="inCombat" @click="game.equipItem(i.name, target[i.name] ?? s.party[0]!.id)">裝備</button>
+                <button v-if="canEquip(s, i.name)" class="small" :disabled="inCombat || !!classWeaponBlockFor(s, i.name, target[i.name] ?? s.party[0]!.id)" :title="classWeaponBlockFor(s, i.name, target[i.name] ?? s.party[0]!.id) ? `${classWeaponBlockFor(s, i.name, target[i.name] ?? s.party[0]!.id)}（存檔規則「職業武器限制」）` : undefined" @click="game.equipItem(i.name, target[i.name] ?? s.party[0]!.id)">裝備</button>
               </template>
             </span>
           </div>

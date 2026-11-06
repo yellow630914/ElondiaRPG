@@ -125,9 +125,11 @@ export function lodgeAtTavern(state: GameState, memberId: string): Report {
 export function takeLodger(state: GameState, id: string): Report {
   const rec = state.npcs?.[id]
   if (!rec || rec.staying !== tavernKey(state.location)) throw new Error(`${rec?.name ?? '這個人'}沒有寄放在這裡`)
-  const m = unparkMember(state, id)
+  const stowed: string[] = []
+  const m = unparkMember(state, id, stowed)
   const town = locationById(state.location).name
   const report = homeReport(state, 'social', 0.2, `${town}的酒館`)
+  if (stowed.length) report.stowed = stowed
   report.changes.companions = [{ npc: m.id, name: m.name, change: 'joined', ...(m.bond ? { bond: m.bond } : {}), reason: '從酒館出發' }]
   report.outcome = { result: 'neutral', summary: `${m.name}從${town}的酒館回到隊伍。`, tags: ['歸隊'] }
   return commitReport(state, report)

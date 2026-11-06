@@ -225,6 +225,8 @@ export interface Report {
     tease?: string
   }
   lore_keys?: string[]
+  /** 存檔規則「職業武器限制」：這次入隊、歸隊時收進行囊的武器（誰的什麼、為什麼）；commitReport 接在摘要後面 */
+  stowed?: string[]
 }
 
 // ---- 遊戲狀態 ----
