@@ -1501,14 +1501,7 @@ export const useGame = defineStore('game', () => {
       save()
     },
     /** 這個存檔的職業武器限制（打開時，主手拿著職業不能用的武器的人卸下武器，見 inventory.ts 的 enforceClassWeapons） */
-    setClassWeapons: (on: boolean) => {
-      if (!state.value) return
-      const { classWeapons: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
-      state.value.options = { ...rest, ...(on ? { classWeapons: true } : {}) }
-      const moved = inventory.enforceClassWeapons(state.value)
-      if (moved.length) flash(`${moved.join('；')}。`, 8000)
-      save()
-    },
+    setClassWeapons: (on: boolean) => run((s) => inventory.setClassWeapons(s, on), { narrate: false }),
     /** 這個存檔的大成功、大失敗只看骰面（20 與 1，見 engine/checks.ts） */
     setNaturalCrit: (on: boolean) => {
       if (!state.value) return

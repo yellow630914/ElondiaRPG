@@ -128,7 +128,10 @@ const derived = computed(() => {
 })
 
 // ---- 起始裝備：在對話框裡挑（StartGearDialog），這裡只顯示目前的配備與預算 ----
-const gearSlots = computed(() => creationSlots(classId.value, race.value))
+// 職業武器限制打開時，主手不列職業不能拿的武器（和引擎的 newGame 一致）
+const gearSlots = computed(() => creationSlots(classId.value, race.value, classWeapons.value))
+/** 換職業、種族時整套換回基本配備（只看職業與種族；切換武器限制時只換主手，見 fixMainHand） */
+const baseSlots = computed(() => creationSlots(classId.value, race.value))
 const gear = ref<CreationGear>({})
 const gearOpen = ref(false)
 function resetGear() {
@@ -137,9 +140,22 @@ function resetGear() {
   for (const s of gearSlots.value) if (s.template && start[s.slot]) next[s.slot] = { base: start[s.slot]!, tier: 1 }
   gear.value = next
 }
-watch(gearSlots, () => {
+watch(baseSlots, () => {
   if (!loading) resetGear()
 }, { immediate: true })
+/** 主手選的武器職業不能拿時（打開職業武器限制、讀進角色設定檔），換回職業的基本配備 */
+function fixMainHand() {
+  const p = gear.value.main_hand
+  if (!p?.base) return
+  const slot = gearSlots.value.find((s) => s.slot === 'main_hand')
+  if (slot?.bases.includes(p.base)) return
+  const next = { ...gear.value }
+  const start = gearRules.classes[classId.value]?.start.main_hand
+  if (start && slot?.bases.includes(start)) next.main_hand = { base: start, tier: 1 }
+  else delete next.main_hand
+  gear.value = next
+}
+watch(classWeapons, () => fixMainHand())
 const twoHanded = computed(() => !!gearRules.bases[gear.value.main_hand?.base ?? '']?.two_handed)
 /** 實際帶走的：拿掉不能放的欄位、雙手武器時的副手、不在清單裡的底材 */
 const gearChoice = computed<CreationGear>(() => {
@@ -275,6 +291,7 @@ async function loadPreset(p: CharacterPreset) {
     customPerks.value = (d.customPerks ?? []) as PerkDef[]
     resetGear()
     gear.value = { ...gear.value, ...(d.gear as CreationGear) }
+    fixMainHand()
     slave.value = !!d.slave
     if (d.slave) {
       masterMode.value = d.slave.mode

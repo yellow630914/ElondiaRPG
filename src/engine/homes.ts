@@ -9,6 +9,7 @@ import { snapshot } from './character'
 import { craftRules, geography, homeRules, itemDef, lewdRules, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
 import { blocksFor, placeAt, position, settlementKey, type Area, type Cell } from './grid'
 import { npcRecord, registerNpc } from './npcs'
+import { enforceClassWeapons } from './inventory'
 import { partyMax, partyRoom } from './party'
 import type { Rng } from './rng'
 import { addHours, addItem, commitReport, newReportId, player, removeItem, withRng } from './state'
@@ -525,8 +526,11 @@ export function parkMember(state: GameState, m: Character, location: string, sta
   })
 }
 
-/** 把留守或寄放的夥伴帶回隊伍（隊伍要有空位）；回傳回到隊伍的角色 */
-export function unparkMember(state: GameState, id: string): Character {
+/**
+ * 把留守或寄放的夥伴帶回隊伍（隊伍要有空位）；回傳回到隊伍的角色。
+ * 存檔規則「職業武器限制」：拿著職業不能用的武器時收進行囊，說明放進 stowed（歸隊那筆日誌用）
+ */
+export function unparkMember(state: GameState, id: string, stowed: string[] = []): Character {
   const rec = state.npcs?.[id]
   if (!rec?.staying || !rec.character) throw new Error(`${rec?.name ?? '這個人'}沒有在等你`)
   if (partyRoom(state) < 1) throw new Error(`隊伍最多 ${partyMax(state)} 人`)
@@ -536,6 +540,7 @@ export function unparkMember(state: GameState, id: string): Character {
   delete rec.stayingSince
   delete rec.at
   state.party.push(m)
+  stowed.push(...enforceClassWeapons(state, [m]))
   return m
 }
 
@@ -545,8 +550,10 @@ export function leaveWithResident(state: GameState, area: Area, id: string): Rep
   if (!home) throw new Error('要在自己的房子裡')
   const rec = state.npcs?.[id]
   if (!rec || rec.staying !== home.id || !rec.character) throw new Error(`${rec?.name ?? '這個人'}沒有留在這裡`)
-  const m = unparkMember(state, id)
+  const stowed: string[] = []
+  const m = unparkMember(state, id, stowed)
   const report = homeReport(state, 'social', 0.2, home.name)
+  if (stowed.length) report.stowed = stowed
   report.changes.companions = [{ npc: m.id, name: m.name, change: 'joined', ...(m.bond ? { bond: m.bond } : {}), reason: '從家裡出發' }]
   report.outcome = { result: 'neutral', summary: `${m.name}跟著你從「${home.name}」出發。`, tags: ['歸隊'] }
   return commitReport(state, report)
