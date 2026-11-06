@@ -5,6 +5,7 @@ import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
 import { breakdownText, buyBreakdown, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
 import { pctText, tradeCategory } from '@/engine/market'
+import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import NameTag from '../NameTag.vue'
@@ -117,6 +118,27 @@ const bag = computed(() => s.value.inventory
   .map((i) => ({ ...i, price: sellPrice(s.value, key.value, i.name) }))
   .filter((i) => !onlySellable.value || i.price !== null)
   .sort((a, b) => Number(b.price !== null) - Number(a.price !== null)))
+// 行囊依類別分段，材料再依小類（和行囊頁一樣，materialInfo.ts）；同一段裡能賣的在前、等級高的在前
+const bagGroups = computed(() => {
+  const groupOf = (name: string) => {
+    const c = categoryOf(s.value, name)
+    if (c === 'material') {
+      const g = materialGroup(s.value, name)
+      return { id: `material:${g}`, order: CATEGORY_ORDER.indexOf('material') + (materialGroupOrder().indexOf(g) + 1) / 100, name: `${itemRules.categories.material}・${materialGroupName(g)}` }
+    }
+    return c ? { id: c, order: CATEGORY_ORDER.indexOf(c), name: itemRules.categories[c] } : { id: 'other', order: 99, name: '其他' }
+  }
+  const groups = new Map<string, { id: string; order: number; name: string; items: typeof bag.value }>()
+  for (const i of bag.value) {
+    const g = groupOf(i.name)
+    if (!groups.has(g.id)) groups.set(g.id, { ...g, items: [] })
+    groups.get(g.id)!.items.push(i)
+  }
+  const tier = (name: string) => materialTier(s.value, name)?.tier ?? 0
+  return [...groups.values()].sort((a, b) => a.order - b.order).map((g) => ({
+    ...g, items: [...g.items].sort((a, b) => Number(b.price !== null) - Number(a.price !== null) || tier(b.name) - tier(a.name)),
+  }))
+})
 const sellQty = reactive<Record<string, number>>({})
 /** 收購遞減：這間店最近收了很多這一類時，收購價旁邊寫出降了多少 */
 const glutText = (name: string) => { const g = glutMult(s.value, key.value, tradeCategory(s.value, name)); return g < 1 ? `收多了 ${pctText(g)}` : '' }
@@ -248,7 +270,9 @@ function buy(d: Deal) {
             </div>
             <p v-if="!bag.length" class="small muted">{{ onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
             <ul class="plain list">
-              <li v-for="i in bag" :key="i.name" class="entry" :class="{ dim: i.price === null }">
+              <template v-for="g in bagGroups" :key="g.id">
+              <li class="group-head small">{{ g.name }}<span class="muted">{{ g.items.length }}</span></li>
+              <li v-for="i in g.items" :key="i.name" class="entry" :class="{ dim: i.price === null }">
                 <div class="row top">
                   <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
                   <strong class="grow">{{ i.name }}</strong>
@@ -256,7 +280,7 @@ function buy(d: Deal) {
                 </div>
                 <div class="small">
                   <span class="muted">{{ categoryName(s, i.name) }}</span>
-                  <span v-if="itemEffect(s, i.name)" class="effect">・{{ itemEffect(s, i.name) }}</span>
+                  <span v-if="itemEffect(s, i.name)" class="effect" :title="materialRecipesFull(i.name) || undefined">・{{ itemEffect(s, i.name) }}</span>
                 </div>
                 <div class="row actions">
                   <template v-if="i.price !== null">
@@ -271,6 +295,7 @@ function buy(d: Deal) {
                 </div>
                 <PriceSteps v-if="sellWhy === i.name && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
               </li>
+              </template>
             </ul>
           </section>
         </template>
@@ -329,6 +354,7 @@ function buy(d: Deal) {
 .item-row .haggle { padding: 0 8px 6px 46px; }
 .entry { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; display: grid; gap: 2px; background: var(--panel); }
 .entry.dim { opacity: 0.55; }
+.group-head { display: flex; gap: 6px; align-items: baseline; padding: 4px 2px 0; color: var(--accent-2); font-weight: 700; }
 .top { flex-wrap: nowrap; }
 .grow { flex: 1; min-width: 0; }
 .price { font-weight: 600; white-space: nowrap; text-align: right; }

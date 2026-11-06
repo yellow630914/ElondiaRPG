@@ -14,7 +14,7 @@
 import { attrOf, mod } from './character'
 import { adultScene, defeatAdultAllowed, defeatAlwaysOn, defeatCompanionAllowed } from './content'
 import { characterBody } from './look'
-import { combatRules, locationById, regionById, type AttrId, type Degree, type DefeatVillain } from './data'
+import { attrName, combatRules, locationById, regionById, type AttrId, type Degree, type DefeatVillain } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { addLewdStat } from './lewd'
 import { afterDefeat } from './grid'
@@ -23,6 +23,7 @@ import { characterFor, npcRecord } from './npcs'
 import { addCondition, isNoncombatant, pcOf } from './party'
 import { roll, withBonus, type Rng } from './rng'
 import type { Character, GameState, LewdStat, Report, TimelineEntry } from './types'
+import { rollBreakdown } from './rollParts'
 
 type Foe = { name: string; npcId?: string; defId?: string; traits?: string[]; hp: number; fled?: boolean; side: string }
 
@@ -109,7 +110,11 @@ export function rollDefeatEvent(state: GameState, rng: Rng, report: Report, foes
       seq, time: report.time.end, actor,
       // 魅力越高越容易引起敵人的興趣：總值達到 DC 時觸發
       action: hit ? `倒下之後：${mate ? `${mate.name}的` : ''}魅力引起了敵人的興趣` : `倒下之後：敵人沒有${mate ? `對${mate.name}` : ''}起意（魅力）`,
-      roll: { dice, value: res.total, dc }, result: hit ? 'success' : 'fail',
+      roll: {
+        dice, value: res.total, dc,
+        ...rollBreakdown(res.rolls[0]!, [{ label: attrName(r.check.attr), value: mod(attrOf(victim, r.check.attr)) }], { dcParts: [{ label: '基礎', value: r.check.dc }, { label: `戰鬥中高潮 ${climaxes} 次`, value: -climaxDcCut(climaxes) }] }),
+      },
+      result: hit ? 'success' : 'fail',
     }
     report.timeline = [...(report.timeline ?? []), entry]
     if (!hit) return false

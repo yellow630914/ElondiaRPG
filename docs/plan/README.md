@@ -16,7 +16,7 @@
 | [roadmap/](roadmap/) | ROADMAP 項目的細節計畫，以及[已完成](roadmap/COMPLETED.md)的紀錄 | 計畫內自己的編號（S、M、E……） | 一個 R 項目細節太多時另開一份，只寫還沒做的部分 |
 | [ideas/](ideas/README.md) | 點子庫（依來源分成不同文件） | I | **還沒決定要不要做**的構想 |
 
-`roadmap/` 目前有：[WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md)（R11）、[EAST_CONTINENT_PLAN](roadmap/EAST_CONTINENT_PLAN.md)、[EAST_CONTENT_PLAN](roadmap/EAST_CONTENT_PLAN.md)（R15，已完成，留作設計紀錄）、[MATERIALS_PLAN](roadmap/MATERIALS_PLAN.md)（R24）、[QOL2_PLAN](roadmap/QOL2_PLAN.md)（R25）、[COMPLETED](roadmap/COMPLETED.md)（已完成）。
+`roadmap/` 目前有：[WORLD_EDITOR_PLAN](roadmap/WORLD_EDITOR_PLAN.md)（R11）、[EAST_CONTINENT_PLAN](roadmap/EAST_CONTINENT_PLAN.md)、[EAST_CONTENT_PLAN](roadmap/EAST_CONTENT_PLAN.md)（R15，已完成，留作設計紀錄）、[COMPLETED](roadmap/COMPLETED.md)（已完成）。
 
 ## 2. 流程
 

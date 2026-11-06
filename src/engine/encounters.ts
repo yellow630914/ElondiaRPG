@@ -4,8 +4,7 @@
 // 2. 沒被發現：悄悄避開、偷襲（戰鬥先手）、或主動現身（應對檢定 +2）。
 //    被發現：蒙混（魅力）、威嚇（力量，依雙方等級修正）、付過路費、或開戰。
 
-import { checkBonus } from './perks'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { snapshot } from './character'
 import { locationById, population, regionById, type Degree } from './data'
 import { startCombat, type CombatState } from './combat'
 import { currentArea } from './grid'
@@ -16,6 +15,7 @@ import { isHostile, peopleHere } from './population'
 import { roll, withBonus } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { GameState, NpcRecord, Report, Standoff } from './types'
+import { checkParts, rollBreakdown, sumParts } from './rollParts'
 
 function eventReport(state: GameState, summary: string, result: Report['outcome']['result'], minutes = 5): Report {
   const area = currentArea(state)
@@ -60,8 +60,8 @@ export function checkHostiles(state: GameState): Report | undefined {
   const maxLevel = Math.max(...foes.map((r) => r.level))
   const dc = 10 + Math.floor(maxLevel / 2) + (foes.length - 1)
   const pc = pcOf(state)
-  const bonus = mod(attrOf(pc, 'dex')) + proficiency(pc.level) + checkBonus(pc, { context: 'stealth', attr: 'dex' })
-  const dice = withBonus('1d20', bonus)
+  const parts = checkParts(pc, { context: 'stealth', attr: 'dex' })
+  const dice = withBonus('1d20', sumParts(parts))
   const r = withRng(state, (rng) => roll(rng, dice))
   const detected = r.total < dc
   const demand = population.hostility.toll_per_level * foes.reduce((s, f) => s + f.level, 0)
@@ -76,7 +76,11 @@ export function checkHostiles(state: GameState): Report | undefined {
   report.others = foes.map((f) => ({ id: f.id, name: f.name, level: f.level }))
   report.timeline = [{
     seq: 1, time: report.time.start, actor: 'pc', action: '靈巧檢定・潛行',
-    roll: { dice, value: r.total, dc }, result: detected ? 'fail' : 'success',
+    roll: {
+      dice, value: r.total, dc,
+      ...rollBreakdown(r.rolls[0]!, parts, { dcParts: [{ label: '基礎', value: 10 }, { label: '對方最高等級 ÷ 2', value: Math.floor(maxLevel / 2) }, { label: '多出來的人數', value: foes.length - 1 }] }),
+    },
+    result: detected ? 'fail' : 'success',
   }]
   return commitReport(state, report)
 }

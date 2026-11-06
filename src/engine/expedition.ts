@@ -2,9 +2,8 @@
 // 戰敗時依這個存檔的規則（options.defeatLoot）失去一部分。離開地下城（啟程旅行）就算帶出去了。
 // 不在安全房也可以緊急撤退：檢定成功直接回到入口，失敗被追上打一場，打贏才撤得出去。
 
-import { checkBonus } from './perks'
 import mapsJson from '@data/world/maps.json'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { attrOf, snapshot } from './character'
 import { computeDegree, naturalCritOnly } from './checks'
 import { DUNGEON_LAYER_IDS, dungeonEncounters, locationById, regionById, type DungeonLayerId } from './data'
 import { inDarkness } from './light'
@@ -13,6 +12,7 @@ import type { Area } from './grid'
 import { withBonus, type Rng } from './rng'
 import type { DefeatLoot, GameState, ItemDelta, Report } from './types'
 import { gameRule } from './gameRules'
+import { checkParts, rollBreakdown, sumParts } from './rollParts'
 
 interface RetreatRules {
   attr: 'dex'
@@ -128,14 +128,15 @@ export function attemptRetreat(state: GameState, area: Area, safe: boolean): Ret
     const table = dungeonEncounters[loc.id]?.[LAYER_IDS[layer] ?? 'shallow'] ?? []
     return { natural, rolled: table.length ? rng.pick(table) : undefined }
   })
-  const modifier = mod(attrOf(guide, r.attr)) + proficiency(guide.level) + checkBonus(guide, { context: 'retreat', attr: r.attr })
+  const parts = checkParts(guide, { context: 'retreat', attr: r.attr })
+  const modifier = sumParts(parts)
   const total = natural + modifier
   const degree = computeDegree(natural, total, dc, naturalCritOnly(state))
   const ok = degree === 'success' || degree === 'critical'
   report.check = { action: '撤出地下城', attr: r.attr, base_dc: dc, dc, natural, modifier, total, degree, source: 'rules' }
   report.timeline = [{
     seq: 1, time: start, actor: guide.id, action: `${guide.name}帶路撤退（靈巧檢定）`,
-    roll: { dice: withBonus('1d20', modifier), value: total, dc }, result: ok ? 'success' : 'fail',
+    roll: { dice: withBonus('1d20', modifier), value: total, dc, ...rollBreakdown(natural, parts) }, result: ok ? 'success' : 'fail',
   }]
   if (ok) {
     report.outcome.summary = `${guide.name}帶著大家避開魔物，從${area.name}撤出${loc.name}，花了大約 ${hours} 小時。`

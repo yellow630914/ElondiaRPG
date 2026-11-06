@@ -1,7 +1,7 @@
 // 在酒館打聽（P2；docs/TRAVEL_EVENTS.md 第 5.1 節）：請一輪酒、擲魅力檢定，揭露這個地區線索池裡隱藏的線索。
 // 成功 1 則、大成功（自然 20 或超過 DC 10 以上）2 則；失敗只花了酒錢。同一間酒館一天一次，花 1 小時。
 
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { snapshot } from './character'
 import { naturalCritOnly } from './checks'
 import { formatMoney } from './money'
 import { currentArea, currentCell } from './grid'
@@ -12,6 +12,7 @@ import { checkModifiers, modifierNote } from './perks'
 import { roll, withBonus } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import type { GameState, Report } from './types'
+import { attrParts, rollBreakdown, sumParts } from './rollParts'
 
 /** 請一輪酒的錢 */
 export const ASK_COST = 15
@@ -43,7 +44,8 @@ export function askAround(state: GameState): Report {
   const loc = locationById(state.location)
   const start = { ...state.time }
   const extra = checkModifiers(pc, { context: 'action', attr: 'cha' })
-  const dice = withBonus('1d20', mod(attrOf(pc, 'cha')) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+  const parts = [...attrParts(pc, 'cha'), ...extra]
+  const dice = withBonus('1d20', sumParts(parts))
   const r = withRng(state, (rng) => roll(rng, dice))
   const natural = r.rolls[0] ?? r.total
   const ok = natural === 20 || (natural !== 1 && r.total >= ASK_DC)
@@ -57,7 +59,7 @@ export function askAround(state: GameState): Report {
     time: { start, end: addHours(start, 1) },
     location: { at: state.location, region: loc.region, scene: `${loc.name}的酒館` },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    timeline: [{ seq: 1, time: start, actor: pc.id, action: `魅力檢定・在酒館打聽消息${modifierNote(extra)}`, roll: { dice, value: r.total, dc: ASK_DC }, result: ok ? 'success' : 'fail' }],
+    timeline: [{ seq: 1, time: start, actor: pc.id, action: `魅力檢定・在酒館打聽消息${modifierNote(extra)}`, roll: { dice, value: r.total, dc: ASK_DC, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }],
     outcome: {
       result: ok ? 'success' : 'failure',
       summary: `你在${loc.name}的酒館請了一輪酒（${formatMoney(ASK_COST)}），向酒客們打聽最近的消息。${found.length

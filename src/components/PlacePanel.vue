@@ -12,6 +12,7 @@ import { canNegotiate } from '@/engine/negotiation'
 import { canAcceptRank, guildQuests, questSpot, questTemplate, templeCost } from '@/engine/town'
 import { examOffer, examQuest, examsFirst, isExam, promotionStatus } from '@/engine/guild'
 import { canTurnIn, deliverable, isCollectQuest, isMaterialQuest, layerName, questProgressText, rewardFor } from '@/engine/materialQuests'
+import { arrangeBoard, BOARD_SORT_NAME, parseBoardView, QUEST_GROUP_NAME, rankTooLow, type BoardSort, type BoardView, type QuestGroup } from '@/engine/questBoard'
 import { bestTool } from '@/engine/tools'
 import type { Quest } from '@/engine/types'
 import { reachable } from '@/engine/world'
@@ -215,9 +216,40 @@ function onExtra(id: string) {
 }
 // 公會的選單：委託板在對話框裡
 const showBoard = ref(false)
+// 委託板的篩選與排序（questBoard.ts）：上次選的記在瀏覽器裡
+const BOARD_VIEW_KEY = 'elondia.questBoard'
+function recallBoardView(): BoardView {
+  try {
+    return parseBoardView(JSON.parse(localStorage.getItem(BOARD_VIEW_KEY) ?? '{}'))
+  } catch {
+    return parseBoardView({})
+  }
+}
+const boardView = ref<BoardView>(recallBoardView())
+watch(boardView, (v) => {
+  try {
+    localStorage.setItem(BOARD_VIEW_KEY, JSON.stringify(v))
+  } catch {
+    // 瀏覽器不給存：只是下次不記得
+  }
+}, { deep: true })
+const BOARD_AREAS = Object.entries(AREA_NAME) as [Quest['area'], string][]
+const BOARD_GROUPS = Object.entries(QUEST_GROUP_NAME) as [QuestGroup, string][]
+const BOARD_SORTS = Object.entries(BOARD_SORT_NAME) as [BoardSort, string][]
+const board = computed(() => arrangeBoard(s.value, quests.value, boardView.value))
+// 收起來的階級不足委託：點了才展開（每次打開委託板都先收起）
+const showLowRank = ref(false)
+watch(showBoard, (open) => { if (open) showLowRank.value = false })
+type BoardRow = { q: Quest; low?: boolean } | { toggle: number }
+const boardRows = computed<BoardRow[]>(() => [
+  ...board.value.shown.map((q) => ({ q })),
+  ...(board.value.hidden.length ? [{ toggle: board.value.hidden.length }] : []),
+  ...(showLowRank.value ? board.value.hidden.map((q) => ({ q, low: true })) : []),
+])
+const filtered = computed(() => !!boardView.value.area || !!boardView.value.group)
 const guildMenu = computed<MenuItem[]>(() => [{
   id: 'board', icon: 'scroll', label: '委託板',
-  detail: `${quests.value.filter((q) => q.status === 'available').length} 件可以接取${activeQuests.value.length ? `・進行中 ${activeQuests.value.length} 件` : ''}`,
+  detail: `${quests.value.filter((q) => q.status === 'available' && !rankTooLow(s.value, q)).length} 件可以接取${activeQuests.value.length ? `・進行中 ${activeQuests.value.length} 件` : ''}`,
   badge: quests.value.filter((q) => canTurnIn(s.value, q)).length ? `${quests.value.filter((q) => canTurnIn(s.value, q)).length} 件可交付` : quests.value.length,
   tone: quests.value.some((q) => canTurnIn(s.value, q)) ? 'gold' : undefined,
 }])
@@ -306,9 +338,37 @@ const shopDesc = computed(() => {
           <BuildingMenu :items="guildMenu" @pick="showBoard = true" />
           <AppDialog :open="showBoard" title="委託板" icon="scroll" width="900px" @close="showBoard = false">
           <template #head><Hint text="委託板每天更新，沒人接的委託會撤下換新（談過報酬的會保留）。" /></template>
+          <div class="board-filter small">
+            <select v-model="boardView.onlyOpen" aria-label="顯示哪些委託">
+              <option :value="true">可以接的</option>
+              <option :value="false">全部</option>
+            </select>
+            <select v-model="boardView.area" aria-label="地點">
+              <option value="">所有地點</option>
+              <option v-for="[id, name] in BOARD_AREAS" :key="id" :value="id">{{ name }}</option>
+            </select>
+            <select v-model="boardView.group" aria-label="類型">
+              <option value="">所有類型</option>
+              <option v-for="[id, name] in BOARD_GROUPS" :key="id" :value="id">{{ name }}</option>
+            </select>
+            <select v-model="boardView.sort" aria-label="排序">
+              <option v-for="[id, name] in BOARD_SORTS" :key="id" :value="id">{{ name }}</option>
+            </select>
+            <Hint text="已接下、可以交付的委託固定排在最上面。「可以接的」會把階級不足的委託收到最下面，點一下才展開；選擇會記在這個瀏覽器裡。" />
+          </div>
           <ul class="plain board">
             <li v-if="quests.length === 0" class="muted small">目前沒有委託。</li>
-            <li v-for="q in quests" :key="q.id">
+            <li v-else-if="boardRows.length === 0" class="muted small">
+              沒有符合的委託。<button v-if="filtered" class="small" @click="boardView.area = ''; boardView.group = ''">清除篩選</button>
+            </li>
+            <template v-for="row in boardRows" :key="'toggle' in row ? 'low-rank' : row.q.id">
+            <li v-if="'toggle' in row" class="low-toggle">
+              <button class="small ghost" :aria-expanded="showLowRank" @click="showLowRank = !showLowRank">
+                <GameIcon :name="showLowRank ? 'down' : 'right'" :size="12" />{{ showLowRank ? '收起' : '還有' }} {{ row.toggle }} 個階級不足的委託
+              </button>
+            </li>
+            <li v-else :class="{ low: row.low }">
+            <template v-for="q in [row.q]" :key="q.id">
               <div><span class="tag" :class="{ hot: isExam(q) }">{{ isExam(q) ? `晉升 ${q.rank}` : q.rank }}</span> <span class="tag">{{ AREA_NAME[q.area] }}</span> {{ q.title }}<span v-if="isExam(q) && q.giver !== s.location" class="small muted">（{{ locationById(q.giver).name }}公會）</span></div>
               <div class="small muted">
                 報酬 {{ formatMoney(q.reward_cc) }}<template v-if="isMaterialQuest(q) && (q.max ?? q.goal) > q.goal">（可以過量交付到 {{ q.max }}{{ isCollectQuest(q) ? ' 份' : ' 次' }}，報酬依比例增加）</template>
@@ -340,7 +400,9 @@ const shopDesc = computed(() => {
                 @click="game.startNegotiation('quest_reward', { quest: q.id })"
               >談判報酬</button>
               <span v-else-if="q.flags?.negotiated" class="small muted">（已談過報酬）</span>
+            </template>
             </li>
+            </template>
           </ul>
           </AppDialog>
         </template>
@@ -469,6 +531,15 @@ const shopDesc = computed(() => {
 .guild-rank .hot { color: var(--accent); }
 .board > li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding: 10px 4px; }
 .board > li > div { flex-basis: 100%; }
+.board > li.low { opacity: 0.7; }
+.board > li.low-toggle { padding: 6px 4px; }
+.board-filter { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.board-filter select { flex: 0 1 auto; min-width: 0; }
+/* 手機版：四個下拉選單擠在同一行，選項文字放不下時截斷 */
+@media (max-width: 600px) {
+  .board-filter { gap: 4px; }
+  .board-filter select { flex: 1 1 0; padding-left: 4px; padding-right: 2px; font-size: var(--fs-xs); text-overflow: ellipsis; }
+}
 .tag.hot { border-color: var(--accent); color: var(--accent); }
 .lock-methods { display: flex; flex-wrap: wrap; gap: 4px; }
 .qty { width: 56px; }

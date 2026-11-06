@@ -6,7 +6,7 @@
 // 兩種做法的結果都套用同一張結果表；部分成功時可以再談一次（最多 max_attempts 次）。
 
 import { checkModifiers, modifierNote } from './perks'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { snapshot } from './character'
 import { computeDegree, DEGREE_NAME, naturalCritOnly } from './checks'
 import {
   actionRules, ATTR_IDS, attrName, locationById, negotiationRules, regionById,
@@ -22,6 +22,7 @@ import { currentCell } from './grid'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { expandTokens, shopKey, shopState } from './trade'
 import type { CheckInfo, GameState, Negotiation, NegotiationOption, Quest, Report } from './types'
+import { attrParts, rollBreakdown, sumParts } from './rollParts'
 
 const RANKS = ['F', 'E', 'D', 'C', 'B', 'A', 'S']
 
@@ -174,7 +175,8 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   const natural = withRng(state, (rng) => roll(rng, '1d20').total)
   // 非戰鬥狀態與特質（對方的標籤也算）
   const extra = checkModifiers(pc, { context: 'negotiation', attr: o.attr, vsTags: npcRecord(state, n.counterpart)?.tags ?? [] })
-  const modifier = mod(attrOf(pc, o.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0)
+  const parts = [...attrParts(pc, o.attr), ...extra]
+  const modifier = sumParts(parts)
   const total = natural + modifier
   const degree = computeDegree(natural, total, o.dc, naturalCritOnly(state))
   const report = negotiationReport(state, n, actionRules.kinds.negotiation.hours)
@@ -183,7 +185,7 @@ export function chooseOption(state: GameState, id: string, optionId: string): Re
   report.check = check
   report.timeline = [{
     seq: 1, time: report.time.start, actor: 'pc', action: `${o.label}${modifierNote(extra)}`, target: n.counterpart,
-    roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc: o.dc }, result: degree,
+    roll: { dice: `1d20${modifier >= 0 ? '+' : ''}${modifier}`, value: total, dc: o.dc, ...rollBreakdown(natural, parts) }, result: degree,
   }]
   report.narration = { ...report.narration, player_intent: o.label }
   const text = applyNegotiationOutcome(state, report, id, degree)

@@ -4,7 +4,6 @@
 
 import { gameRule } from './gameRules'
 import { abilities, attrName, lewdRules, masterEventPool, npcs as namedNpcs, type AbilityDef, type Degree, type MasterEventDef } from './data'
-import { attrOf, mod, proficiency } from './character'
 import { naturalCritOnly } from './checks'
 import { applyEffects, teachAbility } from './effects'
 import { lewdOf, npcLewd } from './lewd'
@@ -18,6 +17,7 @@ import { addMemory } from './social'
 import { commitReport, withRng } from './state'
 import { baseReport } from './town'
 import type { Character, GameState, NpcRecord, PendingMasterEvent, Report } from './types'
+import { attrParts, rollBreakdown, sumParts } from './rollParts'
 
 const rules = () => lewdRules.brothel
 
@@ -207,13 +207,14 @@ export function proposeWork(state: GameState, id: string): Report {
   const pc = pcOf(state)
   const dc = proposeDc(state, m)
   const extra = checkModifiers(pc, { context: 'action', kind: 'flatter', attr: r.attr, vsTags: npcRecord(state, m.id)?.tags ?? [] })
-  const dice = withBonus('1d20', mod(attrOf(pc, r.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+  const parts = [...attrParts(pc, r.attr), ...extra]
+  const dice = withBonus('1d20', sumParts(parts))
   const res = withRng(state, (rng) => roll(rng, dice))
   const natural = res.rolls?.[0]
   const fumble = natural === 1 || (!naturalCritOnly(state) && res.total <= dc - 10)
   const ok = res.total >= dc
   const report = baseReport(state, 'action', 0.25)
-  report.timeline = [{ seq: 1, time: { ...state.time }, actor: pc.id, action: `提議${m.name}去娼館接客${modifierNote(extra)}`, roll: { dice, value: res.total, dc }, result: ok ? 'success' : 'fail' }]
+  report.timeline = [{ seq: 1, time: { ...state.time }, actor: pc.id, action: `提議${m.name}去娼館接客${modifierNote(extra)}`, roll: { dice, value: res.total, dc, ...rollBreakdown(res.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }]
   report.outcome.result = ok ? 'success' : 'failure'
   if (ok) {
     ;(state.workConsent ??= {})[m.id] = state.time.day

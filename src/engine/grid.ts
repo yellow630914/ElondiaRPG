@@ -6,11 +6,11 @@
 //   有戰爭迷霧；離開後重新進入會重新生成（近郊每天換一次）。
 // 走進格子會觸發內容：遭遇（戰鬥）、陷阱（檢定）、資源（採集）等；設施與樓梯等需要在格子上選擇動作。
 
-import { checkBonus, checkModifiers, modifierNote } from './perks'
+import { checkModifiers, modifierNote } from './perks'
 import { condMet } from './storyFlags'
 import { sceneShown } from './landmarks'
 import mapsJson from '@data/world/maps.json'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { attrOf, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
   attrName, contentRevision, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
@@ -40,6 +40,7 @@ import { bestTool } from './tools'
 import { addHours, advanceTime, commitReport, newReportId, player, withRng } from './state'
 import type { Character, GameState, GameTime, Quest, Report } from './types'
 import { gameRule, rewardMoney } from './gameRules'
+import { attrParts, checkParts, rollBreakdown, sumParts } from './rollParts'
 
 export type CellKind =
   | 'floor' | 'wall' | 'water'
@@ -1317,7 +1318,8 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   const scout = [...state.party].filter((m) => m.hp > 0).sort((a, b) => attrOf(b, 'dex') - attrOf(a, 'dex'))[0] ?? player(state)
   const before = state.party.map((m) => ({ ...m }))
   const tool = bestTool(state, 'trap')
-  const dice = withBonus('1d20', mod(attrOf(scout, 'dex')) + proficiency(scout.level) + (tool?.bonus ?? 0) + checkBonus(scout, { context: 'trap', attr: 'dex' }))
+  const parts = [...checkParts(scout, { context: 'trap', attr: 'dex' }), ...(tool ? [{ label: tool.name, value: tool.bonus }] : [])]
+  const dice = withBonus('1d20', sumParts(parts))
   const r = withRng(state, (rng) => roll(rng, dice))
   // 黑暗又沒有光：更難察覺
   const dark = inDarkness(state, area)
@@ -1337,7 +1339,11 @@ function springTrap(state: GameState, area: Area, loc: Location): Report {
   report.kind = 'event'
   report.timeline = [{
     seq: 1, actor: scout.id, action: `靈巧檢定・察覺陷阱${tool ? `（${tool.name} +${tool.bonus}）` : ''}${dark ? '（一片漆黑）' : ''}`,
-    roll: { dice, value: r.total, dc }, result: success ? 'success' : 'fail', effects,
+    roll: {
+      dice, value: r.total, dc,
+      ...rollBreakdown(r.rolls[0]!, parts, dark ? { dcParts: [{ label: '陷阱', value: spec.trap_dc }, { label: '一片漆黑', value: lightingRules.dark.trap_dc }] } : {}),
+    },
+    result: success ? 'success' : 'fail', effects,
   }]
   report.party = state.party.map((m, i) => snapshot(m, before[i], player(state)))
   report.outcome = {
@@ -1398,13 +1404,14 @@ function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod
   const tool = method === 'dex' ? bestTool(state, 'lockpick') : undefined
   const dc = cell.lock!
   const extra = checkModifiers(picker, { context: 'lock', attr: method })
-  const dice = withBonus('1d20', mod(attrOf(picker, method)) + proficiency(picker.level) + (tool?.bonus ?? 0) + extra.reduce((s, x) => s + x.value, 0))
+  const parts = [...attrParts(picker, method), ...(tool ? [{ label: tool.name, value: tool.bonus }] : []), ...extra]
+  const dice = withBonus('1d20', sumParts(parts))
   const r = withRng(state, (rng) => roll(rng, dice))
   const natural = r.rolls[0] ?? 10
   const success = natural === 20 || (natural !== 1 && r.total >= dc)
   const entry = {
     seq: 1, actor: picker.id, action: `${attrName(method)}檢定・${how.name}${tool ? `（${tool.name} +${tool.bonus}）` : ''}${modifierNote(extra)}`,
-    roll: { dice, value: r.total, dc }, result: success ? 'success' as const : 'fail' as const,
+    roll: { dice, value: r.total, dc, ...rollBreakdown(natural, parts) }, result: success ? 'success' as const : 'fail' as const,
   }
   if (!success) {
     report.timeline = [entry]

@@ -1,8 +1,7 @@
 // 衛兵警戒、通緝、罰金與聲望（見 docs/NPC_SYSTEM.md 第 9 節，規則在 data/rules/security.json）。
 
-import { checkModifiers } from './perks'
 import securityJson from '@data/rules/security.json'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { snapshot } from './character'
 import { economy, geography, locationById, regionById, skillName, type AttrId, type SkillId } from './data'
 import { formatMoney } from './money'
 import { pcOf } from './party'
@@ -11,6 +10,7 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import type { GameState, Report } from './types'
 import { gameRule } from './gameRules'
 import { pcTagEffect } from './pcTags'
+import { checkParts, rollBreakdown, sumParts } from './rollParts'
 
 export const securityRules = securityJson as unknown as {
   alert: { max: number; decay_days: number; gate_dc_base: number; gate_dc_per_level: number }
@@ -184,8 +184,8 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
   const pc = pcOf(state)
   // 應付盤查的方式（檢定分類，docs/ACTIONS.md 第 2 節）：講道理亮身分（說服）、說謊（欺瞞）、混在人群裡（潛行），挑總值最高的
   const ways = GATE_WAYS.map((w) => {
-    const extra = checkModifiers(pc, { context: 'gate', attr: w.attr, skill: w.skill })
-    return { ...w, bonus: mod(attrOf(pc, w.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0) }
+    const parts = checkParts(pc, { context: 'gate', attr: w.attr, skill: w.skill })
+    return { ...w, parts, bonus: sumParts(parts) }
   })
   const way = ways.reduce((a, b) => (b.bonus > a.bonus ? b : a))
   const attr = way.attr
@@ -202,7 +202,11 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
   )
   report.timeline = [{
     seq: 1, time: report.time.start, actor: 'pc', action: `${skillName(way.skill)}檢定（${attr === 'dex' ? '靈巧' : '魅力'}）・城門盤查（警戒 ${level}）`,
-    roll: { dice, value: r.total, dc }, result: ok ? 'success' : 'fail',
+    roll: {
+      dice, value: r.total, dc,
+      ...rollBreakdown(r.rolls[0]!, way.parts, { dcParts: [{ label: '基礎', value: securityRules.alert.gate_dc_base }, { label: `警戒 ${level}`, value: securityRules.alert.gate_dc_per_level * level }] }),
+    },
+    result: ok ? 'success' : 'fail',
   }]
   commitReport(state, report)
   return ok
@@ -247,8 +251,8 @@ export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Re
   const loc = locationById(state.location)
   assertMayPersuadePalace(state)
   const pc = pcOf(state)
-  const extra = checkModifiers(pc, { context: 'gate', kind: 'palace_gate', attr: 'cha' })
-  const dice = withBonus('1d20', mod(attrOf(pc, 'cha')) + proficiency(pc.level) + extra.reduce((sum, x) => sum + x.value, 0))
+  const parts = checkParts(pc, { context: 'gate', kind: 'palace_gate', attr: 'cha' })
+  const dice = withBonus('1d20', sumParts(parts))
   const dc = palacePersuadeDc(state)
   const r = withRng(state, (rng) => roll(rng, dice))
   const fumble = r.rolls[0] === 1
@@ -256,7 +260,7 @@ export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Re
   const report = securityReport(state, settlePalacePersuasion(state, ok, fumble, palaceName), ok ? 'success' : 'failure', `${loc.name}・${palaceName}的大門`)
   report.timeline = [{
     seq: 1, time: report.time.start, actor: 'pc', action: `說服檢定（魅力）・說服${palaceName}的衛兵`,
-    roll: { dice, value: r.total, dc }, result: ok ? 'success' : fumble ? 'fumble' : 'fail',
+    roll: { dice, value: r.total, dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : fumble ? 'fumble' : 'fail',
   }]
   return commitReport(state, report)
 }

@@ -6,8 +6,7 @@
 // - 途經的地點與目的地各有一格；走到目的地才產生整趟旅程的旅行報告（花費、時間軸）。
 // - 事件的結果可以帶進臨時地圖（side_map，出口回到原本的地方），或改去別的地點（travel_to）。
 
-import { checkBonus } from './perks'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { attrOf, snapshot } from './character'
 import { startCombat } from './combat'
 import { enemies, locationById, regionById, slaveryRules, specialMaps, stories, wildEncounters, type AttrId, type CheckContext, type SkillId, type LocationType, type RouteMode, type StoryCheck, type StoryCond, type StoryOutcome } from './data'
 import { affordable, applyEffects } from './effects'
@@ -25,9 +24,9 @@ import { applyTimeJump, type DayPart } from './timeOfDay'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { addCounters, condMet, flagKey, openFor } from './storyFlags'
 import { gateCheck } from './security'
-import { toolBonus } from './tools'
 import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
-import type { GameState, Report, RoadState, TimelineEntry } from './types'
+import type { GameState, Report, RollPart, RoadState, TimelineEntry } from './types'
+import { checkParts, rollBreakdown, sumParts, toolParts } from './rollParts'
 import { pcBodyAllowed, tagsAllowed, type ContentTag } from './content'
 import { characterBody } from './look'
 import type { Body } from './traits'
@@ -324,9 +323,9 @@ function spendDay(state: GameState, road: RoadState, cell: Cell) {
 }
 
 /** 隊伍裡最擅長這個屬性的人的檢定修正 */
-function bestBonus(state: GameState, attr: AttrId, context: 'road' | 'action', also?: CheckContext[], skill?: SkillId): { name: string; bonus: number } {
+function bestBonus(state: GameState, attr: AttrId, context: 'road' | 'action', also?: CheckContext[], skill?: SkillId): { name: string; parts: RollPart[] } {
   const best = [...state.party].filter((m) => m.hp > 0).sort((a, b) => attrOf(b, attr) - attrOf(a, attr))[0] ?? pcOf(state)
-  return { name: best.name, bonus: mod(attrOf(best, attr)) + proficiency(best.level) + checkBonus(best, { context, attr, also, ...(skill ? { skill } : {}) }) }
+  return { name: best.name, parts: checkParts(best, { context, attr, also, ...(skill ? { skill } : {}) }) }
 }
 
 /** 事件的檢定：隊伍裡最擅長那個屬性的人來擲。旅途上另加旅途類工具；城鎮事件（scope town）照主動行動算 */
@@ -335,10 +334,11 @@ export function roll(state: GameState, check: StoryCheck, natural: number, scope
   const best = bestBonus(state, check.attr, scope === 'town' ? 'action' : 'road', scope === 'road' ? ['travel'] : undefined, check.skill)
   const name = best.name
   // 旅途類的工具（地圖、指南針）讓旅途事件的檢定容易一點
-  const bonus = best.bonus + (scope === 'town' ? 0 : toolBonus(state, 'travel'))
+  const parts = [...best.parts, ...(scope === 'town' ? [] : toolParts(state, 'travel'))]
+  const bonus = sumParts(parts)
   const total = natural + bonus
   const ok = natural === 20 || (natural !== 1 && total >= check.dc)
-  return { ok, entry: { time: { ...state.time }, actor: 'pc', action: `${name}的檢定`, roll: { dice: `1d20${bonus >= 0 ? '+' : ''}${bonus}`, value: total, dc: check.dc }, result: ok ? 'success' : 'fail' } }
+  return { ok, entry: { time: { ...state.time }, actor: 'pc', action: `${name}的檢定`, roll: { dice: `1d20${bonus >= 0 ? '+' : ''}${bonus}`, value: total, dc: check.dc, ...rollBreakdown(natural, parts) }, result: ok ? 'success' : 'fail' } }
 }
 
 /** 旅途上現在最靠近的地點：這一段路的起點 */

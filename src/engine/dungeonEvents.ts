@@ -5,7 +5,7 @@
 // - 事件發生在主角身上：選項的檢定由主角自己擲（不是隊伍裡最擅長的人）。
 
 import { gameRule } from './gameRules'
-import { attrOf, mod, proficiency, snapshot } from './character'
+import { snapshot } from './character'
 import { pcBodyAllowed, tagsAllowed } from './content'
 import { locationById, regionById } from './data'
 import { currentArea, type Area } from './grid'
@@ -19,6 +19,7 @@ import { condMet } from './storyFlags'
 import { dayPartOk } from './timeOfDay'
 import type { GameState, GameTime, Report } from './types'
 import { roll as diceRoll, withBonus } from './rng'
+import { attrParts, rollBreakdown, sumParts } from './rollParts'
 
 const hoursOf = (t: GameTime) => t.day * 24 + (t.hour ?? 0) + (t.minute ?? 0) / 60
 
@@ -213,12 +214,13 @@ export function resolvePcOption(state: GameState, report: Report, t: RoadTemplat
   let ok = true
   if (o.check) {
     const extra = checkModifiers(pc, { context: 'action', attr: o.check.attr, ...(o.check.skill ? { skill: o.check.skill } : {}) })
-    const dice = withBonus('1d20', mod(attrOf(pc, o.check.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+    const parts = [...attrParts(pc, o.check.attr), ...extra]
+    const dice = withBonus('1d20', sumParts(parts))
     const r = withRng(state, (rng) => diceRoll(rng, dice))
     const natural = r.rolls[0] ?? r.total
     const dc = eventDc(state, t, o.check.dc)
     ok = natural === 20 || (natural !== 1 && r.total >= dc)
-    report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${t.title}：${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc }, result: ok ? 'success' : 'fail' }]
+    report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${t.title}：${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }]
   }
   const lines = [`${t.text}你選擇${o.label}。`, ...applyRoadOutcome(state, report, ok ? o.success : o.fail)]
   report.outcome = { result: o.check ? (ok ? 'success' : 'failure') : 'neutral', summary: lines.join(''), tags: [tag] }

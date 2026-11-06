@@ -21,6 +21,11 @@ const game = useGame()
 const settings = useSettings()
 const s = computed(() => game.state!)
 const aiOn = computed(() => settings.judgesWithAi())
+// 規則判定時自由行動固定用魅力（actions.json 的 free.attr），不看寫的內容：在標題旁提醒（docs/ACTIONS.md 第 1 節）
+const freeAttr = attrName(actionRules.kinds.free.attr)
+const ruleNote = computed(() => (settings.ready('judge')
+  ? `規則判定：自由行動一律用${freeAttr}檢定，不看你寫的內容。想依內容判斷屬性（力量、靈巧……）與檢定分類，點旁邊的「規則判定」打開 AI 判定。`
+  : `規則判定：自由行動一律用${freeAttr}檢定，不看你寫的內容。想依內容判斷屬性（力量、靈巧……）與檢定分類，要先在設定裡設好模型來源，再打開 AI 判定。`))
 /** 有行動等待判定、正在判定，或要先刻印 */
 const busy = computed(() => !!s.value.pendingAction || !!s.value.pendingMark || game.judging)
 
@@ -125,6 +130,7 @@ function unmark(target: string) {
         <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
       </h3>
       <JudgeToggle />
+      <Hint v-if="!aiOn" warn :text="ruleNote" :width="300" />
       <button v-if="isMobile" type="button" class="ghost small fold" aria-label="收起主動行動" @click="expanded = false"><GameIcon name="down" :size="14" /></button>
       <select v-model="pick" class="target" title="對象" :disabled="targets.length >= maxTargets" @change="addTarget">
         <option value="">{{ !targets.length ? '（沒有特定對象）' : targets.length >= maxTargets ? `已選 ${maxTargets} 人` : '＋ 再加一位對象' }}</option>

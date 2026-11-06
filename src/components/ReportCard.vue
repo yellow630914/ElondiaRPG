@@ -6,7 +6,7 @@ import { itemRarity } from './items/itemInfo'
 import { locationName } from '@/engine/data'
 import { formatTime } from '@/engine/state'
 import type { Report } from '@/engine/types'
-import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens } from '@/narrator/describe'
+import { actorNames, describeChanges, describeCheck, describeEntry, formatTokens, rollDetail } from '@/narrator/describe'
 import { narrationParagraphs } from '@/narrator/paragraphs'
 import { streamingView } from '@/narrator/regex'
 import { usePrompts } from '@/stores/prompts'
@@ -34,6 +34,15 @@ const undoSteps = computed(() => {
 })
 function undoHere() {
   if (confirm(undoConfirmText(undoSteps.value))) game.undo(props.report.report_id)
+}
+
+// 經過的每一行：有加值拆解的擲骰，滑鼠移上去看（title），點一下在下面展開（手機版沒有滑鼠提示）
+const openRolls = ref<Set<number>>(new Set())
+function toggleRoll(seq: number) {
+  const next = new Set(openRolls.value)
+  if (next.has(seq)) next.delete(seq)
+  else next.add(seq)
+  openRolls.value = next
 }
 
 const KIND: Record<Report['kind'], { name: string; icon: IconName }> = {
@@ -249,13 +258,27 @@ async function copyPrompt() {
     <div v-if="showBattleReport" class="battle-report">
       <h3 class="small">戰報</h3>
       <div class="small timeline">
-        <div v-for="t in report.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
+        <template v-for="t in report.timeline" :key="t.seq">
+          <div
+            v-if="rollDetail(t.roll)" class="roll-line" role="button" tabindex="0" :title="rollDetail(t.roll)" :aria-expanded="openRolls.has(t.seq)"
+            @click="toggleRoll(t.seq)" @keydown.enter.prevent="toggleRoll(t.seq)"
+          >{{ describeEntry(t, names) }}</div>
+          <div v-else>{{ describeEntry(t, names) }}</div>
+          <div v-if="openRolls.has(t.seq) && rollDetail(t.roll)" class="roll-detail">{{ rollDetail(t.roll) }}</div>
+        </template>
       </div>
     </div>
     <details v-else-if="report.timeline?.length" class="steps">
       <summary class="small">經過（{{ report.timeline.length }} 筆）</summary>
       <div class="small timeline">
-        <div v-for="t in report.timeline" :key="t.seq">{{ describeEntry(t, names) }}</div>
+        <template v-for="t in report.timeline" :key="t.seq">
+          <div
+            v-if="rollDetail(t.roll)" class="roll-line" role="button" tabindex="0" :title="rollDetail(t.roll)" :aria-expanded="openRolls.has(t.seq)"
+            @click="toggleRoll(t.seq)" @keydown.enter.prevent="toggleRoll(t.seq)"
+          >{{ describeEntry(t, names) }}</div>
+          <div v-else>{{ describeEntry(t, names) }}</div>
+          <div v-if="openRolls.has(t.seq) && rollDetail(t.roll)" class="roll-detail">{{ rollDetail(t.roll) }}</div>
+        </template>
       </div>
     </details>
     <div v-if="changes.length" ref="changesEl" class="row small changes" :class="{ crafting }">
@@ -368,6 +391,9 @@ async function copyPrompt() {
 .battle-report h3 { margin: 0 0 2px; }
 .battle-report .timeline { color: var(--text); }
 .timeline { display: grid; gap: 2px; padding: 6px 0; color: var(--muted); }
+.timeline .roll-line { cursor: help; text-decoration: underline dotted; text-decoration-color: color-mix(in srgb, currentColor 45%, transparent); text-underline-offset: 3px; }
+.timeline .roll-line:focus-visible { outline: 1px solid var(--accent); outline-offset: 2px; }
+.timeline .roll-detail { padding-left: 1em; font-size: var(--fs-xs); color: var(--accent); }
 .changes { margin: 8px 0 2px; gap: 5px; }
 /* 變化的標籤可能帶著 AI 寫的原因：允許換行，不要撐破卡片 */
 .changes .tag { white-space: normal; height: auto; }

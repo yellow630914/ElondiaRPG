@@ -7,7 +7,7 @@
 //   （紀錄與旗標清掉，之後再被寄生可以重來），失敗侵蝕度上升。
 // - 紋回來：刻印師把記下來的淫紋（被奴隸印記頂掉、或馴服後洗掉）與被淫紋蓋掉的刺青紋回去。
 
-import { attrOf, mod, proficiency, recalc } from './character'
+import { recalc } from './character'
 import { pcBodyAllowed, tagsAllowed } from './content'
 import { syncGear } from './gear'
 import { classes } from './data'
@@ -30,6 +30,7 @@ import { shopRefusal, tattooShopHere } from './tattooShop'
 import { baseReport } from './town'
 import { dayPartOk } from './timeOfDay'
 import type { GameState, GameTime, ParasiteState, Report } from './types'
+import { attrParts, rollBreakdown, sumParts } from './rollParts'
 
 /** 發作的時機：走動一步（城鎮、地下城、近郊、臨時地圖）、旅途的一天、長休之後 */
 export type ParasiteTrigger = 'step' | 'travel' | 'rest'
@@ -196,11 +197,12 @@ export function cureParasite(state: GameState, id: string): Report {
   report.location.scene = rule.name
   report.changes.money_cc = -terms.price
   const extra = checkModifiers(pc, { context: 'action', attr: rule.attr })
-  const dice = withBonus('1d20', mod(attrOf(pc, rule.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+  const parts = [...attrParts(pc, rule.attr), ...extra]
+  const dice = withBonus('1d20', sumParts(parts))
   const r = withRng(state, (rng) => diceRoll(rng, dice))
   const natural = r.rolls[0] ?? r.total
   const ok = natural === 20 || (natural !== 1 && r.total >= terms.dc)
-  report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${rule.name}：${def.name}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: terms.dc }, result: ok ? 'success' : 'fail' }]
+  report.timeline = [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `${rule.name}：${def.name}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: terms.dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }]
   const lines = [`花了 ${formatMoney(terms.price)} 請人解咒（${def.name}）。`]
   if (ok) {
     lines.push(`${detachParasite(pc, id)}。`)

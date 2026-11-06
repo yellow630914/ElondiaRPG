@@ -505,6 +505,14 @@ const moreStatuses = (c: Combatant) => (isMobile.value ? Math.max(0, c.statuses.
 /** 夾在敵我之間的紀錄：最新兩行 */
 const tickerLines = computed(() => rounds.value.flatMap((g) => g.lines).slice(-2).map((l) => l.text))
 const logOpen = ref(false)
+// 手機版的戰鬥紀錄：點一行展開擲骰的加值拆解（電腦版在滑鼠提示裡）
+const mobileRolls = ref<Set<string>>(new Set())
+function toggleMobileRoll(key: string) {
+  const next = new Set(mobileRolls.value)
+  if (next.has(key)) next.delete(key)
+  else next.add(key)
+  mobileRolls.value = next
+}
 const menuOpen = ref(false)
 
 // 長按（約 0.45 秒）看說明；手指移動就取消（讓捲動與左右滑照常）。長按後放開的那一下不算點擊
@@ -693,7 +701,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
     <div ref="log" class="log small">
       <div v-for="g in rounds" :key="g.key" class="round-group">
         <h4 v-if="g.round" class="round-head">第 {{ g.round }} 回合</h4>
-        <div v-for="(l, i) in g.lines" :key="i" class="line" :title="l.detail">
+        <div v-for="(l, i) in g.lines" :key="i" class="line" :class="{ rolled: !!l.roll }" :title="[l.roll, l.detail].filter(Boolean).join('\n') || undefined">
           <span v-if="l.live" class="die"><GameIcon name="d20" :size="12" /></span>
           {{ l.text }}
           <div v-for="(t, k) in l.targets ?? []" :key="k" class="sub" :title="t.detail">{{ t.text }}</div>
@@ -870,10 +878,11 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
       <div class="m-log small">
         <div v-for="g in rounds" :key="g.key">
           <h4 v-if="g.round" class="round-head">第 {{ g.round }} 回合</h4>
-          <div v-for="(l, i) in g.lines" :key="i" class="line">
+          <div v-for="(l, i) in g.lines" :key="`${g.key}-${i}`" class="line" @click="l.roll && toggleMobileRoll(`${g.key}-${i}`)">
             {{ l.text }}
             <div v-for="(t, k) in l.targets ?? []" :key="k" class="sub">{{ t.text }}</div>
             <div v-if="l.detail" class="muted detail">{{ l.detail }}</div>
+            <div v-if="l.roll && mobileRolls.has(`${g.key}-${i}`)" class="detail roll">{{ l.roll }}</div>
           </div>
         </div>
         <div v-if="played === 0" class="muted">戰鬥開始。</div>
@@ -975,6 +984,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .round-head { margin: 4px 0 2px; font-size: var(--fs-xs); font-weight: normal; color: var(--accent-2); letter-spacing: 0.1em; }
 .round-group:first-child .round-head { margin-top: 0; }
 .line { padding: 2px 0 2px 6px; border-bottom: 1px dotted #ffffff10; }
+.line.rolled { cursor: help; }
 .line[title] { cursor: help; }
 .line .sub { padding-left: 1.2em; color: var(--muted); }
 /* 擲骰：d20 翻滾 0.3 秒，接著那一行的字才出來 */
@@ -1063,6 +1073,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
 .m-log .line { padding: 2px 0; }
 .m-log .sub { padding-left: 1em; color: var(--muted); }
 .m-log .detail { font-size: var(--fs-xs); padding-left: 1em; }
+.m-log .detail.roll { color: var(--accent); }
 .m-menu-list { display: grid; gap: 6px; }
 .m-menu-list button { display: flex; align-items: center; gap: 8px; min-height: 46px; justify-content: flex-start; }
 </style>
