@@ -308,7 +308,9 @@ export function sanitizeJudgment(state: GameState, p: ActionPending, raw: unknow
   const dc = Number.isNaN(dcRaw) ? p.base_dc : clamp(Math.round(dcRaw), p.base_dc - adj, p.base_dc + adj)
   const kindDef = actionRules.kinds[p.kind]
   // 日常小事：結果至少是成功（骰值只決定過程順不順），效果的門檻也照成功看
-  const trivial = !!kindDef.trivial && r.difficulty === 'trivial'
+  const aiDegree = (Object.keys(DEGREE_NAME) as Degree[]).includes(r.degree as Degree) ? (r.degree as Degree) : undefined
+  // AI 自己判了失敗、大失敗時不算日常小事（例如荒唐的要求被拒絕）：照 AI 的結果，不把拒絕記成成功
+  const trivial = !!kindDef.trivial && r.difficulty === 'trivial' && aiDegree !== 'fail' && aiDegree !== 'fumble'
   // AI 沒寫（或寫錯）成功程度時，用骰值對 DC 算出的參考結果（和結算時一樣），效果的門檻也照這個看
   // 存檔規則「只看骰面」：AI 給的大成功、大失敗也照骰面收斂
   const natOnly = naturalCritOnly(state)

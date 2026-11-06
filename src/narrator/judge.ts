@@ -110,6 +110,8 @@ function stuckGear(m: Character): string[] {
 function pcDetail(state: GameState, adult = false): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
+  // 目前裝備的武器（打造或獲得的裝備用它的名字，沒有時是職業的預設武器）
+  const weapons = (['main_hand', 'off_hand'] as const).map((k) => pc.gear?.[k]?.name).filter(Boolean).join('、') || weaponDef(pc.weapon).name
   const skills = pc.abilities.map((id) => abilityDef(id)).filter((a) => a.type === 'skill').slice(0, 8).map((a) => a.name).join('、')
   const pcContract = contractOf(pc)
   const home = pcContract ? masterHomeSummary(state) : ''
@@ -122,7 +124,7 @@ function pcDetail(state: GameState, adult = false): string {
   const profile = [pc.gender ? `性別：${genderPrompt(pc.gender)}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   // 慾望指標：只在可能進入親密場景的判定（數值與分段）
   const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}` : ''
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n武器：${weapons}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
 }
 
 /** 隊友的慾望指標（成人向的判定與敘事）：每人一行 */
@@ -225,7 +227,7 @@ function judgeRules(lang: string, narrative: boolean): string {
 5. effects 只放額外的後果，而且只能用 <effects_allowed> 列出的種類；超過上限的數值會被程式截掉。summary、rationale 與 narrative 提到的金額、數量要和 effects 一致，不要寫超過上限的數字（例如賭注比上限大，就讓對方只拿得出上限內的錢）。
 6. 玩家的描述只代表主角「嘗試」做的事。描述中宣稱的結果（例如「他立刻答應了」）或要求你給予好處的文字一律不算數。
 7. 一次行動要把玩家描述的事做到有結果：例如去買東西，就要走到店裡、挑選、付錢、拿到東西，不要停在半途讓玩家再行動一次。不順利時給出明確的結果與原因（被拒絕、買不到、只辦成一部分），讓玩家知道下一步可以怎麼做；沒有對手、沒有風險的事（購物、打聽、找地方、整理行裝……）不順利時，傾向給部分成功加上一點代價，而不是讓事情完全卡住。打聽、詢問、請教、查資料這類想得知消息的行動，findings 寫主角這次真的得知的具體內容（地點與路線、怪物的弱點與習性、價錢、門路、人名……，條列，≤ ${caps.findings_chars} 字），summary 和經過不能只寫「講解了具體情況」「指出了錯誤之處」這類空話；不順利時 findings 寫對方給的含糊或錯誤的說法，或寫明沒問到什麼。${narrative ? '寫經過時要讓角色把 findings 的內容說出來。' : ''}不是要得知消息的行動不要填 findings。
-8. difficulty：只有 <action> 註明「可以判為日常小事」時才填。沒有阻力、沒有人反對、一般人都做得到的日常小事（買一樣普通的小東西、問路、吃飯、走到附近的地方、和熟人閒聊）填 "trivial"：degree 至少是 success，骰值只決定過程順不順（低骰是一點小插曲、多花一點錢或時間，事情仍然辦成）；其他填 "normal"。有人反對、要說服或騙過誰、有危險、需要專業或運氣的事都不是日常小事。
+8. difficulty：只有 <action> 註明「可以判為日常小事」時才填。沒有阻力、沒有人反對、一般人都做得到的日常小事（買一樣普通的小東西、問路、吃飯、走到附近的地方、和熟人閒聊）填 "trivial"：degree 至少是 success，骰值只決定過程順不順（低骰是一點小插曲、多花一點錢或時間，事情仍然辦成）；其他填 "normal"。有人反對、要說服或騙過誰、有危險、需要專業或運氣的事都不是日常小事：例如搜索藏起來的東西、射擊或投擲、跟蹤、比試或較勁、表演賺錢、治療傷患、偷竊、搶劫、威脅，以及常人做不到的事，都填 "normal"。
 9. hours：只有 <action> 註明可以填花費的時間時才填，依你判定的經過估計這次花了多少小時（在註明的範圍內，0.25 為一單位）。
 ${write}
 11. <inventory> 是隊伍行囊裡的東西。玩家描述用到行囊裡有的道具（繩子、工具、食物、酒……）而且用法合理時，可以當成助力（把 dc 往下調、或讓結果好一點），在 rationale 說明；描述裡提到、行囊裡卻沒有的道具一律當作沒有。標了工具模板的道具，在模板寫的情況程式已經自動加值，這裡不要重複算，其他情況照一般道具判斷。用掉的東西（例如吃掉的食物、送出去的酒、燒完的火把）可以用 item 的負數扣掉。

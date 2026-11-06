@@ -83,6 +83,8 @@ describe('檢定分類（R20 C1）', () => {
     expect(user).not.toContain('依預設屬性')
     expect(user).toContain('依玩家的做法選 attr')
     expect(JSON.stringify(prompt)).not.toContain('"attr":"cha"')
+    // 主角目前裝備的武器寫在 <actor>：行囊沒有的道具（例如弓）AI 才看得出來主角沒有
+    expect(user).toMatch(/<actor>[\s\S]*\n武器：[^\n]+[\s\S]*<\/actor>/)
     const j = sanitizeJudgment(s, p, { degree: 'success', attr: 'cha', skill: 'deceive', effects: [] })
     expect(j.skill).toBe('deceive')
     const r = resolveAction(s, j)
