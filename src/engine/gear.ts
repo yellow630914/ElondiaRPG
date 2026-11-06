@@ -187,6 +187,8 @@ export const gearRules = gearJson as unknown as {
     money: [number, number]; gear: number; gear_extra?: number
     items: [string, number][]; forge: [number, number][]
   }>
+  /** 高等地下城寶箱的打造材料：寶箱等級到 min_level 時取代那一層的 forge（R12） */
+  chest_forge_high?: { bands: ({ min_level: number } & Partial<Record<string, [number, number][]>>)[] }
   craft: {
     hours: number; attr: AttrId; fee: number[]; dc: number[]
     units: Record<string, number>; lost_on_fail: number
@@ -1112,6 +1114,12 @@ export function chestForgeCandidates(kind: MaterialKind, tier: number, series: s
 }
 
 export const MATERIAL_KINDS: MaterialKind[] = ['metal', 'leather', 'cloth', 'wood', 'jewel']
+
+/** 寶箱的打造材料：高等地下城（寶箱等級到 chest_forge_high 的 min_level）用那一組，其他照那一層的 forge */
+export function chestForgeTable(layer: string, level: number): [number, number][] {
+  const band = (gearRules.chest_forge_high?.bands ?? []).find((b) => level >= b.min_level && Array.isArray(b[layer]))
+  return (band?.[layer] as [number, number][] | undefined) ?? gearRules.chests[layer]?.forge ?? []
+}
 
 /** 材料等級的上限（第 6、7 級只從 Lv.13～20 的地下城取得；打造的工錢、DC 與工藝等級都到這一級） */
 export const MAX_TIER = 7

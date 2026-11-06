@@ -1251,7 +1251,7 @@ export interface TownQuestTemplate {
   /** 內容標籤（成人向） */
   tags?: string[]
 }
-export type MaterialQuestKind = 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'boss_hunt'
+export type MaterialQuestKind = 'gather_wild' | 'gather_dungeon' | 'drop_wild' | 'drop_dungeon' | 'drop_boss' | 'boss_hunt'
 export interface MaterialQuestDef {
   /** 固定的等級 */
   rank?: GuildRank
@@ -1261,6 +1261,10 @@ export interface MaterialQuestDef {
   layer?: DungeonLayerId
   qty: [number, number]
   reward_mult?: number
+  /** 材料價值的倍率（沒有時用 material_quests 的 item_value_mult） */
+  item_value_mult?: number
+  /** drop_boss：只收這一級以上的打造材料 */
+  min_tier?: number
 }
 export interface MaterialQuestRules {
   max_multiplier: number
@@ -1273,6 +1277,8 @@ export interface MaterialQuestRules {
   gather_dungeon: MaterialQuestDef
   drop_wild: MaterialQuestDef
   drop_dungeon: MaterialQuestDef
+  /** 層主掉落的打造材料（R12：第 4～7 級只有層主會掉） */
+  drop_boss?: MaterialQuestDef
   boss_hunt: MaterialQuestDef
 }
 /** 委託的期限（天）：城內、近郊固定天數；地下城另加來回路程（per_travel_day × 單程最多天數），最多 max 天 */

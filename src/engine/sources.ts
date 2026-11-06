@@ -171,6 +171,15 @@ function build(): Index {
       }
     }
   }
+  // 高等地下城（Lv.13～20）寶箱的打造材料（gear.json 的 chest_forge_high）
+  for (const band of gearRules.chest_forge_high?.bands ?? []) {
+    for (const [layer, list] of Object.entries(band)) {
+      if (!Array.isArray(list)) continue
+      for (const [tier] of list) for (const k of MATERIAL_KINDS) for (const series of chestSeries) {
+        for (const n of forgeItemsFor(k, tier, series)) group('item', n, '地下城的寶箱（打造材料）', `${LAYER_NAME[layer] ?? layer}（Lv.${band.min_level} 以上）`, 'chest')
+      }
+    }
+  }
   for (const [n] of lewdRules.park.chest_items) add('item', n, '緋夢樂園的寶箱', 'chest')
   for (const [n] of lewdRules.auction.pool) add('item', n, '拍賣會', 'venue')
   const arena = lewdRules.arena
