@@ -302,7 +302,7 @@ export function createNpc(def: NpcDef, rng: Rng): Character {
   while (c.level < def.level) {
     c.level += 1
     c.attrs[classDef(c.class).priority[0]!] += attributeRules.level_up_points
-    const choice = abilityChoices(c, rng)[0]
+    const choice = npcAbilityPick(c, rng)
     if (choice) c.abilities.push(choice)
   }
   // 夥伴與敵對冒險者：依等級即時生成裝備
@@ -356,6 +356,22 @@ export function learnable(c: Character): AbilityDef[] {
     if (a.type === 'spell') return (a.circle ?? 1) <= circles
     return cantripsKnown < maxCantrips(c.level)
   })
+}
+
+/** 能力的層級：技能看解鎖等級，法術看環數（換算成全施法者拿到該環的等級），戲法最低 */
+function abilityTier(a: AbilityDef): number {
+  if (a.type === 'skill') return a.unlock ?? 1
+  if (a.type === 'spell') return 2 * (a.circle ?? 1) - 1
+  return 0
+}
+
+/** NPC 自動成長：學能學的能力裡層級最高的（同層級隨機），跟上新解鎖的能力，不會因為能力池變大就停在低階 */
+function npcAbilityPick(c: Character, rng: Rng): string | undefined {
+  const pool = learnable(c)
+  if (!pool.length) return undefined
+  const top = Math.max(...pool.map(abilityTier))
+  const best = pool.filter((a) => abilityTier(a) === top)
+  return best[rng.int(0, best.length - 1)]!.id
 }
 
 /** 升級時的能力三選一 */
