@@ -14,6 +14,7 @@ import PerkOfferPanel from './PerkOfferPanel.vue'
 import RoadEventPanel from './RoadEventPanel.vue'
 import SuggestionPanel from './SuggestionPanel.vue'
 import JoinPanel from './JoinPanel.vue'
+import ClassRebalancePanel from './ClassRebalancePanel.vue'
 import StoryNodeCard from '../StoryNodeCard.vue'
 import { blockingNode } from '@/engine/story'
 import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQueue'
@@ -93,6 +94,7 @@ function openParty(member?: string) {
       <SuggestionPanel v-else-if="current.kind === 'suggestion'" :id="current.ref!" />
       <LevelUpPanel v-else-if="current.kind === 'levelup'" :id="current.ref!" @open-party="openParty" />
       <PerkOfferPanel v-else-if="current.kind === 'perk'" :refid="current.ref!" />
+      <ClassRebalancePanel v-else-if="current.kind === 'classes'" />
 
       <div class="row foot">
         <span v-if="current.blocking" class="small muted">這件事要先處理，才能繼續移動或休息。<Hint text="可以先關掉視窗看看周圍，右上角的「待處理」可以再打開。" /></span>

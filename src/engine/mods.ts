@@ -11,7 +11,7 @@ import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
 import {
-  abilities, attributeRules, ATTR_IDS, bumpContentRevision, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool, classes, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
+  abilities, attributeRules, ATTR_IDS, bumpContentRevision, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool, classes, NONCOMBAT_CLASS, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type NpcTagDef, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
   stories, type RecipeSpec, type SeedSpec, type StoryCond, type AbilityDef, type AbilityTarget, type AbilityType, type ApplyDef, type DamagePart, type PerkDef,
@@ -26,6 +26,7 @@ import { sanitizeLustPerk, schoolDef } from './schools'
 import { applyStoryMod, builtinStory, restoreStories, sanitizeStory, storyCheck, type StoryMod } from './storyMods'
 import { applyParasiteMod, restoreParasites, sanitizeParasiteMod, type ParasiteMod } from './parasiteMods'
 import { mergeNpcTag, sanitizeNpcTagMod, type NpcTagMod } from './npcTagMods'
+import { applyClassMod, CLASS_ID, isBuiltinClass, restoreClasses, sanitizeClassMod, type ClassMod } from './classMods'
 import { applyMarkRules, currentMarkRules, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, type MarkMod, type MarkRulesMod, type TattooMod } from './tattooMods'
 import { tattooRules, type TattooTemplate } from './tattoos'
 import { applyLandmarkMod, landmarkSpotProblem, restoreLandmarks, sanitizeLandmarkMod, type LandmarkMod, type LandmarkPack } from './landmarkMods'
@@ -148,6 +149,8 @@ export interface ContentMods {
   dungeons: Record<string, DungeonMod>
   /** 身分標籤（內建的只存可編輯的欄位，自建的 mod_tag_…；舊的自訂內容沒有這一欄） */
   npcTags?: Record<string, NpcTagMod>
+  /** 職業（內建的改過的、自建的 mod_cls_…；舊的自訂內容沒有這一欄） */
+  classes?: Record<string, ClassMod>
 }
 
 /** 類別的圖示：玩家上傳的圖（data URL），沒有的類別用內建的圖 */
@@ -276,6 +279,7 @@ function restore() {
   replaceRecord(companionRules.conditions, snapshot.conditions)
   replaceRecord(tattooRules.templates, snapshot.tattoos)
   replaceRecord(npcTags.tags, snapshot.npcTags)
+  restoreClasses()
   restoreParasites()
   replaceRecord(slaveryRules.contracts, snapshot.marks)
   applyMarkRules(clone(snapshot.markRules))
@@ -506,6 +510,8 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('身分標籤', mods.npcTags ?? {}, (id, m) => {
     npcTags.tags[id] = mergeNpcTag(snapshot.npcTags[id], m)
   })
+  // 職業：在身分標籤之後（職業倍率寫在標籤上），在能力、固定 NPC 之前（它們會檢查職業存不存在）
+  tryEach('職業', mods.classes ?? {}, (id, m) => applyClassMod(id, m))
   // 狀態：能力、物品、其他狀態的命中附加都會用到
   tryEach('狀態', mods.statuses ?? {}, (id, m) => {
     statuses[id] = strip(m, ['custom'])
@@ -1136,6 +1142,18 @@ export function normalizeMods(raw: unknown): ContentMods {
     ;(out.npcTags ??= {})[id] = sanitizeNpcTagMod(v, !snapshot.npcTags[id], tagIds)
   }
   for (const [id, t] of Object.entries(out.npcTags ?? {})) if (t.custom && !npcTags.tags[id]) npcTags.tags[id] = mergeNpcTag(undefined, t)
+  // 職業：能力的「誰可以學」、固定 NPC 與特質會檢查職業存不存在，先登錄自建的。
+  // 初始能力與裝備模板可以指同一包裡的自建能力、底材（它們在後面才整理）
+  const classKnownIds = {
+    abilities: new Set([...Object.keys(abilities), ...Object.keys(r.abilities ?? {})]),
+    bases: new Set([...Object.keys(gearRules.bases), ...Object.keys(r.bases ?? {})]),
+    tags: tagIds,
+  }
+  for (const [id, v] of Object.entries(r.classes ?? {})) {
+    if (id === NONCOMBAT_CLASS || (!isBuiltinClass(id) && !CLASS_ID.test(id)) || !v || typeof v !== 'object') continue
+    ;(out.classes ??= {})[id] = sanitizeClassMod(v, !isBuiltinClass(id), classKnownIds)
+  }
+  for (const [id, c] of Object.entries(out.classes ?? {})) if (c.custom && !classes[id]) applyClassMod(id, c)
   // 狀態：能力、物品與其他狀態的命中附加會檢查狀態存不存在（自建的狀態彼此也可以互相引用）
   const statusIds = new Set([...Object.keys(statuses), ...Object.keys(r.statuses ?? {})])
   for (const [id, v] of Object.entries(r.statuses ?? {})) out.statuses[id] = sanitizeStatus(id, v, !!v.custom || !snapshot.statuses[id], statusIds)

@@ -83,7 +83,9 @@
     { "id": "ranger", "name": "遊俠", "power": ["martial"] },
     { "id": "barbarian", "name": "野蠻人", "power": ["martial"] },
     { "id": "monk", "name": "武僧", "power": ["martial"] },
-    { "id": "druid", "name": "德魯伊", "power": ["magic"] }
+    { "id": "druid", "name": "德魯伊", "power": ["magic"] },
+    { "id": "wufu", "name": "武夫", "power": ["martial"] },
+    { "id": "xianshi", "name": "仙術師", "power": ["magic"] }
   ],
   "races": [
     { "id": "human", "name": "人類", "home": "central" },

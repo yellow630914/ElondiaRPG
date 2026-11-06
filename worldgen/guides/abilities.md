@@ -20,12 +20,32 @@
 規則在 `character.ts` 的 `learnable`、COMBAT_SYSTEM 第 7 節：
 
 - 每次升級從「這個職業可以學、還沒學會」的能力隨機抽 3 個讓玩家選一個（NPC 自動挑第一個）。
-- `classes` 裡有這個職業才會出現。可以寫的職業：`fighter` 戰士、`barbarian` 野蠻人、`paladin` 聖騎士、`ranger` 遊俠、`rogue` 遊蕩者、`monk` 武僧、`bard` 吟遊詩人、`cleric` 牧師、`druid` 德魯伊、`wizard` 法師，加上 `monster`、`lewd`（色情技能：不分職業、不進升級的三選一，從技能書與事件學，COMBAT_SYSTEM 8.5 節）。
+- `classes` 裡有這個職業才會出現。可以寫的職業：`fighter` 戰士、`barbarian` 野蠻人、`paladin` 聖騎士、`ranger` 遊俠、`rogue` 遊蕩者、`monk` 武僧、`bard` 吟遊詩人、`cleric` 牧師、`druid` 德魯伊、`wizard` 法師、`wufu` 武夫、`xianshi` 仙術師，以及世界管理新增的自建職業（`mod_cls_…`），加上 `monster`、`lewd`（色情技能：不分職業、不進升級的三選一，從技能書與事件學，COMBAT_SYSTEM 8.5 節）。
 - **技能**：`unlock` ≤ 角色等級。品質依 `unlock`（1-4 普通、5-8 優良、9-12 稀有、13-16 史詩、17-20 傳說），也不能超過角色生命層級的上限，兩者剛好對齊，所以實際上就是到了等級就能抽到。
-- **法術**：角色要有 `circle` 環的法術環。全施法者（吟遊詩人、牧師、德魯伊、法師）1 環 1 級、2 環 3 級、3 環 5 級、4 環 7 級、5 環 10 級、6 環 12 級、7 環 15 級、8 環 17 級、9 環 20 級起（`combat.json` 的 `spell_slots`）；半施法者（聖騎士、遊俠）用一半的等級查同一張表，最多 5 環（1 環 1 級、2 環 5 級、3 環 9 級、4 環 13 級、5 環 19 級）；戰士、野蠻人、遊蕩者、武僧沒有法術環，**給他們的法術永遠抽不到**。
+- **法術**：角色要有 `circle` 環的法術環。全施法者（吟遊詩人、牧師、德魯伊、法師、仙術師）1 環 1 級、2 環 3 級、3 環 5 級、4 環 7 級、5 環 10 級、6 環 12 級、7 環 15 級、8 環 17 級、9 環 20 級起（`combat.json` 的 `spell_slots`）；半施法者（聖騎士、遊俠）用一半的等級查同一張表，最多 5 環（1 環 1 級、2 環 5 級、3 環 9 級、4 環 13 級、5 環 19 級）；戰士、野蠻人、遊蕩者、武僧、武夫沒有法術環，**給他們的法術永遠抽不到**。
 - **戲法**：可學數量 = 2 + floor(等級 ÷ 4)，已經學滿就不會再抽到。
-- 職業的初始能力（`classes.json` 的 `start`）不能用內容修改。特殊任務的「學會能力」效果（`ability`）只在角色目前學得到這個能力時（職業、等級或環數都符合）才學到它，**學不到時改成隨機給一個學得到的**。當任務報酬用的能力，`classes` 要列出主角可能的職業，`unlock` 或 `circle` 不要高過任務的等級。固定 NPC 的 `abilities` 可以直接指定任何能力。
+- 職業的初始能力（`classes.json` 的 `start`）寫在職業上（內容檔的 `classes`，見下面「職業」），不在能力裡。特殊任務的「學會能力」效果（`ability`）只在角色目前學得到這個能力時（職業、等級或環數都符合）才學到它，**學不到時改成隨機給一個學得到的**。當任務報酬用的能力，`classes` 要列出主角可能的職業，`unlock` 或 `circle` 不要高過任務的等級。固定 NPC 的 `abilities` 可以直接指定任何能力。
 - 生成的冒險者 NPC（夥伴、敵對的冒險者）也從同一份清單挑，**平衡模擬的測試隊伍也是**：替戰士、遊蕩者、牧師、法師加新能力，可能讓怪物的模擬結果跟著變（第 6 節）。
+
+### 1.2 職業（內容檔的 `classes`）
+
+世界管理的「🎓 職業」存的格式（`src/engine/classMods.ts` 的 `ClassMod`，[CONTENT_EDITOR](../../docs/CONTENT_EDITOR.md) 3.45 節）。內建職業用原本的 id 寫整份修改後的資料；自建職業的 id 是 `mod_cls_` 加 1～24 個小寫英數字，加 `"custom": true`。
+
+| 欄位 | 說明 |
+|---|---|
+| `name`、`emoji`、`role` | 名稱（8 字內）、emoji、定位說明（80 字內） |
+| `hit_die` | 生命骰：4、6、8、10、12 |
+| `threat` | `{ "start": 0～20, "mult": 0.3～2 }` |
+| `priority` | 五個屬性的分配順序（`str`、`dex`、`int`、`fai`、`cha` 各一次，少的補在後面） |
+| `caster`、`casting` | `none`／`half`／`full`；施法屬性（施法職業才有，沒寫用 `priority` 的第一個） |
+| `weapon`、`armor` | 沒有裝備時的武器、防具類型（`equipment.json`；只有天生武器如 `monk_fists` 有作用） |
+| `start` | 初始能力（最多 6 個；能力的 `classes` 也要有這個職業，才會在升級時繼續學到同一系列） |
+| `resist` | 職業本身的抗性（-0.5～0.5） |
+| `gear` | `{ "start": { "main_hand", "off_hand", "body" }, "main": [], "off": [], "body": [], "pieces": "metal/leather/cloth", "weapons": ["刀劍", …] }`（底材 id；`weapons` 沒寫是不限，空陣列是只用拳腳） |
+| `npc_weight` | NPC 隨機抽到的權重 0～5（1 是一般，0 是不會抽到） |
+| `tag_mult` | 冒險者帶身分標籤的機率倍率 `{ "villain": 0.5 }`（0～10） |
+
+一個職業要有足夠的能力：內建職業 2～20 級每一級都至少有 6 個能力可以選（能重抽），不施法的職業大約要 27 個技能（1 級 5 個含初始 3 個、2 級 4 個，之後每級一個）。
 
 ## 2. 欄位一覽
 
@@ -156,7 +176,7 @@
 |---|---|---|
 | `apply[].status` | 狀態 id | 內建狀態，或同一個檔案 `statuses` 裡的 |
 | `damage[].type` | 傷害屬性 | `data/rules/damage_types.json`（不能新增） |
-| `classes` | 職業 | `data/rules/classes.json`（不能新增） |
+| `classes` | 職業 | `data/rules/classes.json`，或內容檔 `classes` 裡的自建職業 |
 
 被引用：怪物的 `abilities`、`ability_hp_below`（[monsters](monsters.md)）、固定 NPC 的 `abilities`（[npcs](npcs.md)）、特殊任務的「學會能力」效果（[stories](stories.md)），以及存檔裡角色學會的能力。被拿掉的能力會從存檔的角色身上拿掉（[CONTENT_DEPENDENCIES](../../docs/CONTENT_DEPENDENCIES.md)）。
 

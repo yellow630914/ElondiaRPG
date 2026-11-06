@@ -5,7 +5,7 @@
 
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { enemies, geography, itemDef, locationName, npcs as namedNpcs, specialMaps, stories } from '@/engine/data'
+import { abilities, enemies, geography, itemDef, locationName, npcs as namedNpcs, specialMaps, stories } from '@/engine/data'
 import { builtinStory, flagUsage, progressBreaks, sanitizeStory, storyCheck, type StoryMod } from '@/engine/storyMods'
 import {
   abilityUsage, applyContent, cleanItemName, builtinAbility, builtinEnemy, builtinNpc, builtinPerk, dropBrokenStories, emptyMods, normalizeMods, sanitizePerkMod, type PerkMod, sanitizeAbility, sanitizeBase, sanitizeEnemy,
@@ -14,6 +14,7 @@ import {
 } from '@/engine/mods'
 import { builtinParasite, sanitizeParasiteMod, type ParasiteMod } from '@/engine/parasiteMods'
 import { editableOf, npcTagUsage, sanitizeNpcTagMod, type NpcTagMod } from '@/engine/npcTagMods'
+import { builtinClassMod, classUsage, sanitizeClassMod, type ClassMod } from '@/engine/classMods'
 import { markUsage, sanitizeMarkMod, sanitizeMarkRules, sanitizeTattooMod, tattooUsage, type MarkMod, type MarkRulesMod, type TattooMod } from '@/engine/tattooMods'
 import { itemRules, perkRules, shopRules, slaveryRules, type ItemCategory, type ShopType } from '@/engine/data'
 import { sanitizeIcon, withoutIcons } from '@/engine/itemIcons'
@@ -82,9 +83,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'parasites', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters', 'npcTags']
+const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'parasites', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters', 'npcTags', 'classes']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', parasites: '寄生物', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城', npcTags: '身分標籤',
+  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', parasites: '寄生物', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城', npcTags: '身分標籤', classes: '職業',
 }
 
 export interface ModsDiffEntry {
@@ -379,7 +380,7 @@ export const useContent = defineStore('content', () => {
 
   // ---- 引用檢查：還有地方用到的自建項目不能刪 ----
 
-  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap' | 'dungeon' | 'parasite' | 'npcTag'
+  type Kind = 'enemy' | 'item' | 'base' | 'material' | 'npc' | 'story' | 'ability' | 'perk' | 'status' | 'condition' | 'tattoo' | 'mark' | 'shop' | 'landmark' | 'specialMap' | 'dungeon' | 'parasite' | 'npcTag' | 'class'
   /** 哪些地方用到這一項（其他內容與目前載入的存檔） */
   function usageOf(kind: Kind, key: string): string[] {
     const state = useGame().state
@@ -403,6 +404,7 @@ export const useContent = defineStore('content', () => {
       case 'dungeon': return dungeonUsage(key, state)
       case 'parasite': return parasiteUsage(key, state)
       case 'npcTag': return npcTagUsage(key, state)
+      case 'class': return classUsage(key, state)
     }
   }
   function assertUnused(kind: Kind, key: string) {
@@ -710,6 +712,49 @@ export const useContent = defineStore('content', () => {
   }
   function restoreNpcTag(id: string) {
     if (!mods.value.npcTags?.[id]?.custom) delete mods.value.npcTags?.[id]
+    save()
+  }
+
+  // ---- 職業 ----
+
+  /** 存一個職業：內建的和內建一樣時不另外存 */
+  function saveClass(id: string, draft: Partial<ClassMod>) {
+    const base = builtinClassMod(id)
+    const c = sanitizeClassMod(draft, !base)
+    mods.value.classes ??= {}
+    if (base && JSON.stringify(c) === JSON.stringify(sanitizeClassMod(base, false))) delete mods.value.classes[id]
+    else mods.value.classes[id] = c
+    save()
+  }
+  function deleteClass(id: string) {
+    if (!mods.value.classes?.[id]?.custom) throw new Error('內建的職業不能刪除')
+    assertUnused('class', id)
+    delete mods.value.classes[id]
+    save()
+  }
+  /**
+   * 職業編輯器的批次勾選：讓 ids 這些能力（而且只有這些）能被這個職業學到，一次存檔。
+   * 內建能力改完和內建一樣時不另外存；職業要先存好（整理能力時會檢查職業存不存在）
+   */
+  function setClassAbilities(classId: string, ids: string[]) {
+    const want = new Set(ids)
+    let changed = false
+    for (const a of Object.values(abilities)) {
+      if (a.classes.includes('monster') || a.classes.includes('lewd')) continue
+      const has = a.classes.includes(classId)
+      if (has === want.has(a.id)) continue
+      const src = JSON.parse(JSON.stringify(mods.value.abilities[a.id] ?? a)) as AbilityMod
+      src.classes = has ? src.classes.filter((c) => c !== classId) : [...src.classes, classId]
+      const base = builtinAbility(a.id)
+      const next = sanitizeAbility(a.id, src, !base)
+      if (base && JSON.stringify(next) === JSON.stringify(sanitizeAbility(a.id, base, false))) delete mods.value.abilities[a.id]
+      else mods.value.abilities[a.id] = next
+      changed = true
+    }
+    if (changed) save()
+  }
+  function restoreClass(id: string) {
+    if (!mods.value.classes?.[id]?.custom) delete mods.value.classes?.[id]
     save()
   }
 
@@ -1326,7 +1371,7 @@ export const useContent = defineStore('content', () => {
     saveBase, deleteBase, restoreBase, saveMaterial, deleteMaterial, restoreMaterial,
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
-    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveNpcTag, deleteNpcTag, restoreNpcTag, saveParasite, deleteParasite, restoreParasite, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
+    saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveNpcTag, deleteNpcTag, restoreNpcTag, saveClass, deleteClass, restoreClass, setClassAbilities, saveParasite, deleteParasite, restoreParasite, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
     saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods, exportBuiltinWorld, importBuiltinWorld,
     importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,

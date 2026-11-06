@@ -43,6 +43,7 @@ import * as grid from '@/engine/grid'
 import * as specialMaps from '@/engine/specialMaps'
 import * as masterHome from '@/engine/masterHome'
 import * as population from '@/engine/population'
+import * as classRebalance from '@/engine/classRebalance'
 import * as encounters from '@/engine/encounters'
 import * as captives from '@/engine/captives'
 import * as security from '@/engine/security'
@@ -226,6 +227,8 @@ function load(s: GameState): GameState {
   if (!s.position) grid.enterLocation(s)
   population.ensureRoster(s, s.location)
   population.refreshRosters(s)
+  // 新職業（武夫、仙術師）之前的存檔：炎華之地的職業比例不對時，記下提議，事件視窗會問玩家（只問一次）
+  classRebalance.checkClassRebalance(s)
   return s
 }
 
@@ -1329,6 +1332,8 @@ export const useGame = defineStore('game', () => {
     answerLeadEvent: (i: number) => run((s) => leadEvents.answerLeadEvent(s, i)),
     /** 察覺到的陷阱：主動觸發或繞過（存檔規則 trapLure） */
     acceptTrapLure: () => run((s) => dungeonEvents.acceptTrapLure(s)),
+    acceptClassRebalance: () => run((s) => flash(classRebalance.applyClassRebalance(s), 6000)),
+    declineClassRebalance: () => run((s) => classRebalance.declineClassRebalance(s)),
     declineTrapLure: () => run((s) => dungeonEvents.declineTrapLure(s)),
     answerParasiteEvent: (i: number) => run((s) => parasiteEvents.answerParasiteEvent(s, i)),
     triggerParasite: (id: string) => run((s) => parasiteEvents.triggerTamed(s, id)),

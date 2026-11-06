@@ -7,7 +7,7 @@
 import { npcPerksOf, perksOf } from './perks'
 import { createNpc, lifeTier } from './character'
 import {
-  attributeRules, className, combatClasses, NONCOMBAT_CLASS, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, namedNpcById, npcs as namedNpcs, npcTags, perkDef, slaveryRules, tagDef,
+  attributeRules, className, combatClasses, NONCOMBAT_CLASS, npcClassIds, npcClassWeight, companionRules, GENDER_IDS, isCustomShopId, locationById, npcPool, namedNpcById, npcs as namedNpcs, npcTags, perkDef, slaveryRules, tagDef,
   type Haunt, type NpcKind, type NpcStage,
 } from './data'
 import { Rng } from './rng'
@@ -159,6 +159,18 @@ function tierLevels(tier: number): [number, number] {
   return levels[tier] ?? [1, 4]
 }
 
+/**
+ * 隨機生成的 NPC 抽職業：照職業的 npc_weight（世界管理可以調，0 = 不會抽到）。
+ * 權重都一樣時直接平均抽（和以前的結果一樣，不多擲骰）。
+ */
+export function pickNpcClass(rng: Rng): string {
+  const ids = npcClassIds()
+  if (!ids.length) return Object.keys(combatClasses)[0] ?? 'fighter'
+  const ws = ids.map(npcClassWeight)
+  if (ws.every((w) => w === ws[0])) return rng.pick(ids)
+  return weightedPick(rng, Object.fromEntries(ids.map((k, i) => [k, ws[i]!])))
+}
+
 function weightedPick(rng: Rng, weights: Record<string, number>): string {
   const entries = Object.entries(weights).filter(([, w]) => w > 0)
   const total = entries.reduce((s, [, w]) => s + w, 0)
@@ -228,7 +240,7 @@ export function generateNpc(state: GameState, rng: Rng, spec: NpcSpec = {}, pref
   const location = spec.location ?? state.location
   const kind: NpcKind = spec.kind ?? 'adventurer'
   const race = spec.race && attributeRules.races[spec.race] ? spec.race : weightedPick(rng, raceWeights(location))
-  const cls = kind === 'commoner' ? '' : spec.class && combatClasses[spec.class] ? spec.class : rng.pick(Object.keys(combatClasses))
+  const cls = kind === 'commoner' ? '' : spec.class && combatClasses[spec.class] ? spec.class : pickNpcClass(rng)
   const level = Math.max(1, Math.min(20, Math.round(spec.level ?? 1)))
   const gender = spec.gender && GENDER_IDS.includes(spec.gender)
     ? spec.gender

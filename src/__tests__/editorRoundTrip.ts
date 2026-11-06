@@ -35,6 +35,8 @@ import StoryEditor from '@/components/content/StoryEditor.vue'
 import StoryNodeEditor from '@/components/content/StoryNodeEditor.vue'
 import TattooEditor from '@/components/content/TattooEditor.vue'
 import NpcTagEditor from '@/components/content/NpcTagEditor.vue'
+import ClassEditor from '@/components/content/ClassEditor.vue'
+import { editableClassIds } from '@/engine/classMods'
 import TravelEventEditor from '@/components/content/TravelEventEditor.vue'
 
 // 環境用 jsdom：happy-dom 的 <select> 不在畫面上之後也不會釋放它的 <option>（1500 個選項約 40 MB），
@@ -86,6 +88,7 @@ export const CASES: Record<string, () => Case> = {
   conditions: () => ({ editor: ConditionEditor, keys: sample(conditionIds(), 15), props: (id) => ({ id }) }),
   perks: () => ({ editor: PerkEditor, keys: sample(perkRules.perks.map((p) => p.id), 30), props: (id) => ({ id }) }),
   npcTags: () => ({ editor: NpcTagEditor, keys: Object.keys(npcTags.tags), props: (id) => ({ id }) }),
+  classes: () => ({ editor: ClassEditor, keys: editableClassIds(), props: (id) => ({ id }) }),
   tattoos: () => ({ editor: TattooEditor, keys: sample(Object.keys(tattooRules.templates), 10), props: (id) => ({ id }) }),
   parasites: () => ({ editor: ParasiteEditor, keys: Object.keys(parasiteRules.parasites), props: (id) => ({ id }) }),
   marks: () => ({ editor: MarkEditor, keys: sample(Object.keys(slaveryRules.contracts), 10), props: (id) => ({ id }) }),

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, npcTags, NPC_TAG_GROUPS, type NpcKind, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, className, classes, npcClassWeight, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, npcTags, NPC_TAG_GROUPS, type NpcKind, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
@@ -35,6 +35,8 @@ import CountersEditor from './content/CountersEditor.vue'
 import StoryEditor from './content/StoryEditor.vue'
 import TattooEditor from './content/TattooEditor.vue'
 import NpcTagEditor from './content/NpcTagEditor.vue'
+import ClassEditor from './content/ClassEditor.vue'
+import { CASTER_NAME, classAbilityCount, classModOf, editableClassIds, isBuiltinClass, newClassMod } from '@/engine/classMods'
 import ShopEditor from './content/ShopEditor.vue'
 import LandmarkEditor from './content/LandmarkEditor.vue'
 import SpecialMapEditor from './content/SpecialMapEditor.vue'
@@ -66,9 +68,10 @@ import Hint from './ui/Hint.vue'
 import { confirmDiscard, unsavedEdits } from './content/unsaved'
 
 // 自訂內容：新增、修改怪物與物品（包括裝備的底材與材料）。內建項目可以修改、恢復預設，不能刪除；自建項目可以刪除。
-type Sub = 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'npcTags' | 'tattoos' | 'parasites' | 'landmarks' | 'specialMaps' | 'dungeons' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
+type Sub = 'enemies' | 'classes' | 'items' | 'bases' | 'materials' | 'abilities' | 'statuses' | 'perks' | 'npcTags' | 'tattoos' | 'parasites' | 'landmarks' | 'specialMaps' | 'dungeons' | 'shops' | 'events' | 'masterEvents' | 'npcs' | 'stories'
 const SUBS: { id: Sub; label: string }[] = [
   { id: 'enemies', label: '👹 怪物' },
+  { id: 'classes', label: '🎓 職業' },
   { id: 'items', label: '🎒 物品' },
   { id: 'bases', label: '🗡️ 裝備底材' },
   { id: 'materials', label: '💎 材料' },
@@ -90,7 +93,7 @@ const SUBS: { id: Sub; label: string }[] = [
 /** 頁籤分成幾組（上面一排是組，下面一排是組裡的頁籤）；icons 是物品組裡的「類別圖示」 */
 type Tab = Sub | 'icons'
 const GROUPS: { id: string; label: string; tabs: Tab[] }[] = [
-  { id: 'combat', label: '⚔️ 戰鬥', tabs: ['enemies', 'abilities', 'statuses'] },
+  { id: 'combat', label: '⚔️ 戰鬥', tabs: ['enemies', 'classes', 'abilities', 'statuses'] },
   { id: 'people', label: '🧬 角色', tabs: ['npcs', 'perks', 'npcTags', 'tattoos', 'parasites'] },
   { id: 'items', label: '🎒 物品', tabs: ['items', 'bases', 'materials', 'icons'] },
   { id: 'places', label: '🗺️ 地點', tabs: ['landmarks', 'specialMaps', 'dungeons', 'shops'] },
@@ -144,7 +147,7 @@ function resetFilters() {
   for (const m of ALL_FILTER_MODELS) m.value = ''
   pickStatusType.value = false
 }
-const selected = ref<Record<Sub, string>>({ enemies: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', npcTags: '', tattoos: '', landmarks: '', specialMaps: '', dungeons: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '', parasites: '' })
+const selected = ref<Record<Sub, string>>({ enemies: '', classes: '', items: '', bases: '', materials: '', abilities: '', statuses: '', perks: '', npcTags: '', tattoos: '', landmarks: '', specialMaps: '', dungeons: '', shops: '', events: '', masterEvents: '', npcs: '', stories: '', parasites: '' })
 // 刺青：普通刺青、誓約印記、奴隸印記（列表的 key：t:<圖樣>、m:<印記>、rules 是印記設定）
 const tattooKind = ref('')
 // 狀態：增益、減益、非戰鬥狀態（列表的 key：戰鬥狀態是 id，非戰鬥狀態是 c:<id>）
@@ -178,6 +181,8 @@ const gearSlot = ref('')
 const matKind = ref('')
 const perkCat = ref('')
 const tagKind = ref('')
+// 職業：依施法類型篩選
+const classCaster = ref('')
 // 寄生物：可馴服、短期寄生
 const parasiteCat = ref('')
 // 地標、事件、固定 NPC、特殊任務共用：地點、成人向、內容標籤、主角形象、旗標
@@ -309,6 +314,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
     adultDef,
   ],
   bases: [slotDef, matKindDef, adultDef],
+  classes: [{ model: classCaster, name: '施法', all: '所有職業', options: () => entries(CASTER_NAME) }],
   materials: [matKindDef],
   abilities: [
     { model: abilityType, name: '種類', all: '所有種類', options: () => entries(ABILITY_TYPES) },
@@ -451,6 +457,15 @@ const rows = computed<Row[]>(() => {
       .filter((p) => !perkCat.value || (perkCat.value === 'race' ? !!p.race : !p.race && perkCategory(p) === perkCat.value))
       .map((p) => ({ key: p.id, name: p.name, note: p.race ? '種族' : `強度 ${perkPower(p)}${p.train ? '・可受訓' : ''}`, status: st(!!m.perks[p.id], !builtinPerk(p.id)), sort: p.race ? 1 : 0 }))
       .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
+  } else if (sub.value === 'classes') {
+    list = editableClassIds()
+      .filter((id) => !classCaster.value || classes[id]!.caster === classCaster.value)
+      .map((id) => {
+        const c = classes[id]!
+        const w = npcClassWeight(id)
+        return { key: id, name: `${c.emoji} ${c.name}`, note: [CASTER_NAME[c.caster].replace(/（.*）/, ''), `${classAbilityCount(id)} 個能力`, w === 0 ? 'NPC 不會抽到' : w !== 1 ? `NPC 權重 ${w}` : ''].filter(Boolean).join('・'), status: st(!!m.classes?.[id], !isBuiltinClass(id)) }
+      })
+      .sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0))
   } else if (sub.value === 'npcTags') {
     const k = tagKind.value
     list = Object.entries(npcTags.tags)
@@ -572,7 +587,7 @@ const counts = computed(() => {
     const v = Object.values(o)
     return `自建 ${v.filter((x) => x.custom).length}・修改 ${v.filter((x) => !x.custom).length}`
   }
-  return { enemies: n(m.enemies), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), npcTags: n(m.npcTags ?? {}), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), dungeons: n(m.dungeons ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories), parasites: n(m.parasites ?? {}) }
+  return { enemies: n(m.enemies), classes: n(m.classes ?? {}), items: n(m.items), bases: n(m.bases), materials: n(m.materials), abilities: n(m.abilities), statuses: n({ ...(m.statuses ?? {}), ...Object.fromEntries(Object.entries(m.conditions ?? {}).map(([k, v]) => [`c:${k}`, v as { custom?: boolean }])) }), perks: n(m.perks), npcTags: n(m.npcTags ?? {}), tattoos: n({ ...(m.tattoos ?? {}), ...(m.marks ?? {}) }), landmarks: n(m.landmarks ?? {}), specialMaps: n(m.specialMaps ?? {}), dungeons: n(m.dungeons ?? {}), shops: n(m.shops ?? {}), events: n(m.travelEvents ?? {}), masterEvents: n(m.masterEvents ?? {}), npcs: n(m.npcs), stories: n(m.stories), parasites: n(m.parasites ?? {}) }
 })
 
 const current = computed(() => {
@@ -590,6 +605,7 @@ const current = computed(() => {
     : sub.value === 'masterEvents' ? !!masterEventById(key)
     : sub.value === 'parasites' ? !!parasiteRules.parasites[key]
     : sub.value === 'npcTags' ? !!npcTags.tags[key]
+    : sub.value === 'classes' ? editableClassIds().includes(key)
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
     : !!gearRules.materials[key]
   return exists ? key : ''
@@ -663,6 +679,10 @@ function create() {
     } else if (sub.value === 'npcTags') {
       const id = newModId('tag')
       content.saveNpcTag(id, newNpcTag())
+      select(id)
+    } else if (sub.value === 'classes') {
+      const id = newModId('cls')
+      content.saveClass(id, newClassMod())
       select(id)
     } else if (sub.value === 'tattoos') {
       if (tattooKind.value === 'slave') {
@@ -805,6 +825,12 @@ function duplicateKey(key: string) {
     delete src.race
     content.savePerk(id, { ...src, name: `${src.name}2`.slice(0, 12), custom: true })
     select(id)
+  } else if (sub.value === 'classes') {
+    // 複製職業：定義、裝備模板與 NPC 倍率照抄，能力的「誰可以學」不跟著複製（初始能力會被拿掉，要自己挑）
+    const id = newModId('cls')
+    const src = classModOf(key)
+    content.saveClass(id, { ...src, name: `${src.name}2`.slice(0, 8), start: [], custom: true })
+    select(id)
   } else if (sub.value === 'npcTags') {
     const id = newModId('tag')
     const src = editableOf(npcTags.tags[key]!)
@@ -867,7 +893,7 @@ function duplicateKey(key: string) {
 
 /** 有未儲存的修改時不能新增或複製（新的項目會先存進世界） */
 const UNSAVED_HINT = '這一項還有未儲存的修改：先儲存或放棄修改，才能新增或複製'
-const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', npcTags: '＋ 新增身分', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', dungeons: '＋ 新增地下城', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務', parasites: '＋ 新增寄生物' }
+const NEW_LABEL: Record<Sub, string> = { enemies: '＋ 新增怪物', classes: '＋ 新增職業', items: '＋ 新增物品', bases: '＋ 新增底材', materials: '＋ 新增材料', abilities: '＋ 新增技能', statuses: '＋ 新增狀態', perks: '＋ 新增特質', npcTags: '＋ 新增身分', tattoos: '＋ 新增刺青', landmarks: '＋ 新增地標', specialMaps: '＋ 新增地圖', dungeons: '＋ 新增地下城', shops: '＋ 新增商店', events: '＋ 新增事件', masterEvents: '＋ 新增事件', npcs: '＋ 新增角色', stories: '＋ 新增任務', parasites: '＋ 新增寄生物' }
 
 // ---- 局部匯入、匯出（E2） ----
 const showImport = ref(false)
@@ -1072,6 +1098,7 @@ function resetAll() {
         <SpecialMapEditor v-else-if="sub === 'specialMaps'" :id="current" :key="`sm-${current}`" @deleted="select('')" />
         <DungeonEditor v-else-if="sub === 'dungeons'" :id="current" :key="`dg-${current}`" @deleted="select('')" />
         <NpcTagEditor v-else-if="sub === 'npcTags'" :id="current" :key="`tag-${current}`" @deleted="select('')" />
+        <ClassEditor v-else-if="sub === 'classes'" :id="current" :key="`cls-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'tattoos'">
           <MarkRulesEditor v-if="current === 'rules'" key="rules" />
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />

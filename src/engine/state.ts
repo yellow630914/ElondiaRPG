@@ -5,7 +5,7 @@ import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './charact
 import { pruneSpecialMaps } from './specialMaps'
 import { pruneParasites, refreshParasiteMarks } from './parasites'
 import { pruneLocations } from './pruneLocations'
-import { abilities, attributeRules, classDef, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, classes, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -136,6 +136,8 @@ export function newGame(opts: NewGameOptions): GameState {
     guild: { rank: 'F', merit: 0 },
     homes: {},
     options: { ...defaultOptions(), ...opts.options },
+    // 新遊戲的 NPC 一開始就照新的職業生成：不用問「炎華之地要不要改一批職業」（classRebalance.ts）
+    classRebalance: { done: 'skipped' },
   }
 }
 
@@ -318,8 +320,23 @@ export function assertSchema(state: Pick<GameState, 'schema'>) {
   if (v > SAVE_SCHEMA) throw new Error(`這個存檔來自比較新版本的遊戲（存檔格式 ${v}，目前支援到 ${SAVE_SCHEMA}），請更新遊戲後再讀取`)
 }
 
+/**
+ * 存檔用到目前的世界沒有的職業時丟出錯誤，不讀取（職業被世界管理刪掉、或換了世界）。
+ * 不換成別的職業：角色的能力、裝備、屬性都跟著職業走，硬換會把存檔弄壞。
+ */
+export function assertClasses(state: Pick<GameState, 'party' | 'npcs'>) {
+  const missing = new Set<string>()
+  for (const m of state.party ?? []) if (!classes[m.class]) missing.add(m.class)
+  for (const r of Object.values(state.npcs ?? {})) {
+    if (r.class && !classes[r.class]) missing.add(r.class)
+    if (r.character && !classes[r.character.class]) missing.add(r.character.class)
+  }
+  if (missing.size) throw new Error(`這個存檔用到目前的世界沒有的職業（${[...missing].join('、')}），不能讀取。請在世界管理把這個職業加回來，或改用存檔原本的世界`)
+}
+
 export function migrate(state: GameState): GameState {
   assertSchema(state)
+  assertClasses(state)
   // 「本地」聲望以前會直接存成 local（以前記在 KNOWN_ISSUES 的 W5）：沒有人讀，拿掉
   if (state.reputation) delete state.reputation.local
   // 以前 AI 會替商店取名字（shopNames）：店名改成只用手寫與規則生成，拿掉
