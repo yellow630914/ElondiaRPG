@@ -3,15 +3,16 @@
 // 戰敗掉落（defeatLoot）另外在 expedition.ts；難度（difficulty）的係數在下面。說明見 docs/SAVES.md 第 7 節。
 
 import type { Difficulty, GameOptions, GameState } from './types'
-import { companionRules, combatRules, enemies, isLayerBoss, MINION_TIERS, minionTier, type MinionTier } from './data'
+import { className, companionRules, combatRules, enemies, isLayerBoss, MINION_TIERS, minionTier, type MinionTier } from './data'
 // 直接讀 JSON：security.ts 會用到這裡，避免循環引用
 import securityJson from '@data/rules/security.json'
 import slaveryJson from '@data/rules/slavery.json'
 import parasitesJson from '@data/rules/parasites.json'
 import lewdJson from '@data/rules/lewd.json'
+import gearJson from '@data/rules/gear.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit'>
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
 
 export interface RuleDef {
   label: string
@@ -51,6 +52,11 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   gatherMult: { label: '採集量', hint: '近郊、地下城與特殊地圖的採集點，每一格採到幾份材料（小數的部分是機率，例如 1.5 是一半的機會多 1 份）。古錢的金額不受影響（看「報酬與戰利品的錢」）。', default: 2, min: 1, max: 5, step: 0.5, unit: '份' },
   escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
+
+/** 存檔規則「職業武器限制」的說明（新遊戲與設定共用；清單在 gear.json 的 classes[].weapons） */
+export const CLASS_WEAPONS_HINT = `勾選時，主手只能拿職業能用的武器類型（${Object.entries(gearJson.classes as Record<string, { weapons?: string[] }>)
+  .filter(([, c]) => c && typeof c === 'object' && c.weapons)
+  .map(([id, c]) => `${className(id)}：${c.weapons!.length ? c.weapons!.join('、') : '不拿武器'}`).join('；')}）。這樣職業技能不會配到說不通的武器，例如拿著鎚子放箭雨。盾牌、法器這類副手不受限制。`
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`

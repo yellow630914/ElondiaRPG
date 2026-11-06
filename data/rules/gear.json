@@ -300,17 +300,17 @@
   },
 
   "classes": {
-    "$comment": "職業的裝備模板：start 是開局（主角）與等級最低的夥伴的基本配備（鐵、皮革、亞麻、橡木、銅等第一級材料）；main / off / body 是可以挑的底材，pieces 是頭、腿、手腕、腳、腰帶用哪一種材料類型（metal 重甲、leather 輕甲、cloth 布）。",
-    "fighter":   { "start": { "main_hand": "longsword", "off_hand": "shield", "body": "chain" }, "main": ["longsword", "warhammer", "mace", "scimitar"], "off": ["shield"], "body": ["chain", "plate"], "pieces": "metal" },
-    "barbarian": { "start": { "main_hand": "greataxe", "body": "leather_armor" }, "main": ["greataxe"], "off": [], "body": ["leather_armor"], "pieces": "leather" },
-    "paladin":   { "start": { "main_hand": "warhammer", "off_hand": "shield", "body": "chain" }, "main": ["warhammer", "longsword", "mace"], "off": ["shield"], "body": ["chain", "plate"], "pieces": "metal" },
-    "ranger":    { "start": { "main_hand": "longbow", "body": "leather_armor" }, "main": ["longbow"], "off": [], "body": ["leather_armor"], "pieces": "leather" },
-    "rogue":     { "start": { "main_hand": "rapier", "body": "leather_armor" }, "main": ["rapier", "shortsword", "dagger", "scimitar"], "off": ["buckler"], "body": ["leather_armor"], "pieces": "leather" },
-    "monk":      { "start": { "body": "monk_robe" }, "main": [], "off": [], "body": ["monk_robe"], "pieces": "cloth" },
-    "bard":      { "start": { "main_hand": "rapier", "body": "leather_armor" }, "main": ["rapier", "shortsword"], "off": ["focus", "buckler"], "body": ["leather_armor"], "pieces": "leather" },
-    "cleric":    { "start": { "main_hand": "mace", "off_hand": "shield", "body": "chain" }, "main": ["mace", "warhammer"], "off": ["shield"], "body": ["chain"], "pieces": "metal" },
-    "druid":     { "start": { "main_hand": "quarterstaff", "body": "leather_armor" }, "main": ["quarterstaff", "spellstaff"], "off": [], "body": ["leather_armor"], "pieces": "leather" },
-    "wizard":    { "start": { "main_hand": "quarterstaff", "body": "robe" }, "main": ["spellstaff", "quarterstaff"], "off": [], "body": ["robe"], "pieces": "cloth" },
+    "$comment": "職業的裝備模板：start 是開局（主角）與等級最低的夥伴的基本配備（鐵、皮革、亞麻、橡木、銅等第一級材料）；main / off / body 是可以挑的底材，pieces 是頭、腿、手腕、腳、腰帶用哪一種材料類型（metal 重甲、leather 輕甲、cloth 布）。；weapons 是存檔規則「職業武器限制」打開時主手能拿的武器類型（底材的 type；空的表示只能空手；沒寫的職業不限，見 docs/ITEMS.md 第 2.2 節）",
+    "fighter":   { "start": { "main_hand": "longsword", "off_hand": "shield", "body": "chain" }, "main": ["longsword", "warhammer", "mace", "scimitar"], "off": ["shield"], "body": ["chain", "plate"], "pieces": "metal", "weapons": ["刀劍", "鎚斧", "長柄"] },
+    "barbarian": { "start": { "main_hand": "greataxe", "body": "leather_armor" }, "main": ["greataxe"], "off": [], "body": ["leather_armor"], "pieces": "leather", "weapons": ["刀劍", "鎚斧", "長柄"] },
+    "paladin":   { "start": { "main_hand": "warhammer", "off_hand": "shield", "body": "chain" }, "main": ["warhammer", "longsword", "mace"], "off": ["shield"], "body": ["chain", "plate"], "pieces": "metal", "weapons": ["刀劍", "鎚斧", "長柄"] },
+    "ranger":    { "start": { "main_hand": "longbow", "body": "leather_armor" }, "main": ["longbow"], "off": [], "body": ["leather_armor"], "pieces": "leather", "weapons": ["弓弩"] },
+    "rogue":     { "start": { "main_hand": "rapier", "body": "leather_armor" }, "main": ["rapier", "shortsword", "dagger", "scimitar"], "off": ["buckler"], "body": ["leather_armor"], "pieces": "leather", "weapons": ["刀劍"] },
+    "monk":      { "start": { "body": "monk_robe" }, "main": [], "off": [], "body": ["monk_robe"], "pieces": "cloth", "weapons": [] },
+    "bard":      { "start": { "main_hand": "rapier", "body": "leather_armor" }, "main": ["rapier", "shortsword"], "off": ["focus", "buckler"], "body": ["leather_armor"], "pieces": "leather", "weapons": ["刀劍", "鞭"] },
+    "cleric":    { "start": { "main_hand": "mace", "off_hand": "shield", "body": "chain" }, "main": ["mace", "warhammer"], "off": ["shield"], "body": ["chain"], "pieces": "metal", "weapons": ["鎚斧", "法杖"] },
+    "druid":     { "start": { "main_hand": "quarterstaff", "body": "leather_armor" }, "main": ["quarterstaff", "spellstaff"], "off": [], "body": ["leather_armor"], "pieces": "leather", "weapons": ["法杖", "長柄", "鞭"] },
+    "wizard":    { "start": { "main_hand": "quarterstaff", "body": "robe" }, "main": ["spellstaff", "quarterstaff"], "off": [], "body": ["robe"], "pieces": "cloth", "weapons": ["法杖", "長柄"] },
     "noncombatant": { "start": { "body": "robe" }, "main": [], "off": [], "body": ["robe"], "pieces": "cloth" }
   },
 

@@ -31,7 +31,7 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import RuleFields from './RuleFields.vue'
-import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { CLASS_WEAPONS_HINT, DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -67,6 +67,8 @@ const tagChange = ref(false)
 /** 察覺陷阱時可以主動觸發 */
 const trapLure = ref(false)
 const naturalCrit = ref(false)
+// 職業武器限制：新遊戲預設打開（舊存檔沒有這一項＝關閉）
+const classWeapons = ref(true)
 // 特質：清單裡的任選，也可以自訂
 const perks = ref<string[]>([])
 const customPerks = ref<PerkDef[]>([])
@@ -156,7 +158,7 @@ const gearSpent = computed(() => creationCost(classId.value, gearChoice.value))
 const gearOver = computed(() => gearSpent.value > gearBudget.value)
 const catalog = computed(() => {
   void content.version
-  return creationCatalog(classId.value, race.value)
+  return creationCatalog(classId.value, race.value, classWeapons.value)
 })
 const gearRows = computed(() => {
   return Object.entries(gearChoice.value).map(([slot, p]) => {
@@ -215,7 +217,7 @@ function start() {
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
     // 難度和其他規則一樣：和預設一樣的不存
-    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...(naturalCrit.value ? { naturalCrit: true } : {}), ...sanitizeRules(rules.value) },
+    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...(naturalCrit.value ? { naturalCrit: true } : {}), ...(classWeapons.value ? { classWeapons: true } : {}), ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
@@ -458,7 +460,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           <button class="small primary" type="button" @click="gearOpen = true"><GameIcon name="shield" :size="13" /> 挑選起始裝備…</button>
           <button class="small" type="button" @click="resetGear">還原成基本配備</button>
         </div>
-        <StartGearDialog v-model="gear" :open="gearOpen" :class-id="classId" :race="race" :budget="gearBudget" :spent="gearSpent" @close="gearOpen = false" />
+        <StartGearDialog v-model="gear" :open="gearOpen" :class-id="classId" :race="race" :class-weapons="classWeapons" :budget="gearBudget" :spent="gearSpent" @close="gearOpen = false" />
       </div>
     </div>
 
@@ -488,6 +490,10 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         <tr>
           <th>大成功與大失敗 <Hint text="勾選時，只有骰出 20 才是大成功、骰出 1 才是大失敗；總和比 DC 高或低 10 以上不再算（最多是成功或失敗）。AI 判定也照這條規則。不勾時維持原本的規則：骰出 20 或總和 ≥ DC+10 大成功，骰出 1 或總和 ≤ DC−10 大失敗。之後可以在「設定」裡改。" /></th>
           <td><label class="check"><input v-model="naturalCrit" type="checkbox" /> 只看骰面（20 與 1）</label></td>
+        </tr>
+        <tr>
+          <th>職業武器限制 <Hint :text="CLASS_WEAPONS_HINT + '之後可以在「設定」裡改。'" /></th>
+          <td><label class="check"><input v-model="classWeapons" type="checkbox" /> 主手只能拿職業能用的武器</label></td>
         </tr>
         </tbody>
       </table>
