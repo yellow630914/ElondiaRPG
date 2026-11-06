@@ -3,6 +3,9 @@ import { computed, ref } from 'vue'
 import { attrName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { trainOptions } from '@/engine/perkActions'
+import { trainDays } from '@/engine/perks'
+import { craftLessons } from '@/engine/craftLessons'
+import { craftRules } from '@/engine/data'
 import { useGame } from '@/stores/game'
 import FoldMenu from './ui/FoldMenu.vue'
 import Hint from './ui/Hint.vue'
@@ -16,6 +19,13 @@ const list = computed(() => {
   void s.value.time.minute
   return trainOptions(s.value)
 })
+// 學工藝（R21）：這間店教的工藝，店裡最多教到 Lv.2
+const lessons = computed(() => {
+  void game.cell
+  void s.value.time.minute
+  void s.value.money_cc
+  return craftLessons(s.value)
+})
 const text = ref('')
 
 function train(id: string) {
@@ -25,14 +35,25 @@ function train(id: string) {
 </script>
 
 <template>
-  <FoldMenu v-if="list.length" id="place.train" class="train" icon="book" label="受訓" detail="花錢、花時間學特質或克服缺陷" :badge="list.length">
-    <p class="muted small intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。身邊有老師時，也可以向老師學他會教的特質（好感夠才肯教，學費比較便宜、比較好學）。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
-    <input v-model="text" placeholder="怎麼學（選填，會寫進日誌）：例如每天天沒亮就跟著教官練" />
-    <ul class="plain small">
+  <FoldMenu v-if="list.length || lessons.length" id="place.train" class="train" icon="book" label="受訓" :detail="lessons.length ? '學工藝、學特質或克服缺陷' : '花錢、花時間學特質或克服缺陷'" :badge="list.length + lessons.length">
+    <p class="muted small intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。身邊有老師時，也可以向老師學他會教的特質（好感夠才肯教，學費比較便宜、比較好學）。學費、時間、難度照特質的強度算，強的特質要角色等級夠、和老師或店主夠熟才肯教；每天練 8 小時。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
+    <ul v-if="lessons.length" class="plain small">
+      <li v-for="l in lessons" :key="l.craft" class="row">
+        <div class="grow">
+          <span class="tag">學工藝</span><b>{{ l.name }}</b> Lv.{{ l.from }} → Lv.{{ l.to }}
+          <Hint :text="`付學費、花時間就學會，不用擲骰。店裡最多教到 Lv.${craftRules.tuition.length}，之後靠製作累積經驗升級。工藝 0 級時什麼都不能做。`" />
+          <div class="muted">練 {{ l.hours }} 小時<template v-if="l.days > 1">（分 {{ l.days }} 天）</template>・學費 {{ formatMoney(l.price_cc) }}</div>
+          <div v-if="l.blocked" class="muted">{{ l.blocked }}</div>
+        </div>
+        <button class="small" :disabled="game.judging || !!s.pendingAction || !!l.blocked" @click="game.learnCraft(l.craft)">學</button>
+      </li>
+    </ul>
+    <input v-if="list.length" v-model="text" placeholder="怎麼學（選填，會寫進日誌）：例如每天天沒亮就跟著教官練" />
+    <ul v-if="list.length" class="plain small">
       <li v-for="o in list" :key="o.def.id" class="row">
         <div class="grow">
           <span v-if="o.def.flaw" class="tag">克服缺陷</span><span v-if="o.mentor" class="tag">老師：{{ o.mentor.name }}</span><b>{{ o.def.name }}</b>：{{ o.def.desc }}
-          <div class="muted">{{ attrName(o.train.attr) }}檢定 DC {{ o.train.dc }}・{{ o.train.hours }} 小時・學費 {{ formatMoney(o.train.price_cc) }}</div>
+          <div class="muted">{{ attrName(o.train.attr) }}檢定 DC {{ o.train.dc }}・練 {{ o.train.hours }} 小時<template v-if="trainDays(o.train.hours).days > 1">（分 {{ trainDays(o.train.hours).days }} 天）</template>・學費 {{ formatMoney(o.train.price_cc) }}<template v-if="o.train.level">・要 Lv.{{ o.train.level }}<template v-if="o.train.affinity">、親密度 {{ o.train.affinity }}</template></template></div>
           <div v-if="o.blocked" class="muted">{{ o.blocked }}</div>
         </div>
         <button class="small" :disabled="game.judging || !!s.pendingAction || !!o.blocked || s.money_cc < o.train.price_cc" @click="train(o.def.id)">受訓</button>

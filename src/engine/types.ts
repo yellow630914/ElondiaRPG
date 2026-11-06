@@ -131,6 +131,8 @@ export interface CompanionChange {
 export interface CheckInfo {
   action: string
   attr: AttrId
+  /** 檢定分類（說服、欺瞞……，actions.json 的 skills）：行動本身的分類，或自由行動由 AI 選的 */
+  skill?: string
   /** 程式算出的參考 DC */
   base_dc: number
   /** 實際使用的 DC（AI 可在 ±dc_adjust 內調整） */
@@ -897,6 +899,8 @@ export interface GameState {
   auction?: { day: number; location: string; lots: { name: string; start: number; rival: number; won?: number; lost?: boolean }[] }
   /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */
   arena?: Record<string, Record<string, { streak: number; best: number }>>
+  /** 圖紙（底材 id，全隊共用、不會用掉；docs/CRAFTING.md 2.2 節） */
+  blueprints?: string[]
   /** 收購遞減（docs/TRADE.md 3.4 節）：商店 key → 貿易類別 → 最近收了幾件（n）、記錄的那天（day）；每天回復 market.json 的 sell_glut.recover_per_day 件 */
   sales?: Record<string, Record<string, { n: number; day: number }>>
   /** 頭牌等級的累積：角色 id → 城（地點 id）→ 次數（docs/LEWD_STATS.md 第 10 節） */

@@ -1,3 +1,4 @@
+import { trainSpec } from '@/engine/perks'
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -61,9 +62,11 @@ describe('perks in checks', () => {
     const pc = pcOf(state)
     expect(checkBonus(pc, { context: 'travel' })).toBe(2)
     expect(checkBonus(pc, { context: 'retreat', attr: 'dex' })).toBe(2)
-    expect(checkBonus(pc, { context: 'gate', attr: 'cha' })).toBe(3)
-    expect(checkBonus(pc, { context: 'action', kind: 'haggle', attr: 'cha' })).toBe(2)
-    expect(checkBonus(pc, { context: 'action', kind: 'chat', attr: 'cha', vsTags: ['noble'] })).toBe(2)
+    // 檢定分類（R20）：能言善道說服 +2、交易 +1，體面說服 +1、對貴族 +1；城門盤查用說服應付時兩個都算
+    expect(checkBonus(pc, { context: 'gate', attr: 'cha', skill: 'persuade' })).toBe(3)
+    expect(checkBonus(pc, { context: 'gate', attr: 'cha' })).toBe(0)
+    expect(checkBonus(pc, { context: 'action', kind: 'haggle', attr: 'cha' })).toBe(1)
+    expect(checkBonus(pc, { context: 'action', kind: 'chat', attr: 'cha', vsTags: ['noble'] })).toBe(4)
     expect(checkBonus(pc, { context: 'trap', attr: 'dex' })).toBe(0)
     expect(checkModifiers(pc, { context: 'travel' })).toEqual([{ label: '特質【識途老馬】', value: 2 }])
   })
@@ -152,12 +155,20 @@ describe('getting perks', () => {
   it('comes from training, for a fee', () => {
     const state = game()
     standOn(state, 'guild')
-    state.money_cc = 1000
-    prepareAction(state, { kind: 'train', target: 'pathfinder', text: '' })
+    state.money_cc = 5000
+    // 識途老馬（強度 4）：學費、時數、DC 照公式，要角色 Lv.5（公會沒有店主，不看親密度）
+    const spec = trainSpec(perkDef('pathfinder')!)
+    expect(spec).toMatchObject({ price_cc: 1600, hours: 32, dc: 16, level: 5, affinity: 20 })
+    expect(() => prepareAction(state, { kind: 'train', target: 'pathfinder', text: '' })).toThrow('Lv.5')
+    pcOf(state).level = 5
+    const p = prepareAction(state, { kind: 'train', target: 'pathfinder', text: '' })
+    // 32 小時：每天練 8 小時，分 4 天（經過 3 天又 8 小時）
+    expect(p.hours).toBe(3 * 24 + 8)
+    expect(p.scene).toContain('分 4 天')
     state.pendingAction!.natural = 18
     const r = resolveAction(state, null)
     expect(validate(r), JSON.stringify(validate.errors)).toBe(true)
-    expect(state.money_cc).toBe(1000 - perkDef('pathfinder')!.train!.price_cc)
+    expect(state.money_cc).toBe(5000 - spec.price_cc)
     expect(pcOf(state).perkOffers?.[0]).toMatchObject({ options: ['pathfinder'] })
     expect(() => prepareAction(state, { kind: 'train', target: 'lucky', text: '' })).toThrow('學不到')
   })

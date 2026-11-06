@@ -2,6 +2,7 @@
 // 文件裡用 <!-- gen:名稱 --> 和 <!-- /gen:名稱 --> 包住產生的部分，中間的內容每次重新產生；其他文字照常手寫。
 // `npm run docs:gen` 重寫文件，docTables.spec.ts 檢查文件和資料檔一致（改了資料忘記重跑就會失敗）。
 import { abilityApCost } from '@/engine/combat'
+import { trainSpec } from '@/engine/perks'
 import { castingAttr } from '@/engine/character'
 import { formatMoney } from '@/engine/money'
 import { cellName, type CellKind } from '@/engine/grid'
@@ -69,7 +70,7 @@ function lewdSchoolTable(): string {
   return table(['流派', '偏向', '定位', '入門', '進階', '受訓（設施、學費）'], schoolIds().map((id) => {
     const d = schoolDef(id)!
     const p = (x: string) => perkDef(x)
-    const where = (x: string) => { const t = p(x)?.train; return t ? `${t.cells.map((c) => cellName(c as CellKind) || c).join('、')} ${formatMoney(t.price_cc)}` : '—' }
+    const where = (x: string) => { const d = p(x); const t = d?.train ? trainSpec(d) : undefined; return t ? `${t.cells.map((c) => cellName(c as CellKind) || c).join('、')} ${formatMoney(t.price_cc)}` : '—' }
     return [d.name, d.group, d.role, `**${p(d.entry)?.name}**：${p(d.entry)?.desc}`, `**${p(d.advanced)?.name}**：${p(d.advanced)?.desc}`, `${where(d.entry)}／${where(d.advanced)}`]
   }))
 }

@@ -1591,8 +1591,14 @@ export const actionRules = actionsJson as unknown as {
     /** 慾望指標：每項每次 ±這個數 */
     lewd: number
   }
+  /** 檢定分類（docs/ACTIONS.md 第 2 節）：只是分組 */
+  skills: Record<SkillId, { name: string; desc: string }>
+  /** 情境 → 分類 */
+  context_skills: Partial<Record<CheckContext, SkillId>>
   kinds: Record<ActionKind, {
     name: string; attr: AttrId; base?: number; hours: number; effects: EffectKind[]
+    /** 這種行動屬於哪個檢定分類（沒有時不分類；自由行動由 AI 判定時選） */
+    skill?: SkillId
     /** 社交互動：各成功程度的親密度變化 */
     affinity?: Record<Degree, number>
     value_steps?: number[]
@@ -1625,7 +1631,17 @@ export const npcPool = npcPoolJson as unknown as {
   commoner_outfits: Record<string, string[]>
 }
 
+/** 身分標籤的分組（創角的選擇器照這個分；docs/NPC_SYSTEM.md 4.1 節） */
+export type NpcTagGroup = 'identity' | 'profession' | 'craft' | 'underworld' | 'moral'
+export const NPC_TAG_GROUPS: Record<NpcTagGroup, string> = { identity: '身分', profession: '職業', craft: '工匠', underworld: '地下', moral: '善惡' }
+
 export interface NpcTagDef {
+  /** 分組（沒寫時算「身分」） */
+  group?: NpcTagGroup
+  /** 工匠：對應的工藝（開局這門工藝 Lv.2，docs/CRAFTING.md 1.1 節） */
+  craft?: CraftId
+  /** 工匠：另外也算的工藝（皮匠：製革以外還有裁縫） */
+  also_crafts?: CraftId[]
   name: string
   emoji: string
   kinds: NpcKind[]
@@ -1674,6 +1690,10 @@ export interface PcTagEffects {
   slave_price_mult?: number
   /** 戰鬥中的慾望抗性（負數是受到的慾望變少；成人向） */
   lust_resist?: number
+  /** 海路船資的倍率（水手認識船長） */
+  fare_mult?: number
+  /** 開新遊戲時帶的物品 */
+  start_items?: { name: string; qty: number }[]
   /** 給 AI 的身分說明 */
   hint?: string
 }
@@ -2117,6 +2137,16 @@ export function raceImageName(id: string): string {
   return tags ? `${raceName(id)} (${tags})` : raceName(id)
 }
 
+/** 檢定分類的名字（說服、欺瞞……） */
+export function skillName(id: string | undefined): string {
+  return id ? actionRules.skills[id as SkillId]?.name ?? id : ''
+}
+
+/** 這種行動、這個情境屬於哪個檢定分類（行動優先） */
+export function skillOfAction(kind: ActionKind | undefined, context?: CheckContext): SkillId | undefined {
+  return (kind && actionRules.kinds[kind]?.skill) || (context ? actionRules.context_skills[context] : undefined)
+}
+
 export function attrName(id: AttrId): string {
   return attributeRules.attributes.find((a) => a.id === id)?.name ?? id
 }
@@ -2143,7 +2173,14 @@ export interface CraftSkillDef {
 export const craftRules = craftsJson as unknown as {
   skills: Record<CraftId, CraftSkillDef>
   max_level: number
+  /** 工藝檢定：每一級工藝 + 幾點 */
   level_bonus: number
+  /** 工藝檢定：屬性調整值除以多少（向零捨去） */
+  attr_div: number
+  /** 圖紙（blueprints.ts） */
+  blueprints: { dc_without: number; price_mult: number; min_price: number; shop: [number, number]; village_max_base_price: number; chest: Partial<Record<DungeonLayerId, number>>; armed_drop: number }
+  /** 學工藝：tuition[i] 是 Lv.i → Lv.i+1 的學費與時數 */
+  tuition: { price_cc: number; hours: number }[]
   xp_to_next: number[]
   xp: Record<Degree, number>
   tool_tier: number[]
@@ -2203,7 +2240,13 @@ export type CheckContext =
   | 'initiative' | 'save'
 
 /** 檢定加值適用的範圍：同一欄位是「或」，不同欄位是「且」；沒寫的欄位不限 */
+/** 檢定分類（actions.json 的 skills） */
+export type SkillId = 'persuade' | 'deceive' | 'intimidate' | 'trade' | 'charm' | 'stealth' | 'sleight' | 'perception' | 'survival' | 'craft' | 'labor' | 'service' | 'escape'
+export const SKILL_IDS: SkillId[] = ['persuade', 'deceive', 'intimidate', 'trade', 'charm', 'stealth', 'sleight', 'perception', 'survival', 'craft', 'labor', 'service', 'escape']
+
 export interface CheckFilter {
+  /** 檢定分類（說服、欺瞞……）：這次檢定的行動或情境屬於其中一類時適用 */
+  skills?: SkillId[]
   attrs?: AttrId[]
   contexts?: CheckContext[]
   kinds?: ActionKind[]
@@ -2230,7 +2273,8 @@ export interface PerkDef {
   /** 和這些特質互斥 */
   exclusive?: string[]
   /** 可以在這些設施花錢學（缺陷：花錢克服） */
-  train?: { cells: string[]; price_cc: number; hours: number; attr: AttrId; dc: number }
+  /** 可以在哪裡受訓、用什麼屬性；學費、時數、DC 沒寫時照 perks.json 的 training 公式（依強度） */
+  train?: { cells: string[]; attr: AttrId; price_cc?: number; hours?: number; dc?: number }
   /** NPC 生成時抽到的權重與更容易抽到的標籤、職業 */
   npc?: { weight?: number; tags?: string[]; classes?: string[] }
   /** 玩家自訂或 AI 設計的（不在清單裡） */
@@ -2254,7 +2298,9 @@ export const perkRules = perksJson as unknown as {
   creation: { slots: number; max_flaws: number; slots_per_flaw: number }
   pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
   /** 老師（固定 NPC 的 mentor）：預設的好感門檻、學費倍率、難度加減；特質沒有 train 時用 default_train */
-  mentor: { affinity: number; price_mult: number; dc_delta: number; default_train: { price_cc: number; hours: number; attr: AttrId; dc: number } }
+  mentor: { affinity: number; price_mult: number; dc_delta: number; default_train: { attr: AttrId; price_cc?: number; hours?: number; dc?: number } }
+  /** 受訓的公式（docs/PERKS.md 4.2 節） */
+  training: { price_per_power: number; hours_per_power: number; session_hours: number; dc_base: number; flaw_mult: number; gates: { power: number; level: number; affinity?: number }[] }
   custom: {
     name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number]
     flaw: { check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }

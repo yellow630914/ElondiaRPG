@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { blueprintName, blueprintRules } from '@/engine/blueprints'
 import { computed, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
 import { canCraftHere, craftKindsHere, craftPlan, craftRarity, craftTarget, forgeOf, makeTarget, selfFeeName, type AuxItem } from '@/engine/craft'
@@ -294,7 +295,8 @@ function craft() {
       </table>
       <div class="kv">
         <span>{{ skill.name }} <b>{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}</b><span class="muted">（這個材料要 Lv.{{ plan.tier }}）</span></span>
-        <span>檢定 <b>{{ attrName(make ? skill.attr : gearRules.craft.attr) }}<template v-if="make"> +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
+        <span>檢定 <b><template v-if="make">工藝 +{{ plan.level * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}</template><template v-else>店主擲：手藝 +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
+        <span v-if="make">圖紙 <b :class="plan.blueprint ? '' : 'warn-text'">{{ plan.blueprint ? `有${blueprintName(plan.base)}` : `沒有（DC +${blueprintRules().dc_without}）` }}</b> <Hint text="每個底材一張圖紙，不會用掉、任何材料都適用。鐵匠鋪、裁縫店、珠寶店有賣，寶箱與人形的敵人身上也可能找到。委託店家打造不需要。" /></span>
         <span>時間 <b>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</b></span>
         <span v-if="make">工具 <b>要{{ toolTierName(toolTierFor(plan.tier)) }}</b> <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></span>
         <span>{{ make ? selfFeeName(plan) : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><Hint v-if="plan.materialCost" text="第 1 級材料：材料費照底材的價格算（底材價格的一半，乘這裡的物價），用掉的打造材料抵掉它們的價值。" /><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
@@ -331,6 +333,7 @@ function craft() {
 </template>
 
 <style scoped>
+.warn-text { color: var(--danger); }
 .craft { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .craft p { margin: 0; }
 .intro { display: flex; align-items: center; gap: 4px; }

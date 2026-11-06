@@ -428,39 +428,41 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
     </div>
 
     <div class="sec">
-      <h3 class="head small"><GameIcon name="user" :size="15" />身分標籤（選填，最多 3 個） <Hint text="和 NPC 一樣的身分標籤，AI 會把它當成你的身分。有★的標籤有效果：皇族不必聲望也能進出王城。開始之後要換，得在存檔規則勾「允許在遊戲中更換身分標籤」。" /></h3>
-      <PcTagPicker v-model="pcTags" />
-    </div>
-
-    <div class="sec">
       <PerkPicker v-model:perks="perks" v-model:custom="customPerks" :race="race" :cls="classId" />
     </div>
 
-    <div class="sec">
-      <h3 class="head small">
-        <GameIcon name="shield" :size="15" />起始裝備（預算 <strong :class="{ over: gearOver }">{{ gearSpent }}／{{ gearBudget }}</strong> 點）
-        <Hint text="職業的基本配備（第 1 級材料）免費；基本配備升級材料花「等級 - 1」，其他欄位的裝備花它的材料等級。預算在「設定」的遊戲規則裡調整。" />
-      </h3>
-      <table class="tbl gear">
-        <thead><tr><th>欄位</th><th>裝備</th><th>性能</th><th class="num">預算</th></tr></thead>
-        <tbody>
-          <tr v-for="r in gearRows" :key="r.slot">
-            <th>{{ slotNameFor(r.slot, race) }}</th>
-            <td class="name"><span class="item-tile"><ItemIcon :name="r.option!.item" :spec="r.option!.spec" :size="18" /></span>{{ r.option!.name }}<span v-if="r.option!.item" class="tag">自建</span></td>
-            <td class="muted small">{{ gearSummary(r.option!.spec) }}</td>
-            <td class="num">{{ r.option!.cost ? `${r.option!.cost} 點` : '免費' }}</td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-if="gearOver" class="small over">超過預算 {{ gearSpent - gearBudget }} 點，開始冒險前請降低材料等級或拿掉幾件。</p>
-      <div class="row">
-        <button class="small primary" type="button" @click="gearOpen = true"><GameIcon name="shield" :size="13" /> 挑選起始裝備…</button>
-        <button class="small" type="button" @click="resetGear">還原成基本配備</button>
+    <!-- 寬螢幕：身分標籤與起始裝備並排 -->
+    <div class="layout">
+      <div class="sec">
+        <h3 class="head small"><GameIcon name="user" :size="15" />身分標籤（選填，最多 3 個） <Hint text="和 NPC 一樣的身分標籤，AI 會把它當成你的身分。有★的標籤有效果：皇族不必聲望也能進出王城。開始之後要換，得在存檔規則勾「允許在遊戲中更換身分標籤」。" /></h3>
+        <PcTagPicker v-model="pcTags" />
       </div>
-      <StartGearDialog v-model="gear" :open="gearOpen" :class-id="classId" :race="race" :budget="gearBudget" :spent="gearSpent" @close="gearOpen = false" />
+      <div class="sec">
+        <h3 class="head small">
+          <GameIcon name="shield" :size="15" />起始裝備（預算 <strong :class="{ over: gearOver }">{{ gearSpent }}／{{ gearBudget }}</strong> 點）
+          <Hint text="職業的基本配備（第 1 級材料）免費；基本配備升級材料花「等級 - 1」，其他欄位的裝備花它的材料等級。預算在「設定」的遊戲規則裡調整。" />
+        </h3>
+        <table class="tbl gear">
+          <thead><tr><th>欄位</th><th>裝備</th><th>性能</th><th class="num">預算</th></tr></thead>
+          <tbody>
+            <tr v-for="r in gearRows" :key="r.slot">
+              <th>{{ slotNameFor(r.slot, race) }}</th>
+              <td class="name"><span class="item-tile"><ItemIcon :name="r.option!.item" :spec="r.option!.spec" :size="18" /></span>{{ r.option!.name }}<span v-if="r.option!.item" class="tag">自建</span></td>
+              <td class="muted small">{{ gearSummary(r.option!.spec) }}</td>
+              <td class="num">{{ r.option!.cost ? `${r.option!.cost} 點` : '免費' }}</td>
+            </tr>
+          </tbody>
+        </table>
+        <p v-if="gearOver" class="small over">超過預算 {{ gearSpent - gearBudget }} 點，開始冒險前請降低材料等級或拿掉幾件。</p>
+        <div class="row">
+          <button class="small primary" type="button" @click="gearOpen = true"><GameIcon name="shield" :size="13" /> 挑選起始裝備…</button>
+          <button class="small" type="button" @click="resetGear">還原成基本配備</button>
+        </div>
+        <StartGearDialog v-model="gear" :open="gearOpen" :class-id="classId" :race="race" :budget="gearBudget" :spent="gearSpent" @close="gearOpen = false" />
+      </div>
     </div>
 
-    <div class="sec">
+    <div class="sec rules">
       <h3 class="head small"><GameIcon name="d20" :size="15" />存檔規則</h3>
       <table class="tbl form">
         <tbody>
@@ -613,6 +615,8 @@ button :deep(.game-icon) { vertical-align: -0.2em; }
 .attrs th { cursor: help; }
 .derived th { width: 1%; color: var(--muted); }
 .nowrap { white-space: nowrap; }
+/* 存檔規則的選單不要拉到整個畫面寬 */
+.rules .form { max-width: 760px; }
 .profile { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .profile label { display: grid; gap: 4px; }
 .profile textarea { width: 100%; }

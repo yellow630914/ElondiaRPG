@@ -3,7 +3,7 @@
 import { checkModifiers } from './perks'
 import securityJson from '@data/rules/security.json'
 import { attrOf, mod, proficiency, snapshot } from './character'
-import { economy, geography, locationById, regionById } from './data'
+import { economy, geography, locationById, regionById, skillName, type AttrId, type SkillId } from './data'
 import { formatMoney } from './money'
 import { pcOf } from './party'
 import { roll, withBonus } from './rng'
@@ -152,6 +152,13 @@ export function arrivalCheck(state: GameState): boolean {
   return false
 }
 
+/** 應付城門盤查的方式：照檢定分類挑總值最高的 */
+const GATE_WAYS: { skill: SkillId; attr: AttrId; success: string }[] = [
+  { skill: 'persuade', attr: 'cha', success: '講了一番道理、亮出身分，衛兵就放行了' },
+  { skill: 'deceive', attr: 'cha', success: '三言兩語編了個說法應付了過去' },
+  { skill: 'stealth', attr: 'dex', success: '低調地混在人群裡過去了' },
+]
+
 export interface GateResult {
   ok: boolean
   /** 盤查的紀錄（有擲骰時） */
@@ -175,9 +182,14 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
     return { ok: false, reason: `衛兵記得你，今天不會放你過去；繳交罰金 ${formatMoney(alertFine(state, locId))} 就能通過。` }
   }
   const pc = pcOf(state)
-  const attr = mod(attrOf(pc, 'dex')) >= mod(attrOf(pc, 'cha')) ? 'dex' : 'cha'
-  const extra = checkModifiers(pc, { context: 'gate', attr })
-  const dice = withBonus('1d20', mod(attrOf(pc, attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0))
+  // 應付盤查的方式（檢定分類，docs/ACTIONS.md 第 2 節）：講道理亮身分（說服）、說謊（欺瞞）、混在人群裡（潛行），挑總值最高的
+  const ways = GATE_WAYS.map((w) => {
+    const extra = checkModifiers(pc, { context: 'gate', attr: w.attr, skill: w.skill })
+    return { ...w, bonus: mod(attrOf(pc, w.attr)) + proficiency(pc.level) + extra.reduce((s, x) => s + x.value, 0) }
+  })
+  const way = ways.reduce((a, b) => (b.bonus > a.bonus ? b : a))
+  const attr = way.attr
+  const dice = withBonus('1d20', way.bonus)
   const dc = securityRules.alert.gate_dc_base + securityRules.alert.gate_dc_per_level * level
   const r = withRng(state, (rng) => roll(rng, dice))
   const ok = r.total >= dc
@@ -185,11 +197,11 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
   else (state.gateBlock ??= {})[locId] = day
   const report = securityReport(
     state,
-    ok ? `${loc.name}的衛兵盤查了一番，你${attr === 'dex' ? '低調地混了過去' : '三言兩語應付了過去'}。` : `${loc.name}的衛兵認出了你，把你攔了下來。`,
+    ok ? `${loc.name}的衛兵盤查了一番，你${way.success}。` : `${loc.name}的衛兵認出了你，把你攔了下來。`,
     ok ? 'success' : 'failure',
   )
   report.timeline = [{
-    seq: 1, time: report.time.start, actor: 'pc', action: `${attr === 'dex' ? '靈巧' : '魅力'}檢定・城門盤查（警戒 ${level}）`,
+    seq: 1, time: report.time.start, actor: 'pc', action: `${skillName(way.skill)}檢定（${attr === 'dex' ? '靈巧' : '魅力'}）・城門盤查（警戒 ${level}）`,
     roll: { dice, value: r.total, dc }, result: ok ? 'success' : 'fail',
   }]
   commitReport(state, report)
@@ -235,7 +247,7 @@ export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Re
   const loc = locationById(state.location)
   assertMayPersuadePalace(state)
   const pc = pcOf(state)
-  const extra = checkModifiers(pc, { context: 'gate', attr: 'cha' })
+  const extra = checkModifiers(pc, { context: 'gate', kind: 'palace_gate', attr: 'cha' })
   const dice = withBonus('1d20', mod(attrOf(pc, 'cha')) + proficiency(pc.level) + extra.reduce((sum, x) => sum + x.value, 0))
   const dc = palacePersuadeDc(state)
   const r = withRng(state, (rng) => roll(rng, dice))
@@ -243,7 +255,7 @@ export function persuadePalaceGuard(state: GameState, palaceName = '王城'): Re
   const ok = !fumble && r.total >= dc
   const report = securityReport(state, settlePalacePersuasion(state, ok, fumble, palaceName), ok ? 'success' : 'failure', `${loc.name}・${palaceName}的大門`)
   report.timeline = [{
-    seq: 1, time: report.time.start, actor: 'pc', action: `魅力檢定・說服${palaceName}的衛兵`,
+    seq: 1, time: report.time.start, actor: 'pc', action: `說服檢定（魅力）・說服${palaceName}的衛兵`,
     roll: { dice, value: r.total, dc }, result: ok ? 'success' : fumble ? 'fumble' : 'fail',
   }]
   return commitReport(state, report)

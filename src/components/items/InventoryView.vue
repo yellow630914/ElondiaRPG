@@ -8,12 +8,15 @@ import { useGame } from '@/stores/game'
 import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
+import { blueprintName } from '@/engine/blueprints'
 
 // 行囊：依類別篩選，使用、裝備（戰鬥以外）
 const game = useGame()
 const s = computed(() => game.state!)
 const inCombat = computed(() => !!s.value.combat)
 
+/** 圖紙（R21）：底材 id，全隊共用、不會用掉 */
+const blueprints = computed(() => (s.value.blueprints ?? []).map(blueprintName).sort((a, b) => a.localeCompare(b, 'zh-Hant')))
 const filter = ref<ItemCategory | 'all'>('all')
 const items = computed(() => s.value.inventory.filter((i) => i.qty > 0))
 const counts = computed(() => {
@@ -113,6 +116,10 @@ const target = reactive<Record<string, string>>({})
         </li>
       </ul>
     </section>
+    <details v-if="blueprints.length" class="small blueprints">
+      <summary><GameIcon name="scroll" :size="13" /> 圖紙 {{ blueprints.length }} 張<span class="muted">（自己打造那種底材時不用加 DC，不會用掉）</span></summary>
+      <p>{{ blueprints.join('、') }}</p>
+    </details>
     <p v-if="inCombat" class="small muted">戰鬥中只能從戰鬥畫面使用道具。</p>
   </div>
 </template>

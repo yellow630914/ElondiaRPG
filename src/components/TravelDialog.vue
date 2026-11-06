@@ -8,6 +8,8 @@ import { legFare, MODE_NAME } from '@/engine/travel'
 import { reachable, type Path } from '@/engine/world'
 import { openFor } from '@/engine/storyFlags'
 import { useGame } from '@/stores/game'
+import { pcTagMult } from '@/engine/pcTags'
+import { pcOf } from '@/engine/party'
 import { RANK_COLOR } from './ui/cellIcons'
 
 const emit = defineEmits<{ close: [] }>()
@@ -34,8 +36,10 @@ function modesText(path: Path) {
 function viaText(path: Path) {
   return path.legs.slice(0, -1).map((l) => locationById(l.to).name).join('、')
 }
+/** 每人的船資（主角的身分是水手時便宜一點，和出發時扣的一樣） */
 function fareOf(path: Path) {
-  return path.legs.reduce((sum, l) => sum + legFare(l), 0)
+  const mult = game.state ? pcTagMult(pcOf(game.state), 'fare_mult') : 1
+  return Math.round(path.legs.reduce((sum, l) => sum + legFare(l), 0) * mult)
 }
 /** 冒險區域各層的階級，例如「淺層 E・中層 D・深層 C」 */
 function layerRankText(id: string) {

@@ -16,6 +16,7 @@ import {
   type Area, type Cell, type SideMapDef, type StepResult,
 } from './grid'
 import { isBound, pcOf } from './party'
+import { pcTagMult } from './pcTags'
 import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
@@ -161,7 +162,8 @@ export function startJourney(state: GameState, destination: string, intent?: str
   }
   const from = state.location
   const area = withRng(state, (rng) => buildRoad(state, from, destination, path.legs, rng))
-  const seaFare = path.legs.reduce((sum, l) => sum + legFare(l), 0) * state.party.length
+  // 主角的身分（水手）可能讓船資便宜一點
+  const seaFare = Math.round(path.legs.reduce((sum, l) => sum + legFare(l), 0) * state.party.length * pcTagMult(pcOf(state), 'fare_mult'))
   state.road = {
     from, to: destination, start: { ...state.time }, modes: path.legs.map((l) => l.mode), hours: 0,
     money: -seaFare,

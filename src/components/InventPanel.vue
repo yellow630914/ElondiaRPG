@@ -132,7 +132,7 @@ function invent() {
       材料價值 {{ formatMoney(plan.inputValue) }}<template v-if="plan.cost">・不夠的部分另外花 {{ formatMoney(plan.cost) }}（成品份數多時再補）</template><template v-if="plan.rent">・工坊租金 {{ formatMoney(plan.rent) }}</template>
     </p>
     <p class="muted">
-      {{ attrName(skill.attr) }}檢定 +{{ plan.skill * craftRules.level_bonus }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時・工具：要{{ toolTierName(toolTierFor(level)) }} <Hint :text="toolWhere(req.craft, toolTierFor(level))" />，現在 {{ plan.tool.source }}
+      檢定：工藝 +{{ plan.skill * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}・DC {{ plan.dc }}・約 {{ plan.hours }} 小時・工具：要{{ toolTierName(toolTierFor(level)) }} <Hint :text="toolWhere(req.craft, toolTierFor(level))" />，現在 {{ plan.tool.source }}
     </p>
     <p class="muted">大成功：稍強，多做一半・成功：同級，照設計的份數・部分成功：稍弱，份數一半・失敗：材料損失一半・大失敗：材料全部損失（花費照付）</p>
     <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>

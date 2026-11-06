@@ -15,7 +15,7 @@ import { naturalCritOnly } from '@/engine/checks'
 import { inviteDc, validateInvite } from '@/engine/companions'
 import {
   geography, genderPrompt, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
-  actionRules, ATTR_IDS, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
+  actionRules, ATTR_IDS, SKILL_IDS, skillName, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
   abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, TRAP_LOCK, type PerkDef,
 } from '@/engine/data'
 import { wantsWorldFacts, worldFacts } from './worldFacts'
@@ -235,7 +235,7 @@ ${currencyRule()}
 
 function judgeFormat(): string {
   return `輸出格式：
-{"degree":"success","attr":"cha","dc":<整數>,"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","adult_scene":"（只在經過包含親密場景時填寫）","findings":"（只在打聽、詢問時填：得知的具體內容）","difficulty":"（只在 <action> 註明時填）","hours":"（只在 <action> 註明時填）","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
+{"degree":"success","attr":"cha","skill":"（只在 <dice> 列出檢定分類時填：分類的 id）","dc":<整數>,"rationale":"為什麼是這個結果（簡短）","twist":"（只在出乎預料時填寫）","summary":"……","narrative":"……","adult_scene":"（只在經過包含親密場景時填寫）","findings":"（只在打聽、詢問時填：得知的具體內容）","difficulty":"（只在 <action> 註明時填）","hours":"（只在 <action> 註明時填）","effects":[],"relationship_updates":[{"id":"<id>","to_player":"更新後與主角的關係（只在關係明顯改變時提供）"}]}`
 }
 
 /** 可以標出親密場景；寫經過時附上成人場景規則 */
@@ -395,6 +395,16 @@ export function actionLoreText(state: GameState, p: ActionPending): string {
   return [p.text, p.scene, locationById(p.location).name, p.targetName ?? '', ...recs.flatMap((rec) => [rec?.name ?? '', rec?.personality ?? '', rec?.background ?? ''])].join('\n')
 }
 
+/** 檢定分類：一般行動寫出是哪一類；自由行動列出可以選的分類與各自多出來的修正（AI 選一個填 skill） */
+function skillText(p: ActionPending): string {
+  if (p.kind !== 'free') return p.skill ? `檢定分類：${skillName(p.skill)}\n` : ''
+  const lines = SKILL_IDS.map((id) => {
+    const extra = p.skillMods?.[id] ?? []
+    return `- ${id}（${skillName(id)}：${actionRules.skills[id].desc}）${extra.length ? `｜選這一類時另外 ${extra.map((x) => `${x.label} ${signed(x.value)}`).join('、')}` : ''}`
+  })
+  return `檢定分類（自由行動）：選一個最符合玩家做法的分類填 skill，都不像就不填。選了的分類若有額外修正，總值要再加上去（程式會算）：\n${lines.join('\n')}\n`
+}
+
 /** 主動行動的判定提示詞：AI 看得到骰值。 */
 export function buildActionPrompt(state: GameState, p: ActionPending, context: string, opts: JudgePromptOptions = {}): Prompt {
   const kind = actionRules.kinds[p.kind]
@@ -458,7 +468,7 @@ ${p.offer_cc !== undefined ? `出價：${p.kind === 'bargain' ? (p.offer_cc >= 0
 ${p.actor ? `擲骰的人：${state.party.find((m) => m.id === p.actor)?.name ?? p.actor}（不是主角，屬性調整值是這位隊員的）
 ` : ''}自然骰：${p.natural}${p.rolls ? `（擲兩次取高：${p.rolls.join('、')}；${p.advantage}）` : ''}
 情境修正：${sitText}
-各屬性的總值（自然骰 + 屬性調整值 + 熟練 + 情境）：
+${skillText(p)}各屬性的總值（自然骰 + 屬性調整值 + 熟練 + 情境）：
 ${totals}
 參考 DC：${p.base_dc}（dc 可標示 ${p.base_dc - adj}～${p.base_dc + adj}）
 依預設屬性（${attrName(p.attr)}）的參考結果：${DEGREE_NAME[computeDegree(p.natural, p.natural + p.modifiers[p.attr] + sit, p.base_dc, naturalCritOnly(state))]}${naturalCritOnly(state) ? '\n這個存檔的規則：大成功只在自然骰 20、大失敗只在自然骰 1；其他情況差再多也最多是成功或失敗（程式會把不符合的 critical、fumble 改成 success、fail）。' : ''}

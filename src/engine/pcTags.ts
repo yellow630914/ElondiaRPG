@@ -3,7 +3,7 @@
 // 標籤的效果寫在 npc_tags.json 的 pc_effects（docs/NPC_SYSTEM.md 4.1 節）：不看聲望（security.ts 的 meetsReputation）、
 // 檢定的加減（perks.ts 的 checkModifiers）、商店與神殿的價格（trade.ts、slavery.ts、tattooShop.ts）、
 // 曝露名聲的累積（lewd.ts）、被賣時的身價（companions.ts）、戰鬥中的慾望抗性（combat.ts），以及給 AI 的身分說明。
-import { npcTags, tagsExclusive, type NpcTagDef, type PcTagEffects } from './data'
+import { npcTags, skillName, tagsExclusive, type NpcTagDef, type PcTagEffects } from './data'
 import { matches, type CheckCtx } from './perks'
 import type { Character } from './types'
 import { pcOf } from './party'
@@ -40,7 +40,7 @@ function effectsOf(c: Pick<Character, 'tags' | 'isPlayer'> | undefined): { id: s
 }
 
 /** 標籤的數值效果相乘（買價、賣價、神殿服務、曝露名聲、身價），沒有時是 1 */
-export function pcTagMult(c: Pick<Character, 'tags' | 'isPlayer'> | undefined, key: 'buy_mult' | 'sell_mult' | 'service_mult' | 'exposure_mult' | 'slave_price_mult'): number {
+export function pcTagMult(c: Pick<Character, 'tags' | 'isPlayer'> | undefined, key: 'buy_mult' | 'sell_mult' | 'service_mult' | 'exposure_mult' | 'slave_price_mult' | 'fare_mult'): number {
   return effectsOf(c).reduce((m, x) => m * (x.e[key] ?? 1), 1)
 }
 
@@ -63,6 +63,11 @@ const KIND_NAME: Record<string, string> = {
 const CONTEXT_NAME: Record<string, string> = { travel: '旅途的危險', road: '旅途的事件', gate: '城門盤查', stealth: '潛行', negotiation: '談判' }
 const pctText = (m: number) => `${m > 1 ? '+' : '−'}${Math.round(Math.abs(m - 1) * 100)}%`
 
+/** 開新遊戲時，主角的身分帶的物品（標籤的 start_items） */
+export function pcTagStartItems(tags: string[]): { name: string; qty: number }[] {
+  return tags.flatMap((t) => npcTags.tags[t]?.pc_effects?.start_items ?? [])
+}
+
 /** 標籤效果的說明（建角、角色詳情）：一項一句 */
 export function pcTagEffectLines(id: string): string[] {
   const e = npcTags.tags[id]?.pc_effects
@@ -70,7 +75,7 @@ export function pcTagEffectLines(id: string): string[] {
   const out: string[] = []
   if (e.bypass_reputation) out.push('不必聲望也能進入王城、地標與神殿的服務')
   for (const k of e.checks ?? []) {
-    const what = [...(k.check.kinds ?? []).map((x) => KIND_NAME[x] ?? x), ...(k.check.contexts ?? []).map((x) => CONTEXT_NAME[x] ?? x)].join('、')
+    const what = [...(k.check.skills ?? []).map((x) => `${skillName(x)}檢定`), ...(k.check.kinds ?? []).map((x) => KIND_NAME[x] ?? x), ...(k.check.contexts ?? []).map((x) => CONTEXT_NAME[x] ?? x)].join('、')
     const vs = k.check.vs_tags?.length ? `（對${k.check.vs_tags.map((t) => npcTags.tags[t]?.name ?? t).join('、')}）` : ''
     out.push(`${what}${vs} ${k.bonus > 0 ? '+' : ''}${k.bonus}`)
   }
@@ -80,6 +85,8 @@ export function pcTagEffectLines(id: string): string[] {
   if (e.exposure_mult && e.exposure_mult !== 1) out.push(`曝露名聲累積 ×${e.exposure_mult}（成人向）`)
   if (e.slave_price_mult && e.slave_price_mult !== 1) out.push(`被賣時的身價 ×${e.slave_price_mult}（成人向）`)
   if (e.lust_resist) out.push(`戰鬥中受到的慾望 ${pctText(1 + e.lust_resist)}（成人向）`)
+  if (e.fare_mult && e.fare_mult !== 1) out.push(`海路船資 ${pctText(e.fare_mult)}`)
+  if (e.start_items?.length) out.push(`開局帶著 ${e.start_items.map((x) => (x.qty > 1 ? `${x.name}×${x.qty}` : x.name)).join('、')}`)
   return out
 }
 

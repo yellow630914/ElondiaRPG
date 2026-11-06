@@ -27,6 +27,7 @@ import { openFor } from './storyFlags'
 import { condMet } from './storyFlags'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { shopTitle } from './shopNames'
+import { blueprintDeals, blueprintName } from './blueprints'
 import { marketMult, marketRules, pctText, tradeCategory, tradeCategoryName } from './market'
 import { gameRule } from './gameRules'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
@@ -249,6 +250,8 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
       deals.push(itemDeal(state, f.item, f.stock, markup, f.price_cc ?? it.price_cc))
     }
     if (def.info) deals.push(...infoDeals(state, def.info))
+    // 圖紙（R21）：會打造那種底材的店上架幾張，村莊與前哨只有便宜的底材
+    deals.push(...blueprintDeals(state, rng, type, rank === 0, locationMult(state)))
     for (const sp of def.specials) deals.push(specialDeal(sp))
     return deals
   })
@@ -458,7 +461,7 @@ export function capSale(state: GameState, name: string, price: number): number {
 
 // ---- 交易 ----
 
-function tradeReport(state: GameState, key: string, hours: number): Report {
+export function tradeReport(state: GameState, key: string, hours: number): Report {
   const start = { ...state.time }
   const loc = locationById(state.location)
   const place = shopPlace(state)
@@ -946,6 +949,7 @@ export function effectText(state: GameState, e: RewardEffect, keeper?: string): 
     case 'money': return `${e.amount >= 0 ? '+' : ''}${formatMoney(e.amount)}`
     case 'item': return `${e.name} ×${e.qty}`
     case 'gear': return `【${e.name ?? gearName(e.spec)}】`
+    case 'blueprint': return `【${blueprintName(e.base)}】`
     case 'affinity': return `${who(e.npc)}好感 ${e.delta > 0 ? '+' : ''}${e.delta}`
     case 'reputation': return `聲望 ${e.delta > 0 ? '+' : ''}${e.delta}`
     case 'xp': return `經驗 +${e.amount}`

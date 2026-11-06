@@ -22,6 +22,8 @@ const valid = (r: Report) => expect(validate(r), JSON.stringify(validate.errors)
 
 function game(): GameState {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel' })
+  // 舊存檔的角色（沒有工藝資料）算 Lv.1；新角色的 0 級規則在 crafting.spec 另外測
+  delete state.party[0]!.crafts
   enterLocation(state)
   state.money_cc = 100000
   state.inventory = []
@@ -146,9 +148,10 @@ describe('producing', () => {
     addItem(state.inventory, '藥草', 6)
     const money = state.money_cc
     const plan = recipePlan(state, '微弱治療藥劑', 2, pc(state))
+    // 智力 4（−3 ÷ 3 = −1）：2 − 1 + 工藝 Lv.1 × 2 = 3，對 DC 7 是失敗
+    pc(state).attrs.int = 4
     prepareAction(state, { kind: 'produce', target: produceTarget('pc', '微弱治療藥劑', 2), text: '' })
     state.pendingAction!.natural = 2
-    pc(state).attrs.int = 8
     const r = resolveAction(state, null)
     valid(r)
     expect(r.check?.degree).toBe('fail')
@@ -169,7 +172,7 @@ describe('producing', () => {
     expect(recipePlan(state, '獵人燉肉', 1, pc(state)).blocked).toContain('Lv.1')
     const p = prepareAction(state, { kind: 'produce', target: produceTarget(m.id, '獵人燉肉'), text: '' })
     expect(p.actor).toBe(m.id)
-    expect(p.situational).toContainEqual({ label: `${m.name}的烹飪（Lv.2）`, value: 2 })
+    expect(p.situational).toContainEqual({ label: `${m.name}的烹飪（Lv.2）`, value: 4 })
     p.natural = 20
     const r = resolveAction(state, null)
     valid(r)

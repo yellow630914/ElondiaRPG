@@ -1,3 +1,4 @@
+import { trainSpec } from '@/engine/perks'
 import { afterEach, describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { gainXp, gearAffinities } from '@/engine/character'
@@ -145,7 +146,10 @@ describe('getting and overcoming flaws', () => {
     const r = resolveAction(state, null)
     expect(pc.perks).not.toContain('flaw_coward')
     expect(r.changes.perks).toEqual([{ actor: 'pc', perk: 'flaw_coward', name: '膽小', added: false }])
-    expect(state.money_cc).toBe(1000 - perkDef('flaw_coward')!.train!.price_cc)
+    // 克服缺陷：學費、時數照缺陷強度的一半算，沒有等級門檻
+    const spec = trainSpec(perkDef('flaw_coward')!)
+    expect(spec.level).toBeUndefined()
+    expect(state.money_cc).toBe(1000 - spec.price_cc)
     // 沒有這個缺陷就不能「克服」
     expect(() => prepareAction(state, { kind: 'train', target: 'flaw_coward', text: '' })).toThrow('克服')
   })

@@ -5,7 +5,7 @@ import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './charact
 import { pruneSpecialMaps } from './specialMaps'
 import { pruneParasites, refreshParasiteMarks } from './parasites'
 import { pruneLocations } from './pruneLocations'
-import { abilities, attributeRules, classDef, companionRules, findLocation, isChoosablePerk, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -16,7 +16,8 @@ import type { Character, ContractRef, EquippedGear, GameOptions, GameState, Game
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
 import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
-import { sanitizePcTags } from './pcTags'
+import { pcTagStartItems, sanitizePcTags } from './pcTags'
+import { startCrafts } from './crafting'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
@@ -58,6 +59,18 @@ export const DEFAULT_BIRTHPLACE: Record<string, string> = {
   hualong: 'longan', linghu: 'qingqiu', centaur: 'jinzhang',
 }
 
+/** 開局的行囊：5 份乾糧，加上身分標籤帶的物品（同一樣合在一起，目錄沒有的略過） */
+function startInventory(tags: string[]): { name: string; qty: number }[] {
+  const inv = [{ name: '乾糧', qty: 5 }]
+  for (const x of pcTagStartItems(tags)) {
+    if (!itemDef(x.name)) continue
+    const have = inv.find((i) => i.name === x.name)
+    if (have) have.qty += x.qty
+    else inv.push({ name: x.name, qty: x.qty })
+  }
+  return inv
+}
+
 export function newGame(opts: NewGameOptions): GameState {
   const seed = opts.seed ?? Math.floor(Math.random() * 2 ** 31)
   const birthplace = opts.birthplace ?? START_LOCATION
@@ -80,6 +93,8 @@ export function newGame(opts: NewGameOptions): GameState {
   if (gender) pc.gender = gender
   const tags = sanitizePcTags(opts.tags)
   if (tags.length) pc.tags = tags
+  // 工藝從 0 級開始，工匠身分那一門 Lv.2（docs/CRAFTING.md 1.1 節）
+  pc.crafts = startCrafts(tags)
   if (appearance) pc.appearance = appearance
   if (body) pc.body = body
   // 依性別（體型）預設穿上內衣、內褲；建角時自己挑了的欄位不動
@@ -106,7 +121,8 @@ export function newGame(opts: NewGameOptions): GameState {
     location: birthplace,
     money_cc: START_MONEY_CC,
     party: [pc],
-    inventory: [{ name: '乾糧', qty: 5 }],
+    // 開局的乾糧，加上身分帶的東西（獵人的風乾肉、工匠的工具組……，npc_tags.json 的 start_items）
+    inventory: startInventory(tags),
     quests: [],
     recruited: [],
     reputation: {},

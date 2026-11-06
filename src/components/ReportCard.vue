@@ -16,7 +16,7 @@ import { inventedIn } from '@/engine/invention'
 import { useSettings } from '@/stores/settings'
 import { useImageSettings } from '@/stores/image'
 import { sceneKey, useScenes } from '@/stores/scenes'
-import { attrName } from '@/engine/data'
+import { attrName, skillName } from '@/engine/data'
 import SceneImage from './SceneImage.vue'
 import SceneSplitDialog from './SceneSplitDialog.vue'
 import SceneStatus from './SceneStatus.vue'
@@ -209,6 +209,7 @@ async function copyPrompt() {
     <div v-if="roll && check" class="check small" :title="check">
       <span ref="dieEl" class="d20" :class="{ rolling, [roll.degree]: !rolling && fresh }">{{ rolling ? shownNatural : roll.natural }}</span>
       <span class="muted">{{ roll.action }}</span>
+      <span v-if="roll.skill" class="tag" title="檢定分類：特質、身分寫在這個分類上的加成會算進來">{{ skillName(roll.skill) }}檢定</span>
       <span class="tag">{{ attrName(roll.attr) }} {{ signed(roll.modifier - (roll.situational ?? []).reduce((s, x) => s + x.value, 0)) }}</span>
       <span v-for="x in roll.situational ?? []" :key="x.label" class="tag">{{ x.label }} {{ signed(x.value) }}</span>
       <span class="muted">＝</span><b>{{ roll.total }}</b>

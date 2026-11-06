@@ -18,22 +18,24 @@ const range = computed(() => {
   return { check: mag(f.check_bonus), combat: mag(f.combat) }
 })
 
-type Scope = 'all' | 'attr' | 'context' | 'kind' | 'tag'
+type Scope = 'all' | 'skill' | 'attr' | 'context' | 'kind' | 'tag'
 interface Row { type: 'check' | 'combat' | 'resist'; scope: Scope; value: string; bonus: number; stat: string; amount: number; dmg: string; resist: number }
 const name = ref('')
 const desc = ref('')
 const rows = reactive<Row[]>([])
 const COMBAT: Record<string, string> = { hit: '命中', evade: '迴避', save: '豁免', damage: '傷害', dr: '減傷', ap_regen: '行動點回復', crit: '幸運一擊' }
 const contexts = Object.entries(perkRules.contexts) as [CheckContext, string][]
+const skills = Object.entries(actionRules.skills).map(([k, v]) => [k, v.name] as const)
 const kinds = Object.entries(actionRules.kinds).map(([k, v]) => [k, v.name] as const)
 const tags = Object.entries(npcTags.tags).map(([k, v]) => [k, v.name] as const)
 const dmgTypes = damageTypes.types.map((t) => [t.id, t.name] as const)
 
 function addRow() {
   if (rows.length >= c.effects) return
-  rows.push({ type: 'check', scope: 'attr', value: 'cha', bonus: 1, stat: 'hit', amount: 1, dmg: dmgTypes[0]?.[0] ?? 'fire', resist: -0.25 })
+  rows.push({ type: 'check', scope: 'skill', value: 'persuade', bonus: 1, stat: 'hit', amount: 1, dmg: dmgTypes[0]?.[0] ?? 'fire', resist: -0.25 })
 }
 function scopeValues(scope: Scope): readonly (readonly [string, string])[] {
+  if (scope === 'skill') return skills
   if (scope === 'attr') return ATTR_IDS.map((a) => [a, attrName(a as AttrId)] as const)
   if (scope === 'context') return contexts
   if (scope === 'kind') return kinds
@@ -52,7 +54,7 @@ const draft = computed(() => {
     effects: rows.map((r) => {
       if (r.type === 'combat') return { combat: { [r.stat]: sign * Math.abs(r.amount) } }
       if (r.type === 'resist') return { resist: { [r.dmg]: sign * Math.abs(r.resist) * -1 } }
-      const key = { all: '', attr: 'attrs', context: 'contexts', kind: 'kinds', tag: 'vs_tags' }[r.scope]
+      const key = { all: '', skill: 'skills', attr: 'attrs', context: 'contexts', kind: 'kinds', tag: 'vs_tags' }[r.scope]
       return { check: key ? { [key]: [r.value] } : {}, bonus: sign * Math.abs(r.bonus) }
     }),
   }, `c-${Date.now().toString(36)}`, undefined, props.allowFlaw)
@@ -84,6 +86,7 @@ function add() {
       <template v-if="r.type === 'check'">
         <select :value="r.scope" @change="setScope(r, ($event.target as HTMLSelectElement).value as Scope)">
           <option value="all">所有檢定</option>
+          <option value="skill">某個檢定分類</option>
           <option value="attr">某個屬性</option>
           <option value="context">某種情境</option>
           <option value="kind">某種主動行動</option>

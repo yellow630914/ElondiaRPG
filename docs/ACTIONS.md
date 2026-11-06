@@ -75,6 +75,32 @@
 
 自由行動最多可以選 3 個對象（`actions.json` 的 `max_targets`）：第一位是主要對象（`target`），其他是同行的對象（`with`）。每個人都要在身邊；參考 DC 取最難的那位，每多一人 +1（`extra_target_dc`）；擲兩次取高的優勢要每個人都是主角的奴隸，主人在其中就扣服從懲罰。每個人都可以有親密度變化（AI 判定時每人各自的上限；依規則判定時每人照成功程度 ±0～4），AI 會看到每個人的資料、關係、記憶與戒備。入隊（`join`）、換主人（`change_master`）、解除契約（`release`）只認主要對象。
 
+### 2.1 檢定分類（`actions.json` 的 `skills`、各行動的 `skill`、`context_skills`）
+
+行動與情境之上的一層分組，讓特質、身分標籤、裝備可以寫「說服 +2」「欺瞞 +3」，玩家也看得懂加成從哪裡來。**只是分組，沒有技能點**；每種行動照舊用自己的屬性。
+
+| 分類 | 說明 | 行動 | 情境 |
+|---|---|---|---|
+| 說服 `persuade` | 講道理、拉關係、談條件：聊天、送禮、雇傭與邀請、談判 | 雇傭談判 `hire`、邀請入隊 `invite`、請小隊帶你同行 `squad_join`、談判解除契約 `negotiate`、談判 `negotiation`、長休時的互動 `rest_talk`、聊天 `chat`、送禮 `gift`、向主人提議 `propose`、投靠新主人 `seek_master`、說服王城的衛兵 `palace_gate`、爭取特質 `perk_pitch` | 談判（委託報酬、交易條件） `negotiation` |
+| 欺瞞 `deceive` | 說謊、裝傻、蒙混過關 | 蒙混過關 `bluff` | — |
+| 威嚇 `intimidate` | 用氣勢、武力或身分壓人 | 威嚇 `intimidate` | — |
+| 交易 `trade` | 殺價、談價錢、打聽黑市 | 殺價 `haggle`、打聽黑市 `black_market`、交涉價格 `bargain` | — |
+| 魅惑 `charm` | 獻媚、誘惑、討好客人 | 獻媚 `flatter`、誘惑 `seduce`、消費 `patron` | — |
+| 潛行 `stealth` | 躲藏、跟蹤、偷襲 | 偷襲 `attack` | 潛行（避開敵人、偷偷離隊） `stealth` |
+| 巧手 `sleight` | 偷竊、開鎖這類手上功夫 | 偷竊 `steal` | 開鎖 `lock` |
+| 察覺 `perception` | 注意到陷阱、搶先反應 | — | 察覺陷阱 `trap`、戰鬥先攻 `initiative` |
+| 求生 `survival` | 旅途上的危險、認路、撤出地下城 | — | 旅行途中的危險 `travel`、旅途上的事件 `road`、撤出地下城 `retreat` |
+| 工藝 `craft` | 打造、製作、配方 | 委託打造 `craft`、親手製作 `make`、依配方製作 `produce`、自創配方 `invent` | — |
+| 勞動 `labor` | 打工、粗活 | 工作 `work` | — |
+| 侍奉 `service` | 對主人的請求與回應、刻印 | 請求主人同意 `master_permit`、請求主人讓你出門 `master_leave`、刻印 `marking`、回應主人 `master_event`、回到主人身邊 `master_return` | 回應主人的要求（選項） `master_event` |
+| 脫逃 `escape` | 掙脫束縛、逃離主人 | 逃離主人 `escape`、嘗試脫縛 `unbind` | — |
+
+- 不分類的：自由行動（由 AI 判定時選）、特殊任務的判定、戰敗後的處境、探索地標、受訓、解除印記；情境的主動行動、執行委託、戰鬥中的豁免、城門盤查（盤查另外挑應付方式，見下）。
+- **加成怎麼比對**（`perks.ts` 的 `checkSkills`、`matches`）：檢定加值的篩選可以寫 `skills`；這次檢定的分類 = 指定的分類（`CheckCtx.skill`）＋行動的分類＋情境的分類（含 `also`）。舊的 `kinds`、`contexts` 寫法照舊有效（[PERKS](PERKS.md) 第 2 節）。
+- **自由行動**：擲骰時先替每個分類算好「選了這一類時多出來的修正」（`ActionPending.skillMods`，同一個來源只算比不分類時多的部分）。AI 判定時從列出的分類選一個填 `skill`，程式照它選的加上去；不填或填錯就不分類。規則判定（AI 關閉）不分類。
+- **城門盤查**（`security.ts` 的 `gateCheck`）：在說服（講道理、亮身分，魅力）、欺瞞（說謊，魅力）、潛行（混在人群裡，靈巧）裡挑總值最高的，日誌寫「欺瞞檢定（魅力）・城門盤查」。寫在情境「城門盤查」上的加成三種方式都算。說服王城的衛兵算說服。
+- **畫面**：等待判定的卡片寫「說服檢定」（自由行動寫「分類由 AI 判定」，提示裡列出各分類多出來的修正）；日誌的檢定列多一個「說服檢定」標籤，報告的 `check.skill` 記分類的 id。
+
 ## 3. 規則判定
 
 AI 關閉時（也是給 AI 的參考結果，`actions.json` 的 `degrees`）：

@@ -5,6 +5,7 @@ import { PARASITE_LOCK } from './parasites'
 import { snapshot } from './character'
 import { attrName, classes, combatRules, companionRules, locationById, npcs as namedNpcs, slaveryRules, TRAP_LOCK, type AttrId, type Bond } from './data'
 import { characterFor, npcRecord, registerNpc } from './npcs'
+import { startCrafts } from './crafting'
 import { ensureRelationship, setAffinity } from './social'
 import { reachable } from './world'
 import { tavernSpot } from './grid'
@@ -92,6 +93,8 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   if (opts.toPlayer) rel.toPlayer = opts.toPlayer
   else if (rel.toPlayer === '初次見面。') rel.toPlayer = JOIN_TEXT[bond]
   const member = characterFor(state, rec)
+  // 第一次入隊的人工藝從 0 級開始（工匠身分那一門 Lv.2）；離隊再回來的照原本的
+  if (!rec.character && !member.crafts) member.crafts = startCrafts(rec.tags, rec.crafts)
   delete member.group
   clearContract(member)
   member.status = member.status.filter((s) => s !== 'slave_mark')

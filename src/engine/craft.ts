@@ -3,6 +3,7 @@
 // 也可以用 gear 效果替成品取名、寫描述、挑附魔（程式依成功程度夾住稀有度與附魔點數）。
 // AI 關閉時依規則：成功以上隨機附魔。
 
+import { blueprintRules, hasBlueprint } from './blueprints'
 import { craftRules as craftSkillRules, isCustomShopId, itemDef, locationById, shopRules, type CraftId, type Degree, type ShopType } from './data'
 import {
   crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolBlocker, toolTierFor, type ToolAccess,
@@ -42,6 +43,8 @@ export interface CraftPlan {
   /** 委託：工錢；自己動手：工坊租金（不含當場補買） */
   fee: number
   dc: number
+  /** 自己動手時：有沒有這個底材的圖紙（沒有時 dc 已經 +5） */
+  blueprint?: boolean
   /** 做這種材料的工藝 */
   craft: CraftId
   /** 做的人的工藝等級（委託：店主；自己動手：做的人） */
@@ -227,7 +230,9 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   blockers.push(...auxBlocked)
   return {
     base, material, tier, units, uses, have, sources, ...(opts.use ? { use: opts.use } : {}), buys, buyCost,
-    fee, dc: r.dc[tier - 1]!, aux, auxValue, auxChance, elements: auxElements(aux),
+    // 自己動手打造時沒有這個底材的圖紙：DC + 5（委託店家不受影響，docs/CRAFTING.md 2.2 節）
+    fee, dc: r.dc[tier - 1]! + (crafter && !hasBlueprint(state, base) ? blueprintRules().dc_without : 0), aux, auxValue, auxChance, elements: auxElements(aux),
+    ...(crafter ? { blueprint: hasBlueprint(state, base) } : {}),
     craft, level,
     ...(crafter && self ? { crafter: crafter.id, tool: self.tool, rent: self.rent, ...(materialCost ? { materialCost } : {}) } : {}),
     blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}),
@@ -275,11 +280,10 @@ export function setupCraft(state: GameState, target?: string) {
   const at = (d: Degree) => rarityName(craftRarity(material, d)!)
   const used = plan.uses.map((u) => `${u.name}×${u.qty}`).join('、')
   const auxText = aux.map((x) => `${x.name}×${x.qty}`).join('、')
-  // 工匠的手藝比需要的高：做得更好
-  const skill = plan.level - plan.tier
+  // 委託打造由店主擲：d20 + 店主的工藝等級 × 2（docs/CRAFTING.md 1.1 節）
   return {
-    attr: craftRules().attr, dc: plan.dc, hours: craftRules().hours,
-    situational: skill > 0 ? [{ label: `工匠的手藝（${craftName(plan.craft)} Lv.${plan.level}）`, value: skill }] : [],
+    attr: craftSkillRules.skills[plan.craft].attr, dc: plan.dc, hours: craftRules().hours, craftCheck: 'keeper' as const,
+    situational: [{ label: `工匠的手藝（${craftName(plan.craft)} Lv.${plan.level}）`, value: plan.level * craftSkillRules.level_bonus }],
     scene: `${locationById(state.location).name}・委託打造${name}（工錢 ${formatMoney(plan.fee)}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
     targetName: name,
     outcomes: {
@@ -394,7 +398,7 @@ export function setupMake(state: GameState, target?: string) {
   const auxText = aux.map((x) => `${x.name}×${x.qty}`).join('、')
   return {
     actor: crafter.id,
-    attr: skill.attr, dc: plan.dc, hours: craftSkillRules.self.hours,
+    attr: skill.attr, dc: plan.dc, hours: craftSkillRules.self.hours, craftCheck: 'self' as const,
     situational: [{ label: `${crafter.name}的${skill.name}（Lv.${plan.level}）`, value: plan.level * craftSkillRules.level_bonus }],
     scene: `${locationById(state.location).name}・${crafter.isPlayer ? '親手' : `由${crafter.name}`}打造${name}（${plan.tool!.source}${plan.fee ? `，${selfFeeName(plan)} ${formatMoney(plan.fee)}` : ''}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
     targetName: name,

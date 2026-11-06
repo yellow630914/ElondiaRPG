@@ -9,7 +9,7 @@
 import { pcTagModifiers } from './pcTags'
 import { activeParasites, parasiteDef, parasiteEffects, stageName } from './parasites'
 import {
-  actionRules, ATTR_IDS, attrName, choosablePerks, damageTypeName, isChoosablePerk, lewdRules, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
+  actionRules, ATTR_IDS, attrName, skillName, SKILL_IDS, type SkillId, choosablePerks, damageTypeName, isChoosablePerk, lewdRules, npcTags, perkDef, perkRules, type ActionKind, type AffinityMap, type AttrId, type CheckContext, type CheckFilter, type Degree, type Mods,
   type LustPerk, type PerkDef, type PerkEffect,
   mulResist,
 } from './data'
@@ -30,6 +30,21 @@ export interface CheckCtx {
   kind?: ActionKind
   attr?: AttrId
   vsTags?: string[]
+  /** 指定這次檢定的分類（自由行動由 AI 選、城門盤查選的應付方式）；沒有時照行動與情境對應（actions.json 的 skill、context_skills） */
+  skill?: SkillId
+}
+
+/** 這次檢定屬於哪些分類：指定的、行動的、情境的（含 also） */
+export function checkSkills(ctx: CheckCtx): Set<SkillId> {
+  const out = new Set<SkillId>()
+  if (ctx.skill) out.add(ctx.skill)
+  const k = ctx.kind ? actionRules.kinds[ctx.kind]?.skill : undefined
+  if (k) out.add(k)
+  for (const c of [ctx.context, ...(ctx.also ?? [])]) {
+    const x = actionRules.context_skills[c]
+    if (x) out.add(x)
+  }
+  return out
 }
 
 /** 種族特質（原本的種族天賦）：依種族自動擁有，不寫進存檔 */
@@ -48,6 +63,10 @@ export function hasPerk(c: PerkHolder, id: string): boolean {
 }
 
 export function matches(f: CheckFilter, ctx: CheckCtx): boolean {
+  if (f.skills?.length) {
+    const have = checkSkills(ctx)
+    if (!f.skills.some((x) => have.has(x))) return false
+  }
   if (f.attrs?.length && (!ctx.attr || !f.attrs.includes(ctx.attr))) return false
   if (f.contexts?.length && !f.contexts.includes(ctx.context) && !ctx.also?.some((x) => f.contexts!.includes(x))) return false
   // 誘惑也吃獻媚的加值（特質、獨特裝備）
@@ -119,9 +138,17 @@ export function perkCombat(c: PerkHolder): { mods: Mods; resist: AffinityMap; of
 
 // ---- 強度：AI 設計的特質不能比提供的強太多 ----
 
-/** 檢定加值適用的範圍有多廣（全部檢定 4；一個屬性 1.5；一種情境 0.75；一種行動或標籤 0.5；不同欄位取最窄的） */
+/** 一個檢定分類有多廣：照它涵蓋的行動（每種 0.5）與情境（每種 0.75）加總，夾在 1～2 */
+function skillBreadth(id: SkillId): number {
+  const kinds = Object.values(actionRules.kinds).filter((k) => k.skill === id).length
+  const contexts = Object.values(actionRules.context_skills).filter((x) => x === id).length
+  return Math.max(1, Math.min(2, kinds * 0.5 + contexts * 0.75))
+}
+
+/** 檢定加值適用的範圍有多廣（全部檢定 4；一個屬性 1.5；一個分類 1～2；一種情境 0.75；一種行動或標籤 0.5；不同欄位取最窄的） */
 function breadth(f: CheckFilter): number {
   const parts = [
+    f.skills?.length ? Math.min(4, f.skills.reduce((s, x) => s + skillBreadth(x), 0)) : undefined,
     f.attrs?.length ? f.attrs.length * 1.5 : undefined,
     f.contexts?.length ? f.contexts.length * 0.75 : undefined,
     f.kinds?.length ? f.kinds.length * 0.5 : undefined,
@@ -194,10 +221,12 @@ export function cleanPerkEffects(raw: unknown, c: PerkLimits): PerkEffect[] {
     if (e.check && typeof e.check === 'object') {
       const f = e.check as Record<string, unknown>
       const check: CheckFilter = {}
+      const skills = strList(f.skills, SKILL_IDS)
       const attrs = strList(f.attrs, ATTR_IDS)
       const contexts = strList(f.contexts, CONTEXTS)
       const kinds = strList<ActionKind>(f.kinds)
       const tags = strList(f.vs_tags)
+      if (skills.length) check.skills = skills
       if (attrs.length) check.attrs = attrs
       if (contexts.length) check.contexts = contexts
       if (kinds.length) check.kinds = kinds
@@ -280,6 +309,7 @@ const COMBAT_NAME: Record<string, string> = { hit: '命中', evade: '迴避', sa
 export function describeEffects(effects: PerkEffect[]): string {
   const scope = (f: CheckFilter) => {
     const parts = [
+      f.skills?.length ? `${f.skills.map(skillName).join('、')}檢定` : '',
       f.attrs?.length ? `${f.attrs.map(attrName).join('、')}檢定` : '',
       f.contexts?.length ? f.contexts.map((x) => perkRules.contexts[x] ?? x).join('、') : '',
       f.kinds?.length ? f.kinds.map((k) => actionRules.kinds[k]?.name ?? k).join('、') : '',
@@ -485,6 +515,46 @@ export function overcomablePerks(c: Character, cell: string): PerkDef[] {
   return perksOf(c).filter((p) => p.flaw && !p.race && p.train?.cells.includes(cell))
 }
 
+/** 受訓的內容（學費、時數、DC 都已經算好），以及強的特質要的門檻 */
+export interface TrainSpec {
+  cells: string[]
+  attr: AttrId
+  price_cc: number
+  /** 練習的總時數 */
+  hours: number
+  dc: number
+  /** 角色等級的門檻 */
+  level?: number
+  /** 老師或店主的親密度門檻 */
+  affinity?: number
+}
+
+/**
+ * 受訓的學費、時數、DC（perks.json 的 training，docs/PERKS.md 4.2 節）：依特質強度算，特質的 train 寫了就用寫的。
+ * 克服缺陷用缺陷強度的絕對值，學費與時數打折（flaw_mult），沒有門檻
+ */
+export function trainSpec(def: PerkDef, base: { cells?: string[]; attr: AttrId; price_cc?: number; hours?: number; dc?: number } | undefined = def.train): TrainSpec {
+  const r = perkRules.training
+  const power = Math.abs(perkPower(def))
+  const mult = def.flaw ? r.flaw_mult : 1
+  const gate = def.flaw ? undefined : [...r.gates].sort((a, b) => b.power - a.power).find((g) => power >= g.power)
+  return {
+    cells: base?.cells ?? [],
+    attr: base?.attr ?? 'cha',
+    price_cc: base?.price_cc ?? Math.max(10, Math.round((power * r.price_per_power * mult) / 10) * 10),
+    hours: base?.hours ?? Math.max(1, Math.round(power * r.hours_per_power * mult)),
+    dc: base?.dc ?? r.dc_base + Math.floor(power),
+    ...(gate ? { level: gate.level, ...(gate.affinity ? { affinity: gate.affinity } : {}) } : {}),
+  }
+}
+
+/** 練 hours 小時要幾天（每天練 session_hours 小時）與實際經過的時間（最後一天不用睡完） */
+export function trainDays(hours: number): { days: number; elapsed: number } {
+  const per = perkRules.training.session_hours
+  const days = Math.max(1, Math.ceil(hours / per))
+  return { days, elapsed: (days - 1) * 24 + (hours - (days - 1) * per) }
+}
+
 /** 受訓的費用：大成功打對折，失敗收一半，大失敗照收 */
 export function trainingFee(price: number, degree: Degree): number {
   return degree === 'critical' ? Math.round(price / 2) : degree === 'fail' ? Math.round(price / 2) : price
@@ -511,6 +581,12 @@ export const PERK_CATEGORIES: Record<string, string> = {
 
 const SOCIAL_KINDS = ['chat', 'gift', 'flatter', 'seduce', 'haggle', 'bargain', 'intimidate', 'bluff', 'hire', 'invite', 'rest_talk', 'black_market', 'patron']
 const EXPLORE_CONTEXTS = ['trap', 'lock', 'travel', 'road', 'stealth', 'retreat']
+/** 檢定分類 → 特質的分類 */
+const SKILL_CATEGORY: Record<SkillId, string> = {
+  persuade: 'social', deceive: 'social', intimidate: 'social', trade: 'social', charm: 'social',
+  stealth: 'explore', sleight: 'explore', perception: 'explore', survival: 'explore',
+  craft: 'craft', labor: 'craft', service: 'bond', escape: 'bond',
+}
 const BOND_KINDS = ['escape', 'negotiate', 'marking', 'master_permit', 'master_leave', 'master_event', 'unmark']
 const CRAFT_KINDS = ['craft', 'make', 'produce', 'invent', 'work']
 
@@ -522,6 +598,8 @@ export function perkCategory(p: Pick<PerkDef, 'category' | 'effects'> & Partial<
     if ('combat' in e) return 'combat'
     if ('resist' in e || 'offense' in e) return 'body'
     const c = e.check
+    const sk = c.skills?.[0]
+    if (sk) return SKILL_CATEGORY[sk]
     if (c.kinds?.some((k) => BOND_KINDS.includes(k)) || c.contexts?.includes('master_event')) return 'bond'
     if (c.kinds?.some((k) => SOCIAL_KINDS.includes(k)) || c.contexts?.some((x) => x === 'negotiation' || x === 'gate') || c.vs_tags?.length || c.attrs?.includes('cha')) return 'social'
     if (c.contexts?.some((x) => EXPLORE_CONTEXTS.includes(x)) || c.kinds?.includes('steal')) return 'explore'

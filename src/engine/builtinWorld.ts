@@ -7,7 +7,7 @@
 
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import {
-  abilities, companionRules, enemies, itemRules, landmarks, masterEventPool, npcs, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters,
+  abilities, companionRules, enemies, itemRules, landmarks, masterEventPool, npcs, npcTags, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters,
 } from './data'
 import { gearRules } from './gear'
 import { normalizeMods, type ContentMods } from './mods'
@@ -19,10 +19,11 @@ import { tattooRules } from './tattoos'
 import { parasiteRules } from './parasites'
 import { currentParasite } from './parasiteMods'
 import { currentMarkRules } from './tattooMods'
+import { editableOf } from './npcTagMods'
 import { builtinEventRules } from './travelEventMods'
 
 export type BuiltinSection =
-  | 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'statuses' | 'conditions' | 'tattoos' | 'marks' | 'markRules' | 'parasites'
+  | 'enemies' | 'items' | 'bases' | 'materials' | 'abilities' | 'perks' | 'npcTags' | 'statuses' | 'conditions' | 'tattoos' | 'marks' | 'markRules' | 'parasites'
   | 'npcs' | 'stories' | 'landmarks' | 'specialMaps' | 'shops' | 'travelEvents' | 'eventRules' | 'bindRules' | 'masterEvents' | 'counters'
 
 export interface SectionInfo {
@@ -44,6 +45,7 @@ export const BUILTIN_SECTIONS: SectionInfo[] = [
   { key: 'bases', name: '底材', guide: '物品、底材與材料（製作指南）' },
   { key: 'materials', name: '材料', guide: '物品、底材與材料（製作指南）' },
   { key: 'perks', name: '特質', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
+  { key: 'npcTags', name: '身分標籤' },
   { key: 'conditions', name: '非戰鬥狀態', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
   { key: 'tattoos', name: '刺青圖樣', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
   { key: 'marks', name: '奴隸印記', guide: '狀態、特質、刺青與奴隸印記（製作指南）' },
@@ -85,6 +87,8 @@ function rawEntries(): SectionEntries {
     items: Object.fromEntries(itemRules.items.map((i) => [i.name, i])),
     bases: gearRules.bases, materials: gearRules.materials,
     perks: Object.fromEntries(perkRules.perks.map((p) => [p.id, p])),
+    // 身分標籤只匯出可以編輯的欄位（略過聲望這類寫死的效果不在裡面）
+    npcTags: Object.fromEntries(Object.entries(npcTags.tags).map(([id, t]) => [id, editableOf(t)])),
     conditions: Object.fromEntries(Object.entries(companionRules.conditions).filter(([k]) => !k.startsWith('$'))),
     tattoos: tattooRules.templates, marks: slaveryRules.contracts, markRules: { rules: currentMarkRules() },
     parasites: Object.fromEntries(Object.keys(parasiteRules.parasites).map((id) => [id, currentParasite(id)])),

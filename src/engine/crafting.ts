@@ -4,7 +4,7 @@
 //   高階工作台（擺在自己房子裡的工作台家具，見 docs/HOMES.md）。
 // - 夥伴：自願加入而且親密度夠、或奴隸才肯幫忙；雇傭的不幫忙。
 
-import { craftRules, CRAFT_IDS, itemDef, itemRules, locationById, type CraftId, type Degree } from './data'
+import { craftRules, CRAFT_IDS, itemDef, itemRules, locationById, npcTags, type CraftId, type Degree } from './data'
 import { gearRules, type MaterialKind } from './gear'
 import { cellName, currentArea, currentCell } from './grid'
 import { homeOfArea, residentsHere, workbenchFor } from './homes'
@@ -22,7 +22,24 @@ export function craftForKind(kind: MaterialKind | string): CraftId {
   return CRAFT_IDS.find((id) => craftRules.skills[id].kinds.includes(kind)) ?? 'smithing'
 }
 
-/** 角色的某種工藝（沒有學過的是 1 級） */
+/** 工匠身分的開局等級 */
+export const CRAFTER_START_LEVEL = 2
+
+/**
+ * 新角色、新加入的同伴的工藝（docs/CRAFTING.md 1.1 節）：全部 0 級，工匠身分那一門 Lv.2；
+ * 已經有的（例如 NPC 登錄上的）照舊
+ */
+export function startCrafts(tags: string[] | undefined, have?: Partial<Record<CraftId, CraftSkill>>): Partial<Record<CraftId, CraftSkill>> {
+  const out: Partial<Record<CraftId, CraftSkill>> = Object.fromEntries(CRAFT_IDS.map((id) => [id, { level: 0, xp: 0 }]))
+  for (const t of tags ?? []) {
+    const def = npcTags.tags[t]
+    if (def?.group !== 'craft') continue
+    for (const id of [def.craft, ...(def.also_crafts ?? [])]) if (id && CRAFT_IDS.includes(id)) out[id] = { level: CRAFTER_START_LEVEL, xp: 0 }
+  }
+  return { ...out, ...(have ?? {}) }
+}
+
+/** 角色的某種工藝（舊存檔裡沒有工藝資料的角色算 1 級；新角色開局就有 0 級的資料） */
 export function skillOf(c: Pick<Character, 'crafts'>, id: CraftId): CraftSkill {
   return c.crafts?.[id] ?? { level: 1, xp: 0 }
 }

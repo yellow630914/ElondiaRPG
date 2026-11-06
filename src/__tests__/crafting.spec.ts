@@ -1,3 +1,4 @@
+import { startCrafts } from '@/engine/crafting'
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -20,6 +21,8 @@ const valid = (r: Report) => expect(validate(r), JSON.stringify(validate.errors)
 
 function game(): GameState {
   const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, birthplace: 'soriel' })
+  // 舊存檔的角色（沒有工藝資料）算 Lv.1；新角色的 0 級規則在 crafting.spec 另外測
+  delete state.party[0]!.crafts
   enterLocation(state)
   state.money_cc = 20000
   return state
@@ -35,7 +38,16 @@ function companion(state: GameState, bond: 'hired' | 'voluntary' | 'slave', affi
 }
 
 describe('craft skills', () => {
-  it('starts every craft at level 1 and levels up with experience', () => {
+  it('starts a new character at level 0 (a crafter at Lv.2), an old one at level 1', () => {
+    // 新角色：全部 0 級；工匠身分那一門 Lv.2（皮匠製革、裁縫兩門）
+    const fresh = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 6, tags: ['leatherworker'] })
+    expect(skillOf(fresh.party[0]!, 'smithing')).toEqual({ level: 0, xp: 0 })
+    expect(skillOf(fresh.party[0]!, 'leatherwork').level).toBe(2)
+    expect(skillOf(fresh.party[0]!, 'tailoring').level).toBe(2)
+    expect(startCrafts(['blacksmith']).smithing).toEqual({ level: 2, xp: 0 })
+  })
+
+  it('starts every craft at level 1 for an old save and levels up with experience', () => {
     const state = game()
     expect(skillOf(pc(state), 'smithing')).toEqual({ level: 1, xp: 0 })
     expect(gainCraftXp(pc(state), 'smithing', 5)).toBeUndefined()
@@ -117,7 +129,8 @@ describe('making it yourself', () => {
     const plan = craftPlan(state, 'longsword', 'iron', [], pc(state))
     const money = state.money_cc
     prepareAction(state, { kind: 'make', target: makeTarget('pc', 'longsword', 'iron'), text: '' })
-    expect(state.pendingAction!.situational).toContainEqual({ label: '艾倫的鍛造（Lv.1）', value: 1 })
+    // 工藝檢定（R21）：工藝等級 × 2，屬性調整值 ÷ 3、不加熟練
+    expect(state.pendingAction!.situational).toContainEqual({ label: '艾倫的鍛造（Lv.1）', value: 2 })
     state.pendingAction!.natural = 20
     const r = resolveAction(state, null)
     valid(r)
@@ -147,8 +160,9 @@ describe('making it yourself', () => {
     const p = prepareAction(state, { kind: 'make', target: makeTarget(friend.id, 'leather_armor', 'leather'), text: '' })
     expect(p.actor).toBe(friend.id)
     expect(p.attr).toBe('dex')
-    expect(p.modifiers.dex).toBeGreaterThan(2)
-    expect(p.situational).toContainEqual({ label: `${friend.name}的製革（Lv.2）`, value: 2 })
+    // 靈巧 18（調整值 +4）÷ 3 = +1，不加熟練
+    expect(p.modifiers.dex).toBe(1)
+    expect(p.situational).toContainEqual({ label: `${friend.name}的製革（Lv.2）`, value: 4 })
     p.natural = 15
     const r = resolveAction(state, null)
     valid(r)
@@ -171,7 +185,9 @@ describe('shopkeepers', () => {
     expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('工匠（鍛造 Lv.2）')
     state.npcs!['keeper_soriel_smithy']!.crafts = { smithing: { level: 5, xp: 0 } }
     const p = prepareAction(state, { kind: 'craft', target: 'dagger:iron', text: '' })
-    expect(p.situational).toContainEqual({ label: '工匠的手藝（鍛造 Lv.5）', value: 4 })
+    // 委託打造由店主擲：店主的等級 × 2，屬性不算
+    expect(p.situational).toContainEqual({ label: '工匠的手藝（鍛造 Lv.5）', value: 10 })
+    expect(p.modifiers.int).toBe(0)
   })
 
   it('cannot be invited away from the shop', () => {

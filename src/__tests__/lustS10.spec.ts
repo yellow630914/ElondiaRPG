@@ -1,7 +1,8 @@
+import { trainSpec } from '@/engine/perks'
 import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import { startCombat } from '@/engine/combat'
-import { itemDef, landmarkDef, lewdRules, npcs } from '@/engine/data'
+import { itemDef, landmarkDef, lewdRules, npcs, perkDef } from '@/engine/data'
 import { enterLocation, landmarkHidden, standOn } from '@/engine/grid'
 import { useItem } from '@/engine/inventory'
 import { sanitizeItem, sanitizeNpc } from '@/engine/mods'
@@ -44,15 +45,17 @@ describe('S10-1 流派的老師', () => {
     ensureRelationship(state, npcs.find((n) => n.id === ROPE)!)
     setAffinity(state, ROPE, 10)
     expect(rope().blocked).toBeUndefined()
-    expect(rope().train.price_cc).toBe(Math.round(400 * 0.8))
-    expect(rope().train.dc).toBe(12 - 2)
+    // 學費、DC 照特質強度的公式（docs/PERKS.md 4.2 節），老師打 8 折、DC −2
+    const spec = trainSpec(perkDef('school_bondage')!)
+    expect(rope().train.price_cc).toBe(Math.round(spec.price_cc * 0.8))
+    expect(rope().train.dc).toBe(spec.dc - 2)
     expect(trainOptions(state).some((o) => o.def.id === 'rope_strength')).toBe(false)
 
     const p = prepareAction(state, { kind: 'train', target: 'school_bondage', text: '' })
     p.natural = 20
     resolveAction(state, null)
     expect(pcOf(state).perkOffers?.some((o) => o.options.includes('school_bondage'))).toBe(true)
-    expect(state.money_cc).toBe(100000 - Math.round(320 / 2))
+    expect(state.money_cc).toBe(100000 - Math.round(Math.round(trainSpec(perkDef('school_bondage')!).price_cc * 0.8) / 2))
 
     grantPerk(pcOf(state), 'school_bondage')
     expect(trainOptions(state).find((o) => o.def.id === 'rope_strength')?.mentor?.id).toBe(ROPE)
