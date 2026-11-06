@@ -1917,12 +1917,17 @@ export function sanitizePerkMod(id: string, raw: Partial<PerkMod>, custom: boole
   if (!race && raw.train && Array.isArray(raw.train.cells)) {
     const cells = [...new Set(raw.train.cells.filter((x) => (TRAIN_CELLS as readonly string[]).includes(x) || isCustomShopId(x) || isLandmarkId(x)))]
     if (cells.length) {
+      // 學費、時數、DC 沒寫時照 perks.json 的 training 公式（依強度，perks.ts 的 trainSpec）
+      const opt = (v: unknown, lo: number, hi: number) => (v === undefined || v === null || v === '' || !Number.isFinite(Number(v)) ? undefined : Math.round(num(v, lo, hi, lo)))
+      const price = opt(raw.train.price_cc, 0, 1e6)
+      const hours = opt(raw.train.hours, 1, 72)
+      const dc = opt(raw.train.dc, 5, 30)
       out.train = {
         cells,
-        price_cc: Math.round(num(raw.train.price_cc, 0, 1e6, 300)),
-        hours: Math.round(num(raw.train.hours, 1, 72, 8)),
         attr: ATTR_IDS.includes(raw.train.attr) ? raw.train.attr : 'str',
-        dc: Math.round(num(raw.train.dc, 5, 30, 12)),
+        ...(price !== undefined ? { price_cc: price } : {}),
+        ...(hours !== undefined ? { hours } : {}),
+        ...(dc !== undefined ? { dc } : {}),
       }
     }
   }

@@ -9,10 +9,12 @@ import { cellName, currentArea, currentCell } from './grid'
 import { closedHere } from './landmarks'
 import { formatMoney } from './money'
 import { pcOf } from './party'
+import { npcRecord } from './npcs'
+import { shopKey, shopTypeForCell } from './trade'
 import { presentHere } from './population'
 import { snapshot } from './character'
 import {
-  dropOffer, grantPerk, learnablePerks, losePerk, offerPerks, overcomablePerks, parsePitchTarget, perkPower, pitchCap, sanitizePerk, takeOffer, trainablePerks, trainingFee,
+  dropOffer, grantPerk, learnablePerks, losePerk, offerPerks, overcomablePerks, parsePitchTarget, perkPower, pitchCap, sanitizePerk, takeOffer, trainablePerks, trainDays, trainingFee, trainSpec, type TrainSpec,
 } from './perks'
 import { addHours, commitReport, newReportId } from './state'
 import type { Character, GameState, PerkOffer, Report } from './types'
@@ -25,19 +27,38 @@ function memberOf(state: GameState, id: string): Character {
 
 // ---- 訓練 ----
 
-type Train = NonNullable<PerkDef['train']>
+/** 可以受訓的一項：在這個設施，或向身邊的老師（mentor）；blocked 是還不能學的原因（例如好感、等級不夠） */
+export interface TrainOption { def: PerkDef; train: TrainSpec; mentor?: { id: string; name: string }; blocked?: string }
 
-/** 可以受訓的一項：在這個設施，或向身邊的老師（mentor）；blocked 是還不能學的原因（例如好感不夠） */
-export interface TrainOption { def: PerkDef; train: Train; mentor?: { id: string; name: string }; blocked?: string }
+/** 這一格的店主和主角的親密度（設施不是商店、或還沒見過店主時是 undefined） */
+function keeperHere(state: GameState, cell: string): { name: string; affinity: number } | undefined {
+  const type = shopTypeForCell(cell)
+  if (!type) return undefined
+  const keeper = state.shops?.[shopKey(state, type)]?.keeper
+  return { name: (keeper && npcRecord(state, keeper)?.name) || '店主', affinity: (keeper && state.relationships?.[keeper]?.affinity) || 0 }
+}
+
+/** 強的特質的門檻（perks.json 的 training.gates）：角色等級、老師或店主的親密度 */
+function gateBlock(level: number, t: TrainSpec, who?: { name: string; affinity: number }): string | undefined {
+  if (t.level && level < t.level) return `要角色 Lv.${t.level} 才學得來`
+  if (t.affinity && who && who.affinity < t.affinity) return `和${who.name}的親密度要 ${t.affinity} 才肯教`
+  return undefined
+}
 
 /**
  * 現在可以受訓的特質：這一格的設施（克服缺陷排前面），加上身邊的老師會教的（docs/LEWD_STATS.md 第 6.1 節）。
- * 同一個特質設施和老師都能學時，用老師的（比較便宜、比較簡單）；老師的好感不夠時照樣列出、標上原因
+ * 學費、時數、DC 照特質強度算（trainSpec）；同一個特質設施和老師都能學時，用老師的（比較便宜、比較簡單）；
+ * 好感、等級不夠時照樣列出、標上原因
  */
 export function trainOptions(state: GameState): TrainOption[] {
   const pc = pcOf(state)
   const cell = currentCell(state).kind
-  const out: TrainOption[] = closedHere(state) ? [] : [...overcomablePerks(pc, cell), ...trainablePerks(pc, cell)].map((def) => ({ def, train: def.train! }))
+  const keeper = keeperHere(state, cell)
+  const out: TrainOption[] = closedHere(state) ? [] : [...overcomablePerks(pc, cell), ...trainablePerks(pc, cell)].map((def) => {
+    const train = trainSpec(def)
+    const blocked = gateBlock(pc.level, train, keeper)
+    return { def, train, ...(blocked ? { blocked } : {}) }
+  })
   const learnable = new Map(learnablePerks(pc).map((p) => [p.id, p]))
   const r = perkRules.mentor
   for (const n of namedNpcs) {
@@ -47,13 +68,14 @@ export function trainOptions(state: GameState): TrainOption[] {
     for (const id of n.mentor.perks) {
       const def = learnable.get(id)
       if (!def) continue
-      const base = def.train ?? { ...r.default_train, cells: [] }
-      const train: Train = {
-        ...base,
-        price_cc: Math.round(base.price_cc * (n.mentor.price_mult ?? r.price_mult)),
-        dc: Math.max(5, base.dc + r.dc_delta),
+      const spec = trainSpec(def, def.train ?? { ...r.default_train, cells: [] })
+      const train: TrainSpec = {
+        ...spec,
+        price_cc: Math.round(spec.price_cc * (n.mentor.price_mult ?? r.price_mult)),
+        dc: Math.max(5, spec.dc + r.dc_delta),
       }
-      const opt: TrainOption = { def, train, mentor: { id: n.id, name: n.name }, ...(affinity < need ? { blocked: `和${n.name}再熟一點才肯教（好感要 ${need}）` } : {}) }
+      const blocked = affinity < need ? `和${n.name}再熟一點才肯教（好感要 ${need}）` : gateBlock(pc.level, train, { name: n.name, affinity })
+      const opt: TrainOption = { def, train, mentor: { id: n.id, name: n.name }, ...(blocked ? { blocked } : {}) }
       const i = out.findIndex((o) => o.def.id === id)
       if (i < 0) out.push(opt)
       else if (!opt.blocked && (out[i]!.blocked || out[i]!.train.price_cc > train.price_cc)) out[i] = opt
@@ -78,9 +100,11 @@ export function setupTrain(state: GameState, target?: string) {
   if (state.money_cc < train.price_cc) throw new Error(`錢不夠（受訓要 ${formatMoney(train.price_cc)}）`)
   const fee = (d: Degree) => formatMoney(trainingFee(train.price_cc, d))
   const where = mentor ? `跟著${mentor.name}` : `${locationById(state.location).name}的${cellName(cell)}`
+  // 每天練 session_hours 小時，練完要幾天（中間照常吃睡）
+  const { days, elapsed } = trainDays(train.hours)
   return {
-    attr: train.attr, dc: train.dc, hours: train.hours, situational: [],
-    scene: `${where}・${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}`,
+    attr: train.attr, dc: train.dc, hours: elapsed, situational: [],
+    scene: `${where}・${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}（練 ${train.hours} 小時${days > 1 ? `，分 ${days} 天` : ''}）`,
     outcomes: def.flaw ? {
       critical: `克服了缺陷（學費打對折：${fee('critical')}）`, success: `克服了缺陷（學費 ${fee('success')}）`, partial: `克服了缺陷（學費 ${fee('partial')}）`,
       fail: `還是改不掉（學費收一半：${fee('fail')}）`, fumble: `還是改不掉（學費照收：${fee('fumble')}）`,

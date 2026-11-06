@@ -33,7 +33,7 @@ function blocked(p: PerkDef): boolean {
 }
 const CAT_ICON: Record<string, IconName> = { social: 'message', explore: 'compass', combat: 'sword', body: 'heart', craft: 'book', bond: 'lock', lewd: 'fire', other: 'sparkles' }
 
-/** 依分類分組：同一類的特質與缺陷放在同一個摺疊選單（只列有東西的分類；方案 A，docs/plan/roadmap/CHECKS_PERKS_PLAN.md 第 7 節） */
+/** 依分類分組：同一類的特質與缺陷放在同一個摺疊選單（只列有東西的分類；方案 A，R20 的 C5） */
 const groups = computed(() => Object.keys(PERK_CATEGORIES)
   .map((id) => ({ id, name: PERK_CATEGORIES[id]!, perks: list.value.filter((p) => perkCategory(p) === id), flaws: flaws.value.filter((p) => perkCategory(p) === id) }))
   .filter((g) => g.perks.length || g.flaws.length))

@@ -9,7 +9,7 @@ import { LEWD_STATS, lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
 import { builtinPerk, perkEditorLimits, TRAIN_CELLS, type PerkMod } from '@/engine/mods'
 import { cellName, type CellKind } from '@/engine/grid'
-import { describeEffects, perkCategory, perkPower, PERK_CATEGORIES } from '@/engine/perks'
+import { describeEffects, perkCategory, perkPower, PERK_CATEGORIES, trainSpec } from '@/engine/perks'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
@@ -167,8 +167,15 @@ function setGrowth(stat: LewdStat, v: number) {
   setLust('growth', cur)
 }
 
+/** 受訓照公式算出來的值（欄位空白時用；docs/PERKS.md 4.2 節） */
+const formula = computed(() => trainSpec({ ...draft.value, train: undefined } as never, { attr: draft.value.train?.attr ?? 'str' }))
+function setTrainNum(k: 'price_cc' | 'hours' | 'dc', v: string) {
+  if (!draft.value.train) return
+  if (v === '' || !Number.isFinite(Number(v))) delete draft.value.train[k]
+  else draft.value.train[k] = Number(v)
+}
 function setTrain(on: boolean) {
-  if (on) draft.value.train = { cells: ['guild'], price_cc: 300, hours: 8, attr: 'str', dc: 12 }
+  if (on) draft.value.train = { cells: ['guild'], attr: 'str' }
   else delete draft.value.train
 }
 function setNpcWeight(v: string) {
@@ -383,13 +390,14 @@ function remove() {
             </label>
           </div>
           <div class="grid">
-            <label>學費（白鸛幣） <input v-model.number="draft.train.price_cc" type="number" min="0" /></label>
-            <label>花幾小時 <input v-model.number="draft.train.hours" type="number" min="1" max="72" /></label>
+            <label title="空白時照公式：強度 × 學費倍數">學費（白鸛幣） <input type="number" min="0" :placeholder="`照公式：${formula.price_cc}`" :value="draft.train.price_cc ?? ''" @input="setTrainNum('price_cc', ($event.target as HTMLInputElement).value)" /></label>
+            <label title="空白時照公式：強度 × 時數倍數">花幾小時 <input type="number" min="1" max="72" :placeholder="`照公式：${formula.hours}`" :value="draft.train.hours ?? ''" @input="setTrainNum('hours', ($event.target as HTMLInputElement).value)" /></label>
             <label>檢定屬性
               <select v-model="draft.train.attr"><option v-for="a in ATTR_IDS" :key="a" :value="a">{{ attrName(a as AttrId) }}</option></select>
             </label>
-            <label>DC <input v-model.number="draft.train.dc" type="number" min="5" max="30" /></label>
+            <label title="空白時照公式：12 + 強度">DC <input type="number" min="5" max="30" :placeholder="`照公式：${formula.dc}`" :value="draft.train.dc ?? ''" @input="setTrainNum('dc', ($event.target as HTMLInputElement).value)" /></label>
           </div>
+          <p class="small muted">空白的欄位照公式（強度 {{ Math.abs(perkPower(draft)) }}）<template v-if="formula.level">；要角色 Lv.{{ formula.level }}<template v-if="formula.affinity">、老師或店主的親密度 {{ formula.affinity }}</template> 才能學</template>。</p>
         </template>
       </FoldSet>
 

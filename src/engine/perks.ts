@@ -515,6 +515,46 @@ export function overcomablePerks(c: Character, cell: string): PerkDef[] {
   return perksOf(c).filter((p) => p.flaw && !p.race && p.train?.cells.includes(cell))
 }
 
+/** 受訓的內容（學費、時數、DC 都已經算好），以及強的特質要的門檻 */
+export interface TrainSpec {
+  cells: string[]
+  attr: AttrId
+  price_cc: number
+  /** 練習的總時數 */
+  hours: number
+  dc: number
+  /** 角色等級的門檻 */
+  level?: number
+  /** 老師或店主的親密度門檻 */
+  affinity?: number
+}
+
+/**
+ * 受訓的學費、時數、DC（perks.json 的 training，docs/PERKS.md 4.2 節）：依特質強度算，特質的 train 寫了就用寫的。
+ * 克服缺陷用缺陷強度的絕對值，學費與時數打折（flaw_mult），沒有門檻
+ */
+export function trainSpec(def: PerkDef, base: { cells?: string[]; attr: AttrId; price_cc?: number; hours?: number; dc?: number } | undefined = def.train): TrainSpec {
+  const r = perkRules.training
+  const power = Math.abs(perkPower(def))
+  const mult = def.flaw ? r.flaw_mult : 1
+  const gate = def.flaw ? undefined : [...r.gates].sort((a, b) => b.power - a.power).find((g) => power >= g.power)
+  return {
+    cells: base?.cells ?? [],
+    attr: base?.attr ?? 'cha',
+    price_cc: base?.price_cc ?? Math.max(10, Math.round((power * r.price_per_power * mult) / 10) * 10),
+    hours: base?.hours ?? Math.max(1, Math.round(power * r.hours_per_power * mult)),
+    dc: base?.dc ?? r.dc_base + Math.floor(power),
+    ...(gate ? { level: gate.level, ...(gate.affinity ? { affinity: gate.affinity } : {}) } : {}),
+  }
+}
+
+/** 練 hours 小時要幾天（每天練 session_hours 小時）與實際經過的時間（最後一天不用睡完） */
+export function trainDays(hours: number): { days: number; elapsed: number } {
+  const per = perkRules.training.session_hours
+  const days = Math.max(1, Math.ceil(hours / per))
+  return { days, elapsed: (days - 1) * 24 + (hours - (days - 1) * per) }
+}
+
 /** 受訓的費用：大成功打對折，失敗收一半，大失敗照收 */
 export function trainingFee(price: number, degree: Degree): number {
   return degree === 'critical' ? Math.round(price / 2) : degree === 'fail' ? Math.round(price / 2) : price

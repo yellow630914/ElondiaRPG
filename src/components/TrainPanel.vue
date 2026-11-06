@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { attrName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { trainOptions } from '@/engine/perkActions'
+import { trainDays } from '@/engine/perks'
 import { useGame } from '@/stores/game'
 import FoldMenu from './ui/FoldMenu.vue'
 import Hint from './ui/Hint.vue'
@@ -26,13 +27,13 @@ function train(id: string) {
 
 <template>
   <FoldMenu v-if="list.length" id="place.train" class="train" icon="book" label="受訓" detail="花錢、花時間學特質或克服缺陷" :badge="list.length">
-    <p class="muted small intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。身邊有老師時，也可以向老師學他會教的特質（好感夠才肯教，學費比較便宜、比較好學）。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
+    <p class="muted small intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。身邊有老師時，也可以向老師學他會教的特質（好感夠才肯教，學費比較便宜、比較好學）。學費、時間、難度照特質的強度算，強的特質要角色等級夠、和老師或店主夠熟才肯教；每天練 8 小時。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
     <input v-model="text" placeholder="怎麼學（選填，會寫進日誌）：例如每天天沒亮就跟著教官練" />
     <ul class="plain small">
       <li v-for="o in list" :key="o.def.id" class="row">
         <div class="grow">
           <span v-if="o.def.flaw" class="tag">克服缺陷</span><span v-if="o.mentor" class="tag">老師：{{ o.mentor.name }}</span><b>{{ o.def.name }}</b>：{{ o.def.desc }}
-          <div class="muted">{{ attrName(o.train.attr) }}檢定 DC {{ o.train.dc }}・{{ o.train.hours }} 小時・學費 {{ formatMoney(o.train.price_cc) }}</div>
+          <div class="muted">{{ attrName(o.train.attr) }}檢定 DC {{ o.train.dc }}・練 {{ o.train.hours }} 小時<template v-if="trainDays(o.train.hours).days > 1">（分 {{ trainDays(o.train.hours).days }} 天）</template>・學費 {{ formatMoney(o.train.price_cc) }}<template v-if="o.train.level">・要 Lv.{{ o.train.level }}<template v-if="o.train.affinity">、親密度 {{ o.train.affinity }}</template></template></div>
           <div v-if="o.blocked" class="muted">{{ o.blocked }}</div>
         </div>
         <button class="small" :disabled="game.judging || !!s.pendingAction || !!o.blocked || s.money_cc < o.train.price_cc" @click="train(o.def.id)">受訓</button>

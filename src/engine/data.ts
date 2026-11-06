@@ -2264,7 +2264,8 @@ export interface PerkDef {
   /** 和這些特質互斥 */
   exclusive?: string[]
   /** 可以在這些設施花錢學（缺陷：花錢克服） */
-  train?: { cells: string[]; price_cc: number; hours: number; attr: AttrId; dc: number }
+  /** 可以在哪裡受訓、用什麼屬性；學費、時數、DC 沒寫時照 perks.json 的 training 公式（依強度） */
+  train?: { cells: string[]; attr: AttrId; price_cc?: number; hours?: number; dc?: number }
   /** NPC 生成時抽到的權重與更容易抽到的標籤、職業 */
   npc?: { weight?: number; tags?: string[]; classes?: string[] }
   /** 玩家自訂或 AI 設計的（不在清單裡） */
@@ -2288,7 +2289,9 @@ export const perkRules = perksJson as unknown as {
   creation: { slots: number; max_flaws: number; slots_per_flaw: number }
   pitch: { attr: AttrId; dc: number; hours: number; power_delta: Partial<Record<Degree, number>> }
   /** 老師（固定 NPC 的 mentor）：預設的好感門檻、學費倍率、難度加減；特質沒有 train 時用 default_train */
-  mentor: { affinity: number; price_mult: number; dc_delta: number; default_train: { price_cc: number; hours: number; attr: AttrId; dc: number } }
+  mentor: { affinity: number; price_mult: number; dc_delta: number; default_train: { attr: AttrId; price_cc?: number; hours?: number; dc?: number } }
+  /** 受訓的公式（docs/PERKS.md 4.2 節） */
+  training: { price_per_power: number; hours_per_power: number; session_hours: number; dc_base: number; flaw_mult: number; gates: { power: number; level: number; affinity?: number }[] }
   custom: {
     name_chars: number; desc_chars: number; effects: number; check_bonus: [number, number]; combat: [number, number]; resist: [number, number]
     flaw: { check_bonus: [number, number]; combat: [number, number]; resist: [number, number] }
