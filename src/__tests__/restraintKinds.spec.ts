@@ -4,7 +4,7 @@ import { finishCombat } from '@/engine/combat'
 import { BIND_KINDS, enemies, itemDef, lewdRules } from '@/engine/data'
 import { forcedGearPool } from '@/engine/forcedGear'
 import { gearRules, gearSummary } from '@/engine/gear'
-import { enterLocation, standOn } from '@/engine/grid'
+import { enterLocation, standOn, type CellKind } from '@/engine/grid'
 import { equipItem, lockable, lockGear, unlockGear } from '@/engine/inventory'
 import { lewdOf } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
@@ -122,7 +122,7 @@ describe('S9-2 拘束具', () => {
 
   it('拘束戰鬥場：對手夠強時有機會拿到專屬獎品', () => {
     const state = game('albena')
-    standOn(state, 'tavern')
+    standOn(state, 'lm_uw_arena_albena' as CellKind)
     addItem(state.inventory, '皮眼罩', 1)
     const rare = arenaRules().rings.bound!.rare!
     const chance = rare.chance

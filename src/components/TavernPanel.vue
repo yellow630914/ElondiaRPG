@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { apMaxFor, apRegenFor, attrsOf, mod } from '@/engine/character'
-import { askingFor, invitable, joinableSquads, marketsHere, partyOffersHere, proposeDc, squadOptions, waitChance } from '@/engine/companions'
-import { abilityDef, attributeRules, className, companionRules, conditionName, genderName, raceName } from '@/engine/data'
+import { askingFor, invitable, joinableSquads, partyOffersHere, proposeDc, squadOptions, waitChance } from '@/engine/companions'
+import { abilityDef, attributeRules, className, companionRules, conditionName, genderName, raceName, slaveryRules } from '@/engine/data'
+import { landmarkHidden } from '@/engine/grid'
+import { underworldAskBlocked, underworldEntryBlocked, underworldKnown, underworldLandmarks, underworldOf } from '@/engine/underworld'
 import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { ASK_COST, ASK_DC, askAroundBlock } from '@/engine/askAround'
@@ -16,7 +18,6 @@ import { canNegotiate } from '@/engine/negotiation'
 import { discount, keeperTitle, shopKey } from '@/engine/trade'
 import type { Character, TavernCandidate } from '@/engine/types'
 import { useGame } from '@/stores/game'
-import MarketPanel from './MarketPanel.vue'
 import { spellSlots } from './party/memberInfo'
 import NameTag from './NameTag.vue'
 import AppDialog from './AppDialog.vue'
@@ -143,11 +144,19 @@ function squadJoin(leaderId: string) {
 // ---- 寄放在酒館的夥伴（不算離隊、不收錢，奴隸不能寄放） ----
 const lodgers = computed(() => lodgersHere(s.value))
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer && m.bond !== 'guest'))
-const blackText = ref('')
-const blackKnown = computed(() => marketsHere(s.value).some((m) => m.kind === 'black'))
+
+// ---- 地下街（underworld.ts）：沒打聽到之前打聽，打聽到之後從這裡走進去 ----
+const underworld = computed(() => underworldOf(s.value.location))
+const underworldIn = computed(() => (underworld.value ? underworldLandmarks(underworld.value).filter((l) => !landmarkHidden(s.value, l)).map((l) => l.name) : []))
+const knowsUnderworld = computed(() => underworldKnown(s.value))
+const enterWhy = computed(() => underworldEntryBlocked(s.value))
+const askWhy = computed(() => underworldAskBlocked(s.value))
+const askText = ref('')
+const askDc = slaveryRules.black_market_search.dc
+const askHours = slaveryRules.black_market_search.hours
 
 // ---- 選單 ----
-type Section = 'meals' | 'recruit' | 'offers' | 'invite' | 'lodge' | 'black' | 'trade'
+type Section = 'meals' | 'recruit' | 'offers' | 'invite' | 'lodge' | 'underworld' | 'trade'
 const section = ref<Section | null>(null)
 const bestMeal = computed(() => {
   const list = s.value.party.flatMap((m) => m.status.filter((c) => MEAL_CONDITIONS.has(c)))
@@ -166,7 +175,11 @@ const menuItems = computed<MenuItem[]>(() => {
     )
     if (inviteList.value.length) items.push({ id: 'invite', icon: 'feather', label: '邀請認識的人', detail: `${inviteList.value.length} 位認識的人可以邀請`, badge: inviteList.value.length })
     if (lodgers.value.length || companions.value.length) items.push({ id: 'lodge', icon: 'home', label: '寄放夥伴', detail: lodgers.value.length ? `${lodgers.value.map((m) => m.name).join('、')}在這裡等你` : '讓同伴在酒館等你回來（不算離隊、不收錢）', badge: lodgers.value.length || '' })
-    items.push({ id: 'black', icon: 'eye', label: blackKnown.value ? '黑市' : '打聽黑市', detail: blackKnown.value ? '不公開的奴隸買賣' : '魅力檢定，約 2 小時' })
+    if (underworld.value) {
+      items.push(knowsUnderworld.value
+        ? { id: 'enter_underworld', icon: 'door', label: `走進${underworld.value.name}`, disabled: !!enterWhy.value, detail: enterWhy.value ?? (underworldIn.value.length ? `裡面有${underworldIn.value.join('、')}` : '見不得光的買賣') }
+        : { id: 'underworld', icon: 'eye', label: '打聽地下街', detail: `魅力檢定 DC ${askDc}，約 ${askHours} 小時：這座城見不得光的買賣藏在哪裡` })
+    }
   }
   // 打聽：線索池的隱藏線索（askAround.ts）
   const askBlock = game.state ? askAroundBlock(game.state) : null
@@ -189,9 +202,10 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
 function pick(id: string) {
   if (id === 'discount') game.startNegotiation('shop_discount', { shop: 'tavern' })
   else if (id === 'ask') game.askAround()
+  else if (id === 'enter_underworld') game.enterUnderworld()
   else section.value = id as Section
 }
-const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', lodge: '寄放夥伴', black: '黑市', trade: '酒館的交易' }
+const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', lodge: '寄放夥伴', underworld: '打聽地下街', trade: '酒館的交易' }
 </script>
 <template>
   <div class="tavern">
@@ -199,7 +213,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
     <p v-if="keeper" class="small muted keeper">{{ keeperTitle('tavern') }}：<NameTag :id="keeper.id" />・{{ keeper.personality }}</p>
     <BuildingMenu :items="menuItems" @pick="pick" />
 
-    <AppDialog :open="section !== null" :title="section ? TITLES[section] : ''" icon="mug" :inline-error="section === 'trade'" :width="section === 'trade' ? '1180px' : section === 'black' ? '980px' : '900px'" @close="section = null">
+    <AppDialog :open="section !== null" :title="section ? TITLES[section] : ''" icon="mug" :inline-error="section === 'trade'" :width="section === 'trade' ? '1180px' : '900px'" @close="section = null">
       <template #head>
         <Hint v-if="section === 'meals'" text="全隊一起吃（價格是每人）。吃完的狀態到下次長休前有效；同時只保留最好的一餐，喝酒喝多了會微醺。" />
         <Hint v-else-if="section === 'recruit'" :text="`今天在城裡、可以雇用的冒險者（在右側「這裡的人」也能直接雇用）。出價低於要價時要談判；出價的影響最大，運氣好甚至能免費雇到人。\n雇用是一次付清：沒有期限，也不用按週付薪水。之後的戰利品與委託報酬都歸你，不用分給同伴。\n同伴的親密度降到 ${companionRules.leave_threshold} 以下時，會在短休或長休後離隊（奴隸除外）；也可以在隊伍裡遣散。`" />
@@ -369,14 +383,11 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
         </template>
       </template>
 
-      <!-- 黑市 -->
-      <template v-else-if="section === 'black'">
-        <MarketPanel v-if="blackKnown" kind="black" />
-        <template v-else>
-          <p class="small muted">有些城鎮有不公開的奴隸買賣。向酒館裡的人打聽看看（魅力檢定，約 2 小時）。</p>
-          <input v-model="blackText" class="wide" placeholder="打聽的方式（選填）" />
-          <button class="primary" :disabled="game.judging" @click="game.perform({ kind: 'black_market', text: blackText }); blackText = ''; section = null">打聽黑市</button>
-        </template>
+      <!-- 打聽地下街 -->
+      <template v-else-if="section === 'underworld'">
+        <p class="small muted">這座城有見不得光的買賣（黑市、淫鬥場、地下俱樂部……），都藏在不對外人說的地下街裡。向酒館裡的人打聽入口（魅力檢定 DC {{ askDc }}，約 {{ askHours }} 小時）；打聽到之後從酒館就能走進去。</p>
+        <input v-model="askText" class="wide" placeholder="打聽的方式（選填）" />
+        <button class="primary" :disabled="game.judging || !!askWhy" @click="game.perform({ kind: 'black_market', text: askText }); askText = ''; section = null">{{ askWhy ?? '打聽地下街' }}</button>
       </template>
 
       <!-- 酒館的交易 -->

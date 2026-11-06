@@ -446,6 +446,9 @@ def quest_of_flag(f):
     return '／'.join(f"「{F.TITLE[p]}」" for p in ps) or f
 
 
+UNDERWORLD = json.load(open('data/world/special_maps.json'))['maps']
+
+
 def landmarks_page():
     out = ['# 城鎮的特色地標', '', HEAD, '各城鎮的地標：開放條件、可以做的事。成人向的地標標 🔞。', '']
     by_loc = collections.defaultdict(list)
@@ -465,6 +468,11 @@ def landmarks_page():
             if o.get('min_reputation'): cond.append(f"所屬勢力聲望 ≥ {o['min_reputation']}（皇族不看聲望）")
             if o.get('flags'): cond.append(('完成相關任務後才出現：' if o.get('hidden') else '要先完成：') + '、'.join(quest_of_flag(f) for f in o['flags']))
             if cond: out.append('- **開放**：' + '；'.join(cond))
+            if l['at']['area'].startswith('sm/'):
+                sm = UNDERWORLD.get(l['at']['area'][3:])
+                out.append(f"- **位置**：{sm['name'] if sm else '特殊地圖'}" + ('（地下街：在酒館「打聽地下街」之後從酒館進去）' if sm and sm.get('underworld') else ''))
+            if l.get('black_market'): out.append('- **黑市**：不公開的奴隸買賣、今天的珍品')
+            if l.get('arena'): out.append('- **淫鬥場**：淫物場、拘束戰鬥場、性戰場')
             if l.get('visit'): out.append(f"- **參訪**：{l['visit']['title']}" + (f"（{l['visit']['money_cc']} 白鸛）" if l['visit'].get('money_cc') else '') + (f" → {fx_text(gfx(l['visit']))}" if l['visit'].get('effects') else ''))
             if l.get('explore'):
                 e = l['explore']

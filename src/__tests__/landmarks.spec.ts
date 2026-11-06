@@ -4,10 +4,10 @@ import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction } from '@/engine/actions'
 import mapsJson from '@data/world/maps.json'
-import { geography, landmarks, landmarkTypes, townQuestTemplates } from '@/engine/data'
+import { geography, landmarks, landmarkTypes, specialMapOfKey, townQuestTemplates } from '@/engine/data'
 import { CELL_ICON, cellName, currentCell, enterLocation, getArea, questRunnableHere, settlementArea, standOn } from '@/engine/grid'
 import { acceptQuest, guildQuests, questScene, questSpot } from '@/engine/town'
-import { builtinLandmark, newLandmark, sanitizeLandmarkMod } from '@/engine/landmarkMods'
+import { builtinLandmark, landmarkSpotProblem, newLandmark, sanitizeLandmarkMod } from '@/engine/landmarkMods'
 import { applyExplore, blockedReason, closedHere, landmarkHere, setupExplore, visitLandmark, withLandmark } from '@/engine/landmarks'
 import { trainablePerks } from '@/engine/perks'
 import { setFlag } from '@/engine/storyFlags'
@@ -47,14 +47,24 @@ describe('built-in landmarks', () => {
     for (const l of list) {
       expect(l.id).toMatch(/^lm_[a-z0-9_]+$/)
       expect(geography.locations.find((x) => x.id === l.location)?.type).not.toBe('dungeon')
-      const [loc, block] = l.at.area.split('/')
-      expect(loc).toBe(l.location)
-      const grid = maps.maps[loc!]!.blocks.find((b) => b.id === block)!.grid
-      expect(grid[l.at.y]![l.at.x], l.id).toBe('.')
       expect(cells.has(`${l.at.area}:${l.at.x},${l.at.y}`)).toBe(false)
       cells.add(`${l.at.area}:${l.at.x},${l.at.y}`)
       expect(l.types.length).toBeGreaterThan(0)
       for (const t of l.types) expect(landmarkTypes[t], `${l.id} ${t}`).toBeDefined()
+      // 地下街裡的地標：同一個聚落的地下街，地圖上畫的空地
+      const sm = specialMapOfKey(l.at.area)
+      if (sm) {
+        expect(sm.underworld, l.id).toBe(true)
+        expect(sm.location).toBe(l.location)
+        expect(sm.grid![l.at.y]![l.at.x], l.id).toBe('.')
+        expect(landmarkSpotProblem(l.id, l.at), l.id).toBeUndefined()
+        expect(cellName(l.id as never)).toBe(l.name)
+        continue
+      }
+      const [loc, block] = l.at.area.split('/')
+      expect(loc).toBe(l.location)
+      const grid = maps.maps[loc!]!.blocks.find((b) => b.id === block)!.grid
+      expect(grid[l.at.y]![l.at.x], l.id).toBe('.')
       expect(kindAt(l.at)).toBe(l.id)
       expect(cellName(l.id as never)).toBe(l.name)
       expect(CELL_ICON[l.id as never]).toBe(l.emoji)

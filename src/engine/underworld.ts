@@ -33,6 +33,14 @@ export function underworldKnown(state: GameState, location = state.location): bo
   return underworldLandmarks(map).some((l) => !!l.open?.flags?.length && condMet(state, { flags: l.open.flags, ...(l.open.flags_none ? { flags_none: l.open.flags_none } : {}) }))
 }
 
+/** 為什麼現在不能在這裡打聽地下街（可以時是 undefined） */
+export function underworldAskBlocked(state: GameState): string | undefined {
+  if (currentArea(state).kind !== 'settlement' || currentCell(state).kind !== 'tavern') return '要在酒館才能打聽'
+  if (!underworldOf(state.location)) return '這座城沒有地下街'
+  if (underworldKnown(state)) return '已經知道地下街的入口了'
+  return undefined
+}
+
 /** 為什麼現在不能從這裡走進地下街（可以時是 undefined） */
 export function underworldEntryBlocked(state: GameState): string | undefined {
   const map = underworldOf(state.location)

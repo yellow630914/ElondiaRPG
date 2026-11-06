@@ -535,8 +535,8 @@ def write_s8_10():
 
 # ---------------- S8-11 淫鬥場 ----------------
 ARENA = {
-    "$comment": "淫鬥場（docs/LEWD_STATS.md 第 21 節）：魅氣濃度 charm_min 以上的聚落，站在 cells 的設施（娼館、酒館）可以報名；慾望戰鬥關閉時沒有。報名費 fee；三種擂臺（rings），每贏 streak_per_tier 場往上一級對手（tiers 是各級的對手組合），輸了連勝歸零。獎金 = prize.base + prize.per_tier × 對手等級（0 起算）；勝場另外有 item_chance 拿到 items 裡的一樣，對手等級 book_tier 以上有 book_chance 拿到 books 裡的一本。賭注賽（wager）：報名費與獎金 × wager.mult，輸了曝露名聲、順從另外上升（wager.loss）。restraint：上場前選一件行囊裡的拘束具戴上、用白鐵鎖鎖上，打完拿掉。lust_only：性戰場——生命傷害關閉，非魅惑的傷害改成 lust_convert 比例的慾望；雙方都用我方的「三次」規則（高潮不扣生命，第三次倒下）。輸了不會損失錢、不會有戰敗事件。",
-    "charm_min": 3, "cells": ["brothel", "tavern"], "fee": 30, "streak_per_tier": 2,
+    "$comment": "淫鬥場（docs/LEWD_STATS.md 第 21 節）：站在地下街裡的淫鬥場地標（landmarks.json 的 arena，見 docs/SPECIAL_MAPS.md 第 9 節）上可以報名；慾望戰鬥關閉時沒有。報名費 fee；三種擂臺（rings），每贏 streak_per_tier 場往上一級對手（tiers 是各級的對手組合），輸了連勝歸零。獎金 = prize.base + prize.per_tier × 對手等級（0 起算）；勝場另外有 item_chance 拿到 items 裡的一樣，對手等級 book_tier 以上有 book_chance 拿到 books 裡的一本。賭注賽（wager）：報名費與獎金 × wager.mult，輸了曝露名聲、順從另外上升（wager.loss）。restraint：上場前選一件行囊裡的拘束具戴上、用白鐵鎖鎖上，打完拿掉。lust_only：性戰場——生命傷害關閉，非魅惑的傷害改成 lust_convert 比例的慾望；雙方都用我方的「三次」規則（高潮不扣生命，第三次倒下）。輸了不會損失錢、不會有戰敗事件。",
+    "fee": 30, "streak_per_tier": 2,
     "prize": {"base": 60, "per_tier": 50},
     "item_chance": 0.3, "items": ["媚藥瓶", "清心茶", "媚香精油"],
     "book_tier": 3, "book_chance": 0.1,

@@ -1,7 +1,7 @@
 import { describe, expect, it, afterEach } from 'vitest'
 import { arenaBlocked, arenaPurse, arenaRules, arenaTier, startArena } from '@/engine/arena'
 import { act, currentActor, effectiveLustMax, finishCombat, type Combatant } from '@/engine/combat'
-import { enterLocation, standOn } from '@/engine/grid'
+import { enterLocation, standOn, type CellKind } from '@/engine/grid'
 import { lewdOf } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
 import { addItem, newGame } from '@/engine/state'
@@ -11,7 +11,7 @@ import { setContentFilters } from '@/engine/content'
 function game(location = 'albena'): GameState {
   const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 9, birthplace: location })
   enterLocation(state)
-  standOn(state, 'tavern')
+  standOn(state, `lm_uw_arena_${location}` as CellKind)
   state.money_cc = 10000
   return state
 }
@@ -29,9 +29,14 @@ function lose(state: GameState) {
 }
 
 describe('淫鬥場', () => {
-  it('魅氣濃的城鎮，娼館或酒館才能報名', () => {
+  it('在地下街的淫鬥場才能報名；酒館、娼館與沒有淫鬥場的城都不行', () => {
     expect(arenaBlocked(game())).toBeUndefined()
     expect(arenaBlocked(game('rhineburg'))).toContain('沒有淫鬥場')
+    const state = game()
+    standOn(state, 'tavern')
+    expect(arenaBlocked(state)).toContain('沒有淫鬥場')
+    standOn(state, 'brothel')
+    expect(arenaBlocked(state)).toContain('沒有淫鬥場')
   })
 
   it('贏了發獎金、記連勝，贏夠了換更強的對手；輸了不損失錢、沒有戰敗事件', () => {
@@ -119,7 +124,7 @@ describe('性戰場', () => {
   function arena() {
     const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 9, birthplace: 'albena' })
     enterLocation(state)
-    standOn(state, 'tavern')
+    standOn(state, 'lm_uw_arena_albena' as CellKind)
     state.money_cc = 10000
     const pc = pcOf(state)
     pc.level = 17

@@ -16,7 +16,7 @@ import {
   attrName, contentRevision, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
-import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
+import { endpointsIn, enterSpecial, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { chestForgeCandidates, chestForgeTable, gearRules, localLootItems, MATERIAL_KINDS, randomGear, registerGear } from './gear'
 import { blueprintName, blueprintRules, grantBlueprint, randomBlueprint } from './blueprints'
 import { isMaterialQuest, questTargets } from './materialQuests'
@@ -514,6 +514,15 @@ export function standOn(state: GameState, kind: CellKind): boolean {
       placeAt(state, area, i % area.width, Math.floor(i / area.width))
       return true
     }
+  }
+  // 擺在特殊地圖裡的地標（例如地下街的黑市）：走進那張地圖、站上去
+  const l = landmarkDef(kind)
+  if (l && l.location === state.location && l.at.area.startsWith('sm/')) {
+    const area = getArea(state, l.at.area)
+    if (cellAt(area, l.at.x, l.at.y)?.kind !== kind) return false
+    enterSpecial(state, l.at.area.slice(3))
+    placeAt(state, getArea(state, l.at.area), l.at.x, l.at.y)
+    return true
   }
   return false
 }

@@ -1546,7 +1546,7 @@ export interface MasterEventDef {
 export interface UnmarkServiceDef {
   name: string
   desc: string
-  /** cell：站在設施上；black_market：知道這裡的黑市，在酒館；caster：身邊或隊伍裡有這些職業的人 */
+  /** cell：站在設施上；black_market：站在地下街裡的黑市地標上（cell 不看）；caster：身邊或隊伍裡有這些職業的人 */
   where: 'cell' | 'black_market' | 'caster'
   cell?: string
   classes?: string[]
@@ -2439,7 +2439,7 @@ export const lewdRules = lewdJson as unknown as {
   /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
   conquest: { chance: number; kinds: Record<string, string> }
   arena: {
-    charm_min: number; cells: string[]; fee: number; streak_per_tier: number
+    fee: number; streak_per_tier: number
     prize: { base: number; per_tier: number }
     item_chance: number; items: string[]; book_tier: number; book_chance: number; books: string[]
     wager: { mult: number; loss: Partial<Record<LewdKey, number>> }

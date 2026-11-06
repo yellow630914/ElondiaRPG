@@ -29,6 +29,7 @@ import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
 import { growLewd, addLewd, lewdOf } from './lewd'
+import { blackMarketHere } from './underworld'
 import type { Character, ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 import { gameRule } from './gameRules'
@@ -899,9 +900,6 @@ export function oathStrength(t: Tattoo): number {
   return 10 + Object.values(t.attrs ?? {}).filter((v) => (v ?? 0) > 0).reduce((sum, v) => sum + v!, 0) * 2
 }
 
-function blackMarketKnown(state: GameState): boolean {
-  return !!slaveryRules.markets[state.location]?.black && !!state.flags[`black_market:${state.location}`]
-}
 
 /** 這個服務在這裡的聲望夠不夠（神殿） */
 export function unmarkRepOk(state: GameState, def: UnmarkServiceDef): boolean {
@@ -933,7 +931,7 @@ export function unmarkOffers(state: GameState): UnmarkOffer[] {
       const fee = Math.round(strength * def.price_per_point * (def.cell === 'temple' ? pcTagMult(pcOf(state), 'service_mult') : 1))
       if (!unmarkRepOk(state, def)) continue
       if (def.where === 'cell' && cell === def.cell) out.push({ ...base, target: id, dc, fee_cc: fee })
-      if (def.where === 'black_market' && cell === def.cell && blackMarketKnown(state)) out.push({ ...base, target: id, dc, fee_cc: fee })
+      if (def.where === 'black_market' && !!slaveryRules.markets[state.location]?.black && blackMarketHere(state)) out.push({ ...base, target: id, dc, fee_cc: fee })
       if (def.where === 'caster') for (const c of castersFor(state, def)) out.push({ ...base, target: `mage:${c.id}`, dc, fee_cc: c.free ? 0 : fee, helper: c.name })
     }
   }
