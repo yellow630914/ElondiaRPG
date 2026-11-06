@@ -79,6 +79,28 @@ function trial(monster: string, level: number, seed: number) {
 
 export interface Durability { id: string; name: string; level: number; hp: number; boss: boolean; perHit: number; perRound: number; hitsToKill: number; roundsToKill: number }
 
+/** 耐打度的檢查分成幾份（balance.1～4.spec.ts 各跑一份，四個檔案平行，整次測試不用等一個檔案跑完所有怪物） */
+export const DURABILITY_PARTS = 4
+
+/**
+ * 耐打度：所有怪物，或其中一份（part 0～parts-1，照順序交錯分，層主平均分到每一份）。
+ * 頭目：地下城的層主，加上有大招（ability_hp_below）的特殊任務頭目。BALANCE_TRIALS 可以改每隻打幾場（預設 12）
+ */
+export function durabilityRows(part?: number, parts = DURABILITY_PARTS): Durability[] {
+  const bosses = bossIds()
+  const trials = Number(process.env.BALANCE_TRIALS ?? 12)
+  return Object.keys(enemies)
+    .filter((_, i) => part === undefined || i % parts === part)
+    .map((id) => durability(id, trials, bosses.has(id) || !!enemies[id]!.ability_hp_below))
+}
+
+/** 不在範圍內的怪物（小怪 3～5 下、層主 4～5.5 回合，模擬有亂數，容許一點誤差）：寫成說明 */
+export function durabilityOff(rows: Durability[]): string[] {
+  return rows
+    .filter((r) => (r.boss ? r.roundsToKill < 3.7 || r.roundsToKill > 5.9 : r.hitsToKill < 2.7 || r.hitsToKill > 5.4))
+    .map((r) => `${r.name}（${r.level} 級${r.boss ? '層主' : ''}）${r.boss ? `${r.roundsToKill} 回合` : `${r.hitsToKill} 下`}`)
+}
+
 /** 各地下城各層的層主 */
 export function bossIds(): Set<string> {
   const out = new Set<string>()
