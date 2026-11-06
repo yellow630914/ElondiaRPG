@@ -18,6 +18,7 @@ import {
 } from './data'
 import { endpointsIn, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
 import { chestForgeCandidates, gearRules, localLootItems, MATERIAL_KINDS, randomGear, registerGear } from './gear'
+import { blueprintName, blueprintRules, grantBlueprint, randomBlueprint } from './blueprints'
 import { isMaterialQuest, questTargets } from './materialQuests'
 import { blockingNode, ensureStoryMarkers, sideNodesOpen, storyNeedsLandmark } from './story'
 import { applyPendingMove, leaveSide, roadMove } from './road'
@@ -1457,6 +1458,7 @@ function openChest(state: GameState, area: Area, level: number, relic = false): 
   const extra = parkPlaza(area.location) ? parkRules().chest_items : []
   // 地點指定的材料系列（緋夢樂園底下的遺跡開歡愉系列）
   const series = geography.locations.find((l) => l.id === area.location)?.material_series
+  let foundBlueprint: string | undefined
   const money = withRng(state, (rng) => {
     for (const [name, p] of [...t.items, ...extra]) if (itemDef(name) && rng.chance(p)) add(name)
     if (rng.chance(t.gear)) add(registerGear(state, randomGear(rng, level, undefined, series)))
@@ -1468,13 +1470,17 @@ function openChest(state: GameState, area: Area, level: number, relic = false): 
       const pool = chestForgeCandidates(rng.pick(MATERIAL_KINDS), tier, series, (local ??= localLootItems(area.location)))
       if (pool.length) add(rng.pick(pool))
     }
+    // 圖紙（R21）：照層數的機率多一張還沒有的
+    const bp = rng.chance(blueprintRules().chest[layer] ?? 0) ? randomBlueprint(state, rng) : undefined
+    if (bp) foundBlueprint = bp
     return rng.int(t.money[0], t.money[1]) * level
   })
+  if (foundBlueprint) grantBlueprint(state, foundBlueprint)
   report.changes.money_cc = rewardMoney(state, money)
   if (items.length) report.changes.items_gained = items
   report.outcome = {
     result: 'success',
-    summary: `${relic ? `在${area.name}找到冒險者的遺物，從他們留下的行囊裡翻出` : `在${area.name}打開一個寶箱：`}${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name))].join('、')}。`,
+    summary: `${relic ? `在${area.name}找到冒險者的遺物，從他們留下的行囊裡翻出` : `在${area.name}打開一個寶箱：`}${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name)), ...(foundBlueprint ? [blueprintName(foundBlueprint)] : [])].join('、')}。`,
     tags: [relic ? '遺物' : '寶箱'],
   }
   return commitReport(state, report)

@@ -1638,7 +1638,7 @@ export const NPC_TAG_GROUPS: Record<NpcTagGroup, string> = { identity: '身分',
 export interface NpcTagDef {
   /** 分組（沒寫時算「身分」） */
   group?: NpcTagGroup
-  /** 工匠：對應的工藝（開局這門工藝 Lv.2，docs/CRAFTING.md 第 1 節） */
+  /** 工匠：對應的工藝（開局這門工藝 Lv.2，docs/CRAFTING.md 1.1 節） */
   craft?: CraftId
   /** 工匠：另外也算的工藝（皮匠：製革以外還有裁縫） */
   also_crafts?: CraftId[]
@@ -2177,6 +2177,8 @@ export const craftRules = craftsJson as unknown as {
   level_bonus: number
   /** 工藝檢定：屬性調整值除以多少（向零捨去） */
   attr_div: number
+  /** 圖紙（blueprints.ts） */
+  blueprints: { dc_without: number; price_mult: number; min_price: number; shop: [number, number]; village_max_base_price: number; chest: Partial<Record<DungeonLayerId, number>>; armed_drop: number }
   /** 學工藝：tuition[i] 是 Lv.i → Lv.i+1 的學費與時數 */
   tuition: { price_cc: number; hours: number }[]
   xp_to_next: number[]

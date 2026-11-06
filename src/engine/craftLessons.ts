@@ -1,4 +1,4 @@
-// 學工藝（docs/CRAFTING.md 第 1 節，R21 的 K5）：站在對應的店（crafts.json 的 skills.shop）付學費、花時間，工藝升一級。
+// 學工藝（docs/CRAFTING.md 1.1 節，R21 的 K5）：站在對應的店（crafts.json 的 skills.shop）付學費、花時間，工藝升一級。
 // 店裡最多教到 tuition 的長度（Lv.2）；之後只能靠製作升級。不用擲骰，學會的那一級經驗從 0 起算。
 
 import { craftRules, CRAFT_IDS, type CraftId } from './data'

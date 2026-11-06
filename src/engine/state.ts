@@ -93,7 +93,7 @@ export function newGame(opts: NewGameOptions): GameState {
   if (gender) pc.gender = gender
   const tags = sanitizePcTags(opts.tags)
   if (tags.length) pc.tags = tags
-  // 工藝從 0 級開始，工匠身分那一門 Lv.2（docs/CRAFTING.md 第 1 節）
+  // 工藝從 0 級開始，工匠身分那一門 Lv.2（docs/CRAFTING.md 1.1 節）
   pc.crafts = startCrafts(tags)
   if (appearance) pc.appearance = appearance
   if (body) pc.body = body

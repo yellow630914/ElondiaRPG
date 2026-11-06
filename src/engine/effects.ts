@@ -25,6 +25,7 @@ import { withRng } from './state'
 import { gearKnown, registerGear, syncGear } from './gear'
 import type { Character, GameState, GearSpec, Intel, NpcRecord, Report, TattooPlace } from './types'
 import { addIntel } from './intel'
+import { blueprintName, grantBlueprint } from './blueprints'
 import { discoverLead, leadById } from './leads'
 import { hearOf } from './bestiary'
 import { inActiveSquad } from './squads'
@@ -132,12 +133,14 @@ export type RewardEffect =
    * 全部學過時套用 fallback。target 預設主角
    */
   | { type: 'ability_pool'; pool: MasterEventPool; target?: string; fallback?: RewardEffect[] }
+  /** 圖紙（底材 id，記在 state.blueprints；docs/CRAFTING.md 2.2 節） */
+  | { type: 'blueprint'; base: string }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip', 'restrain',
-  'parasite', 'corruption', 'lewd', 'ability_pool', 'rumor',
+  'parasite', 'corruption', 'lewd', 'ability_pool', 'rumor', 'blueprint',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -201,6 +204,9 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'item':
         if (e.qty > 0) (c.items_gained ??= []).push({ name: e.name, qty: e.qty, ...(e.quality ? { quality: e.quality } : {}), owner: 'pc' })
         else if (e.qty < 0) (c.items_lost ??= []).push({ name: e.name, qty: -e.qty })
+        break
+      case 'blueprint':
+        if (grantBlueprint(state, e.base)) notes.push(`得到【${blueprintName(e.base)}】`)
         break
       case 'gear': {
         // 底材或材料被刪掉的裝備獎勵：略過

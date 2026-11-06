@@ -26,7 +26,7 @@ export function craftForKind(kind: MaterialKind | string): CraftId {
 export const CRAFTER_START_LEVEL = 2
 
 /**
- * 新角色、新加入的同伴的工藝（docs/CRAFTING.md 第 1 節）：全部 0 級，工匠身分那一門 Lv.2；
+ * 新角色、新加入的同伴的工藝（docs/CRAFTING.md 1.1 節）：全部 0 級，工匠身分那一門 Lv.2；
  * 已經有的（例如 NPC 登錄上的）照舊
  */
 export function startCrafts(tags: string[] | undefined, have?: Partial<Record<CraftId, CraftSkill>>): Partial<Record<CraftId, CraftSkill>> {

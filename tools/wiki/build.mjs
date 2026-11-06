@@ -132,7 +132,6 @@ export const GROUPS = [
     { page: '特殊任務時段計畫', src: 'docs/plan/roadmap/STORY_TIME_PLAN.md', desc: '內建特殊任務與事件的時段盤點與套用（R13）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
-    { page: '工藝計畫', src: 'docs/plan/roadmap/CRAFTING_PLAN.md', desc: '工藝規則：0 級門檻、學費、圖紙、檢定公式、合併製革與裁縫（R21）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
     { page: '已完成', src: 'docs/plan/roadmap/COMPLETED.md', desc: '做完的計畫：做了什麼、規則寫在哪份文件' },
   ] },

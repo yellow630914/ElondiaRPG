@@ -25,6 +25,7 @@ import {
 } from './data'
 import { characterFor, npcRecord, registerNpc, weightedPick } from './npcs'
 import { gearBonuses, gearRules, randomGear, registerGear } from './gear'
+import { blueprintName, blueprintRules, grantBlueprint, randomBlueprint } from './blueprints'
 import { rollDefeatEvent } from './defeat'
 import { inPark, parkDefeat, parkLust, parkStamps, saveParkLust } from './park'
 import { charmRutMult } from './charm'
@@ -2266,6 +2267,8 @@ export function finishCombat(state: GameState): Report {
 
   let money = 0
   const items: ItemDelta[] = []
+  /** 從人形的敵人身上搜到的圖紙（R21，docs/CRAFTING.md 2.2 節） */
+  const blueprints: string[] = []
   const h = population.hostility
   const xpOf = (f: Combatant) => Math.round((f.npcId ? h.xp_per_level * f.level : enemies[f.defId!]?.xp ?? 0) * (f.xpMult ?? 1))
   const xpTotal = victory ? defeated.reduce((sum, f) => sum + xpOf(f), 0) : 0
@@ -2306,6 +2309,11 @@ export function finishCombat(state: GameState): Report {
       // 持有裝備的人形怪物：有機會掉一件依等級生成的裝備
       if (def.armed && rng.chance(Math.min(drops.armed.max_chance, drops.armed.chance + drops.armed.per_level * def.level))) {
         gain(registerGear(state, randomGear(rng, def.level, undefined, geography.locations.find((l) => l.id === combat.location)?.material_series)))
+      }
+      // 人形的敵人身上可能搜到一張圖紙
+      if (def.armed && rng.chance(blueprintRules().armed_drop)) {
+        const bp = randomBlueprint(state, rng)
+        if (bp && !blueprints.includes(bp)) blueprints.push(bp)
       }
       // 人形的敵人身上可能搜到鑰匙（lewd.json 的 unbind.keys）
       const key = def.armed && rng.chance(lewdRules.unbind.keys.chance) ? keyForLevel(def.level) : undefined
@@ -2381,6 +2389,8 @@ export function finishCombat(state: GameState): Report {
   // 怪物圖鑑：在場的怪物記成遭遇、倒下的記一次擊敗
   const charted = noteFight(state, foes)
   if (charted.length) report.outcome.summary += `圖鑑新增：${charted.join('、')}。`
+  const gotBlueprints = blueprints.filter((b) => grantBlueprint(state, b))
+  if (gotBlueprints.length) report.outcome.summary += `搜到圖紙：${gotBlueprints.map(blueprintName).join('、')}。`
   // 玩家自願戰敗：規則照一般戰敗，只告訴寫手主角是主動認輸還是不幸落敗
   if (combat.surrender === 'willing') {
     report.outcome.summary += '你主動放下武器認輸。'
