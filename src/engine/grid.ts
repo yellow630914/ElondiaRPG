@@ -293,6 +293,27 @@ export function layerKey(locationId: string, layer: number) {
   return `${locationId}/L${layer}`
 }
 
+/** 區域 key 的名字（不建立地圖，給「今天在哪」這類只要名字的地方用） */
+export function areaKeyName(key: string): string {
+  if (key.startsWith('sm/')) {
+    const sm = specialMaps[key.slice(3)]
+    if (!sm) return '某個特別的地方'
+    const loc = sm.location ? geography.locations.find((l) => l.id === sm.location) : undefined
+    return loc && !sm.name.includes(loc.name) ? `${loc.name}・${sm.name}` : sm.name
+  }
+  if (key.startsWith('home/')) return '某處的房子'
+  const [locationId, blockId = ''] = key.split('/')
+  const loc = geography.locations.find((l) => l.id === locationId)
+  if (!loc) return '某個地方'
+  if (blockId === 'outskirts') return `${loc.name}近郊`
+  const layer = /^L(\d+)$/.exec(blockId)
+  if (layer) return `${loc.name}・${maps.generation.dungeon.layers[Number(layer[1])]?.name ?? '地下城'}`
+  const block = blocksFor(loc).find((b) => b.id === blockId)
+  if (!block) return loc.name
+  const name = block.name.split('{town}').join(loc.name).split('{palace}').join(palaceName(loc))
+  return name.includes(loc.name) ? name : `${loc.name}・${name}`
+}
+
 /**
  * 聚落區塊的基底地圖：只依遊戲資料（地圖、世界設定擺的商店與地標），不依存檔，建一次就記住。
  * 房子、通道、隱藏的地標每次另外疊上去（都是換掉整格），所以每次給一份新的格子陣列，快取不會被改到。

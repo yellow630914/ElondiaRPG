@@ -6,9 +6,9 @@
 //   不需要另外存檔，重新整理也不會變。
 // - 店主、公會職員等職員沒有活躍地點，固定待在自己的設施；舊資料（沒有活躍地點）沿用同樣的規則。
 
-import { geography, npcClassWeight, landmarkDef, landmarkTypes, locationById, namedNpcById, npcs as namedNpcs, npcTags, population, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
+import { geography, npcClassWeight, landmarkDef, landmarkTypes, locationById, namedNpcById, npcs as namedNpcs, npcTags, population, specialMaps, tagsExclusive, type Haunt, type Location, type NpcKind } from './data'
 import {
-  currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
+  areaKeyName, currentArea, DUNGEON_LAYERS, findKind, layerKey, outskirtsKey, position, settlementBlocks, zonesOf, type Area, type CellKind, type Zone,
 } from './grid'
 import { generateNpc, hashString, inLeadEvent, npcKind, npcRecord, npcSpot, occupationFor, pickNpcClass, registerNpc, weightedPick } from './npcs'
 import { lineageJobs } from './traits'
@@ -298,6 +298,35 @@ export function areaOf(state: GameState, rec: NpcRecord, day = state.time.day, a
   if (spot) return blocks.find((b) => b.kinds.has(spot as CellKind))?.key
   if (!state.relationships?.[rec.id]) return undefined
   return pickBlock(rec, day, blocks.filter((b) => b.zone === 'town').map((b) => b.key))
+}
+
+/** 東大陸（炎華之地）的地區：「今天在哪」跨大陸時另外註明 */
+const EAST = new Set(['yanhua_south', 'yanhua_north'])
+const continentOf = (region: string | undefined) => (region && EAST.has(region) ? '炎華之地' : '中央大陸')
+function regionOfArea(key: string): string | undefined {
+  const locId = key.startsWith('sm/') ? specialMaps[key.slice(3)]?.location : key.split('/')[0]
+  return locId ? geography.locations.find((l) => l.id === locId)?.region : undefined
+}
+
+/**
+ * 認識的人今天在哪（人際關係頁的「所在」；docs/NPC_SYSTEM.md 第 5 節）：和地圖上擺人用同一套（areaOf），
+ * 只算名字、不建地圖。在另一片大陸時另外註明。allies 是一次算好的任務友方（整批查的時候傳進來）。
+ */
+export function whereaboutsText(state: GameState, rec: NpcRecord, allies?: AllyPlacements): string {
+  if (rec.dead) return '已經不在人世'
+  const key = areaOf(state, rec, state.time.day, allies)
+  if (!key) return '行蹤不明'
+  const here = currentArea(state).key === key
+  const name = areaKeyName(key)
+  const there = continentOf(regionOfArea(key))
+  const mine = continentOf(locationById(state.location).region)
+  return `${here ? '就在這一帶：' : ''}${name}${there !== mine ? `（在${there}，不在這片大陸）` : ''}`
+}
+
+/** 認識的人今天在哪：用 id 查（不會把還沒登場的固定 NPC 寫進存檔，可以在畫面上直接呼叫） */
+export function whereaboutsOf(state: GameState, id: string, allies?: AllyPlacements): string {
+  const rec = state.npcs?.[id] ?? (namedNpcById(id) as NpcRecord | undefined)
+  return rec ? whereaboutsText(state, rec, allies) : '行蹤不明'
 }
 
 /** 地標的格子：依地標的類型（landmarks.json 的 types）決定生成的人站在這裡的權重，取各類型裡最高的 */
