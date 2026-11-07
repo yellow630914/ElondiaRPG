@@ -8,7 +8,7 @@ import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/settings'
+import { AI_FEATURES, judgeTimeout, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/settings'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
@@ -119,8 +119,9 @@ function doReset() {
         <input v-model="settings.judgeWritesNarrative" type="checkbox" :disabled="settings.sourceIndex('judge') !== settings.sourceIndex('narration')" />
         判定時順便寫出經過 <Hint text="判定與敘事正文同一個來源時才有效；省一次呼叫，但經過不是用敘事正文的提示詞寫的。" />
       </label>
-      <label class="small">
-        AI 判定逾時 <input v-model.number="settings.judgeTimeoutMin" type="number" min="0" max="30" style="width: 70px" /> 分鐘
+      <!-- 自己一行（不和上面的勾選接在一起）；輸入完夾成 0～30 的整數，空白還原成 3 -->
+      <label class="small timeout">
+        AI 判定逾時 <input v-model.number="settings.judgeTimeoutMin" type="number" min="0" max="30" step="1" style="width: 70px" @change="settings.judgeTimeoutMin = judgeTimeout(settings.judgeTimeoutMin)" /> 分鐘
         <Hint text="AI 判定這麼久沒有任何回應（連一個字或一段思考都沒有）就放棄，行動保留，可以重試或改用規則判定。只要模型還在回應就不會被切斷。0 = 不限。0～30，預設 3。判定中也可以按卡片上的「取消」。" />
       </label>
       <p class="small note">
@@ -374,4 +375,6 @@ function doReset() {
 .form label.check { display: flex; gap: 6px; align-items: center; }
 .steps { display: flex; flex-wrap: wrap; gap: 12px; }
 .form .steps label { display: inline-flex; gap: 6px; align-items: center; }
+/* AI 判定逾時：自己一行 */
+.timeout { display: block; margin-top: 6px; }
 </style>

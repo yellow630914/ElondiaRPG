@@ -314,6 +314,9 @@ function regionOfArea(key: string): string | undefined {
  */
 export function whereaboutsText(state: GameState, rec: NpcRecord, allies?: AllyPlacements): string {
   if (rec.dead) return '已經不在人世'
+  // 被制伏、倒在地上等你處置的人：在你手上（處置完之前不能離開，通常就在身邊）
+  const held = state.captives?.npcs.includes(rec.id) ? state.captives.area : undefined
+  if (held) return held === currentArea(state).key ? '被你制伏，在身邊' : `被你制伏，在${areaKeyName(held)}`
   const key = areaOf(state, rec, state.time.day, allies)
   if (!key) return '行蹤不明'
   const here = currentArea(state).key === key

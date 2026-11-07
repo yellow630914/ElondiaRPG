@@ -261,6 +261,12 @@ function load(): SavedSettings {
   }
 }
 
+/** AI 判定逾時（分鐘）：0～30 的整數，空白或不是數字時是預設的 3 */
+export function judgeTimeout(v: unknown): number {
+  const n = typeof v === 'string' && !v.trim() ? NaN : Number(v)
+  return v === null || v === undefined || !Number.isFinite(n) ? 3 : Math.max(0, Math.min(30, Math.round(n)))
+}
+
 export const useSettings = defineStore('settings', () => {
   const initial = load()
   const sources = ref(initial.sources)
@@ -293,7 +299,7 @@ export const useSettings = defineStore('settings', () => {
   watch([npcLife, npcLifeDays], ([on, days]) => setNpcLife({ on, days: Number(days) || 3 }), { immediate: true })
   const leadPoolDays = ref(Number.isFinite(Number(initial.leadPoolDays)) ? Math.max(0, Math.min(30, Math.round(Number(initial.leadPoolDays)))) : 7)
   watch(leadPoolDays, (days) => setLeadPool({ days: Number(days) }), { immediate: true })
-  const judgeTimeoutMin = ref(Number.isFinite(Number(initial.judgeTimeoutMin)) ? Math.max(0, Math.min(30, Math.round(Number(initial.judgeTimeoutMin)))) : 3)
+  const judgeTimeoutMin = ref(judgeTimeout(initial.judgeTimeoutMin))
   const npcLifeAi = ref<NpcLifeAi>((['roll', 'reunion', 'off'] as const).includes(initial.npcLifeAi) ? initial.npcLifeAi : 'roll')
   const monsterGirl = ref(initial.monsterGirl)
   watch(monsterGirl, setMonsterGirl, { immediate: true })
@@ -347,7 +353,7 @@ export const useSettings = defineStore('settings', () => {
         npcLifeDays: Number(npcLifeDays.value) || 3,
         leadPoolDays: Number.isFinite(Number(leadPoolDays.value)) ? Math.max(0, Math.min(30, Math.round(Number(leadPoolDays.value)))) : 7,
         npcLifeAi: npcLifeAi.value,
-        judgeTimeoutMin: Number.isFinite(Number(judgeTimeoutMin.value)) ? Math.max(0, Math.min(30, Math.round(Number(judgeTimeoutMin.value)))) : 3,
+        judgeTimeoutMin: judgeTimeout(judgeTimeoutMin.value),
         monsterGirl: monsterGirl.value,
         monsterGirlChance: Number(monsterGirlChance.value),
         defeatAlways: defeatAlways.value,
