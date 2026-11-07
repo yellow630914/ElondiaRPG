@@ -1,7 +1,7 @@
 // 認識的人今天在哪（人際關係頁；population.ts 的 whereaboutsOf）
 import { describe, expect, it } from 'vitest'
 import { locationById, specialMaps } from '@/engine/data'
-import { areaKeyName, enterLocation, layerKey, outskirtsKey } from '@/engine/grid'
+import { areaKeyName, currentArea, enterLocation, layerKey, outskirtsKey } from '@/engine/grid'
 import { allNpcs, areaOf, whereaboutsOf } from '@/engine/population'
 import { newGame } from '@/engine/state'
 
@@ -37,5 +37,12 @@ describe('今天在哪', () => {
     s.npcs = { ...(s.npcs ?? {}), [rec.id]: { ...rec, dead: true } }
     expect(whereaboutsOf(s, rec.id)).toBe('已經不在人世')
     expect(whereaboutsOf(s, 'npc_nobody')).toBe('行蹤不明')
+  })
+
+  it('says a captive is with you, not on their usual rounds', () => {
+    const s = game()
+    const rec = allNpcs(s).find((r) => { const a = areaOf(s, r); return !!a && a !== currentArea(s).key })!
+    s.captives = { npcs: [rec.id], aggressor: 'party', location: s.location, area: currentArea(s).key, day: s.time.day }
+    expect(whereaboutsOf(s, rec.id)).toBe('被你制伏，在身邊')
   })
 })

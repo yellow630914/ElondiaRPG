@@ -4,7 +4,7 @@ import { DEGREE_NAME, situationalTotal } from '@/engine/actions'
 import { actionRules, ATTR_IDS, attrName, skillName, type Degree, type SkillId } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { useGame } from '@/stores/game'
-import { useSettings } from '@/stores/settings'
+import { judgeTimeout, useSettings } from '@/stores/settings'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import { eventDialogOpen } from './events/eventQueue'
@@ -68,7 +68,7 @@ const totals = computed(() => {
       <button v-if="game.judging" title="停止這次 AI 判定；行動保留，可以重試或改用規則判定" @click="game.cancelJudge()">取消</button>
       <button :disabled="game.judging" @click="game.judge(false)">依規則判定（{{ attrName(pending.attr) }}）</button>
     </div>
-    <p v-if="game.judging" class="small muted">AI 判定中；<template v-if="settings.judgeTimeoutMin">{{ settings.judgeTimeoutMin }} 分鐘沒有任何回應會自動放棄，</template>也可以按「取消」。</p>
+    <p v-if="game.judging" class="small muted">AI 判定中；<template v-if="judgeTimeout(settings.judgeTimeoutMin)">{{ judgeTimeout(settings.judgeTimeoutMin) }} 分鐘沒有任何回應會自動放棄，</template>也可以按「取消」。</p>
     <p v-if="!settings.ready('judge')" class="small muted">「主動行動判定」的模型來源尚未設定，只能依規則判定。</p>
   </article>
 

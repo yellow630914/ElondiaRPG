@@ -77,7 +77,7 @@ import { useContent, VANILLA, VANILLA_NAME, type WorldRef } from './content'
 import { usePortraits } from './portraits'
 import { usePrompts } from './prompts'
 import { useScenes } from './scenes'
-import { AI_FEATURES, useSettings, type AiFeature } from './settings'
+import { AI_FEATURES, judgeTimeout, useSettings, type AiFeature } from './settings'
 import { archiveOldReports, mergeUsage } from './logArchive'
 import { actionInputOf, firstNewReport, midTurn, restoreTurn, UNDO_STEPS, type UndoStep } from './undo'
 import { withoutIcons } from '@/engine/itemIcons'
@@ -772,6 +772,7 @@ export const useGame = defineStore('game', () => {
   /** 載入存檔；回傳跳出來的提示（世界切換、被送回聚落），讀檔的「已讀取存檔」接在後面 */
   function enter(data: SaveData): string {
     for (const c of controllers.values()) c.abort()
+    dropJudge()
     clearUndo()
     stopWalk()
     const world = useContent().enterWorld(data.state.world, data.content)
@@ -817,6 +818,7 @@ export const useGame = defineStore('game', () => {
   async function toHome() {
     if (!state.value) return
     for (const c of controllers.values()) c.abort()
+    dropJudge()
     clearUndo()
     stopWalk()
     save()
@@ -959,6 +961,7 @@ export const useGame = defineStore('game', () => {
     if (world !== undefined && world !== content.active) content.switchWorld(world)
     // 還沒繼續的遊戲會被蓋掉：先備份（設定關掉時不備份）
     void backupResume('開新遊戲前')
+    dropJudge()
     clearUndo()
     stopWalk()
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
@@ -976,6 +979,7 @@ export const useGame = defineStore('game', () => {
 
   function reset() {
     for (const c of controllers.values()) c.abort()
+    dropJudge()
     clearUndo()
     stopWalk()
     state.value = null
@@ -1156,6 +1160,14 @@ export const useGame = defineStore('game', () => {
   function cancelJudge() {
     judgeController?.abort()
   }
+  /** 換了一局（回首頁、讀檔、開新遊戲）：進行中的判定作廢，結果回來也不套用，不顯示錯誤 */
+  let gameEpoch = 0
+  function dropJudge() {
+    gameEpoch++
+    judgeController?.abort()
+    judgeController = null
+    judging.value = false
+  }
 
   /** 判定等待中的行動。useAI 未指定時依設定。AI 失敗時保留行動，可以重試或改用規則。 */
   async function judge(useAI?: boolean) {
@@ -1175,8 +1187,11 @@ export const useGame = defineStore('game', () => {
     const controller = new AbortController()
     judgeController = controller
     judgeTimedOut = false
+    const epoch = gameEpoch
+    // 判定回來時：還是同一局、等待中的還是這個行動才套用（行動的 id 每局從頭編，所以兩個都要看）
+    const stillPending = () => epoch === gameEpoch && !!state.value && state.value.pendingAction?.id === pending.id
     // 設定的「AI 判定逾時」（分鐘，0 = 不限）
-    const idleMs = Math.max(0, Number(settings.judgeTimeoutMin) || 0) * 60_000
+    const idleMs = judgeTimeout(settings.judgeTimeoutMin) * 60_000
     // 太久沒有任何回應就放棄（每收到一段文字或思考就重新計時）
     let idle: ReturnType<typeof setTimeout> | undefined
     const alive = () => {
@@ -1190,7 +1205,11 @@ export const useGame = defineStore('game', () => {
       alive()
       const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, controller.signal, collector.onUsage, (t) => { thinking += t; alive() }, alive)
       clearTimeout(idle)
-      const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
+      if (!stillPending()) {
+        collector.flush(OTHER_USAGE)
+        return
+      }
+      const judgment = actions.sanitizeJudgment(state.value!, state.value!.pendingAction!, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型；
       // 數值被程式截掉時也不採用（判定寫的是截掉前的數字），交給寫手照實際結算的數字重寫
       if (opts.splitNarrative || judgment.adjusted?.length) delete judgment.narrative
@@ -1204,7 +1223,7 @@ export const useGame = defineStore('game', () => {
         if (settings.autoNarrates(report) && settings.ready('adult')) void narrate(report)
       } else if (report && judgment.narrative) {
         narrations.value[report.report_id] = { text: cleanText(judgment.narrative, 'judge'), status: 'done' }
-        if (narrations.value[report.report_id]!.text.trim()) void useScenes().auto(s, report)
+        if (narrations.value[report.report_id]!.text.trim()) void useScenes().auto(state.value!, report)
       }
       // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
       if (report && thinking.trim()) {
@@ -1215,6 +1234,8 @@ export const useGame = defineStore('game', () => {
       save()
     } catch (e) {
       collector.flush(OTHER_USAGE)
+      // 已經換了一局：舊的判定靜靜作廢
+      if (epoch !== gameEpoch) return
       error.value = controller.signal.aborted
         ? judgeTimedOut
           ? `AI 判定逾時：${idleMs / 60000} 分鐘沒有任何回應，已經放棄（可以重試，或改用規則判定）`
@@ -1223,7 +1244,7 @@ export const useGame = defineStore('game', () => {
     } finally {
       clearTimeout(idle)
       if (judgeController === controller) judgeController = null
-      judging.value = false
+      if (epoch === gameEpoch) judging.value = false
     }
   }
 
