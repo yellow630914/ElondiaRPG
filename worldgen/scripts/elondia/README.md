@@ -20,6 +20,7 @@
 | `town_events26.py` | `data/rules/travel_events.json` | 城鎮的成人向事件（搜身盤查、被下藥的酒、賭局的代價、被搭訕、被偷摸） |
 | `dragon_text27.py` | `data/rules/enemies.json`、`data/worldbook/elondia.worldbook.json` | 巨龍不可名狀：投影與守衛的描述、世界書「高維巨龍」條目的不可溝通原則與三條龍的動機（可以重跑，改過的不再改） |
 | `npc_looks27.py` | `data/world/npcs.json` | 固定 NPC 的外貌細節（資料在 `npc_looks27.json`；要排在 `work26.py` 之後，因為 work26 會重寫打工線的委託人） |
+| `npc_looks40.py` | `data/world/npcs.json` | 東大陸有角色線的固定 NPC 的外貌細節：身高、身形（人馬族寫連馬身的高度）、玉璘族的鱗尾（資料在 `npc_looks40.json`；要排在東大陸的 `east_p*.py` 之後） |
 | `yulin_body32.py` | `data/worldbook/elondia.worldbook.json`、`data/world/npc_traits.json`、`data/rules/stories.json`（連同 `story_batch16.py`、`story_batch18.py`） | 玉璘族除了魚尾也有雙腿（魚尾長在腰後，像鯨尾一樣粗圓，尾端是寬大的尾鰭；上岸不必化形）：世界書的種族、隨機 NPC 的種族特徵、特殊任務裡「雙腿化回魚尾」的句子。固定 NPC 的外貌在 `npc_looks27.json`。可以重跑 |
 | `lust_park_s7.py` | `data/rules/abilities.json`、`enemies.json`、`items.json`、`lewd.json`、`data/world/geography.json`、`maps.json`、`special_maps.json`、`landmarks.json`、`npcs.json` | 魅魔的遊樂園「緋夢樂園」（慾望戰鬥 S7，[LUST_PARK](../../../docs/LUST_PARK.md)）：怪物、技能、物品、五個園區、入口廣場、售票亭、接待員、園區的規則；集章任務由 `story_batch1.py` 匯入。要排在 `interiors23.py`、`epic_places.py`、`uniq23.py`、`work26.py`、`npc_looks27.py` 之後（它們會重寫同一個檔案）。可以重跑；怪物的生命與攻擊加成在 `TUNE` |
 | `lust_s8.py` | `data/rules/items.json`、`statuses.json`、`companions.json`、`lewd.json`、`gear.json`、`tattoos.json`、`abilities.json`、`parasites.json`、`slavery.json` | 慾望戰鬥 S8 的資料（[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 13 節起）：消耗品、料理、征服掉落、輔料的魅惑方向、淫紋、寄生物的階段、印記的順從累積、鑰匙與戰鬥中的拘束。要排在 `lust_park_s7.py` 之後。可以重跑 |
@@ -36,7 +37,7 @@
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 | `../../tools/guide/guide.py` | `docs/guide/` | 給玩家的遊戲攻略，同步到 wiki（`data/` 改過之後都要重跑；沒重跑時測試 `guide.spec.ts` 會失敗） |
 
-建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
+建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `npc_looks40.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
 
 ## 一次性（已經套用過，留作紀錄）
 

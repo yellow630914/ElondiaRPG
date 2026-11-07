@@ -115,13 +115,13 @@ exports[`world editor round trip > npcs: opening and saving without changes keep
   "npc_morphe": "ac4e927dd41b",
   "npc_noel": "5adad732dcbf",
   "npc_servion_cult": "6f5fa5408bfb",
-  "npc_td_hailan": "62a1da03d719",
-  "npc_td_qiqige": "aa95164bf847",
+  "npc_td_hailan": "0bf209d92d42",
+  "npc_td_qiqige": "512f4c18bc22",
   "npc_yh_bang_laoda": "372634b7b478",
   "npc_yh_hastings": "d8c1235ee409",
-  "npc_yh_hu_jiuniang": "47b614d452e3",
-  "npc_yh_lu_qinghe": "bac88d518933",
-  "npc_yh_wen_ruyu": "3745f81475df",
+  "npc_yh_hu_jiuniang": "c164b915f78a",
+  "npc_yh_lu_qinghe": "c7b1d6b7a5bd",
+  "npc_yh_wen_ruyu": "ee26e4edf200",
 }
 `;
 
