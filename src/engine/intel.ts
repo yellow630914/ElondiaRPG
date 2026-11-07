@@ -22,14 +22,36 @@ const LAYERS = DUNGEON_LAYER_IDS
 
 export function addIntel(state: GameState, spec: Omit<Intel, 'id' | 'from' | 'time' | 'status'>): Intel {
   const list = (state.intel ??= [])
-  const it: Intel = { ...spec, id: `intel-${state.time.day}-${list.length + 1}`, from: state.location, time: { ...state.time }, status: 'active' }
+  // 舊的情報會被清掉（pruneIntel），筆數不能當流水號：找一個沒用過的
+  let n = list.length + 1
+  while (list.some((x) => x.id === `intel-${state.time.day}-${n}`)) n++
+  const it: Intel = { ...spec, id: `intel-${state.time.day}-${n}`, from: state.location, time: { ...state.time }, status: 'active' }
   list.push(it)
+  pruneIntel(state)
   return it
+}
+
+/** 完成、過期的事件點最多留幾筆（冒險筆記只是回顧用） */
+export const KEEP_OLD_POINTS = 50
+
+/**
+ * 完成、過期的事件點只留最近的 KEEP_OLD_POINTS 筆。
+ * 特殊任務的消息不清（用來判斷這個任務的消息賣過了沒有）；傳聞與還有效的情報也不清。
+ * 線索本身記在線索池（leads.ts），清掉筆記裡的那一筆不會讓它重新出現。
+ */
+export function pruneIntel(state: GameState) {
+  const list = state.intel
+  if (!list) return
+  const old = list.filter((it) => it.kind === 'point' && it.status !== 'active')
+  if (old.length <= KEEP_OLD_POINTS) return
+  const drop = new Set(old.slice(0, old.length - KEEP_OLD_POINTS))
+  state.intel = list.filter((it) => !drop.has(it))
 }
 
 /** 過期的事件點 */
 export function expireIntel(state: GameState) {
   for (const it of state.intel ?? []) if (it.status === 'active' && it.until !== undefined && state.time.day > it.until) it.status = 'expired'
+  pruneIntel(state)
 }
 
 export function intelPlace(it: Pick<Intel, 'location' | 'layer'>): string {
