@@ -233,6 +233,9 @@ function load(s: GameState): GameState {
   return s
 }
 
+/** AI 判定多久沒有任何回應（文字或思考）就放棄 */
+export const JUDGE_IDLE_MS = 3 * 60_000
+
 export const useGame = defineStore('game', () => {
   // 進行中的遊戲（自動保存的那一份）：啟動時只讀出來放著，在首頁按「繼續」才載入
   const boot = takePreloaded()
@@ -1150,6 +1153,13 @@ export const useGame = defineStore('game', () => {
     if (pending) await judge()
   }
 
+  /** 進行中的 AI 判定：玩家可以取消；太久沒有任何回應（連一個字或思考都沒有）時自動放棄 */
+  let judgeController: AbortController | null = null
+  let judgeTimedOut = false
+  function cancelJudge() {
+    judgeController?.abort()
+  }
+
   /** 判定等待中的行動。useAI 未指定時依設定。AI 失敗時保留行動，可以重試或改用規則。 */
   async function judge(useAI?: boolean) {
     const s = state.value
@@ -1165,11 +1175,26 @@ export const useGame = defineStore('game', () => {
     error.value = null
     const src = settings.sourceFor('judge')
     const collector = usageCollector(originOf('judge', src))
+    const controller = new AbortController()
+    judgeController = controller
+    judgeTimedOut = false
+    // 太久沒有任何回應就放棄（每收到一段文字或思考就重新計時）
+    let idle: ReturnType<typeof setTimeout> | undefined
+    const alive = () => {
+      clearTimeout(idle)
+      idle = setTimeout(() => { judgeTimedOut = true; controller.abort() }, JUDGE_IDLE_MS)
+    }
     try {
-      const { completeText } = await import('@/narrator/providers')
+      const { streamNarration } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
       let thinking = ''
-      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, undefined, collector.onUsage, (t) => { thinking += t })
+      let text = ''
+      alive()
+      for await (const chunk of streamNarration(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, controller.signal, collector.onUsage, (t) => { thinking += t; alive() })) {
+        text += chunk
+        alive()
+      }
+      clearTimeout(idle)
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型；
       // 數值被程式截掉時也不採用（判定寫的是截掉前的數字），交給寫手照實際結算的數字重寫
@@ -1195,8 +1220,14 @@ export const useGame = defineStore('game', () => {
       save()
     } catch (e) {
       collector.flush(OTHER_USAGE)
-      error.value = `AI 判定失敗：${e instanceof Error ? e.message : String(e)}（可以重試，或改用規則判定）`
+      error.value = controller.signal.aborted
+        ? judgeTimedOut
+          ? `AI 判定逾時：${JUDGE_IDLE_MS / 60000} 分鐘沒有任何回應，已經放棄（可以重試，或改用規則判定）`
+          : '已取消 AI 判定（可以重試，或改用規則判定）'
+        : `AI 判定失敗：${e instanceof Error ? e.message : String(e)}（可以重試，或改用規則判定）`
     } finally {
+      clearTimeout(idle)
+      if (judgeController === controller) judgeController = null
       judging.value = false
     }
   }
@@ -1284,7 +1315,7 @@ export const useGame = defineStore('game', () => {
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
     start, reset, promptFor, composeFor, composeJudgePreview, narrate, continueNarration, continueBlock, cancelNarration,
-    perform, judge, flavorRoster, hire, flavorShop, startNegotiation, negotiationFocus,
+    perform, judge, cancelJudge, flavorRoster, hire, flavorShop, startNegotiation, negotiationFocus,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),
     buyDeal: (type: ShopType, id: string, qty = 1) => run((s) => trade.buyDeal(s, type, id, qty)),
