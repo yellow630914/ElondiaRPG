@@ -6,6 +6,8 @@ import { leaderOf } from '@/engine/party'
 import { gameRule } from '@/engine/gameRules'
 import { ambushChance, autoHitDice, canCampHere, shortRestPreview, hitDiceLeft, hitDie, innCost, longRestBlocked, longRestGapHours, longRestWait, slaveRoomCost, slaveRoomOpen, waitText, type RestPlace } from '@/engine/rest'
 import { bestTool } from '@/engine/tools'
+import { fieldAbilities, fieldCastBlock, fieldTargets, fieldUsesLeft } from '@/engine/fieldCast'
+import { slotsLeft } from '@/engine/character'
 import { useGame } from '@/stores/game'
 import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -39,6 +41,29 @@ const talkText = ref('')
 const talkTarget = ref('')
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer))
 const showTalk = ref(false)
+// 戰鬥外施放治療、護盾類的能力（fieldCast.ts）
+const casts = computed(() => s.value.party.flatMap((m) => fieldAbilities(m).map((a) => ({ key: `${m.id}|${a.id}`, member: m, ability: a }))))
+const castPick = ref('')
+const castTarget = ref('')
+const showCast = ref(false)
+const cur = computed(() => casts.value.find((c) => c.key === castPick.value) ?? casts.value[0])
+const castTargets = computed(() => (cur.value ? fieldTargets(s.value, cur.value.member, cur.value.ability) : []))
+const singleTarget = computed(() => cur.value && (cur.value.ability.target === 'ally' || cur.value.ability.target === 'ally_or_downed'))
+const castBlock = computed(() => (cur.value ? fieldCastBlock(cur.value.member, cur.value.ability) : null))
+/** 選項上的花費：法術寫剩幾個夠環的法術環，技能寫剩幾次 */
+function castCost(c: { member: (typeof s.value.party)[number]; ability: { type: string; circle?: number } & Parameters<typeof fieldUsesLeft>[1] }): string {
+  if (c.ability.type === 'spell') {
+    const n = slotsLeft(c.member).slice((c.ability.circle ?? 1) - 1).reduce((a, b) => a + b, 0)
+    return `${c.ability.circle ?? 1} 環以上・剩 ${n} 個法術環`
+  }
+  return `剩 ${fieldUsesLeft(c.member, c.ability)} 次`
+}
+function doCast() {
+  const c = cur.value
+  if (!c) return
+  const target = singleTarget.value ? castTarget.value || castTargets.value.find((m) => m.hp < m.maxHp)?.id || castTargets.value[0]?.id : undefined
+  void game.castOutsideCombat(c.member.id, c.ability.id, target)
+}
 async function doLongRest(where: RestPlace) {
   const text = talkText.value.trim()
   talkText.value = ''
@@ -96,6 +121,24 @@ async function doLongRest(where: RestPlace) {
           <JudgeToggle />
           <Hint text="長休時想做的事（選填，算主動行動）。有寫互動時，長休和互動會合成一段經過。" />
         </div>
+      </div>
+    </template>
+
+    <template v-if="casts.length">
+      <button v-if="!showCast" class="link more" @click="showCast = true"><GameIcon name="plus" :size="12" /> 用能力治療、上護盾…</button>
+      <div v-else class="talk small">
+        <div class="row talk-row">
+          <select v-model="castPick" aria-label="施放的能力">
+            <option v-for="c in casts" :key="c.key" :value="c.key">{{ c.member.name }}・{{ c.ability.name }}（{{ castCost(c) }}）</option>
+          </select>
+          <select v-if="singleTarget" v-model="castTarget" aria-label="對象">
+            <option value="">自動（傷最重的人）</option>
+            <option v-for="m in castTargets" :key="m.id" :value="m.id">{{ m.name }} {{ m.hp }}/{{ m.maxHp }}</option>
+          </select>
+          <button class="small" :disabled="!!castBlock" :title="castBlock ?? cur?.ability.desc" @click="doCast"><GameIcon name="sparkles" :size="13" /> 施放</button>
+          <Hint text="戰鬥外用治療、護盾類的能力：回復量照戰鬥裡的公式，法術花法術環（用得到的最低環，高環會升環）；技能有「每次休息」次數的照那個算，其他技能兩次長休之間在戰鬥外最多用「每場戰鬥」的次數。護盾（臨時生命值）帶到下一場戰鬥，長休後消失。在主動行動「搭配能力」對夥伴使用時也是同樣的效果，再加上你描述的行為交給判定。" />
+        </div>
+        <p v-if="cur" class="muted">{{ cur.ability.desc }}<template v-if="castBlock"><br /><span class="warn">{{ castBlock }}</span></template></p>
       </div>
     </template>
 

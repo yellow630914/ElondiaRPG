@@ -296,6 +296,8 @@ export interface Character {
   slotsUsed: number[]
   /** 每次休息可用 N 次的能力已使用次數 */
   usesPerRest: Record<string, number>
+  /** 戰鬥外施放的護盾（臨時生命值）：下一場戰鬥開始時帶著，戰鬥結束或長休後消失（fieldCast.ts） */
+  tempHp?: number
   /** 已學會的技能、法術、戲法 id */
   abilities: string[]
   /** 慾望指標（沒有時用 lewd.json 的 defaults） */

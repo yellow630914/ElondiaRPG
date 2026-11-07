@@ -642,6 +642,8 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     for (const [k, v] of Object.entries(def.combat_mods ?? {})) mods[k as keyof Mods] = (mods[k as keyof Mods] ?? 0) + (v ?? 0)
     tempHp = Math.max(tempHp, def.combat_temp_hp ?? 0)
   }
+  // 戰鬥外施放的護盾（fieldCast.ts）
+  tempHp = Math.max(tempHp, c.tempHp ?? 0)
   return {
     threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: attrsOf(c), prof: proficiency(c.level),
@@ -2293,6 +2295,8 @@ export function finishCombat(state: GameState): Report {
     if (!f) continue
     member.slotsUsed = f.slotMax.map((n, i) => Math.max(0, n - (f.slots[i] ?? 0)))
     member.usesPerRest = { ...f.usedRest }
+    // 戰鬥外施放的護盾只撐這一場
+    delete member.tempHp
   }
 
   // 在場的友方也記在報告裡（給 AI 寫經過）

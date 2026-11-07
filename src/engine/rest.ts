@@ -302,6 +302,7 @@ export function longRest(state: GameState, place: RestPlace): Report {
     m.hp = m.maxHp
     m.slotsUsed = []
     m.usesPerRest = {}
+    delete m.tempHp
     const regained = Math.min(m.hitDiceUsed ?? 0, Math.max(1, Math.floor(m.level / 2)))
     if (regained > 0) {
       m.hitDiceUsed = (m.hitDiceUsed ?? 0) - regained

@@ -20,7 +20,7 @@ import {
   applyBlackMarket, applyEscape, applyPalaceGate, applyHaggle, applyHire, applyInvite, applyNegotiate, applyProposal, applySquadJoin, inviteDc, setupFor, validateInvite, type MarketKind,
 } from './companions'
 import {
-  abilities, actionRules, ATTR_IDS, attrName, craftRules, SKILL_IDS, type SkillId, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
+  abilities, abilityDef, actionRules, ATTR_IDS, attrName, craftRules, SKILL_IDS, type SkillId, companionRules, geography, itemDef, itemRules, locationById, regionById, saveItems, slaveryRules, type ActionKind, type AttrId, type Degree, type EffectKind, type LewdKey,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { applyStandoff } from './encounters'
@@ -50,6 +50,7 @@ import { applyBargain } from './trade'
 import { roll } from './rng'
 import { addHours, commitReport, newReportId, withRng } from './state'
 import { useAbilityOutOfCombat, type AbilityUse } from './resources'
+import { applyFieldEffects, fieldCastable, prepareFieldCast, type FieldEffect } from './fieldCast'
 import { formatMoney } from './money'
 import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange, RollPart } from './types'
 import { rollBreakdown } from './rollParts'
@@ -106,7 +107,9 @@ export interface ActionPending extends ActionInput {
   /** 使用能力花掉的資源（擲骰時就已扣除） */
   spent?: ResourceChange[]
   /** 使用的能力，給 AI 參考 */
-  usedAbility?: { member: string; name: string; desc: string; cost: string }
+  usedAbility?: { member: string; name: string; desc: string; cost: string; effect?: string }
+  /** 對夥伴使用治療、護盾類的能力：準備時擲好的效果，判定時套用（fieldCast.ts） */
+  fieldEffects?: FieldEffect[]
   /** 成人向：可能進入的親密場景 */
   adultScene?: AdultScene
 }
@@ -206,14 +209,24 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   // 搭配能力：檢查並扣除資源（和擲骰一樣在判定前發生，判定失敗也不會退回）
   let used: AbilityUse | undefined
   let user: Character | undefined
+  let fieldEffects: FieldEffect[] | undefined
+  const targets = actionTargets(input)
   if (input.use) {
     user = state.party.find((m) => m.id === input.use!.member)
     if (!user) throw new Error('隊伍中沒有這位角色')
-    used = useAbilityOutOfCombat(user, input.use.ability)
+    // 對夥伴使用治療、護盾類的能力：和隊伍的「施放」同一條路（真的回血、上護盾），再加上行為的描述交給判定
+    const ab = abilityDef(input.use.ability)
+    const mate = targets.map((id) => state.party.find((m) => m.id === id)).find((m): m is Character => !!m)
+    if (ab && fieldCastable(ab) && (ab.target === 'self' || ab.target === 'all_allies' || mate)) {
+      const cast = prepareFieldCast(state, user.id, ab.id, mate?.id)
+      fieldEffects = cast.effects
+      used = { ability: cast.ability, bonus: ab.type === 'spell' ? Math.min(6, 2 + (ab.circle ?? 1)) : ab.type === 'cantrip' ? 1 : 3, cost: cast.cost, change: cast.change }
+    } else {
+      used = useAbilityOutOfCombat(user, input.use.ability)
+    }
     situational.push({ label: `${user.name}的【${used.ability.name}】`, value: used.bonus })
   }
   // 對自己的奴隸行動：奴隸抗拒時處於劣勢，主角擲兩次取較高的
-  const targets = actionTargets(input)
   const ownSlave = targets.length > 0 && targets.every((id) => state.party.some((m) => m.id === id && m.bond === 'slave' && contractOf(m)?.master === 'pc'))
   const rolls = withRng(state, (rng) => (ownSlave ? [roll(rng, '1d20').total, roll(rng, '1d20').total] : [roll(rng, '1d20').total]))
   const natural = Math.max(...rolls)
@@ -245,7 +258,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     time: { ...state.time },
     location: state.location,
     ...(used?.change ? { spent: [used.change] } : {}),
-    ...(used && user ? { usedAbility: { member: user.id, name: used.ability.name, desc: used.ability.desc, cost: used.cost } } : {}),
+    ...(used && user ? { usedAbility: { member: user.id, name: used.ability.name, desc: used.ability.desc, cost: used.cost, ...(fieldEffects ? { effect: fieldEffectText(fieldEffects) } : {}) } } : {}),
+    ...(fieldEffects ? { fieldEffects } : {}),
   }
   state.pendingAction = pending
   return pending
@@ -652,6 +666,11 @@ function attrModParts(state: GameState, p: ActionPending, attr: AttrId): RollPar
   return [{ label: attrName(attr), value: m - prof }, { label: '熟練', value: prof }]
 }
 
+/** 擲好的治療、護盾效果寫成一句（給判定的 AI 看） */
+function fieldEffectText(effects: FieldEffect[]): string {
+  return effects.map((e) => `${e.name}${[e.heal !== undefined ? `回復 ${e.heal} 點生命（超過上限的不算）` : '', e.shield ? `得到 ${e.shield} 點臨時生命` : ''].filter(Boolean).join('、')}`).join('；')
+}
+
 export function resolveAction(state: GameState, judgment: Judgment | null): Report {
   const p = state.pendingAction
   if (!p) throw new Error('沒有等待判定的行動')
@@ -683,7 +702,9 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   if (p.spent?.length) report.changes.resources = [...p.spent]
   if (p.usedAbility) {
     const who = state.party.find((m) => m.id === p.usedAbility!.member)?.name ?? ''
-    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `${who}使用了【${p.usedAbility.name}】`] }
+    // 治療、護盾類的能力：效果不看判定結果，照擲好的數字套用
+    const lines = p.fieldEffects ? applyFieldEffects(state, report, p.fieldEffects) : []
+    report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), `${who}使用了【${p.usedAbility.name}】${lines.length ? `：${lines.join('；')}` : ''}`] }
   }
   if (p.kind === 'rest_talk') {
     // 長休時的互動：把剛結束的長休一起交給 AI 描寫（長休本身不另外寫敘事）
