@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { slotsLeft } from '@/engine/character'
 import { abilityDef, classEmoji, raceEmoji } from '@/engine/data'
+import { fieldCastable, fieldCastBlock, fieldUsesLeft } from '@/engine/fieldCast'
 import { useGame } from '@/stores/game'
 
 // 主動行動時搭配使用的能力（例如用魅惑術幫談判）：法術花法術環、限次技能花次數，換檢定加值。
@@ -16,7 +17,12 @@ const options = computed(() => {
       const a = abilityDef(id)
       let note = ''
       let ok = true
-      if (a.type === 'spell') {
+      if (fieldCastable(a) && a.type !== 'spell') {
+        // 治療、護盾類的技能：和休息區的「施放」同一份次數（fieldCast.ts）
+        const left = fieldUsesLeft(m, a) ?? 0
+        note = `戰鬥外剩 ${left} 次・+${a.type === 'cantrip' ? 1 : 3}`
+        ok = !fieldCastBlock(m, a)
+      } else if (a.type === 'spell') {
         const left = slotsLeft(m).slice((a.circle ?? 1) - 1).reduce((x, y) => x + y, 0)
         note = `${a.circle} 環法術・剩 ${left} 個可用法術環・+${Math.min(6, 2 + (a.circle ?? 1))}`
         ok = left > 0

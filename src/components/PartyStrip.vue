@@ -27,9 +27,10 @@ const SECTIONS: { id: PartySection; icon: IconName; label: string }[] = [
 ]
 // 戰鬥中改顯示戰鬥裡的即時 HP 與狀態（沒參戰的人用原本的數字）
 const fighter = (id: string) => game.state?.combat?.combatants.find((c) => c.side === 'party' && c.id === id)
-const hpOf = (m: { id: string; hp: number; maxHp: number }) => {
+// 臨時生命：戰鬥中看戰鬥裡的，戰鬥外是施放的護盾（fieldCast.ts，下一場戰鬥帶著）
+const hpOf = (m: { id: string; hp: number; maxHp: number; tempHp?: number }) => {
   const c = fighter(m.id)
-  return c ? { hp: c.hp, max: c.maxHp, down: !isActive(c), fled: !!c.fled, statuses: c.statuses } : { hp: m.hp, max: m.maxHp, down: false, fled: false, statuses: [] }
+  return c ? { hp: c.hp, max: c.maxHp, temp: c.tempHp, down: !isActive(c), fled: !!c.fled, statuses: c.statuses } : { hp: m.hp, max: m.maxHp, temp: m.tempHp ?? 0, down: false, fled: false, statuses: [] }
 }
 // 升級：那位隊員的小卡升起金色光柱、飄出「升級！」（讀檔、換存檔時不播）
 const cards = new Map<string, Element>()
@@ -76,9 +77,9 @@ const ring = (v: number, max: number) => (max > 0 ? Math.max(0, Math.min(100, (v
           <small v-if="!isNoncombatant(m)" class="xpnum">{{ m.xp }}/{{ xpToNext(m.level) }}</small>
           <span v-if="hpOf(m).down" class="tag bad state">{{ hpOf(m).fled ? '撤離' : '倒下' }}</span>
         </div>
-        <div class="hp" :title="`HP ${hpOf(m).hp} / ${hpOf(m).max}`">
+        <div class="hp" :title="`HP ${hpOf(m).hp} / ${hpOf(m).max}${hpOf(m).temp ? `（臨時生命 ${hpOf(m).temp}${fighter(m.id) ? '' : '，下一場戰鬥帶著，長休後消失'}）` : ''}`">
           <div class="bar hp"><span :style="{ width: pct(hpOf(m).hp, hpOf(m).max) }" /></div>
-          <span class="num">{{ hpOf(m).hp }}/{{ hpOf(m).max }}</span>
+          <span class="num">{{ hpOf(m).hp }}/{{ hpOf(m).max }}<template v-if="hpOf(m).temp">+{{ hpOf(m).temp }}</template></span>
         </div>
         <div v-if="m.status.length || hpOf(m).statuses.length" class="conds">
           <span v-for="c in m.status" :key="c" class="tag" :class="conditionTone(c)" :title="companionRules.conditions[c]?.desc">{{ conditionName(c) }}</span>

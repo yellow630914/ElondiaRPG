@@ -216,7 +216,8 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
     if (!user) throw new Error('隊伍中沒有這位角色')
     // 對夥伴使用治療、護盾類的能力：和隊伍的「施放」同一條路（真的回血、上護盾），再加上行為的描述交給判定
     const ab = abilityDef(input.use.ability)
-    const mate = targets.map((id) => state.party.find((m) => m.id === id)).find((m): m is Character => !!m)
+    // 沒有選任何對象時，對隊友的能力就是對施放者本人（例如主角替自己療傷）；對象只有隊伍外的人時照舊交給判定
+    const mate = targets.map((id) => state.party.find((m) => m.id === id)).find((m): m is Character => !!m) ?? (targets.length ? undefined : user)
     if (ab && fieldCastable(ab) && (ab.target === 'self' || ab.target === 'all_allies' || mate)) {
       const cast = prepareFieldCast(state, user.id, ab.id, mate?.id)
       fieldEffects = cast.effects

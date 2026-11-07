@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { classEmoji, companionRules, raceEmoji } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { leaderOf } from '@/engine/party'
@@ -58,10 +58,16 @@ function castCost(c: { member: (typeof s.value.party)[number]; ability: { type: 
   }
   return `剩 ${fieldUsesLeft(c.member, c.ability)} 次`
 }
+/** 自動選對象：缺最多生命的人（一樣多時取比例低的） */
+function mostHurt<T extends { hp: number; maxHp: number }>(list: T[]): T | undefined {
+  return [...list].sort((a, b) => (b.maxHp - b.hp) - (a.maxHp - a.hp) || a.hp / a.maxHp - b.hp / b.maxHp)[0]
+}
+// 能力選單一打開就帶入第一個（不在清單裡時也換回第一個）
+watch(casts, (list) => { if (!list.some((c) => c.key === castPick.value)) castPick.value = list[0]?.key ?? '' }, { immediate: true })
 function doCast() {
   const c = cur.value
   if (!c) return
-  const target = singleTarget.value ? castTarget.value || castTargets.value.find((m) => m.hp < m.maxHp)?.id || castTargets.value[0]?.id : undefined
+  const target = singleTarget.value ? castTarget.value || mostHurt(castTargets.value)?.id : undefined
   void game.castOutsideCombat(c.member.id, c.ability.id, target)
 }
 async function doLongRest(where: RestPlace) {
