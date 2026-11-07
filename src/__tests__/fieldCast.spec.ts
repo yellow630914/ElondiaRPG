@@ -4,7 +4,7 @@ import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat, startCombat } from '@/engine/combat'
 import { castOutsideCombat, fieldAbilities, fieldCastBlock } from '@/engine/fieldCast'
 import { abilityDef } from '@/engine/data'
-import { enterLocation } from '@/engine/grid'
+import { currentArea, enterLocation } from '@/engine/grid'
 import { generateNpc } from '@/engine/npcs'
 import { joinParty, pcOf } from '@/engine/party'
 import { newGame, withRng } from '@/engine/state'
@@ -72,9 +72,23 @@ describe('戰鬥外施放', () => {
 
   it('falls back to a check bonus when the action target is not in the party', () => {
     const { s, pc, mate } = game()
-    const p = prepareAction(s, { kind: 'free', text: '替路人治療', use: { member: pc.id, ability: 'cure_wounds' } })
+    // 隊伍外的人（用被制伏的人當作就在身邊）
+    const stranger = withRng(s, (rng) => generateNpc(s, rng, { level: 2, kind: 'adventurer', location: s.location }))
+    s.captives = { ...(s.captives ?? {}), npcs: [stranger.id], area: currentArea(s).key } as typeof s.captives
+    const hp = pc.hp
+    const p = prepareAction(s, { kind: 'free', text: '替路人治療', target: stranger.id, use: { member: pc.id, ability: 'cure_wounds' } })
     expect(p.fieldEffects).toBeUndefined()
     resolveAction(s, null)
     expect(mate.hp).toBe(1)
+    expect(pc.hp).toBe(hp)
+  })
+
+  it('heals the caster when an active action has no target at all', () => {
+    const { s, pc } = game()
+    pc.hp = 5
+    const p = prepareAction(s, { kind: 'free', text: '找個角落坐下，替自己處理傷口', use: { member: pc.id, ability: 'cure_wounds' } })
+    expect(p.fieldEffects?.[0]?.target).toBe(pc.id)
+    resolveAction(s, null)
+    expect(pc.hp).toBeGreaterThan(5)
   })
 })

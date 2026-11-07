@@ -1298,8 +1298,8 @@ export const useGame = defineStore('game', () => {
       perform({ kind: 'negotiation', target: id, text, ...(use ? { use } : {}) }),
     abandonNegotiation: (id: string) => run((s) => negotiation.abandonNegotiation(s, id)),
     useItem: (name: string, member: string) => run((s) => inventory.useItem(s, name, member)),
-    /** 戰鬥外施放治療、護盾類的能力（fieldCast.ts） */
-    castOutsideCombat: (caster: string, ability: string, target?: string) => run((s) => fieldCast.castOutsideCombat(s, caster, ability, target)),
+    /** 戰鬥外施放治療、護盾類的能力（fieldCast.ts）：只記一行，不交給 AI 描寫 */
+    castOutsideCombat: (caster: string, ability: string, target?: string) => run((s) => fieldCast.castOutsideCombat(s, caster, ability, target), { narrate: false }),
     readIntel: (name: string) => run((s) => inventory.readIntelItem(s, name)),
     eatMeal: (id: string) => run((s) => meals.eatMeal(s, id)),
     /** 在酒館打聽（線索池的隱藏線索） */

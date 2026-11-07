@@ -20,6 +20,7 @@ import CartPanel from './CartPanel.vue'
 import MarketBadge from './MarketBadge.vue'
 import MarketTags from './MarketTags.vue'
 import PriceSteps from './PriceSteps.vue'
+import { vMarquee } from '../marquee'
 
 // 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價），下面是購物車（一般商品與賣出一次結帳，CartPanel）。
 // 特別交易（AI 準備的、情報、服務）照舊一件一件買、一件一件交涉
@@ -257,12 +258,12 @@ function buy(d: Deal) {
                 <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
                   <div class="line" @click="toggle(d.id)">
                     <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
-                    <span class="what">
+                    <span v-marquee class="what marquee"><span class="what-in">
                       <strong>{{ d.title }}</strong>
                       <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
                       <MarketBadge :name="itemName(d)" />
                       <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
-                    </span>
+                    </span></span>
                     <span class="price" :title="buyWhyText(d)">{{ costText(s, key, d) }}</span>
                     <span class="stock small muted">{{ d.stock < 20 ? `剩 ${leftOf(d)}` : '' }}</span>
                     <span class="incart small" :title="cart.buy[d.id] ? `購物車裡有 ${cart.buy[d.id]} 個` : undefined"><template v-if="cart.buy[d.id]"><GameIcon name="cart" :size="13" />{{ cart.buy[d.id] }}</template></span>
@@ -386,9 +387,9 @@ function buy(d: Deal) {
   .item-row .line .incart { grid-column: 3; }
   .item-row .line .btns { grid-column: 2 / -1; flex-wrap: wrap; }
 }
-.what { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
-.what strong { flex-shrink: 0; }
-.what .effect { overflow: hidden; text-overflow: ellipsis; }
+.what { min-width: 0; }
+/* 名稱、類別、行情、效果放不下時整行跑馬燈（v-marquee） */
+.what .what-in { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
 .stock { text-align: right; white-space: nowrap; }
 .btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
 .btns .num { width: 52px; height: 28px; padding: 2px 6px; }
