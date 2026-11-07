@@ -233,9 +233,6 @@ function load(s: GameState): GameState {
   return s
 }
 
-/** AI 判定多久沒有任何回應（文字或思考）就放棄 */
-export const JUDGE_IDLE_MS = 3 * 60_000
-
 export const useGame = defineStore('game', () => {
   // 進行中的遊戲（自動保存的那一份）：啟動時只讀出來放著，在首頁按「繼續」才載入
   const boot = takePreloaded()
@@ -1178,11 +1175,13 @@ export const useGame = defineStore('game', () => {
     const controller = new AbortController()
     judgeController = controller
     judgeTimedOut = false
+    // 設定的「AI 判定逾時」（分鐘，0 = 不限）
+    const idleMs = Math.max(0, Number(settings.judgeTimeoutMin) || 0) * 60_000
     // 太久沒有任何回應就放棄（每收到一段文字或思考就重新計時）
     let idle: ReturnType<typeof setTimeout> | undefined
     const alive = () => {
       clearTimeout(idle)
-      idle = setTimeout(() => { judgeTimedOut = true; controller.abort() }, JUDGE_IDLE_MS)
+      if (idleMs) idle = setTimeout(() => { judgeTimedOut = true; controller.abort() }, idleMs)
     }
     try {
       const { completeText } = await import('@/narrator/providers')
@@ -1218,7 +1217,7 @@ export const useGame = defineStore('game', () => {
       collector.flush(OTHER_USAGE)
       error.value = controller.signal.aborted
         ? judgeTimedOut
-          ? `AI 判定逾時：${JUDGE_IDLE_MS / 60000} 分鐘沒有任何回應，已經放棄（可以重試，或改用規則判定）`
+          ? `AI 判定逾時：${idleMs / 60000} 分鐘沒有任何回應，已經放棄（可以重試，或改用規則判定）`
           : '已取消 AI 判定（可以重試，或改用規則判定）'
         : `AI 判定失敗：${e instanceof Error ? e.message : String(e)}（可以重試，或改用規則判定）`
     } finally {

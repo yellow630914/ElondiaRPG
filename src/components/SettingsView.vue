@@ -119,6 +119,10 @@ function doReset() {
         <input v-model="settings.judgeWritesNarrative" type="checkbox" :disabled="settings.sourceIndex('judge') !== settings.sourceIndex('narration')" />
         判定時順便寫出經過 <Hint text="判定與敘事正文同一個來源時才有效；省一次呼叫，但經過不是用敘事正文的提示詞寫的。" />
       </label>
+      <label class="small">
+        AI 判定逾時 <input v-model.number="settings.judgeTimeoutMin" type="number" min="0" max="30" style="width: 70px" /> 分鐘
+        <Hint text="AI 判定這麼久沒有任何回應（連一個字或一段思考都沒有）就放棄，行動保留，可以重試或改用規則判定。只要模型還在回應就不會被切斷。0 = 不限。0～30，預設 3。判定中也可以按卡片上的「取消」。" />
+      </label>
       <p class="small note">
         <template v-if="settings.splitJudgeNarrative()">
           主動行動：先由「{{ settings.sourceFor('judge').name }}」判定（只回傳 JSON），再由「{{ settings.sourceFor('narration').name }}」用敘事正文的提示詞寫出經過（每次兩次呼叫）。
