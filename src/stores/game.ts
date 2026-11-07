@@ -1185,15 +1185,11 @@ export const useGame = defineStore('game', () => {
       idle = setTimeout(() => { judgeTimedOut = true; controller.abort() }, JUDGE_IDLE_MS)
     }
     try {
-      const { streamNarration } = await import('@/narrator/providers')
+      const { completeText } = await import('@/narrator/providers')
       const [{ composeJudge }, opts] = await Promise.all([import('@/narrator/compose'), usePrompts().composeOptions()])
       let thinking = ''
-      let text = ''
       alive()
-      for await (const chunk of streamNarration(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, controller.signal, collector.onUsage, (t) => { thinking += t; alive() })) {
-        text += chunk
-        alive()
-      }
+      const text = await completeText(src.provider, src.config, composeJudge(s, pending, opts, narrations.value).prompt, controller.signal, collector.onUsage, (t) => { thinking += t; alive() }, alive)
       clearTimeout(idle)
       const judgment = actions.sanitizeJudgment(s, pending, extractJson(text))
       // 分開時就算判定的模型寫了經過也不採用，交給寫作的模型；

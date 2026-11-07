@@ -244,9 +244,14 @@ async function listModelsRaw(provider: ProviderId, config: ProviderConfig): Prom
 /** 不串流顯示、只要完整文字時使用（AI 判定、角色潤飾）。 */
 export async function completeText(
   provider: ProviderId, config: ProviderConfig, prompt: Prompt, signal?: AbortSignal, onUsage?: UsageCallback, onThinking?: ThinkingCallback,
+  /** 每收到一段文字（例如用來重設「太久沒有回應」的計時） */
+  onChunk?: (chunk: string) => void,
 ): Promise<string> {
   let text = ''
-  for await (const chunk of streamNarration(provider, config, prompt, signal, onUsage, onThinking)) text += chunk
+  for await (const chunk of streamNarration(provider, config, prompt, signal, onUsage, onThinking)) {
+    text += chunk
+    onChunk?.(chunk)
+  }
   return text
 }
 
