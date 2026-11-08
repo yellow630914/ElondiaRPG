@@ -282,20 +282,20 @@ function remove() {
         <template #legend>材料</template>
         <div class="grid">
           <label>名稱 <input v-model="mat.name" maxlength="8" /></label>
-          <label>類型
+          <label><span>類型 <Hint text="決定能做成哪些底材：金屬做刀劍與重甲、皮革做皮甲與靴子、布料做衣服、木材做弓與法杖、寶石做飾品（每種底材寫了用哪一類材料）。" /></span>
             <select v-model="mat.kind" :disabled="builtin"><option v-for="(n, k) in KINDS" :key="k" :value="k">{{ n }}</option></select>
           </label>
           <label><span>等級（1～7） <Hint text="決定打造的工錢與 DC。第 6、7 級是高等地下城的材料。" /></span><input v-model.number="mat.tier" type="number" min="1" max="7" :disabled="builtin" :title="builtin ? '內建材料的等級不能改（隨機裝備依類型與等級找材料）' : ''" /></label>
-          <label>加成 <input v-model.number="mat.bonus" type="number" min="0" max="10" /></label>
-          <label>稀有度
+          <label><span>加成 <Hint text="材料的成長值，不是直接加攻擊。用這個材料做的裝備，數值依底材的「材料成長」換算：刀劍類武器傷害 + 加成、命中 + 加成的一半；胸甲、頭盔豁免 + 加成的一半（進位）；靴子迴避 + 一半……每種底材不同，見底材的「固定加成與材料成長」。內建：鐵 0（沒有加成）、鋼 1、秘銀 2、精金 4、星隕鐵 6、第 6 級 8、第 7 級 10。" /></span><input v-model.number="mat.bonus" type="number" min="0" max="10" /></label>
+          <label><span>稀有度 <Hint text="用這個材料做的裝備預設的稀有度：決定名稱的顏色，以及打造時能放幾點附魔（普通 0、優良 1、稀有 2、史詩 4、傳說 6）。建角挑裝備時，稀有度比材料本來高的要多花點數。" /></span>
             <select v-model="mat.rarity"><option v-for="r in RARITY_ORDER" :key="r" :value="r">{{ rarityName(r) }}</option></select>
           </label>
-          <label>建議等級 <input v-model.number="mat.level" type="number" min="1" max="30" /></label>
-          <label>價格倍率（× 底價）<input v-model.number="mat.price" type="number" min="0.1" step="0.5" /></label>
-          <label>防具額外迴避 <input v-model.number="mat.armor!.evade" type="number" /></label>
-          <label>防具額外減傷 <input v-model.number="mat.armor!.dr" type="number" /></label>
+          <label><span>建議等級 <Hint text="幾級才會出現：怪物掉落、NPC 的裝備、寶箱的隨機裝備，只從建議等級不超過怪物（NPC、寶箱）等級的材料裡挑；商店每天的裝備與 AI 設計的裝備以主角等級 +2 為上限，超過時換成上限內最好的材料。內建：鐵 1、鋼 3、秘銀 7、精金 11、星隕鐵 15。" /></span><input v-model.number="mat.level" type="number" min="1" max="30" /></label>
+          <label><span>價格倍率（× 底價） <Hint text="裝備價格 = 底材的價格 × 這個倍率（有附魔時每點再 +50%）。內建：鐵 1、鋼 2、秘銀 15、精金 150、星隕鐵 1000。" /></span><input v-model.number="mat.price" type="number" min="0.1" step="0.5" /></label>
+          <label><span>防具額外迴避 <Hint text="材料本身的特性，只加在防具、盾與飾品上（武器沒有），和加成另外算。例如秘銀較輕：迴避 +1。" /></span><input v-model.number="mat.armor!.evade" type="number" /></label>
+          <label><span>防具額外減傷 <Hint text="材料本身的特性，只加在防具、盾與飾品上（武器沒有），和加成另外算。例如精金更硬：減傷 +1。" /></span><input v-model.number="mat.armor!.dr" type="number" /></label>
         </div>
-        <AffinityRows v-model="mat.resist" label="防具與飾品的抗性" />
+        <AffinityRows v-model="mat.resist" label="防具與飾品的抗性" hint="材料本身的抗性，只加在防具、盾與飾品上（武器沒有）。負數是受到的傷害變少：例如龍皮的火焰 −0.25，用龍皮做的防具受到的火焰傷害 ×0.75。" />
         <label class="block">描述 <input v-model="mat.desc" maxlength="120" /></label>
         <div class="block icon-row">
           <span>圖示</span>

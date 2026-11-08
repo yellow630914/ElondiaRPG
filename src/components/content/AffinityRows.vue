@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { damageTypeName, damageTypes } from '@/engine/data'
+import Hint from '../ui/Hint.vue'
 
 // 傷害倍率的加減（抗性、攻擊加成）：每列一種傷害屬性或群組
 const model = defineModel<Partial<Record<string, number>> | undefined>()
-const props = withDefaults(defineProps<{ label: string; max?: number }>(), { max: 2 })
+const props = withDefaults(defineProps<{ label: string; max?: number; hint?: string }>(), { max: 2, hint: undefined })
 
 const keys = [...damageTypes.types.map((t) => t.id), ...Object.keys(damageTypes.groups), 'all']
 const name = (k: string) => (k === 'all' ? '全部' : damageTypeName(k))
@@ -31,7 +32,7 @@ function add() {
 
 <template>
   <div class="aff">
-    <span class="small">{{ label }}：</span>
+    <span class="small">{{ label }}<Hint v-if="hint" :text="hint" />：</span>
     <span v-for="[k, v] in rows" :key="k" class="row-item">
       <select :value="k" @change="set(k, ($event.target as HTMLSelectElement).value, v)">
         <option v-for="o in keys" :key="o" :value="o">{{ name(o) }}</option>
