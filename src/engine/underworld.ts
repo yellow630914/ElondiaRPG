@@ -1,9 +1,11 @@
 // 地下街（docs/SPECIAL_MAPS.md 第 9 節）：每座有灰色產業的聚落一張隱藏的特殊地圖（special_maps.json 的 underworld），
 // 黑市、淫鬥場、地下俱樂部這些地標擺在裡面。在酒館打聽到之後（主動行動 black_market，旗標 underworld:<地點>），
 // 從酒館走進去，從出口回到酒館。舊存檔打聽到黑市的旗標（black_market:<地點>）也算知道。
+// 被主人帶著時不能打聽，改成向主人提議去地下街（主人答應的那一天由主人帶著進去，旗標 underworld_escort:<地點>）。
 
 import { landmarkDef, landmarks, specialKey, specialMaps, type LandmarkDef, type SpecialMapDef } from './data'
 import { currentArea, currentCell } from './grid'
+import { isBound } from './party'
 import { enterSpecial } from './specialMaps'
 import { condMet } from './storyFlags'
 import type { GameState } from './types'
@@ -21,6 +23,13 @@ export function underworldLandmarks(map: SpecialMapDef): LandmarkDef[] {
 
 /** 打聽到之後設的旗標 */
 export const underworldFlag = (location: string) => `underworld:${location}`
+/** 被主人帶著時，主人答應今天帶你去這座城的地下街（向主人提議，companions.ts 的 applyUnderworldProposal）：值是那一天 */
+export const underworldEscortFlag = (location: string) => `underworld_escort:${location}`
+
+/** 主人今天答應帶你去這座城的地下街 */
+export function underworldEscorted(state: GameState, location = state.location): boolean {
+  return state.flags[underworldEscortFlag(location)] === state.time.day
+}
 
 /**
  * 主角知道這座聚落的地下街在哪：在酒館打聽到了（舊存檔是打聽到黑市），
@@ -46,7 +55,10 @@ export function underworldEntryBlocked(state: GameState): string | undefined {
   const map = underworldOf(state.location)
   if (!map) return '這座城沒有地下街'
   if (currentArea(state).kind !== 'settlement' || currentCell(state).kind !== 'tavern') return '要從酒館進去'
-  if (!underworldKnown(state)) return '還不知道地下街的入口'
+  // 被主人帶著：要主人今天答應帶你去（知不知道入口都一樣，是主人帶路）
+  if (isBound(state)) {
+    if (!underworldEscorted(state)) return '被主人帶著：先向主人提議去地下街'
+  } else if (!underworldKnown(state)) return '還不知道地下街的入口'
   if (state.combat || state.pendingAction || state.pendingDefeat || state.townEvent) return '現在不能這麼做'
   return undefined
 }

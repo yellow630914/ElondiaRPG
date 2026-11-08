@@ -52,7 +52,7 @@ import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report,
 import { contractOf, placeName } from './tattoos'
 import { lewdOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { gameRule } from './gameRules'
-import { blackMarketHere, underworldAskBlocked, underworldFlag, underworldLandmarks, underworldOf } from './underworld'
+import { blackMarketHere, underworldAskBlocked, underworldEscorted, underworldEscortFlag, underworldFlag, underworldLandmarks, underworldOf } from './underworld'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
 function socialReport(state: GameState, hours: number, scene: string, kind: Report['kind'] = 'social'): Report {
@@ -753,10 +753,12 @@ export function releaseSlave(state: GameState, npcId: string): Report {
 // ---- 6. 被主人帶著時，向主人提議雇人、買奴隸 ----
 // 主人出錢；入隊後是主人的隊員（ally，跟著主人的隊伍），買下的奴隸契約屬於主人。見 docs/COMPANIONS.md 第 2.4 節
 
-export type ProposalTarget = { kind: 'hire'; npc: string } | { kind: 'buy'; market: MarketKind; npc: string }
+export type ProposalTarget = { kind: 'hire'; npc: string } | { kind: 'buy'; market: MarketKind; npc: string } | { kind: 'underworld' }
+type PersonProposal = Exclude<ProposalTarget, { kind: 'underworld' }>
 
-/** target：hire:<npc id> 或 buy:<public|black>:<npc id> */
+/** target：hire:<npc id>、buy:<public|black>:<npc id>，或 underworld（請主人帶你去這座城的地下街） */
 export function parseProposal(target: string | undefined): ProposalTarget {
+  if (target === 'underworld') return { kind: 'underworld' }
   const [k, a, b] = (target ?? '').split(':')
   if (k === 'hire' && a) return { kind: 'hire', npc: a }
   if (k === 'buy' && (a === 'public' || a === 'black') && b) return { kind: 'buy', market: a, npc: b }
@@ -771,8 +773,9 @@ function masterOf(state: GameState): { member: Character; rec?: NpcRecord } {
   return { member: m, ...(rec ? { rec } : {}) }
 }
 
-/** 提議的花費：雇用照要價，買奴隸照市價 */
+/** 提議的花費：雇用照要價，買奴隸照市價；去地下街不花錢 */
 export function proposalCost(state: GameState, t: ProposalTarget): number {
+  if (t.kind === 'underworld') return 0
   return t.kind === 'hire' ? askingFor(candidate(state, t.npc)) : listing(state, t.market, t.npc).price_cc
 }
 
@@ -796,8 +799,39 @@ export function proposeDc(state: GameState, t: ProposalTarget): number {
 
 const proposeFlag = (npc: string) => `propose_no:${npc}`
 
+/** 為什麼現在不能向主人提議去地下街（可以時是 undefined）：被主人帶著、站在有地下街的城的酒館、今天還沒答應過也還沒拒絕過 */
+export function underworldProposalBlocked(state: GameState): string | undefined {
+  if (!isBound(state)) return '你沒有被主人帶著'
+  if (!underworldOf(state.location)) return '這座城沒有地下街'
+  if (currentArea(state).kind !== 'settlement' || currentCell(state).kind !== 'tavern') return '要在酒館才能提議'
+  if (underworldEscorted(state)) return '主人今天已經答應帶你去了'
+  if (state.flags[proposeFlag('underworld')] === state.time.day) return '主人今天不想再聽你提這件事'
+  return undefined
+}
+
+/** 結算向主人提議去地下街：成功時主人今天帶你去（也記住入口）；部分成功主人帶你去但不讓你記路；失敗今天不再提；大失敗主人不高興 */
+function applyUnderworldProposal(state: GameState, report: Report, degree: Degree): string {
+  const p = slaveryRules.propose
+  const why = underworldProposalBlocked(state)
+  if (why) throw new Error(why)
+  const { member: master } = masterOf(state)
+  const map = underworldOf(state.location)!
+  if (degree === 'fail' || degree === 'fumble') {
+    ;(report.changes.flags ??= {})[proposeFlag('underworld')] = state.time.day
+    if (degree === 'fumble') addAffinity(state, report, master.id, p.fumble_affinity, '奴隸想去見不得光的地方')
+    return degree === 'fumble' ? `${master.name}沉下臉：奴隸不該打聽那種地方。` : `${master.name}不答應帶你去${map.name}。`
+  }
+  const flags = (report.changes.flags ??= {})
+  flags[underworldEscortFlag(state.location)] = state.time.day
+  if (degree !== 'partial') flags[underworldFlag(state.location)] = true
+  if (degree === 'critical') addAffinity(state, report, master.id, p.critical_affinity, '提議得體')
+  return degree === 'partial'
+    ? `${master.name}答應今天帶你去${map.name}，但一路讓你低著頭跟在後面，不讓你記路。從酒館就能跟著主人走進去。`
+    : `${master.name}答應今天帶你去${map.name}，入口你也記住了。從酒館就能跟著主人走進去。`
+}
+
 /** 能不能提議：被主人帶著、隊伍還有空位、對象在酒館或市場上、今天還沒被主人拒絕過 */
-export function validateProposal(state: GameState, t: ProposalTarget): NpcRecord {
+export function validateProposal(state: GameState, t: PersonProposal): NpcRecord {
   masterOf(state)
   const rec = npcRecord(state, t.npc)
   if (!rec) throw new Error('找不到這個人')
@@ -815,6 +849,7 @@ export function validateProposal(state: GameState, t: ProposalTarget): NpcRecord
 export function applyProposal(state: GameState, report: Report, target: string, degree: Degree): string {
   const p = slaveryRules.propose
   const t = parseProposal(target)
+  if (t.kind === 'underworld') return applyUnderworldProposal(state, report, degree)
   const rec = validateProposal(state, t)
   const { member: master } = masterOf(state)
   const cost = proposalCost(state, t)
@@ -968,6 +1003,24 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupReturn(state)
     case 'propose': {
       const t = parseProposal(target)
+      if (t.kind === 'underworld') {
+        const why = underworldProposalBlocked(state)
+        if (why) throw new Error(why)
+        const { member: master } = masterOf(state)
+        const map = underworldOf(state.location)!
+        return {
+          attr: slaveryRules.propose.attr,
+          dc: proposeDc(state, t), targetName: master.name, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
+          scene: `${tavernScene(state)}・向${master.name}提議去${map.name}（這座城見不得光的買賣：黑市、淫鬥場、地下俱樂部）`,
+          outcomes: {
+            critical: `${master.name}答應今天帶你去${map.name}，你也記住了入口（親密度 +${slaveryRules.propose.critical_affinity}）`,
+            success: `${master.name}答應今天帶你去${map.name}，你也記住了入口`,
+            partial: `${master.name}答應今天帶你去，但不讓你記路`,
+            fail: '主人不答應，今天不再提這件事',
+            fumble: `主人覺得奴隸不該打聽那種地方（親密度 ${slaveryRules.propose.fumble_affinity}）`,
+          },
+        }
+      }
       const rec = validateProposal(state, t)
       const { member: master } = masterOf(state)
       const cost = proposalCost(state, t)

@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
 import { apMaxFor, apRegenFor, attrsOf, mod } from '@/engine/character'
-import { askingFor, invitable, joinableSquads, partyOffersHere, proposeDc, squadOptions, waitChance } from '@/engine/companions'
+import { askingFor, invitable, joinableSquads, partyOffersHere, proposeDc, squadOptions, underworldProposalBlocked, waitChance } from '@/engine/companions'
 import { abilityDef, attributeRules, className, companionRules, conditionName, genderName, raceName, slaveryRules } from '@/engine/data'
 import { landmarkHidden } from '@/engine/grid'
-import { underworldAskBlocked, underworldEntryBlocked, underworldKnown, underworldLandmarks, underworldOf } from '@/engine/underworld'
+import { underworldAskBlocked, underworldEntryBlocked, underworldEscorted, underworldKnown, underworldLandmarks, underworldOf } from '@/engine/underworld'
 import { mealMenu } from '@/engine/meals'
 import { CURRENCY, formatMoney } from '@/engine/money'
 import { ASK_COST, ASK_DC, askAroundBlock } from '@/engine/askAround'
@@ -151,12 +151,23 @@ const underworldIn = computed(() => (underworld.value ? underworldLandmarks(unde
 const knowsUnderworld = computed(() => underworldKnown(s.value))
 const enterWhy = computed(() => underworldEntryBlocked(s.value))
 const askWhy = computed(() => underworldAskBlocked(s.value))
+// 被主人帶著：向主人提議去地下街（companions.ts 的 underworldProposalBlocked），主人答應的那一天跟著主人走進去
+const escorted = computed(() => underworldEscorted(s.value))
+const proposeUwWhy = computed(() => (bound.value ? underworldProposalBlocked(s.value) : undefined))
+const proposeUwDc = computed(() => {
+  try {
+    return bound.value && underworld.value ? proposeDc(s.value, { kind: 'underworld' }) : null
+  } catch {
+    return null
+  }
+})
+const proposeUwText = ref('')
 const askText = ref('')
 const askDc = slaveryRules.black_market_search.dc
 const askHours = slaveryRules.black_market_search.hours
 
 // ---- 選單 ----
-type Section = 'meals' | 'recruit' | 'offers' | 'invite' | 'lodge' | 'underworld' | 'trade'
+type Section = 'meals' | 'recruit' | 'offers' | 'invite' | 'lodge' | 'underworld' | 'propose_underworld' | 'trade'
 const section = ref<Section | null>(null)
 const bestMeal = computed(() => {
   const list = s.value.party.flatMap((m) => m.status.filter((c) => MEAL_CONDITIONS.has(c)))
@@ -168,6 +179,11 @@ const menuItems = computed<MenuItem[]>(() => {
   ]
   if (bound.value) {
     items.push({ id: 'recruit', icon: 'users', label: '向主人提議雇人', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `請${master.value?.name ?? '主人'}出錢雇用今天城裡的冒險者（${visible.value.length} 位）` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' })
+    if (underworld.value) {
+      items.push(escorted.value
+        ? { id: 'enter_underworld', icon: 'door', label: `跟著${master.value?.name ?? '主人'}走進${underworld.value.name}`, disabled: !!enterWhy.value, detail: enterWhy.value ?? `主人今天答應帶你去${underworldIn.value.length ? `・裡面有${underworldIn.value.join('、')}` : ''}` }
+        : { id: 'propose_underworld', icon: 'eye', label: '向主人提議去地下街', disabled: !!proposeUwWhy.value, detail: proposeUwWhy.value ?? `請${master.value?.name ?? '主人'}帶你去${underworld.value.name}：魅力檢定，參考 DC ${proposeUwDc.value ?? '—'}` })
+    }
   } else {
     items.push(
       { id: 'recruit', icon: 'users', label: '招募冒險者', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人），雇人前先騰出位子` : visible.value.length ? `今天城裡有 ${visible.value.length} 位可以雇用` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' },
@@ -205,7 +221,7 @@ function pick(id: string) {
   else if (id === 'enter_underworld') game.enterUnderworld()
   else section.value = id as Section
 }
-const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', lodge: '寄放夥伴', underworld: '打聽地下街', trade: '酒館的交易' }
+const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒險者', offers: '加入別人的隊伍', invite: '邀請認識的人', lodge: '寄放夥伴', underworld: '打聽地下街', propose_underworld: '向主人提議去地下街', trade: '酒館的交易' }
 </script>
 <template>
   <div class="tavern">
@@ -388,6 +404,13 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
         <p class="small muted">這座城有見不得光的買賣（黑市、淫鬥場、地下俱樂部……），都藏在不對外人說的地下街裡。向酒館裡的人打聽入口（魅力檢定 DC {{ askDc }}，約 {{ askHours }} 小時）；打聽到之後從酒館就能走進去。</p>
         <input v-model="askText" class="wide" placeholder="打聽的方式（選填）" />
         <button class="primary" :disabled="game.judging || !!askWhy" @click="game.perform({ kind: 'black_market', text: askText }); askText = ''; section = null">{{ askWhy ?? '打聽地下街' }}</button>
+      </template>
+
+      <!-- 被主人帶著：向主人提議去地下街 -->
+      <template v-else-if="section === 'propose_underworld'">
+        <p class="small muted">這座城見不得光的買賣（黑市、淫鬥場、地下俱樂部……）藏在{{ underworld?.name ?? '地下街' }}裡。身為奴隸不能自己去，可以請{{ master?.name ?? '主人' }}帶你去：魅力檢定，參考 DC {{ proposeUwDc ?? '—' }}（主人的親密度、主人的身分、契約的服從懲罰）。成功時主人今天帶你去，你也記住入口；部分成功主人帶你去但不讓你記路；失敗今天不能再提。進去之後黑市的奴隸一樣是向主人提議買下，珍品不能自己買。</p>
+        <input v-model="proposeUwText" class="wide" placeholder="怎麼說服主人（選填），例如：想替主人找一件好東西、聽說那裡有主人要的人" />
+        <button class="primary" :disabled="game.judging || !!proposeUwWhy" @click="game.perform({ kind: 'propose', target: 'underworld', text: proposeUwText }); proposeUwText = ''; section = null">{{ proposeUwWhy ?? '向主人提議（魅力檢定）' }}</button>
       </template>
 
       <!-- 酒館的交易 -->
