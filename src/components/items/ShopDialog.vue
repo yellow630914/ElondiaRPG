@@ -2,13 +2,11 @@
 import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { npcRecord } from '@/engine/npcs'
-import { breakdownText, buyBreakdown, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, keeperTitle, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { breakdownText, buyBreakdown, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
 import { pctText, tradeCategory } from '@/engine/market'
 import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
-import NameTag from '../NameTag.vue'
 import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
@@ -20,7 +18,6 @@ import CartPanel from './CartPanel.vue'
 import MarketBadge from './MarketBadge.vue'
 import MarketTags from './MarketTags.vue'
 import PriceSteps from './PriceSteps.vue'
-import { vMarquee } from '../marquee'
 
 // 商店的交易視窗：左邊是店裡的商品，右邊是行囊（可以賣的標出收購價），下面是購物車（一般商品與賣出一次結帳，CartPanel）。
 // 特別交易（AI 準備的、情報、服務）照舊一件一件買、一件一件交涉
@@ -41,7 +38,6 @@ const shop = computed(() => {
   const cur = s.value.shops?.[key.value]
   return cur && cur.day === s.value.time.day ? cur : undefined
 })
-const keeper = computed(() => (shop.value ? npcRecord(s.value, shop.value.keeper) : undefined))
 const off = computed(() => Math.round(discount(s.value, key.value) * 100))
 const busy = computed(() => game.judging)
 const place = computed(() => shopPlace(s.value))
@@ -197,16 +193,16 @@ function buy(d: Deal) {
 
 <template>
   <div class="shop-dialog">
+    <!-- 頂端一列：這座城的行情（彩色標籤）、折扣與 AI 的提示，右邊是錢（店主寫在建築的選單上，這裡不另外佔一列） -->
     <div class="shop-bar">
-      <div class="small">
-        <template v-if="keeper">{{ keeperTitle(type) }}：<NameTag :id="keeper.id" /><span class="muted">・{{ keeper.personality }}</span></template>
+      <div class="bar-left small">
+        <MarketTags :location="place.id" :marquee="false" compact />
         <span v-if="off" class="tag ok">折扣 {{ off }}%</span>
-        <span v-if="loading" class="muted">・AI 正在準備今天的商品…</span>
-        <span v-else-if="shop?.source === 'ai'" class="muted">・今天有 AI 準備的特別商品</span>
+        <span v-if="loading" class="muted">AI 正在準備今天的商品…</span>
+        <span v-else-if="shop?.source === 'ai'" class="muted">今天有 AI 準備的特別商品</span>
       </div>
       <strong class="money"><GameIcon name="coins" :size="16" />{{ formatMoney(s.money_cc) }}</strong>
     </div>
-    <MarketTags :location="place.id" :name="place.name" />
     <p v-if="game.error" class="error small"><GameIcon name="warning" :size="13" /> {{ game.error }}</p>
     <p v-else-if="last" class="last small"><GameIcon name="check" :size="13" /> {{ last }}</p>
 
@@ -216,14 +212,8 @@ function buy(d: Deal) {
         <template v-if="id === 'buy'">
           <!-- 店裡的商品 -->
           <section class="col">
-            <h3 class="head"><GameIcon name="store" :size="17" />店裡的商品</h3>
-            <nav class="row chips">
-              <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ deals.length }}</button>
-              <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">
-                <GameIcon v-if="g === 'special'" name="sparkles" :size="14" /><ItemIcon v-else :category="g" :size="14" /> {{ groupName(g) }}
-              </button>
-            </nav>
-            <div class="row tools">
+            <div class="row head-row">
+              <h3 class="head"><GameIcon name="store" :size="17" />店裡的商品</h3>
               <input v-model="query" class="grow search" type="search" placeholder="搜尋名稱或效果" />
               <select v-model="sort" class="small" aria-label="排序">
                 <option value="default">預設排序</option>
@@ -232,6 +222,12 @@ function buy(d: Deal) {
                 <option value="name">名稱</option>
               </select>
             </div>
+            <nav class="row chips">
+              <button class="small" :class="{ active: filter === 'all' }" @click="filter = 'all'">全部 {{ deals.length }}</button>
+              <button v-for="g in groups" :key="g" class="small" :class="{ active: filter === g }" @click="filter = g">
+                <GameIcon v-if="g === 'special'" name="sparkles" :size="14" /><ItemIcon v-else :category="g" :size="14" /> {{ groupName(g) }}
+              </button>
+            </nav>
             <p v-if="!deals.length" class="small muted">今天沒有東西可以買了。</p>
             <p v-else-if="!shownDeals.length" class="small muted">沒有符合的商品。</p>
             <div class="list">
@@ -242,7 +238,7 @@ function buy(d: Deal) {
                 <li v-for="d in specialDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
                   <div class="line special-line" @click="toggle(d.id)">
                     <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
-                    <span v-marquee class="what marquee"><span class="what-in">
+                    <span class="what marquee"><span class="what-in">
                       <strong>{{ d.title }}</strong>
                       <ContentTagChips v-if="dealStory(d)" :tags="dealStory(d)!.tags" />
                       <span class="small effect">{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</span>
@@ -269,7 +265,7 @@ function buy(d: Deal) {
                 <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
                   <div class="line" @click="toggle(d.id)">
                     <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
-                    <span v-marquee class="what marquee"><span class="what-in">
+                    <span class="what marquee"><span class="what-in">
                       <strong>{{ d.title }}</strong>
                       <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
                       <MarketBadge :name="itemName(d)" />
@@ -303,7 +299,10 @@ function buy(d: Deal) {
         <template v-else>
           <!-- 行囊 -->
           <section class="col">
-            <h3 class="head"><GameIcon name="backpack" :size="17" />你的行囊</h3>
+            <div class="row head-row">
+              <h3 class="head"><GameIcon name="backpack" :size="17" />你的行囊</h3>
+              <input v-model="bagQuery" class="grow search" type="search" placeholder="搜尋行囊" />
+            </div>
             <div class="row small">
               <span class="muted">這間店收：{{ buysText || '不收東西' }}</span>
               <span class="grow" />
@@ -315,9 +314,6 @@ function buy(d: Deal) {
                 <ItemIcon v-if="c !== 'other'" :category="c" :size="14" /> {{ c === 'other' ? '其他' : itemRules.categories[c] }}
               </button>
             </nav>
-            <div class="row tools">
-              <input v-model="bagQuery" class="grow search" type="search" placeholder="搜尋行囊" />
-            </div>
             <p v-if="!bag.length" class="small muted">{{ bagAll.length ? '沒有符合篩選的東西。' : onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
             <div class="list">
               <template v-for="g in bagGroups" :key="g.id">
@@ -326,7 +322,7 @@ function buy(d: Deal) {
                   <li v-for="i in g.items" :key="i.name" class="item-row" :class="{ open: sellWhy === i.name, dim: i.price === null }">
                     <div class="line bag-line" @click="sellWhy = sellWhy === i.name ? null : i.name">
                       <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>
-                      <span v-marquee class="what marquee"><span class="what-in">
+                      <span class="what marquee"><span class="what-in">
                         <strong>{{ i.name }}</strong>
                         <span class="qty small">×{{ i.qty }}</span>
                         <span class="small muted">{{ categoryName(s, i.name) }}</span>
@@ -370,7 +366,8 @@ function buy(d: Deal) {
 .head :deep(.game-icon), .money :deep(.game-icon) { color: var(--accent); }
 .shop-dialog { display: grid; gap: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.shop-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; align-items: center; }
+.shop-bar { display: flex; flex-wrap: nowrap; gap: 8px; justify-content: space-between; align-items: flex-start; }
+.shop-bar .money { flex: none; }
 .money { color: var(--accent-2); }
 .tag.ok { border-color: var(--accent); color: var(--accent); margin-left: 6px; }
 .error { color: var(--danger); margin: 0; }
@@ -379,12 +376,15 @@ function buy(d: Deal) {
 @media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
 .col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; min-width: 0; }
 .col h3 { margin: 0; color: var(--accent-2); }
-/* 手機版：分頁列已經寫了是哪一邊 */
-.cols.swipe .col > h3.head { display: none; }
+/* 標題與搜尋同一列（清單才不會被擠得很矮）；手機版：分頁列已經寫了是哪一邊，只留搜尋 */
+.head-row { flex-wrap: nowrap; gap: 8px; }
+.head-row h3 { flex: none; white-space: nowrap; }
+.cols.swipe .head-row > h3.head { display: none; }
+.bar-left { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: center; min-width: 0; flex: 1; }
 .chips { gap: 4px; }
 .chips button.active { border-color: var(--accent); color: var(--accent); }
 /* 電腦版：下面還有購物車，清單矮一點；手機版購物車是另一個分頁 */
-.list { display: grid; gap: 6px; margin: 0; max-height: max(220px, calc(100vh - 600px)); overflow-y: auto; padding-right: 2px; align-content: start; }
+.list { display: grid; gap: 6px; margin: 0; max-height: max(260px, calc(100vh - 430px)); overflow-y: auto; padding-right: 2px; align-content: start; }
 .cols.swipe .list { max-height: calc(100vh - 350px); }
 /* 手機：清單自己會捲，橫滑要留給分頁切換（不然瀏覽器把橫滑當成清單的捲動） */
 .cols.swipe .list { touch-action: pan-y; }
@@ -410,10 +410,9 @@ function buy(d: Deal) {
   .item-row .line .btns { grid-column: 2 / -1; flex-wrap: wrap; }
 }
 .what { min-width: 0; }
-/* 名稱、類別、行情、效果放不下時整行跑馬燈（v-marquee） */
-.what .what-in { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
-/* 展開的那一列：說明已經寫在下面，跑馬燈停在開頭 */
-.item-row.open .marquee.run > span { animation: none; transform: none; }
+/* 名稱、類別、行情、效果放不下時截斷成「…」（不跑馬燈；點一下展開看完整說明） */
+.what .what-in { display: inline; white-space: nowrap; }
+.what .what-in > * + * { margin-left: 6px; }
 .stock { text-align: right; white-space: nowrap; }
 .btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
 .btns .num { width: 52px; height: 28px; padding: 2px 6px; }
