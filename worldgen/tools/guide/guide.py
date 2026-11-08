@@ -78,6 +78,8 @@ def quest_md(q, out):
     out.append(f"- **接取**：{q['who']}" + (f"（{'、'.join(q['startReq'])}）" if q.get('startReq') else ''))
     if q.get('prereq'): out.append('- **前置**：' + '；'.join(t for _, t in q['prereq']))
     if q.get('rewards'): out.append('- **完成報酬**：' + '、'.join(q['rewards']))
+    for h in q.get('hints', []):
+        out.append(f'- **筆記上的提示**：{h}')
     out.append('')
     out.append('<details><summary>攻略（劇透）</summary>')
     out.append('')

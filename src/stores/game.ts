@@ -230,6 +230,8 @@ function load(s: GameState): GameState {
   population.refreshRosters(s)
   // 新職業（武夫、仙術師）之前的存檔：炎華之地的職業比例不對時，記下提議，事件視窗會問玩家（只問一次）
   classRebalance.checkClassRebalance(s)
+  // 「條件成立時自動開始」的特殊任務：舊存檔讀進來時條件已經成立的（例如史詩的指引）
+  if (!s.combat) story.startAutoStories(s)
   return s
 }
 
@@ -381,6 +383,8 @@ export const useGame = defineStore('game', () => {
     const lastReport = state.value.reports.at(-1)?.report_id
     try {
       const result = fn(state.value)
+      // 「條件成立時自動開始」的特殊任務（升級、事件設了旗標……之後）：戰鬥中等打完再說
+      if (!state.value.combat) story.startAutoStories(state.value)
       // 期限：逾期的委託與特殊任務（各自產生報告）
       deadlines.expireDeadlines(state.value)
       // NPC 自己的日子：每 X 天替在乎的冒險者擲一次（npcLife.ts）

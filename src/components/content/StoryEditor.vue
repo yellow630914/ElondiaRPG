@@ -308,6 +308,19 @@ function remove() {
       <button class="small" @click="addNode">＋ 任務點</button>
     </FoldSet>
 
+    <FoldSet :filled="!!draft.hints?.length">
+      <template #legend>冒險筆記上的提示（{{ draft.hints?.length ?? 0 }}）</template>
+      <HelpText text="條件成立時列在冒險筆記的「目前的目標」，不是任務點：不用走到、不用完成。例如告訴玩家下一段故事在哪裡接、要幾級。" />
+      <div v-for="(h, i) in draft.hints ?? []" :key="i" class="hint-card">
+        <div class="row">
+          <textarea v-model="h.text" class="grow" rows="2" maxlength="200" placeholder="例如：Lv.14 以後，到河谷鎮的冒險者公會接「風暴的前夜」" />
+          <button class="small" title="刪除" @click="draft.hints!.splice(i, 1)">✕</button>
+        </div>
+        <RequiresEditor :model-value="h.requires ?? {}" label="顯示的條件" @update:model-value="(v) => (h.requires = v)" />
+      </div>
+      <button class="small" @click="(draft.hints ??= []).push({ text: '' })">＋ 提示</button>
+    </FoldSet>
+
     <FoldSet>
       <template #legend>完成報酬（獨特報酬）</template>
       <EffectsEditor v-model="draft.rewards" />
@@ -351,6 +364,7 @@ function remove() {
 .node-card.open { border-color: var(--accent); }
 .view-switch button.active { border-color: var(--accent); color: var(--accent); }
 .node-head { cursor: pointer; gap: 6px; }
+.hint-card { border: 1px solid var(--border); border-radius: var(--radius); padding: 4px 6px; display: grid; gap: 6px; }
 .tag.set { border-color: var(--accent); }
 .flags { border-collapse: collapse; width: 100%; }
 .flags th, .flags td { border-bottom: 1px solid var(--border); padding: 3px 6px; text-align: left; vertical-align: top; }

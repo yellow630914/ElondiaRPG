@@ -447,6 +447,14 @@ export function sanitizeStory(id: string, raw: Partial<StoryMod>, custom: boolea
   if (limit > 0) out.time_limit = limit
   const sf = flags(raw.start_flags)
   if (sf.length) out.start_flags = sf
+  // 冒險筆記上的提示：條件成立時列在目前的目標
+  const hints = (Array.isArray(raw.hints) ? raw.hints : []).slice(0, 10).flatMap((h) => {
+    const text = str(h?.text, 200)
+    if (!text) return []
+    const req = sanitizeCond(h?.requires) as StoryCond | undefined
+    return [{ text, ...(req ? { requires: req } : {}) }]
+  })
+  if (hints.length) out.hints = hints
   const rewards = sanitizeEffects(raw.rewards)
   if (rewards.length) out.rewards = rewards
   if (custom) out.custom = true

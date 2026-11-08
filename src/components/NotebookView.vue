@@ -8,7 +8,7 @@ import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engi
 import { formatMoney } from '@/engine/money'
 import { examsFirst } from '@/engine/guild'
 import { formatTime } from '@/engine/state'
-import { activeNodes, nodesWaitingForDays, placeText, storyPauseReason } from '@/engine/story'
+import { activeNodes, nodesWaitingForDays, placeText, storyHints, storyPauseReason } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Intel, Quest } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -180,9 +180,10 @@ const counts = computed(() => ({
           <ul class="plain goals">
             <li v-for="g in goals" :key="g.ref"><GameIcon name="target" :size="12" /> {{ g.node.title }} <span class="muted">（{{ placeText(g.node, s) }}）</span></li>
             <li v-for="g in later" :key="g.ref" class="muted"><GameIcon name="hourglass" :size="12" /> {{ g.node.title }}（{{ placeText(g.node, s) }}・{{ formatTime(g.from) }} 以後）</li>
+            <li v-for="(h, i) in storyHints(s, def!)" :key="`h${i}`"><GameIcon name="compass" :size="12" /> {{ h }}</li>
             <li v-if="storyPauseReason(s, def!) === 'tags'" class="muted">（設定的內容篩選關掉了這個任務的標籤，任務暫停中；重新開啟後接著進行）</li>
             <li v-else-if="storyPauseReason(s, def!) === 'body'" class="muted">（這個任務只給陰柔、中性體型的主角，任務暫停中；打開設定「陽剛體型也能遇到『只給陰柔、中性』的成人內容」或改回體型後接著進行）</li>
-            <li v-else-if="!goals.length && !later.length" class="muted">（現在沒有可以進行的目標）</li>
+            <li v-else-if="!goals.length && !later.length && !storyHints(s, def!).length" class="muted">（現在沒有可以進行的目標）</li>
           </ul>
         </div>
         <FoldMenu class="history" icon="notes" label="經過" :detail="p.log.length ? `最近：${p.log.at(-1)!.text.slice(0, 24)}${p.log.at(-1)!.text.length > 24 ? '…' : ''}` : ''" :badge="p.log.length" :open="p.status === 'active'">

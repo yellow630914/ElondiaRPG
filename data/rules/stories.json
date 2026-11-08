@@ -55159,7 +55159,7 @@
     {
       "id": "epic_guide",
       "title": "史詩的指引",
-      "summary": "各國的戰與和、沉睡巨龍的動靜，最後都會匯流成兩段史詩：政治史詩「風暴的前夜」（Lv.14、公會 A 級起，河谷鎮的冒險者公會），走完它的終章「阿契隆的注視」之後是巨龍史詩（Lv.18 起）。（史詩的指引）",
+      "summary": "各國的戰與和、沉睡巨龍的動靜，最後都會匯流成兩段史詩：政治史詩「風暴的前夜」（Lv.14、公會 A 級起，河谷鎮的冒險者公會），走完它的終章「阿契隆的注視」之後是巨龍史詩（Lv.18～19、S 級）。東大陸的大燁、媞丹也各有自己的政治線。（史詩的指引）",
       "merit": 0,
       "start": {
         "kind": "auto",
@@ -55201,6 +55201,12 @@
             "noc_start",
             "noc_trial",
             "noc_x_start",
+            "nsa_started",
+            "nsp1_started",
+            "nsp2_started",
+            "nsp3_started",
+            "nss_started",
+            "nsw_started",
             "port_council",
             "port_night",
             "port_start",
@@ -55220,10 +55226,50 @@
             "spy_envoy",
             "spy_letter",
             "spy_start",
+            "tdh_1_started",
+            "tdh_2_started",
+            "tdl_1_started",
+            "tdl_2_started",
+            "tdl_3_started",
+            "tdpol_1_started",
+            "tdpol_2_started",
+            "tdpol_3_started",
+            "tdpol_haidong_started",
+            "tdpol_khanate_started",
+            "tdpol_south_started",
+            "tds_1_started",
+            "tds_2_started",
+            "tdt_1_started",
+            "tdt_2_started",
+            "tdt_3_started",
             "valk_games",
             "valk_oath",
             "valk_start",
-            "valk_x_start"
+            "valk_x_start",
+            "yhg_1_started",
+            "yhg_2_started",
+            "yhj_1_started",
+            "yhj_2_started",
+            "yhk_1_started",
+            "yhk_2_started",
+            "yhk_3_started",
+            "yhpol_1_started",
+            "yhpol_2_started",
+            "yhpol_3_started",
+            "yhpol_constitution_started",
+            "yhpol_monarchy_started",
+            "yhpol_republic_started",
+            "yhq_1_started",
+            "yhq_2_started",
+            "yhq_3_started",
+            "yhs_1_started",
+            "yhs_2_started",
+            "yhs_3_started",
+            "yhw_1_started",
+            "yhw_2_started",
+            "yhx_1_started",
+            "yhx_2_started",
+            "yhx_3_started"
           ],
           "flags_none": ["drg_kag_start", "drg_sin_start", "drg_sor_start", "drg_bab_start"]
         },
@@ -55251,10 +55297,67 @@
           "requires": { "flags": ["eg_start", "dragon_calamity"] },
           "kind": "story",
           "success": {
-            "text": "「四條龍都醒了。」主管把信一封一封推給你，「熱量之龍卡格尼，去風錘村找老鐵根；詭秘之龍希諾爾，去珊瑚灣鎮的海靈祠找澪；夢境之龍索利安，去銀月城找艾溫娜；塔之龍巴別林，去烈日草原找塔洛。」他看著你，「你之前在牠們的故事裡做過什麼，牠們都記得。四條龍都平息了，再回來這裡——最後那一隻，還在天上看著。」",
+            "text": "「四條龍都醒了。」主管把信一封一封推給你，「熱量之龍卡格尼，去風錘村找老鐵根；詭秘之龍希諾爾，去珊瑚灣鎮的海靈祠找澪——這兩條龍，18 級就能去。夢境之龍索利安，去銀月城找艾溫娜；塔之龍巴別林，去烈日草原找塔洛——這兩條要到 19 級。」他頓了一下，「四件都是 S 級的事：一個人去要 S 級，帶著隊伍的話 A 級也行。」他看著你，「你之前在牠們的故事裡做過什麼，牠們都記得。四條龍都平息了，再回來這裡——最後那一隻，還在天上看著。」",
             "set_flags": ["eg_drg_told"],
             "complete": true
           }
+        }
+      ],
+      "hints": [
+        { "text": "Lv.14、公會 A 級（組隊 B 級）以後，到河谷鎮的冒險者公會接政治史詩「風暴的前夜」", "requires": { "flags": ["eg_pol_told"], "flags_none": ["pol_start"] } },
+        { "text": "走完政治史詩，終章是「阿契隆的注視」；落幕之後回河谷鎮的公會打聽巨龍的動靜", "requires": { "flags": ["pol_start"], "flags_none": ["dragon_calamity"] } },
+        {
+          "text": "東大陸・大燁的政體：Lv.12、公會 A 級（組隊 B 級）以後，到龍安府的冒險者公會接「女帝的新政」",
+          "requires": {
+            "flags_any": [
+              "yhk_end_court",
+              "yhk_end_people",
+              "yhk_end_balance",
+              "yhj_end_court",
+              "yhj_end_people",
+              "yhj_end_balance",
+              "yhs_end_court",
+              "yhs_end_people",
+              "yhs_end_balance",
+              "yhw_end_court",
+              "yhw_end_people",
+              "yhw_end_balance",
+              "yhx_end_court",
+              "yhx_end_people",
+              "yhx_end_balance",
+              "yhg_end_court",
+              "yhg_end_people",
+              "yhg_end_balance",
+              "yhq_end_court",
+              "yhq_end_people",
+              "yhq_end_balance"
+            ],
+            "flags_none": ["yhpol_1_started"]
+          }
+        },
+        {
+          "text": "東大陸・媞丹的走向：Lv.13、公會 A 級（組隊 B 級）以後，到金帳王庭的冒險者公會接「天可汗的召見」",
+          "requires": {
+            "flags_any": [
+              "tdl_end_war",
+              "tdl_end_peace",
+              "tdl_end_haidong",
+              "tds_end_war",
+              "tds_end_peace",
+              "tds_end_haidong",
+              "tdt_end_war",
+              "tdt_end_peace",
+              "tdt_end_haidong",
+              "tdh_end_war",
+              "tdh_end_peace",
+              "tdh_end_haidong"
+            ],
+            "flags_none": ["tdpol_1_started"]
+          }
+        },
+        {
+          "text": "東大陸・南北交會：Lv.16、公會 S 級（組隊 A 級）以後，到鷹河榷場的冒險者公會接「歲幣的使節」",
+          "requires": { "flags": ["yhpol_done", "tdpol_done"], "flags_none": ["nsp1_started"] }
         }
       ]
     }

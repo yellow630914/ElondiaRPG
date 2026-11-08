@@ -936,14 +936,27 @@ export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
 
 /**
  * 「條件成立時自動開始」的任務（start.kind = auto）：條件（等級、劇情旗標……，和其他開頭一樣用 canStart）成立就開始，
- * 各自寫一則日誌。每次整理任務點時檢查（接任務、任務點結束、戰鬥結束之後都會整理）
+ * 各自寫一則日誌。整理任務點時（接任務、任務點結束、戰鬥結束）、每個動作之後與讀檔時（stores/game.ts）都會檢查。
+ * 每個動作都會呼叫：只看 auto 開頭、還沒開始的任務（清單依內容版本快取），通常一個都不用檢查
  */
 export function startAutoStories(state: GameState): Report[] {
   const out: Report[] = []
-  for (const def of stories) {
-    if (def.start.kind === 'auto' && canStart(state, def)) out.push(startStory(state, def.id))
+  for (const def of autoStories()) {
+    if (!state.stories?.[def.id] && canStart(state, def)) out.push(startStory(state, def.id))
   }
   return out
+}
+
+let autoIndex: { rev: number; list: StoryDef[]; auto: StoryDef[] } | undefined
+function autoStories(): StoryDef[] {
+  const cur = autoIndex
+  if (cur && cur.rev === contentRevision() && cur.list.length === stories.length && cur.list.every((d, i) => stories[i] === d)) return cur.auto
+  return (autoIndex = { rev: contentRevision(), list: stories.slice(), auto: stories.filter((d) => d.start.kind === 'auto') }).auto
+}
+
+/** 冒險筆記上現在成立的提示（StoryDef.hints） */
+export function storyHints(state: GameState, def: Pick<StoryDef, 'hints'>): string[] {
+  return (def.hints ?? []).filter((h) => condMet(state, h.requires)).map((h) => h.text)
 }
 
 /** 重新整理已經生成的區域：補上新解鎖的任務點、拿掉結束的（先開始條件成立的自動任務） */

@@ -187,7 +187,8 @@ def quest(st):
     if st.get('merit'): rew.append(f"功績 {st['merit']}")
     return {'id': st['id'], 'title': st['title'], 'summary': re.sub(r'（[^（）]*）\s*$', '', st['summary']), 'rank': st.get('rank', '—'),
             'level': s0.get('min_level'), 'tags': [TAG.get(t, t) for t in st.get('tags', [])], 'who': who, 'startText': s0.get('text', ''),
-            'startReq': sreq, 'prereq': cond(s0.get('requires'), st, {}), 'rewards': rew, 'nodes': nodes}
+            'startReq': sreq, 'prereq': cond(s0.get('requires'), st, {}), 'rewards': rew, 'nodes': nodes,
+            'hints': [h['text'] for h in st.get('hints', [])]}
 
 
 # 依簡介最後的「（某某・一）」分成任務線

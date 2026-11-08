@@ -397,6 +397,14 @@ export interface StoryDef {
   merit?: number
   /** 期限：開始後幾天內要完成，過了就失敗（沒有時不限） */
   time_limit?: number
+  /** 冒險筆記上的提示：條件成立時列在「目前的目標」，不是任務點（不用走到、不用完成），例如「史詩的指引」告訴玩家下一段史詩在哪裡接 */
+  hints?: StoryHint[]
+}
+
+/** 冒險筆記上的提示（StoryDef.hints） */
+export interface StoryHint {
+  text: string
+  requires?: StoryCond
 }
 
 // ---- 內容的版本 ----
