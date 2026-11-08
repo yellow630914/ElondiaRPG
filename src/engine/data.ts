@@ -245,7 +245,7 @@ export const storyCounters = (countersJson as unknown as { counters: Record<stri
 // ---- 特殊任務（人工編寫的任務鏈，data/rules/stories.json，說明見 docs/STORY_QUESTS.md） ----
 
 /** 任務從哪裡開始 */
-export type StoryStartKind = 'guild' | 'npc' | 'travel' | 'informant' | 'manual'
+export type StoryStartKind = 'guild' | 'npc' | 'travel' | 'informant' | 'manual' | 'auto'
 export interface StoryStart {
   kind: StoryStartKind
   /** guild：哪座城鎮的公會；informant：哪座城鎮的情報商（沒有時任何情報商） */

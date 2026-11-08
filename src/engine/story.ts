@@ -934,8 +934,21 @@ export function ensureStoryMarkers(state: GameState, area: Area, rng: Rng) {
   }
 }
 
-/** 重新整理已經生成的區域：補上新解鎖的任務點、拿掉結束的 */
+/**
+ * 「條件成立時自動開始」的任務（start.kind = auto）：條件（等級、劇情旗標……，和其他開頭一樣用 canStart）成立就開始，
+ * 各自寫一則日誌。每次整理任務點時檢查（接任務、任務點結束、戰鬥結束之後都會整理）
+ */
+export function startAutoStories(state: GameState): Report[] {
+  const out: Report[] = []
+  for (const def of stories) {
+    if (def.start.kind === 'auto' && canStart(state, def)) out.push(startStory(state, def.id))
+  }
+  return out
+}
+
+/** 重新整理已經生成的區域：補上新解鎖的任務點、拿掉結束的（先開始條件成立的自動任務） */
 export function refreshStoryMarkers(state: GameState) {
+  startAutoStories(state)
   for (const area of Object.values(state.areas ?? {})) {
     const want = new Set(markersFor(state, area))
     area.cells.forEach((c, i) => {

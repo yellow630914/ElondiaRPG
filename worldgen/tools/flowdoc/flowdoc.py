@@ -170,7 +170,7 @@ def quest(st):
                       'req': cond(n.get('requires'), st, local), 'info': info, 'urgent': bool(n.get('urgent')), 'branches': branches})
     s0 = st['start']
     who = {'npc': f"{npc(s0.get('npc'))}的委託", 'guild': f"冒險者公會（{loc(s0.get('location'))}）" if s0.get('location') else '冒險者公會',
-           'informant': '情報商', 'travel': '旅途上'}.get(s0['kind'], s0['kind'])
+           'informant': '情報商', 'travel': '旅途上', 'manual': '由其他事件開啟', 'auto': '條件成立時自動開始'}.get(s0['kind'], s0['kind'])
     sreq = []
     if s0.get('min_level'): sreq.append(f"Lv.{s0['min_level']}")
     if s0.get('min_affinity'): sreq.append(f"好感 {s0['min_affinity']}")
@@ -185,7 +185,7 @@ def quest(st):
         elif x['type'] == 'item': rew.append(f"{x['name']}×{x.get('qty', 1)}")
         else: rew.append(str(x.get('type')))
     if st.get('merit'): rew.append(f"功績 {st['merit']}")
-    return {'id': st['id'], 'title': st['title'], 'summary': re.sub(r'（[^（）]*）\s*$', '', st['summary']), 'rank': st['rank'],
+    return {'id': st['id'], 'title': st['title'], 'summary': re.sub(r'（[^（）]*）\s*$', '', st['summary']), 'rank': st.get('rank', '—'),
             'level': s0.get('min_level'), 'tags': [TAG.get(t, t) for t in st.get('tags', [])], 'who': who, 'startText': s0.get('text', ''),
             'startReq': sreq, 'prereq': cond(s0.get('requires'), st, {}), 'rewards': rew, 'nodes': nodes}
 
@@ -216,7 +216,7 @@ EAST_REGION_LINES = {'渡海引導', '化龍族：點青', '靈狐族：胡家�
 
 
 def category(name, sts):
-    if name in ('政治史詩', '巨龍史詩'): return '史詩'
+    if name in ('政治史詩', '巨龍史詩', '史詩的指引'): return '史詩'
     if name in EAST_REGION_LINES: return '地區與勢力'
     if name.startswith('政治線：'): return '史詩'
     if name == '多人特殊任務': return '多人特殊任務'

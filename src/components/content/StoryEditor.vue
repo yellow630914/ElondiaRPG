@@ -236,7 +236,7 @@ function remove() {
     <FoldSet>
       <template #legend>開頭</template>
       <div class="grid">
-        <label>從哪裡開始
+        <label><span>從哪裡開始 <Hint text="「條件成立時自動開始」：下面的等級與接取條件成立時直接開始，不用到哪裡接（例如開了某條故事線之後出現的指引）。" /></span>
           <select :value="draft.start.kind" @change="setStartKind(($event.target as HTMLSelectElement).value as StoryMod['start']['kind'])">
             <option v-for="(n, k) in START_KINDS" :key="k" :value="k">{{ n }}</option>
           </select>

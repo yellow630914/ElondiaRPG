@@ -9,6 +9,7 @@
 | 腳本 | 寫進 | 說明 |
 |---|---|---|
 | `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch31`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）、`lust_skills_s6.place_skills`（打工線的獨特技能，接在結局的獎勵物品後面），最後接上 `lust_park_s7.PARK_STORIES`（緋夢樂園的集章任務）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次。**現在不要重跑**：之後炎華之地的任務（`east_*`）、角色線（`char_lines38.py`）直接寫進 stories.json，內建任務的時段（R13）也是直接改的，重跑會把這些都蓋掉 |
+| `epic_guide41.py` | `data/rules/stories.json` | 「史詩的指引」：接了任何一條政治（結果會動到 `human_stance`、`demon_stance` 的故事線）或巨龍相關（巨龍史詩的結局會看的五條線）的任務就自動開始（`start.kind = auto`），指引到河谷鎮公會的政治史詩，政治史詩落幕後指引到巨龍史詩。觸發的旗標從 stories.json 算出來，可以重跑 |
 | `uniq23.py` | `data/rules/items.json` | 任務的獨特裝備 149 件 |
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
 | `lust_gather34.py` | `data/rules/travel_events.json` | 成人向的採集事件 12 件（不限地下城 8 件、地區限定 4 件；接在「遺落的春宮書」後面）。可以重跑 |

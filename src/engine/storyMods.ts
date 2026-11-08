@@ -60,7 +60,7 @@ const flags = (v: unknown) => [...new Set((Array.isArray(v) ? v : []).map(cleanF
 export const cleanId = (v: unknown, d: string) => (typeof v === 'string' ? v.trim().replace(/[^a-zA-Z0-9_]/g, '_').slice(0, 40) : '') || d
 
 export const START_KINDS: Record<StoryStartKind, string> = {
-  guild: '冒險者公會', npc: '固定 NPC', travel: '旅途中的事件', informant: '情報商', manual: '只由其他事件開啟',
+  guild: '冒險者公會', npc: '固定 NPC', travel: '旅途中的事件', informant: '情報商', manual: '只由其他事件開啟', auto: '條件成立時自動開始',
 }
 export const WHERE_NAME: Record<StoryWhere, string> = {
   settlement: '在聚落裡（任何地方）', cell: '站在聚落的某種設施上', npc: '某位固定 NPC 在身邊', outskirts: '近郊的任務點（⭐）', dungeon: '地下城某一層的任務點（⭐）',
@@ -581,6 +581,9 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
     const starters = others.filter((s) => s.id !== def.id && [...(s.rewards ?? []), ...s.nodes.flatMap((n) => outcomesOf(n).flatMap(({ o }) => o.effects ?? []))]
       .some((e) => e.type === 'start_story' && e.story === def.id))
     if (!starters.length) warn.push('開頭是「只由其他事件開啟」，但沒有任何任務用「開始特殊任務」效果開啟它')
+  }
+  if (def.start.kind === 'auto' && !def.start.min_level && !Object.keys(def.start.requires ?? {}).length) {
+    warn.push('開頭是「條件成立時自動開始」，但沒有任何條件：開新遊戲就會自動開始')
   }
   for (const n of def.nodes) {
     const t = `任務點「${n.title}」`
