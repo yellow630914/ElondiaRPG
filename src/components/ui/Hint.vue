@@ -7,6 +7,7 @@ import type { IconName } from './iconPaths'
 // 小框掛在 body 上（fixed 定位），不會被有捲軸的面板裁掉；用 popover 放進瀏覽器的最上層，
 // 才不會被 showModal() 開的對話框（也在最上層）蓋住。點「?」不會觸發外面的 label。
 // warn：改成三角形的警告圖示（提醒費用、風險；文字一樣移上去才顯示）。
+// trigger 插槽：用別的東西（例如地圖上的小標籤）取代「?」圖示，一樣滑過、點一下就顯示。
 const props = withDefaults(defineProps<{ text?: string; width?: number; warn?: boolean }>(), { text: '', width: 280, warn: false })
 const icon = computed<IconName>(() => (props.warn ? 'caution' : 'question'))
 const open = ref(false)
@@ -56,7 +57,7 @@ onBeforeUnmount(() => window.removeEventListener('click', onOutside))
     ref="btn" class="hint" :class="{ warn }" role="button" tabindex="0" :aria-label="warn ? '注意' : '說明'"
     @mouseenter="show" @mouseleave="hide" @focus="onFocus" @blur="hide" @click.stop="toggle" @keydown.enter.prevent="toggle()"
   >
-    <GameIcon :name="icon" :size="14" />
+    <slot name="trigger"><GameIcon :name="icon" :size="14" /></slot>
   </span>
   <Teleport to="body">
     <div
