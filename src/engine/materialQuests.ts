@@ -254,7 +254,7 @@ function dungeonQuest(state: GameState, rng: Rng, kind: MaterialQuestKind, targe
     if (!bosses.length) return undefined
     const { layer, id } = rng.pick(bosses)
     const goal = qtyFor(rng, r.boss_hunt.qty)
-    const rank = rankForLevel(enemies[id]!.level, r.boss_hunt.ranks ?? ['F', 'A'])
+    const rank = rankForLevel(enemies[id]!.level, r.boss_hunt.ranks ?? ['F', 'S'])
     return {
       ...base(state, kind, target, goal), id: `q-${tag}-bh`, layer, monster: id,
       title: `討伐${dname}${LAYER_NAME[layer]}的層主${enemies[id]!.name}${goal > 1 ? `（${goal} 次）` : ''}`, rank,

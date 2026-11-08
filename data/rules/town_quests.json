@@ -24,7 +24,7 @@
     "drop_wild": { "ranks": ["F", "E"], "qty": [1, 3] },
     "drop_dungeon": { "ranks": ["F", "A"], "qty": [1, 3] },
     "drop_boss": { "ranks": ["F", "S"], "qty": [1, 2], "min_tier": 4, "item_value_mult": 1.25 },
-    "boss_hunt": { "ranks": ["F", "A"], "qty": [1, 1], "reward_mult": 1.5 }
+    "boss_hunt": { "ranks": ["F", "S"], "qty": [1, 1], "reward_mult": 1.5 }
   },
   "templates": [
     {

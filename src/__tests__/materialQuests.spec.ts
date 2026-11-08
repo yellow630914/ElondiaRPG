@@ -76,10 +76,12 @@ describe('material quests', () => {
           expect(q.layer).toBe('outskirts')
         }
         if (q.kind === 'drop_wild') expect(['F', 'E']).toContain(q.rank)
-        if (q.kind === 'drop_dungeon' || q.kind === 'boss_hunt') {
+        if (q.kind === 'drop_dungeon') {
           expect(RANK_ORDER.indexOf(q.rank)).toBeLessThanOrEqual(RANK_ORDER.indexOf('A'))
           expect(q.rank).toBe(rankForLevel(enemies[q.monster!]!.level, ['F', 'A']))
         }
+        // 層主討伐依層主等級 F～S：深淵層的 13 級層主是 S
+        if (q.kind === 'boss_hunt') expect(q.rank).toBe(rankForLevel(enemies[q.monster!]!.level, ['F', 'S']))
         if (q.kind.startsWith('gather_') || q.kind.startsWith('drop_') || q.kind === 'boss_hunt') {
           expect(q.max).toBe(q.goal * materialQuestRules.max_multiplier)
         }

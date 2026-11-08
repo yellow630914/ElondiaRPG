@@ -78,6 +78,9 @@ function dealStory(d: Deal) {
   return g?.type === 'start_story' ? storyDef(g.story) : undefined
 }
 const itemDeals = computed(() => shownDeals.value.filter(isItemDeal))
+// 特別交易預設收起（只看到標題列與筆數）；篩選「特別交易」或搜尋時展開
+const specialsOpen = ref(false)
+const specialsFolded = computed(() => filter.value === 'all' && !query.value.trim() && !specialsOpen.value)
 const expanded = ref<string | null>(null)
 const toggle = (id: string) => { expanded.value = expanded.value === id ? null : id }
 const groupName = (g: Group) => (g === 'special' ? '特別交易' : itemRules.categories[g])
@@ -159,6 +162,13 @@ const bagGroups = computed(() => {
     ...g, items: [...g.items].sort((a, b) => Number(b.price !== null) - Number(a.price !== null) || tier(b.name) - tier(a.name)),
   }))
 })
+// 行囊的每一段預設收起（只看到類別與件數）；選了類別或搜尋時展開
+const bagOpen = reactive(new Set<string>())
+const bagFolded = (id: string) => bagFilter.value === 'all' && !bagQuery.value.trim() && !bagOpen.has(id)
+function toggleBag(id: string) {
+  if (bagOpen.has(id)) bagOpen.delete(id)
+  else bagOpen.add(id)
+}
 const sellQty = reactive<Record<string, number>>({})
 /** 收購遞減：這間店最近收了很多這一類時，收購價旁邊寫出降了多少 */
 const glutText = (name: string) => { const g = glutMult(s.value, key.value, tradeCategory(s.value, name)); return g < 1 ? `收多了 ${pctText(g)}` : '' }
@@ -232,7 +242,10 @@ function buy(d: Deal) {
             <p v-if="!deals.length" class="small muted">今天沒有東西可以買了。</p>
             <p v-else-if="!shownDeals.length" class="small muted">沒有符合的商品。</p>
             <div class="list">
-              <ul v-if="specialDeals.length" class="plain specials">
+              <button v-if="specialDeals.length && filter === 'all' && !query.trim()" class="group-head small ghost" :aria-expanded="!specialsFolded" @click="specialsOpen = !specialsOpen">
+                <GameIcon :name="specialsFolded ? 'right' : 'down'" :size="13" /><GameIcon name="sparkles" :size="13" />特別交易<span class="muted">{{ specialDeals.length }}</span>
+              </button>
+              <ul v-if="specialDeals.length && !specialsFolded" class="plain specials">
                 <li v-for="d in specialDeals" :key="d.id" class="entry">
                   <div class="row top">
                     <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
@@ -310,7 +323,8 @@ function buy(d: Deal) {
             <p v-if="!bag.length" class="small muted">{{ bagAll.length ? '沒有符合篩選的東西。' : onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
             <ul class="plain list">
               <template v-for="g in bagGroups" :key="g.id">
-              <li class="group-head small">{{ g.name }}<span class="muted">{{ g.items.length }}</span></li>
+              <li><button class="group-head small ghost" :aria-expanded="!bagFolded(g.id)" @click="toggleBag(g.id)"><GameIcon :name="bagFolded(g.id) ? 'right' : 'down'" :size="13" />{{ g.name }}<span class="muted">{{ g.items.length }}</span><span v-if="g.items.some((i) => cart.sell[i.name])" class="incart small"><GameIcon name="cart" :size="12" />{{ g.items.reduce((n, i) => n + (cart.sell[i.name] ?? 0), 0) }}</span></button></li>
+              <template v-if="!bagFolded(g.id)">
               <li v-for="i in g.items" :key="i.name" class="entry" :class="{ dim: i.price === null }">
                 <div class="row top">
                   <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="24" /></span>
@@ -337,6 +351,7 @@ function buy(d: Deal) {
                 </div>
                 <PriceSteps v-if="sellWhy === i.name && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
               </li>
+              </template>
               </template>
             </ul>
           </section>
@@ -405,7 +420,8 @@ function buy(d: Deal) {
 .item-row .haggle { padding: 0 8px 6px 46px; }
 .entry { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; display: grid; gap: 2px; background: var(--panel); }
 .entry.dim { opacity: 0.55; }
-.group-head { display: flex; gap: 6px; align-items: baseline; padding: 4px 2px 0; color: var(--accent-2); font-weight: 700; }
+.group-head { display: flex; gap: 6px; align-items: center; padding: 4px 2px 0; color: var(--accent-2); font-weight: 700; }
+button.group-head { border: none; background: none; justify-content: flex-start; width: 100%; text-align: left; cursor: pointer; }
 .top { flex-wrap: nowrap; }
 .grow { flex: 1; min-width: 0; }
 .price { font-weight: 600; white-space: nowrap; text-align: right; }
