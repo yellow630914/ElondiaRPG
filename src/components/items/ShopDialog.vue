@@ -412,6 +412,8 @@ function buy(d: Deal) {
 .what { min-width: 0; }
 /* 名稱、類別、行情、效果放不下時整行跑馬燈（v-marquee） */
 .what .what-in { display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+/* 展開的那一列：說明已經寫在下面，跑馬燈停在開頭 */
+.item-row.open .marquee.run > span { animation: none; transform: none; }
 .stock { text-align: right; white-space: nowrap; }
 .btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
 .btns .num { width: 52px; height: 28px; padding: 2px 6px; }
