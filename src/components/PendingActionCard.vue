@@ -31,7 +31,10 @@ const totals = computed(() => {
   const p = pending.value
   if (!p) return []
   const sit = situationalTotal(p)
-  return ATTR_IDS.map((a) => ({ attr: a, total: p.natural + p.modifiers[a] + sit, isDefault: a === p.attr && !freeAi.value }))
+  return ATTR_IDS.map((a) => ({
+    attr: a, total: p.natural + p.modifiers[a] + sit, isDefault: a === p.attr && !freeAi.value,
+    why: `自然骰 ${p.natural} ＋ ${attrName(a)}調整值與熟練 ${signed(p.modifiers[a])}${sit ? ` ＋ 情境修正 ${signed(sit)}` : ''}`,
+  }))
 })
 </script>
 
@@ -54,7 +57,8 @@ const totals = computed(() => {
       情境修正：<span v-for="x in pending.situational" :key="x.label">{{ x.label }} {{ signed(x.value) }} </span>
     </p>
     <div class="row small totals">
-      <span v-for="t in totals" :key="t.attr" :class="{ def: t.isDefault }">{{ attrName(t.attr) }} {{ t.total }}</span>
+      <span class="muted">這次的總值<Hint :text="`不是任何人的屬性，是你這次擲骰的結果：自然骰 ${pending.natural} 加上你的屬性調整值、熟練加值與情境修正，每一種屬性各算一次（滑過數字看算式）。${freeAi ? 'AI 判定時依你的做法選用其中一種屬性' : `依規則判定用標成顏色的${attrName(pending.attr)}`}；總值達到參考 DC 算成功。`" />：</span>
+      <span v-for="t in totals" :key="t.attr" :class="{ def: t.isDefault }" :title="t.why">{{ attrName(t.attr) }} {{ t.total }}</span>
     </div>
     <ul v-if="Object.keys(pending.outcomes).length" class="plain small outcomes">
       <template v-for="d in DEGREES" :key="d">
