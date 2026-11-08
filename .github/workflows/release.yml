@@ -1,4 +1,4 @@
-# 發布：推送版本 tag（v0.2.0 這類）時跑測試、建置，然後
+# 發布：推送版本 tag（v0.2.0 這類）時跑測試、建置（兩個 job 同時跑），都成功之後
 #   1. 部署到 GitHub Pages（線上版：https://yellow630914.github.io/ElondiaRPG/）；
 #   2. 建立 GitHub Release，附上本機版 zip（遊戲 + release/local/ 的啟動器）與 CHANGELOG.md 裡那一版的說明。
 # 平常推送不會觸發。手動執行（Actions → Release → Run workflow）只重新部署 Pages，不建立 Release。
@@ -16,7 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  build:
+  # 測試與建置分兩個 job 同時跑（各自一台機器），部署與 Release 等兩個都成功才進行
+  test:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -31,6 +32,21 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm test:unit --run
+
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.28.7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - run: pnpm build
       - uses: actions/upload-pages-artifact@v3
         with:
@@ -62,7 +78,7 @@ jobs:
             notes.md
 
   pages:
-    needs: build
+    needs: [test, build]
     runs-on: ubuntu-latest
     permissions:
       pages: write
@@ -75,7 +91,7 @@ jobs:
         uses: actions/deploy-pages@v4
 
   release:
-    needs: build
+    needs: [test, build]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

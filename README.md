@@ -108,9 +108,10 @@ pnpm test:unit --run   # 測試
 pnpm build             # 型別檢查 + 建置到 dist/（相對路徑，放在任何網頁伺服器的任何路徑底下都能用）
 ```
 
-- **發布新版本**：把 `CHANGELOG.md` 的「未發布」改成版本號（例如 `## v0.2.0（2026-10-24）`）、改 `package.json` 的 `version`，提交後推送同名 tag（`git tag v0.2.0 && git push origin v0.2.0`）。GitHub Actions（`.github/workflows/release.yml`）會跑測試、建置，部署到 GitHub Pages，並建立 GitHub Release，附上本機版 zip（建置結果放在 `game/`，加上 `release/local/` 的啟動器與說明）和 CHANGELOG 裡那一版的說明；發布成功後再由 `.github/workflows/wiki.yml` 把那一版的文件同步到 [Wiki](https://github.com/yellow630914/ElondiaRPG/wiki)。平常推送不會觸發。
+- **發布新版本**：把 `CHANGELOG.md` 的「未發布」改成版本號（例如 `## v0.2.0（2026-10-24）`）、改 `package.json` 的 `version`，提交後推送同名 tag（`git tag v0.2.0 && git push origin v0.2.0`）。GitHub Actions（`.github/workflows/release.yml`）會同時跑測試與建置（兩個 job），都成功之後部署到 GitHub Pages，並建立 GitHub Release，附上本機版 zip（建置結果放在 `game/`，加上 `release/local/` 的啟動器與說明）和 CHANGELOG 裡那一版的說明；發布成功後再由 `.github/workflows/wiki.yml` 把那一版的文件同步到 [Wiki](https://github.com/yellow630914/ElondiaRPG/wiki)。平常推送不會觸發。
 - 第一次發布前要在 repo 設定：Settings → Pages → Source 選「GitHub Actions」；Settings → Environments → `github-pages` 的 Deployment branches and tags 加上 tag 規則 `v*`（預設只允許預設分支部署）。
 - `pnpm-workspace.yaml` 已經設定好不執行 `@google/genai` 與 `protobufjs` 的安裝腳本（兩者都不需要），所以 `pnpm install` 不會出現 `ERR_PNPM_IGNORED_BUILDS`。
+- **測試分兩組並行**（`vitest.config.ts`）：純引擎的測試共用已經載入的模組（`isolate: false`，每個檔案開始前由 `src/__tests__/setup/resetGlobals.ts` 還原引擎的全域設定）；用到 `vi.mock`、Pinia store、瀏覽器儲存或掛載元件的測試自動分到每個檔案各自載入的那一組。全部測試約 2 分多鐘（以前約 4 分鐘）。只跑一組：`pnpm test:unit --run --project shared`。
 - 也可以用 npm（`npm install`、`npm run dev`）。`.npmrc` 的 `legacy-peer-deps` 是為了避開 npm 10 在解析 vitest 選用依賴時的錯誤。
 
 ## 文件與資料
