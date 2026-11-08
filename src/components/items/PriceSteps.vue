@@ -1,31 +1,43 @@
 <script setup lang="ts">
+import { pctText } from '@/engine/market'
 import { formatMoney } from '@/engine/money'
-import type { PriceBreakdown } from '@/engine/trade'
+import type { PriceBreakdown, PriceStep } from '@/engine/trade'
+import Hint from '../ui/Hint.vue'
 
-// 價格拆解（docs/TRADE.md 3.3 節）：基本價 × 店家加成 × 聚落物價 × 標籤、狀態 × 折扣、聲望、身分 ＝ 價格
-defineProps<{ b: PriceBreakdown; sell?: boolean }>()
+// 價格拆解（docs/TRADE.md 3.3 節）：基本價，後面每一項加減做成小標籤（▲ 變貴、▼ 變便宜；收購價反過來，▲ 是收得比較多），
+// 標籤只寫漲跌，滑過或點一下（focus）才浮出是哪一項；最後是價格
+const props = defineProps<{ b: PriceBreakdown; sell?: boolean }>()
+
+const rest = () => props.b.steps.filter((s) => s.kind !== 'base' && s.x !== 1)
+const base = () => props.b.steps.find((s) => s.kind === 'base')
+/** 這一項對玩家是好是壞：買入時變便宜好、收購時收得多好 */
+function tone(s: PriceStep): string {
+  if (s.kind === 'cap') return 'bad'
+  if (s.x === undefined || s.x === 1) return ''
+  return (s.x < 1) !== !!props.sell ? 'good' : 'bad'
+}
+const value = (s: PriceStep) => (s.x === undefined ? s.text : `${s.x < 1 ? '▼' : '▲'}${s.text.startsWith('×') ? pctText(s.x) : s.text}`)
 </script>
 
 <template>
   <div class="steps small">
-    <span class="muted">{{ sell ? '收購價' : '價格' }}怎麼算：</span>
-    <template v-for="(s, i) in b.steps" :key="i">
-      <span v-if="i" class="op">×</span>
-      <span class="step" :class="`k-${s.kind}`">{{ s.label }} <b>{{ s.text }}</b></span>
-    </template>
+    <span v-if="base()" class="muted">{{ base()!.label }} {{ base()!.text }}</span>
+    <span v-for="(s, i) in rest()" :key="i" class="chip" :class="tone(s)" tabindex="0" :title="`${s.label}：${s.text}`">
+      <span class="lbl">{{ s.label }}</span>{{ value(s) }}
+    </span>
     <span class="op">＝</span><strong>{{ formatMoney(b.total) }}</strong>
-    <span v-if="b.category" class="muted">（{{ b.category }}）</span>
-    <span class="muted note">每一步四捨五入，合起來可能差一點</span>
+    <Hint :text="`${sell ? '收購價' : '價格'} = 基本價，乘上每一個標籤（滑過或點一下標籤看是哪一項）${b.category ? `；這件算「${b.category}」類` : ''}。每一步四捨五入，合起來可能差一點。`" />
   </div>
 </template>
 
 <style scoped>
-.steps { display: flex; flex-wrap: wrap; gap: 2px 4px; align-items: baseline; }
+.steps { display: flex; flex-wrap: wrap; gap: 3px 5px; align-items: center; }
 .op { color: var(--muted); }
-.step { white-space: nowrap; }
-.step b { font-weight: 600; }
-.step.k-tag b { color: var(--accent-2); }
-.step.k-state b { color: var(--accent); }
-.step.k-cap b, .step.k-clamp b, .step.k-glut b { color: var(--danger); }
-.note { flex-basis: 100%; font-size: 0.75rem; }
+/* 和行情的標籤同一種樣子：只寫漲跌，滑過或 focus 才浮出是哪一項 */
+.chip { font-size: 0.78rem; font-weight: 600; white-space: nowrap; border-radius: 3px; padding: 0 4px; border: 1px solid currentColor; color: var(--muted); cursor: default; outline: none; }
+.chip.good { color: var(--good); }
+.chip.bad { color: var(--danger); }
+.chip .lbl { display: none; font-weight: 400; margin-right: 4px; }
+.chip:hover .lbl, .chip:focus .lbl, .chip:focus-visible .lbl { display: inline; }
+.chip:focus-visible { box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 30%, transparent); }
 </style>

@@ -383,6 +383,8 @@ export interface PriceStep {
   /** 「×1.15」「−50%」「240 白鸛」這類 */
   text: string
   kind?: 'base' | 'place' | 'tag' | 'state' | 'clamp' | 'glut' | 'deal' | 'cap'
+  /** 這一步的倍率（畫面用來標漲跌：▲ 變貴、▼ 變便宜）；基本價、上限沒有 */
+  x?: number
 }
 export interface PriceBreakdown { steps: PriceStep[]; total: number; category?: string }
 
@@ -394,13 +396,13 @@ function placeSteps(state: GameState, name: string): PriceStep[] {
   const place = shopPlace(state)
   const steps: PriceStep[] = []
   const pm = shopRules.location_price_mult[place.type] ?? 1
-  if (pm !== 1) steps.push({ label: place.waystation ? '驛站物價' : `${PLACE_NAME[place.type] ?? place.type}物價`, text: times(pm), kind: 'place' })
+  if (pm !== 1) steps.push({ label: place.waystation ? '驛站物價' : `${PLACE_NAME[place.type] ?? place.type}物價`, text: times(pm), kind: 'place', x: pm })
   const nm = notorietyMult(state)
-  if (nm !== 1) steps.push({ label: '剛遣散夥伴的漲價', text: times(nm), kind: 'place' })
+  if (nm !== 1) steps.push({ label: '剛遣散夥伴的漲價', text: times(nm), kind: 'place', x: nm })
   const m = marketMult(state, place.id, name)
-  for (const p of m.parts) steps.push({ label: p.label, text: `${pctText(p.x)}${p.daysLeft ? `（還有 ${p.daysLeft} 天）` : ''}`, kind: p.kind })
+  for (const p of m.parts) steps.push({ label: `${p.label}${p.daysLeft ? `（還有 ${p.daysLeft} 天）` : ''}`, text: pctText(p.x), kind: p.kind, x: p.x })
   const raw = m.parts.reduce((a, p) => a * p.x, 1)
-  if (Math.abs(raw - m.x) > 1e-9) steps.push({ label: `類別倍率合計夾在 ×${marketRules.mult_range[0]}～×${marketRules.mult_range[1]}`, text: times(m.x), kind: 'clamp' })
+  if (Math.abs(raw - m.x) > 1e-9) steps.push({ label: `類別倍率合計夾在 ×${marketRules.mult_range[0]}～×${marketRules.mult_range[1]}`, text: times(m.x), kind: 'clamp', x: m.x / raw })
   return steps
 }
 
@@ -412,14 +414,14 @@ export function buyBreakdown(state: GameState, key: string, deal: Deal): PriceBr
   if (base === undefined) return undefined
   const steps: PriceStep[] = [{ label: '基本價', text: formatMoney(base), kind: 'base' }]
   const markup = deal.basis?.markup ?? 1
-  if (markup !== 1) steps.push({ label: itemCategory(state, name) === 'material' ? '材料加成（目錄價是收購價）' : '店家加成', text: times(markup), kind: 'deal' })
+  if (markup !== 1) steps.push({ label: itemCategory(state, name) === 'material' ? '材料加成（目錄價是收購價）' : '店家加成', text: times(markup), kind: 'deal', x: markup })
   steps.push(...placeSteps(state, name))
   const d = discount(state, key)
-  if (d) steps.push({ label: '折扣（親密度、談來的）', text: `−${Math.round(d * 100)}%`, kind: 'deal' })
+  if (d) steps.push({ label: '折扣（親密度、談來的）', text: `−${Math.round(d * 100)}%`, kind: 'deal', x: 1 - d })
   const rep = reputationBand(state).buy
-  if (rep) steps.push({ label: '勢力聲望', text: pctText(1 + rep), kind: 'deal' })
+  if (rep) steps.push({ label: '勢力聲望', text: pctText(1 + rep), kind: 'deal', x: 1 + rep })
   const tag = pcTagMult(pcOf(state), typeOf(key) === 'temple' ? 'service_mult' : 'buy_mult')
-  if (tag !== 1) steps.push({ label: '你的身分', text: times(tag), kind: 'deal' })
+  if (tag !== 1) steps.push({ label: '你的身分', text: times(tag), kind: 'deal', x: tag })
   return { steps, total: dealMoney(state, key, deal), category: tradeCategoryName(tradeCategory(state, name)) }
 }
 
@@ -431,18 +433,18 @@ export function sellBreakdown(state: GameState, key: string, name: string): Pric
   const material = itemCategory(state, name) === 'material'
   const steps: PriceStep[] = [
     { label: '基本價', text: formatMoney(value), kind: 'base' },
-    { label: material ? '材料全價收購' : '收購五成', text: times(material ? itemRules.material_sell_ratio : itemRules.sell_ratio), kind: 'deal' },
+    { label: material ? '材料全價收購' : '收購五成', text: times(material ? itemRules.material_sell_ratio : itemRules.sell_ratio), kind: 'deal', x: material ? itemRules.material_sell_ratio : itemRules.sell_ratio },
     ...placeSteps(state, name),
   ]
   const cat = tradeCategory(state, name)
   const g = glutMult(state, key, cat)
-  if (g !== 1) steps.push({ label: `這間店最近收了 ${glutCount(state, key, cat!)} 件${tradeCategoryName(cat)}`, text: pctText(g), kind: 'glut' })
+  if (g !== 1) steps.push({ label: `這間店最近收了 ${glutCount(state, key, cat!)} 件${tradeCategoryName(cat)}`, text: pctText(g), kind: 'glut', x: g })
   const d = discount(state, key)
-  if (d) steps.push({ label: '親密度、談來的折扣（收購加一半）', text: pctText(1 + d / 2), kind: 'deal' })
+  if (d) steps.push({ label: '親密度、談來的折扣（收購加一半）', text: pctText(1 + d / 2), kind: 'deal', x: 1 + d / 2 })
   const rep = reputationBand(state).sell
-  if (rep) steps.push({ label: '勢力聲望', text: pctText(1 + rep), kind: 'deal' })
+  if (rep) steps.push({ label: '勢力聲望', text: pctText(1 + rep), kind: 'deal', x: 1 + rep })
   const tag = pcTagMult(pcOf(state), 'sell_mult')
-  if (tag !== 1) steps.push({ label: '你的身分', text: times(tag), kind: 'deal' })
+  if (tag !== 1) steps.push({ label: '你的身分', text: times(tag), kind: 'deal', x: tag })
   const cap = gearSellCap(gearSpecOf(state, name))
   if (cap !== undefined && total >= cap) steps.push({ label: '裝備最多賣到打造成本的 10 倍', text: formatMoney(cap), kind: 'cap' })
   return { steps, total, category: tradeCategoryName(tradeCategory(state, name)) }

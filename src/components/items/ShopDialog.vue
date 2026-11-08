@@ -2,8 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { breakdownText, buyBreakdown, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, glutMult, isItemDeal, isUniqueItem, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
-import { pctText, tradeCategory } from '@/engine/market'
+import { breakdownText, buyBreakdown, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
 import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -15,7 +14,6 @@ import { isMobile } from '../mobile/mobile'
 import ContentTagChips from '../ContentTagChips.vue'
 import { storyDef, storyMaxCost } from '@/engine/story'
 import CartPanel from './CartPanel.vue'
-import MarketBadge from './MarketBadge.vue'
 import MarketTags from './MarketTags.vue'
 import PriceSteps from './PriceSteps.vue'
 
@@ -159,8 +157,6 @@ const bagGroups = computed(() => {
   }))
 })
 const sellQty = reactive<Record<string, number>>({})
-/** 收購遞減：這間店最近收了很多這一類時，收購價旁邊寫出降了多少 */
-const glutText = (name: string) => { const g = glutMult(s.value, key.value, tradeCategory(s.value, name)); return g < 1 ? `收多了 ${pctText(g)}` : '' }
 /** 展開了收購價拆解的物品 */
 const sellWhy = ref<string | null>(null)
 const buyWhy = (d: Deal) => buyBreakdown(s.value, key.value, d)
@@ -268,7 +264,6 @@ function buy(d: Deal) {
                     <span class="what marquee"><span class="what-in">
                       <strong>{{ d.title }}</strong>
                       <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
-                      <MarketBadge :name="itemName(d)" />
                       <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
                     </span></span>
                     <span class="price" :title="buyWhyText(d)">{{ costText(s, key, d) }}</span>
@@ -326,7 +321,6 @@ function buy(d: Deal) {
                         <strong>{{ i.name }}</strong>
                         <span class="qty small">×{{ i.qty }}</span>
                         <span class="small muted">{{ categoryName(s, i.name) }}</span>
-                        <MarketBadge v-if="i.price !== null" :name="i.name" />
                         <span v-if="itemEffect(s, i.name)" class="small effect">{{ itemEffect(s, i.name) }}</span>
                       </span></span>
                       <span class="price" :title="i.price !== null ? '收購價（一個）' : undefined">{{ i.price !== null ? formatMoney(i.price) : '' }}</span>
@@ -346,7 +340,6 @@ function buy(d: Deal) {
                     <div v-if="sellWhy === i.name" class="more small">
                       <div v-if="itemEffect(s, i.name)" class="effect" :title="materialRecipesFull(i.name) || undefined">{{ itemEffect(s, i.name) }}</div>
                       <div v-if="itemText(s, i.name)" class="muted">{{ itemText(s, i.name) }}</div>
-                      <div v-if="i.price !== null && glutText(i.name)" class="glut">收購遞減：{{ glutText(i.name) }}</div>
                       <PriceSteps v-if="i.price !== null && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
                     </div>
                   </li>
