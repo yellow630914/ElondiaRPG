@@ -372,8 +372,9 @@ details:not(.menu)[open]::details-content { height: auto; }
 /* v-marquee（src/components/marquee.ts）：一行字放不下時來回捲動 */
 .marquee { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .marquee.run { text-overflow: clip; }
-.marquee.run > span { display: inline-block; animation: marquee var(--marq-t, 4s) ease-in-out infinite alternate; }
-@keyframes marquee { 0%, 20% { transform: translateX(0); } 80%, 100% { transform: translateX(var(--marq-d, 0)); } }
+/* 往右捲到最後停一下，直接跳回開頭停一下，再往右捲（不慢慢捲回去） */
+.marquee.run > span { display: inline-block; animation: marquee var(--marq-t, 4s) linear infinite; }
+@keyframes marquee { 0%, 18% { transform: translateX(0); } 82%, 100% { transform: translateX(var(--marq-d, 0)); } }
 @media (prefers-reduced-motion: reduce) {
   .marquee.run { text-overflow: ellipsis; }
   .marquee.run > span { display: inline; animation: none; }
