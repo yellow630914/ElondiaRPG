@@ -2,6 +2,7 @@
 import ContentTagChips from './ContentTagChips.vue'
 import { computed } from 'vue'
 import { formatMoney } from '@/engine/money'
+import { pcWords } from '@/engine/pcWords'
 import { activeNodes, nodesHere, nodesWaitingForTime, storyMaxCost, storyOffersHere, storyWearLocks } from '@/engine/story'
 import { DAY_PART_NAME, hoursUntil } from '@/engine/timeOfDay'
 import { useGame } from '@/stores/game'
@@ -44,8 +45,8 @@ const busy = computed(() => game.judging || !!s.value.pendingAction || !!s.value
     <h3 class="title"><GameIcon name="star" :size="16" />特殊任務</h3>
     <div v-for="d in offers" :key="d.id" class="card">
       <div><span v-if="d.rank" class="tag">{{ d.rank }}</span> <b>{{ d.title }}</b> <ContentTagChips :tags="d.tags" /></div>
-      <p class="small">{{ d.start.text ?? d.summary }}</p>
-      <p v-if="d.start.text" class="small muted">{{ d.summary }}</p>
+      <p class="small">{{ pcWords(s, d.start.text ?? d.summary) }}</p>
+      <p v-if="d.start.text" class="small muted">{{ pcWords(s, d.summary) }}</p>
       <p v-if="storyMaxCost(d)" class="small muted">途中有要付錢的地方（一次最多 {{ formatMoney(storyMaxCost(d)) }}），錢不夠時那一步不能選</p>
       <p v-if="storyWearLocks(s, d)" class="small warn">{{ storyWearLocks(s, d) }}</p>
       <button class="small primary" :disabled="busy" @click="game.startStory(d.id)">接下任務</button>

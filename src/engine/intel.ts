@@ -3,6 +3,7 @@
 //   進入那一區時放一格（有效期限內），完成或過期就拿掉。
 // - 任務消息：開始一個特殊任務（stories.json 的 start.kind = informant）。
 
+import { pcWords } from './pcWords'
 import {
   damageTypeName, dungeonEncounters, enemies, geography, locationById, stories, wildEncounters,
   type Degree, type DungeonLayerId, type EncounterGroup, DUNGEON_LAYER_IDS, DUNGEON_LAYER_NAME,
@@ -263,7 +264,7 @@ export function storyOffers(state: GameState, mult: number): IntelOffer[] {
     .map((def) => ({
       id: `info:story:${def.id}`,
       title: `「${def.title}」的消息`,
-      desc: def.start.text ?? def.summary,
+      desc: pcWords(state, def.start.text ?? def.summary),
       price: Math.round((def.start.price ?? 100) * mult),
       gets: [{ type: 'start_story', story: def.id }],
     }))

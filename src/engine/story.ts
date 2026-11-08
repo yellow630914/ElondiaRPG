@@ -6,6 +6,7 @@
 //   讓固定 NPC 以「任務同行」加入或離開，也可以完成或失敗整個任務。
 // - 每次推進都產生一份報告（report.story），也記在任務的經過（冒險筆記）。
 
+import { pcWords } from './pcWords'
 import { affinityStage, snapshot } from './character'
 import { endpointsIn } from './specialMaps'
 import { storySpotProblem } from './specialMapMods'
@@ -205,7 +206,7 @@ function allyNames(state: GameState, node: StoryNode): string {
 
 /** 冒險筆記的經過：at 是這件事結束的時間（報告的結束時間，含結果推進的時間；沒有時是現在） */
 function log(p: StoryProgress, state: GameState, text: string, node?: string, at?: GameTime) {
-  p.log.push({ time: { ...(at ?? state.time) }, text, ...(node ? { node } : {}) })
+  p.log.push({ time: { ...(at ?? state.time) }, text: pcWords(state, text), ...(node ? { node } : {}) })
 }
 
 function setFlags(report: Report, names: string[] | undefined, value: boolean) {
@@ -224,10 +225,10 @@ export function startStory(state: GameState, id: string, opts: { text?: string; 
   setFlags(report, def.start_flags, true)
   // 接下任務時拿到的物品（例如打工的制服）
   if (def.start.items?.length) applyEffects(state, report, def.start.items.map((name) => ({ type: 'item' as const, name, qty: 1 })))
-  const text = opts.text ?? def.start.text ?? def.summary
+  const text = pcWords(state, opts.text ?? def.start.text ?? def.summary)
   log(progress, state, text)
   const locks = storyWearLocks(state, def)
-  report.outcome = { result: 'success', summary: `接下特殊任務「${def.title}」：${def.summary}${locks ? `（${locks}）` : ''}`, tags: [...new Set([...(report.outcome.tags ?? []), '特殊任務'])] }
+  report.outcome = { result: 'success', summary: `接下特殊任務「${def.title}」：${pcWords(state, def.summary)}${locks ? `（${locks}）` : ''}`, tags: [...new Set([...(report.outcome.tags ?? []), '特殊任務'])] }
   report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), text] }
   if (def.start.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   if (opts.report) return report
@@ -568,8 +569,8 @@ export function setupStoryCheck(state: GameState, target?: string) {
   if (gate) throw new Error(`${gate}：沒辦法檢定`)
   const cost = wearGate(state, n.node) ?? storyCostGate(state, n.node, option)
   if (cost) throw new Error(cost)
-  const ok = c.success?.text ?? '成功'
-  const bad = c.fail?.text ?? '沒有成功（之後可以再試一次）'
+  const ok = pcWords(state, c.success?.text) ?? '成功'
+  const bad = pcWords(state, c.fail?.text) ?? '沒有成功（之後可以再試一次）'
   // 參考好感：加值放進情境修正（骰子明細看得到），對方的關係寫進場景給 AI
   const a = c.check.affinity ? storyAffinity(state, c.check.affinity) : undefined
   const rel = c.check.affinity ? state.relationships?.[c.check.affinity.npc] : undefined
@@ -579,7 +580,7 @@ export function setupStoryCheck(state: GameState, target?: string) {
     attr: c.check.attr, dc: c.check.dc, hours: 1, ...(c.check.skill ? { skill: c.check.skill } : {}),
     situational: a?.bonus ? [{ label: `${a.name}的好感（${a.affinity}）`, value: a.bonus }] : [],
     ...(targetName ? { targetName } : {}),
-    scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${c.label}）。${n.node.text}${allyNames(state, n.node) ? `在場的友方：${allyNames(state, n.node)}。` : ''}${relText}`,
+    scene: `${currentArea(state).name}・特殊任務「${n.def.title}」：${n.node.title}（${pcWords(state, c.label)}）。${pcWords(state, n.node.text)}${allyNames(state, n.node) ? `在場的友方：${allyNames(state, n.node)}。` : ''}${relText}`,
     outcomes: { critical: ok, success: ok, partial: `勉強過關：${ok}`, fail: bad, fumble: bad } as Partial<Record<Degree, string>>,
   }
 }
@@ -637,10 +638,11 @@ export function applyStoryCombat(state: GameState, report: Report, ref: { id: st
 function resolveOutcome(
   state: GameState, report: Report, progress: StoryProgress, def: StoryDef, node: StoryNode, outcome: StoryOutcome | undefined, success: boolean, label: string,
 ): string[] {
+  label = pcWords(state, label)
   const lines = [`「${def.title}」${node.title}${label ? `：${label}` : ''}。`]
-  report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), node.text, ...(outcome?.text ? [outcome.text] : [])] }
+  report.narration = { ...report.narration, focus: [...(report.narration?.focus ?? []), pcWords(state, node.text), ...(outcome?.text ? [pcWords(state, outcome.text)] : [])] }
   // 親密場景：依成人場景規則詳細描寫（交給成人場景正文）
-  if (outcome?.scene) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: outcome.scene }
+  if (outcome?.scene) report.narration = { ...report.narration, length: report.narration?.length === 'long' ? 'long' : 'medium', adult_scene: pcWords(state, outcome.scene) }
   if (def.start.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
   if (!outcome) {
     if (!success) {
@@ -652,7 +654,7 @@ function resolveOutcome(
     }
     outcome = {}
   }
-  if (outcome.text) lines.push(outcome.text)
+  if (outcome.text) lines.push(pcWords(state, outcome.text))
   setFlags(report, outcome.set_flags, true)
   setFlags(report, outcome.clear_flags, false)
   addCounters(state, report.changes, outcome.counters)
@@ -956,7 +958,7 @@ function autoStories(): StoryDef[] {
 
 /** 冒險筆記上現在成立的提示（StoryDef.hints） */
 export function storyHints(state: GameState, def: Pick<StoryDef, 'hints'>): string[] {
-  return (def.hints ?? []).filter((h) => condMet(state, h.requires)).map((h) => h.text)
+  return (def.hints ?? []).filter((h) => condMet(state, h.requires)).map((h) => pcWords(state, h.text))
 }
 
 /** 重新整理已經生成的區域：補上新解鎖的任務點、拿掉結束的（先開始條件成立的自動任務） */

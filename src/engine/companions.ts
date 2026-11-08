@@ -506,7 +506,7 @@ function curio(state: GameState, item: string): CurioListing {
 
 /** 買下黑市的珍品 */
 export function buyCurio(state: GameState, item: string): Report {
-  assertFree(state, '自己在黑市買東西')
+  // 被主人帶著也能用自己的錢買（和一般商店一樣）
   const c = curio(state, item)
   if (state.money_cc < c.price_cc) throw new Error('錢不夠')
   const def = marketDef(state, 'black')

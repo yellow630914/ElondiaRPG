@@ -160,8 +160,8 @@ function sellSelf() {
           <div v-if="itemDef(c.item)?.gear" class="muted">{{ gearSummary(itemDef(c.item)!.gear!) }}</div>
           <div v-if="itemDef(c.item)?.desc" class="muted">{{ itemDef(c.item)!.desc }}</div>
           <div class="row">
-            <button class="small primary" :disabled="bound || s.money_cc < c.price_cc || game.judging" :title="bound ? '被主人帶著時不能自己買' : ''" @click="game.buyCurio(c.item)">買下</button>
-            <button class="small" :disabled="c.haggled || bound || game.judging" @click="curioOpen = curioOpen === c.item ? null : c.item">{{ c.haggled ? '已殺過價' : '殺價／交涉' }}</button>
+            <button class="small primary" :disabled="s.money_cc < c.price_cc || game.judging" @click="game.buyCurio(c.item)">買下</button>
+            <button class="small" :disabled="c.haggled || game.judging" @click="curioOpen = curioOpen === c.item ? null : c.item">{{ c.haggled ? '已殺過價' : '殺價／交涉' }}</button>
           </div>
           <div v-if="curioOpen === c.item" class="row">
             <input v-model="curioText[c.item]" style="flex: 1" placeholder="例如：指出它的來路不明、說自己認識失主" />

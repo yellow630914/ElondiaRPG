@@ -4,6 +4,7 @@ import { computed, ref } from 'vue'
 import { attrName, enemies, type StoryCheck } from '@/engine/data'
 import { npcRecord } from '@/engine/npcs'
 import { formatMoney } from '@/engine/money'
+import { pcWords } from '@/engine/pcWords'
 import { npcFree, optionOpen, storyAffinity, storyCostGate, storyCosts, wearGate, type ActiveNode } from '@/engine/story'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
@@ -64,7 +65,7 @@ function abandon() {
   <div class="card" :class="{ prompt }">
     <div class="small muted">{{ n.def.title }}</div>
     <div><b>{{ n.node.title }}</b></div>
-    <p v-if="n.node.text" class="small">{{ n.node.text }}</p>
+    <p v-if="n.node.text" class="small">{{ pcWords(s, n.node.text) }}</p>
     <p v-if="dress" class="small warn">{{ dress }}</p>
     <template v-if="n.node.kind === 'story'">
       <div class="row"><button class="small primary" :disabled="busy || !!costGate()" :title="costGate()" @click="play()">繼續<template v-if="costLabel()">（{{ costLabel() }}）</template></button></div>
@@ -87,7 +88,7 @@ function abandon() {
           <button
             v-if="optionOpen(s, n.node, i)" class="small" :class="{ primary: !o.check }" :disabled="busy || !!costGate(i)" :title="costGate(i)"
             @click="o.check ? attempt(i) : play(i)"
-          >{{ o.label }}<template v-if="o.check || costLabel(i)">（{{ [o.check ? checkLabel(o.check) : '', costLabel(i)].filter(Boolean).join('・') }}）</template> <ContentTagChips :tags="o.tags" /></button>
+          >{{ pcWords(s, o.label) }}<template v-if="o.check || costLabel(i)">（{{ [o.check ? checkLabel(o.check) : '', costLabel(i)].filter(Boolean).join('・') }}）</template> <ContentTagChips :tags="o.tags" /></button>
         </template>
       </div>
       <p v-if="n.node.kind === 'choice' && !dress && (n.node.options ?? []).some((_, i) => optionOpen(s, n.node, i) && costGate(i))" class="small warn">身上只有 {{ formatMoney(s.money_cc) }}，付不起的選項不能選</p>

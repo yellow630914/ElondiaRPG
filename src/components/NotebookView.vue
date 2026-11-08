@@ -6,6 +6,7 @@ import { enemies, locationById, stories } from '@/engine/data'
 import { expireIntel, intelPlace, KEEP_OLD_POINTS } from '@/engine/intel'
 import { canTurnIn, isMaterialQuest, layerName, questProgressText } from '@/engine/materialQuests'
 import { formatMoney } from '@/engine/money'
+import { pcWords } from '@/engine/pcWords'
 import { examsFirst } from '@/engine/guild'
 import { formatTime } from '@/engine/state'
 import { activeNodes, nodesWaitingForDays, placeText, storyHints, storyPauseReason } from '@/engine/story'
@@ -174,7 +175,7 @@ const counts = computed(() => ({
           <span class="tag" :class="{ ok: p.status === 'completed' }">{{ p.status === 'active' ? '進行中' : p.status === 'completed' ? '完成' : '失敗' }}</span>
           <button v-if="p.status === 'active'" class="small" @click="abandon(p.id, def!.title)">放棄</button>
         </div>
-        <p class="small">{{ def!.summary }}</p>
+        <p class="small">{{ pcWords(game.state ?? undefined, def!.summary) }}</p>
         <div v-if="p.status === 'active'" class="small">
           <b>目前的目標</b>
           <ul class="plain goals">

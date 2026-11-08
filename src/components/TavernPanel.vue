@@ -408,7 +408,7 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
 
       <!-- 被主人帶著：向主人提議去地下街 -->
       <template v-else-if="section === 'propose_underworld'">
-        <p class="small muted">這座城見不得光的買賣（黑市、淫鬥場、地下俱樂部……）藏在{{ underworld?.name ?? '地下街' }}裡。身為奴隸不能自己去，可以請{{ master?.name ?? '主人' }}帶你去：魅力檢定，參考 DC {{ proposeUwDc ?? '—' }}（主人的親密度、主人的身分、契約的服從懲罰）。成功時主人今天帶你去，你也記住入口；部分成功主人帶你去但不讓你記路；失敗今天不能再提。進去之後黑市的奴隸一樣是向主人提議買下，珍品不能自己買。</p>
+        <p class="small muted">這座城見不得光的買賣（黑市、淫鬥場、地下俱樂部……）藏在{{ underworld?.name ?? '地下街' }}裡。身為奴隸不能自己去，可以請{{ master?.name ?? '主人' }}帶你去：魅力檢定，參考 DC {{ proposeUwDc ?? '—' }}（主人的親密度、主人的身分、契約的服從懲罰）。成功時主人今天帶你去，你也記住入口；部分成功主人帶你去但不讓你記路；失敗今天不能再提。進去之後黑市的奴隸一樣是向主人提議買下；珍品、拍賣會、淫鬥場用你自己的錢。</p>
         <input v-model="proposeUwText" class="wide" placeholder="怎麼說服主人（選填），例如：想替主人找一件好東西、聽說那裡有主人要的人" />
         <button class="primary" :disabled="game.judging || !!proposeUwWhy" @click="game.perform({ kind: 'propose', target: 'underworld', text: proposeUwText }); proposeUwText = ''; section = null">{{ proposeUwWhy ?? '向主人提議（魅力檢定）' }}</button>
       </template>

@@ -515,6 +515,9 @@ def build():
     files['npcs'] = npcs_page(); pages.append(('npcs', '固定 NPC 在哪裡', '平常出沒的地方與相關任務線'))
     files['landmarks'] = landmarks_page(); pages.append(('landmarks', '城鎮的特色地標', '開放條件、參訪、探索與工作'))
     files['README'] = index_page(pages)
+    # 依主角性別換的詞（{哥哥|姊姊}，見 docs/STORY_QUESTS.md）：攻略上兩種都寫
+    pc_words = re.compile(r'\{([^{}|\n]*)\|([^{}|\n]*)(?:\|([^{}|\n]*))?\}')
+    files = {k: pc_words.sub(lambda m: '／'.join(x for x in m.groups() if x is not None), v) for k, v in files.items()}
     return {k: v.rstrip('\n') + '\n' for k, v in files.items()}
 
 

@@ -1,5 +1,6 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
+import { pcWords } from './pcWords'
 import { PARASITE_LOCK } from './parasites'
 import { hasPerk, learnablePerks, offerPerks } from './perks'
 import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
@@ -86,7 +87,7 @@ export function readIntelItem(state: GameState, name: string): Report {
     if (!def) throw new Error('消息裡說的事已經不存在了')
     if (state.stories?.[def.id]) throw new Error(`「${def.title}」的事你已經知道了`)
     startStory(state, def.id)
-    addIntel(state, { kind: 'story', story: def.id, title: def.title, text: def.start.text ?? def.summary, source: name })
+    addIntel(state, { kind: 'story', story: def.id, title: def.title, text: pcWords(state, def.start.text ?? def.summary), source: name })
     text = `得知「${def.title}」的消息，開始了這個特殊任務`
   } else if (spec.kind === 'lead') {
     const quests = state.quests.filter((q) => q.status === 'accepted' && !q.flags?.lead && q.template && townQuestTemplates[q.template]?.dc !== undefined)
