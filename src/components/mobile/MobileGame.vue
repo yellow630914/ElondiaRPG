@@ -24,13 +24,15 @@ import { OPEN_ACTION_EVENT, guardExit } from './mobile'
 // 手機版的冒險畫面（寬度 720px 以下，見 docs/MOBILE_UI.md）：
 // 上：狀態列（只看）→ 地圖（探索時大、閱讀時縮成一條）→ 日誌與主動行動列 → 情境按鈕 → 底部分頁列。
 // 這裡、休息、設施、更多用半屏面板；隊伍與更多裡的功能是全螢幕頁面（App 的對話框，手機上自動全螢幕）。
-export type MobileOpen = 'party' | 'relations' | 'notebook' | 'craft' | 'contract' | 'saves' | 'settings' | 'prompts' | 'content' | 'home' | 'quickload' | 'logsettings'
+export type MobileOpen = 'party' | 'relations' | 'notebook' | 'craft' | 'contract' | 'slaves' | 'saves' | 'settings' | 'prompts' | 'content' | 'home' | 'quickload' | 'logsettings'
 const props = defineProps<{
   hud: { day: number; clock: string; daytime: boolean; place: string; money: string; crime: { text: string; title: string } | null }
   events: number
   blockingEvent: boolean
   badges: { party: boolean; relations: number; notebook: number; contract: boolean }
   enslaved: boolean
+  /** 主角擁有奴隸：「更多」裡多一項「奴隸」 */
+  ownsSlaves?: boolean
 }>()
 const emit = defineEmits<{ open: [what: MobileOpen] }>()
 
@@ -92,6 +94,7 @@ const moreItems = computed<MoreItem[]>(() => [
   { icon: 'notebook', label: '筆記', open: 'notebook', badge: props.badges.notebook },
   { icon: 'tools', label: '工藝', open: 'craft' },
   ...(props.enslaved ? [{ icon: 'lock' as IconName, label: '契約', open: 'contract' as MobileOpen, badge: props.badges.contract ? '!' : undefined }] : []),
+  ...(props.ownsSlaves ? [{ icon: 'link' as IconName, label: '奴隸', open: 'slaves' as MobileOpen }] : []),
   { icon: 'saves', label: '存讀檔', open: 'saves' },
   { icon: 'save', label: '快存', run: () => void game.quickSave() },
   { icon: 'load', label: '快讀', open: 'quickload' },

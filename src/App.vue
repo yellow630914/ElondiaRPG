@@ -25,6 +25,8 @@ import MapPanel from '@/components/MapPanel.vue'
 import NewGameView from '@/components/NewGameView.vue'
 import PartyCards from '@/components/party/PartyCards.vue'
 import CharacterDialog from '@/components/party/CharacterDialog.vue'
+import OwnedSlavesDialog from '@/components/OwnedSlavesDialog.vue'
+import { ownedSlaves } from '@/engine/ownedSlaves'
 import MakeRoomDialog from '@/components/party/MakeRoomDialog.vue'
 import type { CharTab } from '@/components/party/memberInfo'
 import InventoryView from '@/components/items/InventoryView.vue'
@@ -140,7 +142,7 @@ async function goHome() {
   await game.toHome()
 }
 function closeDialogs() {
-  charOpen.value = showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showContract.value = showSaves.value = showSettings.value = false
+  charOpen.value = showParty.value = showInventory.value = showRelations.value = showNotebook.value = showCraft.value = showContract.value = showSlaves.value = showSaves.value = showSettings.value = false
 }
 
 const showSettings = ref(false)
@@ -165,6 +167,17 @@ const showCraft = ref(false)
 /** 奴隸契約（主角身上有契約印記時才有這個按鈕） */
 const showContract = ref(false)
 const enslaved = computed(() => (game.state ? isEnslaved(game.state) : false))
+/** 我的奴隸（主角擁有奴隸時才有這個按鈕；角色詳情可以指定先看哪一位） */
+const showSlaves = ref(false)
+const slaveFocus = ref('')
+const ownsSlaves = computed(() => (game.state ? ownedSlaves(game.state).length > 0 : false))
+function openSlaves(id = '') {
+  slaveFocus.value = id
+  showSlaves.value = true
+}
+const onOpenSlaves = (e: Event) => openSlaves(String((e as CustomEvent).detail ?? ''))
+window.addEventListener('elondia:open-slaves', onOpenSlaves)
+onBeforeUnmount(() => window.removeEventListener('elondia:open-slaves', onOpenSlaves))
 /** 現在可以請求主人讓你出門或出城（按鈕上提示一下） */
 const canAskMaster = computed(() => {
   const s = game.state
@@ -221,6 +234,7 @@ function onMobileOpen(what: MobileOpen) {
     case 'notebook': showNotebook.value = true; break
     case 'craft': showCraft.value = true; break
     case 'contract': showContract.value = true; break
+    case 'slaves': openSlaves(); break
     case 'saves': showSaves.value = true; break
     case 'settings': showSettings.value = true; break
     case 'logsettings': openSettings('models'); break
@@ -332,7 +346,7 @@ onBeforeUnmount(() => {
   </nav>
   <MobileGame
     v-if="mobileGame"
-    :hud="mobileHud" :events="eventCount" :blocking-event="blockingEvent" :badges="mobileBadges" :enslaved="enslaved"
+    :hud="mobileHud" :events="eventCount" :blocking-event="blockingEvent" :badges="mobileBadges" :enslaved="enslaved" :owns-slaves="ownsSlaves"
     @open="onMobileOpen"
   />
   <PromptsView v-if="game.state && tab === 'prompts'" />
@@ -361,6 +375,7 @@ onBeforeUnmount(() => {
         <button class="ghost" :title="readyQuests ? `${readyQuests} 件委託可以交付` : ''" @click="showNotebook = true"><GameIcon name="notebook" :size="20" />筆記<span v-if="readyQuests" class="badge gold">{{ readyQuests }}</span></button>
         <button class="ghost" @click="showCraft = true"><GameIcon name="tools" :size="20" />工藝</button>
         <button v-if="enslaved" class="ghost" :title="canAskMaster ? '可以請求主人讓你出門或出城' : ''" @click="showContract = true"><GameIcon name="lock" :size="20" />契約<span v-if="canAskMaster" class="note">可請求</span></button>
+        <button v-if="ownsSlaves" class="ghost" @click="openSlaves()"><GameIcon name="link" :size="20" />奴隸</button>
       </nav>
       <CombatView v-if="inCombat" />
       <LogView v-else @settings="openSettings('models')" />
@@ -397,6 +412,9 @@ onBeforeUnmount(() => {
   </AppDialog>
   <AppDialog :open="showContract && enslaved" title="奴隸契約" icon="lock" width="640px" @close="showContract = false">
     <ContractDialog @close="showContract = false" />
+  </AppDialog>
+  <AppDialog :open="showSlaves && ownsSlaves" title="我的奴隸" icon="link" width="680px" @close="showSlaves = false">
+    <OwnedSlavesDialog :focus="slaveFocus" @close="showSlaves = false" @detail="(id) => { showSlaves = false; openCharacter(id, 'stats') }" />
   </AppDialog>
   <AppDialog :open="showSaves" title="存檔與讀檔" icon="saves" width="860px" @close="showSaves = false">
     <SaveDialog @loaded="showSaves = false" />

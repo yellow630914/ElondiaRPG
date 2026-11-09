@@ -7,11 +7,10 @@ import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeNam
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
-import { contractOf } from '@/engine/tattoos'
 import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT } from '@/engine/lewd'
 import { encounterText, sexRecordItems, sexRecordOf, virginWord } from '@/engine/sexRecord'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
-import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
+import { isOwnSlave } from '@/engine/ownedSlaves'
 import { MOD_NAME } from '@/engine/gear'
 import { gameRule } from '@/engine/gameRules'
 import { useGame } from '@/stores/game'
@@ -95,12 +94,12 @@ function clearSex() {
   resetSexDraft()
 }
 
-// 調教：主角自己的奴隸（docs/LEWD_STATS.md 第 9 節）
-const canTrain = computed(() => trainees(s.value).some((x) => x.id === m.value.id))
-const courses = computed(() => (canTrain.value ? courseStatus(m.value) : []))
-const course = ref('serve')
-const courseDesc = computed(() => courses.value.find((c) => c.id === course.value)?.desc ?? '')
-const trainBlock = computed(() => (canTrain.value ? trainingBlocked(s.value, m.value, course.value) : '不能調教'))
+// 主角自己的奴隸：契約、調教與能對他做的事在「我的奴隸」（OwnedSlavesDialog.vue）
+const ownSlave = computed(() => isOwnSlave(s.value, m.value))
+function openSlaves() {
+  window.dispatchEvent(new CustomEvent('elondia:open-slaves', { detail: m.value.id }))
+  emit('close')
+}
 
 // 慾望指標：有效值（括號是裝備的加減）、分段；曝露名聲看目前的地區
 const lewdItems = computed<StatItem[]>(() => {
@@ -316,7 +315,11 @@ function saveTags() {
         <section v-else-if="id === 'profile'" class="pane profile">
           <PortraitBox :id="m.id" />
           <div class="texts">
-            <div v-if="contractFor(m)" class="contract small">
+            <div v-if="ownSlave" class="contract small own">
+              <span><GameIcon name="link" :size="14" /> {{ m.name }}是你的奴隸（{{ contractFor(m)!.def.name }}）：契約、調教與能對他做的事在「我的奴隸」。</span>
+              <button class="small" @click="openSlaves">打開「我的奴隸」</button>
+            </div>
+            <div v-else-if="contractFor(m)" class="contract small">
               <h4><GameIcon name="lock" :size="14" /> {{ contractFor(m)!.def.name }}</h4>
               <div>主人 {{ contractFor(m)!.masterName || '無主' }}・{{ contractFor(m)!.def.mark }}</div>
               <ul class="plain">
@@ -329,17 +332,6 @@ function saveTags() {
                 <span class="tag">逃離 DC {{ contractFor(m)!.def.escape_dc }}</span>
                 <span class="tag">出城 DC {{ contractFor(m)!.def.exit_dc }}</span>
                 <span class="tag">服從懲罰 -{{ contractFor(m)!.obedience }}</span>
-              </div>
-              <button v-if="contractOf(m)?.master === 'pc'" class="small" :disabled="inCombat" @click="game.releaseSlave(m.id)">解除契約</button>
-              <div v-if="canTrain" class="training">
-                <h4><GameIcon name="lock" :size="14" /> 調教 <Hint text="成人向（docs/LEWD_STATS.md 第 9 節）。選一個課程，抽一件調教事件，由你選做法、擲檢定；奴隸越順從越容易，親密度很低時變難。成功時指標成長，同一課程成功幾次保證學會一個技能；親密度很低時失敗會留下怨恨。" /></h4>
-                <div class="row">
-                  <select v-model="course">
-                    <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.name }}（{{ c.progress }}/{{ c.need }}）{{ c.open.length ? `・還能學：${c.open.join('、')}` : '' }}</option>
-                  </select>
-                  <button class="small" :disabled="!!trainBlock" :title="trainBlock ?? ''" @click="game.startTraining(m.id, course); emit('close')">開始調教</button>
-                </div>
-                <p v-if="courseDesc" class="small muted">{{ courseDesc }}</p>
               </div>
             </div>
             <template v-if="!editingProfile">
@@ -487,6 +479,8 @@ function saveTags() {
 .tag-edit { display: grid; gap: 6px; }
 .contract { display: grid; gap: 4px; padding: 8px 10px; border: 1px dashed var(--danger); border-radius: 3px; }
 .contract h4 { margin: 0; color: var(--danger); display: flex; align-items: center; gap: 4px; }
+.contract.own { border-color: var(--accent-2); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.contract.own > span { display: inline-flex; align-items: center; gap: 4px; flex: 1 1 16em; }
 .edit { display: grid; gap: 6px; }
 .edit label { display: grid; gap: 2px; }
 .edit textarea { width: 100%; }
