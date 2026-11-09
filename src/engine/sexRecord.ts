@@ -3,11 +3,24 @@
 // 還沒有記錄的人依角色擲出初始值（NPC 依標籤與 id 固定地擲，固定 NPC 可以在內容頁籤指定）。
 // 親密場景之後另外請 AI 讀這段經過、回傳這次誰和誰做了什麼（stores/game.ts 的 recordSex），程式驗證後加進記錄。
 
-import { genderName, lewdRules, namedNpcById, type NpcSexSeed, type SexSeedRule } from './data'
+import { tagsAllowed } from './content'
+import { genderName, lewdRules, namedNpcById, stories, type NpcSexSeed, type SexSeedRule, type StoryDef } from './data'
 import { npcRecord } from './npcs'
 import type { Character, GameState, LewdStat, Report, SexEncounter, SexRecord } from './types'
 
 const rules = () => lewdRules.experience
+
+/**
+ * 「性經歷」整個開關（設定 → 成人內容的內容篩選；預設打開）。關掉時：AI 不記錄、提示詞不附、
+ * NPC 私生活不擲成人向的事、奴隸身價不看性經歷；已經記下的資料保留，打開就恢復
+ */
+let recordsOn = true
+export function setSexRecords(on: boolean) {
+  recordsOn = on
+}
+export function sexRecordsOn(): boolean {
+  return recordsOn
+}
 
 /** 依字串固定的亂數（不用共用的亂數，不影響其他生成） */
 function seeded(seed: string): () => number {
@@ -38,6 +51,35 @@ function seedRule(tags: string[] = []): SexSeedRule {
 }
 
 /**
+ * 成人向任務的開頭 NPC（任務沒標非處女、自己也不是男性）：劇情把她寫成還沒有經驗，初始性經歷一律是處子。
+ * 也當開頭 NPC 的非處女任務不算（那條線本來就照有經驗寫）。特殊任務可以在內容頁籤編輯，清單換了就重算
+ */
+let storyVirginCache: { list: StoryDef[]; ids: Set<string> } | null = null
+export function storyVirginIds(): Set<string> {
+  if (storyVirginCache && storyVirginCache.list.length === stories.length && storyVirginCache.list.every((x, i) => x === stories[i])) return storyVirginCache.ids
+  const adult = new Set<string>()
+  const nv = new Set<string>()
+  for (const st of stories) {
+    const id = st.start?.kind === 'npc' ? st.start.npc : undefined
+    if (!id) continue
+    const tags = st.tags ?? []
+    if (tags.includes('non_virgin')) nv.add(id)
+    else if (tags.includes('adult')) adult.add(id)
+  }
+  const ids = new Set([...adult].filter((id) => !nv.has(id) && namedNpcById(id)?.gender !== 'male'))
+  storyVirginCache = { list: [...stories], ids }
+  return ids
+}
+
+/**
+ * 初始一定是處子嗎（性經歷沒有寫死的人）：成人向任務的開頭 NPC（storyVirginIds），
+ * 或內容篩選關掉了非處女（所有照擲的人都是處子）
+ */
+export function seedsVirgin(id: string): boolean {
+  return !tagsAllowed(['non_virgin']) || storyVirginIds().has(id)
+}
+
+/**
  * NPC 的初始性經歷：依 id 固定地擲，標籤決定機率與範圍（娼妓一定有經驗、神官多半沒有……）；
  * 固定 NPC 指定了的欄位優先（NpcDef.sex）
  */
@@ -47,7 +89,9 @@ export function npcSexSeed(def: { id: string; tags?: string[]; sex?: NpcSexSeed 
   const fixed = def.sex ?? {}
   // 寫了人數或次數就算有經驗
   const hinted = (fixed.partners ?? 0) > 0 || (fixed.times ?? 0) > 0
-  const virgin = fixed.virgin ?? (hinted ? false : next() < rule.virgin)
+  // 照擲的人：成人向任務的開頭 NPC、或關掉了非處女時一律是處子（照樣先擲一次，後面的亂數不變）
+  const rolled = hinted ? false : next() < rule.virgin
+  const virgin = fixed.virgin ?? (hinted ? false : rolled || seedsVirgin(def.id))
   const rec = emptySexRecord(virgin)
   if (!virgin) {
     rec.partners = Math.max(1, fixed.partners ?? between(next, rule.partners))
@@ -141,6 +185,7 @@ export function sexRecordItems(state: GameState, id: string): { label: string; v
 
 /** 交給 AI 的一段（成人場景的敘事與判定、記錄請求） */
 export function sexRecordText(state: GameState, id: string): string {
+  if (!recordsOn) return ''
   const rec = sexRecordOf(state, id)
   const items = sexRecordItems(state, id).map((x) => `${x.label}：${x.value}`).join('；')
   const recent = rec.recent.length ? `\n  最近${rec.recent.length}次：${rec.recent.map(encounterText).join(' ／ ')}` : ''
@@ -399,6 +444,7 @@ export function sexValue(rec: SexRecord, gender?: string): { mult: number; notes
 
 /** 這個人的身價倍率（性經歷的部分） */
 export function sexValueOf(state: GameState, id: string): { mult: number; notes: string[] } {
+  if (!recordsOn) return { mult: 1, notes: [] }
   return sexValue(sexRecordOf(state, id), genderOf(state, id))
 }
 
@@ -416,7 +462,38 @@ export function pcExperience(experienced: boolean, note = ''): SexRecord {
 
 /** 成人場景的敘事與判定：主角、隊友與在場的人的性經歷，每人一行（ids 是報告或行動裡的其他人） */
 export function sexRecordsNote(state: GameState, ids: string[] = []): string {
+  if (!recordsOn) return ''
   const pc = state.party.find((m) => m.isPlayer)
   const list = ['pc', ...state.party.filter((m) => !m.isPlayer).map((m) => m.id), ...ids.filter((id) => id !== pc?.id && !!npcRecord(state, id))]
   return [...new Set(list)].map((id) => `\n${nameFor(state, id)}的性經歷：${sexRecordText(state, id)}`).join('')
+}
+
+/** 存檔救濟（11/9）只做一次：記在 flags 裡 */
+export const STORY_VIRGIN_FIX = 'fix:story_virgin_1109'
+
+/**
+ * 存檔救濟（11/9 實測決定）：成人向任務的開頭 NPC（storyVirginIds）與劇情寫了第一次的固定 NPC，以前照擲可能是有經驗，
+ * 或在私生活裡失去了第一次。已經寫進存檔的記錄改回處子（照現在的初始值重算），幕後的成人向近況一起拿掉。
+ * 和主角發生過關係的不動（那是玩出來的）。只做一次。回傳改了誰
+ */
+export function rescueStoryVirgins(state: GameState): string[] {
+  const flags = (state.flags ??= {})
+  if (flags[STORY_VIRGIN_FIX]) return []
+  flags[STORY_VIRGIN_FIX] = true
+  const pcIds = new Set(['pc', ...state.party.filter((m) => m.isPlayer).map((m) => m.id)])
+  const fixed: string[] = []
+  for (const [id, rec] of Object.entries(state.sexRecords ?? {})) {
+    if (pcIds.has(id) || rec.virgin) continue
+    const def = namedNpcById(id)
+    if (!def || !(def.sex?.virgin === true || storyVirginIds().has(id))) continue
+    if ((rec.known ?? []).some((k) => pcIds.has(k)) || (rec.serviceKnown ?? []).some((k) => pcIds.has(k))) continue
+    if (rec.recent.some((e) => e.with.some((p) => p.id && pcIds.has(p.id)))) continue
+    const seed = npcSexSeed({ id, tags: def.tags ?? [], ...(def.sex ? { sex: def.sex } : {}) })
+    if (!seed.virgin) continue
+    state.sexRecords![id] = seed
+    const news = state.npcLife?.news?.[id]
+    if (news) state.npcLife!.news[id] = news.filter((n) => !n.adult || n.adult.kind === 'solo')
+    fixed.push(id)
+  }
+  return fixed
 }

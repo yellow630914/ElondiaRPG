@@ -44,7 +44,7 @@ const SEX_HINT = `開啟：親密場景的日誌寫完經過之後（沒有寫�
       <Hint :text="NARRATION_HINT" :width="340" />
       <span v-if="settings.aiNarration && !settings.ready('narration')" class="small warn">「敘事正文」的模型來源未設定</span>
     </div>
-    <div class="row-line">
+    <div v-if="settings.sexRecords" class="row-line">
       <label class="check"><input v-model="settings.sexRecordAi" type="checkbox" /> AI 記下性經歷（成人向）</label>
       <Hint :text="SEX_HINT" :width="340" />
       <span v-if="settings.sexRecordAi && !settings.ready('sexlog')" class="small warn">「性經歷記錄」的模型來源未設定</span>

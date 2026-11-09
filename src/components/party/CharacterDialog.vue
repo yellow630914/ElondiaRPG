@@ -255,6 +255,7 @@ function saveTags() {
           <div>
             <p v-if="isNoncombatant(m)" class="small muted">無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>
             <StatGrid v-else :items="combat" />
+            <template v-if="settings.sexRecords">
             <h4 class="lewd-title">性經歷 <Hint text="成人向（docs/LEWD_STATS.md 第 29 節）。親密場景之後，AI 讀那段經過記下誰和誰發生了關係、性侍奉、初體驗、最喜歡的人與性癖（設定 → AI 敘事的「AI 記下性經歷」；判定時不記）。只留最近三次的經過。成人場景的敘事與判定會附上這份記錄。" /></h4>
             <StatGrid :items="sexItems" />
             <ul v-if="sexRec.recent.length" class="sex-recent small">
@@ -282,6 +283,7 @@ function saveTags() {
                 <button class="small" title="清掉記錄（含最近三次），回到依角色擲出的初始值" @click="clearSex">回到初始值</button>
               </div>
             </details>
+            </template>
           </div>
         </section>
 

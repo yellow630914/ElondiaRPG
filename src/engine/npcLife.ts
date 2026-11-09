@@ -20,7 +20,7 @@ import { attributeRules, lewdRules, namedNpcById } from './data'
 import { addItem } from './state'
 import { tagsAllowed } from './content'
 import { addLewdStat, lewdOf, npcLewd } from './lewd'
-import { addEncounter, sexRecordOf } from './sexRecord'
+import { addEncounter, sexRecordOf, sexRecordsOn, storyVirginIds } from './sexRecord'
 import { locationOpen } from './storyFlags'
 import type { Character, EquippedGear, GameState, GearSlot, NpcLifeState, NpcNews, NpcRecord } from './types'
 
@@ -345,11 +345,13 @@ export function setPairs(state: GameState, id: string, on: boolean) {
 }
 
 /**
- * 固定 NPC 寫了還沒有經驗（NpcDef.sex.virgin）而且現在還是處子：私生活只自慰，第一次留給劇情或主角
- * （伊莎朵拉、艾琳……的戀愛線有和主角的第一次）
+ * 現在還是處子、第一次要留給劇情或主角的人：私生活只自慰，也不會被挑成對象。
+ * 固定 NPC 寫了還沒有經驗（NpcDef.sex.virgin；伊莎朵拉、艾琳……的戀愛線有和主角的第一次）、
+ * 成人向任務的開頭 NPC（storyVirginIds：任務沒標非處女），或內容篩選關掉了非處女（誰都不在幕後失去第一次）
  */
 export function keepsFirst(state: GameState, id: string): boolean {
-  return namedNpcById(id)?.sex?.virgin === true && sexRecordOf(state, id).virgin
+  if (!sexRecordOf(state, id).virgin) return false
+  return namedNpcById(id)?.sex?.virgin === true || storyVirginIds().has(id) || !tagsAllowed(['non_virgin'])
 }
 
 /** 內容篩選關掉男性對象時，NPC 之間不挑男性 */
@@ -391,6 +393,8 @@ function grow(state: GameState, id: string, day: number) {
  * 沒有的話擲自慰。記進性經歷，回傳近況的一句（沒有事時 null）。用「id＋lust＋日子」的固定亂數
  */
 export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: LustCtx): { text: string; adult: NonNullable<NpcNews['adult']> } | null {
+  // 「性經歷」整個關掉時，私生活不擲成人向的事
+  if (!sexRecordsOn()) return null
   const rng = new Rng(hashString(`${rec.id}:lust:${day}`))
   const r = lustRules()
   const scale = Math.min(3, everyDays / 3)

@@ -20,6 +20,9 @@ SEEDS = {
     'npc_oboro': {**V, 'notes': '修行過房中術，卻只學了理論'},
     'npc_aya': {'solo': 120, **V, 'notes': '祈禱書裡寫滿和黝黑異族男人的妄想'},
     'npc_td_wanning': {'solo': 300, **V, 'notes': '和親三年，夫婦從未同帳；常常偷看摔跤看得臉紅'},
+    # 劇情寫的是她們的第一次（11/9 實測決定：以前寫成有經驗）
+    'npc_yh_xuanshuang': {**V, 'notes': '雙修講究陰陽相濟，等了十年的「有緣人」才肯真的修'},
+    'npc_yh_wen_ruyu': {**V, 'notes': '教了十三年的規矩，自己一次也沒有用過'},
     # ---- 有經驗 ----
     'npc_clara': {'solo': 200, 'virgin': False, 'partners': 1, 'times': 120, 'service_partners': 1, 'service_times': 30, 'first': '新婚之夜，和現在冷落她的丈夫', 'notes': '書裡寫的每一個情節都想親身試一次'},
     'npc_lieselotte': {'solo': 150, 'virgin': False, 'partners': 1, 'times': 60, 'first': '和丈夫，在麵包店的閣樓', 'notes': '丈夫一年只回家一次，身體正值慾望最旺盛的年紀'},
@@ -33,8 +36,6 @@ SEEDS = {
     'npc_elena': {'virgin': False, 'partners': 6, 'times': 50, 'service_partners': 8, 'service_times': 70, 'notes': '施法要用精液；對快感的反應和臉上的平靜完全相反'},
     'npc_sister_agathe': {'virgin': False, 'partners': 40, 'times': 160, 'service_partners': 40, 'service_times': 160, 'notes': '大腿內側用墨水記著一排排的數字'},
     'npc_seph_fertility': {'virgin': False, 'partners': 20, 'times': 120, 'notes': '豐饒的祭儀'},
-    'npc_yh_xuanshuang': {'virgin': False, 'partners': 5, 'times': 60, 'notes': '雙修講究陰陽相濟，修的時候要「心無雜念」'},
-    'npc_yh_wen_ruyu': {'virgin': False, 'partners': 6, 'times': 70, 'service_partners': 6, 'service_times': 40, 'notes': '教人的時候，會讓對方親手數清楚有幾片鱗'},
     'npc_yh_xiao_fengyi': {'virgin': False, 'partners': 15, 'times': 120, 'service_partners': 15, 'service_times': 80, 'notes': '戲台上的旦角都是她手把手教出來的，教的不只是唱腔'},
     'npc_yh_chihuan': {'virgin': False, 'partners': 20, 'times': 80, 'notes': '輸給她的人可以用身子抵債，贏了她的人也一樣'},
     'npc_yh_hu_sanniang': {'virgin': False, 'partners': 4, 'times': 30, 'notes': '仙家附身時主動得嚇人，事後什麼都不記得'},

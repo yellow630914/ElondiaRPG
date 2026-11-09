@@ -22136,7 +22136,7 @@
       "id": "noir_blank_score",
       "title": "寫不出來的歌",
       "summary": "星屑三重奏的作曲諾瓦寫不出新歌了。她說河谷鎮的聲音太吵，要去城外錄「真正的聲音」——鳥妖的歌。（諾瓦・一）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "D",
       "merit": 5,
       "start": {
@@ -22224,7 +22224,7 @@
       "id": "noir_fan_letters",
       "title": "粉絲的信",
       "summary": "諾瓦偷偷收集粉絲的信，一封都捨不得丟。最近，有一個粉絲的信越寫越可怕——信封裡夾著她的頭髮，還有她房間窗戶的素描。（諾瓦・二）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "C",
       "merit": 8,
       "start": {
@@ -22318,7 +22318,7 @@
       "id": "noir_song_for_whom",
       "title": "為誰寫的歌",
       "summary": "男爵少爺被放出來了。他找了一個流浪的咒術樂師，把諾瓦的舊魯特琴改成了會自己彈奏的魔像——它只會彈一首歌，彈到聽的人瘋掉為止。（諾瓦・三）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "B",
       "merit": 8,
       "start": {
@@ -26430,7 +26430,7 @@
       "id": "group_idol_backstage",
       "title": "三重奏的後台",
       "summary": "星屑三重奏的三個人，各自和護衛兼經紀人在一起了——然後在同一天發現了。下一場演唱會只剩三天，團員們卻吵得一首歌也排不出來。（多人特殊任務）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "B",
       "merit": 8,
       "start": {
@@ -35982,7 +35982,7 @@
       "id": "conf_last",
       "title": "修女的懺悔",
       "summary": "最後一站是河谷鎮四國交界的小禮拜堂。阿嘉莎說，這一站換她懺悔。（教堂懺悔室的各國巡禮・五）",
-      "tags": ["adult", "male_partner"],
+      "tags": ["adult", "non_virgin", "male_partner"],
       "rank": "B",
       "merit": 5,
       "start": {
@@ -51052,7 +51052,7 @@
       "id": "tdur_wild_stallion",
       "title": "最烈的馬",
       "summary": "王庭的馴馬師烏日娜要馴一匹誰也騎不上去的黑馬。她說想看看外地人能撐多久——在馬背上，還有別的地方。（烏日娜・一）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "D",
       "merit": 8,
       "start": {
@@ -51128,7 +51128,7 @@
       "id": "tdur_who_rides",
       "title": "誰騎誰",
       "summary": "烏日娜說，馴馬和馴人是一樣的道理：先讓對方騎上來，再讓對方知道誰才是騎的那一個。她要跟你比一場。（烏日娜・二）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "C",
       "merit": 10,
       "start": {
@@ -51209,7 +51209,7 @@
       "id": "tdur_bridle",
       "title": "韁繩",
       "summary": "北院要烏日娜去替怯薛馴戰馬，從此只聽北院的令。她說，她這輩子不讓任何人給她套韁繩——除了一個人。（烏日娜・三）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "B",
       "merit": 15,
       "start": {
@@ -51281,7 +51281,7 @@
       "id": "tdsr_foaling",
       "title": "接生",
       "summary": "春天的第一匹小馬要出生了，牧女薩日朗一個人忙不過來。她說接生和配種一樣，沒什麼好害臊的。（薩日朗・一）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "D",
       "merit": 8,
       "start": {
@@ -51361,7 +51361,7 @@
       "id": "tdsr_stud",
       "title": "種馬",
       "summary": "配種的季節到了，薩日朗最好的種馬被黑鬃的人搶走了。她說沒有種馬，今年的春天就白過了——不管是馬的，還是她的。（薩日朗・二）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "C",
       "merit": 10,
       "start": {
@@ -51440,7 +51440,7 @@
       "id": "tdsr_herd",
       "title": "她的馬群",
       "summary": "北院要徵薩日朗的馬群去當戰馬。她說馬群就是她的家，誰也帶不走——她也想讓你知道，她的家裡有一個位子。（薩日朗・三）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "B",
       "merit": 15,
       "start": {

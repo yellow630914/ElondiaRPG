@@ -547,7 +547,7 @@ export const useGame = defineStore('game', () => {
     const s = state.value
     const settings = useSettings()
     if (!s || !sexRecord.intimateReport(report) || sexRecord.sexLogged(s, report.report_id) || recordingSex.value.has(report.report_id)) return
-    if (!settings.ready('sexlog') || (!opts.manual && !settings.sexRecordAi)) return
+    if (!settings.sexRecords || !settings.ready('sexlog') || (!opts.manual && !settings.sexRecordAi)) return
     const text = narrative ?? narrations.value[report.report_id]?.text ?? ''
     const { buildSexLogPrompt } = await import('@/narrator/sexLog')
     const built = buildSexLogPrompt(s, report, text)

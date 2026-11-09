@@ -313,6 +313,9 @@ function doReset() {
           <label v-for="t in FILTER_TAGS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
             <input v-model="settings.contentFilters[t]" type="checkbox" /> {{ CONTENT_TAGS[t].name }}
           </label>
+          <label class="check" title="主角、夥伴與 NPC 的性經歷（是不是處子、人數、次數、初體驗……）。取消勾選：角色詳情、人際關係、世界編輯器都不顯示，AI 不記錄、提示詞不附，NPC 的私生活不擲成人向的事，奴隸身價不看性經歷。已經記下的保留，重新勾選就恢復">
+            <input v-model="settings.sexRecords" type="checkbox" /> 性經歷
+          </label>
         </div>
         <label>
           <span class="lab">戰敗色情事件 <Hint text="戰敗後敵人（發情的怪物、惡人……）起意的事件。關閉「主角非自願」時也不會發生。" /></span>

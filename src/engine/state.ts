@@ -21,7 +21,7 @@ import { startCrafts } from './crafting'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
-import { pcExperience } from './sexRecord'
+import { pcExperience, rescueStoryVirgins } from './sexRecord'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -342,6 +342,8 @@ export function assertClasses(state: Pick<GameState, 'party' | 'npcs'>) {
 export function migrate(state: GameState): GameState {
   assertSchema(state)
   assertClasses(state)
+  // 成人向任務的開頭 NPC 以前可能擲成有經驗、或在私生活裡失去第一次：改回處子（只做一次；sexRecord.ts）
+  rescueStoryVirgins(state)
   // 「本地」聲望以前會直接存成 local（以前記在 KNOWN_ISSUES 的 W5）：沒有人讀，拿掉
   if (state.reputation) delete state.reputation.local
   // 以前 AI 會替商店取名字（shopNames）：店名改成只用手寫與規則生成，拿掉

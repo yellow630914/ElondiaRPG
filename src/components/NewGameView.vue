@@ -450,7 +450,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           背景（選填）
           <textarea v-model="background" rows="3" maxlength="800" placeholder="例如：河谷鎮鐵匠的次子，為了尋找失蹤的哥哥而成為冒險者；不太會說謊，對魔族有說不出口的心結。" />
         </label>
-        <div class="experience">
+        <div v-if="settings.sexRecords" class="experience">
           <label class="check"><input v-model="experienced" type="checkbox" /> 已經有性經驗 <Hint text="成人向（docs/LEWD_STATS.md 第 29 節）。沒勾時主角從處子開始；之後每次親密場景，AI 會記下發生過關係與性侍奉的人數、次數、初體驗與最喜歡的人，記錄在角色詳情裡，也可以自己改。" /></label>
           <input v-if="experienced" v-model="firstNote" maxlength="120" placeholder="初體驗（選填，一句話）" />
         </div>

@@ -5,7 +5,7 @@
 import { pcTagSummary } from '@/engine/pcTags'
 import { inActiveSquad, squadIds } from '@/engine/squads'
 import { lewdSummary } from '@/engine/lewd'
-import { sexRecordsNote, sexRecordText } from '@/engine/sexRecord'
+import { sexRecordsNote, sexRecordsOn, sexRecordText } from '@/engine/sexRecord'
 import { charmNote } from '@/engine/charm'
 import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
@@ -536,7 +536,7 @@ export function buildNewsPrompt(state: GameState, items: { id: string; news: Npc
       rel ? `和主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '',
       memories.length ? `和主角的共同記憶：\n${memories.map((m) => `- ${m.summary}`).join('\n')}` : '',
       // 成人向的私生活：附上性經歷，AI 才寫得出「第一次」、和誰熟
-      adult ? `性經歷：${sexRecordText(state, id)}` : '',
+      adult && sexRecordsOn() ? `性經歷：${sexRecordText(state, id)}` : '',
       `這段時間（程式擲出來的，要照寫）：\n${news.map((n) => `- day ${n.day}：${n.text}`).join('\n')}`,
     ].filter(Boolean).join('\n')
   }).join('\n\n')

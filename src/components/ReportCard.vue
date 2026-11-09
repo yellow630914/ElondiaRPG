@@ -28,7 +28,7 @@ const props = defineProps<{ report: Report }>()
 const game = useGame()
 const settings = useSettings()
 // 親密場景還沒記下性經歷（自動記關著、失敗時，可以手動記；docs/LEWD_STATS.md 第 29 節）
-const canRecordSex = computed(() => !!game.state && intimateReport(props.report) && settings.ready('sexlog') && !sexLogged(game.state, props.report.report_id))
+const canRecordSex = computed(() => !!game.state && settings.sexRecords && intimateReport(props.report) && settings.ready('sexlog') && !sexLogged(game.state, props.report.report_id))
 const recordingSex = computed(() => game.recordingSex.has(props.report.report_id))
 
 // 回退（stores/undo.ts）：最近幾輪的日誌可以撤銷，連同之後的日誌

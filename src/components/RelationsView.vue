@@ -255,8 +255,8 @@ const suggestionDraft = reactive<Record<string, string>>({})
             </template>
             <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
             <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationName(r.firstMet.location) }}</dd></template>
-            <dt>性經歷</dt>
-            <dd>
+            <dt v-if="settings.sexRecords">性經歷</dt>
+            <dd v-if="settings.sexRecords">
               <details class="sex">
                 <summary>{{ sexBrief(r.id) }}</summary>
                 <div v-for="x in sexRecordItems(s, r.id)" :key="x.label">{{ x.label }}：{{ x.value }}</div>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSettings } from '@/stores/settings'
 import { abilities, choosablePerks, KEEPER_SHOPS, perkDef, shopRules } from '@/engine/data'
 import { npcTraits } from '@/engine/traits'
 import { npcPerksOf } from '@/engine/perks'
@@ -38,6 +39,7 @@ const keeperShops = computed(() => {
   return Object.entries(shopRules.types).filter(([t, d]) => (KEEPER_SHOPS as string[]).includes(t) || d.custom).map(([t, d]) => [t, d.name] as const)
 })
 const game = useGame()
+const settings = useSettings()
 
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 function current(): NpcMod {
@@ -488,6 +490,7 @@ const occupations = computed(() => {
           <input type="number" min="0" max="100" :value="draft.lewd?.[k] ?? ''" :placeholder="String(rolledLewd[k])" @change="setLewd(k, ($event.target as HTMLInputElement).value)" />
         </label>
       </div>
+      <template v-if="settings.sexRecords">
       <div class="row lewd">
         <span class="small">初始性經歷 <Hint text="成人向（docs/LEWD_STATS.md 第 29 節）。空著時依標籤與 id 固定地擲，灰字是擲出來的值；沒寫淫亂時，淫亂也照這裡調整（沒有經驗的打折、經驗多的加一點）。遊戲中親密場景之後由 AI 記下新的經歷。" /></span>
         <label class="small">經驗
@@ -505,6 +508,7 @@ const occupations = computed(() => {
         <label class="small grow">初體驗 <input :value="draft.sex?.first ?? ''" maxlength="120" placeholder="一句話（有經驗時）" @change="setSex('first', ($event.target as HTMLInputElement).value)" /></label>
         <label class="small grow">性癖與偏好 <input :value="draft.sex?.notes ?? ''" maxlength="120" placeholder="一句話" @change="setSex('notes', ($event.target as HTMLInputElement).value)" /></label>
       </div>
+      </template>
       <details v-if="draft.tags?.includes('prostitute')" class="small">
         <summary>光顧時會教的技能（{{ draft.teaches?.length ?? 0 }}） <Hint text="成人向（docs/LEWD_STATS.md 第 10 節）。親密度 40 以上、光顧成功時有機會教主角一個；她的淫亂決定能教到幾級。沒勾時用預設的清單。" /></summary>
         <label v-for="a in lewdAbilities" :key="a.id" class="check"><input type="checkbox" :checked="draft.teaches?.includes(a.id)" @change="toggleTeach(a.id, ($event.target as HTMLInputElement).checked)" /> {{ a.name }}</label>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useSettings } from '@/stores/settings'
 import FoldMenu from './ui/FoldMenu.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { marketsHere, proposeDc, selfSaleChance, type MarketKind } from '@/engine/companions'
@@ -18,6 +19,7 @@ import Hint from './ui/Hint.vue'
 
 const props = defineProps<{ kind: MarketKind }>()
 const game = useGame()
+const settings = useSettings()
 const s = computed(() => game.state!)
 const market = computed(() => marketsHere(s.value).find((m) => m.kind === props.kind)?.def)
 const loaded = ref<SlaveListing[]>([])
@@ -117,7 +119,7 @@ function sellSelf() {
           </div>
           <div class="muted">{{ npcRecord(s, l.npc)!.appearance }} {{ npcRecord(s, l.npc)!.background }}</div>
           <div class="muted" :title="contractDef(l.contract).side_effects.join('；')">契約：{{ contractDef(l.contract).name }}</div>
-          <div class="muted">性經歷：{{ sexBrief(l.npc) }}<template v-if="sexValueOf(s, l.npc).notes.length">（身價 {{ sexValueOf(s, l.npc).notes.join('、') }}）</template></div>
+          <div v-if="settings.sexRecords" class="muted">性經歷：{{ sexBrief(l.npc) }}<template v-if="sexValueOf(s, l.npc).notes.length">（身價 {{ sexValueOf(s, l.npc).notes.join('、') }}）</template></div>
           <div class="row">
             <span>{{ formatMoney(l.price_cc) }}</span>
             <!-- 被主人帶著：向主人提議買下（主人出錢，奴隸屬於主人） -->
