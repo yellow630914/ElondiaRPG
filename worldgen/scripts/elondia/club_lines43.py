@@ -5,7 +5,7 @@
 
 - 黑檀之夜（aya_club）：卡蓮（kar_club）、朧（oboro_club）
 - 地下酒館的榮譽洞（wl_1_done）：卡蜜拉（cam_hole）、零號（zero_hole）
-  這兩個地標只剩兩格（一個地標最多 8 個場景），所以西大陸的四位各一個場景；任務點在那座城的酒館。
+  這兩個地標當時只剩兩格（那時一個地標最多 8 個場景，之後提高到 12 個），所以西大陸的四位各一個場景；任務點在那座城的酒館。
 - 野馬帳（tdwn_club）：赤鬟（yach_wild）、烏日娜（tdur_wild）、海蘭（tdch_wild）
 - 無面樓（yasz_club）：沈知瀾（ycsz_mask）、瑤汀（ycyt_mask）
   東邊的五位各兩個場景（在一旁看著／陰柔、中性的主角一起）。野馬帳的任務點在鷹河榷場的近郊（帳在榷場外），
@@ -335,7 +335,7 @@ STORIES.append(ext(
 
 # ================= 地標的場景 =================
 SCENES = {
-    # 黑檀之夜、榮譽洞只剩兩格（最多 8 個場景）：各一個
+    # 黑檀之夜、榮譽洞當時只剩兩格（那時最多 8 個場景）：各一個
     EBONY: [
         scene('看卡蓮下戰帖', '在掰手腕的桌子邊，看卡蓮和水手們比誰先認輸。',
               '主角坐在黑檀之夜掰手腕的桌子邊當公證人，看著{cast}和高大黝黑的水手們比誰先認輸：她把他們按在長椅上騎上去，又被好幾個人一起按住輪流貫穿，熔岩紋路亮得發燙；每次被頂到失神都回頭咬著牙說「還沒完」，天亮前鑽回主角懷裡算比分。',
@@ -398,7 +398,7 @@ def write_landmarks():
     for lid, mine in SCENES.items():
         titles = {s['title'] for s in mine}
         by_id[lid]['scenes'] = [s for s in by_id[lid].get('scenes', []) if s['title'] not in titles] + mine
-        assert len(by_id[lid]['scenes']) <= 8, (lid, len(by_id[lid]['scenes']))
+        assert len(by_id[lid]['scenes']) <= 12, (lid, len(by_id[lid]['scenes']))
     open(p, 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, indent=1))
 
 

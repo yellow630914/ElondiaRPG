@@ -40,7 +40,7 @@ export function landmarkSpotProblem(id: string, at: { area: string; x: number; y
 
 export const LANDMARK_LIMITS = {
   name_chars: 12, desc_chars: 200, scene_chars: 200, types: 4, title_chars: 16, flags: 4,
-  scenes: 8, scene_text_chars: 400, cast: 6, extras_chars: 30, affinity: [0, 30],
+  scenes: 12, scene_text_chars: 400, cast: 6, extras_chars: 30, affinity: [0, 30],
   money: [0, 100_000], hours: [0.5, 24], cooldown: [1, 60], dc: [5, 30], rate_cc: [0, 100], reputation: [0, 100], effects: 6,
 } as const
 /** 參訪與探索可以用的效果（不能讓主角淪為奴隸、開始特殊任務或讓人入隊） */

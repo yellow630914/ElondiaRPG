@@ -462,7 +462,7 @@ def write_landmarks():
     for lid, mine in SCENES.items():
         titles = {s['title'] for s in mine}
         by_id[lid]['scenes'] = [s for s in by_id[lid].get('scenes', []) if s['title'] not in titles] + mine
-        assert len(by_id[lid]['scenes']) <= 8, lid
+        assert len(by_id[lid]['scenes']) <= 12, lid
     open(p, 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, indent=1))
 
 
