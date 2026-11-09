@@ -176,7 +176,7 @@ function sellSelf() {
           </div>
         </li>
       </ul>
-      <p v-if="!curios.length" class="small muted">今天沒有珍品（數量在「這個存檔的規則」調整）。</p>
+      <p v-if="!curios.length" class="small muted">今天沒有珍品（數量在設定的「遊戲規則」調整）。</p>
     </FoldMenu>
 
     <FoldMenu v-if="!bound" class="small" icon="scale" :label="enslaved ? '登記出售自己（找新主人）' : '登記出售自己'" :detail="`等 ${slaveryRules.self_sale.hours} 小時，有買家的機率約 ${Math.round(selfSaleChance(s) * 100)}%`">

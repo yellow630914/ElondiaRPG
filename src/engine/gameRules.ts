@@ -1,4 +1,4 @@
-// 這個存檔的規則（state.options）：開新遊戲時選，之後可以在設定的「這個存檔的規則」改。
+// 這個存檔的規則（state.options）：開新遊戲時選，之後可以在設定的「遊戲規則」與「成人內容」頁改（標著「存檔」的項目）。
 // 每一項都有預設值（和沒有這項規則時一樣），讀的時候一律夾在範圍內；舊存檔沒有的欄位就是預設。
 // 戰敗掉落（defeatLoot）另外在 expedition.ts；難度（difficulty）的係數在下面。說明見 docs/SAVES.md 第 7 節。
 
@@ -51,7 +51,7 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   shortRestHours: { group: 'time', label: '短休的時間', hint: `短休花幾小時（預設 ${companionRules.rest.short_hours}）。`, default: companionRules.rest.short_hours, min: 0.5, max: 4, step: 0.5, unit: '小時' },
   longRestHours: { group: 'time', label: '長休的時間', hint: `長休花幾小時（預設 ${companionRules.rest.long_hours}）。住旅店照樣住到隔天早上。`, default: companionRules.rest.long_hours, min: 2, max: 12, step: 1, unit: '小時' },
   alertDecayDays: { group: 'town', label: '衛兵警戒多久降一級', hint: `犯案被目擊後，城裡的警戒每隔幾天降 1（預設 ${securityJson.alert.decay_days}）。`, default: securityJson.alert.decay_days, min: 1, max: 30, step: 1, unit: '天' },
-  sellRatio: { group: 'town', label: '賣給商店的價格', hint: `把東西賣給商店時拿到基本價的幾 %（預設 ${pct(itemRules.sell_ratio)}）。打造材料與採集品照舊全價收購；地點物價、行情、殺價、聲望、收購遞減照常再乘上去。調得太高時，同一間店低買高賣可能穩賺。`, default: Math.round(itemRules.sell_ratio * 100), min: 10, max: 100, step: 5, unit: '%' },
+  sellRatio: { group: 'town', label: '賣給商店的價格', hint: `把東西賣給商店時拿到基本價的幾 %（預設 ${pct(itemRules.sell_ratio)}）。打造材料與採集品照舊全價收購；地點物價、行情、殺價、聲望、收購遞減照常再乘上去。有店家的折扣（親密度、談來的長期折扣）時，超過約 65% 就可能在同一間店低買高賣、穩賺不賠。`, default: Math.round(itemRules.sell_ratio * 100), min: 10, max: 100, step: 5, unit: '%' },
   sellGlutPct: { group: 'town', label: '收購遞減', hint: '同一間店收購同一類東西（礦石與金屬、皮革與毛皮……）時，每收一件，下一件的收購價降這麼多（最多降 50%），每天慢慢回復，讓跑商不會無限賺。0 表示不遞減。', default: 3, min: 0, max: 10, step: 1, unit: '%', zero: '不遞減' },
   blackMarketGear: { group: 'town', label: '黑市每天的珍品', hint: '地下街裡的黑市每天刷新幾件獨特裝備（物品勾了「也會出現在黑市」的）。0 表示黑市不賣裝備。', default: 3, min: 0, max: 10, step: 1, unit: '件', zero: '不賣裝備' },
   masterEventMult: { group: 'adult_events', label: '主人事件的機率', hint: `被主人帶著時，主人突發事件的機率乘上這個倍率（預設：走動每一步 ${pct(slaveryJson.master_events.step_chance)}、旅行每趟 ${pct(slaveryJson.master_events.travel_chance)}）。0 表示主人不會突然提出要求（離家逾期的「主人要回家」照樣會發生）。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },

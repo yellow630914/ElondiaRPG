@@ -400,7 +400,7 @@ function saveTags() {
           </div>
           <p v-if="loadoutCap > 0 && m.abilities.some(countsForLoadout)" class="loadout small">
             攜帶 <b :class="{ full: carriedCount >= loadoutCap }">{{ carriedCount }} / {{ loadoutCap }}</b>
-            <Hint text="戰鬥中只能用攜帶的技能與法術（戲法不算，一直都帶著）；沒帶的留在技能庫，戰鬥以外隨時可以換。上限在設定的「這個存檔的規則」調整。" />
+            <Hint text="戰鬥中只能用攜帶的技能與法術（戲法不算，一直都帶著）；沒帶的留在技能庫，戰鬥以外隨時可以換。上限在設定的「遊戲規則」調整。" />
           </p>
           <div v-for="g in groupedAbilities(m)" :key="g.type" class="group">
             <h4>{{ TYPE_NAME[g.type] }}</h4>

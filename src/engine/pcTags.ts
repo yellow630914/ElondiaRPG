@@ -106,7 +106,7 @@ export function pcTagSummary(c: Pick<Character, 'tags' | 'isPlayer'>): string {
 
 /** 遊戲中更換主角的標籤（存檔規則要允許） */
 export function setPcTags(state: GameState, tags: unknown) {
-  if (!state.options?.tagChange) throw new Error('這個存檔不允許更換身分標籤（可以在設定的「這個存檔的規則」打開）')
+  if (!state.options?.tagChange) throw new Error('這個存檔不允許更換身分標籤（可以在設定的「遊戲規則」打開）')
   const pc = pcOf(state)
   const next = sanitizePcTags(tags)
   if (next.length) pc.tags = next

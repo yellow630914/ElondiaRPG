@@ -58,7 +58,7 @@ function retreat() {
       <span :title="lootTitle || '還沒撿到東西'">
         <GameIcon name="backpack" :size="13" /> 這趟：最深到{{ DUNGEON_LAYERS[expedition.deepest]?.name }}・撿到 {{ lootCount }} 件<template v-if="expedition.money_cc">、{{ formatMoney(expedition.money_cc) }}</template>
       </span>
-      <span class="muted" title="可以在設定的「這個存檔的規則」修改">（戰敗時：{{ DEFEAT_LOOT_NAME[defeatLootRule(s)] }}）</span>
+      <span class="muted" title="可以在設定的「遊戲規則」修改">（戰敗時：{{ DEFEAT_LOOT_NAME[defeatLootRule(s)] }}）</span>
       <span v-if="parkLust.length" class="lust" title="魅氣：在園區裡慾望跨戰鬥保留，每走一格慢慢增加；回到入口廣場就散了">
         <GameIcon name="heart" :size="13" /> 魅氣 {{ parkLust.map((x) => `${x.name} ${x.pct}%`).join('、') }}
       </span>

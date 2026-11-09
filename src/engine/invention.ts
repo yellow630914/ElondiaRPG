@@ -17,7 +17,7 @@ import { formatMoney } from './money'
 import { lostQty, producedQty } from './recipes'
 import { renameItemInState } from './usage'
 import { withRng } from './state'
-import { locationMult } from './trade'
+import { locationMult, sellRatio } from './trade'
 import type { Character, GameState, Report } from './types'
 
 export type InventCategory = 'consumable' | 'food' | 'furniture'
@@ -384,9 +384,9 @@ export interface InventPlan {
   blockers: string[]
 }
 
-/** 材料價值不到「價格 × 收購比例 × 份數」的差額（基準價，還沒乘地點物價） */
-export function supplyGap(caps: InventCaps, inputValue: number, qty: number): number {
-  return Math.max(0, Math.ceil(caps.price * itemRules.sell_ratio * qty) - inputValue)
+/** 材料價值不到「價格 × 收購比例 × 份數」的差額（基準價，還沒乘地點物價）；收購比例照存檔規則「賣給商店的價格」，做出來賣掉不會穩賺 */
+export function supplyGap(state: Pick<GameState, 'options'>, caps: InventCaps, inputValue: number, qty: number): number {
+  return Math.max(0, Math.ceil(caps.price * sellRatio(state) * qty) - inputValue)
 }
 
 export function inventPlan(state: GameState, req: InventRequest, crafter: Character): InventPlan {
@@ -396,7 +396,7 @@ export function inventPlan(state: GameState, req: InventRequest, crafter: Charac
   const hours = craftRules.invention.hours
   const needTier = toolTierFor(req.level)
   const tool = toolAccess(state, req.craft, needTier)
-  const cost = caps ? Math.round(supplyGap(caps, inputValue, 1) * locationMult(state)) : 0
+  const cost = caps ? Math.round(supplyGap(state, caps, inputValue, 1) * locationMult(state)) : 0
   const rent = tool.rentPerHour && tool.tier >= needTier ? tool.rentPerHour * hours : 0
   const skill = skillOf(crafter, req.craft).level
   // 做不了的原因全部列出來（種類不對、沒有參考配方時其他的就不用看了）
@@ -473,7 +473,7 @@ export function applyInvent(state: GameState, report: Report, target: string, de
   const design = (raw !== undefined ? sanitizeDesign(raw, caps) : undefined) ?? templateDesign(state, caps)
   const made = producedQty(design.qty, degree)
   // 份數多時花費跟著補足（材料價值要撐得起所有的份數）
-  const gap = supplyGap(caps, plan.inputValue, design.qty)
+  const gap = supplyGap(state, caps, plan.inputValue, design.qty)
   const fee = Math.min(state.money_cc, (made ? Math.round(gap * locationMult(state)) : plan.cost) + plan.rent)
   const effects: RewardEffect[] = fee ? [{ type: 'money', amount: -fee }] : []
   for (const x of plan.inputs) {

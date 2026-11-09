@@ -1,12 +1,12 @@
 <script setup lang="ts">
-// 這個存檔的規則（數值類，見 engine/gameRules.ts）：設定的「這個存檔的規則」與開新遊戲共用。
+// 這個存檔的規則（數值類，見 engine/gameRules.ts）：設定的「遊戲規則」「成人內容」頁與開新遊戲共用。
 // 欄位清空或填回預設值就是預設；改了的項目旁邊可以一鍵恢復。
-// groups：只列這幾類（沒給是全部）；headings：每一類前面加小標題（開新遊戲用）；badge：每一項名稱後面的小標籤（設定頁標「存檔」）。
+// groups：只列這幾類（沒給是全部）；headings：每一類前面加小標題（開新遊戲用）；noAdultMark：小標題不加（成人向）（成人內容頁本身就是成人向）；badge：每一項名稱後面的小標籤（設定頁標「存檔」）。
 import { computed } from 'vue'
 import { RULE_DEFS, RULE_GROUPS, type NumericRule, type RuleGroup } from '@/engine/gameRules'
 import Hint from './ui/Hint.vue'
 
-const props = defineProps<{ modelValue: Partial<Record<NumericRule, number>>; groups?: RuleGroup[]; headings?: boolean; badge?: string }>()
+const props = defineProps<{ modelValue: Partial<Record<NumericRule, number>>; groups?: RuleGroup[]; headings?: boolean; badge?: string; noAdultMark?: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Partial<Record<NumericRule, number>>] }>()
 
 const ALL = Object.keys(RULE_DEFS) as NumericRule[]
@@ -35,7 +35,7 @@ const changed = (key: NumericRule) => props.modelValue[key] !== undefined && pro
 <template>
   <div class="rules">
     <template v-for="g in sections" :key="g.id">
-    <h4 v-if="headings" class="group">{{ g.name }}<span v-if="g.adult" class="muted">（成人向）</span></h4>
+    <h4 v-if="headings" class="group">{{ g.name }}<span v-if="g.adult && !noAdultMark" class="muted">（成人向）</span></h4>
     <label v-for="k in g.keys" :key="k" class="rule" :class="{ changed: changed(k) }">
       <span class="lab">{{ RULE_DEFS[k].label }} <span v-if="badge" class="badge">{{ badge }}</span><Hint :text="RULE_DEFS[k].hint" /></span>
       <span class="val">
@@ -63,5 +63,5 @@ const changed = (key: NumericRule) => props.modelValue[key] !== undefined && pro
 .changed .lab { color: var(--accent-2); }
 .group { margin: 10px 0 2px; font-size: var(--fs-sm); color: var(--accent); }
 .group:first-child { margin-top: 0; }
-.badge { font-size: 11px; padding: 0 5px; border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent); border-radius: 3px; color: var(--accent-2); font-weight: normal; }
+.badge { font-size: 11px; padding: 0 5px; border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent); border-radius: 3px; color: var(--accent-2); font-weight: normal; white-space: nowrap; flex-shrink: 0; }
 </style>

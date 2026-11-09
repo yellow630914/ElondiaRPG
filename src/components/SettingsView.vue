@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { DEFEAT_LOOT_NAME, defeatLootRule } from '@/engine/expedition'
 import type { DefeatLoot, Difficulty } from '@/engine/types'
 import { companionRules } from '@/engine/data'
@@ -63,8 +63,21 @@ function savedPage(): PageId {
   }
 }
 const page = ref<PageId>(savedPage())
+// 手機版的頁籤是一排、可以左右滑：把目前的頁籤捲進畫面（只捲頁籤列，不動整頁）
+const pagesNav = ref<HTMLElement | null>(null)
+function revealTab() {
+  void nextTick(() => {
+    const nav = pagesNav.value
+    const btn = nav?.querySelector<HTMLElement>('button.active')
+    if (!nav || !btn || nav.scrollWidth <= nav.clientWidth) return
+    const left = btn.getBoundingClientRect().left - nav.getBoundingClientRect().left + nav.scrollLeft
+    if (left < nav.scrollLeft || left + btn.offsetWidth > nav.scrollLeft + nav.clientWidth) nav.scrollLeft = left - (nav.clientWidth - btn.offsetWidth) / 2
+  })
+}
+onMounted(revealTab)
 function openPage(id: PageId) {
   page.value = id
+  revealTab()
   try {
     localStorage.setItem(PAGE_KEY, id)
   } catch {
@@ -78,7 +91,7 @@ function doReset() {
 </script>
 
 <template>
-  <nav class="row tabs pages">
+  <nav ref="pagesNav" class="row tabs pages">
     <button v-for="p in PAGES" :key="p.id" :class="{ active: page === p.id }" @click="openPage(p.id)"><GameIcon :name="p.icon" :size="15" />{{ p.label }}</button>
   </nav>
 
@@ -341,7 +354,7 @@ function doReset() {
         <Hint text="每個存檔各自設定，開新遊戲時也能選。" />
       </h2>
       <div class="form">
-        <RuleFields :model-value="saveRules" :groups="['lust', 'adult_events', 'lewd']" headings @update:model-value="game.setRules" />
+        <RuleFields :model-value="saveRules" :groups="['lust', 'adult_events', 'lewd']" headings no-adult-mark @update:model-value="game.setRules" />
       </div>
     </section>
   </template>
@@ -401,7 +414,7 @@ function doReset() {
 
 <style scoped>
 .intro { margin: 0 0 10px; line-height: 1.7; }
-.badge { font-size: 11px; padding: 0 5px; border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent); border-radius: 3px; color: var(--accent-2); font-weight: normal; }
+.badge { font-size: 11px; padding: 0 5px; border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent); border-radius: 3px; color: var(--accent-2); font-weight: normal; white-space: nowrap; flex-shrink: 0; }
 .body-warn { display: flex; gap: 6px; align-items: flex-start; margin: 0; line-height: 1.6; }
 .body-warn .warn-icon { color: var(--danger); flex: none; margin-top: 2px; }
 .form { display: grid; gap: 12px; max-width: 560px; }
@@ -420,6 +433,12 @@ function doReset() {
 .routes { border-collapse: collapse; width: 100%; }
 .routes td { border-bottom: 1px solid var(--border); padding: 6px 8px 6px 0; vertical-align: top; }
 .routes .name { white-space: nowrap; font-weight: 600; }
+/* 手機：頁籤一排、左右滑（不再排成好幾排固定在上面）*/
+@media (max-width: 720px) {
+  .pages { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .pages::-webkit-scrollbar { display: none; }
+  .pages button { flex: 0 0 auto; white-space: nowrap; }
+}
 /* 手機：用途名稱和來源一排，說明換到下一排佔滿寬度 */
 @media (max-width: 720px) {
   .routes, .routes tbody { display: block; }

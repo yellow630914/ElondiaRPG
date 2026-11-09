@@ -143,7 +143,7 @@
 | 短休的時間 | `shortRestHours` | 1 | 0.5～4 小時 | |
 | 長休的時間 | `longRestHours` | 8 | 2～12 小時 | 旅店與家裡照樣住到隔天早上 |
 | 衛兵警戒多久降一級 | `alertDecayDays` | 7 | 1～30 天 | |
-| 賣給商店的價格 | `sellRatio` | 50 | 10～100 % | 賣給商店時拿到基本價的幾 %（`items.json` 的 `sell_ratio`）；打造材料與採集品照舊全價（`material_sell_ratio`）。地點物價、行情、殺價、聲望、收購遞減照常再乘。拿東西抵價（AI 交涉的 `gives`）也照這個比例算（[TRADE](TRADE.md) 第 3 節） |
+| 賣給商店的價格 | `sellRatio` | 50 | 10～100 % | 賣給商店時拿到基本價的幾 %（`items.json` 的 `sell_ratio`）；打造材料與採集品照舊全價（`material_sell_ratio`）。地點物價、行情、殺價、聲望、收購遞減照常再乘。拿東西抵價（AI 交涉的 `gives`）也照這個比例算（[TRADE](TRADE.md) 第 3 節）；自創配方的材料門檻也照這個比例（[CRAFTING](CRAFTING.md)）。有店家折扣時，超過約 65% 就可能在同一間店低買高賣 |
 | 收購遞減 | `sellGlutPct` | 3 | 0～10 % | 同一間店收購同一個貿易類別，每件降這麼多（最多 50%，每天回復 5 件；[TRADE](TRADE.md) 3.4 節）；0 = 不遞減 |
 | 黑市每天的珍品 | `blackMarketGear` | 3 | 0～10 件 | 黑市每天刷新幾件獨特裝備（[ITEMS](ITEMS.md) 3.1 節）；0 = 不賣 |
 | 曝露名聲每天淡掉多少 | `exposureDecay` | 1 | 0～10 點 | 曝露名聲每天、每個地區淡掉幾點；頻率不變，0 = 不會淡掉（[LEWD_STATS](LEWD_STATS.md) 第 4 節）。成人向 |

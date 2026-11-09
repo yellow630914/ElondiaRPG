@@ -118,6 +118,14 @@ describe('inventing', () => {
     expect(inventPlan(state, { ...potion, category: 'food' }, pc(state)).blocked).toContain('不能做料理')
   })
 
+  it('raises the material floor with the save rule for selling prices, so inventing never pays when selling is generous', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    addItem(state.inventory, '藥草', 2)
+    state.options = { ...state.options, sellRatio: 100 }
+    expect(inventPlan(state, potion, pc(state)).cost).toBe(Math.round((340 - 24) * locationMult(state)))
+  })
+
   it('copies a same-level recipe without AI and saves it as a new recipe in this save only', () => {
     const state = game()
     addItem(state.inventory, '煉金工具組', 1)
