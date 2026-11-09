@@ -16,8 +16,11 @@ import { gearName, gearPrice, generateLoadout, syncGear } from './gear'
 import { characterFor, hashString, inLeadEvent, npcRecord, registerNpc } from './npcs'
 import { isNoncombatant } from './party'
 import { Rng } from './rng'
-import { attributeRules } from './data'
+import { attributeRules, lewdRules } from './data'
 import { addItem } from './state'
+import { tagsAllowed } from './content'
+import { addLewdStat, lewdOf, npcLewd } from './lewd'
+import { addEncounter, sexRecordOf } from './sexRecord'
 import { locationOpen } from './storyFlags'
 import type { Character, EquippedGear, GameState, GearSlot, NpcLifeState, NpcNews, NpcRecord } from './types'
 
@@ -34,10 +37,17 @@ export const MAX_CATCH_UP = 10
 
 let enabled = true
 let everyDays = 3
+/** NPC 之間可以發生關係（設定；人際關係裡還可以個別關掉） */
+let pairsAllowed = true
 
-export function setNpcLife(opts: { on?: boolean; days?: number }) {
+export function setNpcLife(opts: { on?: boolean; days?: number; pairs?: boolean }) {
   if (opts.on !== undefined) enabled = opts.on
   if (opts.days !== undefined && Number.isFinite(opts.days)) everyDays = Math.max(1, Math.min(30, Math.round(opts.days)))
+  if (opts.pairs !== undefined) pairsAllowed = opts.pairs
+}
+
+export function npcPairsOn(): boolean {
+  return pairsAllowed
 }
 
 export function npcLifeOn(): boolean {
@@ -103,6 +113,8 @@ export function livingNpcs(state: GameState): NpcRecord[] {
  * 第一次呼叫只記下今天（不補擲遊戲開始以前的日子）
  */
 export function tickNpcLife(state: GameState): string[] {
+  // 這一輪的成人向事件：同一天已經和別人在一起過的 NPC 不再被挑成對象；被挑成對象的人也算有新的近況
+  const ctx: LustCtx = { paired: new Set(), touched: new Set() }
   // 關掉的期間不算：打開時從那天開始數，不補擲關掉的那段日子
   if (!enabled) {
     if (state.npcLife) state.npcLife.last = state.time.day
@@ -120,10 +132,22 @@ export function tickNpcLife(state: GameState): string[] {
     }
     life.last += everyDays
     rolls++
-    for (const rec of livingNpcs(state)) {
-      if (rollOnce(state, rec, life.last)) changed.add(rec.id)
+    ctx.paired.clear()
+    const living = livingNpcs(state)
+    for (const rec of living) {
+      if (rollOnce(state, rec, life.last, ctx)) changed.add(rec.id)
+    }
+    // 其他認識的人（普通人、親密度不夠的冒險者）：只擲成人向的私生活，有事才記近況
+    const livingIds = new Set(living.map((r) => r.id))
+    for (const rec of knownNpcs(state)) {
+      if (livingIds.has(rec.id)) continue
+      const part = rollLust(state, rec, life.last, ctx)
+      if (!part) continue
+      pushNews(state, rec.id, { day: life.last, text: `${part.text}。`, adult: part.adult })
+      changed.add(rec.id)
     }
   }
+  for (const id of ctx.touched) changed.add(id)
   return [...changed]
 }
 
@@ -176,7 +200,7 @@ function placeFor(state: GameState, rng: Rng, rec: NpcRecord): { name: string; d
 }
 
 /** 替一個人擲一次：寫進近況，有升級、換裝時改他的角色資料。回傳有沒有新的近況 */
-export function rollOnce(state: GameState, rec0: NpcRecord, day: number): boolean {
+export function rollOnce(state: GameState, rec0: NpcRecord, day: number, ctx: LustCtx = { paired: new Set(), touched: new Set() }): boolean {
   const rng = new Rng(hashString(`${rec0.id}:life:${day}`))
   const fixed = isFixed(rec0.id)
   const pcLevel = state.party.find((m) => m.isPlayer)?.level ?? 1
@@ -231,12 +255,176 @@ export function rollOnce(state: GameState, rec0: NpcRecord, day: number): boolea
     news.rest = town
     parts.push(`${rng.pick(RESTS)}，在${town}休養了幾天`)
   }
+  // 成人向的私生活（另外的亂數：不影響上面擲出來的事）
+  const lust = rollLust(state, rec0, day, ctx)
+  if (lust) {
+    parts.push(lust.text)
+    news.adult = lust.adult
+  }
   news.text = `${parts.join('，')}。`
+  pushNews(state, rec0.id, news)
+  return true
+}
+
+/** 寫進近況：同一天已經有一則（例如被別人挑成對象）就接在後面 */
+function pushNews(state: GameState, id: string, news: NpcNews) {
   const life = lifeOf(state)
-  const list = (life.news[rec0.id] ??= [])
+  const list = (life.news[id] ??= [])
+  const same = list.find((n) => n.day === news.day && !n.story)
+  if (same) {
+    const { text, ...rest } = news
+    Object.assign(same, { ...rest, ...(same.adult && !news.adult ? { adult: same.adult } : {}) })
+    same.text = `${same.text.replace(/。$/, '')}；${text}`
+    return
+  }
   list.push(news)
   if (list.length > NEWS_KEEP) list.splice(0, list.length - NEWS_KEEP)
-  return true
+}
+
+// ---- 成人向的私生活（docs/NPC_SYSTEM.md 第 14 節、docs/LEWD_STATS.md 第 29 節） ----
+
+/** 一輪擲骰共用：這天已經和別人在一起過的人、被挑成對象的人 */
+export interface LustCtx {
+  paired: Set<string>
+  touched: Set<string>
+}
+
+const lustRules = () => lewdRules.experience.life
+const STRANGERS = ['旅人', '冒險者', '傭兵', '吟遊詩人', '行商', '水手', '酒館的熟客']
+
+/** 認識的人（人際關係裡的 NPC）：不在隊上、沒死、不敵對、沒被制伏、不在等主角的線索事件裡 */
+export function knownNpcs(state: GameState): NpcRecord[] {
+  const inParty = new Set(state.party.map((m) => m.id))
+  const out: NpcRecord[] = []
+  for (const id of Object.keys(state.relationships ?? {})) {
+    if (inParty.has(id) || state.captives?.npcs.includes(id) || inLeadEvent(state, id)) continue
+    const rec = npcRecord(state, id)
+    if (rec && !rec.dead && !rec.hostile) out.push(rec)
+  }
+  return out
+}
+
+/** 這個人的淫亂與順從（有角色資料的看有效值，沒有的照擲） */
+function lustOf(rec: NpcRecord): { lewdness: number; submission: number } {
+  return rec.character ? lewdOf(rec.character) : npcLewd(rec)
+}
+
+/** 內容篩選關掉 NTR 時，和主角夠親密的人不和別人發生關係 */
+function devoted(state: GameState, id: string): boolean {
+  return !tagsAllowed(['ntr']) && (state.relationships?.[id]?.affinity ?? 0) >= lustRules().lover_affinity
+}
+
+/** 這個人可以和其他 NPC 發生關係嗎：設定開著，人際關係裡沒有關掉 */
+export function canPair(state: GameState, id: string): boolean {
+  return pairsAllowed && !state.npcLife?.noPairs?.includes(id)
+}
+
+/** 人際關係裡的開關：這個人可不可以和其他 NPC 發生關係 */
+export function setPairs(state: GameState, id: string, on: boolean) {
+  const life = lifeOf(state)
+  const list = new Set(life.noPairs ?? [])
+  if (on) list.delete(id)
+  else list.add(id)
+  life.noPairs = [...list]
+  if (!life.noPairs.length) delete life.noPairs
+}
+
+/** 內容篩選關掉男性對象時，NPC 之間不挑男性 */
+const maleBlocked = (rec: NpcRecord) => !tagsAllowed(['male_partner']) && (rec.character?.gender ?? rec.gender) === 'male'
+
+/** 挑一個認識的 NPC 當對象：互相寫了關係的、住在同一座城的比較容易 */
+function pickPartner(state: GameState, rng: Rng, rec: NpcRecord, ctx: LustCtx): NpcRecord | undefined {
+  if (!canPair(state, rec.id) || maleBlocked(rec)) return undefined
+  const pick = lustRules().pair_pick
+  const related = new Set(Object.keys(rec.relations ?? {}))
+  const pool: [NpcRecord, number][] = []
+  const seen = new Set<string>()
+  for (const o of [...knownNpcs(state), ...[...related].map((id) => npcRecord(state, id)).filter((r): r is NpcRecord => !!r)]) {
+    if (o.id === rec.id || seen.has(o.id) || o.dead || o.hostile || ctx.paired.has(o.id)) continue
+    seen.add(o.id)
+    if (state.party.some((m) => m.id === o.id) || state.captives?.npcs.includes(o.id) || inLeadEvent(state, o.id)) continue
+    if (!canPair(state, o.id) || devoted(state, o.id) || maleBlocked(o)) continue
+    const w = (related.has(o.id) || o.relations?.[rec.id] ? pick.related : 1) * (o.location && o.location === rec.location ? pick.same_town : 1)
+    pool.push([o, w])
+  }
+  if (!pool.length) return undefined
+  let roll = rng.next() * pool.reduce((s, [, w]) => s + w, 0)
+  for (const [o, w] of pool) if ((roll -= w) < 0) return o
+  return pool[pool.length - 1]![0]
+}
+
+/** 有角色資料的人：發生關係時淫亂成長、記下日子（和主角的親密場景一樣） */
+function grow(state: GameState, id: string, day: number) {
+  const c = state.npcs?.[id]?.character
+  if (!c) return
+  addLewdStat(c, 'lewdness', lewdRules.growth.adult_scene?.lewdness ?? 1)
+  ;(c.lewd ??= { ...lewdRules.defaults }).lastScene = day
+}
+
+/**
+ * 擲一次成人向的私生活：淫亂越高越常發生。娼妓先擲接客；其他人擲和別人發生關係（一夜情、性侍奉、和其他認識的 NPC），
+ * 沒有的話擲自慰。記進性經歷，回傳近況的一句（沒有事時 null）。用「id＋lust＋日子」的固定亂數
+ */
+export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: LustCtx): { text: string; adult: NonNullable<NpcNews['adult']> } | null {
+  const rng = new Rng(hashString(`${rec.id}:lust:${day}`))
+  const r = lustRules()
+  const scale = Math.min(3, everyDays / 3)
+  const { lewdness, submission } = lustOf(rec)
+  const town = rec.location ? locationById(rec.location).name : '城裡'
+  const virgin = sexRecordOf(state, rec.id).virgin
+  const firstNote = (first: boolean) => (first ? `——這是${rec.name}的第一次` : '')
+  // 娼妓：接客
+  if (rec.tags?.includes('prostitute') && !devoted(state, rec.id) && rng.chance(r.client.chance)) {
+    const n = rng.int(r.client.count[0], r.client.count[1]) * Math.max(1, Math.round(scale))
+    const sex = rng.int(Math.ceil(n / 2), n)
+    const text = `在${town}的娼館接了 ${n} 位客人`
+    const first = addEncounter(state, rec.id, { day, with: [{ name: `${n} 位客人` }], sex, service: n, summary: text, anonKeys: Array.from({ length: n }, (_, i) => `client:${day}:${i}`) })
+    grow(state, rec.id, day)
+    ctx.paired.add(rec.id)
+    return { text: text + firstNote(first), adult: { kind: 'client', ...(first ? { first } : {}) } }
+  }
+  const partnerP = Math.min(r.partner.max, (r.partner.base + (lewdness / 100) * r.partner.per_lewd) * scale) * (virgin ? r.partner.virgin_mult : 1)
+  if (!ctx.paired.has(rec.id) && !devoted(state, rec.id) && rng.chance(partnerP)) {
+    const partner = rng.chance(r.weights.pair / (r.weights.pair + r.weights.stranger + r.weights.service)) ? pickPartner(state, rng, rec, ctx) : undefined
+    if (partner) {
+      const sex = rng.int(1, 3)
+      const text = rng.pick([`和${partner.name}在${town}共度了一夜`, `和${partner.name}偷偷發生了關係`, `和${partner.name}喝了酒，一起回了房間`])
+      const first = addEncounter(state, rec.id, { day, with: [{ name: partner.name, id: partner.id }], sex, service: 0, summary: text })
+      const back = `和${rec.name}在${town}共度了一夜`
+      const pFirst = addEncounter(state, partner.id, { day, with: [{ name: rec.name, id: rec.id }], sex, service: 0, summary: back })
+      grow(state, rec.id, day)
+      grow(state, partner.id, day)
+      ctx.paired.add(rec.id)
+      ctx.paired.add(partner.id)
+      ctx.touched.add(partner.id)
+      pushNews(state, partner.id, { day, text: `${back}${pFirst ? `——這是${partner.name}的第一次` : ''}。`, adult: { kind: 'pair', with: rec.id, ...(pFirst ? { first: true } : {}) } })
+      return { text: text + firstNote(first), adult: { kind: 'pair', with: partner.id, ...(first ? { first } : {}) } }
+    }
+    const who = rng.pick(STRANGERS)
+    // 順從高的比較常替人服務
+    const service = rng.chance(r.weights.service * (1 + submission / 50) / (r.weights.service * (1 + submission / 50) + r.weights.stranger))
+    if (service) {
+      const n = rng.int(1, 2)
+      const text = rng.pick([`替一位${who}用嘴服務，抵了一晚的房錢`, `用手替一位${who}解決了，換到一條消息`, `被一位${who}半哄半逼地跪下來服侍了一回`])
+      addEncounter(state, rec.id, { day, with: [{ name: who }], sex: 0, service: n, summary: text, anonKey: `stranger:${day}` })
+      ctx.paired.add(rec.id)
+      return { text, adult: { kind: 'service', with: who } }
+    }
+    const sex = rng.int(1, 3)
+    const text = rng.pick([`在${town}的酒館和一位${who}看對了眼，共度了一夜`, `和同行的${who}在營火邊發生了關係`, `在旅店被一位${who}搭訕，順勢上了床`])
+    const first = addEncounter(state, rec.id, { day, with: [{ name: who }], sex, service: 0, summary: text, anonKey: `stranger:${day}` })
+    grow(state, rec.id, day)
+    ctx.paired.add(rec.id)
+    return { text: text + firstNote(first), adult: { kind: 'stranger', with: who, ...(first ? { first } : {}) } }
+  }
+  const soloP = Math.min(r.solo.max, (r.solo.base + (lewdness / 100) * r.solo.per_lewd) * scale)
+  if (rng.chance(soloP)) {
+    const n = rng.int(1, 1 + Math.floor(lewdness / 25)) * Math.max(1, Math.round(scale))
+    const text = rng.pick([`夜裡一個人睡不著，偷偷自慰了 ${n} 次`, `洗澡的時候忍不住自己碰了起來（${n} 次）`, `看了些不該看的書，夜裡自己解決了 ${n} 次`])
+    addEncounter(state, rec.id, { day, with: [], sex: 0, service: 0, solo: n, summary: text })
+    return { text, adult: { kind: 'solo' } }
+  }
+  return null
 }
 
 /** 這一格能不能換成 next：空著，或現在的沒上鎖（主人、陷阱、寄生、拘束具的鎖）、不是獨特裝備、而且 next 比較好（估價：底材、材料、附魔） */

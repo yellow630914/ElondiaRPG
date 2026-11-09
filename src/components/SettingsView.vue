@@ -295,7 +295,7 @@ function doReset() {
         </label>
         <label class="check">
           <input v-model="settings.npcLife" type="checkbox" /> NPC 會自己成長
-          <Hint text="你在乎的冒險者不在你身邊時也會過自己的日子：你在人際關係裡「關注」的人、留在家裡或寄放在酒館的夥伴、離隊的夥伴，以及親密度 30 以上的冒險者。每隔幾天擲一次：去了哪裡做什麼、升級（最多到主角的等級，落後越多越容易升；固定 NPC 不升級；夥伴的能力與屬性點留給你選）、換一件比較好的武器或護甲（上鎖的、獨特的不換；夥伴換下的寄回行囊；固定 NPC 不換）、受了點傷去休養（只是近況，隨時可以找他）。近況記在人際關係裡，AI 寫重逢的經過時也會知道。" />
+          <Hint text="你在乎的冒險者不在你身邊時也會過自己的日子：你在人際關係裡「關注」的人、留在家裡或寄放在酒館的夥伴、離隊的夥伴，以及親密度 30 以上的冒險者。每隔幾天擲一次：去了哪裡做什麼、升級（最多到主角的等級，落後越多越容易升；固定 NPC 不升級；夥伴的能力與屬性點留給你選）、換一件比較好的武器或護甲（上鎖的、獨特的不換；夥伴換下的寄回行囊；固定 NPC 不換）、受了點傷去休養（只是近況，隨時可以找他）。成人向：認識的 NPC（也包括普通人）也擲自己的私生活，淫亂越高越常發生，記進性經歷。近況記在人際關係裡，AI 寫重逢的經過時也會知道。" />
         </label>
         <template v-if="settings.npcLife">
           <label>
@@ -307,6 +307,10 @@ function doReset() {
             <select v-model="settings.npcLifeAi">
               <option v-for="o in NPC_LIFE_AI" :key="o.id" :value="o.id">{{ o.name }}</option>
             </select>
+          </label>
+          <label class="check">
+            <input v-model="settings.npcPairs" type="checkbox" /> NPC 之間可以發生關係（成人向）
+            <Hint text="認識的 NPC 每次擲骰也會擲自己的私生活：淫亂越高越常發生——自慰、一夜情、替人性侍奉、娼妓接客，以及和另一位認識的 NPC 發生關係（互相有關係描述、住在同一座城的比較容易）。關掉這一項：NPC 之間不會發生關係，其他照舊。人際關係裡也可以個別關掉某個人。內容篩選關了 NTR 時，和你親密度 60 以上的人只會自慰；關了男性對象時，NPC 之間不挑男性。" />
           </label>
         </template>
         <label>

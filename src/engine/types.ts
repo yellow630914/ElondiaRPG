@@ -308,6 +308,9 @@ export interface SexRecord {
   serviceTimes: number
   /** 非自願的次數 */
   forced?: number
+  /** 自慰的次數與最近一次是第幾天 */
+  solo?: number
+  soloLast?: number
   /** 最喜歡的人（名字） */
   favorite?: string
   /** 性癖與偏好（一句話） */
@@ -1193,6 +1196,8 @@ export interface NpcNews {
   /** 夥伴換下、寄回行囊的裝備 */
   returned?: string
   place?: string
+  /** 成人向的私生活（npcLife.ts 的 rollLust）：自慰、一夜情、性侍奉、接客、和其他 NPC 發生關係；有的話這則近況交給「性經歷記錄」的來源潤飾 */
+  adult?: { kind: 'solo' | 'stranger' | 'service' | 'client' | 'pair'; with?: string; first?: boolean }
 }
 
 export interface NpcLifeState {
@@ -1202,4 +1207,6 @@ export interface NpcLifeState {
   news: Record<string, NpcNews[]>
   /** 玩家關注的人 */
   followed?: string[]
+  /** 不和其他 NPC 發生關係的人（人際關係裡關掉的；docs/NPC_SYSTEM.md 第 14 節） */
+  noPairs?: string[]
 }

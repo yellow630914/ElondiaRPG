@@ -57,6 +57,9 @@ export function npcSexSeed(def: { id: string; tags?: string[]; sex?: NpcSexSeed 
   const basis = Math.max(1, rec.partners)
   rec.servicePartners = fixed.service_partners ?? (serves && !virgin ? Math.max(1, Math.round(basis * rule.service_share)) : 0)
   rec.serviceTimes = fixed.service_times ?? (rec.servicePartners ? rec.servicePartners * between(next, rule.times_per) : 0)
+  // 自慰（最後才擲：不影響前面擲出來的值）
+  const solo = fixed.solo ?? between(next, rule.solo ?? [0, 0])
+  if (solo) rec.solo = solo
   if (fixed.first && !virgin) rec.first = { note: fixed.first }
   if (fixed.notes) rec.notes = fixed.notes
   return rec
@@ -128,6 +131,7 @@ export function sexRecordItems(state: GameState, id: string): { label: string; v
   out.push({ label: '發生過關係', value: `${rec.partners} 人・${rec.times} 次` })
   out.push({ label: '性侍奉', value: `${rec.servicePartners} 人・${rec.serviceTimes} 次` })
   if (rec.forced) out.push({ label: '非自願', value: `${rec.forced} 次` })
+  out.push({ label: '自慰', value: `${rec.solo ?? 0} 次${rec.soloLast !== undefined ? `・最近在第 ${rec.soloLast} 天` : ''}` })
   if (rec.favorite) out.push({ label: '最喜歡的人', value: rec.favorite })
   const last = rec.recent[0]
   if (last) out.push({ label: '最近一次的對象', value: names(last) })
@@ -177,6 +181,7 @@ export interface SexUpdate {
   id: string
   sex?: number
   service?: number
+  solo?: number
   with?: { name?: string; id?: string }[]
   forced?: boolean
   summary?: string
@@ -205,6 +210,68 @@ function countPartners(list: string[], keys: string[]): { list: string[]; added:
   return { list: out.slice(-cap), added }
 }
 
+/** 一次經歷（AI 記下的，或 NPC 自己的日子擲出來的） */
+export interface EncounterInput {
+  day: number
+  with: { name: string; id?: string }[]
+  sex: number
+  service: number
+  /** 自慰的次數（不算在最近幾次裡） */
+  solo?: number
+  forced?: boolean
+  summary: string
+  /** 第一次性交時記下的初體驗（沒寫時用 summary） */
+  firstNote?: string
+  report?: string
+  /** 對象寫不出來時用來認人的 key（同一個 key 算同一個人） */
+  anonKey?: string
+  /** 一次好幾個不認識的人（接客）：每個 key 算一個人，with 只用來顯示 */
+  anonKeys?: string[]
+}
+
+/**
+ * 加進一個人的記錄：認得的對象不再算新的人；第一次性交時記下初體驗，有角色資料的人照 experience.first_time 成長；
+ * 有性交或性侍奉時加進最近幾次。回傳這次是不是初體驗
+ */
+export function addEncounter(state: GameState, id: string, e: EncounterInput): boolean {
+  const rec = ensureRecord(state, id)
+  const keys = e.with.map((p) => p.id ?? `name:${p.name}`)
+  // 對象寫不出來（例如一群看不清臉的人）：至少算一個新的人
+  const fresh = e.anonKeys?.length ? e.anonKeys : keys.length ? keys : [e.anonKey ?? `anon:${e.report ?? e.day}`]
+  let first = false
+  if (e.sex) {
+    const r = countPartners(rec.known ?? [], fresh)
+    rec.known = r.list
+    rec.partners += r.added
+    rec.times += e.sex
+    if (rec.virgin) {
+      first = true
+      rec.virgin = false
+      const note = e.firstNote || e.summary
+      rec.first = { day: e.day, ...(e.with.length ? { with: e.with.map((p) => p.name).join('、') } : {}), ...(note ? { note } : {}) }
+      const c = characterOf(state, id)
+      if (c) for (const [k, v] of Object.entries(rules().first_time)) if (v) bumpLewd(c, k as LewdStat, v)
+    }
+  }
+  if (e.service) {
+    const r = countPartners(rec.serviceKnown ?? [], fresh)
+    rec.serviceKnown = r.list
+    rec.servicePartners += r.added
+    rec.serviceTimes += e.service
+  }
+  if (e.solo) {
+    rec.solo = (rec.solo ?? 0) + e.solo
+    rec.soloLast = e.day
+  }
+  if (e.forced) rec.forced = (rec.forced ?? 0) + 1
+  if (e.sex || e.service) {
+    const enc: SexEncounter = { day: e.day, with: e.with, sex: e.sex, service: e.service, summary: e.summary, ...(e.report ? { report: e.report } : {}) }
+    if (e.forced) enc.forced = true
+    rec.recent = [enc, ...rec.recent.filter((x) => !e.report || x.report !== e.report)].slice(0, rules().recent)
+  }
+  return first
+}
+
 /**
  * 套用 AI 回傳的性經歷（驗證後加進記錄）：只收 candidates 裡的人；次數、對象有上限；
  * 第一次性交時記下初體驗，有角色資料的人照 experience.first_time 成長。回傳更新了誰
@@ -220,7 +287,8 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
     if (!ctx.candidates.includes(id) || updated.includes(id)) continue
     const sex = nonNeg(u.sex, caps.times) ?? 0
     const service = nonNeg(u.service, caps.times) ?? 0
-    if (!sex && !service) continue
+    const solo = nonNeg(u.solo, caps.times) ?? 0
+    if (!sex && !service && !solo) continue
     const partners = (Array.isArray(u.with) ? u.with : [])
       .filter((w) => w && typeof w === 'object')
       .map((w) => {
@@ -231,37 +299,16 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
       })
       .filter((w): w is { name: string; id?: string } => !!w)
       .slice(0, caps.partners)
+    addEncounter(state, id, {
+      day, with: sex || service ? partners : [], sex, service, solo, forced: u.forced === true,
+      summary: text(u.summary, 120) || ctx.report.narration?.adult_scene?.slice(0, 120) || '',
+      firstNote: text(u.first_time, 120), report: ctx.report.report_id, anonKey: `anon:${ctx.report.report_id}`,
+    })
     const rec = ensureRecord(state, id)
-    const keys = partners.map((p) => p.id ?? `name:${p.name}`)
-    // 對象寫不出來（例如一群看不清臉的人）：至少算一個新的人
-    const fresh = keys.length ? keys : [`anon:${ctx.report.report_id}`]
-    if (sex) {
-      const r = countPartners(rec.known ?? [], fresh)
-      rec.known = r.list
-      rec.partners += r.added
-      rec.times += sex
-      if (rec.virgin) {
-        rec.virgin = false
-        const note = text(u.first_time, 120) || text(u.summary, 120)
-        rec.first = { day, ...(partners.length ? { with: partners.map((p) => p.name).join('、') } : {}), ...(note ? { note } : {}) }
-        const c = characterOf(state, id)
-        if (c) for (const [k, v] of Object.entries(rules().first_time)) if (v) bumpLewd(c, k as LewdStat, v)
-      }
-    }
-    if (service) {
-      const r = countPartners(rec.serviceKnown ?? [], fresh)
-      rec.serviceKnown = r.list
-      rec.servicePartners += r.added
-      rec.serviceTimes += service
-    }
-    if (u.forced === true) rec.forced = (rec.forced ?? 0) + 1
     const favorite = text(u.favorite, 16)
     if (favorite) rec.favorite = favorite
     const notes = text(u.notes, 120)
     if (notes) rec.notes = notes
-    const e: SexEncounter = { day, with: partners, sex, service, summary: text(u.summary, 120) || ctx.report.narration?.adult_scene?.slice(0, 120) || '', report: ctx.report.report_id }
-    if (u.forced === true) e.forced = true
-    rec.recent = [e, ...rec.recent.filter((x) => x.report !== ctx.report.report_id)].slice(0, rules().recent)
     updated.push(id)
   }
   return updated
@@ -279,14 +326,14 @@ function nameFor(state: GameState, id: string): string {
 }
 
 /** 玩家在角色詳情改的記錄（是不是處子、人數、次數、最喜歡的人、性癖）；清空時回到初始值 */
-export function editSexRecord(state: GameState, id: string, patch: Partial<Pick<SexRecord, 'virgin' | 'partners' | 'times' | 'servicePartners' | 'serviceTimes' | 'favorite' | 'notes'>> | null) {
+export function editSexRecord(state: GameState, id: string, patch: Partial<Pick<SexRecord, 'virgin' | 'partners' | 'times' | 'servicePartners' | 'serviceTimes' | 'solo' | 'favorite' | 'notes'>> | null) {
   if (!patch) {
     if (state.sexRecords) delete state.sexRecords[id]
     return
   }
   const rec = ensureRecord(state, id)
   if (typeof patch.virgin === 'boolean') rec.virgin = patch.virgin
-  for (const k of ['partners', 'times', 'servicePartners', 'serviceTimes'] as const) {
+  for (const k of ['partners', 'times', 'servicePartners', 'serviceTimes', 'solo'] as const) {
     const n = nonNeg(patch[k])
     if (n !== undefined) rec[k] = n
   }

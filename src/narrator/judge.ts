@@ -5,7 +5,7 @@
 import { pcTagSummary } from '@/engine/pcTags'
 import { inActiveSquad, squadIds } from '@/engine/squads'
 import { lewdSummary } from '@/engine/lewd'
-import { sexRecordsNote } from '@/engine/sexRecord'
+import { sexRecordsNote, sexRecordText } from '@/engine/sexRecord'
 import { charmNote } from '@/engine/charm'
 import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
@@ -525,7 +525,7 @@ export function buildRosterPrompt(state: GameState, locId: string): Prompt | nul
  * NPC 的近況（engine/npcLife.ts）：程式擲出這段時間發生了什麼（去了哪裡、升級、換裝、休養），
  * 請 AI 依角色的性格、身分、和主角的關係與共同記憶寫成一段。數值、等級、裝備都照程式的結果，不可更改或增加。
  */
-export function buildNewsPrompt(state: GameState, items: { id: string; news: NpcNews[] }[]): Prompt | null {
+export function buildNewsPrompt(state: GameState, items: { id: string; news: NpcNews[] }[], adult = false): Prompt | null {
   if (!items.length) return null
   const blocks = items.map(({ id, news }) => {
     const ctx = selectContext(state, { participants: [id], maxMemories: 4 })
@@ -535,11 +535,13 @@ export function buildNewsPrompt(state: GameState, items: { id: string; news: Npc
       `## ${npcDetail(state, id, '角色')}`,
       rel ? `和主角：${rel.toPlayer}｜親密度 ${rel.affinity}（${affinityStage(rel.affinity)}）` : '',
       memories.length ? `和主角的共同記憶：\n${memories.map((m) => `- ${m.summary}`).join('\n')}` : '',
+      // 成人向的私生活：附上性經歷，AI 才寫得出「第一次」、和誰熟
+      adult ? `性經歷：${sexRecordText(state, id)}` : '',
       `這段時間（程式擲出來的，要照寫）：\n${news.map((n) => `- day ${n.day}：${n.text}`).join('\n')}`,
     ].filter(Boolean).join('\n')
   }).join('\n\n')
   const pc = state.party.find((m) => m.isPlayer)!
-  const system = `你是奇幻 RPG《埃隆迪亞大陸》的寫手。下面這些角色是主角${pc.name}認識的冒險者，最近不在主角身邊。請依每個人的性格、身分、和主角的關係與共同記憶，把程式擲出的「這段時間」（可能有好幾件事）寫成一段近況（每人一段；第三人稱，像是主角聽人說起或之後聽本人講起的樣子）。近況寫的是他自己的日子：大部分不要提到主角，也不要用想起主角、惦記主角收尾；只有和主角很親近（親密度高）或這段經歷和主角有關時才可以帶一句，而且同一批最多一則。只能寫程式列出的事：去的地方、做的事、升到的等級、換上的裝備、受傷休養都照寫，不可更改、不可增加別的戰果、物品或人物，也不要寫成他已經死去或離開這片大陸。每段 ≤ 150 字。只輸出 JSON：{"news":[{"id":"…","day":數字,"story":"…"}]}（每個人一則，把他這段時間的事依序寫進同一段；day 填他最後一件事的 day）`
+  const system = `你是奇幻 RPG《埃隆迪亞大陸》的寫手。下面這些角色是主角${pc.name}認識的冒險者，最近不在主角身邊。請依每個人的性格、身分、和主角的關係與共同記憶，把程式擲出的「這段時間」（可能有好幾件事）寫成一段近況（每人一段；第三人稱，像是主角聽人說起或之後聽本人講起的樣子）。近況寫的是他自己的日子：大部分不要提到主角，也不要用想起主角、惦記主角收尾；只有和主角很親近（親密度高）或這段經歷和主角有關時才可以帶一句，而且同一批最多一則。只能寫程式列出的事：去的地方、做的事、升到的等級、換上的裝備、受傷休養都照寫，不可更改、不可增加別的戰果、物品或人物，也不要寫成他已經死去或離開這片大陸。每段 ≤ 150 字。${adult ? '這批近況有成人向的私生活（自慰、和誰發生了關係、性侍奉、接客）：照程式擲出的對象與次數寫，可以寫得直白、帶一點情慾的細節，但仍是一段近況，不要寫成完整的場景；只記錄成年的角色。' : ''}只輸出 JSON：{"news":[{"id":"…","day":數字,"story":"…"}]}（每個人一則，把他這段時間的事依序寫進同一段；day 填他最後一件事的 day）`
   const user = `主角：${pc.name}（現在在${locationById(state.location).name}）\n\n${blocks}`
   return { system, user }
 }

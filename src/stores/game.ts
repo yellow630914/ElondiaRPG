@@ -66,7 +66,7 @@ import * as partyEngine from '@/engine/party'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
 import * as fieldCast from '@/engine/fieldCast'
-import type { DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, Report, TattooPlace } from '@/engine/types'
+import type { DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, NpcNews, Report, TattooPlace } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildNewsPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -497,23 +497,34 @@ export const useGame = defineStore('game', () => {
   // ---- NPC 自己的日子（npcLife.ts）：近況交給 AI 寫 ----
   const polishing = new Set<string>()
 
-  /** 請 AI 把這些人還沒寫的近況寫成一段（失敗時保留規則寫的短句） */
+  /**
+   * 請 AI 把這些人還沒寫的近況寫成一段（失敗時保留規則寫的短句）。
+   * 帶成人向私生活的人另外一批，交給「性經歷記錄」的來源（要願意處理成人內容）
+   */
   async function polishNews(ids: string[]) {
     const s = state.value
-    const settings = useSettings()
-    if (!s || !settings.ready('life')) return
+    if (!s) return
     const items = ids.filter((id) => !polishing.has(id))
       .map((id) => ({ id, news: npcLife.newsOf(s, id).filter((n) => !n.story) }))
       .filter((x) => x.news.length)
-    const built = buildNewsPrompt(s, items)
+    const adult = items.filter((x) => x.news.some((n) => n.adult))
+    const plain = items.filter((x) => !adult.includes(x))
+    await Promise.all([polishBatch(plain, 'life'), polishBatch(adult, 'sexlog')])
+  }
+
+  async function polishBatch(items: { id: string; news: NpcNews[] }[], feature: 'life' | 'sexlog') {
+    const s = state.value
+    const settings = useSettings()
+    if (!s || !items.length || !settings.ready(feature)) return
+    const built = buildNewsPrompt(s, items, feature === 'sexlog')
     if (!built) return
     // 近況是給玩家看的正文：輸出簡體時整份提示詞轉成簡體（和敘事一樣，docs/I18N.md 第 4 節）
     const prompt = settings.language === 'zh-Hans' ? { system: toSimplifiedText(built.system), user: toSimplifiedText(built.user) } : built
     for (const x of items) polishing.add(x.id)
-    const src = settings.sourceFor('life')
+    const src = settings.sourceFor(feature)
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u, originOf('life', src)))) as { news?: { id: string; day: number; story: string }[] }
+      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(OTHER_USAGE, u, originOf(feature, src)))) as { news?: { id: string; day: number; story: string }[] }
       // 等 AI 的時候讀了別的檔：不要寫進去
       if (state.value !== s) return
       npcLife.applyNewsStories(s, Array.isArray(raw.news) ? raw.news : [])
@@ -1529,6 +1540,8 @@ export const useGame = defineStore('game', () => {
     walkTo, stopWalk, walkTarget,
     // NPC 自己的日子：關注、手動請 AI 寫近況
     setFollowed: (id: string, on: boolean) => run((s) => npcLife.setFollowed(s, id, on)),
+    // 這個人可不可以和其他 NPC 發生關係（人際關係裡的開關）
+    setNpcPairs: (id: string, on: boolean) => run((s) => npcLife.setPairs(s, id, on)),
     polishNews,
     // 性經歷（sexRecord.ts）：手動請 AI 記下、玩家修改
     recordSex, recordingSex, editSexRecord,

@@ -150,6 +150,13 @@ describe('性經歷：AI 的記錄', () => {
     expect(rec.servicePartners).toBe(lewdRules.experience.caps.partners)
   })
 
+  it('只有自慰：記進自慰次數，不失去處子、不進最近幾次', () => {
+    const { state } = game()
+    const r = intimate(state)
+    expect(applySexUpdates(state, [{ id: 'pc', solo: 2, summary: '一個人在房裡' }], { report: r, candidates: ['pc'] })).toEqual(['pc'])
+    expect(sexRecordOf(state, 'pc')).toMatchObject({ virgin: true, solo: 2, soloLast: r.time.end.day, recent: [] })
+  })
+
   it('記過的日誌不再記；玩家可以修改或回到初始值', () => {
     const { state } = game()
     const r = intimate(state)

@@ -22,6 +22,11 @@ import { genderName, GENDER_IDS } from '@/engine/data'
 import { encounterText, sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 
 const game = useGame()
+// NPC 之間發生關係：設定是總開關，這裡個別關掉（npcLife.ts 的 canPair）
+const pairable = (id: string) => !s.value.npcLife?.noPairs?.includes(id)
+const inParty = (id: string) => s.value.party.some((m) => m.id === id)
+// 有成人向私生活的近況交給「性經歷記錄」的來源寫
+const newsFeature = (id: string) => (newsOf(s.value, id).some((n) => !n.story && n.adult) ? 'sexlog' : 'life')
 // 性經歷（成人向，docs/LEWD_STATS.md 第 29 節）：摺起來，標題只寫經驗與人數
 function sexBrief(id: string): string {
   const items = sexRecordItems(s.value, id)
@@ -271,7 +276,11 @@ const suggestionDraft = reactive<Record<string, string>>({})
               @click="game.setFollowed(r.id, !followed(r.id))"
             ><GameIcon name="star" :size="13" /> {{ followed(r.id) ? '已關注' : '關注' }}</button>
             <span v-if="settings.npcLife && living.has(r.id) && !followed(r.id)" class="small muted">會自己成長</span>
-            <button v-if="settings.npcLife && unpolished(r.id) && settings.ready('life')" class="small" title="請 AI 依他的性格與和你的記憶，把近況寫成一段" @click="game.polishNews([r.id])"><GameIcon name="feather" :size="13" /> 寫成一段</button>
+            <label
+              v-if="settings.npcLife && settings.npcPairs && !inParty(r.id)" class="small check pairs"
+              title="成人向：這個人會不會和其他認識的 NPC 發生關係（設定 → 遊戲規則的「NPC 之間可以發生關係」是總開關）。關掉時只剩自慰、一夜情與性侍奉這類私生活"
+            ><input type="checkbox" :checked="pairable(r.id)" @change="game.setNpcPairs(r.id, ($event.target as HTMLInputElement).checked)" /> 和其他 NPC 發生關係</label>
+            <button v-if="settings.npcLife && unpolished(r.id) && settings.ready(newsFeature(r.id))" class="small" title="請 AI 依他的性格與和你的記憶，把近況寫成一段" @click="game.polishNews([r.id])"><GameIcon name="feather" :size="13" /> 寫成一段</button>
             <button
               v-if="promotable(r.id)" class="small"
               :title="(content.readOnly ? `${VANILLA_NAME}不能直接修改：會自動建立自己的世界，這場遊戲也改用它。` : '') + '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
@@ -385,6 +394,7 @@ const suggestionDraft = reactive<Record<string, string>>({})
 .layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.2fr); gap: 14px; align-items: start; }
 .rel { border-top: 1px solid var(--border); padding: 10px 0; display: grid; gap: 6px; }
 .news { margin-bottom: 2px; }
+.pairs { display: inline-flex; align-items: center; gap: 4px; }
 .affinity { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--danger), #5a4a33 50%, var(--good)); }
 .affinity span { position: absolute; top: -3px; width: 4px; height: 12px; margin-left: -2px; background: var(--text); border-radius: 2px; }
 dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }

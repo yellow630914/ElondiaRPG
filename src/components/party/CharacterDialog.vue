@@ -80,10 +80,10 @@ const combat = computed<StatItem[]>(() => {
 const sexId = computed(() => (m.value.isPlayer ? 'pc' : m.value.id))
 const sexRec = computed(() => sexRecordOf(s.value, sexId.value))
 const sexItems = computed<StatItem[]>(() => sexRecordItems(s.value, sexId.value).map((x) => ({ label: x.label, value: x.value, ...(x.value.length > 12 ? { wide: true } : {}) })))
-const sexDraft = reactive({ virgin: true, partners: 0, times: 0, servicePartners: 0, serviceTimes: 0, favorite: '', notes: '' })
+const sexDraft = reactive({ virgin: true, partners: 0, times: 0, servicePartners: 0, serviceTimes: 0, solo: 0, favorite: '', notes: '' })
 function resetSexDraft() {
   const r = sexRec.value
-  Object.assign(sexDraft, { virgin: r.virgin, partners: r.partners, times: r.times, servicePartners: r.servicePartners, serviceTimes: r.serviceTimes, favorite: r.favorite ?? '', notes: r.notes ?? '' })
+  Object.assign(sexDraft, { virgin: r.virgin, partners: r.partners, times: r.times, servicePartners: r.servicePartners, serviceTimes: r.serviceTimes, solo: r.solo ?? 0, favorite: r.favorite ?? '', notes: r.notes ?? '' })
 }
 function saveSex() {
   game.editSexRecord(sexId.value, { ...sexDraft })
@@ -272,6 +272,7 @@ function saveTags() {
                 <label>次數 <input v-model.number="sexDraft.times" type="number" min="0" /></label>
                 <label>侍奉人數 <input v-model.number="sexDraft.servicePartners" type="number" min="0" /></label>
                 <label>侍奉次數 <input v-model.number="sexDraft.serviceTimes" type="number" min="0" /></label>
+                <label>自慰次數 <input v-model.number="sexDraft.solo" type="number" min="0" /></label>
               </div>
               <label class="wide">最喜歡的人 <input v-model="sexDraft.favorite" maxlength="16" /></label>
               <label class="wide">性癖與偏好 <input v-model="sexDraft.notes" maxlength="120" /></label>

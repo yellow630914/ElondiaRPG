@@ -48,12 +48,13 @@ const draft = ref<NpcMod>(current())
 const rolledLewd = computed(() => npcLewd({ id: props.id, tags: draft.value.tags, ...(draft.value.sex ? { sex: draft.value.sex } : {}) }))
 // 初始的性經歷：空著時依標籤與 id 擲（灰字顯示擲出來的值；docs/LEWD_STATS.md 第 29 節）
 const rolledSex = computed(() => npcSexSeed({ id: props.id, tags: draft.value.tags, ...(draft.value.sex ? { sex: draft.value.sex } : {}) }))
-type SexKey = 'partners' | 'times' | 'service_partners' | 'service_times'
+type SexKey = 'partners' | 'times' | 'service_partners' | 'service_times' | 'solo'
 const SEX_FIELDS: { k: SexKey; label: string; rolled: (r: SexRecord) => number }[] = [
   { k: 'partners', label: '關係人數', rolled: (r) => r.partners },
   { k: 'times', label: '次數', rolled: (r) => r.times },
   { k: 'service_partners', label: '侍奉人數', rolled: (r) => r.servicePartners },
   { k: 'service_times', label: '侍奉次數', rolled: (r) => r.serviceTimes },
+  { k: 'solo', label: '自慰次數', rolled: (r) => r.solo ?? 0 },
 ]
 function setSex(k: SexKey | 'virgin' | 'first' | 'notes', v: string) {
   const sx = { ...(draft.value.sex ?? {}) }

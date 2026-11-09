@@ -19,7 +19,7 @@ import { setLongRestGap } from '@/engine/rest'
   setMonsterGirl('off')
   setMonsterGirlChance(100)
   setDefeatCompanion('not_masc')
-  setNpcLife({ on: true, days: 3 })
+  setNpcLife({ on: true, days: 3, pairs: true })
   setLeadPool({ days: 7 })
   setStepMinutes(undefined)
   setLongRestGap(undefined)

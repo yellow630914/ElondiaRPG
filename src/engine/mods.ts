@@ -1442,7 +1442,7 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
   if (raw.sex && typeof raw.sex === 'object') {
     const sx: NonNullable<NpcDef['sex']> = {}
     if (typeof raw.sex.virgin === 'boolean') sx.virgin = raw.sex.virgin
-    for (const k of ['partners', 'times', 'service_partners', 'service_times'] as const) {
+    for (const k of ['partners', 'times', 'service_partners', 'service_times', 'solo'] as const) {
       const v = raw.sex[k]
       if (typeof v === 'number' && Number.isFinite(v)) sx[k] = int(v, 0, 100000, 0)
     }

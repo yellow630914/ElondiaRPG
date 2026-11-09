@@ -2428,8 +2428,24 @@ export interface SexSeedRule {
   times_per: [number, number]
   /** 有性侍奉經驗的機率 */
   service: number
+  /** 自慰的次數範圍 */
+  solo: [number, number]
   /** 性侍奉的人數約為 partners × service_share */
   service_share: number
+}
+
+/** NPC 自己的日子裡的成人向事件（lewd.json 的 experience.life；docs/NPC_SYSTEM.md 第 14 節） */
+export interface NpcLustRules {
+  /** 每次擲骰（每 3 天算一份）的機率 = base + 淫亂 / 100 × per_lewd，最多 max */
+  solo: { base: number; per_lewd: number; max: number }
+  partner: { base: number; per_lewd: number; max: number; virgin_mult: number }
+  /** 有對象時，各種事件的權重；順從高的性侍奉 × (1 + 順從 / 50)；和其他 NPC 的對象挑選：互相有關係描述 × related、同一個城 × same_town */
+  weights: { stranger: number; service: number; pair: number }
+  pair_pick: { related: number; same_town: number }
+  /** 娼妓（標籤 prostitute）每次擲骰接客的機率與人數 */
+  client: { chance: number; count: [number, number] }
+  /** 親密度到這裡、而內容篩選關了 NTR 時，只會自慰（不和別人發生關係） */
+  lover_affinity: number
 }
 
 /** 固定 NPC 指定的初始性經歷（內容頁籤；沒寫的欄位照擲） */
@@ -2439,6 +2455,8 @@ export interface NpcSexSeed {
   times?: number
   service_partners?: number
   service_times?: number
+  /** 自慰的次數 */
+  solo?: number
   /** 初體驗（一句話） */
   first?: string
   /** 性癖與偏好（一句話） */
@@ -2457,6 +2475,8 @@ export const lewdRules = lewdJson as unknown as {
     npc_tags: Record<string, Partial<SexSeedRule>>
     lewdness: { virgin_mult: number; partner_bonus: [number, number][] }
     first_time: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+    /** NPC 自己的日子裡的成人向事件（npcLife.ts 的 rollLust） */
+    life: NpcLustRules
   }
   combat: {
     endurance_max_div: number; sensitivity_base: number; sensitivity_div: number; lewd_start_per: number; lewd_start_ratio: number; lewd_decay_div: number
