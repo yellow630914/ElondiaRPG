@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import mapUrl from '../../assets/map/elondia-map.webp'
+import eastMapUrl from '../../assets/map/yanhua-map.webp'
 import { geography, locationById } from '@/engine/data'
 import { DUNGEON_LAYERS } from '@/engine/grid'
 import { layerRank } from '@/engine/materialQuests'
@@ -27,10 +28,12 @@ const layerRankHere = computed(() => {
   return id ? layerRank(a.location, id) : undefined
 })
 const showWorldMap = ref(false)
-/** 世界地圖的兩張圖：世界總覽（兩塊大陸與東海，標出聚落）、埃隆迪亞大陸（西大陸的細節） */
-const mapTab = ref<'overview' | 'continent'>('overview')
+/** 世界地圖的三張圖：世界總覽（兩塊大陸與東海，標出聚落）、埃隆迪亞大陸（西大陸的細節）、炎華之地（東大陸的細節） */
+const mapTab = ref<'overview' | 'continent' | 'east'>('overview')
 function openWorldMap() {
-  mapTab.value = here.value.region.startsWith('yanhua') || here.value.region === 'east_sea' ? 'overview' : mapTab.value
+  // 在東大陸時直接看東大陸的圖；在東海群島看總覽；回到西大陸時從東大陸的圖換回上次看的西大陸或總覽
+  const r = here.value.region
+  mapTab.value = r.startsWith('yanhua') ? 'east' : r === 'east_sea' ? 'overview' : mapTab.value === 'east' ? 'overview' : mapTab.value
   showWorldMap.value = true
 }
 </script>
@@ -61,9 +64,11 @@ function openWorldMap() {
     <nav class="map-tabs" role="tablist">
       <button role="tab" :aria-selected="mapTab === 'overview'" :class="{ on: mapTab === 'overview' }" @click="mapTab = 'overview'">世界總覽</button>
       <button role="tab" :aria-selected="mapTab === 'continent'" :class="{ on: mapTab === 'continent' }" @click="mapTab = 'continent'">埃隆迪亞大陸</button>
+      <button role="tab" :aria-selected="mapTab === 'east'" :class="{ on: mapTab === 'east' }" @click="mapTab = 'east'">炎華之地</button>
     </nav>
     <WorldOverviewMap v-if="mapTab === 'overview'" :here="here.id" />
-    <img v-else :src="mapUrl" alt="埃隆迪亞大陸地圖" class="world-map" />
+    <img v-else-if="mapTab === 'continent'" :src="mapUrl" alt="埃隆迪亞大陸地圖" class="world-map" />
+    <img v-else :src="eastMapUrl" alt="炎華之地（東大陸）地圖：炎華南域與炎華北原（媞丹）" class="world-map" />
     <p class="small muted">目前位置：{{ here.name }}（{{ geography.regions.find((r) => r.id === here.region)?.name }}）</p>
   </AppDialog>
 </template>

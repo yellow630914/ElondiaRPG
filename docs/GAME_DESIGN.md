@@ -123,7 +123,7 @@
 ## 6. 專案結構
 
 ```
-assets/map/           世界地圖：埃隆迪亞大陸、世界總覽（world-overview.json 是聚落在總覽圖上的位置）
+assets/map/           世界地圖：埃隆迪亞大陸、炎華之地（東大陸，yanhua-map.webp）、世界總覽（world-overview.json 是聚落在總覽圖上的位置）
 data/worldbook/       原始世界書（SillyTavern 格式，保持原樣以便回頭用酒館編輯）
 data/world/           地理、聚落地圖與生成參數、具名 NPC、生成 NPC 的素材
 data/rules/           各系統的規則數值（改 JSON 就能調整，不必動程式）
