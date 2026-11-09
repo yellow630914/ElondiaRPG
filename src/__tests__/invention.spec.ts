@@ -122,7 +122,7 @@ describe('inventing', () => {
     const state = game()
     addItem(state.inventory, '煉金工具組', 1)
     addItem(state.inventory, '藥草', 2)
-    state.options = { ...state.options, sellRatio: 100 }
+    state.options = { ...state.options!, sellRatio: 100 }
     expect(inventPlan(state, potion, pc(state)).cost).toBe(Math.round((340 - 24) * locationMult(state)))
   })
 
