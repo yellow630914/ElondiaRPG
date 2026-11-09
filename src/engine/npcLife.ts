@@ -16,7 +16,7 @@ import { gearName, gearPrice, generateLoadout, syncGear } from './gear'
 import { characterFor, hashString, inLeadEvent, npcRecord, registerNpc } from './npcs'
 import { isNoncombatant } from './party'
 import { Rng } from './rng'
-import { attributeRules, lewdRules } from './data'
+import { attributeRules, lewdRules, namedNpcById } from './data'
 import { addItem } from './state'
 import { tagsAllowed } from './content'
 import { addLewdStat, lewdOf, npcLewd } from './lewd'
@@ -329,6 +329,14 @@ export function setPairs(state: GameState, id: string, on: boolean) {
   if (!life.noPairs.length) delete life.noPairs
 }
 
+/**
+ * 固定 NPC 寫了還沒有經驗（NpcDef.sex.virgin）而且現在還是處子：私生活只自慰，第一次留給劇情或主角
+ * （伊莎朵拉、艾琳……的戀愛線有和主角的第一次）
+ */
+export function keepsFirst(state: GameState, id: string): boolean {
+  return namedNpcById(id)?.sex?.virgin === true && sexRecordOf(state, id).virgin
+}
+
 /** 內容篩選關掉男性對象時，NPC 之間不挑男性 */
 const maleBlocked = (rec: NpcRecord) => !tagsAllowed(['male_partner']) && (rec.character?.gender ?? rec.gender) === 'male'
 
@@ -343,7 +351,7 @@ function pickPartner(state: GameState, rng: Rng, rec: NpcRecord, ctx: LustCtx): 
     if (o.id === rec.id || seen.has(o.id) || o.dead || o.hostile || ctx.paired.has(o.id)) continue
     seen.add(o.id)
     if (state.party.some((m) => m.id === o.id) || state.captives?.npcs.includes(o.id) || inLeadEvent(state, o.id)) continue
-    if (!canPair(state, o.id) || devoted(state, o.id) || maleBlocked(o)) continue
+    if (!canPair(state, o.id) || devoted(state, o.id) || maleBlocked(o) || keepsFirst(state, o.id)) continue
     const w = (related.has(o.id) || o.relations?.[rec.id] ? pick.related : 1) * (o.location && o.location === rec.location ? pick.same_town : 1)
     pool.push([o, w])
   }
@@ -373,8 +381,10 @@ export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: Lus
   const town = rec.location ? locationById(rec.location).name : '城裡'
   const virgin = sexRecordOf(state, rec.id).virgin
   const firstNote = (first: boolean) => (first ? `——這是${rec.name}的第一次` : '')
+  // 第一次留給劇情或主角的人：只擲自慰
+  const chaste = keepsFirst(state, rec.id)
   // 娼妓：接客
-  if (rec.tags?.includes('prostitute') && !devoted(state, rec.id) && rng.chance(r.client.chance)) {
+  if (rec.tags?.includes('prostitute') && !devoted(state, rec.id) && !chaste && rng.chance(r.client.chance)) {
     const n = rng.int(r.client.count[0], r.client.count[1]) * Math.max(1, Math.round(scale))
     const sex = rng.int(Math.ceil(n / 2), n)
     const text = `在${town}的娼館接了 ${n} 位客人`
@@ -384,7 +394,7 @@ export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: Lus
     return { text: text + firstNote(first), adult: { kind: 'client', ...(first ? { first } : {}) } }
   }
   const partnerP = Math.min(r.partner.max, (r.partner.base + (lewdness / 100) * r.partner.per_lewd) * scale) * (virgin ? r.partner.virgin_mult : 1)
-  if (!ctx.paired.has(rec.id) && !devoted(state, rec.id) && rng.chance(partnerP)) {
+  if (!ctx.paired.has(rec.id) && !devoted(state, rec.id) && !chaste && rng.chance(partnerP)) {
     const partner = rng.chance(r.weights.pair / (r.weights.pair + r.weights.stranger + r.weights.service)) ? pickPartner(state, rng, rec, ctx) : undefined
     if (partner) {
       const sex = rng.int(1, 3)

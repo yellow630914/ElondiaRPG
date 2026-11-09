@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setContentFilters } from '@/engine/content'
 import { enterLocation } from '@/engine/grid'
-import { generateNpc, registerNpc } from '@/engine/npcs'
+import { generateNpc, npcRecord, registerNpc } from '@/engine/npcs'
 import { canPair, knownNpcs, newsOf, rollLust, setNpcLife, setPairs, tickNpcLife, type LustCtx } from '@/engine/npcLife'
 import { sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 import { ensureRelationship, setAffinity } from '@/engine/social'
@@ -140,5 +140,29 @@ describe('NPC 的私生活', () => {
     const prompt = buildNewsPrompt(state, [{ id: rec.id, news }], true)!
     expect(prompt.user).toContain('性經歷：')
     expect(prompt.system).toContain('成人向的私生活')
+  })
+})
+
+describe('指定處子的固定 NPC', () => {
+  it('私生活只自慰，也不會被挑成對象；第一次留給劇情或主角', () => {
+    setContentFilters({ ntr: true })
+    const state = game()
+    const ids = ['npc_aya', 'npc_isadora', 'npc_eve', 'npc_eileen', 'npc_oboro', 'npc_td_wanning']
+    for (const id of ids) {
+      const r = npcRecord(state, id)!
+      ensureRelationship(state, r)
+      setAffinity(state, id, 20)
+    }
+    for (let d = 3; d <= 360; d += 3) {
+      state.time.day = d
+      tickNpcLife(state)
+    }
+    for (const id of ids) {
+      const rec = sexRecordOf(state, id)
+      expect(rec.virgin).toBe(true)
+      expect(rec.recent).toHaveLength(0)
+    }
+    // 有人自慰（私生活照擲）
+    expect(ids.some((id) => (sexRecordOf(state, id).soloLast ?? 0) > 0)).toBe(true)
   })
 })
