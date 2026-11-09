@@ -9,6 +9,7 @@ import { useGame } from '@/stores/game'
 import AppDialog from './AppDialog.vue'
 import AreaMap from './AreaMap.vue'
 import ExpeditionBar from './ExpeditionBar.vue'
+import TownTagChips from './TownTagChips.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import WorldOverviewMap from './WorldOverviewMap.vue'
@@ -44,6 +45,7 @@ function openWorldMap() {
           <span v-if="layerName">・{{ layerName }}</span>
           <span v-if="layerRankHere" class="tag">建議 {{ layerRankHere }} 級</span>
           <span v-if="here.type !== 'dungeon'" class="tag" title="魅氣濃度（1～4）：曝露名聲累積的速度、近郊的怪物發情的機率、城裡的風氣">魅氣・{{ charmName(charmLevel(here.id)) }}</span>
+          <TownTagChips v-if="here.type !== 'dungeon'" :location="here.id" />
         </p>
       </div>
       <div class="row tools">
@@ -72,11 +74,13 @@ function openWorldMap() {
 .map-tabs button.on { background: var(--accent); color: #fff; border-color: var(--accent); }
 .title { display: flex; align-items: center; gap: 6px; margin-bottom: 2px; }
 .title :deep(.game-icon) { color: var(--accent); }
-.tools { gap: 6px; flex-wrap: nowrap; }
-/* 手機：標題與工具同一排，世界地圖只剩圖示 */
+.tools { gap: 6px; flex-wrap: nowrap; flex: none; }
+.tools button { white-space: nowrap; }
+/* 標題與工具同一排：地名列加了行情標籤，太長時標籤在左邊換行，不把工具擠到下一排 */
+.head { flex-wrap: nowrap; }
+.head > div:first-child { min-width: 0; }
+/* 手機：世界地圖只剩圖示 */
 @media (max-width: 720px) {
-  .head { flex-wrap: nowrap; }
-  .head > div:first-child { min-width: 0; }
   .wm { display: none; }
 }
 </style>
