@@ -208,6 +208,46 @@ describe('other characters following into the special areas (club_lines42.py)', 
   })
 })
 
+describe('more characters following into the special areas (club_lines43.py)', () => {
+  const story = (id: string) => stories.find((s) => s.id === id)!
+  const QUESTS: [string, string, string[]][] = [
+    ['kar_ebony_night', 'lm_ebony_night', ['kar_lover', 'aya_club']],
+    ['oboro_ebony_night', 'lm_ebony_night', ['oboro_lover', 'aya_club']],
+    ['camilla_honor_hole', 'lm_honor_hole', ['wl_lovers', 'wl_1_done']],
+    ['zero_honor_hole', 'lm_honor_hole', ['zero_lover', 'wl_1_done']],
+    ['club_chihuan_wild', 'lm_td_wild_horse', ['yach_lover', 'tdwn_club']],
+    ['club_urina_wild', 'lm_td_wild_horse', ['tdur_lover', 'tdwn_club']],
+    ['club_hailan_wild', 'lm_td_wild_horse', ['tdch_lover', 'tdch_x_done', 'tdwn_club']],
+    ['club_shen_faceless', 'lm_yh_faceless', ['ycsz_lover', 'ycsz_x_done', 'yasz_club']],
+    ['club_yaoting_faceless', 'lm_yh_faceless', ['ycyt_lover', 'ycyt_x_done', 'yasz_club']],
+  ]
+
+  it('needs the place already open and the character as a lover, is marked NTR, and unlocks her scenes there', () => {
+    for (const [id, lm, flags] of QUESTS) {
+      const s = story(id)
+      expect(s.start.requires?.flags, id).toEqual(flags)
+      expect(s.tags, id).toContain('ntr')
+      // 地標的開放旗標一定在接取條件裡
+      expect(flags, id).toEqual(expect.arrayContaining(landmarks[lm]!.open!.flags!))
+      const done = s.nodes.at(-1)!.options!.map((o) => o.success!.set_flags![0]!)
+      expect(new Set(done).size, id).toBe(1)
+      expect(landmarks[lm]!.scenes!.some((sc) => sc.requires?.flags?.includes(done[0]!)), id).toBe(true)
+    }
+    for (const id of ['lm_ebony_night', 'lm_honor_hole', 'lm_td_wild_horse']) expect(landmarks[id]!.scenes, id).toHaveLength(8)
+  })
+
+  it('shows each new scene only after her own quest, with NTR switched on', () => {
+    expect(titles(at('lm_ebony_night', ['aya_club', 'kar_club', 'oboro_club'], 'masc'))).toEqual(['看阿雅和水手們', '看卡蓮下戰帖', '看朧潛入'])
+    expect(titles(at('lm_honor_hole', ['wl_1_done', 'cam_hole', 'zero_hole']))).toEqual(['當服務的一方', '當被服務的一方', '替卡蜜拉數瓶子', '替零號記錄體溫'])
+    const wild = at('lm_td_wild_horse', ['tdwn_club', 'yach_wild', 'tdur_wild', 'tdch_wild'], 'fem')
+    expect(titles(wild)).toHaveLength(8)
+    const masked = at('lm_yh_faceless', ['yasz_club', 'ycsz_mask', 'ycyt_mask'], 'masc')
+    expect(titles(masked)).toEqual(['看戴著儺面的婉貞', '沒有名字的一夜', '看瀾生套話', '替瑤汀拿著月琴'])
+    setContentFilters({ ntr: false })
+    expect(titles(masked)).toEqual(['沒有名字的一夜'])
+  })
+})
+
 describe('quests set inside a special area', () => {
   it('only use its interior when the area is already open, or the quest itself takes you in', () => {
     // 以前野馬帳的任務點都在野馬帳的內部，地標卻要任務完成才出現，第一個任務點永遠走不到

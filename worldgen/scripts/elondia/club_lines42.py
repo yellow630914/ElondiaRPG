@@ -455,7 +455,9 @@ def write_npc():
 def write_landmarks():
     p = 'data/world/landmarks.json'
     d = json.load(open(p, encoding='utf-8'))
-    d['landmarks'] = [l for l in d['landmarks'] if l['id'] != LANDMARK['id']] + [dict(LANDMARK)]
+    # 無面樓整筆換掉，但保留別支腳本（club_lines43.py）加上去的場景
+    old = next((l for l in d['landmarks'] if l['id'] == LANDMARK['id']), {})
+    d['landmarks'] = [l for l in d['landmarks'] if l['id'] != LANDMARK['id']] + [{**LANDMARK, **({'scenes': old['scenes']} if old.get('scenes') else {})}]
     by_id = {l['id']: l for l in d['landmarks']}
     for lid, mine in SCENES.items():
         titles = {s['title'] for s in mine}

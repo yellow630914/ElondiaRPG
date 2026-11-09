@@ -178,8 +178,9 @@ describe('炎華之地', () => {
     // 地標的場景：旗標由這些任務設定
     const sets = new Set(stories.flatMap((s) => s.nodes.flatMap((n) => [n.success, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).flatMap((o) => o?.set_flags ?? [])))
     const scenes = Object.values(landmarks).filter((l) => l.id.startsWith('lm_yh_')).flatMap((l) => l.scenes ?? [])
-    // 成人向角色與多人任務的 10 個，加上 R26 打工線回去上工的 8 個、蘇婉貞的 4 個（無面樓 3、御街夜市 1）
-    expect(scenes.length).toBe(22)
+    // 成人向角色與多人任務的 10 個，加上 R26 打工線回去上工的 8 個、蘇婉貞的 4 個（無面樓 3、御街夜市 1）、
+    // 走進無面樓的沈知瀾與瑤汀 4 個（club_lines43.py）
+    expect(scenes.length).toBe(26)
     for (const sc of scenes) {
       expect(sc.tags, sc.title).toContain('adult')
       for (const f of sc.requires!.flags!) expect(sets.has(f), `${sc.title} ${f}`).toBe(true)
