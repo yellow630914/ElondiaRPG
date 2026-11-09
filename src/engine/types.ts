@@ -863,6 +863,8 @@ export interface GameOptions {
   shortRestHours?: number
   longRestHours?: number
   alertDecayDays?: number
+  /** 賣給商店時拿到基本價的幾 %（材料照舊全價；trade.ts 的 sellRatio） */
+  sellRatio?: number
   /** 收購遞減：同一間店收購同一個貿易類別，每件降幾 %（0 = 不遞減；docs/TRADE.md 3.4 節） */
   sellGlutPct?: number
   /** 每個採集點採到幾份（小數是機率） */

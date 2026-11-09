@@ -365,12 +365,17 @@ export function sellTotalOf(state: GameState, key: string, name: string, qty: nu
   return total
 }
 
+/** 賣給商店時拿到基本價的比例（存檔規則「賣給商店的價格」，預設 items.json 的 sell_ratio）；材料另外是 material_sell_ratio */
+export function sellRatio(state: Pick<GameState, 'options'>): number {
+  return gameRule(state, 'sellRatio') / 100
+}
+
 function sellPriceAt(state: GameState, key: string, name: string, extra: number): number | null {
   const type = typeOf(key)
   const cat = itemCategory(state, name)
   const value = itemValue(state, name)
   if (!cat || value === undefined || !shopDef(type).buys.includes(cat) || isUniqueItem(state, name)) return null
-  const ratio = cat === 'material' ? itemRules.material_sell_ratio : itemRules.sell_ratio
+  const ratio = cat === 'material' ? itemRules.material_sell_ratio : sellRatio(state)
   const glut = glutMult(state, key, tradeCategory(state, name), extra)
   const price = Math.max(1, Math.floor(value * ratio * locationMult(state) * marketMult(state, shopPlace(state).id, name).x * glut * (1 + discount(state, key) / 2) * (1 + reputationBand(state).sell) * pcTagMult(pcOf(state), 'sell_mult')))
   return capSale(state, name, price)
@@ -433,7 +438,9 @@ export function sellBreakdown(state: GameState, key: string, name: string): Pric
   const material = itemCategory(state, name) === 'material'
   const steps: PriceStep[] = [
     { label: '基本價', text: formatMoney(value), kind: 'base' },
-    { label: material ? '材料全價收購' : '收購五成', text: times(material ? itemRules.material_sell_ratio : itemRules.sell_ratio), kind: 'deal', x: material ? itemRules.material_sell_ratio : itemRules.sell_ratio },
+    material
+      ? { label: '材料全價收購', text: times(itemRules.material_sell_ratio), kind: 'deal', x: itemRules.material_sell_ratio }
+      : { label: `收購 ${Math.round(sellRatio(state) * 100)}%`, text: times(sellRatio(state)), kind: 'deal', x: sellRatio(state) },
     ...placeSteps(state, name),
   ]
   const cat = tradeCategory(state, name)
@@ -922,7 +929,7 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
         const name = clip(x.name, 20)
         const qty = Math.max(1, Math.min(10, Math.round(num(x.qty) || 1)))
         gives.push({ type: 'item', name, qty })
-        itemsGiven += capSale(state, name, (itemValue(state, name) ?? 0) * itemRules.sell_ratio) * qty
+        itemsGiven += capSale(state, name, (itemValue(state, name) ?? 0) * sellRatio(state)) * qty
       } else if (x.type === 'hours') {
         const h = Math.max(0.5, Math.min(4, num(x.amount) || 1))
         gives.push({ type: 'hours', amount: h })

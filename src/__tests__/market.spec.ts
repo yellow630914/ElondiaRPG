@@ -238,6 +238,21 @@ describe('價格拆解（R19 T5）', () => {
     }
   })
 
+  it('sells at the save rule\'s ratio (default 50%); materials stay at full price', () => {
+    const s = at('soriel')
+    standOn(s, 'temple')
+    const key = shopKey(s, 'temple')
+    s.inventory = []
+    addItem(s.inventory, '治療藥劑', 1)
+    const half = sellPrice(s, key, '治療藥劑')!
+    expect(sellBreakdown(s, key, '治療藥劑')!.steps.map((x) => x.label)).toContain('收購 50%')
+    s.options = { ...s.options!, sellRatio: 100 }
+    const full = sellPrice(s, key, '治療藥劑')!
+    expect(full).toBeGreaterThanOrEqual(half * 2 - 1)
+    expect(full).toBeLessThanOrEqual(half * 2 + 1)
+    expect(sellBreakdown(s, key, '治療藥劑')!.steps.map((x) => x.label)).toContain('收購 100%')
+  })
+
   it('explains a buying price, including the cap on gear', () => {
     const s = at('soriel')
     standOn(s, 'smithy')
