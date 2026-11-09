@@ -6,7 +6,7 @@ import {
 import { setStepMinutes } from '@/engine/grid'
 import { setLeadPool } from '@/engine/leads'
 import { applyContent, emptyMods } from '@/engine/mods'
-import { setNpcLife } from '@/engine/npcLife'
+import { defaultLoyalAffinity, setNpcLife } from '@/engine/npcLife'
 import { setLongRestGap } from '@/engine/rest'
 
 // 寫在最上層（不放在 beforeAll）：setupFiles 在測試檔載入之前執行，測試檔在載入時抓的資料物件（例如 dungeonEncounters 的某一項）才是還原後的那一份
@@ -19,7 +19,7 @@ import { setLongRestGap } from '@/engine/rest'
   setMonsterGirl('off')
   setMonsterGirlChance(100)
   setDefeatCompanion('not_masc')
-  setNpcLife({ on: true, days: 3, pairs: true })
+  setNpcLife({ on: true, days: 3, pairs: true, loyal: defaultLoyalAffinity() })
   setLeadPool({ days: 7 })
   setStepMinutes(undefined)
   setLongRestGap(undefined)

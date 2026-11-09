@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
-import { setNpcLife } from '@/engine/npcLife'
+import { defaultLoyalAffinity, LOYAL_MAX, LOYAL_MIN, setNpcLife } from '@/engine/npcLife'
 import { setLeadPool } from '@/engine/leads'
 import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, setMonsterGirlChance, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
@@ -141,8 +141,10 @@ interface SavedSettings {
   npcLifeAi: NpcLifeAi
   /** 親密場景之後請 AI 記下性經歷（docs/LEWD_STATS.md 第 29 節） */
   sexRecordAi: boolean
-  /** NPC 自己的日子裡，NPC 之間可以發生關係（人際關係裡還可以個別關掉；docs/NPC_SYSTEM.md 第 14 節） */
+  /** NPC 的私生活可以和別人發生關係的總開關（一夜情、性侍奉、接客、和其他 NPC；人際關係裡還要個別打開；docs/NPC_SYSTEM.md 第 14 節） */
   npcPairs: boolean
+  /** 和主角的親密度到這個值以上的人只會自慰（-100～101；101 = 親密度滿了也會出軌） */
+  npcLoyalAffinity: number
   /** 地區線索池每幾天換一批（leads.ts；0 = 關閉，情報商照舊每天隨機） */
   leadPoolDays: number
   /** AI 判定多少分鐘沒有任何回應（文字或思考）就放棄；0 = 不限 */
@@ -213,6 +215,7 @@ function defaults(): SavedSettings {
     npcLifeAi: 'roll',
     sexRecordAi: true,
     npcPairs: true,
+    npcLoyalAffinity: defaultLoyalAffinity(),
     leadPoolDays: 7,
     judgeTimeoutMin: 3,
     monsterGirl: 'off',
@@ -275,6 +278,12 @@ export function judgeTimeout(v: unknown): number {
   return v === null || v === undefined || !Number.isFinite(n) ? 3 : Math.max(0, Math.min(30, Math.round(n)))
 }
 
+/** 「專情」門檻：-100～101 的整數，空白或不是數字時用預設 */
+export function loyalAffinity(v: unknown): number {
+  const n = Number(v)
+  return v === '' || v === null || v === undefined || !Number.isFinite(n) ? defaultLoyalAffinity() : Math.max(LOYAL_MIN, Math.min(LOYAL_MAX, Math.round(n)))
+}
+
 export const useSettings = defineStore('settings', () => {
   const initial = load()
   const sources = ref(initial.sources)
@@ -305,7 +314,8 @@ export const useSettings = defineStore('settings', () => {
   const npcLife = ref(initial.npcLife !== false)
   const npcLifeDays = ref(Number(initial.npcLifeDays) || 3)
   const npcPairs = ref(initial.npcPairs !== false)
-  watch([npcLife, npcLifeDays, npcPairs], ([on, days, pairs]) => setNpcLife({ on, days: Number(days) || 3, pairs }), { immediate: true })
+  const npcLoyalAffinity = ref(loyalAffinity(initial.npcLoyalAffinity))
+  watch([npcLife, npcLifeDays, npcPairs, npcLoyalAffinity], ([on, days, pairs, loyal]) => setNpcLife({ on, days: Number(days) || 3, pairs, loyal: loyalAffinity(loyal) }), { immediate: true })
   const leadPoolDays = ref(Number.isFinite(Number(initial.leadPoolDays)) ? Math.max(0, Math.min(30, Math.round(Number(initial.leadPoolDays)))) : 7)
   watch(leadPoolDays, (days) => setLeadPool({ days: Number(days) }), { immediate: true })
   const judgeTimeoutMin = ref(judgeTimeout(initial.judgeTimeoutMin))
@@ -335,7 +345,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, npcPairs, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, npcPairs, npcLoyalAffinity, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -365,6 +375,7 @@ export const useSettings = defineStore('settings', () => {
         npcLifeAi: npcLifeAi.value,
         sexRecordAi: sexRecordAi.value,
         npcPairs: npcPairs.value,
+        npcLoyalAffinity: loyalAffinity(npcLoyalAffinity.value),
         judgeTimeoutMin: judgeTimeout(judgeTimeoutMin.value),
         monsterGirl: monsterGirl.value,
         monsterGirlChance: Number(monsterGirlChance.value),
@@ -472,7 +483,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, npcPairs, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, npcPairs, npcLoyalAffinity, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

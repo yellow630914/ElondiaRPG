@@ -22,7 +22,7 @@ import { genderName, GENDER_IDS } from '@/engine/data'
 import { encounterText, sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 
 const game = useGame()
-// NPC 之間發生關係：設定是總開關，這裡個別打開（預設關閉；npcLife.ts 的 canPair）
+// 私生活和別人發生關係（一夜情、性侍奉、接客、和其他 NPC）：設定是總開關，這裡個別打開（預設關閉；npcLife.ts 的 canPair）
 const pairable = (id: string) => !!s.value.npcLife?.pairs?.includes(id)
 const inParty = (id: string) => s.value.party.some((m) => m.id === id)
 // 有成人向私生活的近況交給「性經歷記錄」的來源寫
@@ -278,8 +278,8 @@ const suggestionDraft = reactive<Record<string, string>>({})
             <span v-if="settings.npcLife && living.has(r.id) && !followed(r.id)" class="small muted">會自己成長</span>
             <label
               v-if="settings.npcLife && settings.npcPairs && !inParty(r.id)" class="small check pairs"
-              title="成人向：這個人會不會和其他認識的 NPC 發生關係（預設關閉；兩個人都打開、住在同一座城才會；設定 → 遊戲規則的「NPC 之間可以發生關係」是總開關）。關著時只有自慰、一夜情與性侍奉這類私生活"
-            ><input type="checkbox" :checked="pairable(r.id)" @change="game.setNpcPairs(r.id, ($event.target as HTMLInputElement).checked)" /> 和其他 NPC 發生關係</label>
+              title="成人向：這個人的私生活會不會和別人發生關係——一夜情、替人性侍奉、娼妓接客，以及和其他認識的 NPC（兩個人都打開、住在同一座城才會）。預設關閉，關著時只會自慰。和你的親密度到設定的門檻以上的人也只會自慰（設定 → 遊戲規則 → NPC）"
+            ><input type="checkbox" :checked="pairable(r.id)" @change="game.setNpcPairs(r.id, ($event.target as HTMLInputElement).checked)" /> 可以和別人發生關係</label>
             <button v-if="settings.npcLife && unpolished(r.id) && settings.ready(newsFeature(r.id))" class="small" title="請 AI 依他的性格與和你的記憶，把近況寫成一段" @click="game.polishNews([r.id])"><GameIcon name="feather" :size="13" /> 寫成一段</button>
             <button
               v-if="promotable(r.id)" class="small"

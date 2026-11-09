@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { setContentFilters } from '@/engine/content'
 import { enterLocation } from '@/engine/grid'
 import { generateNpc, npcRecord, registerNpc } from '@/engine/npcs'
-import { canPair, knownNpcs, newsOf, rollLust, setNpcLife, setPairs, tickNpcLife, type LustCtx } from '@/engine/npcLife'
+import { canPair, defaultLoyalAffinity, knownNpcs, newsOf, rollLust, setNpcLife, setPairs, tickNpcLife, type LustCtx } from '@/engine/npcLife'
 import { sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 import { ensureRelationship, setAffinity } from '@/engine/social'
 import { newGame, withRng } from '@/engine/state'
@@ -11,7 +11,7 @@ import type { GameState, NpcRecord } from '@/engine/types'
 import { buildNewsPrompt } from '@/narrator/judge'
 
 afterEach(() => {
-  setNpcLife({ on: true, days: 3, pairs: true })
+  setNpcLife({ on: true, days: 3, pairs: true, loyal: defaultLoyalAffinity() })
   setContentFilters({ ntr: true, male_partner: true })
 })
 
@@ -104,16 +104,58 @@ describe('NPC 的私生活', () => {
     expect(state.npcLife?.pairs).toBeUndefined()
   })
 
-  it('內容篩選關掉 NTR 時，和主角夠親密的人只會自慰', () => {
-    setContentFilters({ ntr: false })
+  it('人際關係裡沒打開的人只會自慰：一夜情、性侍奉、接客都不會；打開之後才會', () => {
     const state = game()
     const rec = known(state, 95)
-    setAffinity(state, rec.id, 70)
-    for (let d = 1; d <= 200; d++) {
-      const r = rollLust(state, rec, d, ctx())
-      if (r) expect(r.adult.kind).toBe('solo')
+    const whore = known(state, 70, { tags: ['prostitute'] })
+    const kinds = (r: NpcRecord, from: number) => {
+      const out = new Set<string>()
+      for (let d = from; d < from + 200; d++) {
+        const x = rollLust(state, r, d, ctx())
+        if (x) out.add(x.adult.kind)
+      }
+      return out
     }
+    expect([...kinds(rec, 1)]).toEqual(['solo'])
+    expect([...kinds(whore, 1)]).toEqual(['solo'])
     expect(sexRecordOf(state, rec.id).recent).toEqual([])
+    setPairs(state, rec.id, true)
+    setPairs(state, whore.id, true)
+    const on = kinds(rec, 201)
+    expect(on.has('stranger') || on.has('service')).toBe(true)
+    expect(kinds(whore, 201).has('client')).toBe(true)
+    // 總開關關掉：打開了也只會自慰
+    setNpcLife({ pairs: false })
+    expect([...kinds(rec, 401)]).toEqual(['solo'])
+  })
+
+  it('親密度到設定的門檻以上的人只會自慰；門檻 101 時親密度滿了也會出軌；NTR 篩選不再決定這件事', () => {
+    const state = game()
+    const rec = known(state, 95)
+    setPairs(state, rec.id, true)
+    setAffinity(state, rec.id, 70)
+    const others = (from: number) => {
+      let n = 0
+      for (let d = from; d < from + 200; d++) {
+        const x = rollLust(state, rec, d, ctx())
+        if (x && x.adult.kind !== 'solo') n++
+      }
+      return n
+    }
+    // 預設 60：只會自慰
+    expect(others(1)).toBe(0)
+    // 門檻調到 80：70 不夠，會出軌
+    setNpcLife({ loyal: 80 })
+    expect(others(201)).toBeGreaterThan(0)
+    // 101：親密度滿了也會；NTR 篩選關掉也一樣
+    setContentFilters({ ntr: false })
+    setAffinity(state, rec.id, 100)
+    setNpcLife({ loyal: 101 })
+    expect(others(401)).toBeGreaterThan(0)
+    // -100：誰都不會
+    setAffinity(state, rec.id, -50)
+    setNpcLife({ loyal: -100 })
+    expect(others(601)).toBe(0)
   })
 
   it('關掉男性對象時，NPC 之間不挑男性', () => {
@@ -129,6 +171,7 @@ describe('NPC 的私生活', () => {
   it('娼妓接客：一次好幾位客人，人數照算', () => {
     const state = game()
     const rec = known(state, 70, { tags: ['prostitute'] })
+    setPairs(state, rec.id, true)
     const before = sexRecordOf(state, rec.id).partners
     const r = rollLust(state, rec, 1, ctx()) ?? rollLust(state, rec, 2, ctx())
     expect(r?.adult.kind).toBe('client')

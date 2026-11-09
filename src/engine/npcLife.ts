@@ -37,13 +37,20 @@ export const MAX_CATCH_UP = 10
 
 let enabled = true
 let everyDays = 3
-/** NPC 之間可以發生關係（設定；人際關係裡還可以個別關掉） */
+/** NPC 的私生活可以和別人發生關係（設定的總開關；人際關係裡還要個別打開） */
 let pairsAllowed = true
+/** 和主角的親密度到這個值以上的人只會自慰，不和別人發生關係（設定，-100～101；101 = 親密度滿了也會出軌） */
+let loyalAffinity: number | undefined
 
-export function setNpcLife(opts: { on?: boolean; days?: number; pairs?: boolean }) {
+/** 「專情」門檻的範圍：-100～101（101 比親密度上限 100 還高，等於沒有限制） */
+export const LOYAL_MIN = -100
+export const LOYAL_MAX = 101
+
+export function setNpcLife(opts: { on?: boolean; days?: number; pairs?: boolean; loyal?: number }) {
   if (opts.on !== undefined) enabled = opts.on
   if (opts.days !== undefined && Number.isFinite(opts.days)) everyDays = Math.max(1, Math.min(30, Math.round(opts.days)))
   if (opts.pairs !== undefined) pairsAllowed = opts.pairs
+  if (opts.loyal !== undefined && Number.isFinite(opts.loyal)) loyalAffinity = Math.max(LOYAL_MIN, Math.min(LOYAL_MAX, Math.round(opts.loyal)))
 }
 
 export function npcPairsOn(): boolean {
@@ -309,17 +316,25 @@ function lustOf(rec: NpcRecord): { lewdness: number; submission: number } {
   return rec.character ? lewdOf(rec.character) : npcLewd(rec)
 }
 
-/** 內容篩選關掉 NTR 時，和主角夠親密的人不和別人發生關係 */
+/** 和主角夠親密的人（設定的門檻，預設 60）不和別人發生關係，只會自慰 */
 function devoted(state: GameState, id: string): boolean {
-  return !tagsAllowed(['ntr']) && (state.relationships?.[id]?.affinity ?? 0) >= lustRules().lover_affinity
+  return (state.relationships?.[id]?.affinity ?? 0) >= (loyalAffinity ?? defaultLoyalAffinity())
 }
 
-/** 這個人可以和其他 NPC 發生關係嗎：設定開著，而且人際關係裡打開了（預設關閉） */
+/** 「專情」門檻的預設（lewd.json 的 experience.life.lover_affinity） */
+export function defaultLoyalAffinity(): number {
+  return lustRules().lover_affinity
+}
+
+/**
+ * 這個人的私生活可以和別人發生關係嗎（一夜情、性侍奉、接客、和其他 NPC）：設定的總開關開著，而且人際關係裡打開了（預設關閉）。
+ * 關著時只會自慰
+ */
 export function canPair(state: GameState, id: string): boolean {
   return pairsAllowed && !!state.npcLife?.pairs?.includes(id)
 }
 
-/** 人際關係裡的開關（預設關閉）：這個人可不可以和其他 NPC 發生關係 */
+/** 人際關係裡的開關（預設關閉）：這個人的私生活可不可以和別人發生關係 */
 export function setPairs(state: GameState, id: string, on: boolean) {
   const life = lifeOf(state)
   const list = new Set(life.pairs ?? [])
@@ -383,10 +398,10 @@ export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: Lus
   const town = rec.location ? locationById(rec.location).name : '城裡'
   const virgin = sexRecordOf(state, rec.id).virgin
   const firstNote = (first: boolean) => (first ? `——這是${rec.name}的第一次` : '')
-  // 第一次留給劇情或主角的人：只擲自慰
-  const chaste = keepsFirst(state, rec.id)
+  // 只擲自慰的人：人際關係裡沒打開（或總開關關著）、和主角夠親密、第一次留給劇情或主角
+  const chaste = !canPair(state, rec.id) || devoted(state, rec.id) || keepsFirst(state, rec.id)
   // 娼妓：接客
-  if (rec.tags?.includes('prostitute') && !devoted(state, rec.id) && !chaste && rng.chance(r.client.chance)) {
+  if (rec.tags?.includes('prostitute') && !chaste && rng.chance(r.client.chance)) {
     const n = rng.int(r.client.count[0], r.client.count[1]) * Math.max(1, Math.round(scale))
     const sex = rng.int(Math.ceil(n / 2), n)
     const text = `在${town}的娼館接了 ${n} 位客人`
@@ -396,7 +411,7 @@ export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: Lus
     return { text: text + firstNote(first), adult: { kind: 'client', ...(first ? { first } : {}) } }
   }
   const partnerP = Math.min(r.partner.max, (r.partner.base + (lewdness / 100) * r.partner.per_lewd) * scale) * (virgin ? r.partner.virgin_mult : 1)
-  if (!ctx.paired.has(rec.id) && !devoted(state, rec.id) && !chaste && rng.chance(partnerP)) {
+  if (!ctx.paired.has(rec.id) && !chaste && rng.chance(partnerP)) {
     const partner = rng.chance(r.weights.pair / (r.weights.pair + r.weights.stranger + r.weights.service)) ? pickPartner(state, rng, rec, ctx) : undefined
     if (partner) {
       const sex = rng.int(1, 3)

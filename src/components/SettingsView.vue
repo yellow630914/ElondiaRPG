@@ -8,7 +8,8 @@ import { gearRules } from '@/engine/gear'
 import type { StepPlace } from '@/engine/grid'
 import mapsJson from '@data/world/maps.json'
 import { useGame } from '@/stores/game'
-import { AI_FEATURES, judgeTimeout, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/settings'
+import { AI_FEATURES, judgeTimeout, loyalAffinity, NPC_LIFE_AI, SOURCE_MAX, useSettings } from '@/stores/settings'
+import { defaultLoyalAffinity, LOYAL_MAX, LOYAL_MIN } from '@/engine/npcLife'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
@@ -290,8 +291,12 @@ function doReset() {
             </select>
           </label>
           <label class="check">
-            <input v-model="settings.npcPairs" type="checkbox" /> NPC 之間可以發生關係（成人向）
-            <Hint text="認識的 NPC 每次擲骰也會擲自己的私生活：淫亂越高越常發生——自慰、一夜情、替人性侍奉、娼妓接客，以及和另一位認識的 NPC 發生關係（互相有關係描述、住在同一座城的比較容易）。關掉這一項：NPC 之間不會發生關係，其他照舊。人際關係裡也可以個別關掉某個人。內容篩選關了 NTR 時，和你親密度 60 以上的人只會自慰；關了男性對象時，NPC 之間不挑男性。" />
+            <input v-model="settings.npcPairs" type="checkbox" /> NPC 的私生活可以和別人發生關係（成人向）
+            <Hint text="總開關。認識的 NPC 每次擲骰也擲自己的私生活，淫亂越高越常發生：一夜情、替人性侍奉、娼妓接客，以及和另一位認識的 NPC 發生關係（兩個人都打開、住在同一座城才會）。除了這個總開關，每個人還要在人際關係裡個別打開（預設關閉）；沒打開的人只會自慰。關掉總開關：所有人都只會自慰。關了男性對象時，NPC 之間不挑男性。" />
+          </label>
+          <label v-if="settings.npcPairs">
+            <span class="lab">親密度到多少就不會出軌 <Hint :text="`-100～101，預設 ${defaultLoyalAffinity()}。和你的親密度到這個值以上的人只會自慰，不和別人發生關係（就算人際關係裡打開了）。101 = 親密度滿了也照樣會；-100 = 每個人都不會。`" /></span>
+            <input v-model.number="settings.npcLoyalAffinity" type="number" :min="LOYAL_MIN" :max="LOYAL_MAX" style="width: 100px" @change="settings.npcLoyalAffinity = loyalAffinity(settings.npcLoyalAffinity)" />
           </label>
         </template>
       </div>
