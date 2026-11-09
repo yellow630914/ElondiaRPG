@@ -2,7 +2,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { setContentFilters } from '@/engine/content'
 import { enterLocation } from '@/engine/grid'
-import { generateNpc, registerNpc } from '@/engine/npcs'
+import { generateNpc, npcRecord, registerNpc } from '@/engine/npcs'
 import { canPair, knownNpcs, newsOf, rollLust, setNpcLife, setPairs, tickNpcLife, type LustCtx } from '@/engine/npcLife'
 import { sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 import { ensureRelationship, setAffinity } from '@/engine/social'
@@ -56,7 +56,6 @@ describe('NPC 的私生活', () => {
   it('自慰記進性經歷的自慰次數，不算在最近幾次裡', () => {
     const state = game()
     const rec = known(state, 60, { sex: { virgin: true } })
-    setPairs(state, rec.id, false)
     setNpcLife({ pairs: false })
     for (let d = 1; d <= 60; d++) rollLust(state, rec, d, ctx())
     const r = sexRecordOf(state, rec.id)
@@ -65,15 +64,23 @@ describe('NPC 的私生活', () => {
     expect(sexRecordItems(state, rec.id).find((x) => x.label === '自慰')?.value).toContain('次')
   })
 
-  it('和其他認識的 NPC 發生關係：兩人都記下、都有近況；設定或人際關係關掉時不會', () => {
+  it('和其他認識的 NPC 發生關係：預設關閉；兩人都打開、住同一座城才會，兩人都記下、都有近況', () => {
     const state = game()
     const a = known(state, 95)
     const b = known(state, 95)
     // 互相寫了關係：比較容易挑到
     a.relations = { [b.id]: '老朋友' }
     setNpcLife({ days: 3 })
+    // 預設：人際關係裡沒打開，不挑 NPC
+    expect(canPair(state, a.id)).toBe(false)
+    for (let d = 1; d <= 200; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
+    // 只打開一個人：還是不會
+    setPairs(state, a.id, true)
+    for (let d = 201; d <= 400; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
+    setPairs(state, b.id, true)
+    expect(state.npcLife?.pairs).toEqual([a.id, b.id])
     let pairDay = 0
-    for (let d = 1; d <= 300 && !pairDay; d++) {
+    for (let d = 401; d <= 700 && !pairDay; d++) {
       const r = rollLust(state, a, d, ctx())
       if (r?.adult.kind === 'pair') pairDay = d
     }
@@ -82,17 +89,19 @@ describe('NPC 的私生活', () => {
     expect(sexRecordOf(state, b.id).recent[0]!.with[0]!.id).toBe(a.id)
     expect(newsOf(state, b.id).at(-1)?.adult).toMatchObject({ kind: 'pair', with: a.id })
 
+    // 住在別的城：不挑
+    b.location = 'rhineburg'
+    for (let d = 701; d <= 900; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
+    b.location = a.location
+
     // 設定關掉：不挑 NPC
     setNpcLife({ pairs: false })
     expect(canPair(state, a.id)).toBe(false)
-    for (let d = 301; d <= 500; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
-    // 設定開著、人際關係裡關掉其中一人
+    for (let d = 901; d <= 1100; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
     setNpcLife({ pairs: true })
+    setPairs(state, a.id, false)
     setPairs(state, b.id, false)
-    expect(state.npcLife?.noPairs).toEqual([b.id])
-    for (let d = 501; d <= 700; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
-    setPairs(state, b.id, true)
-    expect(state.npcLife?.noPairs).toBeUndefined()
+    expect(state.npcLife?.pairs).toBeUndefined()
   })
 
   it('內容篩選關掉 NTR 時，和主角夠親密的人只會自慰', () => {
@@ -111,7 +120,9 @@ describe('NPC 的私生活', () => {
     setContentFilters({ male_partner: false })
     const state = game()
     const a = known(state, 95)
-    known(state, 95, { gender: 'male' })
+    const m = known(state, 95, { gender: 'male' })
+    setPairs(state, a.id, true)
+    setPairs(state, m.id, true)
     for (let d = 1; d <= 300; d++) expect(rollLust(state, a, d, ctx())?.adult.kind).not.toBe('pair')
   })
 
@@ -140,5 +151,29 @@ describe('NPC 的私生活', () => {
     const prompt = buildNewsPrompt(state, [{ id: rec.id, news }], true)!
     expect(prompt.user).toContain('性經歷：')
     expect(prompt.system).toContain('成人向的私生活')
+  })
+})
+
+describe('指定處子的固定 NPC', () => {
+  it('私生活只自慰，也不會被挑成對象；第一次留給劇情或主角', () => {
+    setContentFilters({ ntr: true })
+    const state = game()
+    const ids = ['npc_aya', 'npc_isadora', 'npc_eve', 'npc_eileen', 'npc_oboro', 'npc_td_wanning']
+    for (const id of ids) {
+      const r = npcRecord(state, id)!
+      ensureRelationship(state, r)
+      setAffinity(state, id, 20)
+    }
+    for (let d = 3; d <= 360; d += 3) {
+      state.time.day = d
+      tickNpcLife(state)
+    }
+    for (const id of ids) {
+      const rec = sexRecordOf(state, id)
+      expect(rec.virgin).toBe(true)
+      expect(rec.recent).toHaveLength(0)
+    }
+    // 有人自慰（私生活照擲）
+    expect(ids.some((id) => (sexRecordOf(state, id).soloLast ?? 0) > 0)).toBe(true)
   })
 })

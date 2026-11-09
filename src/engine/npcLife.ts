@@ -16,7 +16,7 @@ import { gearName, gearPrice, generateLoadout, syncGear } from './gear'
 import { characterFor, hashString, inLeadEvent, npcRecord, registerNpc } from './npcs'
 import { isNoncombatant } from './party'
 import { Rng } from './rng'
-import { attributeRules, lewdRules } from './data'
+import { attributeRules, lewdRules, namedNpcById } from './data'
 import { addItem } from './state'
 import { tagsAllowed } from './content'
 import { addLewdStat, lewdOf, npcLewd } from './lewd'
@@ -314,27 +314,35 @@ function devoted(state: GameState, id: string): boolean {
   return !tagsAllowed(['ntr']) && (state.relationships?.[id]?.affinity ?? 0) >= lustRules().lover_affinity
 }
 
-/** 這個人可以和其他 NPC 發生關係嗎：設定開著，人際關係裡沒有關掉 */
+/** 這個人可以和其他 NPC 發生關係嗎：設定開著，而且人際關係裡打開了（預設關閉） */
 export function canPair(state: GameState, id: string): boolean {
-  return pairsAllowed && !state.npcLife?.noPairs?.includes(id)
+  return pairsAllowed && !!state.npcLife?.pairs?.includes(id)
 }
 
-/** 人際關係裡的開關：這個人可不可以和其他 NPC 發生關係 */
+/** 人際關係裡的開關（預設關閉）：這個人可不可以和其他 NPC 發生關係 */
 export function setPairs(state: GameState, id: string, on: boolean) {
   const life = lifeOf(state)
-  const list = new Set(life.noPairs ?? [])
-  if (on) list.delete(id)
-  else list.add(id)
-  life.noPairs = [...list]
-  if (!life.noPairs.length) delete life.noPairs
+  const list = new Set(life.pairs ?? [])
+  if (on) list.add(id)
+  else list.delete(id)
+  life.pairs = [...list]
+  if (!life.pairs.length) delete life.pairs
+}
+
+/**
+ * 固定 NPC 寫了還沒有經驗（NpcDef.sex.virgin）而且現在還是處子：私生活只自慰，第一次留給劇情或主角
+ * （伊莎朵拉、艾琳……的戀愛線有和主角的第一次）
+ */
+export function keepsFirst(state: GameState, id: string): boolean {
+  return namedNpcById(id)?.sex?.virgin === true && sexRecordOf(state, id).virgin
 }
 
 /** 內容篩選關掉男性對象時，NPC 之間不挑男性 */
 const maleBlocked = (rec: NpcRecord) => !tagsAllowed(['male_partner']) && (rec.character?.gender ?? rec.gender) === 'male'
 
-/** 挑一個認識的 NPC 當對象：互相寫了關係的、住在同一座城的比較容易 */
+/** 挑一個認識的 NPC 當對象：只挑住在同一座城的，互相寫了關係的比較容易 */
 function pickPartner(state: GameState, rng: Rng, rec: NpcRecord, ctx: LustCtx): NpcRecord | undefined {
-  if (!canPair(state, rec.id) || maleBlocked(rec)) return undefined
+  if (!canPair(state, rec.id) || maleBlocked(rec) || !rec.location) return undefined
   const pick = lustRules().pair_pick
   const related = new Set(Object.keys(rec.relations ?? {}))
   const pool: [NpcRecord, number][] = []
@@ -343,8 +351,10 @@ function pickPartner(state: GameState, rng: Rng, rec: NpcRecord, ctx: LustCtx): 
     if (o.id === rec.id || seen.has(o.id) || o.dead || o.hostile || ctx.paired.has(o.id)) continue
     seen.add(o.id)
     if (state.party.some((m) => m.id === o.id) || state.captives?.npcs.includes(o.id) || inLeadEvent(state, o.id)) continue
-    if (!canPair(state, o.id) || devoted(state, o.id) || maleBlocked(o)) continue
-    const w = (related.has(o.id) || o.relations?.[rec.id] ? pick.related : 1) * (o.location && o.location === rec.location ? pick.same_town : 1)
+    if (!canPair(state, o.id) || devoted(state, o.id) || maleBlocked(o) || keepsFirst(state, o.id)) continue
+    // 只挑住在同一座城的人（不會和遠方的人「在這座城共度一夜」）
+    if (o.location !== rec.location) continue
+    const w = related.has(o.id) || o.relations?.[rec.id] ? pick.related : 1
     pool.push([o, w])
   }
   if (!pool.length) return undefined
@@ -373,8 +383,10 @@ export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: Lus
   const town = rec.location ? locationById(rec.location).name : '城裡'
   const virgin = sexRecordOf(state, rec.id).virgin
   const firstNote = (first: boolean) => (first ? `——這是${rec.name}的第一次` : '')
+  // 第一次留給劇情或主角的人：只擲自慰
+  const chaste = keepsFirst(state, rec.id)
   // 娼妓：接客
-  if (rec.tags?.includes('prostitute') && !devoted(state, rec.id) && rng.chance(r.client.chance)) {
+  if (rec.tags?.includes('prostitute') && !devoted(state, rec.id) && !chaste && rng.chance(r.client.chance)) {
     const n = rng.int(r.client.count[0], r.client.count[1]) * Math.max(1, Math.round(scale))
     const sex = rng.int(Math.ceil(n / 2), n)
     const text = `在${town}的娼館接了 ${n} 位客人`
@@ -384,7 +396,7 @@ export function rollLust(state: GameState, rec: NpcRecord, day: number, ctx: Lus
     return { text: text + firstNote(first), adult: { kind: 'client', ...(first ? { first } : {}) } }
   }
   const partnerP = Math.min(r.partner.max, (r.partner.base + (lewdness / 100) * r.partner.per_lewd) * scale) * (virgin ? r.partner.virgin_mult : 1)
-  if (!ctx.paired.has(rec.id) && !devoted(state, rec.id) && rng.chance(partnerP)) {
+  if (!ctx.paired.has(rec.id) && !devoted(state, rec.id) && !chaste && rng.chance(partnerP)) {
     const partner = rng.chance(r.weights.pair / (r.weights.pair + r.weights.stranger + r.weights.service)) ? pickPartner(state, rng, rec, ctx) : undefined
     if (partner) {
       const sex = rng.int(1, 3)

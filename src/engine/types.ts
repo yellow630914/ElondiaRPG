@@ -1213,6 +1213,6 @@ export interface NpcLifeState {
   news: Record<string, NpcNews[]>
   /** 玩家關注的人 */
   followed?: string[]
-  /** 不和其他 NPC 發生關係的人（人際關係裡關掉的；docs/NPC_SYSTEM.md 第 14 節） */
-  noPairs?: string[]
+  /** 可以和其他 NPC 發生關係的人（人際關係裡打開的，預設沒有人；docs/NPC_SYSTEM.md 第 14 節） */
+  pairs?: string[]
 }
