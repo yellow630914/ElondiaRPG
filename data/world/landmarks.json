@@ -2062,6 +2062,156 @@
       "y": 1
      },
      "spot_name": "水手們中間"
+    },
+    {
+     "title": "看貝爾維婭定規矩",
+     "desc": "在吧台邊看貝爾維婭自己挑人、自己定規矩。",
+     "scene": "主角坐在黑檀之夜的吧台邊，看著{cast}自己挑了今晚的水手：她把高大黝黑的男人按在長椅上、騎上去、咬著他們的肩膀發號施令，一次又一次地回頭確認主角還在看；天亮前她自己喊了停，鑽回主角懷裡。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "belv_club"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_belvia"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 8,
+      "y": 2
+     },
+     "spot_name": "吧台邊的高腳椅"
+    },
+    {
+     "title": "站在貝爾維婭旁邊",
+     "desc": "照貝爾維婭的規矩，和她一起侍奉水手們（陰柔、中性體型的主角）。",
+     "scene": "主角站在{cast}旁邊，一起被黑檀之夜那群高大黝黑的水手圍住：規矩照樣是貝爾維婭定的，她一邊發號施令，一邊抓著主角的手不放，喊停的時候連主角也一起停。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin",
+      "male_partner"
+     ],
+     "requires": {
+      "flags": [
+       "belv_club"
+      ]
+     },
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_belvia"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 2,
+      "y": 1
+     },
+     "spot_name": "長椅那頭"
+    },
+    {
+     "title": "聽艾蜜莉亞唱船歌",
+     "desc": "聽艾蜜莉亞和水手們唱完船歌，看她被抱上長桌。",
+     "scene": "主角坐在黑檀之夜的酒桶旁，聽{cast}和水手們一起唱完船歌，然後看著她被高大黝黑的水手們抱上長桌，一個接一個；她一邊喘一邊接著唱，天亮前裹著水手的外套回到主角身邊。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "ame_club"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_amelia"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 6,
+      "y": 2
+     },
+     "spot_name": "酒桶旁的位子"
+    },
+    {
+     "title": "和艾蜜莉亞一起唱",
+     "desc": "和艾蜜莉亞並肩坐上長桌，跟著船歌一起被享用（陰柔、中性體型的主角）。",
+     "scene": "主角和{cast}並肩坐在黑檀之夜的長桌上，跟著水手們的船歌一起被輪流享用；艾蜜莉亞教主角唱下一段，歌聲斷斷續續，她握著主角的手不放。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin",
+      "male_partner"
+     ],
+     "requires": {
+      "flags": [
+       "ame_club"
+      ]
+     },
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_amelia"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 6,
+      "y": 1
+     },
+     "spot_name": "唱船歌的長桌"
     }
    ],
    "interior": "sm_ebony_night"
@@ -2397,6 +2547,146 @@
       "y": 1
      },
      "spot_name": "牆的那一邊（被服務）"
+    },
+    {
+     "title": "替瑟蕾娜拿著髮簪",
+     "desc": "坐在角落，聽牆後沒有名字的瑟蕾娜一整夜。",
+     "scene": "主角坐在榮譽洞的角落，握著{cast}的蓮花髮簪，聽著牆後沒有名字的她服侍一個又一個看不見臉的人，聽她低低地笑出聲；天亮時她拿回髮簪，變回從容的瑟蕾娜，只有耳根還紅著。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "ser_hole"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_serena"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 1,
+      "y": 1
+     },
+     "spot_name": "瑟蕾娜的隔間"
+    },
+    {
+     "title": "讓瑟蕾娜猜哪一個是你",
+     "desc": "混進牆那一邊排隊的客人裡，讓牆後的瑟蕾娜猜哪一個是你。",
+     "scene": "主角站到榮譽洞牆的那一邊，混在一排看不見臉的客人中間；牆後的{cast}一個一個服侍過去，輪到主角時停了一下，低低地笑了——她猜對了，於是慢條斯理地讓主角等到最後。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "ser_hole"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_serena"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 7,
+      "y": 1
+     },
+     "spot_name": "牆那一側的盡頭"
+    },
+    {
+     "title": "替紫丁香記筆記",
+     "desc": "在牆的這一邊，替牆後的克拉拉記下每一個反應。",
+     "scene": "主角坐在榮譽洞的牆邊翻開筆記本，替牆後的{cast}記下每一個反應：她服侍著一個又一個看不見臉的人，從默念句子到忘了數數；天亮時她出來搶過筆記，一邊讀一邊紅著臉說「這一句不對，重來」。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "clara_hole"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_clara"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 1,
+      "y": 2
+     },
+     "spot_name": "記筆記的板凳"
+    },
+    {
+     "title": "讓克拉拉閉著眼睛猜",
+     "desc": "混進牆那一邊的客人裡，讓克拉拉閉著眼睛猜哪一個是你。",
+     "scene": "主角混進榮譽洞牆那一邊排隊的客人裡；牆後的{cast}閉著眼睛一個一個服侍過去，邊服侍邊小聲地自言自語，像在打草稿，輪到主角時她停住了，很久很久——然後說「找到了」。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "clara_hole"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_clara"
+      }
+     ],
+     "hours": 2,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 7,
+      "y": 2
+     },
+     "spot_name": "牆那一側的長凳"
     }
    ],
    "interior": "sm_honor_hole"
@@ -3380,7 +3670,38 @@
     "dc": 12,
     "rate_cc": 4,
     "desc": "在夜市替攤子吆喝、跑堂、收碗。"
-   }
+   },
+   "scenes": [
+    {
+     "title": "不戴面具的夜市",
+     "desc": "蘇婉貞不再穿孝服了，她想和你逛一次夜市。",
+     "scene": "{cast}換下了孝服，挽著主角從御街的街頭吃到街尾，回到她在瓦舍邊上的小院就關上門：不用再戴面具的寡婦一開始還會害羞地遮著臉，後來主動騎上主角，天青的細鱗從鎖骨一路紅到胸口。",
+     "tags": [
+      "adult",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yasz_lover"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_su_wanzhen"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ]
+    }
+   ]
   },
   {
    "id": "lm_yh_goulan",
@@ -5734,6 +6055,136 @@
     "adult": true
    },
    "arena": true
+  },
+  {
+   "id": "lm_yh_faceless",
+   "name": "無面樓",
+   "emoji": "👺",
+   "location": "longan",
+   "at": {
+    "area": "longan/washe",
+    "x": 8,
+    "y": 3
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "瓦舍深處一座不掛招牌的小樓，進門的人都要戴上儺面，誰也不問誰的名字。蘇婉貞帶你來過一次，門口的老嫗記住了你的面具。",
+   "scene": "樓裡點著一盞盞紗燈，帷幔隔出一間間雅座，戴著儺面的男男女女在燈影裡交纏，沒有人說出自己的名字。",
+   "open": {
+    "hours": "night",
+    "flags": [
+     "yasz_club"
+    ],
+    "hidden": true,
+    "adult": true
+   },
+   "interior": "sm_yh_faceless",
+   "scenes": [
+    {
+     "title": "看戴著儺面的婉貞",
+     "desc": "坐在二樓的欄杆邊，看戴著儺面的蘇婉貞被面具客們享用。",
+     "scene": "主角坐在無面樓二樓的欄杆邊，看著戴著白底朱紋儺面的{cast}在廳堂正中被一群戴著面具的男人輪流享用：她放肆地叫出聲，又一次次抬頭找主角；天亮前她摘下面具爬上二樓，把一切都說給主角聽。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin"
+     ],
+     "requires": {
+      "flags": [
+       "yasz_club"
+      ]
+     },
+     "cast": [
+      {
+       "npc": "npc_yh_su_wanzhen"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 9,
+      "y": 1
+     },
+     "spot_name": "二樓欄杆邊的椅子"
+    },
+    {
+     "title": "戴著儺面陪她入席",
+     "desc": "戴上黑底金紋的儺面，和蘇婉貞一起被面具客們享用（陰柔、中性體型的主角）。",
+     "scene": "主角戴上黑底金紋的儺面，和{cast}一起走進無面樓帷幔後的雅座，被一群戴著面具的男人圍住；誰也不知道誰是誰，只有蘇婉貞的手一直握著主角的手。",
+     "tags": [
+      "adult",
+      "ntr",
+      "non_virgin",
+      "male_partner"
+     ],
+     "requires": {
+      "flags": [
+       "yasz_club"
+      ]
+     },
+     "pc_body": [
+      "fem",
+      "andro"
+     ],
+     "cast": [
+      {
+       "npc": "npc_yh_su_wanzhen"
+      }
+     ],
+     "hours": 3,
+     "affinity": 3,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 5,
+      "y": 1
+     },
+     "spot_name": "帷幔後的雅座"
+    },
+    {
+     "title": "沒有名字的一夜",
+     "desc": "自己戴上儺面，在無面樓的燈影裡過一夜（付給老嫗香資）。",
+     "scene": "主角戴上儺面，在無面樓的燈影裡和不知道名字的面具客們交纏了一夜：戴著面具的貴婦、名妓、書生、官員，誰也不問誰是誰；天亮前大家各自摘了面具，散進瓦舍的晨霧裡。",
+     "tags": [
+      "adult"
+     ],
+     "requires": {
+      "flags": [
+       "yasz_club"
+      ]
+     },
+     "hours": 3,
+     "money_cc": 20,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      }
+     ],
+     "spot": {
+      "x": 2,
+      "y": 3
+     },
+     "spot_name": "燈影裡的廳堂"
+    }
+   ]
   }
  ]
 }

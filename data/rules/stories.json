@@ -55360,6 +55360,642 @@
           "requires": { "flags": ["yhpol_done", "tdpol_done"], "flags_none": ["nsp1_started"] }
         }
       ]
+    },
+    {
+      "id": "belv_ebony_night",
+      "title": "自己選的夜",
+      "summary": "貝爾維婭從水手那裡聽說了索里耶爾港區的「黑檀之夜」。那一年她是被拖去那種地方的；這一次，她說要自己走進去，自己定規矩，自己喊停——你在角落看著。（貝爾維婭・黑檀之夜）",
+      "tags": ["adult", "ntr", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_belvia",
+        "min_affinity": 40,
+        "min_level": 12,
+        "requires": { "flags": ["belv_lover", "aya_club"] },
+        "text": "貝爾維婭把一張皺巴巴的紙條拍在你胸口，上面歪歪扭扭地畫著一扇門和一塊黑色的檀木牌。「護送商隊去索里耶爾的時候，水手們說的。港區酒館的地下，叫『黑檀之夜』。」她別開臉，尾巴煩躁地甩來甩去，「那一年，我是被拖著去那種地方的。被誰碰、碰多久，都不是我說了算。」她深吸一口氣，抬起下巴看你，「這次我想自己走進去。自己挑、自己定規矩、自己喊停。……你坐在角落，看著。我喊停的時候，你就過來把我帶走。才不是怕，是要有人作證。」"
+      },
+      "start_flags": ["belv_ebony_night_start"],
+      "nodes": [
+        {
+          "id": "door",
+          "title": "晚上跟貝爾維婭到索里耶爾的酒館地下",
+          "text": "酒館地下的門開了一條縫，燻香和酒氣湧上來。阿雅坐在長椅那頭，看見你們，紅著臉點了點頭。貝爾維婭在門口停了一下，手指摸過腰側的舊烙印，然後大步走進那群高大黝黑的水手中間，把纏著繃帶的手往桌上一拍：「規矩我定。我說停，就停。」",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["belv_ebony_night_start"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_belvia"],
+          "success": {
+            "text": "水手們先是一愣，接著大笑起來，有人舉起酒杯：「聽妳的，小貓。」那一夜，貝爾維婭一次也沒有喊停。天快亮的時候，有個醉醺醺的男人盯著她腰側的烙印看了很久，咧嘴一笑：「這個印子……我見過。札卡的貨？」",
+            "set_flags": ["belv_club_seen"],
+            "scene": "黑檀之夜的地下室裡，貝爾維婭自己挑了人、自己定了規矩：她把高大黝黑的水手按在長椅上，騎上去，咬著他們的肩膀，命令他們慢一點、再用力一點；尾巴高高翹著，一次又一次地回頭看角落裡的主角，像在確認有人看見——這一次，是她自己選的。"
+          }
+        },
+        {
+          "id": "brand",
+          "title": "在索里耶爾的酒館地下擋下認出烙印的人",
+          "text": "那個男人吹了一聲口哨，角落裡又站起一個人——都是烙印幫的漏網之魚，手上拎著鐵鍊。「札卡沒了，貨還在。」他們朝貝爾維婭走過去，「跟我們走，小貓。舊主人的規矩，妳的身體還記得吧？」",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["belv_club_seen"] },
+          "kind": "combat",
+          "enemies": [["brand_enforcer", 2]],
+          "success": { "text": "鐵鍊掉在地上。水手們把兩個人拖出後門扔進了港口，缺了一顆門牙的老船長朝貝爾維婭舉起酒杯：「在這裡，規矩是妳定的。」貝爾維婭沒有說話，只是抓著你的手，抓得很緊。", "set_flags": ["belv_club_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "answer",
+          "title": "回答貝爾維婭",
+          "text": "天亮了，你們坐在港口的石階上。貝爾維婭把下巴擱在膝蓋上，尾巴繞著你的腳踝：「……你都看見了。」她的聲音很小，「我一次也沒喊停。不是因為身體記得，是因為我想。」她瞪著海，耳朵一抖一抖的，「你、你說點什麼啊。」",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["belv_club_safe"] },
+          "kind": "choice",
+          "allies": ["npc_belvia"],
+          "options": [
+            {
+              "label": "「妳選的，我都在角落看著」",
+              "success": {
+                "text": "貝爾維婭的耳朵抖了一下，用額頭撞你的肩膀：「……笨蛋。」她撇著嘴，尾巴卻纏上了你的手腕，「那下次也來。坐同一個位子，不准走開。」從那以後，她每次到索里耶爾，總要拉著你去一趟黑檀之夜——每一次，最後都回到你懷裡。",
+                "set_flags": ["belv_club"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_belvia", "delta": 15, "reason": "看著她自己選" },
+                  { "type": "memory", "summary": "貝爾維婭自己走進了索里耶爾的黑檀之夜，自己定規矩，一次也沒喊停；你在角落看著，她說下次也要你坐同一個位子。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下次，換我站在妳旁邊」",
+              "success": {
+                "text": "「……站旁邊？」貝爾維婭瞪大了眼睛，臉一下子紅透了，「你、你是說要一起……」她咬著嘴唇想了很久，最後別開臉，「……隨便你。反正規矩是我定的。」她把手塞進你的手心，「先說好，我喊停的時候，連你也要停。」",
+                "set_flags": ["belv_club"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_belvia", "delta": 12, "reason": "說要站在她旁邊" },
+                  { "type": "memory", "summary": "貝爾維婭自己走進了索里耶爾的黑檀之夜；你說下次要站在她旁邊，她紅著臉說規矩還是她定的。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "amelia_ebony_night",
+      "title": "水手們的船歌",
+      "summary": "海鷗亭的老闆娘艾蜜莉亞想知道，那個人在海上找到了什麼，讓他寧可換個名字也不回家。常來的船員說過，索里耶爾港區的酒館地下有一整屋子的水手。（艾蜜莉亞・黑檀之夜）",
+      "tags": ["adult", "ntr", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_amelia",
+        "min_affinity": 40,
+        "min_level": 12,
+        "requires": { "flags": ["ame_lover", "aya_club"] },
+        "text": "打烊之後，艾蜜莉亞把最後一張椅子倒扣在桌上，卻沒有上樓。「常來的船員說，索里耶爾港區的酒館地下有一間俱樂部，叫『黑檀之夜』，一整屋子的水手。」她擦著早就乾淨的杯子，聲音很輕，「我守著海鷗亭，當了兩年的好妻子。那個人在海上找到了什麼，讓他寧可換個名字也不回家？……我想知道。」她放下杯子看著你，臉有點紅，眼神卻很清楚，「你陪我去。我想讓你看著——看著我不再當誰的好妻子。」"
+      },
+      "start_flags": ["amelia_ebony_night_start"],
+      "nodes": [
+        {
+          "id": "song",
+          "title": "晚上陪艾蜜莉亞到索里耶爾的酒館地下",
+          "text": "地下室裡，一群高大黝黑的水手正敲著桌子唱船歌。艾蜜莉亞在門口站了一下，解開頭巾，走到他們中間，接著唱下一段——那是沿海渡口的漁婦送男人出海時唱的歌。整間地下室安靜了一瞬，接著爆出喝采。",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["amelia_ebony_night_start"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_amelia"],
+          "success": {
+            "text": "那一夜，她唱完了整首船歌，然後再也沒有回到你身邊的座位上——直到天快亮。她裹著一件水手的外套走回來，頭髮散了，掛婚戒的那條項鍊不知道丟在了哪裡，臉上卻是你從沒見過的表情。「原來是這樣。」她靠在你肩上，笑著，又像要哭，「海上的男人……原來是這樣的。」",
+            "set_flags": ["ame_club_seen"],
+            "scene": "黑檀之夜的地下室裡，艾蜜莉亞唱完了船歌，被高大黝黑的水手們抱上長桌：守了兩年的身子一被碰就軟了，她一個接一個地接納他們，喘息混著還沒唱完的歌詞，一邊哭一邊笑，時不時回頭找角落裡的主角——像在確認自己被看著，也被允許了。"
+          }
+        },
+        {
+          "id": "debt",
+          "title": "在索里耶爾的酒館地下擋下來討債的黑帆打手",
+          "text": "門被踹開，兩個黑帆的打手擠了進來：「找到了，海鷗亭的老闆娘。」帶頭的抖開一張借據，「白鷗號的船主欠黑帆的錢，總得有人還。我們看妳在這裡挺能還的。」水手們放下了酒杯。",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["ame_club_seen"] },
+          "kind": "combat",
+          "enemies": [["blacksail_enforcer", 2]],
+          "success": { "text": "打手們被水手們和你一起扔進了港口。老船長把那張借據撕了，丟進燈裡燒掉：「白鷗號的債，黑檀之夜不認。」他朝艾蜜莉亞眨眨眼，「下次再來唱，老闆娘。」", "set_flags": ["ame_club_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "answer",
+          "title": "回答艾蜜莉亞",
+          "text": "天亮了，你們坐在港口的石階上看船進港。艾蜜莉亞一直看著海，很久才開口：「我以為我會覺得對不起誰。」她把手放進你的手心，「可是我只覺得……輕鬆。」她轉頭看你，「你呢？看著我那樣，你還要我嗎？」",
+          "at": { "where": "cell", "location": "soriel", "cell": "tavern" },
+          "requires": { "flags": ["ame_club_safe"] },
+          "kind": "choice",
+          "allies": ["npc_amelia"],
+          "options": [
+            {
+              "label": "「妳就是妳，我要妳」",
+              "success": {
+                "text": "艾蜜莉亞愣了一下，然後把臉埋進你的懷裡，笑出了聲：「……我好像，終於不用再等誰了。」那之後，她每個月總有一兩個晚上關了海鷗亭的門，坐船去索里耶爾唱歌——回來的那天，二樓的燈總是為你亮到天亮。",
+                "set_flags": ["ame_club"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_amelia", "delta": 15, "reason": "看見了還要她" },
+                  { "type": "memory", "summary": "艾蜜莉亞在索里耶爾的黑檀之夜唱完了船歌，和水手們過了一夜；你說妳就是妳，她說終於不用再等誰了。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下次換首歌，我們一起唱」",
+              "success": {
+                "text": "「一起……？」她的臉紅了，又噗哧一聲笑出來，「那你得先學會詞。」她靠回你肩上，輕輕哼起那首船歌，「我教你。在黑檀之夜，在海鷗亭——在哪裡都好。」",
+                "set_flags": ["ame_club"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_amelia", "delta": 12, "reason": "說要和她一起唱" },
+                  { "type": "memory", "summary": "艾蜜莉亞在黑檀之夜唱完了船歌；你說下次一起唱，她說要先教你歌詞。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "serena_honor_hole",
+      "title": "沒有價錢的夜",
+      "summary": "贖身之後，瑟蕾娜第一次不知道自己想要什麼——在金蓮樓，每一個眼神都有價錢。她說阿爾貝納的酒館地下有一道牆，牆的兩邊誰也看不見誰。（瑟蕾娜・榮譽洞）",
+      "tags": ["adult", "ntr", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_serena",
+        "min_affinity": 40,
+        "min_level": 12,
+        "requires": { "flags": ["ser_lover", "wl_1_done"] },
+        "text": "瑟蕾娜替你倒了一杯茶，手停在半空中，很久沒有放下。「你知道嗎？在金蓮樓，我連笑幾分都是算好的。」她把茶壺放下，「一夜多少錢、哪個客人喜歡哪種眼神……我全都記得。可是我不知道，沒有人付錢、沒有人看見我的臉的時候，我想要什麼。」她抬起眼睛，「阿爾貝納的酒館地下有一道牆，牆的兩邊誰也看不見誰。金蓮樓的姊妹們笑著說過。」她的聲音很輕，「陪我去。我想知道，不是瑟蕾娜的我，是什麼樣子。」"
+      },
+      "start_flags": ["serena_honor_hole_start"],
+      "nodes": [
+        {
+          "id": "wall",
+          "title": "晚上陪瑟蕾娜到阿爾貝納的酒館地下",
+          "text": "酒館地下的隔間悶熱又昏暗，木板牆上開著一排圓洞。瑟蕾娜拔下蓮花髮簪交給你，拉起兜帽，走進牆的那一邊。你聽見她在牆後輕輕吸了一口氣——然後是第一個客人的腳步聲。",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "requires": { "flags": ["serena_honor_hole_start"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_serena"],
+          "success": {
+            "text": "那一夜，牆的另一邊換了很多人。你坐在角落，聽著牆後那個沒有名字的女人喘息、低笑，有一次甚至笑出了聲——那不是金蓮樓頭牌的笑，你從沒聽過她這樣笑。天快亮時，隔壁有人壓低了聲音說：「這種手藝……是金蓮樓出來的吧？」",
+            "set_flags": ["ser_hole_seen"],
+            "scene": "榮譽洞的牆後，瑟蕾娜拉著兜帽跪在圓洞前：沒有價錢、沒有臉、沒有名字，她第一次不用計算任何一個眼神，只照著自己的身體想要的，用嘴和手服侍牆那一邊一個接一個看不見臉的人，偶爾低低地笑出聲；主角坐在角落，握著她的蓮花髮簪聽了一整夜。"
+          }
+        },
+        {
+          "id": "peek",
+          "title": "在阿爾貝納的酒館地下擋住想看牆後是誰的人",
+          "text": "隔壁的人是金蓮樓的老常客，阿爾貝納的一個布商。他繞到牆的這一邊，伸手就要掀隔間的布簾：「讓我看一眼，就一眼——要真是她，我出雙倍。」",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "requires": { "flags": ["ser_hole_seen"] },
+          "kind": "check",
+          "check": { "attr": "cha", "dc": 14 },
+          "success": { "text": "你擋在布簾前，笑著跟他講這裡的規矩：牆後的人沒有名字，掀簾子的人會被酒館老闆扔進運河。他悻悻地走了，臨走前還回頭看了一眼。布簾後面，瑟蕾娜輕輕笑了一聲。", "set_flags": ["ser_hole_safe"] },
+          "fail": { "text": "他推開你的手，你只好擋在布簾前繼續和他周旋。再試一次。", "retry": true },
+          "hours": "night"
+        },
+        {
+          "id": "answer",
+          "title": "回答瑟蕾娜",
+          "text": "天亮了，阿爾貝納的運河上飄著薄霧。瑟蕾娜從你手上拿回蓮花髮簪，插回髮間，又變回了那個從容的瑟蕾娜——只有耳根還紅著。「我笑了。」她說，像在說一件不可思議的事，「沒有人付錢，我卻笑了。」她看著你，「你都聽見了。現在換你說——你還要我嗎？還是，你要的只是那個頭牌？」",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "requires": { "flags": ["ser_hole_safe"] },
+          "kind": "choice",
+          "allies": ["npc_serena"],
+          "options": [
+            {
+              "label": "「我要的是會那樣笑的妳」",
+              "success": {
+                "text": "瑟蕾娜看了你很久，然後笑了——不是算好的那種。「那我以後……偶爾還想去那道牆後面。」她挽住你的手臂，「每一次，你都替我拿著髮簪。好嗎？」",
+                "set_flags": ["ser_hole"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_serena", "delta": 15, "reason": "要會那樣笑的她" },
+                  { "type": "memory", "summary": "瑟蕾娜在阿爾貝納的榮譽洞當了一夜沒有名字的女人，第一次不是為了錢而笑；你說要的就是會那樣笑的她。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下次，牆的那一邊也有我」",
+              "success": {
+                "text": "「……你是說，在那麼多人裡面，讓我猜哪一個是你？」瑟蕾娜的眼睛亮了起來，像在看一齣新戲，「好啊。我猜得出來的。」她湊到你耳邊，「猜錯了，就罰我。」",
+                "set_flags": ["ser_hole"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_serena", "delta": 12, "reason": "要她猜哪一個是你" },
+                  { "type": "memory", "summary": "瑟蕾娜在榮譽洞當了一夜沒有名字的女人；你說下次牆的那一邊也有你，她說一定猜得出來。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "clara_honor_hole",
+      "title": "第十三卷的取材",
+      "summary": "紫丁香的第十三卷要寫一道牆：牆的兩邊誰也看不見誰。克拉拉說這一次的取材，她要自己站到牆後面——由你在外面記筆記。（克拉拉・榮譽洞）",
+      "tags": ["adult", "ntr", "non_virgin"],
+      "rank": "B",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_clara",
+        "min_affinity": 40,
+        "min_level": 12,
+        "requires": { "flags": ["clara_lover", "wl_1_done"] },
+        "text": "克拉拉把一份新的大綱推到你面前，封面上寫著《紫丁香・第十三卷：牆》。「阿爾貝納的酒館地下有一道牆，」她推了推眼鏡，臉紅得很專業，「牆上開著洞，兩邊誰也看不見誰。我寫了三遍，三遍都不對。」她把一本空白的筆記本和一支筆交到你手上，「所以這次的取材……我要自己站到牆後面。你在外面，替我記下我的反應。每一個。」她頓了一下，聲音小了下去，「……你會讀到很多我沒寫過的東西。你，可以嗎？」"
+      },
+      "start_flags": ["clara_honor_hole_start"],
+      "nodes": [
+        {
+          "id": "research",
+          "title": "晚上陪克拉拉到阿爾貝納的酒館地下取材",
+          "text": "榮譽洞的隔間又悶又暗。克拉拉把眼鏡放進你的口袋，深吸一口氣，走進牆的那一邊。你翻開筆記本，聽見木板牆後傳來她小聲的、像在默念稿子的聲音：「第一位……」",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "requires": { "flags": ["clara_honor_hole_start"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_clara"],
+          "success": {
+            "text": "筆記本寫滿了二十七頁。你記下了她的每一次停頓、每一聲壓不住的驚呼，還有她第一次忘了數到第幾位的時候。天快亮時她從牆後出來，頭髮亂了，第一句話卻是：「筆記給我看。」——就在這時，隔間外有人在問：「紫丁香是不是在這裡？」",
+            "set_flags": ["clara_hole_seen"],
+            "scene": "榮譽洞的牆後，克拉拉摘了眼鏡跪在圓洞前，替牆那一邊一個接一個看不見臉的人服務：她一開始還小聲地默數、默念句子，後來忘了數，忘了念，只剩壓不住的喘息與驚呼；主角在牆的這一邊，把她每一個反應寫進筆記本，寫滿了二十七頁。"
+          }
+        },
+        {
+          "id": "pirates",
+          "title": "在阿爾貝納的酒館地下擋下來搶原稿的盜印商",
+          "text": "三個金秤商行的傭兵堵住了隔間的門——阿爾貝納賣的紫丁香盜印本，都是金秤商行印的。「聽說紫丁香在這裡取材？」帶頭的盯著你手上的筆記本，「第十三卷的原稿，我們先買了。」",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "requires": { "flags": ["clara_hole_seen"] },
+          "kind": "combat",
+          "enemies": [["goldscale_mercenary", 3]],
+          "success": { "text": "傭兵們被酒館的老闆和你一起扔了出去。克拉拉從你手上搶過筆記本抱在胸前，瞪著門口：「……盜印的人，連取材都要搶。」她的手在發抖，嘴角卻在笑，「這一段我要寫進後記。」", "set_flags": ["clara_hole_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "answer",
+          "title": "回答克拉拉",
+          "text": "天亮了，克拉拉坐在酒館的角落，一頁一頁地翻著你的筆記，耳根越來越紅。翻到最後一頁，她停住了：那一頁你只寫了一行字。她把筆記本闔上，抱在胸前，小聲地問：「你寫這些的時候……在想什麼？讀完了，你還要我嗎？」",
+          "at": { "where": "cell", "location": "albena", "cell": "tavern" },
+          "requires": { "flags": ["clara_hole_safe"] },
+          "kind": "choice",
+          "allies": ["npc_clara"],
+          "options": [
+            {
+              "label": "「我在想，下一卷要怎麼寫我們」",
+              "success": {
+                "text": "克拉拉愣了一下，然後把臉埋進筆記本裡笑了：「……又是好老套的台詞。」她把筆記本塞回你手裡，「那這本你留著。第十三卷出版的時候，只有你知道哪一句是真的。」",
+                "set_flags": ["clara_hole"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 15, "reason": "讀完了還要她" },
+                  { "type": "memory", "summary": "克拉拉在阿爾貝納的榮譽洞替紫丁香的第十三卷取材，你替她記了二十七頁的筆記；你說在想下一卷要怎麼寫你們。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「下一次，牆的那一邊換我」",
+              "success": {
+                "text": "「……這、這是新的取材提案嗎？」克拉拉的臉紅到了脖子，卻立刻翻開筆記本的新一頁，寫下日期，「那……我要閉著眼睛猜，哪一個是你。猜不到的話，」她咬著筆桿，「就要重新取材。」",
+                "set_flags": ["clara_hole"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_clara", "delta": 12, "reason": "說下次換你在牆那一邊" },
+                  { "type": "memory", "summary": "克拉拉在榮譽洞替第十三卷取材；你說下次牆的那一邊換你，她說要閉著眼睛猜哪一個是你。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 400 }, { "type": "xp", "amount": 1800 }]
+    },
+    {
+      "id": "yasz_widow",
+      "title": "牌坊下的寡婦",
+      "summary": "龍安府蘇御史家的寡婦蘇婉貞，守節三年，禮部就要替她立一座貞節牌坊。那天夜裡，你在御街夜市撿到了她掉落的一張儺面。（蘇婉貞・一）",
+      "tags": ["adult"],
+      "rank": "D",
+      "merit": 8,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_wanzhen",
+        "text": "御街夜市的人潮裡，一個穿著素白孝服的年輕寡婦被擠得撞上了你，懷裡掉出一樣東西——一張白底朱紋的儺面，笑得很放肆。她的臉一下子白了，蹲下去撿，手抖得撿了兩次才撿起來。「這、這是替婆家的姪兒買的……」她把面具藏進袖子裡，聲音細得快聽不見，又飛快地往人群後面看了一眼，「……抱歉。後面有人跟著我。可以請您……送我一段路嗎？」",
+        "min_level": 5
+      },
+      "start_flags": ["yasz_1_started"],
+      "nodes": [
+        {
+          "id": "tail",
+          "title": "晚上在御街夜市擋下跟蹤蘇婉貞的人",
+          "text": "兩個短打扮的漢子一路跟在後面，見你們拐進巷口，乾脆攔了上來：「蘇家少夫人，這麼晚了要去哪兒？御史大人吩咐過，少夫人夜裡出門，要我們『陪著』。」其中一個伸手就去抓她的袖子——藏著面具的那一隻。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yasz_1_started"] },
+          "kind": "combat",
+          "enemies": [["yh_street_thug", 2]],
+          "success": { "text": "兩個漢子罵罵咧咧地跑了。蘇婉貞靠在牆上大口喘氣，袖子裡的面具硌得她手腕發紅，她卻一直沒有鬆手。", "set_flags": ["yasz_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"]
+        },
+        {
+          "id": "promise",
+          "title": "晚上在御街夜市聽蘇婉貞說實話",
+          "text": "「那不是替姪兒買的。」蘇婉貞低著頭，把那張儺面從袖子裡拿出來，捧在手上，「瓦舍深處有一座不掛招牌的樓，叫『無面樓』。進門的人都要戴上面具，誰也不問誰的名字。」她的聲音在發抖，「我去過一次。只有一次。戴上它的時候……我不是蘇家的寡婦，不是要立牌坊的人，我是誰都可以。」她抬起眼睛，眼眶紅了，「禮部的人下個月就要來看牌坊的地了。您……會說出去嗎？」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_night_market" },
+          "requires": { "flags": ["yasz_safe"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"],
+          "options": [
+            {
+              "label": "「我不會說出去」",
+              "success": {
+                "text": "蘇婉貞鬆了一口氣，把面具收回袖子裡，又抬頭看你，第一次笑了——只笑了一半。「那……下次在夜市看見我，請您當作不認識。」她走了幾步，又回過頭，「……或者，認識也可以。」",
+                "set_flags": ["yasz_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 8, "reason": "替她保守秘密" },
+                  { "type": "memory", "summary": "在御街夜市替蘇御史家的寡婦蘇婉貞擋下跟蹤的人；她說了無面樓的秘密，你答應不說出去。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "「戴上它的時候，妳快樂嗎」",
+              "success": {
+                "text": "她愣住了，像是從來沒有人問過她這個問題。很久之後，她輕輕點了點頭，又搖了搖頭：「……我不知道。我只知道，摘下來的時候，我好想哭。」她把面具貼在胸口，「謝謝您問我。」",
+                "set_flags": ["yasz_1_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 10, "reason": "問她快不快樂" },
+                  { "type": "memory", "summary": "問蘇婉貞戴上儺面的時候快不快樂；她說不知道，只知道摘下來的時候好想哭。", "importance": 2 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 300 }, { "type": "xp", "amount": 450 }]
+    },
+    {
+      "id": "yasz_banquet",
+      "title": "無面宴",
+      "summary": "禮部的人要來看牌坊的地了。蘇婉貞說，她想在那之前再去一次無面樓——最後一次。她求你陪她去，替她甩掉婆家的眼線。（蘇婉貞・二）",
+      "tags": ["adult"],
+      "rank": "C",
+      "merit": 10,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_wanzhen",
+        "min_affinity": 20,
+        "requires": { "flags": ["yasz_1_done"] },
+        "text": "蘇婉貞趁著上香出了門，在瓦舍外的柳樹下等你。她換下了孝服，穿著一件不起眼的灰色褙子，袖子裡鼓鼓的，是那張儺面。「禮部的人下個月就來了。牌坊一立，我就一輩子是蘇家的節婦。」她抓著你的袖子，指節發白，「我想再去一次無面樓。最後一次——我保證。公公的人一直盯著我，我一個人走不過瓦舍。您……能陪我嗎？」",
+        "min_level": 8
+      },
+      "start_flags": ["yasz_2_started"],
+      "nodes": [
+        {
+          "id": "sneak",
+          "title": "晚上帶蘇婉貞穿過瓦舍甩掉眼線",
+          "text": "瓦舍的勾欄剛散戲，人潮湧出來，燈籠照得像白天。御史府的兩個眼線就站在勾欄門口，一個一個看著過路女人的臉。你得帶著她混進人群，從勾欄的後台繞出去。",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yasz_2_started"] },
+          "kind": "check",
+          "check": { "attr": "dex", "dc": 13 },
+          "success": { "text": "你們貼著後台的布景溜了出去，戲子們忙著卸妝，誰也沒多看一眼。蘇婉貞的手一直在你手心裡，濕濕的，在發抖。", "set_flags": ["yasz_escaped"] },
+          "fail": { "text": "眼線往這邊看了一眼，你只好拉著她退回人群。等一下再試。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"]
+        },
+        {
+          "id": "door",
+          "title": "晚上在無面樓的門口回答蘇婉貞",
+          "text": "瓦舍深處一座不掛招牌的小樓，門口掛著一盞白紗燈，沒有招牌。門口的老嫗遞來一張空白的儺面，等著。蘇婉貞捧著自己那張白底朱紋的面具，在燈下站了很久，沒有戴上。「我想進去。」她轉頭看你，聲音很輕，「可是……我也想知道，有沒有一個人，是我不用戴面具也能面對的。」",
+          "at": { "where": "cell", "location": "longan", "cell": "lm_yh_goulan" },
+          "requires": { "flags": ["yasz_escaped"] },
+          "kind": "choice",
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"],
+          "options": [
+            {
+              "label": "「把面具摘下來，看著我」",
+              "success": {
+                "text": "你把那張儺面從她手上拿下來，還給門口的老嫗。蘇婉貞愣愣地看著你，像第一次被人看見自己的臉。你們沒有進那座樓。回去的路上，她在一條沒有燈的小巷裡停下來，踮起腳尖吻了你——素白的臉紅得像那張面具上的朱紋。",
+                "set_flags": ["yasz_2_done", "yasz_pc"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 12, "reason": "讓她不用戴面具" },
+                  { "type": "memory", "summary": "在無面樓的門口，你把蘇婉貞的儺面還給了老嫗；回去的路上，她在沒有燈的小巷裡吻了你。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "龍安府沒有燈的小巷裡，蘇婉貞第一次不戴面具地吻了主角：守了三年節的寡婦先是生澀地發抖，後來越吻越急，顫抖的手解開了自己灰色褙子的衣帶，把主角拉進巷底的陰影裡；她咬著主角的肩膀不敢出聲，天青的細鱗從鎖骨一路紅到胸口。"
+              }
+            },
+            {
+              "label": "「戴上吧，我在樓下等妳」",
+              "tags": ["ntr"],
+              "success": {
+                "text": "她看了你很久，然後戴上那張白底朱紋的儺面，推開了門。樓裡的笑聲、絲竹聲和壓低的喘息湧出來，又被關在門後。你在樓下的燈籠下等到天亮。她出來的時候摘下了面具，髮髻散了，素白的頸子上留著不知道是誰的牙印——可是她在笑，那張臉笑得比面具還放肆。",
+                "set_flags": ["yasz_2_done", "yasz_ntr"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 10, "reason": "在樓下等她" },
+                  { "type": "memory", "summary": "你在無面樓的樓下等蘇婉貞到天亮；她摘下面具出來的時候，笑得比面具還放肆。", "importance": 3 }
+                ],
+                "complete": true,
+                "time": { "until": "morning" }
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 600 }, { "type": "xp", "amount": 900 }]
+    },
+    {
+      "id": "yasz_arch",
+      "title": "牌坊之前",
+      "summary": "禮部的人來了，蘇家門前搭起了牌坊的竹架。蘇婉貞要在牌坊立起來之前，把一句話說給所有人聽。（蘇婉貞・三）",
+      "tags": ["adult", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_wanzhen",
+        "min_affinity": 40,
+        "requires": { "flags": ["yasz_pc"] },
+        "text": "蘇家門前的空地上已經搭起了牌坊的竹架，禮部的官員明天就要來題字。蘇婉貞在夜市的茶坊裡等你，換回了孝服，手腕上的念珠卻不見了。「我把念珠還給了亡夫的牌位。」她看著你，眼神第一次那麼穩，「明天禮部的人來的時候，我要對他們說：這座牌坊，蘇婉貞不要。」她在桌子底下握住你的手，「公公不會讓我說出口的。您……願意站在我旁邊嗎？」",
+        "min_level": 11
+      },
+      "start_flags": ["yasz_3_started"],
+      "nodes": [
+        {
+          "id": "hired",
+          "title": "晚上在龍安府擋下御史府派來的人",
+          "text": "你送她回蘇家的路上，巷口堵著幾個蒙面的刀客。帶頭的壓低了聲音：「少夫人，御史大人說了，牌坊立起來之前，請您在家裡好好『養病』。」他們身後停著一頂沒有窗的小轎。",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["yasz_3_started"] },
+          "kind": "combat",
+          "enemies": [["yh_blade_for_hire", 3]],
+          "success": { "text": "刀客們丟下轎子跑了。蘇婉貞看著那頂沒有窗的小轎，臉色發白，卻一步也沒有退：「……他要把我關起來，一直關到牌坊立好。」她深吸一口氣，「明天，我一定要說。」", "set_flags": ["yasz_stood"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"],
+          "urgent": true
+        },
+        {
+          "id": "arch",
+          "title": "白天在龍安府陪蘇婉貞面對禮部的官員",
+          "text": "牌坊的竹架下圍滿了看熱鬧的街坊，禮部的官員捧著題字的匾額，蘇御史站在一旁，臉色鐵青。蘇婉貞從人群裡走出來，拔下頭上的素銀簪，跪下，又站起來：「這座牌坊，蘇婉貞不要。」人群一下子炸開了。蘇御史的手在發抖，指著你：「是你——」",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["yasz_stood"] },
+          "kind": "story",
+          "hours": "day",
+          "allies": ["npc_yh_su_wanzhen"],
+          "success": {
+            "text": "禮部的官員看了看蘇御史，又看了看站在你身邊、一步也不肯退的蘇婉貞，慢慢收起了匾額：「節婦自己不要的牌坊，禮部立不起來。」他走之前看了你一眼，搖搖頭，又像在笑。當天晚上，竹架就拆了；蘇婉貞從蘇家搬了出來，在瓦舍邊上租了一間小院。",
+            "set_flags": ["yasz_freed"]
+          }
+        },
+        {
+          "id": "lover",
+          "title": "晚上到龍安府蘇婉貞的小院",
+          "text": "小院裡只點著一盞燈。蘇婉貞換下了穿了三年的孝服，穿著一件淺青的衫子，頭髮放了下來，看見你就紅了臉。「我以為我會怕。」她說，「可是我只想著一件事——以後，我不用再戴任何一張面具了。」她走到你面前，第一次主動解開了自己的衣帶。",
+          "at": { "where": "settlement", "location": "longan" },
+          "requires": { "flags": ["yasz_freed"] },
+          "kind": "choice",
+          "options": [
+            {
+              "label": "「今晚，妳想怎樣都可以」",
+              "success": {
+                "text": "她紅著臉點點頭，牽著你走進裡屋。天亮的時候，她靠在你懷裡，手指在你胸口畫著什麼，畫完了才小聲說：「是那張面具。我把它畫在你身上，就不用再戴了。」",
+                "set_flags": ["yasz_lover", "yasz_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "蘇婉貞在禮部的官員面前說不要那座牌坊，搬出了蘇家；那一夜她在自己的小院裡，第一次不用戴任何面具。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "瓦舍邊的小院裡，守了三年節的蘇婉貞第一次為自己解開衣帶：她先是害羞地遮著臉，被主角輕輕拉開手之後就再也不躲了，生澀又貪心地迎上去，天青的細鱗從鎖骨一路紅到胸口；最後她伏在主角胸前，說她終於知道不戴面具是什麼感覺。",
+                "time": { "until": "morning" }
+              }
+            },
+            {
+              "label": "把她的手拉開，看著她的臉",
+              "success": {
+                "text": "她想遮住臉，你把她的手輕輕拉開。她看著你，眼淚掉了下來，又笑了：「……原來被人看著，是這種感覺。」那一夜，她一直沒有閉上眼睛。",
+                "set_flags": ["yasz_lover", "yasz_3_done"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 15, "reason": "在一起了" },
+                  { "type": "memory", "summary": "蘇婉貞不要那座牌坊，搬出了蘇家；那一夜你拉開她遮著臉的手，她說原來被人看著是這種感覺。", "importance": 3 }
+                ],
+                "complete": true,
+                "scene": "小院的燈下，主角拉開蘇婉貞遮著臉的手，看著她的臉一寸寸地愛撫她：寡婦豐腴白皙的身子在主角手下發燙，她一直睜著眼睛看主角，喘息越來越亂，最後哭著笑出聲，雙腿纏住主角不肯放。"
+              }
+            }
+          ],
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
+    },
+    {
+      "id": "yasz_faceless",
+      "title": "無面樓",
+      "summary": "瓦舍深處那座不掛招牌的小樓，蘇婉貞已經去了很多次。她要你陪她進去一次，看她戴著面具的樣子——然後問你，還要不要她。（蘇婉貞・三）",
+      "tags": ["adult", "ntr", "non_virgin"],
+      "rank": "B",
+      "merit": 15,
+      "start": {
+        "kind": "npc",
+        "npc": "npc_yh_su_wanzhen",
+        "min_affinity": 30,
+        "requires": { "flags": ["yasz_ntr"] },
+        "text": "蘇婉貞把兩張儺面放在你面前：一張是她那張白底朱紋的，一張是新的，黑底金紋。「無面樓的老嫗說，帶人來，要先替他挑一張面具。」她的臉紅透了，眼神卻很坦然，「我想讓你看看我在那裡的樣子。不是在樓下等，是進去，坐在二樓的欄杆邊看。」她把黑底金紋的那張推給你，「然後，我想聽你說，你還要不要我。」",
+        "min_level": 11
+      },
+      "start_flags": ["yasz_club_start"],
+      "nodes": [
+        {
+          "id": "banquet",
+          "title": "晚上戴上儺面，跟蘇婉貞走進瓦舍的無面樓",
+          "text": "無面樓裡點著一盞盞紗燈，帷幔隔出一間間雅座，戴著儺面的男男女女在燈影裡交纏，誰也不說自己的名字。蘇婉貞戴上那張白底朱紋的面具，回頭看了你一眼，走進了廳堂正中。你坐在二樓的欄杆邊，看了一整夜。",
+          "at": { "where": "cell", "location": "longan", "cell": "tavern" },
+          "requires": { "flags": ["yasz_club_start"] },
+          "kind": "story",
+          "hours": "night",
+          "allies": ["npc_yh_su_wanzhen"],
+          "success": {
+            "text": "天快亮的時候，樓下突然一陣騷動——有人在門口喊：「御史臺查案！樓裡的人都把面具摘下來！」",
+            "set_flags": ["yasz_club_seen"],
+            "scene": "無面樓的廳堂裡，戴著白底朱紋儺面的蘇婉貞被一群戴著面具的男人圍住：沒有名字、沒有牌坊，守了三年節的身子被一個接一個地享用，她放肆地叫出聲，又一次次抬頭看二樓欄杆邊的主角；面具底下流著淚，嘴角卻在笑。天亮前她裹著披帛爬上二樓，摘下面具，把一切都說給主角聽。"
+          }
+        },
+        {
+          "id": "raid",
+          "title": "天亮時在無面樓擋下來查案的人",
+          "text": "兩個披甲的禁軍踹開了門，身後跟著一個提著燈籠的老僕——是蘇御史府上的管家。「少夫人一定在這裡。」管家舉著燈籠，一張一張地照過那些面具，「御史大人說了，找到了，就當場摘下來。」",
+          "at": { "where": "cell", "location": "longan", "cell": "tavern" },
+          "requires": { "flags": ["yasz_club_seen"] },
+          "kind": "combat",
+          "enemies": [["yh_imperial_guard", 2]],
+          "success": { "text": "禁軍被樓裡的客人們推推搡搡地擠出了門，管家的燈籠掉在地上滅了。門口的老嫗慢吞吞地關上門：「無面樓裡，沒有人有臉。」她把那張黑底金紋的面具塞回你手裡，「下次也來。」", "set_flags": ["yasz_club_safe"] },
+          "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "urgent": true
+        },
+        {
+          "id": "answer",
+          "title": "在無面樓的二樓回答蘇婉貞",
+          "text": "蘇婉貞坐在你身邊，披帛裹著肩膀，面具放在膝上，臉上還有淚痕。她沒有道歉，只是看著你：「這就是我。白天是要立牌坊的蘇家寡婦，夜裡是誰都可以的女人。」她握住你的手，「你看見了。你還要不要我？」",
+          "at": { "where": "cell", "location": "longan", "cell": "tavern" },
+          "requires": { "flags": ["yasz_club_safe"] },
+          "kind": "choice",
+          "allies": ["npc_yh_su_wanzhen"],
+          "options": [
+            {
+              "label": "「妳還是妳，我要妳」",
+              "success": {
+                "text": "她愣了一下，然後把臉埋進你的懷裡，笑著哭了出來：「你是唯一一個……看過我兩張臉，還要我的人。」從那天起，她白天照樣替婆家抄經，夜裡常常出現在無面樓——每一次，她都會先在二樓的欄杆邊找你。",
+                "set_flags": ["yasz_club"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 15, "reason": "看見了還要她" },
+                  { "type": "memory", "summary": "蘇婉貞帶你去了瓦舍的無面樓，讓你看她戴著儺面的樣子；你說妳還是妳，我要妳。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            },
+            {
+              "label": "讓她自己決定要不要回來",
+              "success": {
+                "text": "「我不會替妳決定。」她看了你很久，輕輕點頭：「那我會回來的——每一次。」她說到做到：夜裡她常常在無面樓，天亮之前，一定回到你身邊。",
+                "set_flags": ["yasz_club"],
+                "effects": [
+                  { "type": "affinity", "npc": "npc_yh_su_wanzhen", "delta": 12, "reason": "讓她自己決定" },
+                  { "type": "memory", "summary": "蘇婉貞帶你去了無面樓；你讓她自己決定要不要回來，她說每一次都會回來。", "importance": 3 }
+                ],
+                "complete": true
+              }
+            }
+          ]
+        }
+      ],
+      "rewards": [{ "type": "money", "amount": 1500 }, { "type": "xp", "amount": 2000 }]
     }
   ]
 }

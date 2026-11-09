@@ -34,11 +34,12 @@
 | `east_p9_work.py` | `data/rules/stories.json`、`items.json`、`gear.json`、`abilities.json`、`lewd.json`、`data/world/npcs.json`、`landmarks.json` | 炎華之地的打工線（R26 第一批，成人向）：五條線 15 個任務、五位委託人、四個新地標與上工的場景、五件獨特裝備、五個獨特技能與技能書（加進淫鬥場、拍賣會、園區寶箱）、新底材肚兜與它的制式品。要排在 `east_p3_places.py`、`east_p7_people.py` 之後（它們整筆重寫地標）。可以重跑 |
 | `east_p9_fest.py` | `data/rules/stories.json`、`items.json`、`gear.json`、`abilities.json`、`lewd.json`、`data/world/npcs.json`、`data/worldbook/elondia.worldbook.json` | 炎華之地的巡禮與祭典（R26 第二批，成人向）：龍母祠的求子香五站、四個祭典各三個任務、五位委託人、五件獨特裝備、五個獨特技能與技能書、新底材紅蓋頭與褻褲和它們的制式品、世界書的龍母祠。寫檔的函式借 `east_p9_work.py` 的。要排在 `east_p9_work.py` 之後（用到肚兜；兩支都把委託人接在 npcs.json 最後，順序反過來時委託人的排列會不同）、`east_p4a_races.py` 之後（它寫神祇信仰）。可以重跑 |
 | `underworld39.py` | `data/world/special_maps.json`、`landmarks.json` | 地下街（[SPECIAL_MAPS](../../../docs/SPECIAL_MAPS.md) 第 9 節）：有黑市或魅氣 3 以上的聚落各一張隱藏地圖（`sm_uw_<地點>`），裡面擺黑市與地下淫鬥場的地標（`lm_uw_black_<地點>`、`lm_uw_arena_<地點>`），並把黑檀之夜、榮譽洞、月下拍賣會搬進去。要排在 `work26.py`、`lust_s8.py` 之後（它們會重寫地標）。可以重跑 |
+| `club_lines42.py` | `data/rules/stories.json`、`data/world/npcs.json`、`landmarks.json`、`special_maps.json`、`data/worldbook/elondia.worldbook.json` | 特殊區域的延伸線：貝爾維婭、艾蜜莉亞走進黑檀之夜，瑟蕾娜、克拉拉走進榮譽洞（各一個任務，完成後那個地標多兩個場景）；炎華南域的新角色蘇婉貞（四個任務）與龍安府瓦舍的「無面樓」（地標、內部、場景），純愛線在御街夜市多一個場景。要排在 `east_p3_places.py`、`east_p3_npcs.py`、`east_p4e_group.py`、`east_p7_people.py`、`east_p9_work.py`、`underworld39.py` 之後（它們會整筆重寫地標、南域的 NPC 或場景）。可以重跑 |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 | `../../tools/guide/guide.py` | `docs/guide/` | 給玩家的遊戲攻略，同步到 wiki（`data/` 改過之後都要重跑；沒重跑時測試 `guide.spec.ts` 會失敗） |
 
-建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `npc_looks40.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
+建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `npc_looks40.py` → `club_lines42.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
 
 ## 一次性（已經套用過，留作紀錄）
 

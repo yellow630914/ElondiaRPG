@@ -24,7 +24,7 @@ afterEach(() => {
   applyContent(emptyMods())
 })
 
-const AREAS = ['lm_wives_salon', 'lm_maid_cafe', 'lm_ebony_night', 'lm_succubus_banquet', 'lm_idol_backstage', 'lm_honor_hole']
+const AREAS = ['lm_wives_salon', 'lm_maid_cafe', 'lm_ebony_night', 'lm_succubus_banquet', 'lm_idol_backstage', 'lm_honor_hole', 'lm_yh_faceless']
 
 function at(id: string, flags: string[], body?: 'masc' | 'fem' | 'andro'): GameState {
   const l = landmarks[id]!
@@ -147,6 +147,64 @@ describe('special areas unlocked by the storylines', () => {
     expect(sceneText(tea, landmarks.lm_wives_salon!.scenes![0]!)).toContain('瑪格麗特・馮・艾森、莉澤洛特、克拉拉')
     const idols = at('lm_idol_backstage', ['group_idols_done'])
     expect(titles(idols)).toEqual(['演出後替三人「充電」'])
+  })
+})
+
+describe('other characters following into the special areas (club_lines42.py)', () => {
+  const story = (id: string) => stories.find((s) => s.id === id)!
+
+  it('needs the place already open and the character as a lover, and is marked NTR', () => {
+    for (const [id, flags] of [
+      ['belv_ebony_night', ['belv_lover', 'aya_club']], ['amelia_ebony_night', ['ame_lover', 'aya_club']],
+      ['serena_honor_hole', ['ser_lover', 'wl_1_done']], ['clara_honor_hole', ['clara_lover', 'wl_1_done']],
+    ] as const) {
+      const s = story(id)
+      expect(s.start.requires?.flags, id).toEqual(flags)
+      expect(s.tags, id).toContain('ntr')
+      expect(s.rank, id).toBe('B')
+    }
+  })
+
+  it('adds Belvia and Amelia to the Ebony Night only after their own quests, and never opens the club by itself', () => {
+    expect(titles(at('lm_ebony_night', ['aya_club', 'belv_club'], 'masc'))).toEqual(['看阿雅和水手們', '看貝爾維婭定規矩'])
+    const fem = at('lm_ebony_night', ['aya_club', 'belv_club', 'ame_club'], 'fem')
+    expect(titles(fem)).toEqual(['看阿雅和水手們', '和阿雅一起侍奉水手們', '看貝爾維婭定規矩', '站在貝爾維婭旁邊', '聽艾蜜莉亞唱船歌', '和艾蜜莉亞一起唱'])
+    const r = playLandmarkScene(fem, index(fem, '看貝爾維婭定規矩'))
+    expect(r.narration?.adult_scene).toContain('貝爾維婭')
+    // 共用地標的冷卻（場景演到過了午夜，所以剩兩天）
+    expect(sceneBlocked(fem, index(fem, '看阿雅和水手們'))).toMatch(/^\d 天後才能再來$/)
+    // 沒走阿雅的 NTR 線：地標照樣不出現
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'soriel' })
+    setFlag(state, 'belv_club')
+    expect(landmarkHidden(state, landmarks.lm_ebony_night!)).toBe(true)
+  })
+
+  it('adds Serena and Clara to the honor hole, and hides them with NTR turned off', () => {
+    const state = at('lm_honor_hole', ['wl_1_done', 'ser_hole', 'clara_hole'])
+    expect(titles(state)).toEqual(['當服務的一方', '當被服務的一方', '替瑟蕾娜拿著髮簪', '讓瑟蕾娜猜哪一個是你', '替紫丁香記筆記', '讓克拉拉閉著眼睛猜'])
+    setContentFilters({ ntr: false })
+    expect(titles(state)).toEqual(['當服務的一方', '當被服務的一方'])
+  })
+
+  it('opens the Faceless House in 龍安府 only after Su Wanzhen\'s NTR ending, with her inside at night', () => {
+    const lines = stories.filter((s) => s.id.startsWith('yasz_'))
+    expect(lines.map((s) => [s.id, s.rank])).toEqual([['yasz_widow', 'D'], ['yasz_banquet', 'C'], ['yasz_arch', 'B'], ['yasz_faceless', 'B']])
+    const door = story('yasz_banquet').nodes.find((n) => n.id === 'door')!.options!
+    expect(door[1]!.tags).toEqual(['ntr'])
+    expect(JSON.stringify(story('yasz_faceless'))).toContain('yasz_club')
+    expect(JSON.stringify(story('yasz_arch'))).not.toContain('yasz_club')
+    expect(story('yasz_faceless').tags).toContain('ntr')
+    expect(landmarks.lm_yh_faceless!.open).toMatchObject({ flags: ['yasz_club'], hidden: true, adult: true, hours: 'night' })
+    expect(titles(at('lm_yh_faceless', ['yasz_club'], 'masc'))).toEqual(['看戴著儺面的婉貞', '沒有名字的一夜'])
+    const fem = at('lm_yh_faceless', ['yasz_club'], 'fem')
+    expect(titles(fem)).toEqual(['看戴著儺面的婉貞', '戴著儺面陪她入席', '沒有名字的一夜'])
+    expect(npcRecord(fem, 'npc_yh_su_wanzhen')?.stage).toBeDefined()
+    expect(peopleHere(fem).map((p) => p.rec.id)).toContain('npc_yh_su_wanzhen')
+    // 純愛線：無面樓不開，御街夜市多一個場景
+    const love = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'longan' })
+    setFlag(love, 'yasz_lover')
+    expect(landmarkHidden(love, landmarks.lm_yh_faceless!)).toBe(true)
+    expect(landmarks.lm_yh_night_market!.scenes!.find((s) => s.title === '不戴面具的夜市')?.requires?.flags).toEqual(['yasz_lover'])
   })
 })
 
