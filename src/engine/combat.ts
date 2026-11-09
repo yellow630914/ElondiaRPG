@@ -51,7 +51,7 @@ import { tagsAllowed } from './content'
 import { flagKey, hasFlag } from './storyFlags'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
 import { bindsOf, lockedBound, lustTotals, outfitCombat, twoFaceCombat } from './schools'
-import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, type DifficultyDef } from './gameRules'
+import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, RULE_DEFS, type DifficultyDef } from './gameRules'
 import { rollBreakdown, sumParts } from './rollParts'
 
 export interface StatusInstance {
@@ -184,6 +184,8 @@ export interface CombatState {
   surrender?: 'willing' | 'unlucky'
   /** 存檔規則：慾望戰鬥的倍率（開戰時記下；沒有或 0 表示關閉） */
   lustMult?: number
+  /** 存檔規則：高潮時失去最大生命的比例（開戰時記下；沒有時用 combat.json 的 lust） */
+  climaxHp?: { party: number; minion: number; boss: number }
   /** 淫鬥場的比賽（arena.ts）：輸了不損失錢、沒有戰敗事件；戰後發獎金、拿掉上場前戴的拘束具 */
   arena?: ArenaMatch
   /** 性戰場：生命傷害關閉，非魅惑的傷害改成慾望；雙方都用我方的「三次」規則 */
@@ -324,6 +326,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     }
     const lustMult = gameRule(state, 'lustMult')
     initLust(state, fighters, lustMult)
+    const climaxHp = climaxHpOf(state)
     // 黑暗中又沒有光：隊伍這邊看不清楚，命中降低（怪物習慣黑暗）
     if (opts.dark) for (const f of fighters) if (f.side === 'party') f.baseMods.hit = (f.baseMods.hit ?? 0) + lightingRules.dark.hit
     // 先手：被偷襲的一方排在最後
@@ -334,6 +337,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     const combat: CombatState = {
       id: `c-${state.nextReportNo}`,
       ...(lustMult > 0 ? { lustMult } : {}),
+      ...(lustMult > 0 && climaxHp ? { climaxHp } : {}),
       ...(gameRule(state, 'escapeDc') ? { fleeDcMod: gameRule(state, 'escapeDc') } : {}),
       ...(difficultyOf(state) !== 'normal' ? { difficulty: difficultyOf(state) } : {}),
       location: state.location,
@@ -375,6 +379,23 @@ export function lustMaxFor(level: number): number {
 
 /** 頭目：地下城的層主、有低血大招的特殊任務頭目（和難度係數的分法一樣，gameRules.ts 的 difficultyFor） */
 const isHeadEnemy = (id: string) => isLayerBoss(id) || Object.keys(enemies[id]?.ability_hp_below ?? {}).length > 0
+/** 這個敵人算不算頭目：BOSS 格的主角，或層主、有低血大招的任務頭目 */
+const isHeadFoe = (f: Combatant) => f.side === 'enemy' && (!!f.headliner || (!!f.defId && isHeadEnemy(f.defId)))
+
+/** 存檔規則改過的高潮扣血比例（都和預設一樣時回傳 undefined，戰鬥照 combat.json） */
+function climaxHpOf(state: GameState): CombatState['climaxHp'] {
+  const keys = ['climaxHpParty', 'climaxHpMinion', 'climaxHpBoss'] as const
+  if (keys.every((k) => gameRule(state, k) === RULE_DEFS[k].default)) return undefined
+  const [party, minion, boss] = keys.map((k) => gameRule(state, k) / 100) as [number, number, number]
+  return { party, minion, boss }
+}
+
+/** 高潮時失去最大生命的比例：我方、小怪（與 NPC 敵人）、頭目 */
+function climaxRatio(combat: CombatState, target: Combatant): number {
+  const r = lustRules()
+  if (target.side !== 'enemy') return combat.climaxHp?.party ?? r.party_climax_hp
+  return isHeadFoe(target) ? combat.climaxHp?.boss ?? r.boss_climax_hp : combat.climaxHp?.minion ?? r.enemy_climax_hp
+}
 
 let typicalHp: Record<number, number> = {}
 let typicalHpRev = -1
@@ -420,7 +441,7 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     f.lust = 0
     f.lustMax = lustMaxFor(f.level)
     // 頭目（BOSS 格的主角、層主、有低血大招的任務頭目）：慾望上限照生命比例放大（和同等級一般怪物的生命中位數相比，難度係數也算在生命裡）
-    if (f.side === 'enemy' && (f.headliner || (f.defId && isHeadEnemy(f.defId)))) f.lustMax = Math.round(f.lustMax * Math.max(1, f.maxHp / typicalEnemyHp(f.level)))
+    if (isHeadFoe(f)) f.lustMax = Math.round(f.lustMax * Math.max(1, f.maxHp / typicalEnemyHp(f.level)))
     if (f.side === 'party') f.climaxes = 0
     if (f.defId) {
       const def = enemies[f.defId]
@@ -548,8 +569,9 @@ function relieveLust(target: Combatant, amount: number, effects: Effect[]): numb
 }
 
 /**
- * 高潮：慾望歸零。我方停止行動一回合、失去最大生命的三分之一（最多扣到剩 1），之後一段時間受到的慾望減半、不會再高潮；
- * 一場戰鬥第三次高潮就倒下。敵方受到最大生命三分之一的真實傷害（不看抗性、減傷、臨時生命，可以致死），被這樣打倒算慾望勝利。
+ * 高潮：慾望歸零。我方停止行動一回合、失去最大生命的一部分（預設 33%，最多扣到剩 1），之後一段時間受到的慾望減半、不會再高潮；
+ * 一場戰鬥第三次高潮就倒下。敵方受到最大生命一部分的真實傷害（小怪、頭目分開，預設都是 33%；不看抗性、減傷、臨時生命，可以致死），
+ * 被這樣打倒算慾望勝利。比例可以用存檔規則改（climaxRatio）。
  */
 /** 高潮或引爆之後：身上有 on_release 狀態的人，對所有敵人放出傷害（獻祭的契紋） */
 function fireReleases(combat: CombatState, rng: Rng) {
@@ -573,10 +595,12 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
   const r = lustRules()
   target.lust = 0
   if (target.side === 'enemy' && !combat.lustOnly) {
-    const dmg = Math.max(1, Math.round(target.maxHp * r.enemy_climax_hp))
+    const ratio = climaxRatio(combat, target)
+    const dmg = ratio > 0 ? Math.max(1, Math.round(target.maxHp * ratio)) : 0
     const loss = Math.min(target.hp, dmg)
     target.hp -= loss
-    effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮・真實傷害' })
+    if (loss > 0) effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮・真實傷害' })
+    else effects.push({ type: 'status_add', target: target.id, status: statusDef('climax').name, text: '高潮（不扣生命）' })
     if (target.hp === 0) {
       target.lustDefeated = true
       effects.push({ type: 'status_add', target: target.id, status: '死亡', text: '慾望勝利' })
@@ -604,7 +628,7 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
     target.statuses = target.statuses.filter((x) => x !== guard)
     effects.push({ type: 'status_remove', target: target.id, status: statusDef(guard.id).name, text: '高潮沒有扣生命' })
   }
-  const loss = guard || combat.lustOnly ? 0 : Math.max(0, Math.min(Math.round(target.maxHp * r.party_climax_hp), target.hp - 1))
+  const loss = guard || combat.lustOnly ? 0 : Math.max(0, Math.min(Math.round(target.maxHp * climaxRatio(combat, target)), target.hp - 1))
   if (loss > 0) {
     target.hp -= loss
     effects.push({ type: 'damage', target: target.id, amount: loss, text: '高潮' })
