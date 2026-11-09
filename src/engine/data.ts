@@ -2477,6 +2477,8 @@ export const lewdRules = lewdJson as unknown as {
     first_time: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
     /** NPC 自己的日子裡的成人向事件（npcLife.ts 的 rollLust） */
     life: NpcLustRules
+    /** 奴隸的身價照性經歷調整（sexRecord.ts 的 sexValue） */
+    slave_price: { virgin: number; partners: [number, number][]; service: [number, number][]; min: number; max: number }
   }
   combat: {
     endurance_max_div: number; sensitivity_base: number; sensitivity_div: number; lewd_start_per: number; lewd_start_ratio: number; lewd_decay_div: number

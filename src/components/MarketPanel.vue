@@ -5,6 +5,7 @@ import { marketsHere, proposeDc, selfSaleChance, type MarketKind } from '@/engin
 import { className, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
+import { sexRecordItems, sexRecordOf, sexValueOf } from '@/engine/sexRecord'
 import { isBound, isEnslaved, leaderOf, partyRoom } from '@/engine/party'
 import type { MarkChoice } from '@/engine/slavery'
 import type { CurioListing, SlaveListing } from '@/engine/types'
@@ -38,6 +39,11 @@ function haggleCurio(c: CurioListing) {
 
 const stock = computed(() => s.value.markets?.[`${s.value.location}/${props.kind}`]?.stock ?? loaded.value)
 const partyFull = computed(() => partyRoom(s.value) < 1)
+// 性經歷（成人向，docs/LEWD_STATS.md 第 23、29 節）：經驗與人數；身價照它調整
+function sexBrief(id: string): string {
+  const rec = sexRecordOf(s.value, id)
+  return `${sexRecordItems(s.value, id)[0]?.value ?? ''}・${rec.partners} 人・侍奉 ${rec.serviceTimes} 次`
+}
 const enslaved = computed(() => isEnslaved(s.value))
 const bound = computed(() => isBound(s.value))
 // 這個市場常見的買家（依權重）
@@ -111,6 +117,7 @@ function sellSelf() {
           </div>
           <div class="muted">{{ npcRecord(s, l.npc)!.appearance }} {{ npcRecord(s, l.npc)!.background }}</div>
           <div class="muted" :title="contractDef(l.contract).side_effects.join('；')">契約：{{ contractDef(l.contract).name }}</div>
+          <div class="muted">性經歷：{{ sexBrief(l.npc) }}<template v-if="sexValueOf(s, l.npc).notes.length">（身價 {{ sexValueOf(s, l.npc).notes.join('、') }}）</template></div>
           <div class="row">
             <span>{{ formatMoney(l.price_cc) }}</span>
             <!-- 被主人帶著：向主人提議買下（主人出錢，奴隸屬於主人） -->

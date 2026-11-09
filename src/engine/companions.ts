@@ -51,6 +51,7 @@ import { addHours, commitReport, masterTake, newReportId, withRng } from './stat
 import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
 import { lewdOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
+import { sexValueOf } from './sexRecord'
 import { gameRule } from './gameRules'
 import { blackMarketHere, underworldAskBlocked, underworldEscorted, underworldEscortFlag, underworldFlag, underworldLandmarks, underworldOf } from './underworld'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
@@ -445,7 +446,8 @@ export function marketStock(state: GameState, kind: MarketKind): SlaveListing[] 
       const level = Math.max(1, Math.min(20, pc.level + rng.int(-2, 1)))
       const rec = generateNpc(state, rng, { race, level, tags: ['slave'], background: rng.pick(npcPool.slave_backgrounds) }, 'slv')
       const contract = contractKind(weightedPick(rng, slaveryRules.market_contracts[kind]))
-      return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng, slaveValueMult(npcLewd(rec), 0)), contract }
+      // 身價：指標與性經歷（處子加價、經驗多的扣一點、侍奉熟練的加一點）
+      return { npc: rec.id, price_cc: slavePrice(rec, def.price_mult, rng, slaveValueMult(npcLewd(rec), 0) * sexValueOf(state, rec.id).mult), contract }
     })
   })
   markets[key] = { day: state.time.day, stock }
@@ -619,8 +621,8 @@ export function offerSelf(state: GameState, kind: MarketKind): Report {
       tags: madam ? ['prostitute', 'merchant'] : [buyer.tag], ...(madam ? { occupation: '老鴇' } : {}),
     }, 'mst')
     const contract = contractKind(madam ? slaveryRules.roles.madam : weightedPick(rng, s.contract_weights))
-    // 主角出售自己：指標與色情技能讓身價變高
-    const price = slavePrice(pc, def.price_mult, rng, slaveValueOf(pc) * pcTagMult(pc, 'slave_price_mult'))
+    // 主角出售自己：指標、色情技能與性經歷讓身價變高
+    const price = slavePrice(pc, def.price_mult, rng, slaveValueOf(pc) * sexValueOf(state, 'pc').mult * pcTagMult(pc, 'slave_price_mult'))
     return { master, contract, price }
   })
   if (!deal) {

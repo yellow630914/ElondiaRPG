@@ -5,7 +5,7 @@ import { pcOf } from '@/engine/party'
 import { newGame } from '@/engine/state'
 import { baseReport } from '@/engine/town'
 import {
-  applySexUpdates, editSexRecord, experienceLewdness, intimateReport, markSexLogged, npcSexSeed, sexCandidates, sexLogged, sexRecordItems, sexRecordOf, sexRecordsNote, virginWord,
+  applySexUpdates, editSexRecord, sexValue, experienceLewdness, intimateReport, markSexLogged, npcSexSeed, sexCandidates, sexLogged, sexRecordItems, sexRecordOf, sexRecordsNote, virginWord,
 } from '@/engine/sexRecord'
 import { buildSexLogPrompt } from '@/narrator/sexLog'
 import type { GameState, Report } from '@/engine/types'
@@ -179,5 +179,21 @@ describe('性經歷：AI 的記錄', () => {
     expect(built.prompt.system).toContain('"records"')
     expect(sexRecordsNote(state, ['npc_lina'])).toContain('莉雅的性經歷：經驗：處女')
     expect(sexRecordsNote(state, ['npc_lina'])).toContain('莉娜的性經歷')
+  })
+})
+
+describe('性經歷：奴隸的身價', () => {
+  it('處子加價；人數多的扣一點；侍奉熟練的加一點；夾在上下限', () => {
+    const r = lewdRules.experience.slave_price
+    expect(sexValue(npcSexSeed({ id: 'a', sex: { virgin: true, service_times: 0 } }), 'female')).toEqual({ mult: 1 + r.virgin, notes: [`處女 +${Math.round(r.virgin * 100)}%`] })
+    expect(sexValue(npcSexSeed({ id: 'a', sex: { partners: 3, service_times: 0 } })).mult).toBe(1)
+    const used = sexValue(npcSexSeed({ id: 'a', sex: { partners: 150, service_times: 0 } }))
+    expect(used.mult).toBeCloseTo(1 - r.partners.at(-1)![1])
+    expect(used.notes[0]).toContain('150 人')
+    const skilled = sexValue(npcSexSeed({ id: 'a', sex: { partners: 150, service_times: 500 } }))
+    expect(skilled.mult).toBeCloseTo(1 - r.partners.at(-1)![1] + r.service.at(-1)![1])
+    expect(skilled.notes).toContain(`熟練的侍奉 +${Math.round(r.service.at(-1)![1] * 100)}%`)
+    // 處子又侍奉熟練：最多到上限
+    expect(sexValue(npcSexSeed({ id: 'a', sex: { virgin: true, service_times: 500 } })).mult).toBeLessThanOrEqual(r.max)
   })
 })

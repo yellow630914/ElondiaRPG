@@ -349,6 +349,39 @@ export function editSexRecord(state: GameState, id: string, patch: Partial<Pick<
   }
 }
 
+/**
+ * 奴隸的身價照性經歷調整（docs/LEWD_STATS.md 第 23 節；lewd.json 的 experience.slave_price）：
+ * 處子加價；有經驗的照人數扣一點；性侍奉做得多的加一點。回傳倍率與說明（市場的清單顯示）
+ */
+export function sexValue(rec: SexRecord, gender?: string): { mult: number; notes: string[] } {
+  const r = rules().slave_price
+  const tier = (table: [number, number][], n: number) => table.reduce((v, [min, d]) => (n >= min ? d : v), 0)
+  const pct = (d: number) => `${d > 0 ? '+' : '−'}${Math.round(Math.abs(d) * 100)}%`
+  const notes: string[] = []
+  let d = 0
+  if (rec.virgin) {
+    d += r.virgin
+    notes.push(`${virginWord(gender)} ${pct(r.virgin)}`)
+  } else {
+    const off = tier(r.partners, rec.partners)
+    if (off) {
+      d -= off
+      notes.push(`和 ${rec.partners} 人有過關係 ${pct(-off)}`)
+    }
+  }
+  const skill = tier(r.service, rec.serviceTimes)
+  if (skill) {
+    d += skill
+    notes.push(`熟練的侍奉 ${pct(skill)}`)
+  }
+  return { mult: Math.max(r.min, Math.min(r.max, 1 + d)), notes }
+}
+
+/** 這個人的身價倍率（性經歷的部分） */
+export function sexValueOf(state: GameState, id: string): { mult: number; notes: string[] } {
+  return sexValue(sexRecordOf(state, id), genderOf(state, id))
+}
+
 /** 主角建角時選的經驗（開新遊戲） */
 export function pcExperience(experienced: boolean, note = ''): SexRecord {
   const rec = emptySexRecord(!experienced)
