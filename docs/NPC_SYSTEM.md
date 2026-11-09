@@ -36,7 +36,7 @@
 | `adult` | 固定 NPC：成人向角色。不佔名單名額（`population.ts` 的 `outsideQuota`）；內容編輯器可以依它篩選 |
 | `adult_appearance` | 固定 NPC：成人向的外貌細節（私密部位、性徵）。接在外貌後面，交給 AI（行動判定的對象、人際關係）與形象圖；跟著內容頁籤的設定走，不存進存檔（`npcs.ts` 的 `appearanceOf`） |
 | `unhireable` | 固定 NPC：不受雇用（統治者、機構首長……）：不在雇用名單、不佔名單名額，邀請入隊 DC 另加（[COMPANIONS](COMPANIONS.md) 第 2.5 節） |
-| `perks`、`lewd`、`teaches` | 固定 NPC：指定的特質（[PERKS](PERKS.md) 第 5 節）、慾望指標、娼婦光顧時會教的技能（[LEWD_STATS](LEWD_STATS.md) 第 5、10 節）；沒寫的照規則生成 |
+| `perks`、`lewd`、`sex`、`teaches` | 固定 NPC：指定的特質（[PERKS](PERKS.md) 第 5 節）、慾望指標、初始的性經歷、娼婦光顧時會教的技能（[LEWD_STATS](LEWD_STATS.md) 第 5、29、10 節）；沒寫的照規則生成 |
 | `fixed`、`landmark`、`keeper` | 固定 NPC：固定站的格子、待在某個地標、擔任這種店的店主；有這些欄位時不看活躍地點 |
 | `requires`、`stages` | 固定 NPC：只在劇情旗標符合時出現；依旗標改變所屬地點與出沒 |
 | `character` | 戰鬥資料（入隊過、或戰鬥時才產生） |

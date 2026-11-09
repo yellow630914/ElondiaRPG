@@ -162,7 +162,7 @@ export function afterBrothelTraining(state: GameState, report: Report, who: Char
 export function patronTeaches(rec: NpcRecord): string[] {
   const def = namedNpcs.find((n) => n.id === rec.id)
   const list = def?.teaches?.length ? def.teaches : rules().patron.default
-  const lewd = npcLewd({ id: rec.id, tags: rec.tags, ...(def?.lewd ? { lewd: def.lewd } : {}) }).lewdness
+  const lewd = npcLewd({ id: rec.id, tags: rec.tags, ...(def?.lewd ? { lewd: def.lewd } : {}), ...(def?.sex ? { sex: def.sex } : {}) }).lewdness
   const cap = [...rules().patron.tiers].reverse().find((t) => lewd >= t.lewd)?.unlock ?? 1
   return list.filter((id) => abilities[id]?.classes.includes('lewd') && (abilities[id]!.unlock ?? 1) <= cap)
 }

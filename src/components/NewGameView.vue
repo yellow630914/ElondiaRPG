@@ -57,6 +57,9 @@ const birthplace = ref(DEFAULT_BIRTHPLACE.human!)
 const gender = ref('')
 const appearance = ref('')
 const background = ref('')
+// 主角的性經驗（成人向，docs/LEWD_STATS.md 第 29 節）：之後的親密場景由 AI 記下
+const experienced = ref(false)
+const firstNote = ref('')
 // 體態：體型（空字串＝依種族與性別）與各部位
 const body = ref<Body | ''>('')
 const look = ref<Record<string, string>>({})
@@ -224,6 +227,7 @@ function start() {
     gender: gender.value,
     appearance: appearance.value,
     background: background.value,
+    experience: { experienced: experienced.value, ...(experienced.value && firstNote.value.trim() ? { note: firstNote.value.trim() } : {}) },
     ...(body.value ? { body: body.value } : {}),
     ...(Object.keys(look.value).length ? { look: { ...look.value } } : {}),
     ...(s ? { slave: s } : {}),
@@ -251,6 +255,7 @@ function draft(): CharacterDraft {
   return {
     name: name.value.trim() || '旅人', gender: gender.value, race: race.value, classId: classId.value, bonus: { ...bonus }, birthplace: birthplace.value,
     ...(body.value ? { body: body.value } : {}), look: { ...look.value }, appearance: appearance.value, background: background.value,
+    ...(experienced.value ? { experience: { experienced: true, note: firstNote.value } } : {}),
     tags: [...pcTags.value], perks: [...perks.value], customPerks: customPerks.value.map((p) => ({ ...p })), gear: JSON.parse(JSON.stringify(gearChoice.value)),
     ...(slave.value ? { slave: { mode: masterMode.value, seed: masterSeed.value, picked: pickedMaster.value, custom: JSON.parse(JSON.stringify(customMaster)), mark: JSON.parse(JSON.stringify(mark.value)) } } : {}),
   }
@@ -284,6 +289,8 @@ async function loadPreset(p: CharacterPreset) {
     look.value = { ...(d.look ?? {}) }
     appearance.value = d.appearance ?? ''
     background.value = d.background ?? ''
+    experienced.value = !!d.experience?.experienced
+    firstNote.value = d.experience?.note ?? ''
     // 現在的世界沒有的特質不帶
     const known = new Set(choosablePerks().map((x) => x.id))
     perks.value = (d.perks ?? []).filter((id) => known.has(id))
@@ -443,6 +450,10 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           背景（選填）
           <textarea v-model="background" rows="3" maxlength="800" placeholder="例如：河谷鎮鐵匠的次子，為了尋找失蹤的哥哥而成為冒險者；不太會說謊，對魔族有說不出口的心結。" />
         </label>
+        <div class="experience">
+          <label class="check"><input v-model="experienced" type="checkbox" /> 已經有性經驗 <Hint text="成人向（docs/LEWD_STATS.md 第 29 節）。沒勾時主角從處子開始；之後每次親密場景，AI 會記下發生過關係與性侍奉的人數、次數、初體驗與最喜歡的人，記錄在角色詳情裡，也可以自己改。" /></label>
+          <input v-if="experienced" v-model="firstNote" maxlength="120" placeholder="初體驗（選填，一句話）" />
+        </div>
       </div>
     </div>
 
@@ -643,6 +654,9 @@ button :deep(.game-icon) { vertical-align: -0.2em; }
 .profile { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 .profile label { display: grid; gap: 4px; }
 .profile textarea { width: 100%; }
+.profile .experience { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.profile .experience .check { display: flex; grid-template-columns: none; align-items: center; gap: 6px; }
+.profile .experience input:not([type='checkbox']) { flex: 1; min-width: 14em; }
 .gear .name { display: flex; align-items: center; gap: 6px; font-weight: 700; white-space: nowrap; }
 .gear .item-tile { width: 24px; height: 24px; }
 .over { color: var(--danger); }

@@ -5,6 +5,7 @@
 import { pcTagSummary } from '@/engine/pcTags'
 import { inActiveSquad, squadIds } from '@/engine/squads'
 import { lewdSummary } from '@/engine/lewd'
+import { sexRecordsNote } from '@/engine/sexRecord'
 import { charmNote } from '@/engine/charm'
 import { isGuarded } from '@/engine/population'
 import { npcOutfit } from '@/engine/outfits'
@@ -107,7 +108,7 @@ function stuckGear(m: Character): string[] {
   })
 }
 
-function pcDetail(state: GameState, adult = false): string {
+function pcDetail(state: GameState, adult = false, others: string[] = []): string {
   const pc = state.party.find((m) => m.isPlayer)!
   const attrs = ATTR_IDS.map((a) => `${attrName(a)} ${attrOf(pc, a)}`).join('、')
   // 目前裝備的武器（打造或獲得的裝備用它的名字，沒有時是職業的預設武器）
@@ -123,7 +124,8 @@ function pcDetail(state: GameState, adult = false): string {
   const contract = pcContract ? `\n奴隸契約${pc.status.includes('fugitive') ? '（逃亡中）' : ''}：${markSummary(pcContract)}${home ? `\n${home}` : ''}` : ''
   const profile = [pc.gender ? `性別：${genderPrompt(pc.gender)}` : '', pc.birthplace ? `出身：${locationById(pc.birthplace).name}` : '', pc.tags?.length ? `身分（已算進情境修正）：${pcTagSummary(pc)}` : '', pc.appearance ? `外貌：${pc.appearance}` : '', pc.background ? `背景：${pc.background}` : ''].filter(Boolean).join('\n')
   // 慾望指標：只在可能進入親密場景的判定（數值與分段）
-  const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}` : ''
+  // 性經歷（docs/LEWD_STATS.md 第 29 節）：主角、隊友與這次的對象
+  const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}${sexRecordsNote(state, others)}` : ''
   return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n武器：${weapons}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
 }
 
@@ -164,6 +166,12 @@ function targetDetail(state: GameState, p: ActionPending): string {
     npcDetail(state, id, '主要對象'),
     ...p.with.map((w) => npcDetail(state, w, '同行的對象')),
   ].join('\n\n')
+}
+
+/** 行動的對象與同行的對象（id） */
+function actionPeople(p: ActionPending): string[] {
+  const id = p.target?.includes(':') ? p.target.split(':')[1] : p.target
+  return [...(id ? [id] : []), ...(p.with ?? [])]
 }
 
 function npcDetail(state: GameState, id: string, label: string, fallback?: string): string {
@@ -444,7 +452,7 @@ export function buildActionPrompt(state: GameState, p: ActionPending, context: s
     // 成人向的戰敗事件：回應時另外附上戰敗事件規則（narrative 是後半段）
     { key: 'defeat', title: '戰敗事件規則', part: 'system', text: p.kind === 'defeat_event' && narrative ? `${fillDefeatRules(opts.defeatRules, pc.name, defeatMate?.name)}\n這次的 narrative 是戰敗事件的後半段。` : '' },
     { key: 'scene', title: '成人場景規則', part: 'system', text: sceneSection(opts, pc.name, narrative) },
-    { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state, !!p.adultScene)}\n</actor>` },
+    { key: 'actor', title: '主角', part: 'user', text: `<actor>\n${pcDetail(state, !!p.adultScene, actionPeople(p))}\n</actor>` },
     { key: 'party', title: '隊伍狀態', part: 'user', text: `<party>\n${partyLines(state)}\n</party>` },
     { key: 'inventory', title: '行囊', part: 'user', text: `<inventory>\n${inventoryLines(state)}\n</inventory>` },
     { key: 'lore_triggered', title: '世界書（這次觸發）', part: 'user', text: triggered.length ? `<worldbook>\n${loreText(triggered)}\n</worldbook>` : '' },

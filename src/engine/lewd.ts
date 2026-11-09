@@ -4,7 +4,8 @@
 import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
-import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey, type LewdTitleDef } from './data'
+import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey, type LewdTitleDef, type NpcSexSeed } from './data'
+import { experienceLewdness, npcSexSeed } from './sexRecord'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules, type VacuumSide } from './gear'
 import { gameRule } from './gameRules'
@@ -63,9 +64,9 @@ export function forcedSubmission(c: Character): boolean {
 
 /**
  * NPC 的慾望指標：依 id 固定地擲（不用共用的亂數，不影響其他生成），標籤（娼婦、奴隸、貴族……）決定範圍，
- * 固定 NPC 寫了的值優先
+ * 淫亂再照初始的性經歷調整；固定 NPC 寫了的值優先
  */
-export function npcLewd(def: { id: string; tags?: string[]; lewd?: Partial<Record<LewdStat, number>> }): LewdStats {
+export function npcLewd(def: { id: string; tags?: string[]; lewd?: Partial<Record<LewdStat, number>>; sex?: NpcSexSeed }): LewdStats {
   let h = 2166136261
   for (const ch of `${def.id}:lewd`) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0
   const next = () => {
@@ -76,8 +77,14 @@ export function npcLewd(def: { id: string; tags?: string[]; lewd?: Partial<Recor
   const out = {} as LewdStats
   for (const k of LEWD_STATS) {
     let range = lewdRules.npc_random[k]
-    for (const t of def.tags ?? []) range = lewdRules.npc_tags[t]?.[k] ?? range
-    const roll = range[0] + Math.floor(next() * (range[1] - range[0] + 1))
+    let tagged = false
+    for (const t of def.tags ?? []) {
+      const r = lewdRules.npc_tags[t]?.[k]
+      if (r) { range = r; tagged = true }
+    }
+    let roll = range[0] + Math.floor(next() * (range[1] - range[0] + 1))
+    // 淫亂照性經歷調整：還沒有經驗的打折，有經驗的依人數加一點（docs/LEWD_STATS.md 第 29 節；固定 NPC 寫了的不動）
+    if (k === 'lewdness') roll = experienceLewdness(roll, npcSexSeed(def), tagged)
     out[k] = clamp(def.lewd?.[k] ?? roll)
   }
   return out

@@ -9,6 +9,7 @@ import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { contractOf } from '@/engine/tattoos'
 import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT } from '@/engine/lewd'
+import { encounterText, sexRecordItems, sexRecordOf, virginWord } from '@/engine/sexRecord'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { courseStatus, trainees, trainingBlocked } from '@/engine/ownerTraining'
 import { MOD_NAME } from '@/engine/gear'
@@ -74,6 +75,25 @@ const combat = computed<StatItem[]>(() => {
     { label: '傷害倍率', value: affinityText(x) },
   ]
 })
+
+// 性經歷（docs/LEWD_STATS.md 第 29 節）：主角記在 pc，其他人用自己的 id
+const sexId = computed(() => (m.value.isPlayer ? 'pc' : m.value.id))
+const sexRec = computed(() => sexRecordOf(s.value, sexId.value))
+const sexItems = computed<StatItem[]>(() => sexRecordItems(s.value, sexId.value).map((x) => ({ label: x.label, value: x.value, ...(x.value.length > 12 ? { wide: true } : {}) })))
+const sexDraft = reactive({ virgin: true, partners: 0, times: 0, servicePartners: 0, serviceTimes: 0, favorite: '', notes: '' })
+function resetSexDraft() {
+  const r = sexRec.value
+  Object.assign(sexDraft, { virgin: r.virgin, partners: r.partners, times: r.times, servicePartners: r.servicePartners, serviceTimes: r.serviceTimes, favorite: r.favorite ?? '', notes: r.notes ?? '' })
+}
+function saveSex() {
+  game.editSexRecord(sexId.value, { ...sexDraft })
+  game.flash('已更新性經歷')
+}
+function clearSex() {
+  if (!confirm(`清掉${m.value.name}的性經歷記錄（含最近三次），回到初始值？`)) return
+  game.editSexRecord(sexId.value, null)
+  resetSexDraft()
+}
 
 // 調教：主角自己的奴隸（docs/LEWD_STATS.md 第 9 節）
 const canTrain = computed(() => trainees(s.value).some((x) => x.id === m.value.id))
@@ -234,6 +254,32 @@ function saveTags() {
             <StatGrid v-else :items="combat" />
             <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派從受訓學（娼館、神殿、裁縫店……）；拘束具平常是檢定減值，修了流派又上了鎖，戰鬥中反轉成增益。" /></h4>
             <StatGrid :items="lewdItems" />
+            <h4 class="lewd-title">性經歷 <Hint text="成人向（docs/LEWD_STATS.md 第 29 節）。親密場景之後，AI 讀那段經過記下誰和誰發生了關係、性侍奉、初體驗、最喜歡的人與性癖（設定 → 敘事與判定的「AI 記下性經歷」；判定時不記）。只留最近三次的經過。成人場景的敘事與判定會附上這份記錄。" /></h4>
+            <StatGrid :items="sexItems" />
+            <ul v-if="sexRec.recent.length" class="sex-recent small">
+              <li v-for="e in sexRec.recent" :key="`${e.day}-${e.report}`">{{ encounterText(e) }}</li>
+            </ul>
+            <details class="sex-edit small" @toggle="($event.target as HTMLDetailsElement).open && resetSexDraft()">
+              <summary>修改性經歷</summary>
+              <div class="row">
+                <label>經驗
+                  <select v-model="sexDraft.virgin">
+                    <option :value="true">沒有（{{ virginWord(m.gender) }}）</option>
+                    <option :value="false">有</option>
+                  </select>
+                </label>
+                <label>關係人數 <input v-model.number="sexDraft.partners" type="number" min="0" /></label>
+                <label>次數 <input v-model.number="sexDraft.times" type="number" min="0" /></label>
+                <label>侍奉人數 <input v-model.number="sexDraft.servicePartners" type="number" min="0" /></label>
+                <label>侍奉次數 <input v-model.number="sexDraft.serviceTimes" type="number" min="0" /></label>
+              </div>
+              <label class="wide">最喜歡的人 <input v-model="sexDraft.favorite" maxlength="16" /></label>
+              <label class="wide">性癖與偏好 <input v-model="sexDraft.notes" maxlength="120" /></label>
+              <div class="row">
+                <button class="small primary" @click="saveSex">儲存</button>
+                <button class="small" title="清掉記錄（含最近三次），回到依角色擲出的初始值" @click="clearSex">回到初始值</button>
+              </div>
+            </details>
           </div>
         </section>
 
@@ -409,6 +455,13 @@ function saveTags() {
 .tag.bad { color: var(--danger); border-color: var(--danger); }
 .ability.q-uncommon { border-left-color: #2f7a1e; } .ability.q-rare { border-left-color: #1f5a9a; }
 .ability.q-epic { border-left-color: #6a3a9a; } .ability.q-legendary, .ability.q-mythic { border-left-color: #a86a10; }
+.sex-recent { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 2px; }
+.sex-edit { margin-top: 6px; }
+.sex-edit .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 4px 0; }
+.sex-edit label { display: inline-flex; align-items: center; gap: 4px; }
+.sex-edit input[type='number'] { width: 4.5em; }
+.sex-edit .wide { display: flex; margin: 4px 0; }
+.sex-edit .wide input { flex: 1; }
 .lewd-title { margin: 14px 0 4px; color: var(--accent-2); letter-spacing: 0.1em; display: flex; align-items: center; gap: 4px; }
 .group h4 { margin: 12px 0 6px; color: var(--accent-2); letter-spacing: 0.15em; }
 .loadout { margin: 0 0 4px; display: flex; align-items: center; gap: 4px; }

@@ -13,6 +13,7 @@ import { usePrompts } from '@/stores/prompts'
 import { usageFeatureName, usageSourceLabel, useGame } from '@/stores/game'
 import { undoConfirmText } from '@/stores/undo'
 import { inventedIn } from '@/engine/invention'
+import { intimateReport, sexLogged } from '@/engine/sexRecord'
 import { useSettings } from '@/stores/settings'
 import { useImageSettings } from '@/stores/image'
 import { sceneKey, useScenes } from '@/stores/scenes'
@@ -26,6 +27,9 @@ import type { IconName } from './ui/iconPaths'
 const props = defineProps<{ report: Report }>()
 const game = useGame()
 const settings = useSettings()
+// 親密場景還沒記下性經歷（自動記關著、失敗時，可以手動記；docs/LEWD_STATS.md 第 29 節）
+const canRecordSex = computed(() => !!game.state && intimateReport(props.report) && settings.ready('sexlog') && !sexLogged(game.state, props.report.report_id))
+const recordingSex = computed(() => game.recordingSex.has(props.report.report_id))
 
 // 回退（stores/undo.ts）：最近幾輪的日誌可以撤銷，連同之後的日誌
 const undoSteps = computed(() => {
@@ -292,6 +296,11 @@ async function copyPrompt() {
         :title="showStory ? '重新寫出經過（用「敘事正文」的模型）' : '寫出經過（用「敘事正文」的模型）'" :aria-label="showStory ? '重新寫出經過' : '寫出經過'"
         @click="game.narrate(report, { manual: !settings.aiNarration })"
       ><GameIcon name="edit" :size="15" /></button>
+      <button
+        v-if="canRecordSex" class="small ghost tool" :disabled="recordingSex || narration?.status === 'streaming'" aria-label="記下性經歷"
+        title="記下性經歷：請「性經歷記錄」的模型讀這段經過，記下誰和誰發生了關係、性侍奉、初體驗（每則日誌只記一次）"
+        @click="game.recordSex(report, undefined, { manual: true })"
+      ><GameIcon name="heart" :size="15" /></button>
       <button
         v-if="canContinue" class="small ghost tool" :class="{ active: continuing }" aria-label="續寫"
         title="續寫：接著這段經過往下寫，把這一幕寫得更完整（只是文字，不擲骰、不改結果、不過時間）"

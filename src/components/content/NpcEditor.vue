@@ -3,6 +3,8 @@ import { abilities, choosablePerks, KEEPER_SHOPS, perkDef, shopRules } from '@/e
 import { npcTraits } from '@/engine/traits'
 import { npcPerksOf } from '@/engine/perks'
 import { LEWD_STATS, lewdName, npcLewd } from '@/engine/lewd'
+import { npcSexSeed } from '@/engine/sexRecord'
+import type { SexRecord } from '@/engine/types'
 import type { LewdStat } from '@/engine/types'
 import { computed, ref, watch } from 'vue'
 import { createNpc } from '@/engine/character'
@@ -43,7 +45,32 @@ function current(): NpcMod {
 }
 const draft = ref<NpcMod>(current())
 // 慾望指標：空著時依標籤與 id 擲（灰字顯示擲出來的值）
-const rolledLewd = computed(() => npcLewd({ id: props.id, tags: draft.value.tags }))
+const rolledLewd = computed(() => npcLewd({ id: props.id, tags: draft.value.tags, ...(draft.value.sex ? { sex: draft.value.sex } : {}) }))
+// 初始的性經歷：空著時依標籤與 id 擲（灰字顯示擲出來的值；docs/LEWD_STATS.md 第 29 節）
+const rolledSex = computed(() => npcSexSeed({ id: props.id, tags: draft.value.tags, ...(draft.value.sex ? { sex: draft.value.sex } : {}) }))
+type SexKey = 'partners' | 'times' | 'service_partners' | 'service_times'
+const SEX_FIELDS: { k: SexKey; label: string; rolled: (r: SexRecord) => number }[] = [
+  { k: 'partners', label: '關係人數', rolled: (r) => r.partners },
+  { k: 'times', label: '次數', rolled: (r) => r.times },
+  { k: 'service_partners', label: '侍奉人數', rolled: (r) => r.servicePartners },
+  { k: 'service_times', label: '侍奉次數', rolled: (r) => r.serviceTimes },
+]
+function setSex(k: SexKey | 'virgin' | 'first' | 'notes', v: string) {
+  const sx = { ...(draft.value.sex ?? {}) }
+  if (k === 'virgin') {
+    if (v === '') delete sx.virgin
+    else sx.virgin = v === 'yes'
+  } else if (k === 'first' || k === 'notes') {
+    if (v.trim()) sx[k] = v.trim()
+    else delete sx[k]
+  } else {
+    const n = Number(v)
+    if (v === '' || !Number.isFinite(n)) delete sx[k]
+    else sx[k] = Math.max(0, Math.round(n))
+  }
+  if (Object.keys(sx).length) draft.value.sex = sx
+  else delete draft.value.sex
+}
 function setLewd(k: LewdStat, v: string) {
   const n = Number(v)
   const lewd = { ...(draft.value.lewd ?? {}) }
@@ -460,6 +487,23 @@ const occupations = computed(() => {
           <input type="number" min="0" max="100" :value="draft.lewd?.[k] ?? ''" :placeholder="String(rolledLewd[k])" @change="setLewd(k, ($event.target as HTMLInputElement).value)" />
         </label>
       </div>
+      <div class="row lewd">
+        <span class="small">初始性經歷 <Hint text="成人向（docs/LEWD_STATS.md 第 29 節）。空著時依標籤與 id 固定地擲，灰字是擲出來的值；沒寫淫亂時，淫亂也照這裡調整（沒有經驗的打折、經驗多的加一點）。遊戲中親密場景之後由 AI 記下新的經歷。" /></span>
+        <label class="small">經驗
+          <select :value="draft.sex?.virgin === undefined ? '' : draft.sex.virgin ? 'yes' : 'no'" @change="setSex('virgin', ($event.target as HTMLSelectElement).value)">
+            <option value="">照擲（{{ rolledSex.virgin ? '沒有' : '有' }}）</option>
+            <option value="yes">沒有（處子）</option>
+            <option value="no">有</option>
+          </select>
+        </label>
+        <label v-for="f in SEX_FIELDS" :key="f.k" class="small">{{ f.label }}
+          <input type="number" min="0" :value="draft.sex?.[f.k] ?? ''" :placeholder="String(f.rolled(rolledSex))" @change="setSex(f.k, ($event.target as HTMLInputElement).value)" />
+        </label>
+      </div>
+      <div class="row">
+        <label class="small grow">初體驗 <input :value="draft.sex?.first ?? ''" maxlength="120" placeholder="一句話（有經驗時）" @change="setSex('first', ($event.target as HTMLInputElement).value)" /></label>
+        <label class="small grow">性癖與偏好 <input :value="draft.sex?.notes ?? ''" maxlength="120" placeholder="一句話" @change="setSex('notes', ($event.target as HTMLInputElement).value)" /></label>
+      </div>
       <details v-if="draft.tags?.includes('prostitute')" class="small">
         <summary>光顧時會教的技能（{{ draft.teaches?.length ?? 0 }}） <Hint text="成人向（docs/LEWD_STATS.md 第 10 節）。親密度 40 以上、光顧成功時有機會教主角一個；她的淫亂決定能教到幾級。沒勾時用預設的清單。" /></summary>
         <label v-for="a in lewdAbilities" :key="a.id" class="check"><input type="checkbox" :checked="draft.teaches?.includes(a.id)" @change="toggleTeach(a.id, ($event.target as HTMLInputElement).checked)" /> {{ a.name }}</label>
@@ -504,6 +548,8 @@ const occupations = computed(() => {
 <style scoped>
 .lewd label { display: inline-flex; align-items: center; gap: 4px; }
 .lewd input { width: 4.5em; }
+.grow { flex: 1; display: inline-flex; align-items: center; gap: 4px; min-width: 12em; }
+.grow input { flex: 1; }
 .stage { border: 1px dashed var(--border); border-radius: var(--radius); padding: 6px; display: grid; gap: 4px; }
 .slot { width: 3em; }
 .pct { width: 5em; }

@@ -14,6 +14,7 @@
 | `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
 | `lust_gather34.py` | `data/rules/travel_events.json` | 成人向的採集事件 12 件（不限地下城 8 件、地區限定 4 件；接在「遺落的春宮書」後面）。可以重跑 |
 | `dungeon_events33.py` | `data/rules/travel_events.json` | 普通（非成人向）的地下城與近郊事件 54 件：採集 19、陷阱 13、寶箱 11、安全房長休 11（接在成人向的「遺落的春宮書」後面）。可以重跑 |
+| `sex_seeds42.py` | `data/world/npcs.json` | 固定 NPC 的初始性經歷（`sex`，[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 29 節）：設定寫得清楚的 40 位成人向角色（還是處女、人妻、寡婦、當過奴隸、花魁、老師……）。只改每個人 id 那一行的 `sex`。可以重跑 |
 | `vacuum37.py` | `data/rules/gear.json`、`data/rules/lewd.json` | 真空會走光的常規服裝（底材的 `vacuum`：裙子、薄襯衫、浴衣）與在聚落裡真空的淫亂成長（`daily.vacuum`）。可以重跑 |
 | `lead_events35.py` | `data/rules/travel_events.json` | 線索事件 12 件（`scope: lead`，有登場角色 `{a}`、`{b}`；接在旅途事件的「神父的告解」後面）。可以重跑 |
 | `parasites25.py` | `data/rules/parasites.json`、`items.json`、`companions.json`、`travel_events.json` | 寄生物的規則、物品、發作事件 |

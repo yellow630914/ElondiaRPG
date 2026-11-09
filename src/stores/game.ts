@@ -52,6 +52,7 @@ import * as defeat from '@/engine/defeat'
 import * as social from '@/engine/social'
 import * as story from '@/engine/story'
 import * as npcLife from '@/engine/npcLife'
+import * as sexRecord from '@/engine/sexRecord'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
 import type { Attrs, AttrId } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
@@ -410,6 +411,9 @@ export const useGame = defineStore('game', () => {
       if (report?.kind === 'travel' && report.outcome.result === 'arrived') void autoSave('抵達')
       if (opts.narrate !== false && report && settings.autoNarrates(report) && settings.ready(settings.narrationFeature(report))) {
         void narrate(report)
+      } else if (opts.narrate !== false && report) {
+        // 不寫經過的親密場景：照報告記下性經歷（寫經過的，寫完之後才記）
+        void recordSex(report)
       }
       return result
     } catch (e) {
@@ -519,6 +523,50 @@ export const useGame = defineStore('game', () => {
     } finally {
       for (const x of items) polishing.delete(x.id)
     }
+  }
+
+  // ---- 性經歷（成人向，sexRecord.ts）：親密場景之後另外請 AI 記下 ----
+  const recordingSex = ref(new Set<string>())
+
+  /**
+   * 請「性經歷記錄」的模型讀這則親密場景（報告與寫好的經過），記下誰和誰做了什麼。
+   * 自動：設定開啟、來源設定好、這則還沒記過時才送；manual：玩家在日誌上按的（不看開關，記過的不再記）
+   */
+  async function recordSex(report: Report, narrative?: string, opts: { manual?: boolean } = {}) {
+    const s = state.value
+    const settings = useSettings()
+    if (!s || !sexRecord.intimateReport(report) || sexRecord.sexLogged(s, report.report_id) || recordingSex.value.has(report.report_id)) return
+    if (!settings.ready('sexlog') || (!opts.manual && !settings.sexRecordAi)) return
+    const text = narrative ?? narrations.value[report.report_id]?.text ?? ''
+    const { buildSexLogPrompt } = await import('@/narrator/sexLog')
+    const built = buildSexLogPrompt(s, report, text)
+    if (!built) return
+    // 記錄的文字給玩家看：輸出簡體時整份提示詞轉成簡體（和 NPC 近況一樣）
+    const prompt = settings.language === 'zh-Hans' ? { system: toSimplifiedText(built.prompt.system), user: toSimplifiedText(built.prompt.user) } : built.prompt
+    recordingSex.value.add(report.report_id)
+    const src = settings.sourceFor('sexlog')
+    try {
+      const { completeText } = await import('@/narrator/providers')
+      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(report.report_id, u, originOf('sexlog', src)))) as { records?: unknown }
+      // 等 AI 的時候讀了別的檔、或回退掉這則日誌：不要寫進去
+      if (state.value !== s || !s.reports.some((r) => r.report_id === report.report_id) || sexRecord.sexLogged(s, report.report_id)) return
+      const updated = sexRecord.applySexUpdates(s, raw.records, { report, candidates: built.candidates })
+      sexRecord.markSexLogged(s, report.report_id)
+      save()
+      if (updated.length) flash(`📒 記下性經歷：${updated.map((id) => social.nameOf(s, id)).join('、')}`)
+      else if (opts.manual) flash('📒 這段經過沒有需要記下的性經歷')
+    } catch (e) {
+      error.value = `AI 記下性經歷失敗：${e instanceof Error ? e.message : String(e)}（可以在日誌上再按一次）`
+    } finally {
+      recordingSex.value.delete(report.report_id)
+    }
+  }
+
+  /** 玩家改性經歷（角色詳情）；null 是回到初始值 */
+  function editSexRecord(id: string, patch: Parameters<typeof sexRecord.editSexRecord>[2]) {
+    if (!state.value) return
+    sexRecord.editSexRecord(state.value, id, patch)
+    save()
   }
 
   /** 這次重逢已經請 AI 寫過的人（失敗或漏寫也不再送）：離開身邊之後再見面才會再寫 */
@@ -1069,6 +1117,8 @@ export const useGame = defineStore('game', () => {
       entry.status = 'done'
       save()
       if (!rewrite && text.trim() && state.value) void useScenes().auto(state.value, report)
+      // 親密場景：寫完經過之後另外請 AI 記下性經歷（重寫時已經記過，不再記）
+      void recordSex(report, text)
     } catch (e) {
       // 停止或出錯時留下的半段也照正則清理
       entry.text = cleanText(splitSuggestions(entry.text).text, 'narration')
@@ -1225,9 +1275,11 @@ export const useGame = defineStore('game', () => {
       const rewrite = !!report && !!judgment.narrative && settings.narrationFeature(report) === 'adult' && settings.sourceIndex('adult') !== settings.sourceIndex('judge')
       if (report && rewrite) {
         if (settings.autoNarrates(report) && settings.ready('adult')) void narrate(report)
+        else void recordSex(report)
       } else if (report && judgment.narrative) {
         narrations.value[report.report_id] = { text: cleanText(judgment.narrative, 'judge'), status: 'done' }
         if (narrations.value[report.report_id]!.text.trim()) void useScenes().auto(state.value!, report)
+        void recordSex(report, narrations.value[report.report_id]!.text)
       }
       // 判定的思考過程：記在這則日誌（還沒有敘事時先放一個空的）
       if (report && thinking.trim()) {
@@ -1478,6 +1530,8 @@ export const useGame = defineStore('game', () => {
     // NPC 自己的日子：關注、手動請 AI 寫近況
     setFollowed: (id: string, on: boolean) => run((s) => npcLife.setFollowed(s, id, on)),
     polishNews,
+    // 性經歷（sexRecord.ts）：手動請 AI 記下、玩家修改
+    recordSex, recordingSex, editSexRecord,
     goOutskirts: () => run((s) => grid.goOutskirts(s) ?? encounters.checkHostiles(s), { onMap: true }),
     returnToTown: () => run(grid.returnToTown, { onMap: true }),
     // 房子（homes.ts）

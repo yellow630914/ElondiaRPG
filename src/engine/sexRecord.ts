@@ -1,0 +1,322 @@
+// 性經歷（成人向；docs/LEWD_STATS.md 第 29 節）：主角、夥伴與 NPC 都有一份記錄——是不是處子、初體驗、
+// 發生過關係與性侍奉的人數與次數、最喜歡的人、性癖、最近三次。記在存檔的 sexRecords（角色 id → 記錄）；
+// 還沒有記錄的人依角色擲出初始值（NPC 依標籤與 id 固定地擲，固定 NPC 可以在內容頁籤指定）。
+// 親密場景之後另外請 AI 讀這段經過、回傳這次誰和誰做了什麼（stores/game.ts 的 recordSex），程式驗證後加進記錄。
+
+import { genderName, lewdRules, namedNpcById, type NpcSexSeed, type SexSeedRule } from './data'
+import { npcRecord } from './npcs'
+import type { Character, GameState, LewdStat, Report, SexEncounter, SexRecord } from './types'
+
+const rules = () => lewdRules.experience
+
+/** 依字串固定的亂數（不用共用的亂數，不影響其他生成） */
+function seeded(seed: string): () => number {
+  let h = 2166136261
+  for (const ch of seed) h = Math.imul(h ^ ch.charCodeAt(0), 16777619) >>> 0
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) >>> 0
+    h = Math.imul(h ^ (h >>> 13), 3266489909) >>> 0
+    return (h >>> 0) / 4294967296
+  }
+}
+
+const between = (next: () => number, [lo, hi]: [number, number]) => lo + Math.floor(next() * (hi - lo + 1))
+const nonNeg = (n: unknown, max = 100000) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(max, Math.round(n))) : undefined)
+
+export function emptySexRecord(virgin = true): SexRecord {
+  return { virgin, partners: 0, times: 0, servicePartners: 0, serviceTimes: 0, recent: [] }
+}
+
+/** 這些標籤用哪一組擲法（標籤寫了的欄位蓋過 npc_random，多個標籤取最後符合的） */
+function seedRule(tags: string[] = []): SexSeedRule {
+  let out = { ...rules().npc_random }
+  for (const t of tags) {
+    const r = rules().npc_tags[t]
+    if (r) out = { ...out, ...r }
+  }
+  return out
+}
+
+/**
+ * NPC 的初始性經歷：依 id 固定地擲，標籤決定機率與範圍（娼妓一定有經驗、神官多半沒有……）；
+ * 固定 NPC 指定了的欄位優先（NpcDef.sex）
+ */
+export function npcSexSeed(def: { id: string; tags?: string[]; sex?: NpcSexSeed }): SexRecord {
+  const next = seeded(`${def.id}:sex`)
+  const rule = seedRule(def.tags)
+  const fixed = def.sex ?? {}
+  // 寫了人數或次數就算有經驗
+  const hinted = (fixed.partners ?? 0) > 0 || (fixed.times ?? 0) > 0
+  const virgin = fixed.virgin ?? (hinted ? false : next() < rule.virgin)
+  const rec = emptySexRecord(virgin)
+  if (!virgin) {
+    rec.partners = Math.max(1, fixed.partners ?? between(next, rule.partners))
+    rec.times = Math.max(rec.partners, fixed.times ?? rec.partners * between(next, rule.times_per))
+  }
+  const serves = next() < rule.service
+  const basis = Math.max(1, rec.partners)
+  rec.servicePartners = fixed.service_partners ?? (serves && !virgin ? Math.max(1, Math.round(basis * rule.service_share)) : 0)
+  rec.serviceTimes = fixed.service_times ?? (rec.servicePartners ? rec.servicePartners * between(next, rule.times_per) : 0)
+  if (fixed.first && !virgin) rec.first = { note: fixed.first }
+  if (fixed.notes) rec.notes = fixed.notes
+  return rec
+}
+
+/**
+ * NPC 初始的淫亂照經歷調整（npcLewd 用）：還沒有經驗的打折，有經驗的依人數加一點；
+ * 標籤已經決定淫亂範圍的（娼妓、貴族……）不加（範圍本來就照身分定）
+ */
+export function experienceLewdness(lewdness: number, rec: SexRecord, tagRanged: boolean): number {
+  const r = rules().lewdness
+  if (rec.virgin) return Math.round(lewdness * r.virgin_mult)
+  let bonus = 0
+  for (const [min, add] of r.partner_bonus) if (rec.partners >= min) bonus = add
+  return lewdness + (tagRanged ? 0 : bonus)
+}
+
+/** 主角還沒有記錄時：有過親密場景（淫亂記過日子）的舊存檔算有經驗，次數不明 */
+function pcSeed(pc: Character | undefined): SexRecord {
+  return emptySexRecord(pc?.lewd?.lastScene === undefined)
+}
+
+/** 這個人的性經歷：存檔裡有就用，沒有時依角色擲出初始值（不寫進存檔） */
+export function sexRecordOf(state: GameState, id: string): SexRecord {
+  const stored = state.sexRecords?.[id]
+  if (stored) return stored
+  const member = state.party.find((m) => m.id === id)
+  if (id === 'pc' || member?.isPlayer) return pcSeed(state.party.find((m) => m.isPlayer))
+  const rec = npcRecord(state, id)
+  const def = namedNpcById(id)
+  return npcSexSeed({ id, tags: rec?.tags ?? def?.tags ?? [], ...(def?.sex ? { sex: def.sex } : {}) })
+}
+
+/** 存檔裡的記錄（沒有時先照初始值寫進去） */
+function ensureRecord(state: GameState, id: string): SexRecord {
+  const map = (state.sexRecords ??= {})
+  return (map[id] ??= JSON.parse(JSON.stringify(sexRecordOf(state, id))) as SexRecord)
+}
+
+/** 處女、處男或處子（依性別） */
+export function virginWord(gender?: string): string {
+  const g = genderName(gender) || gender || ''
+  if (g.includes('女') && !g.includes('男')) return '處女'
+  if (g.includes('男') && !g.includes('女')) return '處男'
+  return '處子'
+}
+
+function genderOf(state: GameState, id: string): string | undefined {
+  const m = state.party.find((x) => x.id === id || (id === 'pc' && x.isPlayer))
+  return m?.gender ?? npcRecord(state, id)?.gender
+}
+
+/** 名字列表 */
+const names = (e: SexEncounter) => e.with.map((w) => w.name).join('、') || '不明的對象'
+
+/** 一次經歷的文字（第幾天、對象、做了什麼） */
+export function encounterText(e: SexEncounter): string {
+  const what = [e.sex ? `性交 ${e.sex} 次` : '', e.service ? `性侍奉 ${e.service} 次` : ''].filter(Boolean).join('、')
+  return `第 ${e.day} 天和${names(e)}（${what}${e.forced ? '・非自願' : ''}）：${e.summary}`
+}
+
+/** 角色詳情與人際關係顯示用：每一項一列 */
+export function sexRecordItems(state: GameState, id: string): { label: string; value: string }[] {
+  const rec = sexRecordOf(state, id)
+  const word = virginWord(genderOf(state, id))
+  const out: { label: string; value: string }[] = []
+  out.push({ label: '經驗', value: rec.virgin ? `${word}` : `非${word}` })
+  if (rec.first) out.push({ label: '初體驗', value: [rec.first.day !== undefined ? `第 ${rec.first.day} 天` : '', rec.first.with ? `和${rec.first.with}` : '', rec.first.note ?? ''].filter(Boolean).join('・') })
+  out.push({ label: '發生過關係', value: `${rec.partners} 人・${rec.times} 次` })
+  out.push({ label: '性侍奉', value: `${rec.servicePartners} 人・${rec.serviceTimes} 次` })
+  if (rec.forced) out.push({ label: '非自願', value: `${rec.forced} 次` })
+  if (rec.favorite) out.push({ label: '最喜歡的人', value: rec.favorite })
+  const last = rec.recent[0]
+  if (last) out.push({ label: '最近一次的對象', value: names(last) })
+  if (rec.notes) out.push({ label: '性癖與偏好', value: rec.notes })
+  return out
+}
+
+/** 交給 AI 的一段（成人場景的敘事與判定、記錄請求） */
+export function sexRecordText(state: GameState, id: string): string {
+  const rec = sexRecordOf(state, id)
+  const items = sexRecordItems(state, id).map((x) => `${x.label}：${x.value}`).join('；')
+  const recent = rec.recent.length ? `\n  最近${rec.recent.length}次：${rec.recent.map(encounterText).join(' ／ ')}` : ''
+  return `${items}${recent}`
+}
+
+/** 是不是要記下性經歷的親密場景：帶 adult_scene，而且不是戰鬥中只有挑逗、剝衣 */
+export function intimateReport(report: Report): boolean {
+  const a = report.narration?.adult_scene
+  return !!a && report.narration?.tease !== a
+}
+
+/**
+ * 這次可能有性經歷的人（AI 只能更新這些人的記錄）：主角、隊伍、報告裡的其他人（怪物除外）、
+ * 派去接客的人與戰敗事件被圍住的隊友
+ */
+export function sexCandidates(state: GameState, report: Report): string[] {
+  const ids = new Set<string>(['pc'])
+  for (const a of report.party ?? []) ids.add(state.party.find((m) => m.id === a.id)?.isPlayer ? 'pc' : a.id)
+  for (const a of report.others ?? []) if (!a.monster && (npcRecord(state, a.id) || state.party.some((m) => m.id === a.id))) ids.add(a.id)
+  for (const id of [report.narration?.adult_actor, report.narration?.defeat_victim]) if (id) ids.add(id)
+  return [...ids].filter((id) => id === 'pc' || !!npcRecord(state, id) || state.party.some((m) => m.id === id))
+}
+
+/** 這則日誌已經記過了嗎 */
+export function sexLogged(state: GameState, reportId: string): boolean {
+  return !!state.sexLogged?.includes(reportId)
+}
+
+export function markSexLogged(state: GameState, reportId: string) {
+  const list = (state.sexLogged ??= [])
+  if (!list.includes(reportId)) list.push(reportId)
+  if (list.length > 50) list.splice(0, list.length - 50)
+}
+
+/** AI 回傳的一筆：誰、這次性交與性侍奉幾次、和誰、經過、是不是初體驗…… */
+export interface SexUpdate {
+  id: string
+  sex?: number
+  service?: number
+  with?: { name?: string; id?: string }[]
+  forced?: boolean
+  summary?: string
+  first_time?: string
+  favorite?: string
+  notes?: string
+}
+
+const text = (v: unknown, max: number) => (typeof v === 'string' ? v.trim().slice(0, max) : '')
+
+function characterOf(state: GameState, id: string): Character | undefined {
+  if (id === 'pc') return state.party.find((m) => m.isPlayer)
+  return state.party.find((m) => m.id === id) ?? state.npcs?.[id]?.character
+}
+
+/** 記過的對象：認得就不再算一個新的人 */
+function countPartners(list: string[], keys: string[]): { list: string[]; added: number } {
+  const cap = rules().known_cap
+  let added = 0
+  const out = [...list]
+  for (const k of keys) {
+    if (out.includes(k)) continue
+    added += 1
+    out.push(k)
+  }
+  return { list: out.slice(-cap), added }
+}
+
+/**
+ * 套用 AI 回傳的性經歷（驗證後加進記錄）：只收 candidates 裡的人；次數、對象有上限；
+ * 第一次性交時記下初體驗，有角色資料的人照 experience.first_time 成長。回傳更新了誰
+ */
+export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: Report; candidates: string[] }): string[] {
+  const caps = rules().caps
+  const list = Array.isArray(raw) ? (raw as SexUpdate[]) : []
+  const updated: string[] = []
+  const day = ctx.report.time.end.day
+  for (const u of list) {
+    if (!u || typeof u !== 'object' || typeof u.id !== 'string') continue
+    const id = u.id === state.party.find((m) => m.isPlayer)?.id ? 'pc' : u.id
+    if (!ctx.candidates.includes(id) || updated.includes(id)) continue
+    const sex = nonNeg(u.sex, caps.times) ?? 0
+    const service = nonNeg(u.service, caps.times) ?? 0
+    if (!sex && !service) continue
+    const partners = (Array.isArray(u.with) ? u.with : [])
+      .filter((w) => w && typeof w === 'object')
+      .map((w) => {
+        const wid = typeof w.id === 'string' && w.id && w.id !== id ? (w.id === state.party.find((m) => m.isPlayer)?.id ? 'pc' : w.id) : undefined
+        const known = wid && (wid === 'pc' || state.party.some((m) => m.id === wid) || !!npcRecord(state, wid)) ? wid : undefined
+        const name = text(w.name, 16) || (known ? nameFor(state, known) : '')
+        return name ? { name, ...(known ? { id: known } : {}) } : null
+      })
+      .filter((w): w is { name: string; id?: string } => !!w)
+      .slice(0, caps.partners)
+    const rec = ensureRecord(state, id)
+    const keys = partners.map((p) => p.id ?? `name:${p.name}`)
+    // 對象寫不出來（例如一群看不清臉的人）：至少算一個新的人
+    const fresh = keys.length ? keys : [`anon:${ctx.report.report_id}`]
+    if (sex) {
+      const r = countPartners(rec.known ?? [], fresh)
+      rec.known = r.list
+      rec.partners += r.added
+      rec.times += sex
+      if (rec.virgin) {
+        rec.virgin = false
+        const note = text(u.first_time, 120) || text(u.summary, 120)
+        rec.first = { day, ...(partners.length ? { with: partners.map((p) => p.name).join('、') } : {}), ...(note ? { note } : {}) }
+        const c = characterOf(state, id)
+        if (c) for (const [k, v] of Object.entries(rules().first_time)) if (v) bumpLewd(c, k as LewdStat, v)
+      }
+    }
+    if (service) {
+      const r = countPartners(rec.serviceKnown ?? [], fresh)
+      rec.serviceKnown = r.list
+      rec.servicePartners += r.added
+      rec.serviceTimes += service
+    }
+    if (u.forced === true) rec.forced = (rec.forced ?? 0) + 1
+    const favorite = text(u.favorite, 16)
+    if (favorite) rec.favorite = favorite
+    const notes = text(u.notes, 120)
+    if (notes) rec.notes = notes
+    const e: SexEncounter = { day, with: partners, sex, service, summary: text(u.summary, 120) || ctx.report.narration?.adult_scene?.slice(0, 120) || '', report: ctx.report.report_id }
+    if (u.forced === true) e.forced = true
+    rec.recent = [e, ...rec.recent.filter((x) => x.report !== ctx.report.report_id)].slice(0, rules().recent)
+    updated.push(id)
+  }
+  return updated
+}
+
+/** 淫亂、敏感……的基本值（不經過流派的成長倍率：初體驗是一次性的變化） */
+function bumpLewd(c: Character, k: LewdStat, v: number) {
+  const stats = (c.lewd ??= { ...lewdRules.defaults })
+  stats[k] = Math.max(0, Math.min(100, Math.round(stats[k] + v)))
+}
+
+function nameFor(state: GameState, id: string): string {
+  if (id === 'pc') return state.party.find((m) => m.isPlayer)?.name ?? '主角'
+  return state.party.find((m) => m.id === id)?.name ?? npcRecord(state, id)?.name ?? id
+}
+
+/** 玩家在角色詳情改的記錄（是不是處子、人數、次數、最喜歡的人、性癖）；清空時回到初始值 */
+export function editSexRecord(state: GameState, id: string, patch: Partial<Pick<SexRecord, 'virgin' | 'partners' | 'times' | 'servicePartners' | 'serviceTimes' | 'favorite' | 'notes'>> | null) {
+  if (!patch) {
+    if (state.sexRecords) delete state.sexRecords[id]
+    return
+  }
+  const rec = ensureRecord(state, id)
+  if (typeof patch.virgin === 'boolean') rec.virgin = patch.virgin
+  for (const k of ['partners', 'times', 'servicePartners', 'serviceTimes'] as const) {
+    const n = nonNeg(patch[k])
+    if (n !== undefined) rec[k] = n
+  }
+  if (patch.favorite !== undefined) {
+    const f = text(patch.favorite, 16)
+    if (f) rec.favorite = f
+    else delete rec.favorite
+  }
+  if (patch.notes !== undefined) {
+    const n = text(patch.notes, 120)
+    if (n) rec.notes = n
+    else delete rec.notes
+  }
+}
+
+/** 主角建角時選的經驗（開新遊戲） */
+export function pcExperience(experienced: boolean, note = ''): SexRecord {
+  const rec = emptySexRecord(!experienced)
+  if (experienced) {
+    rec.partners = 1
+    rec.times = 1
+    const n = text(note, 120)
+    if (n) rec.first = { note: n }
+  }
+  return rec
+}
+
+/** 成人場景的敘事與判定：主角、隊友與在場的人的性經歷，每人一行（ids 是報告或行動裡的其他人） */
+export function sexRecordsNote(state: GameState, ids: string[] = []): string {
+  const pc = state.party.find((m) => m.isPlayer)
+  const list = ['pc', ...state.party.filter((m) => !m.isPlayer).map((m) => m.id), ...ids.filter((id) => id !== pc?.id && !!npcRecord(state, id))]
+  return [...new Set(list)].map((id) => `\n${nameFor(state, id)}的性經歷：${sexRecordText(state, id)}`).join('')
+}

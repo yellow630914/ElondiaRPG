@@ -94,14 +94,14 @@ exports[`world editor round trip > npcs: opening and saving without changes keep
 {
   "npc_alexei": "7981c94ed4e2",
   "npc_balin_greyrock": "ba13557f6a29",
-  "npc_belvia": "74e297312e31",
+  "npc_belvia": "d75239880b29",
   "npc_brandt_copperbeard": "f9fc5d875966",
-  "npc_eileen": "3a3b277cf4de",
+  "npc_eileen": "e6615363101d",
   "npc_fenn_apprentice": "91893929adab",
   "npc_helen_lighthouse": "a2936454b112",
   "npc_hildegard": "70f23c06db5e",
   "npc_isabella_rowan": "db623caff9f6",
-  "npc_isadora": "09182ec6ef1d",
+  "npc_isadora": "9e14bcd69a7c",
   "npc_ithrandil": "b3d9d1fd01e0",
   "npc_kaspar_nord": "6febe762b70a",
   "npc_leila": "2938afdd3732",
@@ -109,8 +109,8 @@ exports[`world editor round trip > npcs: opening and saving without changes keep
   "npc_lina": "97bc0158e2ec",
   "npc_lisar": "75f3059c8014",
   "npc_matilda_rosen": "35d83aab80d3",
-  "npc_mentor_exhibition": "a8a5270fcc6e",
-  "npc_mentor_servitude": "c67abfca9eec",
+  "npc_mentor_exhibition": "beca46cbb958",
+  "npc_mentor_servitude": "b8b7e8e1e665",
   "npc_moring": "cfb2122884aa",
   "npc_morphe": "ac4e927dd41b",
   "npc_noel": "5adad732dcbf",
@@ -121,7 +121,7 @@ exports[`world editor round trip > npcs: opening and saving without changes keep
   "npc_yh_hastings": "d8c1235ee409",
   "npc_yh_hu_jiuniang": "c164b915f78a",
   "npc_yh_lu_qinghe": "c7b1d6b7a5bd",
-  "npc_yh_wen_ruyu": "ee26e4edf200",
+  "npc_yh_wen_ruyu": "878b4cc052b5",
 }
 `;
 

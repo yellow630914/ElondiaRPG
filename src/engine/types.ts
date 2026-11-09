@@ -278,6 +278,47 @@ export interface LewdStats extends Record<LewdStat, number> {
   carry?: Partial<Record<LewdStat, number>>
 }
 
+/** 一次親密經歷（性經歷的「最近幾次」） */
+export interface SexEncounter {
+  day: number
+  /** 對象：名字，認識的人帶 id */
+  with: { name: string; id?: string }[]
+  /** 性交幾次、性侍奉（替對方服務）幾次 */
+  sex: number
+  service: number
+  /** 一兩句話的經過 */
+  summary: string
+  /** 非自願 */
+  forced?: boolean
+  /** 哪一則日誌 */
+  report?: string
+}
+
+/** 性經歷（成人向，docs/LEWD_STATS.md 第 29 節）：主角、夥伴與 NPC 都有；AI 在親密場景之後記下 */
+export interface SexRecord {
+  /** 還沒有性交的經驗（性侍奉不算） */
+  virgin: boolean
+  /** 初體驗 */
+  first?: { day?: number; with?: string; note?: string }
+  /** 發生過關係的人數、次數 */
+  partners: number
+  times: number
+  /** 性侍奉的人數、次數 */
+  servicePartners: number
+  serviceTimes: number
+  /** 非自願的次數 */
+  forced?: number
+  /** 最喜歡的人（名字） */
+  favorite?: string
+  /** 性癖與偏好（一句話） */
+  notes?: string
+  /** 最近幾次，最新的在前面（lewd.json 的 experience.recent） */
+  recent: SexEncounter[]
+  /** 記過的對象（id 或名字），用來算人數；最多 experience.known_cap 個 */
+  known?: string[]
+  serviceKnown?: string[]
+}
+
 export interface Character {
   id: string
   name: string
@@ -931,6 +972,10 @@ export interface GameState {
   exposure?: Record<string, Record<string, number>>
   /** 曝露名聲依身分標籤加減時的零頭（角色 id → 還沒算進去的部分） */
   exposureCarry?: Record<string, number>
+  /** 性經歷（成人向，docs/LEWD_STATS.md 第 29 節）：角色 id（主角是 pc）→ 記錄；沒有時依角色擲出初始值（sexRecord.ts 的 sexRecordOf） */
+  sexRecords?: Record<string, SexRecord>
+  /** 已經請 AI 記下性經歷的日誌（報告 id，最近 50 則）：同一則不重複記 */
+  sexLogged?: string[]
   /** 拍賣會今天的拍品（auction.ts；每天、每個地方重新抽） */
   auction?: { day: number; location: string; lots: { name: string; start: number; rival: number; won?: number; lost?: boolean }[] }
   /** 淫鬥場的連勝：城（地點 id）→ 擂臺 → 目前的連勝與最好的紀錄（docs/LEWD_STATS.md 第 21 節） */

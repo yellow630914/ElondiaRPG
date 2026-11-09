@@ -1438,6 +1438,18 @@ export function sanitizeNpc(id: string, raw: Partial<NpcMod>, custom: boolean): 
       .filter((k) => typeof raw.lewd?.[k] === 'number' && Number.isFinite(raw.lewd[k])).map((k) => [k, int(raw.lewd?.[k], 0, 100, 0)]))
     if (Object.keys(lewd).length) out.lewd = lewd
   }
+  // 初始的性經歷（docs/LEWD_STATS.md 第 29 節）：寫了的欄位才存，其他依標籤與 id 擲
+  if (raw.sex && typeof raw.sex === 'object') {
+    const sx: NonNullable<NpcDef['sex']> = {}
+    if (typeof raw.sex.virgin === 'boolean') sx.virgin = raw.sex.virgin
+    for (const k of ['partners', 'times', 'service_partners', 'service_times'] as const) {
+      const v = raw.sex[k]
+      if (typeof v === 'number' && Number.isFinite(v)) sx[k] = int(v, 0, 100000, 0)
+    }
+    if (str(raw.sex.first, 120)) sx.first = str(raw.sex.first, 120)
+    if (str(raw.sex.notes, 120)) sx.notes = str(raw.sex.notes, 120)
+    if (Object.keys(sx).length) out.sex = sx
+  }
   // 娼婦光顧時會教的色情技能
   const teaches = [...new Set((Array.isArray(raw.teaches) ? raw.teaches : []).filter((id) => typeof id === 'string' && abilities[id]?.classes.includes('lewd')))].slice(0, 12)
   if (teaches.length) out.teaches = teaches

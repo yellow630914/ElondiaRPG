@@ -19,8 +19,15 @@ import { canLive, isFollowed, livingNpcs, newsOf, newsText } from '@/engine/npcL
 import { useSettings } from '@/stores/settings'
 import { genderSwapBlock } from '@/engine/genderSwap'
 import { genderName, GENDER_IDS } from '@/engine/data'
+import { encounterText, sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 
 const game = useGame()
+// 性經歷（成人向，docs/LEWD_STATS.md 第 29 節）：摺起來，標題只寫經驗與人數
+function sexBrief(id: string): string {
+  const items = sexRecordItems(s.value, id)
+  const rec = sexRecordOf(s.value, id)
+  return `${items[0]?.value ?? ''}・${rec.partners} 人・${rec.times} 次`
+}
 const content = useContent()
 const s = computed(() => game.state!)
 // 所在：在隊伍裡、留在房子或寄放在酒館；其他人寫今天在哪（和地圖上擺人用同一套，另一片大陸時註明；population.ts 的 whereaboutsOf）
@@ -243,6 +250,14 @@ const suggestionDraft = reactive<Record<string, string>>({})
             </template>
             <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
             <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationName(r.firstMet.location) }}</dd></template>
+            <dt>性經歷</dt>
+            <dd>
+              <details class="sex">
+                <summary>{{ sexBrief(r.id) }}</summary>
+                <div v-for="x in sexRecordItems(s, r.id)" :key="x.label">{{ x.label }}：{{ x.value }}</div>
+                <div v-for="e in sexRecordOf(s, r.id).recent" :key="`${e.day}-${e.report}`" class="news">{{ encounterText(e) }}</div>
+              </details>
+            </dd>
             <template v-if="news(r.id).length">
               <dt>近況</dt>
               <dd><div v-for="n in news(r.id)" :key="n.day" class="news">第 {{ n.day }} 天：{{ newsText(n) }}</div></dd>

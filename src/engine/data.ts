@@ -128,6 +128,8 @@ export interface NpcDef {
   perks?: string[]
   /** 慾望指標（淫亂、敏感、忍耐、順從，0～100；沒寫的依標籤與 id 固定地擲，見 docs/LEWD_STATS.md） */
   lewd?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+  /** 初始的性經歷（成人向，docs/LEWD_STATS.md 第 29 節）：寫了的欄位優先，其他依標籤與 id 固定地擲 */
+  sex?: NpcSexSeed
   /** 娼婦：光顧時可能教主角的色情技能（docs/LEWD_STATS.md 第 10 節；沒寫時用 lewd.json 的 brothel.patron.default） */
   teaches?: string[]
   /**
@@ -2416,11 +2418,46 @@ export interface LustPerk {
   wounded?: Mods; master?: Mods; bound?: Mods; bound_max?: number
 }
 type LewdBonus = Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+/** NPC 初始性經歷的擲法（lewd.json 的 experience） */
+export interface SexSeedRule {
+  /** 還沒有經驗的機率 */
+  virgin: number
+  /** 有經驗時發生過關係的人數範圍 */
+  partners: [number, number]
+  /** 每人平均幾次 */
+  times_per: [number, number]
+  /** 有性侍奉經驗的機率 */
+  service: number
+  /** 性侍奉的人數約為 partners × service_share */
+  service_share: number
+}
+
+/** 固定 NPC 指定的初始性經歷（內容頁籤；沒寫的欄位照擲） */
+export interface NpcSexSeed {
+  virgin?: boolean
+  partners?: number
+  times?: number
+  service_partners?: number
+  service_times?: number
+  /** 初體驗（一句話） */
+  first?: string
+  /** 性癖與偏好（一句話） */
+  notes?: string
+}
+
 export const lewdRules = lewdJson as unknown as {
   stats: Record<LewdKey, { name: string; bands: string[]; forced_bands?: string[] }>
   defaults: Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>
   npc_tags: Record<string, Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', [number, number]>>>
   npc_random: Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', [number, number]>
+  /** 性經歷（docs/LEWD_STATS.md 第 29 節）：NPC 初始經歷的範圍、淫亂的調整、初體驗的成長 */
+  experience: {
+    recent: number; known_cap: number; caps: { times: number; partners: number }
+    npc_random: SexSeedRule
+    npc_tags: Record<string, Partial<SexSeedRule>>
+    lewdness: { virgin_mult: number; partner_bonus: [number, number][] }
+    first_time: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
+  }
   combat: {
     endurance_max_div: number; sensitivity_base: number; sensitivity_div: number; lewd_start_per: number; lewd_start_ratio: number; lewd_decay_div: number
     self_gain_lewd: number; self_gain_bonus: number; submission_per: number; submission_convert: number; exposure_per: number; faith_resist: number

@@ -19,6 +19,9 @@ const DESIGN_HINT: Record<string, string> = {
 const NARRATION_HINT = `開啟：勾選種類的日誌產生後，自動請「敘事正文」的模型寫出詳細經過。
 關閉：不自動呼叫 AI，戰鬥直接顯示戰報，其他事件顯示簡述；每則日誌都可以按底下的筆圖示手動寫出經過。
 AI 判定的主動行動：只要「主動行動」這個種類有勾，就會寫出經過，不看這個開關。`
+const SEX_HINT = `開啟：親密場景的日誌寫完經過之後（沒有寫經過時，日誌產生後），另外請「性經歷記錄」的模型讀這段經過，記下誰和誰發生了關係、性侍奉、初體驗、最喜歡的人與性癖；判定時不記。
+記錄在角色詳情的「屬性與戰鬥」與人際關係裡看得到，成人場景的敘事與判定會附上。
+關閉：不呼叫；記錄停在目前的樣子（日誌上還是可以手動記）。`
 </script>
 
 <template>
@@ -40,6 +43,11 @@ AI 判定的主動行動：只要「主動行動」這個種類有勾，就會�
       <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述：自動寫出經過</label>
       <Hint :text="NARRATION_HINT" :width="340" />
       <span v-if="settings.aiNarration && !settings.ready('narration')" class="small warn">「敘事正文」的模型來源未設定</span>
+    </div>
+    <div class="row-line">
+      <label class="check"><input v-model="settings.sexRecordAi" type="checkbox" /> AI 記下性經歷（成人向）</label>
+      <Hint :text="SEX_HINT" :width="340" />
+      <span v-if="settings.sexRecordAi && !settings.ready('sexlog')" class="small warn">「性經歷記錄」的模型來源未設定</span>
     </div>
     <div v-if="kinds" class="kinds">
       <label v-for="k in NARRATE_KINDS" :key="k.id" class="check small" :title="k.desc">

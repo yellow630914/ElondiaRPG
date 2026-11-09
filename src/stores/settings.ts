@@ -26,12 +26,13 @@ function reducedMotion(): boolean {
 }
 
 /** 會呼叫 AI 的功能（見 docs/PROMPTS.md 第 1 節） */
-export type AiFeature = 'narration' | 'adult' | 'judge' | 'roster' | 'shop' | 'negotiation' | 'life' | 'tags' | 'designer'
+export type AiFeature = 'narration' | 'adult' | 'judge' | 'sexlog' | 'roster' | 'shop' | 'negotiation' | 'life' | 'tags' | 'designer'
 
 export const AI_FEATURES: { id: AiFeature; name: string; desc: string; prose: boolean }[] = [
   { id: 'narration', name: '敘事正文', desc: '所有日誌的詳細經過：戰鬥、旅行、事件，以及主動行動判定之後的經過；也可以在每則日誌手動生成', prose: true },
   { id: 'adult', name: '成人場景正文', desc: '帶親密場景的日誌（娼館、主人的邀約、戰敗後的遭遇、AI 判定認為有親密場景的行動）改用這個來源寫經過；提示詞用套用到「成人場景」的文風與其他提示詞', prose: true },
   { id: 'judge', name: '主動行動判定', desc: '「擲骰的行動交給 AI 判定」開啟時：看骰值決定成敗與後果，只回傳 JSON；經過交給「敘事正文」（除非下方勾選「判定時順便寫出經過」）', prose: false },
+  { id: 'sexlog', name: '性經歷記錄', desc: '「AI 記下性經歷」開啟時：親密場景的日誌寫完經過之後（沒寫經過時在日誌產生後），讀這段經過，記下誰和誰發生了關係、性侍奉、初體驗、最喜歡的人（JSON）；要願意處理成人內容，預設和成人場景正文同一個來源', prose: false },
   { id: 'roster', name: '居民潤飾', desc: '「AI 設計 → 居民」開啟時：到一個地點而有還沒潤飾的居民時（第一次來或新搬來的人），設計居民的名字、外貌與性格（JSON）', prose: false },
   { id: 'shop', name: '商店清單', desc: '「AI 設計 → 商店清單」開啟時：每間店每天第一次進店時，設計今天的交易清單（JSON）', prose: false },
   { id: 'negotiation', name: '談判方式', desc: '「AI 設計 → 談判方式」開啟時：開始談判時設計可以採取的方式（JSON）', prose: false },
@@ -138,6 +139,8 @@ interface SavedSettings {
   npcLife: boolean
   npcLifeDays: number
   npcLifeAi: NpcLifeAi
+  /** 親密場景之後請 AI 記下性經歷（docs/LEWD_STATS.md 第 29 節） */
+  sexRecordAi: boolean
   /** 地區線索池每幾天換一批（leads.ts；0 = 關閉，情報商照舊每天隨機） */
   leadPoolDays: number
   /** AI 判定多少分鐘沒有任何回應（文字或思考）就放棄；0 = 不限 */
@@ -206,6 +209,7 @@ function defaults(): SavedSettings {
     npcLife: true,
     npcLifeDays: 3,
     npcLifeAi: 'roll',
+    sexRecordAi: true,
     leadPoolDays: 7,
     judgeTimeoutMin: 3,
     monsterGirl: 'off',
@@ -245,7 +249,8 @@ function load(): SavedSettings {
       return { name: s.name || `來源 ${i + 1}`, provider: s.provider ?? 'anthropic', configs: { ...defaultConfigs(), ...s.configs } }
     })
     // 舊版沒有「成人場景正文」：和敘事正文用同一個來源
-    const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...saved.routes }
+    // 舊版沒有「性經歷記錄」：和成人場景正文用同一個來源
+    const routes = { ...defaultRoutes(), ...(saved.routes ? { adult: saved.routes.narration ?? 0 } : {}), ...(saved.routes ? { sexlog: saved.routes.adult ?? saved.routes.narration ?? 0 } : {}), ...saved.routes }
     for (const k of Object.keys(routes) as AiFeature[]) if (!(routes[k] >= 0 && routes[k] < sources.length)) routes[k] = 0
     // 舊版的「成人向」開關已經拿掉
     const { autoNarrate: _a, provider: _p, configs: _c, adult: _adult, ...rest } = saved
@@ -301,6 +306,7 @@ export const useSettings = defineStore('settings', () => {
   watch(leadPoolDays, (days) => setLeadPool({ days: Number(days) }), { immediate: true })
   const judgeTimeoutMin = ref(judgeTimeout(initial.judgeTimeoutMin))
   const npcLifeAi = ref<NpcLifeAi>((['roll', 'reunion', 'off'] as const).includes(initial.npcLifeAi) ? initial.npcLifeAi : 'roll')
+  const sexRecordAi = ref(initial.sexRecordAi !== false)
   const monsterGirl = ref(initial.monsterGirl)
   watch(monsterGirl, setMonsterGirl, { immediate: true })
   const monsterGirlChance = ref(Number.isFinite(Number(initial.monsterGirlChance)) ? Math.max(0, Math.min(100, Math.round(Number(initial.monsterGirlChance)))) : 100)
@@ -325,7 +331,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -353,6 +359,7 @@ export const useSettings = defineStore('settings', () => {
         npcLifeDays: Number(npcLifeDays.value) || 3,
         leadPoolDays: Number.isFinite(Number(leadPoolDays.value)) ? Math.max(0, Math.min(30, Math.round(Number(leadPoolDays.value)))) : 7,
         npcLifeAi: npcLifeAi.value,
+        sexRecordAi: sexRecordAi.value,
         judgeTimeoutMin: judgeTimeout(judgeTimeoutMin.value),
         monsterGirl: monsterGirl.value,
         monsterGirlChance: Number(monsterGirlChance.value),
@@ -460,7 +467,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

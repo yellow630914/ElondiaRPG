@@ -45,6 +45,7 @@
 | `adult` | 布林 | `true` 或不寫 | 成人向角色：不佔名單名額，內容編輯器可以依它篩選（[NPC_SYSTEM](../../docs/NPC_SYSTEM.md) 第 3 節） |
 | `adult_appearance` | 字串 | 最多 240 字 | 成人向的外貌細節，接在外貌後面交給 AI |
 | `lewd` | 物件 | `lewdness`、`sensitivity`、`endurance`、`submission`，每項 0～100 | 慾望指標；寫了的才存，沒寫的依標籤與 id 擲（[LEWD_STATS](../../docs/LEWD_STATS.md)） |
+| `sex` | 物件 | `virgin`（布林）、`partners`、`times`、`service_partners`、`service_times`（0 以上的整數）、`first`、`notes`（各最多 120 字） | 初始的性經歷；寫了的才存，沒寫的依標籤與 id 擲。寫了人數或次數就算有經驗；沒寫淫亂時，初始淫亂也照這份經歷調整（[LEWD_STATS](../../docs/LEWD_STATS.md) 第 29 節） |
 | `teaches` | id 陣列 | 色情技能（`classes` 有 `lewd` 的技能），最多 12 個 | 娼婦光顧時會教的技能；不是色情技能的拿掉 |
 | `mentor` | 物件 | `{ "perks": [...], "affinity": 10, "price_mult": 0.8 }`：`perks` 最多 8 個（不是種族特質、不是缺陷），`affinity` 0～100、`price_mult` 0～3 | 老師：在主角身邊時受訓面板多出這些特質（[LEWD_STATS](../../docs/LEWD_STATS.md) 第 6.1 節）。`perks` 一個都不合時整欄拿掉 |
 

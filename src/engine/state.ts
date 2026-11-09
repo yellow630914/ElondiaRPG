@@ -21,6 +21,7 @@ import { startCrafts } from './crafting'
 import { occupationFor } from './npcs'
 import { characterBody, genderId, lookAppearance, sanitizeLook } from './look'
 import { BODIES, bodyOf, type Body } from './traits'
+import { pcExperience } from './sexRecord'
 
 export const START_LOCATION = 'soriel'
 export const START_MONEY_CC = 500
@@ -51,6 +52,8 @@ export interface NewGameOptions {
   /** 建角時挑的裝備（沒有時用職業的起始裝備）與預算（材料等級點數，見 gear.ts 的 creationGear） */
   gear?: CreationGear
   gearBudget?: number
+  /** 主角的性經驗（成人向，docs/LEWD_STATS.md 第 29 節）：有沒有，以及一句話的初體驗；沒有時算沒有經驗 */
+  experience?: { experienced: boolean; note?: string }
 }
 
 /** 各種族的預設出生地 */
@@ -138,6 +141,8 @@ export function newGame(opts: NewGameOptions): GameState {
     options: { ...defaultOptions(), ...opts.options },
     // 新遊戲的 NPC 一開始就照新的職業生成：不用問「炎華之地要不要改一批職業」（classRebalance.ts）
     classRebalance: { done: 'skipped' },
+    // 主角的性經歷：建角時選的（sexRecord.ts）
+    sexRecords: { pc: pcExperience(!!opts.experience?.experienced, opts.experience?.note) },
   }
 }
 
