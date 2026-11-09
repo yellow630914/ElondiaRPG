@@ -46,8 +46,9 @@ function removeSource() {
 const PAGES = [
   { id: 'models', label: '模型', icon: 'settings' },
   { id: 'images', label: '圖像', icon: 'image' },
-  { id: 'narration', label: '敘事與判定', icon: 'sparkles' },
+  { id: 'narration', label: 'AI 敘事', icon: 'sparkles' },
   { id: 'rules', label: '遊戲規則', icon: 'd20' },
+  { id: 'adult', label: '成人內容', icon: 'heart' },
   { id: 'display', label: '畫面', icon: 'eye' },
   { id: 'save', label: '存檔與設定檔', icon: 'save' },
 ] as const
@@ -154,7 +155,7 @@ function doReset() {
     </section>
 
     <section class="panel">
-      <h2 class="head"><GameIcon name="book" :size="20" />AI 輸出與內容</h2>
+      <h2 class="head"><GameIcon name="book" :size="20" />AI 輸出</h2>
       <div class="form">
         <label>
           AI 的輸出語言
@@ -167,6 +168,128 @@ function doReset() {
           <span class="lab">世界書注入字數上限 <Hint text="文風、世界書條目與其他提示詞在畫面上方的「提示詞」頁籤調整，也可以在那裡預覽送出的內容。" /></span>
           <input v-model.number="settings.loreBudget" type="number" min="2000" step="1000" style="width: 140px" />
         </label>
+      </div>
+    </section>
+
+  </template>
+
+  <template v-if="page === 'rules'">
+    <p class="small muted intro">
+      標著<span class="badge">存檔</span>的項目只套用在目前的存檔（每個存檔各自設定，開新遊戲時也能選）；其他的套用在所有存檔。<template v-if="!game.state">還沒有開始冒險，只列出所有存檔共用的項目。</template>
+      成人向的規則在<a href="#" @click.prevent="openPage('adult')">成人內容</a>。
+    </p>
+    <section v-if="game.state" class="panel">
+      <h2 class="head"><GameIcon name="d20" :size="20" />難度與戰鬥</h2>
+      <div class="form">
+        <label><span class="lab">難度 <span class="badge">存檔</span><Hint text="怪物的生命與造成的傷害各乘一個係數（頭目一組，小怪依出現的區域各一組），普通是設計的基準（和沒有這個設定時一樣）。經驗值與戰利品不隨難度變動。改了只影響之後開打的戰鬥，進行中的那一場不變。" /></span>
+          <select :value="difficultyOf(game.state)" @change="game.setDifficulty(($event.target as HTMLSelectElement).value as Difficulty)">
+            <option v-for="id in DIFFICULTY_IDS" :key="id" :value="id">
+              {{ DIFFICULTY_DEFS[id].name }}
+            </option>
+          </select>
+        </label>
+        <p class="small muted">{{ DIFFICULTY_DEFS[difficultyOf(game.state)].desc }}（{{ difficultySummary(DIFFICULTY_DEFS[difficultyOf(game.state)]) }}）</p>
+        <label><span class="lab">在地下城戰敗時，這趟探索撿到、還沒帶出去的物品與錢 <span class="badge">存檔</span><Hint text="離開地下城（啟程旅行）就算帶出去了。這個規則存在存檔裡，每個存檔可以不一樣。" /></span>
+          <select :value="defeatLootRule(game.state)" @change="game.setDefeatLoot(($event.target as HTMLSelectElement).value as DefeatLoot)">
+            <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.naturalCrit" @change="game.setNaturalCrit(($event.target as HTMLInputElement).checked)" />
+          大成功、大失敗只看骰面 <span class="badge">存檔</span><Hint text="勾選時，只有骰出 20 才是大成功、骰出 1 才是大失敗；總和比 DC 高或低 10 以上不再算（最多是成功或失敗）。AI 判定也照這條規則。不勾時維持原本的規則：骰出 20 或總和 ≥ DC+10 大成功，骰出 1 或總和 ≤ DC−10 大失敗。" /></label>
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.classWeapons" @change="game.setClassWeapons(($event.target as HTMLInputElement).checked)" />
+          職業武器限制 <span class="badge">存檔</span><Hint :text="CLASS_WEAPONS_HINT + '打開時，主手拿著職業不能用的武器的人會卸下武器、放回行囊。'" /></label>
+        <RuleFields v-if="game.state" :model-value="saveRules" :groups="['combat']" badge="存檔" @update:model-value="game.setRules" />
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="head"><GameIcon name="star" :size="20" />成長與報酬</h2>
+      <div class="form">
+        <RuleFields v-if="game.state" :model-value="saveRules" :groups="['growth']" badge="存檔" @update:model-value="game.setRules" />
+        <label>
+          <span class="lab">升級時能力三選一的重抽次數（每組） <Hint text="0 表示不能重抽。只影響之後的重抽，已經用掉的次數照算。" /></span>
+          <input v-model.number="settings.abilityRerolls" type="number" min="0" max="99" style="width: 100px" />
+        </label>
+        <label>
+          <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
+          <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
+        </label>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="head"><GameIcon name="clock" :size="20" />時間與休息</h2>
+      <div class="form">
+        <RuleFields v-if="game.state" :model-value="saveRules" :groups="['time']" badge="存檔" @update:model-value="game.setRules" />
+        <label>
+          <span class="lab">兩次長休至少隔幾小時 <Hint :text="`0～24，預設 ${companionRules.rest.long_rest_gap_hours}。從上次長休結束時算起。`" /></span>
+          <input v-model.number="settings.longRestGap" type="number" min="0" max="24" style="width: 100px" />
+        </label>
+        <div class="field">
+          <span class="lab">走一格花幾分鐘 <Hint :text="`0～60。預設：城鎮 ${STEP_DEFAULT.settlement}、近郊 ${STEP_DEFAULT.wild}、冒險區域 ${STEP_DEFAULT.dungeon} 分鐘。時間影響白天黑夜、光源的燃料與委託的期限。房子裡照城鎮算，特殊地圖照冒險區域算；旅途一格一天，不受影響。`" /></span>
+          <div class="steps">
+            <label v-for="p in STEP_PLACES" :key="p.id">{{ p.name }} <input v-model.number="settings.stepMinutes[p.id]" type="number" min="0" max="60" style="width: 72px" /> 分</label>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="head"><GameIcon name="map" :size="20" />冒險與事件</h2>
+      <div class="form">
+        <template v-if="game.state">
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.trapLure" @change="game.setTrapLure(($event.target as HTMLInputElement).checked)" />
+          察覺陷阱時可以主動觸發 <span class="badge">存檔</span><Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。" /></label>
+        </template>
+        <RuleFields v-if="game.state" :model-value="saveRules" :groups="['adventure']" badge="存檔" @update:model-value="game.setRules" />
+        <label>
+          <span class="lab">線索池每幾天換一批 <Hint text="每個地區有一池線索（盤踞的強敵、藏寶處、流浪商人、冒險者的遺物），走進那個地區時才擲；過了這麼多天再擲一批。一部分由情報商賣，其他的要解讀情報物品才知道，不知道也可能在近郊或地下城遇到。0 = 關閉（情報商照舊每天隨機賣事件點）。1～30，預設 7。" /></span>
+          <input v-model.number="settings.leadPoolDays" type="number" min="0" max="30" style="width: 100px" />
+        </label>
+      </div>
+    </section>
+
+    <section v-if="game.state" class="panel">
+      <h2 class="head"><GameIcon name="coins" :size="20" />城鎮、交易與身分</h2>
+      <div class="form">
+        <label class="check"><input type="checkbox" :checked="!!game.state.options?.tagChange" @change="game.setTagChange(($event.target as HTMLInputElement).checked)" />
+          允許在遊戲中更換身分標籤 <span class="badge">存檔</span><Hint text="勾選時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個）。皇族可以直接進出王城。" /></label>
+        <RuleFields v-if="game.state" :model-value="saveRules" :groups="['town']" badge="存檔" @update:model-value="game.setRules" />
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="head"><GameIcon name="users" :size="20" />NPC</h2>
+      <div class="form">
+        <label class="check">
+          <input v-model="settings.npcLife" type="checkbox" /> NPC 會自己成長
+          <Hint text="你在乎的冒險者不在你身邊時也會過自己的日子：你在人際關係裡「關注」的人、留在家裡或寄放在酒館的夥伴、離隊的夥伴，以及親密度 30 以上的冒險者。每隔幾天擲一次：去了哪裡做什麼、升級（最多到主角的等級，落後越多越容易升；固定 NPC 不升級；夥伴的能力與屬性點留給你選）、換一件比較好的武器或護甲（上鎖的、獨特的不換；夥伴換下的寄回行囊；固定 NPC 不換）、受了點傷去休養（只是近況，隨時可以找他）。成人向：認識的 NPC（也包括普通人）也擲自己的私生活，淫亂越高越常發生，記進性經歷。近況記在人際關係裡，AI 寫重逢的經過時也會知道。" />
+        </label>
+        <template v-if="settings.npcLife">
+          <label>
+            <span class="lab">每幾天擲一次 <Hint text="1～30，預設 3。間隔越長，每次的變化越多（升級、換裝的機率跟著提高）。" /></span>
+            <input v-model.number="settings.npcLifeDays" type="number" min="1" max="30" style="width: 100px" />
+          </label>
+          <label>
+            <span class="lab">近況交給 AI 寫 <Hint text="AI 依角色的性格、經歷與和你的共同記憶，把擲出來的近況寫成一段（數值照擲出來的，不會改）。每次擲骰時：一次寫完這次有變化的人；重逢時：見到他（或他回到隊上）時才寫，比較省；不用 AI：只有簡短的近況。用的是「模型」頁的「NPC 近況」來源。" /></span>
+            <select v-model="settings.npcLifeAi">
+              <option v-for="o in NPC_LIFE_AI" :key="o.id" :value="o.id">{{ o.name }}</option>
+            </select>
+          </label>
+          <label class="check">
+            <input v-model="settings.npcPairs" type="checkbox" /> NPC 之間可以發生關係（成人向）
+            <Hint text="認識的 NPC 每次擲骰也會擲自己的私生活：淫亂越高越常發生——自慰、一夜情、替人性侍奉、娼妓接客，以及和另一位認識的 NPC 發生關係（互相有關係描述、住在同一座城的比較容易）。關掉這一項：NPC 之間不會發生關係，其他照舊。人際關係裡也可以個別關掉某個人。內容篩選關了 NTR 時，和你親密度 60 以上的人只會自慰；關了男性對象時，NPC 之間不挑男性。" />
+          </label>
+        </template>
+      </div>
+    </section>
+
+  </template>
+
+  <template v-if="page === 'adult'">
+    <section class="panel">
+      <h2 class="head"><GameIcon name="heart" :size="20" />內容篩選與成人場景</h2>
+      <div class="form">
         <div class="row checks">
           <span class="lab">內容篩選 <Hint text="取消勾選的內容不會出現：帶這個標籤的特殊任務不會開放、任務裡帶這個標籤的選項不會出現。進行中的任務不受影響。" /></span>
           <label v-for="t in FILTER_TAGS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
@@ -213,6 +336,14 @@ function doReset() {
       </div>
     </section>
 
+    <section v-if="game.state" class="panel">
+      <h2 class="head"><GameIcon name="d20" :size="20" />這個存檔的成人向規則
+        <Hint text="每個存檔各自設定，開新遊戲時也能選。" />
+      </h2>
+      <div class="form">
+        <RuleFields :model-value="saveRules" :groups="['lust', 'adult_events', 'lewd']" headings @update:model-value="game.setRules" />
+      </div>
+    </section>
   </template>
 
   <section v-if="page === 'display'" class="panel">
@@ -243,85 +374,6 @@ function doReset() {
     </div>
   </section>
 
-  <template v-if="page === 'rules'">
-    <section v-if="game.state" class="panel">
-      <h2 class="head"><GameIcon name="d20" :size="20" />這個存檔的規則</h2>
-      <div class="form">
-        <label><span class="lab">難度 <Hint text="怪物的生命與造成的傷害各乘一個係數（頭目一組，小怪依出現的區域各一組），普通是設計的基準（和沒有這個設定時一樣）。經驗值與戰利品不隨難度變動。改了只影響之後開打的戰鬥，進行中的那一場不變。" /></span>
-          <select :value="difficultyOf(game.state)" @change="game.setDifficulty(($event.target as HTMLSelectElement).value as Difficulty)">
-            <option v-for="id in DIFFICULTY_IDS" :key="id" :value="id">
-              {{ DIFFICULTY_DEFS[id].name }}
-            </option>
-          </select>
-        </label>
-        <p class="small muted">{{ DIFFICULTY_DEFS[difficultyOf(game.state)].desc }}（{{ difficultySummary(DIFFICULTY_DEFS[difficultyOf(game.state)]) }}）</p>
-        <label><span class="lab">在地下城戰敗時，這趟探索撿到、還沒帶出去的物品與錢 <Hint text="離開地下城（啟程旅行）就算帶出去了。這個規則存在存檔裡，每個存檔可以不一樣。" /></span>
-          <select :value="defeatLootRule(game.state)" @change="game.setDefeatLoot(($event.target as HTMLSelectElement).value as DefeatLoot)">
-            <option v-for="(n, k) in DEFEAT_LOOT_NAME" :key="k" :value="k">{{ n }}</option>
-          </select>
-        </label>
-        <label class="check"><input type="checkbox" :checked="!!game.state.options?.tagChange" @change="game.setTagChange(($event.target as HTMLInputElement).checked)" />
-          允許在遊戲中更換身分標籤 <Hint text="勾選時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個）。皇族可以直接進出王城。" /></label>
-        <label class="check"><input type="checkbox" :checked="!!game.state.options?.trapLure" @change="game.setTrapLure(($event.target as HTMLInputElement).checked)" />
-          察覺陷阱時可以主動觸發 <Hint text="勾選時，察覺到地下城或近郊的陷阱之後，會問你要不要主動踩上去：踩了就遇到一件陷阱的地下城事件（成人向的事件照「成人地下城事件的比重」加權），不踩就像平常一樣繞過去。" /></label>
-        <label class="check"><input type="checkbox" :checked="!!game.state.options?.naturalCrit" @change="game.setNaturalCrit(($event.target as HTMLInputElement).checked)" />
-          大成功、大失敗只看骰面 <Hint text="勾選時，只有骰出 20 才是大成功、骰出 1 才是大失敗；總和比 DC 高或低 10 以上不再算（最多是成功或失敗）。AI 判定也照這條規則。不勾時維持原本的規則：骰出 20 或總和 ≥ DC+10 大成功，骰出 1 或總和 ≤ DC−10 大失敗。" /></label>
-        <label class="check"><input type="checkbox" :checked="!!game.state.options?.classWeapons" @change="game.setClassWeapons(($event.target as HTMLInputElement).checked)" />
-          職業武器限制 <Hint :text="CLASS_WEAPONS_HINT + '打開時，主手拿著職業不能用的武器的人會卸下武器、放回行囊。'" /></label>
-        <RuleFields :model-value="saveRules" @update:model-value="game.setRules" />
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2 class="head"><GameIcon name="sliders" :size="20" />遊戲規則</h2>
-      <div class="form">
-        <label>
-          <span class="lab">升級時能力三選一的重抽次數（每組） <Hint text="0 表示不能重抽。只影響之後的重抽，已經用掉的次數照算。" /></span>
-          <input v-model.number="settings.abilityRerolls" type="number" min="0" max="99" style="width: 100px" />
-        </label>
-        <label>
-          <span class="lab">兩次長休至少隔幾小時 <Hint :text="`0～24，預設 ${companionRules.rest.long_rest_gap_hours}。從上次長休結束時算起。`" /></span>
-          <input v-model.number="settings.longRestGap" type="number" min="0" max="24" style="width: 100px" />
-        </label>
-        <div class="field">
-          <span class="lab">走一格花幾分鐘 <Hint :text="`0～60。預設：城鎮 ${STEP_DEFAULT.settlement}、近郊 ${STEP_DEFAULT.wild}、冒險區域 ${STEP_DEFAULT.dungeon} 分鐘。時間影響白天黑夜、光源的燃料與委託的期限。房子裡照城鎮算，特殊地圖照冒險區域算；旅途一格一天，不受影響。`" /></span>
-          <div class="steps">
-            <label v-for="p in STEP_PLACES" :key="p.id">{{ p.name }} <input v-model.number="settings.stepMinutes[p.id]" type="number" min="0" max="60" style="width: 72px" /> 分</label>
-          </div>
-        </div>
-        <label>
-          <span class="lab">建角時挑裝備的預算（材料等級點數） <Hint :text="`0～${gearRules.creation.max_budget}，預設 ${gearRules.creation.default_budget}。職業的基本配備免費；把模板裝備換成更好的材料每升一級花 1 點，另外加的裝備花它的材料等級（第 ${gearRules.creation.max_tier} 級以內）。只影響之後建立的角色。`" /></span>
-          <input v-model.number="settings.creationGearBudget" type="number" min="0" :max="gearRules.creation.max_budget" style="width: 100px" />
-        </label>
-        <label class="check">
-          <input v-model="settings.npcLife" type="checkbox" /> NPC 會自己成長
-          <Hint text="你在乎的冒險者不在你身邊時也會過自己的日子：你在人際關係裡「關注」的人、留在家裡或寄放在酒館的夥伴、離隊的夥伴，以及親密度 30 以上的冒險者。每隔幾天擲一次：去了哪裡做什麼、升級（最多到主角的等級，落後越多越容易升；固定 NPC 不升級；夥伴的能力與屬性點留給你選）、換一件比較好的武器或護甲（上鎖的、獨特的不換；夥伴換下的寄回行囊；固定 NPC 不換）、受了點傷去休養（只是近況，隨時可以找他）。成人向：認識的 NPC（也包括普通人）也擲自己的私生活，淫亂越高越常發生，記進性經歷。近況記在人際關係裡，AI 寫重逢的經過時也會知道。" />
-        </label>
-        <template v-if="settings.npcLife">
-          <label>
-            <span class="lab">每幾天擲一次 <Hint text="1～30，預設 3。間隔越長，每次的變化越多（升級、換裝的機率跟著提高）。" /></span>
-            <input v-model.number="settings.npcLifeDays" type="number" min="1" max="30" style="width: 100px" />
-          </label>
-          <label>
-            <span class="lab">近況交給 AI 寫 <Hint text="AI 依角色的性格、經歷與和你的共同記憶，把擲出來的近況寫成一段（數值照擲出來的，不會改）。每次擲骰時：一次寫完這次有變化的人；重逢時：見到他（或他回到隊上）時才寫，比較省；不用 AI：只有簡短的近況。用的是「模型」頁的「NPC 近況」來源。" /></span>
-            <select v-model="settings.npcLifeAi">
-              <option v-for="o in NPC_LIFE_AI" :key="o.id" :value="o.id">{{ o.name }}</option>
-            </select>
-          </label>
-          <label class="check">
-            <input v-model="settings.npcPairs" type="checkbox" /> NPC 之間可以發生關係（成人向）
-            <Hint text="認識的 NPC 每次擲骰也會擲自己的私生活：淫亂越高越常發生——自慰、一夜情、替人性侍奉、娼妓接客，以及和另一位認識的 NPC 發生關係（互相有關係描述、住在同一座城的比較容易）。關掉這一項：NPC 之間不會發生關係，其他照舊。人際關係裡也可以個別關掉某個人。內容篩選關了 NTR 時，和你親密度 60 以上的人只會自慰；關了男性對象時，NPC 之間不挑男性。" />
-          </label>
-        </template>
-        <label>
-          <span class="lab">線索池每幾天換一批 <Hint text="每個地區有一池線索（盤踞的強敵、藏寶處、流浪商人、冒險者的遺物），走進那個地區時才擲；過了這麼多天再擲一批。一部分由情報商賣，其他的要解讀情報物品才知道，不知道也可能在近郊或地下城遇到。0 = 關閉（情報商照舊每天隨機賣事件點）。1～30，預設 7。" /></span>
-          <input v-model.number="settings.leadPoolDays" type="number" min="0" max="30" style="width: 100px" />
-        </label>
-      </div>
-    </section>
-
-  </template>
-
   <section v-if="page === 'save'" class="panel">
     <h2 class="head"><GameIcon name="save" :size="20" />存檔</h2>
     <p v-if="!game.state" class="small muted">還沒有開始冒險。</p>
@@ -348,6 +400,8 @@ function doReset() {
 </template>
 
 <style scoped>
+.intro { margin: 0 0 10px; line-height: 1.7; }
+.badge { font-size: 11px; padding: 0 5px; border: 1px solid color-mix(in srgb, var(--accent-2) 60%, transparent); border-radius: 3px; color: var(--accent-2); font-weight: normal; }
 .body-warn { display: flex; gap: 6px; align-items: flex-start; margin: 0; line-height: 1.6; }
 .body-warn .warn-icon { color: var(--danger); flex: none; margin-top: 2px; }
 .form { display: grid; gap: 12px; max-width: 560px; }

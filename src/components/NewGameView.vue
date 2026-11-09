@@ -526,7 +526,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         </tbody>
       </table>
       <FoldMenu id="newgame.rules" icon="d20" label="更多存檔規則" :detail="Object.keys(rules).length ? `改了 ${Object.keys(rules).length} 項` : '經驗、報酬、休息、旅途、委託期限……（之後可以在設定裡改）'">
-        <RuleFields v-model="rules" />
+        <RuleFields v-model="rules" headings />
       </FoldMenu>
     </div>
 

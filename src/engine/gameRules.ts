@@ -3,7 +3,7 @@
 // 戰敗掉落（defeatLoot）另外在 expedition.ts；難度（difficulty）的係數在下面。說明見 docs/SAVES.md 第 7 節。
 
 import type { Difficulty, GameOptions, GameState } from './types'
-import { className, companionRules, combatRules, enemies, isLayerBoss, MINION_TIERS, minionTier, type MinionTier } from './data'
+import { className, companionRules, combatRules, enemies, isLayerBoss, itemRules, MINION_TIERS, minionTier, type MinionTier } from './data'
 // 直接讀 JSON：security.ts 會用到這裡，避免循環引用
 import securityJson from '@data/rules/security.json'
 import slaveryJson from '@data/rules/slavery.json'
@@ -14,7 +14,22 @@ import gearJson from '@data/rules/gear.json'
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
 export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
 
+/** 存檔規則的分類（設定與開新遊戲依這個分組顯示） */
+export type RuleGroup = 'combat' | 'growth' | 'time' | 'adventure' | 'town' | 'lust' | 'adult_events' | 'lewd'
+
+export const RULE_GROUPS: { id: RuleGroup; name: string; adult?: boolean }[] = [
+  { id: 'combat', name: '戰鬥' },
+  { id: 'growth', name: '成長與報酬' },
+  { id: 'time', name: '時間與休息' },
+  { id: 'adventure', name: '冒險與事件' },
+  { id: 'town', name: '城鎮與交易' },
+  { id: 'lust', name: '慾望戰鬥', adult: true },
+  { id: 'adult_events', name: '成人向事件', adult: true },
+  { id: 'lewd', name: '慾望指標', adult: true },
+]
+
 export interface RuleDef {
+  group: RuleGroup
   label: string
   hint: string
   default: number
@@ -28,32 +43,33 @@ export interface RuleDef {
 }
 
 export const RULE_DEFS: Record<NumericRule, RuleDef> = {
-  xpMult: { label: '經驗值倍率', hint: '所有經驗值（戰鬥、委託、事件）乘上這個倍率。', default: 1, min: 0.1, max: 5, step: 0.05, unit: '倍' },
-  moneyMult: { label: '報酬與戰利品的錢', hint: '委託報酬、特殊任務與事件給的錢、戰鬥與寶箱撿到的錢乘上這個倍率；賣東西與打工的收入、物價不變。', default: 1, min: 0.25, max: 5, step: 0.25, unit: '倍' },
-  ambushMult: { label: '休息時被襲擊的機率', hint: `在野外、地下城、旅途上休息時被魔物襲擊的機率乘上這個倍率（預設：近郊 ${pct(companionRules.rest.ambush.wild)}、冒險區域 ${pct(companionRules.rest.ambush.dungeon)}、旅途 ${pct(companionRules.rest.ambush.road)}）。0 表示不會被襲擊；安全房與城裡一直是 0。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會被襲擊' },
-  travelEventMult: { label: '旅途事件的頻率', hint: '旅途上每天發生事件的機率乘上這個倍率（預設依路況 25%～55%，最高 100%）。0 表示一路平安。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '一路平安' },
-  deadlineMult: { label: '委託的期限', hint: '公會委託的期限乘上這個倍率（預設城內 3 天、近郊 5 天、冒險區域 7 天＋路程每天 2 天）。0 表示不限期限。只影響之後接的委託；特殊任務的期限不變。', default: 1, min: 0, max: 5, step: 0.25, unit: '倍', zero: '不限期限' },
-  shortRestHours: { label: '短休的時間', hint: `短休花幾小時（預設 ${companionRules.rest.short_hours}）。`, default: companionRules.rest.short_hours, min: 0.5, max: 4, step: 0.5, unit: '小時' },
-  longRestHours: { label: '長休的時間', hint: `長休花幾小時（預設 ${companionRules.rest.long_hours}）。住旅店照樣住到隔天早上。`, default: companionRules.rest.long_hours, min: 2, max: 12, step: 1, unit: '小時' },
-  alertDecayDays: { label: '衛兵警戒多久降一級', hint: `犯案被目擊後，城裡的警戒每隔幾天降 1（預設 ${securityJson.alert.decay_days}）。`, default: securityJson.alert.decay_days, min: 1, max: 30, step: 1, unit: '天' },
-  sellGlutPct: { label: '收購遞減', hint: '同一間店收購同一類東西（礦石與金屬、皮革與毛皮……）時，每收一件，下一件的收購價降這麼多（最多降 50%），每天慢慢回復，讓跑商不會無限賺。0 表示不遞減。', default: 3, min: 0, max: 10, step: 1, unit: '%', zero: '不遞減' },
-  blackMarketGear: { label: '黑市每天的珍品', hint: '地下街裡的黑市每天刷新幾件獨特裝備（物品勾了「也會出現在黑市」的）。0 表示黑市不賣裝備。', default: 3, min: 0, max: 10, step: 1, unit: '件', zero: '不賣裝備' },
-  masterEventMult: { label: '主人事件的機率', hint: `被主人帶著時，主人突發事件的機率乘上這個倍率（預設：走動每一步 ${pct(slaveryJson.master_events.step_chance)}、旅行每趟 ${pct(slaveryJson.master_events.travel_chance)}）。0 表示主人不會突然提出要求（離家逾期的「主人要回家」照樣會發生）。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
-  parasiteMult: { label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
-  dungeonEventMult: { label: '地下城事件的機率', hint: '地下城與近郊的事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率，普通與成人向的事件都算。0 表示不會發生。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
-  adultDungeonMult: { label: '成人地下城事件的比重', hint: '地下城與近郊的成人向事件（色情陷阱、擬態寶箱、花粉、夜襲……）比普通的事件更容易遇到：抽事件時的權重，以及遇到事件的機率裡成人向的那一份，乘上這個倍率。1 表示和普通事件一樣。成人向內容。', default: 1, min: 1, max: 8, step: 0.5, unit: '倍' },
-  exposureDecay: { label: '曝露名聲每天淡掉多少', hint: `曝露名聲每天、每個地區淡掉幾點（預設 ${lewdJson.daily.exposure_decay}）。每天一次的頻率不變；0 表示不會淡掉。在城裡穿著曝露的服裝累積、相鄰地區的傳播照舊。成人向內容。`, default: lewdJson.daily.exposure_decay, min: 0, max: 10, step: 1, unit: '點', zero: '不會淡掉' },
-  submissionDecay: { label: '順從每次回落多少', hint: `沒有奴隸契約時，順從每 ${lewdJson.daily.free_submission_every} 天回落一次，每次幾點（預設 1）。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
-  lewdnessDecay: { label: '淫亂每次回落多少', hint: `${lewdJson.daily.idle_days} 天以上沒有親密場景時，淫亂每天回落一次，每次幾點（預設 1），降到預設為止。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
-  brothelEventMult: { label: '娼館事件的機率', hint: `在娼館打工（接客）結束時發生事件的機率乘上這個倍率（預設 ${pct(lewdJson.brothel.work_event.base)}，淫亂越高越容易，最高 ${pct(lewdJson.brothel.work_event.max)}）。0 表示不會發生。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
-  eventDc: { label: '事件檢定的難度', hint: '地下城事件（普通與成人向的都算）與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
-  lustMult: { label: '慾望戰鬥', hint: '戰鬥中所有慾望增加的倍率（慾望攻擊、媚毒、自己增加的慾望……）。慾望滿了會高潮：我方停止行動一回合、失去一部分生命（不會因此死亡，一場高潮三次倒下）；敵方受到一部分生命的真實傷害（比例見下面三項）。0 表示關閉：沒有慾望條，色情技能不能用，敵人也不用慾望攻擊。成人向內容。', default: 1, min: 0, max: 2, step: 0.25, unit: '倍', zero: '關閉' },
-  climaxHpParty: { label: '高潮扣的生命：我方', hint: `我方（主角、夥伴、在場的友方）慾望滿了高潮時，失去最大生命的這個百分比（預設 ${pct(combatRules.lust.party_climax_hp)}）。最多扣到剩 1，不會因此死亡；一場戰鬥第 ${combatRules.lust.down_after} 次高潮照樣倒下。0 表示高潮不扣生命。成人向內容。`, default: Math.round(combatRules.lust.party_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },
-  climaxHpMinion: { label: '高潮扣的生命：小怪', hint: `一般的怪物與 NPC 敵人慾望滿了高潮時，受到最大生命這個百分比的真實傷害（預設 ${pct(combatRules.lust.enemy_climax_hp)}；不看抗性、減傷，可以致死，最後一擊是高潮算慾望勝利）。0 表示敵人高潮不扣生命，只能靠一般傷害打倒。成人向內容。`, default: Math.round(combatRules.lust.enemy_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },
-  climaxHpBoss: { label: '高潮扣的生命：頭目', hint: `頭目（BOSS 格的主角、地下城的層主、有低血大招的特殊任務頭目）慾望滿了高潮時，受到最大生命這個百分比的真實傷害（預設 ${pct(combatRules.lust.boss_climax_hp)}）。頭目的慾望上限本來就照生命比例放大，不會一下子就滿。0 表示頭目高潮不扣生命。成人向內容。`, default: Math.round(combatRules.lust.boss_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },
-  skillLoadout: { label: '技能攜帶上限', hint: '每個角色戰鬥時最多帶幾個技能與法術（戲法不算）。學會的能力都留在技能庫，在角色詳情的「能力」頁勾選要帶哪些，戰鬥以外隨時可以換；超過上限時先帶最近學會的。0 表示不限，全部帶上。', default: 12, min: 0, max: 30, step: 1, unit: '個', zero: '不限' },
-  gatherMult: { label: '採集量', hint: '近郊、地下城與特殊地圖的採集點，每一格採到幾份材料（小數的部分是機率，例如 1.5 是一半的機會多 1 份）。古錢的金額不受影響（看「報酬與戰利品的錢」）。', default: 2, min: 1, max: 5, step: 0.5, unit: '份' },
-  escapeDc: { label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
+  xpMult: { group: 'growth', label: '經驗值倍率', hint: '所有經驗值（戰鬥、委託、事件）乘上這個倍率。', default: 1, min: 0.1, max: 5, step: 0.05, unit: '倍' },
+  moneyMult: { group: 'growth', label: '報酬與戰利品的錢', hint: '委託報酬、特殊任務與事件給的錢、戰鬥與寶箱撿到的錢乘上這個倍率；賣東西與打工的收入、物價不變。', default: 1, min: 0.25, max: 5, step: 0.25, unit: '倍' },
+  ambushMult: { group: 'time', label: '休息時被襲擊的機率', hint: `在野外、地下城、旅途上休息時被魔物襲擊的機率乘上這個倍率（預設：近郊 ${pct(companionRules.rest.ambush.wild)}、冒險區域 ${pct(companionRules.rest.ambush.dungeon)}、旅途 ${pct(companionRules.rest.ambush.road)}）。0 表示不會被襲擊；安全房與城裡一直是 0。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會被襲擊' },
+  travelEventMult: { group: 'adventure', label: '旅途事件的頻率', hint: '旅途上每天發生事件的機率乘上這個倍率（預設依路況 25%～55%，最高 100%）。0 表示一路平安。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '一路平安' },
+  deadlineMult: { group: 'time', label: '委託的期限', hint: '公會委託的期限乘上這個倍率（預設城內 3 天、近郊 5 天、冒險區域 7 天＋路程每天 2 天）。0 表示不限期限。只影響之後接的委託；特殊任務的期限不變。', default: 1, min: 0, max: 5, step: 0.25, unit: '倍', zero: '不限期限' },
+  shortRestHours: { group: 'time', label: '短休的時間', hint: `短休花幾小時（預設 ${companionRules.rest.short_hours}）。`, default: companionRules.rest.short_hours, min: 0.5, max: 4, step: 0.5, unit: '小時' },
+  longRestHours: { group: 'time', label: '長休的時間', hint: `長休花幾小時（預設 ${companionRules.rest.long_hours}）。住旅店照樣住到隔天早上。`, default: companionRules.rest.long_hours, min: 2, max: 12, step: 1, unit: '小時' },
+  alertDecayDays: { group: 'town', label: '衛兵警戒多久降一級', hint: `犯案被目擊後，城裡的警戒每隔幾天降 1（預設 ${securityJson.alert.decay_days}）。`, default: securityJson.alert.decay_days, min: 1, max: 30, step: 1, unit: '天' },
+  sellRatio: { group: 'town', label: '賣給商店的價格', hint: `把東西賣給商店時拿到基本價的幾 %（預設 ${pct(itemRules.sell_ratio)}）。打造材料與採集品照舊全價收購；地點物價、行情、殺價、聲望、收購遞減照常再乘上去。調得太高時，同一間店低買高賣可能穩賺。`, default: Math.round(itemRules.sell_ratio * 100), min: 10, max: 100, step: 5, unit: '%' },
+  sellGlutPct: { group: 'town', label: '收購遞減', hint: '同一間店收購同一類東西（礦石與金屬、皮革與毛皮……）時，每收一件，下一件的收購價降這麼多（最多降 50%），每天慢慢回復，讓跑商不會無限賺。0 表示不遞減。', default: 3, min: 0, max: 10, step: 1, unit: '%', zero: '不遞減' },
+  blackMarketGear: { group: 'town', label: '黑市每天的珍品', hint: '地下街裡的黑市每天刷新幾件獨特裝備（物品勾了「也會出現在黑市」的）。0 表示黑市不賣裝備。', default: 3, min: 0, max: 10, step: 1, unit: '件', zero: '不賣裝備' },
+  masterEventMult: { group: 'adult_events', label: '主人事件的機率', hint: `被主人帶著時，主人突發事件的機率乘上這個倍率（預設：走動每一步 ${pct(slaveryJson.master_events.step_chance)}、旅行每趟 ${pct(slaveryJson.master_events.travel_chance)}）。0 表示主人不會突然提出要求（離家逾期的「主人要回家」照樣會發生）。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
+  parasiteMult: { group: 'adult_events', label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
+  dungeonEventMult: { group: 'adventure', label: '地下城事件的機率', hint: '地下城與近郊的事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率，普通與成人向的事件都算。0 表示不會發生。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
+  adultDungeonMult: { group: 'adult_events', label: '成人地下城事件的比重', hint: '地下城與近郊的成人向事件（色情陷阱、擬態寶箱、花粉、夜襲……）比普通的事件更容易遇到：抽事件時的權重，以及遇到事件的機率裡成人向的那一份，乘上這個倍率。1 表示和普通事件一樣。成人向內容。', default: 1, min: 1, max: 8, step: 0.5, unit: '倍' },
+  exposureDecay: { group: 'lewd', label: '曝露名聲每天淡掉多少', hint: `曝露名聲每天、每個地區淡掉幾點（預設 ${lewdJson.daily.exposure_decay}）。每天一次的頻率不變；0 表示不會淡掉。在城裡穿著曝露的服裝累積、相鄰地區的傳播照舊。成人向內容。`, default: lewdJson.daily.exposure_decay, min: 0, max: 10, step: 1, unit: '點', zero: '不會淡掉' },
+  submissionDecay: { group: 'lewd', label: '順從每次回落多少', hint: `沒有奴隸契約時，順從每 ${lewdJson.daily.free_submission_every} 天回落一次，每次幾點（預設 1）。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
+  lewdnessDecay: { group: 'lewd', label: '淫亂每次回落多少', hint: `${lewdJson.daily.idle_days} 天以上沒有親密場景時，淫亂每天回落一次，每次幾點（預設 1），降到預設為止。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
+  brothelEventMult: { group: 'adult_events', label: '娼館事件的機率', hint: `在娼館打工（接客）結束時發生事件的機率乘上這個倍率（預設 ${pct(lewdJson.brothel.work_event.base)}，淫亂越高越容易，最高 ${pct(lewdJson.brothel.work_event.max)}）。0 表示不會發生。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
+  eventDc: { group: 'adventure', label: '事件檢定的難度', hint: '地下城事件（普通與成人向的都算）與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
+  lustMult: { group: 'lust', label: '慾望戰鬥', hint: '戰鬥中所有慾望增加的倍率（慾望攻擊、媚毒、自己增加的慾望……）。慾望滿了會高潮：我方停止行動一回合、失去一部分生命（不會因此死亡，一場高潮三次倒下）；敵方受到一部分生命的真實傷害（比例見下面三項）。0 表示關閉：沒有慾望條，色情技能不能用，敵人也不用慾望攻擊。成人向內容。', default: 1, min: 0, max: 2, step: 0.25, unit: '倍', zero: '關閉' },
+  climaxHpParty: { group: 'lust', label: '高潮扣的生命：我方', hint: `我方（主角、夥伴、在場的友方）慾望滿了高潮時，失去最大生命的這個百分比（預設 ${pct(combatRules.lust.party_climax_hp)}）。最多扣到剩 1，不會因此死亡；一場戰鬥第 ${combatRules.lust.down_after} 次高潮照樣倒下。0 表示高潮不扣生命。成人向內容。`, default: Math.round(combatRules.lust.party_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },
+  climaxHpMinion: { group: 'lust', label: '高潮扣的生命：小怪', hint: `一般的怪物與 NPC 敵人慾望滿了高潮時，受到最大生命這個百分比的真實傷害（預設 ${pct(combatRules.lust.enemy_climax_hp)}；不看抗性、減傷，可以致死，最後一擊是高潮算慾望勝利）。0 表示敵人高潮不扣生命，只能靠一般傷害打倒。成人向內容。`, default: Math.round(combatRules.lust.enemy_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },
+  climaxHpBoss: { group: 'lust', label: '高潮扣的生命：頭目', hint: `頭目（BOSS 格的主角、地下城的層主、有低血大招的特殊任務頭目）慾望滿了高潮時，受到最大生命這個百分比的真實傷害（預設 ${pct(combatRules.lust.boss_climax_hp)}）。頭目的慾望上限本來就照生命比例放大，不會一下子就滿。0 表示頭目高潮不扣生命。成人向內容。`, default: Math.round(combatRules.lust.boss_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },
+  skillLoadout: { group: 'combat', label: '技能攜帶上限', hint: '每個角色戰鬥時最多帶幾個技能與法術（戲法不算）。學會的能力都留在技能庫，在角色詳情的「能力」頁勾選要帶哪些，戰鬥以外隨時可以換；超過上限時先帶最近學會的。0 表示不限，全部帶上。', default: 12, min: 0, max: 30, step: 1, unit: '個', zero: '不限' },
+  gatherMult: { group: 'growth', label: '採集量', hint: '近郊、地下城與特殊地圖的採集點，每一格採到幾份材料（小數的部分是機率，例如 1.5 是一半的機會多 1 份）。古錢的金額不受影響（看「報酬與戰利品的錢」）。', default: 2, min: 1, max: 5, step: 0.5, unit: '份' },
+  escapeDc: { group: 'combat', label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
 
 /** 存檔規則「職業武器限制」的說明（新遊戲與設定共用；清單在 gear.json 的 classes[].weapons） */
