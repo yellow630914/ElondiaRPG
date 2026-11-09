@@ -109,7 +109,7 @@ function openParty(member?: string) {
 </template>
 
 <style scoped>
-.event-center { display: grid; gap: 10px; }
+.event-center { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .lure { display: grid; gap: 6px; border-color: var(--accent); }
 .lure h3, .lure p { margin: 0; }
 .lure .title { display: flex; align-items: center; gap: 6px; }

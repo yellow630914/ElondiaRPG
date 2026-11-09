@@ -1090,6 +1090,8 @@ export interface GameState {
   masterHouseRefuse?: number
   /** 上一次主人突發事件的時間（小時數，避免太頻繁） */
   lastMasterEvent?: number
+  /** 主角最近一次主動找主人的日子（每天一次；slavery.ts 的 askMaster） */
+  masterAskDay?: number
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
   standoff?: Standoff
   /** 打贏冒險者後被制伏、等主角處置的人（見 engine/captives.ts） */

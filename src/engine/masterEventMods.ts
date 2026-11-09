@@ -3,7 +3,7 @@
 // 內建的事件可以改、不能刪；自建的事件隨時可以刪（等待回應中的事件作廢）。id 在所有事件庫裡不能重複。
 
 import {
-  abilities, ATTR_IDS, SKILL_IDS, type SkillId, lewdRules, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterEventDef, type MasterEventOption, type MasterEventPool,
+  abilities, ATTR_IDS, SKILL_IDS, type SkillId, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterAskGroup, type MasterEventDef, type MasterEventOption, type MasterEventPool,
 } from './data'
 import { sanitizeEffects } from './storyMods'
 
@@ -17,6 +17,7 @@ export const MASTER_EVENT_LIMITS = { text_chars: 400, label_chars: 30, result_ch
 export const POOL_IDS = Object.keys(MASTER_EVENT_POOLS) as MasterEventPool[]
 /** 只有主人的突發事件用得到的欄位（在主人的家、離家逾期、刺青、強制裝備、經過娼館） */
 export const MASTER_ONLY_POOL: MasterEventPool = 'master'
+const MASTER_ASK_GROUP_IDS = Object.keys(MASTER_ASK_GROUPS) as MasterAskGroup[]
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
@@ -112,6 +113,13 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
     if (raw.overdue) out.overdue = true
     if (raw.free_place) out.free_place = true
     if (raw.forced_gear) out.forced_gear = true
+    // 主動找主人（每天一次）：分類、名稱、說明、開頭
+    const ask = raw.ask
+    const askName = str(ask?.name, 16)
+    const askLead = str(ask?.lead, 120)
+    if (ask && askName && askLead && (MASTER_ASK_GROUP_IDS as string[]).includes(ask.group as string)) {
+      out.ask = { group: ask.group as MasterAskGroup, name: askName, desc: str(ask.desc, 80), lead: askLead }
+    }
   }
   const teaches = [...new Set((raw.teaches ?? []).filter(lewdAbility))].slice(0, L.teaches)
   if (teaches.length) out.teaches = teaches

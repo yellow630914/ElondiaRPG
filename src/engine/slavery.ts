@@ -8,7 +8,7 @@
 import { pcTagMult } from './pcTags'
 import { checkModifiers, modifierNote } from './perks'
 import { lifeTier, snapshot } from './character'
-import { abilities, contractDef, lewdRules, locationById, masterEventPool, type MasterEventPool, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterEventDef, type MasterEventOption, type UnmarkServiceDef } from './data'
+import { abilities, contractDef, lewdRules, locationById, masterEventPool, type MasterEventPool, regionById, slaveryRules, tagDef, type AttrId, type ContractDef, type ContractFunction, type MasterAskGroup, type MasterEventDef, type MasterEventOption, type UnmarkServiceDef } from './data'
 import { isMadam, madamHere, nearBrothel } from './brothel'
 import { adultScene, tagsAllowed } from './content'
 import { addTattoo, contractOf, freePlaces, isTattooPlace, placeName, setContract, tattooAt, tattooName, tattoosOf } from './tattoos'
@@ -483,10 +483,71 @@ export function eventFits(state: GameState, master: Pick<NpcRecord, 'id' | 'tags
   return true
 }
 
-export function startMasterEvent(state: GameState, e: MasterEventDef): PendingMasterEvent {
+export function startMasterEvent(state: GameState, e: MasterEventDef, lead = ''): PendingMasterEvent {
   state.lastMasterEvent = hoursOf(state.time)
-  state.pendingMasterEvent = { id: e.id, text: withMaster(state, e.text) }
+  state.pendingMasterEvent = { id: e.id, text: withMaster(state, lead + e.text) }
   return state.pendingMasterEvent
+}
+
+// ---- 主動找主人（slavery.json 的 master_events 裡寫了 ask 的事件；每天一次） ----
+
+export interface MasterAskOption {
+  id: string
+  group: MasterAskGroup
+  name: string
+  desc: string
+  adult: boolean
+  /** 做不了的原因（親密度不夠、要在主人的家裡……） */
+  blocked?: string
+}
+
+/** 現在能不能主動找主人（不能時是原因） */
+export function askMasterBlocked(state: GameState): string | undefined {
+  if (!isBound(state)) return '你沒有被主人帶著'
+  const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
+  if (!master || master.status.includes('away')) return '主人不在身邊'
+  if (state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent || state.parasiteEvent || state.leadEvent) return '現在不能這麼做'
+  if (state.masterAskDay === state.time.day) return '今天已經主動找過主人了'
+  return undefined
+}
+
+/**
+ * 可以主動找主人做的事：主人的身分不符的不列；親密度不夠、不在家裡的列出來但寫原因。
+ * 成人向的和主人的突發事件一樣，內容篩選關掉「主角非自願」時不列
+ */
+export function askableEvents(state: GameState): MasterAskOption[] {
+  const c = contractOf(pcOf(state))
+  if (!c?.master) return []
+  const tags = npcRecord(state, c.master)?.tags ?? []
+  const aff = state.relationships?.[c.master]?.affinity ?? 0
+  const unwilling = tagsAllowed(['pc_unwilling'])
+  const home = atMasterHome(state)
+  const out: MasterAskOption[] = []
+  for (const e of slaveryRules.master_events.events) {
+    if (!e.ask || (e.adult && !unwilling)) continue
+    if (e.tags?.length && !e.tags.some((t) => tags.includes(t))) continue
+    if (e.tags_none?.some((t) => tags.includes(t))) continue
+    let blocked: string | undefined
+    if (e.affinity_min !== undefined && aff < e.affinity_min) blocked = `親密度 ${e.affinity_min} 以上（現在 ${aff}）`
+    else if (e.affinity_max !== undefined && aff > e.affinity_max) blocked = `親密度 ${e.affinity_max} 以下才會（現在 ${aff}）`
+    else if (e.at_home === true && !home) blocked = '要在主人的家裡'
+    else if (e.at_home === false && home) blocked = '要在主人的家外面'
+    out.push({ id: e.id, group: e.ask.group, name: e.ask.name, desc: e.ask.desc, adult: !!e.adult, ...(blocked ? { blocked } : {}) })
+  }
+  return out
+}
+
+/** 主動找主人：開始那件主奴事件（和突發事件一樣回應），記下今天找過了 */
+export function askMaster(state: GameState, id: string): PendingMasterEvent {
+  const why = askMasterBlocked(state)
+  if (why) throw new Error(why)
+  const opt = askableEvents(state).find((o) => o.id === id)
+  if (!opt) throw new Error('主人現在不會答應這件事')
+  if (opt.blocked) throw new Error(opt.blocked)
+  const e = slaveryRules.master_events.events.find((x) => x.id === id)!
+  syncMasterHome(state)
+  state.masterAskDay = state.time.day
+  return startMasterEvent(state, e, e.ask!.lead)
 }
 
 function pickEvent(rng: Rng, list: MasterEventDef[]): MasterEventDef {

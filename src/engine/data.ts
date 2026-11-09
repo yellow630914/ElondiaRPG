@@ -1583,7 +1583,19 @@ export interface MasterEventDef {
   rank_min?: number
   /** 同一個課程成功幾次保證學會一個技能（調教事件） */
   progress?: number
+  /** 主角可以主動找主人觸發這件事（slavery.ts 的 askableEvents；只在主人的突發事件） */
+  ask?: MasterAskDef
 }
+
+/** 主動找主人：分類、名稱、一句說明、開頭（{master} 換成主人的名字，接在事件描述前面） */
+export interface MasterAskDef {
+  group: MasterAskGroup
+  name: string
+  desc: string
+  lead: string
+}
+export type MasterAskGroup = 'serve' | 'close' | 'discipline'
+export const MASTER_ASK_GROUPS: Record<MasterAskGroup, string> = { serve: '服侍', close: '親近', discipline: '管教' }
 
 export interface UnmarkServiceDef {
   name: string

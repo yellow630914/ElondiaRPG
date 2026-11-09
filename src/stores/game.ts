@@ -1660,6 +1660,8 @@ export const useGame = defineStore('game', () => {
     buyCurio: (item: string) => run((s) => companions.buyCurio(s, item)),
     chooseMark: (choice: slavery.MarkChoice) => run((s) => slavery.chooseMark(s, choice)),
     answerMasterEvent: (index: number) => run((s) => slavery.answerMasterEvent(s, index)),
+    // 主動找主人（每天一次；slavery.ts 的 askMaster）
+    askMaster: (id: string) => run((s) => { slavery.askMaster(s, id); return {} }),
     // 調教（主角對自己的奴隸）、娼館受訓、提議夥伴去接客（docs/LEWD_STATS.md 第 9、10 節）
     startTraining: (slave: string, course: string) => run((s) => { ownerTraining.startTraining(s, slave, course); return {} }),
     startBrothelTraining: (who?: string) => run((s) => brothelLife.startBrothelTraining(s, who)),

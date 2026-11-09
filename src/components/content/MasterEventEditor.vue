@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, lewdRules, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
+import { abilities, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
 import { builtinMasterEvent, masterEventById, masterEventWarnings, MASTER_EVENT_LIMITS, POOL_IDS, type MasterEventMod } from '@/engine/masterEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -178,6 +178,16 @@ function remove() {
           <label class="check"><input v-model="draft.overdue" type="checkbox" /> 離家逾期的「主人要回家」</label>
           <label class="check"><input v-model="draft.free_place" type="checkbox" /> 主角身上還有空的部位（刺青）</label>
           <label class="check"><input v-model="draft.forced_gear" type="checkbox" /> 主人有會強制裝備的東西</label>
+        </div>
+        <div class="row small">
+          <label class="check"><input type="checkbox" :checked="!!draft.ask" @change="($event.target as HTMLInputElement).checked ? (draft.ask = { group: 'serve', name: '', desc: '', lead: '' }) : delete draft.ask" /> 主角可以主動找主人做這件事
+            <Hint text="勾選時，被主人帶著的主角可以在契約視窗的「找主人做點什麼」挑這件事（每天一次）。事件的條件照舊：主人的身分不符的不列，親密度不夠、不在家裡的寫原因。名稱與開頭要寫，才會出現。" /></label>
+        </div>
+        <div v-if="draft.ask" class="row small">
+          <label>分類 <select v-model="draft.ask.group"><option v-for="(n, g) in MASTER_ASK_GROUPS" :key="g" :value="g">{{ n }}</option></select></label>
+          <label>名稱 <input v-model="draft.ask.name" maxlength="16" placeholder="例如：陪主人用餐" /></label>
+          <label style="flex: 1 1 100%">一句說明 <input v-model="draft.ask.desc" maxlength="80" /></label>
+          <label style="flex: 1 1 100%">開頭 <Hint text="主角主動去找主人的那一句，接在事件描述前面；{master} 換成主人的名字。例如：你端上飯菜，在{master}身旁候著。" /> <input v-model="draft.ask.lead" maxlength="120" /></label>
         </div>
       </template>
     </FoldSet>
