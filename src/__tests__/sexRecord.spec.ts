@@ -105,6 +105,25 @@ describe('性經歷：AI 的記錄', () => {
     expect(sexCandidates(state, r)).toEqual(['pc', 'npc_lina'])
   })
 
+  it('套用：對象分開寫了性交、侍奉的次數時，人數各算各的（接了四位客人、只替一位口交）', () => {
+    const { state } = game({ experienced: true })
+    const r = intimate(state)
+    applySexUpdates(state, [{
+      id: 'pc', sex: 4, service: 1, summary: '在娼館接了四位客人',
+      with: [
+        { name: '商人', sex: 1, service: 0 }, { name: '水手甲', sex: 1, service: 0 },
+        { name: '水手乙', sex: 1, service: 0 }, { name: '老兵', sex: 1, service: 1 },
+      ],
+    }], { report: r, candidates: ['pc'] })
+    const rec = sexRecordOf(state, 'pc')
+    expect(rec).toMatchObject({ partners: 5, times: 5, servicePartners: 1, serviceTimes: 1 })
+    expect(rec.recent[0]!.with).toEqual([{ name: '商人' }, { name: '水手甲' }, { name: '水手乙' }, { name: '老兵' }])
+    // 沒寫各自的次數：照舊兩邊都算
+    const r2 = intimate(state)
+    applySexUpdates(state, [{ id: 'pc', sex: 1, service: 1, summary: '兩人', with: [{ name: '甲' }, { name: '乙' }] }], { report: r2, candidates: ['pc'] })
+    expect(sexRecordOf(state, 'pc')).toMatchObject({ partners: 7, servicePartners: 3 })
+  })
+
   it('套用：初體驗、人數只算新的對象、次數累加、最近三次、非自願；不在名單上的不收', () => {
     const { state, pc } = game()
     const before = pc.lewd?.lewdness ?? lewdRules.defaults.lewdness

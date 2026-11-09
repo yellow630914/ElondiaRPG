@@ -314,19 +314,19 @@ function devoted(state: GameState, id: string): boolean {
   return !tagsAllowed(['ntr']) && (state.relationships?.[id]?.affinity ?? 0) >= lustRules().lover_affinity
 }
 
-/** 這個人可以和其他 NPC 發生關係嗎：設定開著，人際關係裡沒有關掉 */
+/** 這個人可以和其他 NPC 發生關係嗎：設定開著，而且人際關係裡打開了（預設關閉） */
 export function canPair(state: GameState, id: string): boolean {
-  return pairsAllowed && !state.npcLife?.noPairs?.includes(id)
+  return pairsAllowed && !!state.npcLife?.pairs?.includes(id)
 }
 
-/** 人際關係裡的開關：這個人可不可以和其他 NPC 發生關係 */
+/** 人際關係裡的開關（預設關閉）：這個人可不可以和其他 NPC 發生關係 */
 export function setPairs(state: GameState, id: string, on: boolean) {
   const life = lifeOf(state)
-  const list = new Set(life.noPairs ?? [])
-  if (on) list.delete(id)
-  else list.add(id)
-  life.noPairs = [...list]
-  if (!life.noPairs.length) delete life.noPairs
+  const list = new Set(life.pairs ?? [])
+  if (on) list.add(id)
+  else list.delete(id)
+  life.pairs = [...list]
+  if (!life.pairs.length) delete life.pairs
 }
 
 /**
@@ -340,9 +340,9 @@ export function keepsFirst(state: GameState, id: string): boolean {
 /** 內容篩選關掉男性對象時，NPC 之間不挑男性 */
 const maleBlocked = (rec: NpcRecord) => !tagsAllowed(['male_partner']) && (rec.character?.gender ?? rec.gender) === 'male'
 
-/** 挑一個認識的 NPC 當對象：互相寫了關係的、住在同一座城的比較容易 */
+/** 挑一個認識的 NPC 當對象：只挑住在同一座城的，互相寫了關係的比較容易 */
 function pickPartner(state: GameState, rng: Rng, rec: NpcRecord, ctx: LustCtx): NpcRecord | undefined {
-  if (!canPair(state, rec.id) || maleBlocked(rec)) return undefined
+  if (!canPair(state, rec.id) || maleBlocked(rec) || !rec.location) return undefined
   const pick = lustRules().pair_pick
   const related = new Set(Object.keys(rec.relations ?? {}))
   const pool: [NpcRecord, number][] = []
@@ -352,7 +352,9 @@ function pickPartner(state: GameState, rng: Rng, rec: NpcRecord, ctx: LustCtx): 
     seen.add(o.id)
     if (state.party.some((m) => m.id === o.id) || state.captives?.npcs.includes(o.id) || inLeadEvent(state, o.id)) continue
     if (!canPair(state, o.id) || devoted(state, o.id) || maleBlocked(o) || keepsFirst(state, o.id)) continue
-    const w = (related.has(o.id) || o.relations?.[rec.id] ? pick.related : 1) * (o.location && o.location === rec.location ? pick.same_town : 1)
+    // 只挑住在同一座城的人（不會和遠方的人「在這座城共度一夜」）
+    if (o.location !== rec.location) continue
+    const w = related.has(o.id) || o.relations?.[rec.id] ? pick.related : 1
     pool.push([o, w])
   }
   if (!pool.length) return undefined

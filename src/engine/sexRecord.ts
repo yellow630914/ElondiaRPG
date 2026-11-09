@@ -182,7 +182,8 @@ export interface SexUpdate {
   sex?: number
   service?: number
   solo?: number
-  with?: { name?: string; id?: string }[]
+  /** 這次的對象：每人一筆，sex／service 是和這個人性交、替這個人侍奉的次數（沒寫時兩邊都算） */
+  with?: { name?: string; id?: string; sex?: number; service?: number }[]
   forced?: boolean
   summary?: string
   first_time?: string
@@ -211,9 +212,17 @@ function countPartners(list: string[], keys: string[]): { list: string[]; added:
 }
 
 /** 一次經歷（AI 記下的，或 NPC 自己的日子擲出來的） */
+/** 一次經歷的對象；sex／service 是 false 時這個人不算進那一邊的人數（沒寫時兩邊都算） */
+export interface EncounterPartner {
+  name: string
+  id?: string
+  sex?: boolean
+  service?: boolean
+}
+
 export interface EncounterInput {
   day: number
-  with: { name: string; id?: string }[]
+  with: EncounterPartner[]
   sex: number
   service: number
   /** 自慰的次數（不算在最近幾次裡） */
@@ -235,12 +244,19 @@ export interface EncounterInput {
  */
 export function addEncounter(state: GameState, id: string, e: EncounterInput): boolean {
   const rec = ensureRecord(state, id)
-  const keys = e.with.map((p) => p.id ?? `name:${p.name}`)
+  const key = (p: EncounterPartner) => p.id ?? `name:${p.name}`
   // 對象寫不出來（例如一群看不清臉的人）：至少算一個新的人
-  const fresh = e.anonKeys?.length ? e.anonKeys : keys.length ? keys : [e.anonKey ?? `anon:${e.report ?? e.day}`]
+  const fallback = e.anonKeys?.length ? e.anonKeys : [e.anonKey ?? `anon:${e.report ?? e.day}`]
+  // 性交與性侍奉各自的對象：AI 分開寫了（只替其中一人侍奉……）就照寫的算，沒寫的人兩邊都算
+  const keysFor = (side: 'sex' | 'service') => {
+    if (e.anonKeys?.length) return e.anonKeys
+    const all = e.with.map(key)
+    const some = e.with.filter((p) => p[side] !== false).map(key)
+    return some.length ? some : all.length ? all : fallback
+  }
   let first = false
   if (e.sex) {
-    const r = countPartners(rec.known ?? [], fresh)
+    const r = countPartners(rec.known ?? [], keysFor('sex'))
     rec.known = r.list
     rec.partners += r.added
     rec.times += e.sex
@@ -254,7 +270,7 @@ export function addEncounter(state: GameState, id: string, e: EncounterInput): b
     }
   }
   if (e.service) {
-    const r = countPartners(rec.serviceKnown ?? [], fresh)
+    const r = countPartners(rec.serviceKnown ?? [], keysFor('service'))
     rec.serviceKnown = r.list
     rec.servicePartners += r.added
     rec.serviceTimes += e.service
@@ -265,7 +281,7 @@ export function addEncounter(state: GameState, id: string, e: EncounterInput): b
   }
   if (e.forced) rec.forced = (rec.forced ?? 0) + 1
   if (e.sex || e.service) {
-    const enc: SexEncounter = { day: e.day, with: e.with, sex: e.sex, service: e.service, summary: e.summary, ...(e.report ? { report: e.report } : {}) }
+    const enc: SexEncounter = { day: e.day, with: e.with.map((p) => ({ name: p.name, ...(p.id ? { id: p.id } : {}) })), sex: e.sex, service: e.service, summary: e.summary, ...(e.report ? { report: e.report } : {}) }
     if (e.forced) enc.forced = true
     rec.recent = [enc, ...rec.recent.filter((x) => !e.report || x.report !== e.report)].slice(0, rules().recent)
   }
@@ -295,9 +311,13 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
         const wid = typeof w.id === 'string' && w.id && w.id !== id ? (w.id === state.party.find((m) => m.isPlayer)?.id ? 'pc' : w.id) : undefined
         const known = wid && (wid === 'pc' || state.party.some((m) => m.id === wid) || !!npcRecord(state, wid)) ? wid : undefined
         const name = text(w.name, 16) || (known ? nameFor(state, known) : '')
-        return name ? { name, ...(known ? { id: known } : {}) } : null
+        // 和這個人性交、替這個人侍奉的次數：寫了才分開算（0 表示這一邊沒有這個人）
+        const side = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? { on: n > 0 } : undefined)
+        const s = side(w.sex)
+        const v = side(w.service)
+        return name ? { name, ...(known ? { id: known } : {}), ...(s ? { sex: s.on } : {}), ...(v ? { service: v.on } : {}) } : null
       })
-      .filter((w): w is { name: string; id?: string } => !!w)
+      .filter((w): w is EncounterPartner => !!w)
       .slice(0, caps.partners)
     addEncounter(state, id, {
       day, with: sex || service ? partners : [], sex, service, solo, forced: u.forced === true,

@@ -2439,9 +2439,9 @@ export interface NpcLustRules {
   /** 每次擲骰（每 3 天算一份）的機率 = base + 淫亂 / 100 × per_lewd，最多 max */
   solo: { base: number; per_lewd: number; max: number }
   partner: { base: number; per_lewd: number; max: number; virgin_mult: number }
-  /** 有對象時，各種事件的權重；順從高的性侍奉 × (1 + 順從 / 50)；和其他 NPC 的對象挑選：互相有關係描述 × related、同一個城 × same_town */
+  /** 有對象時，各種事件的權重；順從高的性侍奉 × (1 + 順從 / 50)；和其他 NPC 的對象挑選：互相有關係描述 × related（只挑同一座城的人） */
   weights: { stranger: number; service: number; pair: number }
-  pair_pick: { related: number; same_town: number }
+  pair_pick: { related: number }
   /** 娼妓（標籤 prostitute）每次擲骰接客的機率與人數 */
   client: { chance: number; count: [number, number] }
   /** 親密度到這裡、而內容篩選關了 NTR 時，只會自慰（不和別人發生關係） */
