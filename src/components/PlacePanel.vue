@@ -261,6 +261,11 @@ const shopDesc = computed(() => {
 
 <template>
     <div class="place">
+      <!-- 房子裡站在大門或樓梯上：前往的按鈕（房子裡不顯示下面的格子區塊，以前只能按 E，手機出不去） -->
+      <section v-if="showPlace && area.kind === 'home' && cell.kind === 'link'" class="panel">
+        <p class="muted small">通往{{ linkName }}的{{ cell.dir === 'out' ? '大門' : cell.dir === 'up' ? '樓梯（往上）' : cell.dir === 'down' ? '樓梯（往下）' : '出入口' }}。</p>
+        <button class="primary" @click="game.crossLink()"><GameIcon name="right" :size="14" /> 前往{{ linkName }}<span class="key">E</span></button>
+      </section>
       <!-- 待售的空地、自己的房子 -->
       <HomePanel v-if="showPlace" />
       <!-- 目前所在格子（房子裡由上面的房屋區塊顯示） -->

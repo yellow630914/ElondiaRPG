@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
-import { cellName } from '@/engine/grid'
+import { cellName, linkTargetName } from '@/engine/grid'
 import { nearbyPeople } from '@/engine/population'
 import { shopTitle } from '@/engine/shopNames'
 import { shopPlace, shopTypeForCell } from '@/engine/trade'
@@ -47,6 +47,8 @@ const cell = computed(() => game.cell)
 // ── 情境按鈕：旅途中往前走；站在設施（或有事可做的格子）上時打開設施面板
 const PLAIN = new Set(['floor', 'wall', 'water', 'road'])
 const place = computed(() => {
+  // 房子裡站在大門或樓梯上：直接過去（以前一律是「查看房屋」，手機出不了門）
+  if (area.value.kind === 'home' && cell.value?.kind === 'link') return { verb: '前往', name: linkTargetName(s.value) ?? '別處', go: true }
   if (area.value.kind === 'home') return { verb: '查看', name: '房屋' }
   const k = cell.value?.kind
   if (cell.value?.storyNode) return { verb: '查看', name: '任務點' }
@@ -195,7 +197,8 @@ function onFocusOut(e: FocusEvent) {
         <button :disabled="roadBusy || roadEnd" title="遇到事件、戰鬥或抵達時停下" @click="game.walkRoad()">一路走下去</button>
       </div>
       <div v-else-if="place" class="ctx">
-        <button class="primary" @click="toggleSheet('place')">{{ place.verb }}{{ place.name }}</button>
+        <button v-if="place.go" class="primary" @click="game.crossLink()"><GameIcon name="right" :size="16" />{{ place.verb }}{{ place.name }}</button>
+        <button v-else class="primary" @click="toggleSheet('place')">{{ place.verb }}{{ place.name }}</button>
       </div>
     </template>
 

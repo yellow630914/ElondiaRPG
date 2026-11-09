@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isMobile } from './mobile/mobile'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { cellAt, CELL_ICON, CELL_NAME, cellName, isRevealed, linkTargetName, position, sight, type Cell } from '@/engine/grid'
 import { isCustomShopId, itemDef, landmarkDef, locationById } from '@/engine/data'
@@ -209,7 +210,8 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   <div class="map-wrap">
     <Transition name="bump-tip">
       <span v-if="bumping" class="bump-tip small">{{ game.bumpText || '那邊走不過去' }}</span>
-      <span v-else-if="linkTo" class="bump-tip small">按 E 前往{{ linkTo }}</span>
+      <!-- 點一下也能過去（手機沒有 E 鍵；房子的大門與樓梯只靠這個） -->
+      <button v-else-if="linkTo" class="bump-tip go small" :title="`前往${linkTo}（E）`" @click="game.crossLink()">{{ isMobile ? '點這裡' : '按 E 或點這裡' }}前往{{ linkTo }}</button>
       <span v-else-if="dark" class="bump-tip small">一片漆黑：走路不會揭開地圖，先點火把或等天亮</span>
     </Transition>
     <div :key="area.key" class="map" :style="{ '--w': area.width }">
@@ -245,6 +247,7 @@ onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
   position: absolute; top: 4px; right: 4px; z-index: 2; pointer-events: none;
   max-width: calc(100% - 8px); padding: 1px 8px; border-radius: 10px; background: rgba(20, 17, 13, 0.9); color: var(--muted); border: 1px solid var(--border);
 }
+button.bump-tip.go { pointer-events: auto; cursor: pointer; color: var(--accent); border-color: var(--accent); font: inherit; line-height: 1.6; }
 .bump-tip-enter-active, .bump-tip-leave-active { transition: opacity 0.25s; }
 .bump-tip-enter-from, .bump-tip-leave-to { opacity: 0; }
 .cell.bump { animation: bump 0.3s ease; }
