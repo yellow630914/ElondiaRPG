@@ -412,12 +412,12 @@ export function setupMake(state: GameState, target?: string) {
   }
 }
 
-/** 結算自己動手：和委託一樣做出裝備，再給做的人工藝經驗 */
+/** 結算自己動手：和委託一樣做出裝備，再給做的人工藝經驗（材料等級 × 用了幾份材料 × 成功程度的倍數：大件的經驗比小件多） */
 export function applyMake(state: GameState, report: Report, target: string, degree: Degree, gear?: Extract<RewardEffect, { type: 'gear' }>): string {
   const { crafter, base, material, aux, opts } = parseMakeTarget(state, target)
   const plan = craftPlan(state, base, material, aux, crafter, opts)
   const text = finishCraft(state, report, plan, degree, gear)
-  const xp = craftXpFor(plan.tier, degree)
+  const xp = craftXpFor(plan.tier, degree) * Math.max(1, plan.units)
   if (!xp) return text
   const level = gainCraftXp(crafter, plan.craft, xp)
   ;(report.changes.craft_xp ??= []).push({ actor: crafter.id, craft: plan.craft, amount: xp, ...(level ? { level } : {}) })

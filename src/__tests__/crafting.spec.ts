@@ -139,8 +139,10 @@ describe('making it yourself', () => {
     expect(state.inventory.find((i) => i.name === '鐵礦石')?.qty).toBe(1)
     const made = r.changes.items_gained!.find((i) => gearSpecOf(state, i.name))!
     expect(gearSpecOf(state, made.name)).toMatchObject({ base: 'longsword', material: 'iron' })
-    expect(r.changes.craft_xp).toEqual([{ actor: 'pc', craft: 'smithing', amount: 3 }])
-    expect(skillOf(pc(state), 'smithing').xp).toBe(3)
+    // 經驗 = 材料等級 1 × 長劍用的 2 份材料 × 大成功 3 = 6，剛好升到 Lv.2
+    expect(plan.units).toBe(2)
+    expect(r.changes.craft_xp).toEqual([{ actor: 'pc', craft: 'smithing', amount: 6, level: 2 }])
+    expect(skillOf(pc(state), 'smithing')).toEqual({ level: 2, xp: 0 })
   })
 
   it('lets willing companions and slaves craft with their own stats, but not hired hands', () => {

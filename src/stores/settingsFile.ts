@@ -8,7 +8,7 @@
 export const SETTINGS_FILE_KIND = 'elondia-settings'
 
 export const SETTINGS_PARTS = [
-  { id: 'settings', key: 'elondia.settings', name: 'AI 來源與遊戲設定', desc: '模型來源、各功能用哪個來源、敘事與判定、畫面、遊戲規則' },
+  { id: 'settings', key: 'elondia.settings', name: 'AI 來源與遊戲設定', desc: '模型來源、各功能用哪個來源、AI 敘事、遊戲規則、成人內容、畫面' },
   { id: 'image', key: 'elondia.image', name: '生圖設定', desc: '生圖服務、ComfyUI 的設定組合、提示詞模板' },
   { id: 'prompts', key: 'elondia.promptSets', name: '提示詞組', desc: '敘事規則、文風、世界書、其他提示詞' },
   { id: 'characters', key: 'elondia.characters', name: '角色預設', desc: '開新遊戲時存下的角色' },

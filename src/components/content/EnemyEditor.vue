@@ -310,7 +310,7 @@ function remove() {
       <label class="block"><span>魔物娘的習性 <Hint text="可以不寫。她怎麼生活、怎麼狩獵或求偶、對人類的興趣。戰鬥、戰敗事件的敘事會附上；插圖不用。" /></span>
         <textarea :value="draft.girl?.habits ?? ''" rows="2" maxlength="200" @input="setGirl('habits', ($event.target as HTMLTextAreaElement).value)" />
       </label>
-      <label><span>魔物娘出現機率 <Hint text="0～100。空白時照「⚙️ 設定 → 敘事與判定」的魔物娘出現機率；寫 0 就一定照原本的樣子，100 就一定是魔物娘（設定打開、主角符合時）。" /></span>
+      <label><span>魔物娘出現機率 <Hint text="0～100。空白時照「⚙️ 設定 → 成人內容」的魔物娘出現機率；寫 0 就一定照原本的樣子，100 就一定是魔物娘（設定打開、主角符合時）。" /></span>
         <input v-model="girlChance" type="number" min="0" max="100" placeholder="照設定" class="girl-chance" />
       </label>
     </FoldSet>
