@@ -890,6 +890,10 @@ export interface GameOptions {
   submissionDecay?: number
   lewdnessDecay?: number
   lustMult?: number
+  /** 慾望滿了高潮時失去最大生命的百分比：我方、小怪（與 NPC 敵人）、頭目（combat.ts 的 climax） */
+  climaxHpParty?: number
+  climaxHpMinion?: number
+  climaxHpBoss?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
   /** 大成功、大失敗只看骰面：只有骰出 20 才大成功、骰出 1 才大失敗（engine/checks.ts） */

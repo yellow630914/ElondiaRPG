@@ -292,6 +292,44 @@ describe('慾望戰鬥的修正', () => {
     expect(boss.lustMax!).toBeGreaterThan(lustMaxFor(enemies.lp_boss_queen!.level) * 10)
     expect(minion.lustMax).toBe(lustMaxFor(minion.level))
   })
+
+  it('存檔規則分開設定高潮扣的生命：我方、小怪、頭目', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    const pc = pcOf(state)
+    pc.abilities.push('lust_whisper', 'lust_self_tease')
+    pc.level = 5
+    pc.hp = pc.maxHp = 9999
+    state.options = { ...state.options!, climaxHpParty: 0, climaxHpMinion: 50, climaxHpBoss: 10 }
+    const combat = startCombat(state, [['lp_boss_queen', 1], ['lp_succ_dancer', 1]])
+    expect(combat.climaxHp).toEqual({ party: 0, minion: 0.5, boss: 0.1 })
+    const me = combat.combatants.find((c) => c.id === pc.id)!
+    const boss = combat.combatants.find((c) => c.defId === 'lp_boss_queen')!
+    const minion = combat.combatants.find((c) => c.defId === 'lp_succ_dancer')!
+    for (const [foe, ratio] of [[minion, 0.5], [boss, 0.1]] as const) {
+      myTurn(state, me)
+      foe.lust = effectiveLustMax(foe) - 1
+      const hp = foe.hp
+      act(state, { type: 'ability', ability: 'lust_whisper', target: foe.id })
+      expect(foe.hp).toBe(Math.max(0, hp - Math.round(foe.maxHp * ratio)))
+    }
+    // 我方 0%：高潮照常（慾望歸零、計次），不扣生命
+    const solo = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    const p2 = pcOf(solo)
+    p2.abilities.push('lust_self_tease')
+    p2.level = 5
+    p2.hp = p2.maxHp = 200
+    solo.options = { ...solo.options!, climaxHpParty: 0 }
+    const c2 = startCombat(solo, [['goblin', 1]])
+    const me2 = c2.combatants.find((c) => c.id === p2.id)!
+    myTurn(solo, me2)
+    me2.lust = effectiveLustMax(me2) - 5
+    const hp2 = me2.hp
+    act(solo, { type: 'ability', ability: 'lust_self_tease' })
+    expect(me2.climaxes).toBe(1)
+    expect(me2.hp).toBe(hp2)
+    // 都是預設時不記在戰鬥上
+    expect(startCombat(newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 }), [['goblin', 1]]).climaxHp).toBeUndefined()
+  })
 })
 
 describe('任務戰鬥的慾望勝利', () => {
