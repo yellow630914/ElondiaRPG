@@ -16,7 +16,7 @@ from east_p4e_lines import done
 
 WANNING, URINA, SARILANG, AMUR, KHAN, CHALAN, QIQIGE, BATUR = (
     'npc_td_wanning', 'npc_td_urina', 'npc_td_sarilang', 'npc_td_amur', 'npc_td_ulantuya', 'npc_td_chalan', 'npc_td_qiqige', 'npc_td_batur')
-INNER, WILD = 'sm_td_inner_tent', 'sm_td_wild_horse'
+INNER = 'sm_td_inner_tent'
 NAADAM, SOUTH = cell('jinzhang', 'lm_td_naadam'), cell('jinzhang', 'lm_td_south_court')
 POST, MARKET = cell('yinghe', 'lm_td_post_station'), cell('yinghe', 'lm_td_tea_horse')
 CENTAUR = ['centaur']
@@ -26,8 +26,9 @@ def inner(x=5, y=3):
     return {'where': 'special', 'special_map': INNER, 'x': x, 'y': y}
 
 
-def wild(x=5, y=2):
-    return {'where': 'special', 'special_map': WILD, 'x': x, 'y': y}
+# 野馬帳在鷹河榷場外：任務進行時地標還沒出現（tdwn_club 是結局才設的旗標，進不去它的內部），
+# 所以任務點放在近郊的 ⭐，那就是那頂大帳；結局之後才從榷場裡的地標走進去
+WILD_TENT = out('yinghe')
 
 
 STORIES = []
@@ -150,17 +151,17 @@ STORIES.append(story(
     {'kind': 'npc', 'npc': WANNING, 'min_affinity': 30, 'requires': {'flags': ['tdwn_ntr']},
      'text': '燁婉寧在你耳邊說，鷹河榷場外有一頂只收熟客的大帳，叫「野馬帳」。「那天晚上的人帶我去過。」她的臉紅透了，眼神卻很坦然，「我想……讓你也看看我在那裡的樣子。然後，我想聽你說，你還要不要我。」'},
     'tdwn_club_start', [
-        node('tent', '晚上到鷹河榷場的野馬帳',
+        node('tent', '晚上到鷹河榷場的近郊找野馬帳',
              '野馬帳裡燻著草原的香，地上鋪滿了毛氈，一群高大的雄性人馬族圍坐在火邊喝酒。燁婉寧一進帳，他們就笑著叫她的名字。她回頭看了你一眼，解開斗篷，走進他們中間。你坐在角落的毛氈上，看了一整夜。',
-             wild(), 'tdwn_club_start', hours='night', allies=[WANNING],
+             WILD_TENT, 'tdwn_club_start', hours='night', allies=[WANNING],
              success={'text': '天快亮的時候，帳外傳來馬蹄聲與吆喝聲——有人來抓人了。', 'set_flags': ['tdwn_club_seen'],
                       'scene': '野馬帳的火光裡，嬌小的可敦被一群高大的雄性人馬族圍住：她害羞又貪婪地被一個接一個地享用，天青的細鱗泛著紅，一邊沉溺其中，一邊回頭看著角落裡的主角；結束後她裹著斗篷爬回主角身邊，把一切都說給主角聽。'}),
-        fight('raid', '天亮時在鷹河榷場的野馬帳擋下來抓人的怯薛', '兩個北院的怯薛闖進野馬帳：「南院的可敦在這裡？北院要帶她回王庭——讓南院的人看看，他們的可敦是什麼樣子。」',
-              wild(), 'tdwn_club_seen', [['td_kheshig', 2]],
+        fight('raid', '天亮時在鷹河榷場近郊的野馬帳擋下來抓人的怯薛', '兩個北院的怯薛闖進野馬帳：「南院的可敦在這裡？北院要帶她回王庭——讓南院的人看看，他們的可敦是什麼樣子。」',
+              WILD_TENT, 'tdwn_club_seen', [['td_kheshig', 2]],
               '怯薛被打了出去。帳裡的人馬族們大笑著把帳門重新拉上，有人拍了拍你的肩膀：「下次也來。」', win_flags=['tdwn_club_safe'], urgent=True),
-        node('answer', '在鷹河榷場的野馬帳回答燁婉寧',
+        node('answer', '在鷹河榷場近郊的野馬帳回答燁婉寧',
              '燁婉寧裹著斗篷坐在你身邊，頭髮亂了，龍角上又纏著馬鬃。她沒有哭，也沒有道歉，只是看著你：「這就是我。從龍安府來的時候，我以為我這一輩子只能端端正正地坐在帳裡彈琴。」她握住你的手，「你看見了。你還要不要我？」',
-             wild(), 'tdwn_club_safe', 'choice', allies=[WANNING], options=[
+             WILD_TENT, 'tdwn_club_safe', 'choice', allies=[WANNING], options=[
                  {'label': '「妳還是妳，我要妳」', 'success': {
                      'text': '她愣了一下，然後把臉埋進你的肩上，笑著哭了出來：「你是唯一一個看見了還要我的人。」從那天起，她白天是端莊的可敦，夜裡常常出現在野馬帳——每一次，她都會先回頭找你。',
                      'set_flags': ['tdwn_club'], 'effects': [aff(WANNING, 15, '看見了還要她'), mem('燁婉寧帶你去了鷹河榷場的野馬帳，讓你看她在那裡的樣子；你說妳還是妳，我要妳。', 3)], 'complete': True}},

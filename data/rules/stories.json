@@ -50985,9 +50985,9 @@
       "nodes": [
         {
           "id": "tent",
-          "title": "晚上到鷹河榷場的野馬帳",
+          "title": "晚上到鷹河榷場的近郊找野馬帳",
           "text": "野馬帳裡燻著草原的香，地上鋪滿了毛氈，一群高大的雄性人馬族圍坐在火邊喝酒。燁婉寧一進帳，他們就笑著叫她的名字。她回頭看了你一眼，解開斗篷，走進他們中間。你坐在角落的毛氈上，看了一整夜。",
-          "at": { "where": "special", "special_map": "sm_td_wild_horse", "x": 5, "y": 2 },
+          "at": { "where": "outskirts", "location": "yinghe" },
           "requires": { "flags": ["tdwn_club_start"] },
           "kind": "story",
           "hours": "night",
@@ -51000,9 +51000,9 @@
         },
         {
           "id": "raid",
-          "title": "天亮時在鷹河榷場的野馬帳擋下來抓人的怯薛",
+          "title": "天亮時在鷹河榷場近郊的野馬帳擋下來抓人的怯薛",
           "text": "兩個北院的怯薛闖進野馬帳：「南院的可敦在這裡？北院要帶她回王庭——讓南院的人看看，他們的可敦是什麼樣子。」",
-          "at": { "where": "special", "special_map": "sm_td_wild_horse", "x": 5, "y": 2 },
+          "at": { "where": "outskirts", "location": "yinghe" },
           "requires": { "flags": ["tdwn_club_seen"] },
           "kind": "combat",
           "enemies": [["td_kheshig", 2]],
@@ -51012,9 +51012,9 @@
         },
         {
           "id": "answer",
-          "title": "在鷹河榷場的野馬帳回答燁婉寧",
+          "title": "在鷹河榷場近郊的野馬帳回答燁婉寧",
           "text": "燁婉寧裹著斗篷坐在你身邊，頭髮亂了，龍角上又纏著馬鬃。她沒有哭，也沒有道歉，只是看著你：「這就是我。從龍安府來的時候，我以為我這一輩子只能端端正正地坐在帳裡彈琴。」她握住你的手，「你看見了。你還要不要我？」",
-          "at": { "where": "special", "special_map": "sm_td_wild_horse", "x": 5, "y": 2 },
+          "at": { "where": "outskirts", "location": "yinghe" },
           "requires": { "flags": ["tdwn_club_safe"] },
           "kind": "choice",
           "allies": ["npc_td_wanning"],

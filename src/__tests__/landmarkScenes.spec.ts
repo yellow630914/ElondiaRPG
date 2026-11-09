@@ -208,6 +208,28 @@ describe('other characters following into the special areas (club_lines42.py)', 
   })
 })
 
+describe('quests set inside a special area', () => {
+  it('only use its interior when the area is already open, or the quest itself takes you in', () => {
+    // 以前野馬帳的任務點都在野馬帳的內部，地標卻要任務完成才出現，第一個任務點永遠走不到
+    const bad: string[] = []
+    for (const s of stories) {
+      // 任務的結果把隊伍送進去的地圖（special_map）
+      const outcomes = s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])])
+      const takes = new Set(outcomes.map((o) => o?.special_map).filter(Boolean))
+      for (const n of s.nodes) {
+        if (n.at.where !== 'special') continue
+        const l = Object.values(landmarks).find((x) => x.interior === n.at.special_map && x.open?.hidden)
+        if (!l) continue
+        const need = l.open!.flags ?? []
+        const has = s.start.requires?.flags ?? []
+        if (!need.every((f) => has.includes(f)) && !takes.has(n.at.special_map)) bad.push(`${s.id}/${n.id} → ${l.id}`)
+      }
+    }
+    expect(bad).toEqual([])
+    expect(stories.find((s) => s.id === 'tdwn_wild_horse')!.nodes.every((n) => n.at.where === 'outskirts' && n.at.location === 'yinghe')).toBe(true)
+  })
+})
+
 describe('landmark scenes in the content editor', () => {
   it('keeps the fields that make sense and drops the rest', () => {
     const sc = sanitizeScene({
