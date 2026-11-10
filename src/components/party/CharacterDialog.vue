@@ -11,6 +11,8 @@ import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_S
 import { encounterText, sexRecordItems, sexRecordOf, virginWord } from '@/engine/sexRecord'
 import { pregnancyLine } from '@/engine/pregnancy'
 import { lactationLine } from '@/engine/lactation'
+import { postpartumMaxHp, pregnancyTwoFace } from '@/engine/pregCombat'
+import { pregnancyStageName } from '@/engine/pregMarks'
 import { lactationSensitivity } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { isOwnSlave } from '@/engine/ownedSlaves'
@@ -148,6 +150,15 @@ const lewdItems = computed<StatItem[]>(() => {
       wide: true,
     })
   }
+  // 懷孕的雙面效應與產後虛弱（docs/FAMILY.md 第 4.3、6 節）
+  if (x.pregMark?.known && x.pregMark.stage && x.pregMark.stage !== 'hidden') {
+    const pf = pregnancyTwoFace(x)
+    const parts = Object.entries(pf.mods).filter(([, n]) => n).map(([k, n]) => `${MOD_NAME[k] ?? k} ${signed(n ?? 0)}`)
+    const down = Object.entries(pf.allyDown ?? {}).filter(([, n]) => n).map(([k, n]) => `${MOD_NAME[k] ?? k} ${signed(n ?? 0)}`)
+    if (down.length) parts.push(`有隊友倒下時${down.join('、')}`)
+    items.push({ label: '懷孕', value: pregnancyStageName(x.pregMark.stage), note: parts.length ? `戰鬥中：${parts.join('・')}` : schools.length ? '' : '沒修流派：只有平常的檢定減值', wide: true })
+  }
+  if (x.pregMark?.postpartum) items.push({ label: '產後虛弱', value: `生命上限 ×${postpartumMaxHp(x)}`, note: '戰鬥中；所有檢定 -1', wide: true })
   // 稱號（第 28 節，只是稱號）
   const titles = lewdTitles(s.value, x)
   if (titles.length) items.push({ label: '稱號', value: titles.map((t) => t.name).join('、'), note: titles.map((t) => t.desc).join(' '), wide: true })

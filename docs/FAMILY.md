@@ -1,9 +1,9 @@
 # 懷孕、嬰兒與泌乳（成人向）
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[LEWD_STATS](LEWD_STATS.md) 第 29 節（性經歷：受孕在這裡判定）、[HOMES](HOMES.md)（房子、搖籃）、[COMPANIONS](COMPANIONS.md)（夥伴、NPC 登錄）、[EVENTS](EVENTS.md)（生產、通知）。被依賴：[PROMPTS](PROMPTS.md)（給 AI 的資料）、[SAVES](SAVES.md)（`state.pregnancies`、`children`）。
-> 程式：`src/engine/pregnancy.ts`（受孕、階段、察覺、生產、診察、給 AI 的資料）、`src/engine/pregnancyEvents.ts`（察覺事件）、`src/engine/children.ts`（嬰兒、育幼院、房子、自動安排）、`src/engine/pregMarks.ts`（檢定減值、誰能泌乳）、`src/engine/lactation.ts`（泌乳）；資料：`data/rules/family.json`。
+> 程式：`src/engine/pregnancy.ts`（受孕、階段、察覺、生產、診察、給 AI 的資料）、`src/engine/pregnancyEvents.ts`（察覺事件）、`src/engine/children.ts`（嬰兒、育幼院、房子、自動安排）、`src/engine/pregMarks.ts`（檢定減值、誰能泌乳）、`src/engine/pregCombat.ts`（懷孕的雙面效應、產後的生命上限）、`src/engine/lactation.ts`（泌乳）；資料：`data/rules/family.json`。
 > 畫面：事件視窗的察覺事件（`events/RoadEventPanel.vue` 的 `pregnancy`）、「🍼 要生了」（`events/BirthPanel.vue`）與「🍼 家人的消息」；神殿的「診察」「育幼院」（`NurseryPanel.vue`）；房屋區塊的「孩子」；隊伍視窗的「家人」；角色詳情慾望指標底下的懷孕與泌乳各一行。
-> 設計紀錄與還沒做的部分（懷孕在戰鬥中的雙面效應、形象圖、怪物的苗床、內容編輯器）：[計畫 R28](plan/roadmap/PREGNANCY_PLAN.md)。
+> 設計紀錄與還沒做的部分（怪物的苗床、內容編輯器）：[計畫 R28](plan/roadmap/PREGNANCY_PLAN.md)。
 
 ## 1. 開關
 
@@ -47,6 +47,8 @@
 
 ## 4. 懷孕的狀態
 
+### 4.1 記錄與階段
+
 記錄在 `state.pregnancies`（角色 id → 記錄，主角是 `pc`）：受孕日、預產日（受孕當下照存檔規則算好）、父親、哪一則日誌、察覺了沒、陣痛開始的時間。
 
 | 階段 | 40 天時 | 比例 | 平常 |
@@ -57,9 +59,27 @@
 | 後期 | 31～39 天 | 75～100% | 靈巧檢定 −2 |
 | 臨盆 | 40 天 | 100% | 生產（第 6 節） |
 
+### 4.2 平常：檢定與顯示
+
 - 檢定減值看角色身上的標記 `pregMark`（`pregMarks.ts`），每次結算（`commitReport`、`advanceTime` 呼叫的 `familyTick`）照記錄同步；未察覺時一律沒有減值。事件視窗的情境修正寫「懷孕・中期 −1」。
 - 角色詳情的慾望指標底下多一行：「懷孕・中期（第 18 天，預產第 41 天）・父親：某某／父親不明」；產後虛弱也寫在這裡。
-- **戰鬥**這一版沒有效果（雙面效應、產後的生命上限見計畫 P4）。
+- 靈巧的減值也算在先攻上（先攻是靈巧的檢定）。
+
+### 4.3 戰鬥：雙面效應
+
+和拘束具、寄生物一樣是兩面（`pregCombat.ts` 的 `pregnancyTwoFace`，數值在 `family.json` 的 `two_face`）：**平常**是上面的檢定減值；**戰鬥中**，修了任何流派、慾望戰鬥開著的人，**察覺之後**依階段反轉成增益。沒修流派的人只吃平常的減值。
+
+| 階段 | 戰鬥中 |
+|---|---|
+| 初期 | 豁免 +1 |
+| 中期 | 豁免 +1、減傷 +1 |
+| 後期 | 豁免 +2、減傷 +1；同一邊有人倒下時傷害 +2 |
+
+「有人倒下」在每個角色的回合開始時更新（`combat.ts` 的 `startTurn`）。角色詳情的慾望指標多一行「懷孕」，寫出戰鬥中的修正。
+
+### 4.4 形象圖
+
+察覺之後的中期以後，形象圖的外貌後面加上懷孕（中期「小腹微微隆起」、後期「肚子明顯隆起」，附英文的 pregnant）；泌乳時加上「乳房脹滿、正在泌乳（lactating）」。內容篩選關掉時不寫（`pregnancy.ts` 的 `bodyImageNotes`，`narrator/imageInfo.ts` 的 `portraitSubject`）。
 
 ## 5. 察覺
 
@@ -91,7 +111,7 @@
 - **怎麼生**：這座城有神殿時可以「去神殿生」（200 白鸛，一定順利）；或「自己生」，信仰檢定 DC 12（野外 16），隊伍裡母親以外有牧師、聖騎士或德魯伊 −2。
 - **名字**：自己取，空著照種族的名字庫抽（`traits.ts` 的 `babyName`）。
 - **放在哪裡**：這座城自己的房子、這座城的神殿育幼院；都沒有時照第 7.4 節自動安排。
-- **結果**：成功產後虛弱 3 天，失敗 6 天；**不會死，嬰兒也不會有事**（不做流產）。產後虛弱是所有檢定 −1（`state.postpartum` 記到哪一天）。
+- **結果**：成功產後虛弱 3 天，失敗 6 天；**不會死，嬰兒也不會有事**（不做流產）。產後虛弱是所有檢定 −1、**戰鬥中生命上限 ×0.8**（不看流派與慾望戰鬥；`state.postpartum` 記到哪一天）。
 - **嬰兒**：性別照 `npc_pool.json` 的權重擲（不擲「未知」），種族照父母各一半（父親不明照母親）。
 - 日誌是一般的日誌（`kind: social`、標籤「生產」），**不是親密場景**。
 

@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { postpartumMaxHp, pregnancyTwoFace } from './pregCombat'
 import { lactationCombat } from './lactation'
 import { noteFight } from './bestiary'
 import { pcTagLustResist } from './pcTags'
@@ -138,6 +139,8 @@ export interface Combatant {
   climaxes?: number
   /** 敵方：被高潮的傷害打倒（慾望勝利） */
   lustDefeated?: boolean
+  /** 同一邊有人倒下了（懷孕後期的雙面效應用；每回合開始時更新） */
+  allyDown?: boolean
   /**
    * 慾望指標（docs/LEWD_STATS.md）換算的修正：受到的慾望倍率（敏感）、消退的倍率與自己增加的慾望倍率（淫亂）、
    * 傷害轉成慾望的比例加成（順從）、造成的魅惑傷害加值（曝露名聲）。沒有時都是 1 或 0
@@ -147,6 +150,8 @@ export interface Combatant {
     /** 流派特質（docs/LEWD_STATS.md 第 6 節）：引爆的傷害倍率加成、消退慾望的倍率加成、受到幸運一擊時改成慾望的比例、
      * 慾望一半以上時每回合回復的生命、高潮時回復最大生命的比例、生命低於一半時的戰鬥修正 */
     burst?: number; relief?: number; critConvert?: number; regen?: number; climaxHeal?: number; wounded?: Mods
+    /** 懷孕後期的雙面效應：有隊友倒下時的戰鬥修正（docs/FAMILY.md 第 4.3 節；allyDown 每回合開始時更新） */
+    allyDown?: Mods
     /** 分擔慾望的效率：主角記 pc，隊友記對主角的親密度（lewd.json 的 combat.bond_step） */
     pc?: boolean; affinity?: number
   }
@@ -500,6 +505,10 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const of = outfitCombat(ch)
     addMods(of.mods)
     f.lustMods.bonus += of.lustBonus
+    // 懷孕的雙面效應（docs/FAMILY.md 第 4.3 節）：修了流派的人，察覺之後依階段有加成；後期在有隊友倒下時傷害再加
+    const preg = pregnancyTwoFace(ch)
+    addMods(preg.mods)
+    if (preg.allyDown) f.lustMods.allyDown = preg.allyDown
     // 泌乳（docs/FAMILY.md 第 10 節）：修了流派的人慾望上限與受到的慾望都多一點，肉體派更多
     const lac = lactationCombat(state, ch)
     if (lac.max) f.lustMax = Math.round(f.lustMax * (1 + lac.max))
@@ -676,7 +685,8 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
   return {
     threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: attrsOf(c), prof: proficiency(c.level),
-    hp: c.hp, maxHp: c.maxHp, tempHp,
+    // 產後虛弱：戰鬥中生命上限變低（docs/FAMILY.md 第 6 節）
+    hp: Math.min(c.hp, Math.round(c.maxHp * postpartumMaxHp(c))), maxHp: Math.round(c.maxHp * postpartumMaxHp(c)), tempHp,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
     // 魔導束縛契約：只能施放 spell_cap 環以下的法術
     slots: slotsLeft(c).slice(0, spellCap(c)),
@@ -919,6 +929,8 @@ function modsOf(c: Combatant): Required<Mods> {
   add(c.baseMods)
   // 流派特質：生命低於一半時（刑罰派）
   if (c.lustMods?.wounded && c.hp * 2 < c.maxHp) add(c.lustMods.wounded)
+  // 懷孕後期：有隊友倒下時（每回合開始時更新）
+  if (c.lustMods?.allyDown && c.allyDown) add(c.lustMods.allyDown)
   for (const s of c.statuses) {
     const def = statusDef(s.id)
     add(def.mods)
@@ -2079,6 +2091,8 @@ const LINGERING_CONTROL = new Set(['taunt', 'silence', 'confuse'])
 
 function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   actor.usedTurn = {}
+  // 懷孕後期的雙面效應：同一邊有人倒下了沒有
+  for (const f of combat.combatants) if (f.lustMods?.allyDown) f.allyDown = combat.combatants.some((o) => o !== f && o.side === f.side && o.hp <= 0)
   actor.ap = Math.min(actor.apMax, actor.ap + Math.max(0, actor.apRegen + modsOf(actor).ap_regen))
   let canAct = true
   // 潮之新娘：慾望全部消退

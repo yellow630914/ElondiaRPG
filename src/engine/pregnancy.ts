@@ -18,7 +18,7 @@ import { characterBody } from './look'
 import { formatMoney } from './money'
 import { hashString, npcRecord } from './npcs'
 import { addNpcNews } from './npcLife'
-import { lactationPrompt, lactationSources, pregnancyLactation, pruneLactation } from './lactation'
+import { isLactating, lactationPrompt, lactationSources, pregnancyLactation, pruneLactation } from './lactation'
 import { gainCondition, isFugitive } from './party'
 import { checkModifiers } from './perks'
 import { familyRules, pregnancyStageName } from './pregMarks'
@@ -464,4 +464,22 @@ export function familyPrompt(state: GameState, adult: boolean): string {
   const lact = adult ? lactationPrompt(state).trim() : ''
   if (lact) lines.push(lact)
   return lines.length ? `\n${lines.join('\n')}` : ''
+}
+
+/**
+ * 形象圖的身體描述（docs/FAMILY.md 第 4.4、10.3 節）：察覺之後的中期以後寫懷孕（小腹隆起），泌乳寫泌乳。
+ * 主角是 pc，其他人用角色 id；篩選關掉時不寫
+ */
+export function bodyImageNotes(state: GameState, id: string): string[] {
+  const out: string[] = []
+  const key = pcKey(state, id)
+  const p = state.pregnancies?.[key]
+  if (p?.known && tagsAllowed(['pregnancy'])) {
+    const stage = stageOf(p, state.time.day)
+    if (stage === 'mid') out.push('懷孕中，小腹微微隆起（pregnant, small baby bump）')
+    if (stage === 'late') out.push('懷孕後期，肚子明顯隆起（pregnant, large baby bump）')
+  }
+  const who = personOf(state, key)
+  if (who?.character && isLactating(state, who.character)) out.push('乳房脹滿、正在泌乳（lactating）')
+  return out
 }

@@ -1,7 +1,7 @@
 # 懷孕、嬰兒、泌乳與怪物的苗床（成人向）
 
 > 上層：[ROADMAP](../ROADMAP.md) R28。依賴：[LEWD_STATS](../../LEWD_STATS.md) 第 29 節（性經歷：受孕在這裡判定）、[ADULT_EVENTS](../../ADULT_EVENTS.md) 第 6 節（寄生物：狀態、階段、事件的做法照這套）、[HOMES](../../HOMES.md)（房子、家具、留守）、[COMPANIONS](../../COMPANIONS.md)（夥伴、NPC 登錄）。
-> **進度（2026-11-10）**：**P1 核心、P2 察覺劇情、P3 泌乳完成**，規則寫在 [FAMILY](../../FAMILY.md)；和這份計畫不同的地方記在第 11.1～11.3 節。接著是 P4～P6。
+> **進度（2026-11-10）**：**P1 核心、P2 察覺劇情、P3 泌乳、P4 戰鬥與形象圖完成**，規則寫在 [FAMILY](../../FAMILY.md)；和這份計畫不同的地方記在第 11.1～11.4 節。接著是 P5、P6。
 > **第三版（2026-11-10，定稿）**：所有問題都確認了（第 0 節 10～18），可以開工。第二版加上怪物的苗床（第 12 節，分卵生、胎生、寄生）；第三版讓一般怪物也能在色情戰敗事件造成苗床、放回巢穴沒有後果。做完之後規則寫進新的系統文件 `docs/FAMILY.md`，這份留作設計紀錄。
 
 ## 0. 已決定的事
@@ -349,7 +349,7 @@ interface LactationState {
 | **P1 核心** ✅ | 篩選與存檔規則；`family.json`；`pregnancy.ts`（判定、階段、減值、自動察覺、生產）；在 `applySexUpdates` 擲受孕；避子湯；神殿的診察；生產事件；`state.children`、育幼院、搖籃、搬來搬去、自動送來的嬰兒；隊伍視窗的「家人」；給 AI 的資料 | 新增 `src/engine/pregnancy.ts`、`src/engine/children.ts`、`data/rules/family.json`；改 `content.ts`、`settings.ts`、`gameRules.ts`、`sexRecord.ts`、`state.ts`（`advanceTime` 每天檢查預產日）、`party.ts`（減值）、`homes.ts`（搖籃）、`items.json`、`shops.json`、`narrator/prompt.ts`、`types.ts`、神殿與房屋的面板、`PartyCards` 或隊伍視窗 |
 | **P2 察覺劇情** ✅ | 主角 6 件、夥伴 3 件的察覺事件；人際關係的近況；`scope: pregnancy` | `travel_events.json`（或新的 `family.json` 的 `events`）、`parasiteEvents.ts` 的做法照抄一份 |
 | **P3 泌乳** ✅ | 狀態、效果、6 樣道具、乳香草、淫紋・乳泉、篩選；給夥伴用的同意檢定 | `lactation.ts`、`items.json`、`gear.json`、`tattoos.json`、`crafts.json`、`lewd.ts`（敏感加值）、`combat.ts` 的 `initLust` |
-| **P4 戰鬥與形象圖** | 懷孕的雙面效應、泌乳的戰鬥效果、生圖的描述 | `combat.ts`、`portraits` 的提示詞 |
+| **P4 戰鬥與形象圖** ✅ | 懷孕的雙面效應、泌乳的戰鬥效果、生圖的描述 | `combat.ts`、`portraits` 的提示詞 |
 | **P5 內容編輯器與文件** | 第 10 節；寫 `docs/FAMILY.md`，更新 LEWD_STATS、HOMES、SAVES、CONTENT_EDITOR、CHANGELOG 的「未發布」 | `components/content/*` |
 | **P6 怪物的苗床** | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
 
@@ -377,6 +377,14 @@ interface LactationState {
 - **同一樣道具再用一次**取比較晚的到期日，不疊加天數。
 - **給夥伴用的檢定**是主角的魅力調整值＋熟練（和提議接客一樣的 DC 公式），不吃情境修正。
 - **泌乳的事件效果**（任務、事件讓人泌乳）和內容編輯器一起放在 P5；這一版的效果種類還沒有「泌乳」。
+
+### 11.4 P4 實作時和計畫不同的地方（2026-11-10）
+
+- **懷孕的雙面效應要先察覺**：還沒察覺時戰鬥中也沒有加成（和平常的減值一樣）。
+- **「有隊友倒下」在每個角色的回合開始時更新**，不是倒下的那一刻；倒下的人被救起來之後，下一個回合開始就不算。
+- **產後的生命上限 ×0.8 一律生效**，不看有沒有修流派、慾望戰鬥有沒有開（它不是雙面效應）。
+- **靈巧的減值也算在先攻上**：先攻本來就是靈巧的檢定，計畫沒有特別寫。
+- **形象圖**：懷孕與泌乳寫在外貌後面（中文加上英文的 pregnant、lactating），沒有另外的模板代號。
 
 P6 和 P1～P5 互不依賴（只共用「產後虛弱」與泌乳的來源），可以在 P1 之後任何時候做。
 
