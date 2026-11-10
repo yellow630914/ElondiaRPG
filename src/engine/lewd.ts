@@ -189,7 +189,7 @@ export function currentRegion(state: Pick<GameState, 'location'>): string {
  * 符合的慾望稱號（lewd.json 的 titles，由上往下最多 max 個）：五項慾望指標（有效值；曝露名聲看所在地區）、
  * 至少有一個身分標籤、所在地勢力的聲望。目前只顯示在角色詳情，不影響檢定、價格或 AI
  */
-export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'reputation'>, c: Character): LewdTitleDef[] {
+export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'reputation' | 'broodBirths'>, c: Character): LewdTitleDef[] {
   const t = lewdRules.titles
   if (!t) return []
   const v = lewdOf(c)
@@ -201,6 +201,7 @@ export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'rep
     const q = d.requires
     if (q.pc_tags?.length && !c.tags?.some((tag) => q.pc_tags!.includes(tag))) return false
     if (q.reputation && !inRange(rep, q.reputation)) return false
+    if (q.brood_births && (!c.isPlayer || !inRange(state.broodBirths ?? 0, q.brood_births))) return false
     return Object.entries(q.stats ?? {}).every(([k, r]) => inRange(k === 'exposure' ? exposure : v[k as LewdStat], r))
   }).slice(0, t.max)
 }

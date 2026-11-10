@@ -70,7 +70,7 @@ function adultBoost(state: GameState, t: RoadTemplate): number {
  */
 export function maybeTownEvent(state: GameState): { report?: Report } {
   const rules = travelEvents.town
-  if (!rules || state.townEvent || state.parasiteEvent || state.pregnancyEvent || state.pendingBirth || state.leadEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.road) return {}
+  if (!rules || state.townEvent || state.parasiteEvent || state.pregnancyEvent || state.pendingBirth || state.pendingBroodBirth || state.leadEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.road) return {}
   const area = currentArea(state)
   if (area.kind !== 'settlement') return {}
   const p = position(state)

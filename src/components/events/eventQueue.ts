@@ -14,7 +14,7 @@ import { pendingPregnancyEvent } from '@/engine/pregnancyEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'pregnancy' | 'birth' | 'story' | 'join' | 'suggestion' | 'family' | 'levelup' | 'perk' | 'classes'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'pregnancy' | 'birth' | 'brood' | 'story' | 'join' | 'suggestion' | 'family' | 'levelup' | 'perk' | 'classes'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -73,6 +73,7 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
       const who = state.party.find((m) => (pb.mother === 'pc' ? m.isPlayer : m.id === pb.mother))
       out.push({ id: `birth:${pb.mother}:${pb.wild ? 1 : 0}`, kind: 'birth', icon: '🍼', title: who?.isPlayer ? '要生了' : `${who?.name ?? ''}要生了`, blocking: true })
     }
+    if (state.pendingBroodBirth) out.push({ id: `brood:${state.pendingBroodBirth.parasite}`, kind: 'brood', icon: '🪺', title: '體內的東西要出來了', blocking: true })
     if (state.roadEvent) out.push({ id: `road:${state.roadEvent.x}:${state.roadEvent.template}`, kind: 'road', icon: '🧭', title: roadTemplate(state.roadEvent.template)?.title ?? '旅途上的事', blocking: true })
     // 走到特殊任務的任務點：處理、稍候（不緊急的）或放棄（緊急的）
     const story = blockingNode(state)

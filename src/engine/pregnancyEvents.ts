@@ -38,7 +38,7 @@ export type PregnancyMoment = 'rest' | 'travel' | 'step'
 
 /** 有別的事情等著處理的時候不跳 */
 function busy(state: GameState): boolean {
-  return !!(state.pregnancyEvent || state.pendingBirth || state.parasiteEvent || state.dungeonEvent || state.leadEvent || state.trapLure || state.townEvent || state.roadEvent
+  return !!(state.pregnancyEvent || state.pendingBirth || state.pendingBroodBirth || state.parasiteEvent || state.dungeonEvent || state.leadEvent || state.trapLure || state.townEvent || state.roadEvent
     || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.pendingMark || state.pendingDefeat)
 }
 

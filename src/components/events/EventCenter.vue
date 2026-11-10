@@ -16,6 +16,7 @@ import SuggestionPanel from './SuggestionPanel.vue'
 import JoinPanel from './JoinPanel.vue'
 import ClassRebalancePanel from './ClassRebalancePanel.vue'
 import BirthPanel from './BirthPanel.vue'
+import BroodBirthPanel from './BroodBirthPanel.vue'
 import StoryNodeCard from '../StoryNodeCard.vue'
 import { blockingNode } from '@/engine/story'
 import { activeEvents, eventDialogOpen, snoozed, type GameEvent } from './eventQueue'
@@ -92,6 +93,7 @@ function openParty(member?: string) {
       <RoadEventPanel v-else-if="current.kind === 'parasite'" parasite />
       <RoadEventPanel v-else-if="current.kind === 'pregnancy'" pregnancy />
       <BirthPanel v-else-if="current.kind === 'birth'" />
+      <BroodBirthPanel v-else-if="current.kind === 'brood'" />
       <section v-else-if="current.kind === 'family'" class="panel lure">
         <h3 class="title">🍼 家人的消息</h3>
         <p v-for="(t, i) in game.state?.familyNotices ?? []" :key="i" class="small">{{ t }}</p>

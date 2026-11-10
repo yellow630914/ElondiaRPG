@@ -16,6 +16,7 @@ import * as dungeonEvents from '@/engine/dungeonEvents'
 import * as leadEvents from '@/engine/leadEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as pregnancy from '@/engine/pregnancy'
+import * as brood from '@/engine/brood'
 import * as pregnancyEvents from '@/engine/pregnancyEvents'
 import * as children from '@/engine/children'
 import * as deadlines from '@/engine/deadlines'
@@ -643,7 +644,7 @@ export const useGame = defineStore('game', () => {
 
   /** 走完這一步之後有要先處理的事（戰鬥、事件、等待判定、擋路的任務點……）：停下來 */
   function mustStop(s: GameState): boolean {
-    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || s.pendingBirth || s.pregnancyEvent || story.blockingNode(s))
+    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || s.pendingBirth || s.pendingBroodBirth || s.pregnancyEvent || story.blockingNode(s))
   }
 
   function walkTo(x: number, y: number) {
@@ -1445,9 +1446,9 @@ export const useGame = defineStore('game', () => {
     /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
     walkRoad: () => run((s) => {
       for (let i = 0; i < 80; i++) {
-        if (!s.road || s.side || s.roadEvent || s.parasiteEvent || s.pregnancyEvent || s.pendingBirth || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
+        if (!s.road || s.side || s.roadEvent || s.parasiteEvent || s.pregnancyEvent || s.pendingBirth || s.pendingBroodBirth || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
         const r = afterMove(s, grid.move(s, 1, 0))
-        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent || s.parasiteEvent || s.pregnancyEvent || s.pendingBirth) return r
+        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent || s.parasiteEvent || s.pregnancyEvent || s.pendingBirth || s.pendingBroodBirth) return r
       }
       return {}
     }),
@@ -1464,6 +1465,8 @@ export const useGame = defineStore('game', () => {
     /** 懷孕與嬰兒（docs/FAMILY.md）：生產、通知、神殿的診察、育幼院、把孩子送到別的地方 */
     answerPregnancyEvent: (i: number) => run((s) => pregnancyEvents.answerPregnancyEvent(s, i)),
     answerBirth: (how: 'temple' | 'self', name?: string, place?: string) => run((s) => pregnancy.answerBirth(s, how, name, place)),
+    answerBroodBirth: (how: brood.BroodHow, fate?: brood.OffspringFate) => run((s) => brood.answerBroodBirth(s, how, fate)),
+    extractBrood: (id: string) => run((s) => brood.extractBrood(s, id)),
     acknowledgeFamilyNotices: () => run((s) => pregnancy.acknowledgeFamilyNotices(s)),
     templeCheckup: () => run((s) => pregnancy.templeCheckup(s)),
     payNursery: (days = 0) => run((s) => children.payNursery(s, days)),

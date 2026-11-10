@@ -36,6 +36,7 @@ import NurseryPanel from './NurseryPanel.vue'
 import { childrenAtTemple, templeDebt } from '@/engine/children'
 import { tagsAllowed } from '@/engine/content'
 import { CHECKUP_CC } from '@/engine/pregnancy'
+import { extractOffers } from '@/engine/brood'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
 import TrainPanel from './TrainPanel.vue'
@@ -179,6 +180,8 @@ const ICON = computed<Partial<Record<string, string>>>(() => {
   return { ...CELL_ICON, floor: '🧭' }
 })
 
+// 魔法物品店：取出卵生、寄生的苗床（brood.ts）
+const broodExtracts = computed(() => extractOffers(s.value))
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商：各自的交易清單
 const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant'] as const
 // 自建的商店（內容編輯器擺的）：格子的種類就是商店的 id
@@ -338,6 +341,13 @@ const shopDesc = computed(() => {
 
         <template v-else-if="shopHere">
           <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" />
+          <div v-if="broodExtracts.length" class="small">
+            <b>取出苗床</b> <Hint text="鍊金師可以把卵生、寄生的苗床取出來（胎生的只能到神殿或刻印師解咒）。先付錢再擲智力，失敗錢不退、侵蝕度 +5。" />
+            <div v-for="o in broodExtracts" :key="o.id" class="row">
+              {{ o.name }}（智力・DC {{ o.dc }}）
+              <button class="small" :disabled="s.money_cc < o.price" @click="game.extractBrood(o.id)">取出（{{ formatMoney(o.price) }}）</button>
+            </div>
+          </div>
           <FusePanel />
           <OutfitTailorPanel />
         </template>

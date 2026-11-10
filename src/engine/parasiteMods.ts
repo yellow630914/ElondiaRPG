@@ -4,14 +4,14 @@
 // 雙面效應（lewd.json 的 parasite_two_face.parasites）跟著每一種寄生物一起編輯（two_face）。
 // 寄生物會引用物品、技能、非戰鬥狀態與特殊任務：整理時給已知的清單（同一個包裡新增的也算），不存在的拿掉。
 
-import { ATTR_IDS, SKILL_IDS, abilities, itemDef, lewdRules, perkRules, stories, type AttrId, type CheckContext, type CheckFilter } from './data'
+import { ATTR_IDS, SKILL_IDS, abilities, itemDef, lewdRules, perkDef, perkRules, stories, type AttrId, type CheckContext, type CheckFilter } from './data'
 import { SLOTS } from './gear'
-import { parasiteRules, type ParasiteDef } from './parasites'
+import { parasiteRules, type BroodDef, type BroodKind, type ParasiteDef } from './parasites'
 import { isTattooPlace } from './tattoos'
 import type { GearSlot, TattooPlace } from './types'
 
-export type ParasiteCategory = 'tameable' | 'short'
-export const PARASITE_CATEGORY_NAME: Record<ParasiteCategory, string> = { tameable: '可馴服', short: '短期寄生' }
+export type ParasiteCategory = 'tameable' | 'short' | 'brood'
+export const PARASITE_CATEGORY_NAME: Record<ParasiteCategory, string> = { tameable: '可馴服', short: '短期寄生', brood: '苗床' }
 export const PARASITE_KIND_NAME: Record<ParasiteDef['kind'], string> = { gear: '寄生裝備', mark: '淫紋', seed: '種子' }
 
 /** 雙面效應的一個階段：戰鬥修正與造成的慾望（lust_bonus） */
@@ -65,7 +65,7 @@ export function builtinParasite(id: string): ParasiteMod | undefined {
 
 /** 寄生物的分類：資料寫了就照寫的；沒寫時有馴服的效果是可馴服，否則是短期寄生 */
 export function parasiteCategory(d: Pick<ParasiteDef, 'tamed'> & { category?: ParasiteCategory }): ParasiteCategory {
-  return d.category === 'tameable' || d.category === 'short' ? d.category : d.tamed ? 'tameable' : 'short'
+  return d.category === 'tameable' || d.category === 'short' || d.category === 'brood' ? d.category : d.tamed ? 'tameable' : 'short'
 }
 
 export function isCustomParasiteId(id: string): boolean {
@@ -105,7 +105,7 @@ export function sanitizeParasiteMod(id: string, raw: Partial<ParasiteMod>, refs:
     story: refs.story ?? ((x: string) => stories.some((s) => s.id === x)),
   }
   const kind: ParasiteDef['kind'] = base?.kind ?? (raw.kind === 'gear' || raw.kind === 'mark' ? raw.kind : 'seed')
-  const category: ParasiteCategory = raw.category === 'tameable' || raw.category === 'short' ? raw.category : parasiteCategory(raw)
+  const category: ParasiteCategory = raw.category === 'tameable' || raw.category === 'short' || raw.category === 'brood' ? raw.category : parasiteCategory(raw)
   const out: ParasiteMod = {
     name: str(raw.name, L.name_chars) || base?.name || '新的寄生物',
     kind,
@@ -143,6 +143,25 @@ export function sanitizeParasiteMod(id: string, raw: Partial<ParasiteMod>, refs:
   if (raw.remove && typeof raw.remove === 'object') out.remove = { dc: int(raw.remove.dc, L.dc, 14), price: int(raw.remove.price, L.price, 1000) }
   // 刻印師把淫紋紋回來的價錢（沒寫是 500；寫了照寫，0 是免費）
   if (raw.reink_price !== undefined && raw.reink_price !== null && Number.isFinite(Number(raw.reink_price))) out.reink_price = int(raw.reink_price, L.price, 500)
+  // 苗床（docs/FAMILY.md 第 13 節）：種類、產下的物品、胎生的幼體、寄生共生的特質
+  if (category === 'brood') {
+    const b = raw.brood && typeof raw.brood === 'object' ? raw.brood : undefined
+    const bk: BroodKind = b?.kind === 'live' || b?.kind === 'parasite' ? b.kind : 'egg'
+    const range = (r: unknown, lo: number, hi: number): [number, number] => {
+      const a = Array.isArray(r) ? r : []
+      const x = int(a[0], [lo, hi], lo)
+      return [x, Math.max(x, int(a[1], [lo, hi], x))]
+    }
+    const yields = (Array.isArray(b?.yields) ? b!.yields : []).filter((y) => y && typeof y.item === 'string' && known.item(y.item.trim()))
+      .map((y) => ({ item: y.item.trim(), qty: range(y.qty, 1, 20) })).slice(0, 3)
+    const brood: BroodDef = { kind: bk, ...(bk !== 'live' && yields.length ? { yields } : {}) }
+    if (bk === 'live') {
+      const o = b?.offspring
+      brood.offspring = { name: str(o?.name, 20) || '魔物的幼體', count: range(o?.count, 1, 6), value_cc: int(o?.value_cc, [0, 5000], 50) }
+    }
+    if (bk === 'parasite' && typeof b?.symbiosis === 'string' && perkDef(b.symbiosis)) brood.symbiosis = b.symbiosis
+    out.brood = brood
+  }
   const st = [...new Set((Array.isArray(raw.stories) ? raw.stories : []).filter((s): s is string => typeof s === 'string' && known.story(s)))].slice(0, L.stories)
   if (st.length) out.stories = st
   const prefix = str(raw.flag_prefix, 25)

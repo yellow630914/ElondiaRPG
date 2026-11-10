@@ -158,7 +158,7 @@ export interface LewdTitleDef {
   id: string
   name: string
   desc: string
-  requires: { stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>; pc_tags?: string[]; reputation?: CounterRange }
+  requires: { stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>; pc_tags?: string[]; reputation?: CounterRange; /** 主角產下過幾次胎生的苗床（只看主角） */ brood_births?: CounterRange }
 }
 
 /** 老師會教的特質與條件 */
@@ -1162,6 +1162,8 @@ export interface EnemyDef {
    * field 是只在近郊、旅途、地下城的遭遇（特殊任務的戰鬥任務點要寫 rut 才擲，淫鬥場不擲）
    */
   rut?: boolean | 'field'
+  /** 怪物的苗床（docs/FAMILY.md 第 13 節）：色情戰敗事件沒能擺脫時，可能讓主角變成這個苗床（parasites.json 的 id） */
+  brood?: string
   /** 魔物娘的樣子（設定「魔物娘」打開時，交給 AI 的名字與外觀換成這個；docs/MONSTERS.md 的「魔物娘」） */
   girl?: MonsterGirl
   /** 一定帶著的特徵（例如層主天生巨大） */

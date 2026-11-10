@@ -8,6 +8,7 @@
 //   不在隊上的人在他的城裡自動生下，嬰兒照 children.ts 的 autoPlace 自動安排。
 // - 不做流產：生產失敗只會讓產後虛弱變長。
 
+import { hasLiveBrood } from './brood'
 import { tattooTemplate } from './tattoos'
 import { parasiteDef } from './parasites'
 import familyJson from '@data/rules/family.json'
@@ -21,7 +22,7 @@ import { formatMoney } from './money'
 import { hashString, npcRecord } from './npcs'
 import { addNpcNews } from './npcLife'
 import { isLactating, lactationPrompt, lactationSources, pregnancyLactation, pruneLactation } from './lactation'
-import { gainCondition, isFugitive } from './party'
+import { gainCondition, isFugitive, pcOf } from './party'
 import { checkModifiers } from './perks'
 import { familyRules, pregnancyStageName } from './pregMarks'
 import { Rng, roll as diceRoll, withBonus } from './rng'
@@ -136,6 +137,8 @@ export function conceptionChance(state: GameState, input: ConceiveInput): { chan
   if (!mother || !canCarry(mother)) return undefined
   if (state.pregnancies?.[key] || isPostpartum(state, key)) return undefined
   if (mother.character?.status.includes('contraceptive')) return undefined
+  // 子宮裡有胎生的苗床（brood.ts）時不會懷孕
+  if (key === 'pc' && hasLiveBrood(pcOf(state))) return undefined
   // 娼館接客：老鴇讓接客的人喝避子湯
   const worker = input.report.narration?.brothel_work
   if (worker && pcKey(state, worker) === key && rules.conception.brothel <= 0) return undefined
@@ -508,6 +511,7 @@ export function effectConceive(state: GameState, report: Report, target: string,
   if (!canCarry(mother)) return `${who}的身體不會懷孕`
   if (state.pregnancies?.[key]) return `${who}已經懷孕了`
   if (isPostpartum(state, key)) return `${who}才剛生完孩子`
+  if (key === 'pc' && hasLiveBrood(pcOf(state))) return '你的子宮裡已經有魔物的種'
   const fKey = father ? pcKey(state, father) : undefined
   const f = fKey ? personOf(state, fKey) : undefined
   const name = f?.name ?? fatherName?.trim()

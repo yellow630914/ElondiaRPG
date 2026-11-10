@@ -106,6 +106,7 @@ export function restEventBlock(state: GameState): string | null {
   if (state.townEvent || state.roadEvent) return '先決定怎麼應付眼前的事'
   if (state.pendingDefeat) return '先應付眼前的處境'
   if (state.pendingBirth) return '先處理生產'
+  if (state.pendingBroodBirth) return '先處理體內的苗床'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
   if (state.pendingJoins?.length) return '先決定要不要讓想入隊的人加入（騰出位子或放棄）'
   const story = blockingNode(state)

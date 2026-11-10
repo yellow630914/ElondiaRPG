@@ -7,6 +7,7 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
+import { broodBlock, broodOf } from './brood'
 import { effectConceive, effectReveal } from './pregnancy'
 import { effectLactation } from './lactation'
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
@@ -431,6 +432,12 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
       case 'parasite': {
         const pc = pcOf(state)
         if (e.op === 'add') {
+          // 苗床（brood.ts）：篩選、懷孕中、沒有子宮、已經有胎生的苗床時不寄生
+          const blocked = broodOf(e.parasite) ? broodBlock(state, e.parasite) : undefined
+          if (blocked) {
+            notes.push(`沒有成為苗床（${blocked}）`)
+            break
+          }
           const r = attachParasite(pc, e.parasite, state.time)
           if (r.removed) addItem(state.inventory, r.removed, 1)
           syncGear(pc, classes[pc.class]?.weapon)

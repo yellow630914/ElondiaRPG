@@ -416,7 +416,7 @@ interface LactationState {
 | **P3 泌乳** ✅ | 狀態、效果、6 樣道具、乳香草、淫紋・乳泉、篩選；給夥伴用的同意檢定 | `lactation.ts`、`items.json`、`gear.json`、`tattoos.json`、`crafts.json`、`lewd.ts`（敏感加值）、`combat.ts` 的 `initLust` |
 | **P4 戰鬥與形象圖** ✅ | 懷孕的雙面效應、泌乳的戰鬥效果、生圖的描述 | `combat.ts`、`portraits` 的提示詞 |
 | **P5 內容編輯器與孕期事件** ✅ | 第 10 節，分四批：P5a 事件搬家、孕期事件與事件編輯器；P5b 條件與效果；P5c 物品、刺青、寄生物的欄位；P5d 設定頁。文件：CONTENT_EDITOR、EFFECTS、STORY_QUESTS、CONTENT_DEPENDENCIES、FAMILY | `travel_events.json`、`pregnancyEvents.ts`、`travelEventMods.ts`、`storyFlags.ts`、`effects.ts`、`storyMods.ts`、`mods.ts`、`components/content/*` |
-| **P6 怪物的苗床** | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
+| **P6 怪物的苗床**（P6a ✅） | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
 
 ### 11.1 P1 實作時和計畫不同的地方（2026-11-10）
 
@@ -470,6 +470,20 @@ interface LactationState {
 
 - **設定頁只列固定的欄位**（`familyMods.ts` 的 `FAMILY_GROUPS`）：種族倍率只有精靈、魔族、化龍族三個（新的種族要改程式的欄位清單）；雙面效應只有內建用到的豁免、減傷、傷害。
 - **`ContentMods.family` 是選填**，空的世界不寫這一區（舊的世界、匯出的檔案照樣讀得進來）。
+
+### 11.8 P6a 實作時和計畫不同的地方（2026-11-10）
+
+P6 分兩批：**P6a** 是資料、變成苗床（戰敗、效果）、成長、產下、取出、稱號；**P6b** 是戰鬥中被植入（能力的 `brood`）與編輯器（寄生物、怪物、能力的欄位）。
+
+- **寄生植物的種子不歸到苗床**：還是原本的短期寄生（有發作事件、開花產下），只是新的 11 種是苗床。
+- **篩選「怪物的苗床」關掉時，身上的苗床侵蝕度停住**、不會跳出產下（計畫寫照常長到產下）：關掉的人不想看到產下的事件；被動效果還在，可以解咒拿掉。
+- **被動效果簡化**：卵生是靈巧 −1（沒有旅途時間 ×1.1）；寄生是力量 −1、共生再加智力 −1（沒有長休回復 −10%）；戰鬥中的雙面效應寄生是豁免 +1（沒有毒傷害的倍率）。
+- **共生**：學會特質「蟲巢的共生體」（毒抗性，要修了獸蟲派入門），苗床拿掉，不留成已馴服的寄生物。
+- **魔物的幼體只是文字**：不產生怪物、沒有 `young` 特徵（本來就不進任何系統）；交給魔物學者在事件裡直接選（每隻的價錢寫在苗床的 `offspring.value_cc`，不照怪物的等級），不用走到魔法物品店。
+- **產仔的地點**：神殿或自己生（聚落裡 DC 照生產、野外照野外），沒有分房子、旅店。卵生、寄生的檢定失敗是多一層「虛脫」，不是多一天產後虛弱。
+- **取出只在魔法物品店**（沒有煉金術士的格子）。
+- **產仔次數存在 `state.broodBirths`**；稱號的條件 `requires.brood_births`。
+- **園區（淫獸園）的專屬戰敗不改**：還是給原本的東西；園區的怪物照一般的色情戰敗事件擲苗床。
 
 P6 和 P1～P5 互不依賴（只共用「產後虛弱」與泌乳的來源），可以在 P1 之後任何時候做。
 

@@ -194,6 +194,7 @@ function build(): Index {
   for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
     add('item', p.item, `寄生物「${p.name ?? pid}」`, 'forced')
     add('item', p.tamed?.item, `寄生物「${p.name ?? pid}」（馴服之後）`, 'forced')
+    for (const y of p.brood?.yields ?? []) add('item', y.item, `苗床「${p.name ?? pid}」產下`, 'event')
   }
   for (const m of itemRules.meals?.menu ?? []) add('item', m.name, '用餐', 'shop')
 
@@ -216,6 +217,7 @@ function build(): Index {
     if (p.npc?.weight) add('perk', p.id, `隨機的 NPC 可能有${p.flaw ? '這個缺陷' : ''}`)
   }
   for (const i of itemRules.items) for (const p of i.use?.perks ?? []) add('perk', p, `書籍「${i.name}」`)
+  for (const p of Object.values(parasiteRules.parasites)) if (p.brood?.symbiosis) add('perk', p.brood.symbiosis, `苗床「${p.name}」產下時選共生`)
   for (const n of npcs) {
     for (const p of n.mentor?.perks ?? []) add('perk', p, `老師：${n.name}（${mentorPlace(n.location, n.landmark)}）`)
   }

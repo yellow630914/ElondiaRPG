@@ -884,6 +884,8 @@ export interface GameOptions {
   conceptionMult?: number
   /** 孕期幾天（docs/FAMILY.md） */
   pregnancyDays?: number
+  /** 怪物的苗床的機率倍率（0 = 不會變成苗床；docs/FAMILY.md 第 13 節） */
+  broodMult?: number
   dungeonEventMult?: number
   /** 成人向地下城事件的比重（1～8 倍；普通的地下城事件不變） */
   adultDungeonMult?: number
@@ -1084,6 +1086,10 @@ export interface GameState {
   familyNotices?: string[]
   /** 等待回應的生產（主角或隊上的夥伴）：母親的 id 與是不是在野外生 */
   pendingBirth?: { mother: string; wild?: boolean }
+  /** 等待回應的苗床產下（brood.ts）：長到支配的苗床 */
+  pendingBroodBirth?: { parasite: string }
+  /** 主角產下過幾次胎生的苗床（稱號「魔物的苗床」） */
+  broodBirths?: number
   /** 寄生物等待回應的發作事件（parasiteEvents.ts）：模板與寄生物 */
   parasiteEvent?: { template: string; parasite: string }
   /** 寄生物發作的紀錄：上一次的時間（絕對小時）、最近發作過的事件（避免連續重複） */
