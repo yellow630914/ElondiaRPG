@@ -5,7 +5,7 @@ import { computeDegree, prepareAction, resolveAction, sanitizeJudgment } from '@
 import { startCombat } from '@/engine/combat'
 import {
   acceptPartyOffer, buySlave, hireAtAsking, marketStock, offerSelf, requestLeave, releaseSlave,
-  tavernCandidates, waitForParty,
+  partyOffersHere, tavernCandidates, waitForParty,
 } from '@/engine/companions'
 import { contractDef, population, slaveryRules } from '@/engine/data'
 import { mod, proficiency } from '@/engine/character'
@@ -303,6 +303,20 @@ describe('joining another party', () => {
     }
     throw new Error('no offer')
   }
+
+  it('keeps an invitation that arrives after midnight', () => {
+    for (let seed = 1; seed < 80; seed++) {
+      const state = game(seed, { cha: 16 })
+      state.time = { ...state.time, hour: 23, minute: 0 }
+      const day = state.time.day
+      waitForParty(state)
+      if (!state.partyOffers?.length) continue
+      expect(state.time.day).toBe(day + 1)
+      expect(partyOffersHere(state)).toHaveLength(1)
+      return
+    }
+    throw new Error('no offer')
+  })
 
   it('waits in the tavern for an invitation and joins the leader', () => {
     const state = offered()

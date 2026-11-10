@@ -15,7 +15,7 @@ import PeoplePanel from '../PeoplePanel.vue'
 import PlacePanel from '../PlacePanel.vue'
 import RestPanel from '../RestPanel.vue'
 import RoadPanel from '../RoadPanel.vue'
-import { eventDialogOpen } from '../events/eventQueue'
+import { eventDialogOpen, openEvents } from '../events/eventQueue'
 import GameIcon from '../ui/GameIcon.vue'
 import type { IconName } from '../ui/iconPaths'
 import BottomSheet from './BottomSheet.vue'
@@ -157,7 +157,7 @@ function onFocusOut(e: FocusEvent) {
       <span class="cell place"><GameIcon name="pin" :size="14" /><b>{{ hud.place }}</b></span>
       <span class="cell money"><GameIcon name="coins" :size="14" /><b>{{ hud.money }}</b></span>
       <span v-if="hud.crime" class="cell crime" :title="hud.crime.title"><GameIcon name="siren" :size="14" /><b>{{ hud.crime.text }}</b></span>
-      <button v-if="events" class="bell ghost" :class="{ hot: blockingEvent }" aria-label="待處理" @click="eventDialogOpen = true">
+      <button v-if="events" class="bell ghost" :class="{ hot: blockingEvent }" aria-label="待處理" @click="openEvents()">
         <GameIcon name="bell" :size="20" /><span class="badge">{{ events }}</span>
       </button>
     </header>

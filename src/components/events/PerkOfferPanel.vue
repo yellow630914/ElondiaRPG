@@ -55,6 +55,7 @@ function decline() {
         <textarea v-model="text" rows="3" maxlength="400" :placeholder="`例如「這幾年跟著商隊跑遍各地，${m.name}比起打架，更懂得怎麼跟人討價還價」`" />
         <button class="small" :disabled="!text.trim() || game.judging || !!game.state?.pendingAction" @click="pitch"><GameIcon name="message" :size="13" /> 爭取</button>
       </template>
+      <p v-else-if="settings.aiJudge" class="muted">「主動行動判定」的模型來源設定好之後，可以寫一段說法爭取別的特質。</p>
       <p v-else class="muted">開啟 AI 判定後，可以寫一段說法爭取別的特質。</p>
     </div>
     <p v-else-if="offer.pitched" class="muted">說法已經試過了，只能從提供的特質選。</p>

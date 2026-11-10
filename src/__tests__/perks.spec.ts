@@ -10,7 +10,7 @@ import { enterLocation, standOn } from '@/engine/grid'
 import { useItem } from '@/engine/inventory'
 import { applyPitch, learnFromOffer } from '@/engine/perkActions'
 import {
-  checkBonus, checkModifiers, grantPerk, npcPerksOf, offerPerks, perkPower, perksOf, pitchCap, pitchTarget, rollNpcPerks, sanitizePerk,
+  checkBonus, checkModifiers, grantPerk, learnablePerks, npcPerksOf, offerPerks, perkPitch, perkPower, perksOf, pitchCap, pitchTarget, rollNpcPerks, sanitizePerk,
 } from '@/engine/perks'
 import { pcOf } from '@/engine/party'
 import { ensureGuildClerk, npcRecord } from '@/engine/npcs'
@@ -141,6 +141,43 @@ describe('getting perks', () => {
     applyEffects(state, report, [{ type: 'lose_perk', perk: 'thick_skin' }])
     expect(pc.perks).not.toContain('thick_skin')
     expect(report.changes.perks).toEqual([{ actor: 'pc', perk: 'thick_skin', name: '皮糙肉厚', added: false }])
+  })
+
+  it('fills random learnable perks when every offered one is already known', () => {
+    const state = game()
+    const pc = pcOf(state)
+    for (const id of ['lucky', 'iron_will', 'scholar']) grantPerk(pc, id)
+    const notes = applyEffects(state, blank(state), [{ type: 'perk', perk: 'lucky', options: ['iron_will', 'scholar'], source: '特殊任務「測試」' }])
+    const offer = pc.perkOffers![0]!
+    expect(offer.options).toHaveLength(3)
+    for (const id of offer.options) {
+      expect(['lucky', 'iron_will', 'scholar']).not.toContain(id)
+      expect(perkDef(id)!.flaw).toBeFalsy()
+      expect(perkDef(id)!.school).toBeFalsy()
+    }
+    expect(notes.join('')).toContain('有機會學會特質')
+  })
+
+  it('makes no offer when nothing is learnable and the AI cannot take a pitch', () => {
+    const state = game()
+    const pc = pcOf(state)
+    const offerAll = () => applyEffects(state, blank(state), [{ type: 'perk', source: '特殊任務「測試」' }])
+    // 學得了的都學會
+    for (const p of learnablePerks(pc)) grantPerk(pc, p.id)
+    for (let i = 0; i < 5 && learnablePerks(pc).some((p) => !p.school); i++) for (const p of learnablePerks(pc)) grantPerk(pc, p.id)
+    const ai = perkPitch.ai
+    try {
+      perkPitch.ai = false
+      expect(offerAll().join('')).toContain('都已經會了')
+      expect(pc.perkOffers ?? []).toHaveLength(0)
+      // 能用 AI 時還是可以寫說法爭取（只有說法、沒有提供的特質）
+      perkPitch.ai = true
+      offerAll()
+      expect(pc.perkOffers).toHaveLength(1)
+      expect(pc.perkOffers![0]!.options).toEqual([])
+    } finally {
+      perkPitch.ai = ai
+    }
   })
 
   it('can be set up in the special quest editor', () => {

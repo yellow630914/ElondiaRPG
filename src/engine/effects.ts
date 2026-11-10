@@ -12,7 +12,7 @@ import { pcBodyAllowed, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { addItem } from './state'
 import { abilities, classAbilities, classes, enemies, locationById, masterEventPool, perkDef, slaveryRules, type AbilityDef, type AttrId, type LewdKey, type LockGrade, type MasterEventPool } from './data'
-import { grantPerk, losePerk, offerPerks } from './perks'
+import { fillPerkOptions, grantPerk, losePerk, offerPerks } from './perks'
 import { abilityChoices, abilityQuality, carryLearned, learnable, learnAbility, maxCircle, recalc } from './character'
 import { formatMoney } from './money'
 import { npcRecord, generateNpc, type NpcSpec } from './npcs'
@@ -390,9 +390,11 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
           if (got) notes.push(got.flaw ? `${who.name}多了一個缺陷【${got.name}】` : `${who.name}學會了特質【${got.name}】`)
           break
         }
-        const options = [...(e.perk ? [e.perk] : []), ...(e.options ?? [])]
+        // 提供的特質都已經有了：從可學的特質隨機補（fillPerkOptions）；補不到又不能用 AI 爭取時，沒有這次機會
+        const options = withRng(state, (rng) => fillPerkOptions(who, [...(e.perk ? [e.perk] : []), ...(e.options ?? [])], rng))
         const offer = offerPerks(who, e.source ?? '事件', options)
         if (offer) notes.push(offer.options.length ? `${who.name}有機會學會特質：${offer.options.map((id) => perkDef(id)?.name ?? id).join('、')}` : `${who.name}有機會學會一個特質`)
+        else notes.push(`${who.name}能學的特質都已經會了`)
         break
       }
       case 'lose_perk': {

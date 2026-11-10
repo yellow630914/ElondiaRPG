@@ -29,8 +29,14 @@ export interface GameEvent {
 
 /** 事件視窗開著嗎 */
 export const eventDialogOpen = ref(false)
-/** 按了「稍後」的事件（這次開啟頁面內有效） */
+/** 按了「稍後」的事件（這次開啟頁面內有效；玩家自己按「待處理」打開視窗時清掉，見 openEvents） */
 export const snoozed = ref(new Set<string>())
+
+/** 玩家自己打開事件視窗（「待處理」的鈴鐺）：按過「稍後」的事件也一起列出來 */
+export function openEvents() {
+  snoozed.value = new Set()
+  eventDialogOpen.value = true
+}
 
 function hash(v: unknown): string {
   const text = JSON.stringify(v) ?? ''

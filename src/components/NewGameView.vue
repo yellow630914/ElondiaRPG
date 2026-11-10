@@ -29,9 +29,10 @@ import { creationCatalog, creationCost, creationSlots, gearRules, gearSummary, s
 import { useSettings } from '@/stores/settings'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import ClassWeaponsHint from './ui/ClassWeaponsHint.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import RuleFields from './RuleFields.vue'
-import { CLASS_WEAPONS_HINT, DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -520,7 +521,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
           <td><label class="check"><input v-model="naturalCrit" type="checkbox" /> 只看骰面（20 與 1）</label></td>
         </tr>
         <tr>
-          <th>職業武器限制 <Hint :text="CLASS_WEAPONS_HINT + '之後可以在「設定」裡改。'" /></th>
+          <th>職業武器限制 <ClassWeaponsHint note="之後可以在「設定」裡改。" /></th>
           <td><label class="check"><input v-model="classWeapons" type="checkbox" /> 主手只能拿職業能用的武器</label></td>
         </tr>
         </tbody>

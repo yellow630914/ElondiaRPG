@@ -48,7 +48,7 @@ import BackgroundLayer from '@/components/fx/BackgroundLayer.vue'
 import { edgePulse, floatText, placeCard, tween } from '@/fx/fx'
 import { stateKey } from '@/fx/seen'
 import type { IconName } from '@/components/ui/iconPaths'
-import { activeEvents, eventDialogOpen, pendingEvents } from '@/components/events/eventQueue'
+import { activeEvents, openEvents, pendingEvents } from '@/components/events/eventQueue'
 import { confirmDiscard, unsavedEdits } from '@/components/content/unsaved'
 
 // 提示詞頁籤會載入整本世界書，切過去時才載入
@@ -295,7 +295,7 @@ onBeforeUnmount(() => {
       <span v-if="crime" :key="crime.text" class="cell crime" :title="crime.title"><GameIcon name="siren" :size="15" /><b>{{ crime.text }}</b></span>
     </div>
     <div class="top-buttons">
-      <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="eventDialogOpen = true"><GameIcon :key="eventCount" name="bell" :size="14" class="bell" />待處理<span class="badge">{{ eventCount }}</span></button>
+      <button v-if="eventCount" class="small events" :class="{ hot: blockingEvent }" title="需要你處理的事" @click="openEvents()"><GameIcon :key="eventCount" name="bell" :size="14" class="bell" />待處理<span class="badge">{{ eventCount }}</span></button>
       <!-- 介面語言：選項名稱各用自己的寫法，不轉換 -->
       <label class="ghost icon lang" title="介面語言（AI 寫的正文用哪一種，在設定的「AI 的輸出語言」）">
         <GameIcon name="globe" :size="24" />
