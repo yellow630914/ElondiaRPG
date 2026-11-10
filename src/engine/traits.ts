@@ -209,6 +209,15 @@ function pickName(rng: Rng, race: RaceTraits, lineage: LineageDef | undefined, g
   for (let i = 2; ; i++) if (!used.has(`${base}・${i}`)) return `${base}・${i}`
 }
 
+/** 嬰兒的名字：照種族與性別的名字庫抽一個名（不帶姓；docs/FAMILY.md） */
+export function babyName(rng: Rng, race: string, gender: string, used: Set<string> = new Set()): string {
+  const r = raceOf(race)
+  const body: Body = r.body ?? npcTraits.body_by_gender[gender] ?? 'andro'
+  const pool = gender === 'unknown' || body === 'andro' ? [...r.names.m, ...r.names.f] : body === 'masc' || gender === 'femboy' ? r.names.m : r.names.f
+  const free = pool.filter((n) => !used.has(n))
+  return rng.pick(free.length ? free : pool)
+}
+
 /** 抽一組名字、外貌與性格 */
 export function rollLook(rng: Rng, spec: LookSpec): Look {
   const race = raceOf(spec.race)

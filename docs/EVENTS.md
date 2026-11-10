@@ -16,12 +16,14 @@
 | ⛓️ 主人的要求 | 主角是奴隸時，走動或旅途上隨機發生；調教自己的奴隸、娼館接客或受訓（🌹）結束時也用同一個格式 | 是 | `MasterEventPanel` |
 | ⚠️ 地下城事件 | 地下城與近郊觸發陷阱、打開寶箱、採集、在安全房長休之後（成人向，見 [ADULT_EVENTS](ADULT_EVENTS.md)） | 是 | `events/RoadEventPanel`（`dungeon`） |
 | 💗 寄生物的發作 | 身上的寄生物在走動、旅途或長休之後發作（[ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） | 是 | `events/RoadEventPanel`（`parasite`） |
+| 🍼 要生了 | 主角或隊上的夥伴到了預產日、人在聚落裡（或陣痛 24 小時還沒進聚落），見 [FAMILY](FAMILY.md) 第 6 節 | 是 | `events/BirthPanel` |
 | 🧭 旅途事件 | 旅途上走到 ❔ 事件格 | 是 | `events/RoadEventPanel` |
 | ⭐ 特殊任務的任務點 | 走到解鎖的任務點（[STORY_QUESTS](STORY_QUESTS.md)）；不緊急的可以「稍候」，緊急的只能處理或放棄任務 | 是 | `StoryNodeCard` |
 | 🤝 入隊 | 事件或 AI 讓人入隊、邀請同行時隊伍滿了：騰出位子或放棄（[COMPANIONS](COMPANIONS.md) 2.7 節） | 是 | `events/JoinPanel` |
 | 🏘️ 城鎮事件 | 在聚落裡走上設施時遇到的選擇事件（[TRAVEL_EVENTS](TRAVEL_EVENTS.md) 第 6 節） | 是 | `events/RoadEventPanel`（`town`） |
 | 💞 關係變化 | AI 寫敘事或判定後提議更新和某人的關係 | 否，可以稍後 | `events/SuggestionPanel` |
 | ⬆️ 升級 | 有能力三選一或屬性點還沒分配 | 否，可以稍後 | `events/LevelUpPanel`（到隊伍視窗選） |
+| 🍼 家人的消息 | 察覺懷孕、開始陣痛、不在隊上的人生下孩子（[FAMILY](FAMILY.md)）；按「知道了」寫成一筆日誌 | 否，可以稍後 | `EventCenter` 裡直接顯示 |
 | 🌟 特質的機會 | 隊員有學特質的機會（[PERKS](PERKS.md)） | 否，可以稍後 | `events/PerkOfferPanel` |
 
 「擋住行動」的事件不處理就不能移動、短休（引擎丟出「先回應主人的要求」之類的錯誤），排在佇列前面，不能稍後。短休、長休也一樣，要先處理這些事件，等待中的旅途事件與城鎮事件也算（`rest.ts` 的 `restEventBlock`）。

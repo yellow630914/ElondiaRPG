@@ -1,0 +1,41 @@
+{
+  "$comment": "懷孕與嬰兒（成人向，docs/FAMILY.md）。受孕只在性經歷的 AI 記錄時判定（sexRecord.ts 的 applySexUpdates），NPC 私生活不會受孕。conception：受孕的機率（base 基礎、times 這次性交幾次的倍率、race 種族、max 上限；brothel 娼館接客的倍率，0 = 不會；tattoos 身上有這個圖樣的刺青時的倍率；parasites 這個寄生物的侵蝕度到 min 以上、沒有沉睡時的倍率）。stages：階段（at 是已經懷了幾天佔孕期的比例，從這個比例起算這個階段）。checks：各階段平常的檢定加減（check 是適用的範圍，和寄生物的 stage_effects 同一種格式；bonus 負數是減值；靈巧的檢定包括潛行）。discover：察覺（auto_stage 到這個階段自動察覺）。birth：生產（temple_cc 在神殿生的費用、dc 自己生的 DC、wild_dc 在野外、healer_bonus 隊伍裡有治療的人減多少、healer_classes 誰算、labor_hours 陣痛之後幾小時在原地生）。postpartum：產後虛弱（days 成功、fail_days 失敗、check 所有檢定的減值）。nursery：神殿的育幼院（fee_cc 每天的寄養費、escort_cc_per_day 護送到別的城每天路程的費用）。genders：誰能懷孕（carry）、誰能讓人懷孕（sire）；主角對應不到的性別看體型（body_carry、body_sire）。",
+  "conception": {
+    "base": 0.15,
+    "times": { "1": 1, "2": 1.3, "3": 1.5 },
+    "race": { "same": 1, "mixed": 0.6, "low_fertility": { "elf": 0.6, "demon": 0.5, "hualong": 0.5 } },
+    "max": 0.6,
+    "brothel": 0,
+    "tattoos": { "lewd_womb": 1.5 },
+    "parasites": { "succubus_mark": { "min": 60, "mult": 1.5 } }
+  },
+  "genders": {
+    "carry": ["female", "futa"],
+    "sire": ["male", "femboy", "ts", "futa"],
+    "body_carry": ["fem", "andro"],
+    "body_sire": ["masc"]
+  },
+  "stages": [
+    { "id": "hidden", "name": "未察覺", "at": 0 },
+    { "id": "early", "name": "初期", "at": 0.2 },
+    { "id": "mid", "name": "中期", "at": 0.4 },
+    { "id": "late", "name": "後期", "at": 0.75 }
+  ],
+  "checks": {
+    "mid": [{ "check": { "attrs": ["dex"] }, "bonus": -1 }],
+    "late": [{ "check": { "attrs": ["dex"] }, "bonus": -2 }]
+  },
+  "morning_sickness": { "stage": "early", "chance": 0.3, "condition": "morning_sickness" },
+  "discover": { "auto_stage": "mid" },
+  "birth": {
+    "temple_cc": 200,
+    "attr": "fai",
+    "dc": 12,
+    "wild_dc": 16,
+    "healer_bonus": 2,
+    "healer_classes": ["cleric", "paladin", "druid"],
+    "labor_hours": 24
+  },
+  "postpartum": { "days": 3, "fail_days": 6, "check": 1 },
+  "nursery": { "fee_cc": 10, "escort_cc_per_day": 30 }
+}

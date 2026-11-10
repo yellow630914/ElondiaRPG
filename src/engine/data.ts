@@ -1941,6 +1941,8 @@ export interface ItemDef {
   master_force?: { tags?: string[] }
   /** 成人向的物品：內容編輯器的篩選用 */
   adult?: boolean
+  /** 內容標籤（content.ts）：設定的內容篩選關掉這些標籤時，商店不賣（例如懷孕的避子湯、搖籃） */
+  content_tags?: string[]
   /** 鎖（lewd.json 的 locks）：可以替身上的拘束具上鎖，雙面效應的戰鬥增益才生效 */
   lock?: LockGrade
   /** 鑰匙（docs/LEWD_STATS.md 第 16 節）：打開這個等級以下的鎖，用一次就沒了 */
@@ -2281,8 +2283,8 @@ export type FurniturePlace = 'indoor' | 'yard' | 'basement'
 
 export interface FurnitureSpec {
   places: FurniturePlace[]
-  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃；training：調教室的家具（docs/LEWD_STATS.md 第 19 節） */
-  function?: 'bed' | 'workbench' | 'garden' | 'training'
+  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃；training：調教室的家具（docs/LEWD_STATS.md 第 19 節）；crib：搖籃（家裡的嬰兒，docs/FAMILY.md） */
+  function?: 'bed' | 'workbench' | 'garden' | 'training' | 'crib'
   craft?: CraftId
   /** 調教室的家具：在家調教時的檢定加值 */
   training?: number

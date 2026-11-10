@@ -8,6 +8,7 @@
 
 import { pcTagMult } from './pcTags'
 import { charmLevel } from './charm'
+import { tagsAllowed } from './content'
 import { snapshot } from './character'
 import {
   companionRules, craftRules, damageTypeName, dungeonEncounters, enemies, geography, itemDef, itemRules, locationById, regionById, isCustomShopId, shopDef, shopRules, slaveryRules,
@@ -188,7 +189,7 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
   const charm = place.waystation ? 0 : charmLevel(place.id)
   const region = locationById(state.location).region
   const soldHere = (i: ItemDef) => !i.regions?.length || i.regions.includes(region)
-  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank && (!i.charm_min || charm >= i.charm_min) && soldHere(i))
+  const available = itemRules.items.filter((i) => i.tags.includes(def.catalog_tag) && !notForSale(i) && locationRank(i.min_location ?? 'village') <= rank && (!i.charm_min || charm >= i.charm_min) && soldHere(i) && tagsAllowed(i.content_tags))
   return withRng(state, (rng) => {
     const deals: Deal[] = []
     // 服裝另外挑（shops.json 的 outfits），不擠掉護具與武器

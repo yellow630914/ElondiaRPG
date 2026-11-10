@@ -6,6 +6,7 @@
 import { tagsAllowed } from './content'
 import { genderName, lewdRules, namedNpcById, stories, type NpcSexSeed, type SexSeedRule, type StoryDef } from './data'
 import { npcRecord } from './npcs'
+import { maybeConceive } from './pregnancy'
 import type { Character, GameState, LewdStat, Report, SexEncounter, SexRecord } from './types'
 
 const rules = () => lewdRules.experience
@@ -369,6 +370,8 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
       summary: text(u.summary, 120) || ctx.report.narration?.adult_scene?.slice(0, 120) || '',
       firstNote: text(u.first_time, 120), report: ctx.report.report_id, anonKey: `anon:${ctx.report.report_id}`,
     })
+    // 受孕只在這裡判定（AI 記下的經歷）；NPC 私生活走 addEncounter，不會受孕（docs/FAMILY.md）
+    if (sex) maybeConceive(state, { report: ctx.report, mother: id, partners, times: sex })
     const rec = ensureRecord(state, id)
     const favorite = text(u.favorite, 16)
     if (favorite) rec.favorite = favorite

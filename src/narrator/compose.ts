@@ -3,6 +3,7 @@
 import type { ActionPending } from '@/engine/actions'
 import { lewdSummary } from '@/engine/lewd'
 import { sexRecordsNote } from '@/engine/sexRecord'
+import { familyPrompt } from '@/engine/pregnancy'
 import { charmNote } from '@/engine/charm'
 import { protagonistText } from '@/engine/character'
 import { locationById } from '@/engine/data'
@@ -82,7 +83,8 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
   const adult = !!adultSceneOf(report)
   const lore = loreForReport(o.lore, report, { adult, budgetChars: o.budgetChars, playerName: name, ...flagsOf(state) })
   // 成人場景：主角與隊友的慾望指標（分段的文字），以及主角、隊友與在場的人的性經歷
-  const protagonist = protagonistOf(state) + (adult && state ? `\n慾望指標：${lewdSummary(state, state.party.find((m) => m.isPlayer)!)}${partyLewd(state, false)}\n${charmNote(state)}${sexRecordsNote(state, (report.others ?? []).filter((o) => !o.monster).map((o) => o.id))}` : '')
+  // 懷孕與孩子（docs/FAMILY.md）：孩子只在一般的敘事寫，成人場景不送
+  const protagonist = protagonistOf(state) + (adult && state ? `\n慾望指標：${lewdSummary(state, state.party.find((m) => m.isPlayer)!)}${partyLewd(state, false)}\n${charmNote(state)}${sexRecordsNote(state, (report.others ?? []).filter((o) => !o.monster).map((o) => o.id))}` : '') + (state ? familyPrompt(state, adult) : '')
   const context = narrationContext(state, report)
   // 成人場景的敘事用套用到「成人場景」的條目
   const target = narrationTarget(report)

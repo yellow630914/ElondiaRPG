@@ -5,6 +5,7 @@
 import { pcTagSummary } from '@/engine/pcTags'
 import { inActiveSquad, squadIds } from '@/engine/squads'
 import { lewdSummary } from '@/engine/lewd'
+import { familyPrompt } from '@/engine/pregnancy'
 import { sexRecordsNote, sexRecordsOn, sexRecordText } from '@/engine/sexRecord'
 import { charmNote } from '@/engine/charm'
 import { isGuarded } from '@/engine/population'
@@ -126,7 +127,9 @@ function pcDetail(state: GameState, adult = false, others: string[] = []): strin
   // 慾望指標：只在可能進入親密場景的判定（數值與分段）
   // 性經歷（docs/LEWD_STATS.md 第 29 節）：主角、隊友與這次的對象
   const lewd = adult ? `\n慾望指標：${lewdSummary(state, pc, true)}${partyLewd(state)}\n${charmNote(state)}${sexRecordsNote(state, others)}` : ''
-  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n武器：${weapons}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}`
+  // 懷孕與孩子（docs/FAMILY.md）：孩子只在一般的判定寫，可能進入親密場景的判定不送
+  const family = familyPrompt(state, adult)
+  return `主角 ${pc.name}：${raceName(pc.race)}・${className(pc.class)} Lv.${pc.level}（生命層級 ${lifeTier(pc.level)}）${profile ? `\n${profile}` : ''}\n屬性：${attrs}\n武器：${weapons}\n技能：${skills || '無'}\n金錢：${formatMoney(state.money_cc)}${perks ? `\n特質（已算進情境修正，不要重複加值）：${perks}` : ''}${tattoos}${locked}${contract}${lewd}${family}`
 }
 
 /** 隊友的慾望指標（成人向的判定與敘事）：每人一行 */

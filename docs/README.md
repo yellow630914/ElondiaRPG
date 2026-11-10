@@ -33,6 +33,7 @@ GAME_DESIGN（總綱：原則、遊戲迴圈、報告格式、AI 管線、系統
 │   ├─ NPC_SYSTEM         名單、活躍地點、互動、警戒與通緝
 │   ├─ COMPANIONS         夥伴、休息、奴隸契約、主人的家
 │   ├─ TATTOOS            刺青：奴隸印記、誓約印記、普通刺青
+│   ├─ FAMILY             成人向：懷孕、生產、嬰兒與育幼院
 │   └─ RELATIONSHIP_MEMORY 人際關係、共同記憶
 │
 ├─ 劇情與事件
@@ -167,6 +168,7 @@ flowchart TD
 | [WORK](WORK.md) | 工作與娼館 | `work.ts`、`brothel.ts` |
 | [NPC_SYSTEM](NPC_SYSTEM.md) | NPC | `population.ts`、`interactions.ts`、`encounters.ts`、`security.ts` |
 | [TATTOOS](TATTOOS.md) | 刺青（奴隸印記、誓約印記、普通刺青） | `tattoos.ts` |
+| [FAMILY](FAMILY.md) | 懷孕與嬰兒（成人向） | `pregnancy.ts`、`children.ts`、`pregMarks.ts` |
 | [LANDMARKS](LANDMARKS.md) | 城鎮的特色地標 | `landmarks.ts`、`landmarkMods.ts` |
 | [SPECIAL_MAPS](SPECIAL_MAPS.md) | 特殊地圖（下水道之類人工設計的地方）、地下街 | `specialMaps.ts`、`specialMapMods.ts`、`underworld.ts` |
 | [COMPANIONS](COMPANIONS.md) | 夥伴與奴隸 | `companions.ts`、`party.ts`、`rest.ts`、`slavery.ts`、`masterHome.ts` |

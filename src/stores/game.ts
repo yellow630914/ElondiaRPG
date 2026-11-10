@@ -15,6 +15,8 @@ import { setPcTags } from '@/engine/pcTags'
 import * as dungeonEvents from '@/engine/dungeonEvents'
 import * as leadEvents from '@/engine/leadEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
+import * as pregnancy from '@/engine/pregnancy'
+import * as children from '@/engine/children'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
 import { perkPitch, pitchTarget } from '@/engine/perks'
@@ -637,7 +639,7 @@ export const useGame = defineStore('game', () => {
 
   /** 走完這一步之後有要先處理的事（戰鬥、事件、等待判定、擋路的任務點……）：停下來 */
   function mustStop(s: GameState): boolean {
-    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || story.blockingNode(s))
+    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || s.pendingBirth || story.blockingNode(s))
   }
 
   function walkTo(x: number, y: number) {
@@ -1455,6 +1457,13 @@ export const useGame = defineStore('game', () => {
     declineClassRebalance: () => run((s) => classRebalance.declineClassRebalance(s)),
     declineTrapLure: () => run((s) => dungeonEvents.declineTrapLure(s)),
     answerParasiteEvent: (i: number) => run((s) => parasiteEvents.answerParasiteEvent(s, i)),
+    /** 懷孕與嬰兒（docs/FAMILY.md）：生產、通知、神殿的診察、育幼院、把孩子送到別的地方 */
+    answerBirth: (how: 'temple' | 'self', name?: string, place?: string) => run((s) => pregnancy.answerBirth(s, how, name, place)),
+    acknowledgeFamilyNotices: () => run((s) => pregnancy.acknowledgeFamilyNotices(s)),
+    templeCheckup: () => run((s) => pregnancy.templeCheckup(s)),
+    payNursery: (days = 0) => run((s) => children.payNursery(s, days)),
+    visitChild: (id: string) => run((s) => children.visitChild(s, id)),
+    moveChild: (id: string, to: Parameters<typeof children.moveChild>[2]) => run((s) => children.moveChild(s, id, to)),
     triggerParasite: (id: string) => run((s) => parasiteEvents.triggerTamed(s, id)),
     cureParasite: (id: string) => run((s) => parasiteEvents.cureParasite(s, id)),
     reinkParasite: (id: string, kind: 'curse' | 'covered') => run((s) => parasiteEvents.reinkAtCarver(s, id, kind)),

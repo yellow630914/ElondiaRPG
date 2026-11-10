@@ -15,6 +15,7 @@ import {
 } from './data'
 import { gearRules } from './gear'
 import { conditionModifiers } from './party'
+import { pregnancyModifiers } from './pregMarks'
 import { Rng as RngImpl, type Rng } from './rng'
 import { bindModifiers, outfitModifiers } from './schools'
 import type { Character, PerkOffer, Report } from './types'
@@ -116,9 +117,9 @@ export function parasiteCheckModifiers(c: Pick<Character, 'parasites' | 'tattoos
   return out
 }
 
-/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記 + 拘束具（雙面效應的平常面）（正數是加值） */
+/** 檢定的情境修正：非戰鬥狀態 + 特質 + 獨特裝備 + 寄生物與印記 + 懷孕與產後虛弱 + 拘束具（雙面效應的平常面）（正數是加值） */
 export function checkModifiers(c: Character, ctx: CheckCtx): { label: string; value: number }[] {
-  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...pcTagModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...bindModifiers(c, ctx), ...outfitModifiers(c, ctx)].filter((x) => x.value !== 0)
+  return [...conditionModifiers(c, ctx.attr), ...perkModifiers(c, ctx), ...pcTagModifiers(c, ctx), ...gearCheckModifiers(c, ctx), ...parasiteCheckModifiers(c, ctx), ...pregnancyModifiers(c, ctx, matches), ...bindModifiers(c, ctx), ...outfitModifiers(c, ctx)].filter((x) => x.value !== 0)
 }
 
 /** 檢定的情境修正總和 */

@@ -223,6 +223,8 @@ export interface Report {
     adult_actor?: string
     /** 戰鬥中只有挑逗、剝衣（沒有人高潮或屈服）時的成人場景：一樣交給成人場景的寫手，但不算親密場景（淫亂不因此成長）。adult_scene 被別的場景換掉時就不再相同 */
     tease?: string
+    /** 在娼館接客的人（角色 id）：老鴇讓接客的人喝避子湯，這次不會受孕（docs/FAMILY.md） */
+    brothel_work?: string
   }
   lore_keys?: string[]
   /** 存檔規則「職業武器限制」：這次入隊、歸隊時收進行囊的武器（誰的什麼、為什麼）；commitReport 接在摘要後面 */
@@ -380,6 +382,8 @@ export interface Character {
   tattoos?: Tattoo[]
   /** 身上的寄生物（寄生裝備、淫紋、寄生種子；只有主角會有，見 engine/parasites.ts） */
   parasites?: ParasiteState[]
+  /** 懷孕與產後虛弱的標記（檢定減值用；真正的記錄在 state.pregnancies，每次結算時同步，見 engine/pregnancy.ts 的 syncPregnancyMarks） */
+  pregMark?: PregnancyMark
   /** 淫紋拿掉（解咒、撕毀）時，原本被它蓋掉的刺青：刻印師可以紋回來（parasite 是當時蓋掉它的寄生物） */
   coveredTattoos?: { parasite: string; tattoo: Tattoo }[]
   /** 已花掉的生命骰（總數 = 等級） */
@@ -876,6 +880,10 @@ export interface GameOptions {
   /** 主人的突發事件、寄生物的發作、地下城事件的機率倍率 */
   masterEventMult?: number
   parasiteMult?: number
+  /** 受孕機率的倍率（0 = 不會受孕；docs/FAMILY.md） */
+  conceptionMult?: number
+  /** 孕期幾天（docs/FAMILY.md） */
+  pregnancyDays?: number
   dungeonEventMult?: number
   /** 成人向地下城事件的比重（1～8 倍；普通的地下城事件不變） */
   adultDungeonMult?: number
@@ -1060,6 +1068,16 @@ export interface GameState {
   trapLure?: { area: string }
   /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */
   dungeonEvents?: { last?: number; seen: Record<string, number> }
+  /** 懷孕（成人向，docs/FAMILY.md）：角色 id（主角是 pc）→ 記錄 */
+  pregnancies?: Record<string, PregnancyState>
+  /** 產後虛弱：角色 id → 到哪一天為止（含） */
+  postpartum?: Record<string, number>
+  /** 嬰兒（不是 NPC，不進 NPC 登錄；docs/FAMILY.md 第 7 節） */
+  children?: ChildRecord[]
+  /** 懷孕的通知（察覺、陣痛、自動生下的嬰兒）：事件視窗按「知道了」寫成一筆日誌 */
+  familyNotices?: string[]
+  /** 等待回應的生產（主角或隊上的夥伴）：母親的 id 與是不是在野外生 */
+  pendingBirth?: { mother: string; wild?: boolean }
   /** 寄生物等待回應的發作事件（parasiteEvents.ts）：模板與寄生物 */
   parasiteEvent?: { template: string; parasite: string }
   /** 寄生物發作的紀錄：上一次的時間（絕對小時）、最近發作過的事件（避免連續重複） */
@@ -1217,4 +1235,51 @@ export interface NpcLifeState {
   followed?: string[]
   /** 可以和其他 NPC 發生關係的人（人際關係裡打開的，預設沒有人；docs/NPC_SYSTEM.md 第 14 節） */
   pairs?: string[]
+}
+
+// ---- 懷孕與嬰兒（docs/FAMILY.md） ----
+
+export type PregnancyStage = 'hidden' | 'early' | 'mid' | 'late'
+
+/** 一位懷孕的人（state.pregnancies 的值） */
+export interface PregnancyState {
+  /** 受孕的日子 */
+  conceived: number
+  /** 預產日（受孕當下照存檔規則算好；之後改存檔規則不影響已經懷上的） */
+  due: number
+  /** 父親；沒有 = 父親不明 */
+  father?: { id?: string; name: string }
+  /** 哪一則日誌受孕的 */
+  report?: string
+  /** 察覺了沒 */
+  known?: boolean
+  knownDay?: number
+  /** 預產日到了、人不在聚落：陣痛開始的時間（絕對小時） */
+  labor?: number
+}
+
+/** 角色身上的懷孕標記（檢定減值、顯示用） */
+export interface PregnancyMark {
+  stage?: PregnancyStage
+  known?: boolean
+  /** 產後虛弱 */
+  postpartum?: boolean
+}
+
+/** 嬰兒在哪裡：神殿的育幼院（寄養費從 since 起算、繳到 paidUntil 那天為止）或自己的房子 */
+export type ChildPlace =
+  | { kind: 'temple'; location: string; since: number; paidUntil: number }
+  | { kind: 'home'; home: string }
+
+export interface ChildRecord {
+  id: string
+  name: string
+  gender: string
+  race: string
+  /** 出生的日子 */
+  born: number
+  mother: { id: string; name: string }
+  /** 沒有 = 父親不明 */
+  father?: { id?: string; name: string }
+  where: ChildPlace
 }

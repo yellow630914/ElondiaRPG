@@ -3,7 +3,7 @@ import { ref, watch } from 'vue'
 import { defaultLoyalAffinity, LOYAL_MAX, LOYAL_MIN, setNpcLife } from '@/engine/npcLife'
 import { setLeadPool } from '@/engine/leads'
 import { setSexRecords } from '@/engine/sexRecord'
-import { setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, setMonsterGirlChance, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
+import { DEFAULT_FILTERS, setContentFilters, setDefeatAdult, setDefeatAlways, setDefeatCompanion, setMascBodyContent, setMonsterGirl, setMonsterGirlChance, type DefeatAdultMode, type MonsterGirlMode, type FilterTag } from '@/engine/content'
 import { companionRules, progression } from '@/engine/data'
 import { gearRules } from '@/engine/gear'
 import { setLongRestGap } from '@/engine/rest'
@@ -209,7 +209,7 @@ function defaults(): SavedSettings {
     stepMinutes: { ...mapsJson.generation.step_minutes },
     creationGearBudget: gearRules.creation.default_budget,
     logKeep: 200,
-    contentFilters: { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true },
+    contentFilters: { ...DEFAULT_FILTERS },
     defeatAdult: 'all',
     defeatCompanion: 'not_masc',
     mascBodyContent: false,

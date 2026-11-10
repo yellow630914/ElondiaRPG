@@ -10,6 +10,8 @@ import { specRarity } from '../items/itemInfo'
 import { hitDiceLeft, hitDie } from '@/engine/rest'
 import { isBound, isNoncombatant, leaderOf } from '@/engine/party'
 import { awayCompanions, awayLabel } from '@/engine/away'
+import { childrenOf, owedFee, placeText } from '@/engine/children'
+import { formatMoney } from '@/engine/money'
 import NameTag from '../NameTag.vue'
 import { perksOf } from '@/engine/perks'
 import { placeName, tattooName, tattoosOf } from '@/engine/tattoos'
@@ -57,6 +59,8 @@ for (const m of s.value.party) {
 onMounted(() => requestAnimationFrame(() => requestAnimationFrame(() => { for (const k of Object.keys(xpFrom)) delete xpFrom[k] })))
 // 不在隊上的夥伴：留在房子、寄放在酒館（要親自回去才帶得上）
 const away = computed(() => awayCompanions(s.value))
+// 家人：嬰兒（docs/FAMILY.md 第 7.5 節）
+const kids = computed(() => childrenOf(s.value))
 const BOND: Record<string, string> = { hired: '受雇', voluntary: '自願', slave: '奴隸' }
 function canDismiss(m: Character) {
   return !m.isPlayer && !m.group && m.bond !== 'slave' && m.bond !== 'guest'
@@ -182,6 +186,19 @@ function canDismiss(m: Character) {
         <span class="small muted">Lv.{{ a.character.level }}<template v-if="a.character.bond && BOND[a.character.bond]">・{{ BOND[a.character.bond] }}</template></span>
         <span class="small where"><GameIcon :name="a.place.kind === 'home' ? 'home' : 'mug'" :size="12" /> {{ awayLabel(a.place) }}</span>
         <span class="small muted">{{ a.days ? `待了 ${a.days} 天` : '今天留下' }}</span>
+      </li>
+    </ul>
+  </section>
+
+  <section v-if="kids.length" class="panel away">
+    <h3><GameIcon name="heart" :size="16" /> 家人 <span class="muted small">{{ kids.length }} 個孩子</span></h3>
+    <p class="small muted">孩子住在神殿的育幼院（每天寄養費）或自己的房子。到那座城的神殿「育幼院」或房子的「孩子」可以探望、繳費、接回家或送去育幼院。</p>
+    <ul class="plain">
+      <li v-for="k in kids" :key="k.id" class="away-row">
+        <span>🍼 {{ k.name }}</span>
+        <span class="small muted">{{ s.time.day - k.born }} 天大・母親{{ k.mother.name }}・父親{{ k.father?.name ?? '不明' }}</span>
+        <span class="small where"><GameIcon :name="k.where.kind === 'home' ? 'home' : 'heart'" :size="12" /> {{ placeText(s, k.where) }}</span>
+        <span v-if="owedFee(s, k)" class="small">欠寄養費 {{ formatMoney(owedFee(s, k)) }}</span>
       </li>
     </ul>
   </section>

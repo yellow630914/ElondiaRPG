@@ -32,6 +32,10 @@ import ShopPanel from './ShopPanel.vue'
 import LandmarkPanel from './LandmarkPanel.vue'
 import { closedHere, sceneSpots } from '@/engine/landmarks'
 import TattooPanel from './TattooPanel.vue'
+import NurseryPanel from './NurseryPanel.vue'
+import { childrenAtTemple, templeDebt } from '@/engine/children'
+import { tagsAllowed } from '@/engine/content'
+import { CHECKUP_CC } from '@/engine/pregnancy'
 import TavernPanel from './TavernPanel.vue'
 import WorkPanel from './WorkPanel.vue'
 import TrainPanel from './TrainPanel.vue'
@@ -199,19 +203,29 @@ const banner = computed(() => {
   return null
 })
 // 神殿、雜貨店選單的其他項目（交易與折扣以外）
-const extraOpen = ref<'wash' | 'market' | null>(null)
+const extraOpen = ref<'wash' | 'market' | 'nursery' | null>(null)
 const templeMenu = computed<MenuItem[]>(() => [
   {
     id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
     badge: templeCost(s.value) ? formatMoney(templeCost(s.value)) : '不需要', disabled: templeCost(s.value) === 0 || s.value.money_cc < templeCost(s.value),
   },
   { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
+  // 懷孕與嬰兒（docs/FAMILY.md）：內容篩選打開「懷孕」或已經有孩子寄在這裡時才顯示
+  ...(tagsAllowed(['pregnancy']) || Object.keys(s.value.pregnancies ?? {}).length ? [{
+    id: 'checkup', icon: 'search', label: '診察', detail: '請修女看看隊伍裡有沒有人懷孕（包括還沒察覺的）',
+    badge: formatMoney(CHECKUP_CC), disabled: s.value.money_cc < CHECKUP_CC,
+  } as MenuItem] : []),
+  ...(tagsAllowed(['pregnancy']) || childrenAtTemple(s.value, s.value.location).length ? [{
+    id: 'nursery', icon: 'heart', label: '育幼院', detail: '寄養的孩子、寄養費、探望、接回家',
+    badge: templeDebt(s.value) ? `欠 ${formatMoney(templeDebt(s.value))}` : childrenAtTemple(s.value, s.value.location).length, tone: templeDebt(s.value) ? 'gold' : undefined,
+  } as MenuItem] : []),
 ])
 const marketName = computed(() => marketsHere(s.value).find((m) => m.kind === 'public')?.def.name ?? '市場')
 const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'market', icon: 'users', label: marketName.value, detail: '公開的奴隸買賣' }] : []))
 function onExtra(id: string) {
   if (id === 'heal') game.templeHeal()
-  else if (id === 'wash' || id === 'market') extraOpen.value = id
+  else if (id === 'checkup') game.templeCheckup()
+  else if (id === 'wash' || id === 'market' || id === 'nursery') extraOpen.value = id
 }
 // 公會的選單：委託板在對話框裡
 const showBoard = ref(false)
@@ -298,6 +312,9 @@ const shopDesc = computed(() => {
           <ShopPanel :key="`temple-${s.location}-${s.time.day}`" type="temple" :extra="templeMenu" @extra="onExtra" />
           <AppDialog :open="extraOpen === 'wash'" title="洗刺青" icon="feather" width="760px" @close="extraOpen = null">
             <TattooPanel shop="temple" />
+          </AppDialog>
+          <AppDialog :open="extraOpen === 'nursery'" title="育幼院" icon="heart" width="640px" @close="extraOpen = null">
+            <NurseryPanel />
           </AppDialog>
         </template>
 

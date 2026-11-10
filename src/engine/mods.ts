@@ -7,6 +7,7 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
+import { FILTER_TAGS, type FilterTag } from './content'
 import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
@@ -920,6 +921,9 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  // 內容標籤（商店照內容篩選上架，例如懷孕的避子湯、搖籃）
+  const ctags = [...new Set((Array.isArray(raw.content_tags) ? raw.content_tags : []).filter((t): t is FilterTag => (FILTER_TAGS as string[]).includes(t)))]
+  if (ctags.length) out.content_tags = ctags
   // 貿易類別：沒寫（或寫了不認得的）照其他欄位推
   if (isTradeCategory(raw.trade_category)) out.trade_category = raw.trade_category
   // 材料的等級：手動填的才記（沒填照用途推）

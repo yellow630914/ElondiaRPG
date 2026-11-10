@@ -86,6 +86,9 @@
     "fugitive": { "name": "逃亡奴隸", "desc": "契約仍在，公會、神殿等官方機構不接待，旅店加價且可能通報。" },
     "punished": { "name": "受罰", "desc": "被主人懲罰，下次長休前所有檢定 -2。", "check_penalty": 2, "clears": "long_rest" },
     "blessed": { "name": "祝福", "desc": "神殿的祝福，下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" },
+    "morning_sickness": { "name": "孕吐", "desc": "懷孕初期，一早起來就想吐，渾身沒力：下次長休前力量檢定 -1。", "check_penalty": 1, "check_attrs": ["str"], "clears": "long_rest" },
+    "contraceptive": { "name": "避孕", "desc": "喝了避子湯：下次長休前不會受孕。", "clears": "long_rest" },
+    "family_smile": { "name": "家人的笑容", "desc": "看過孩子，心裡踏實：下次長休前所有檢定 +1。", "check_penalty": -1, "clears": "long_rest" },
     "away": { "name": "暫時離隊", "desc": "戰敗時逃到安全的地方等你；回到聚落或安全房時以一半生命值歸隊。" },
     "shaken": { "name": "驚魂未定", "desc": "戰敗後的遭遇讓你心神不寧，下次長休前所有檢定 -1。", "check_penalty": 1, "clears": "long_rest" },
     "fed_light": {
