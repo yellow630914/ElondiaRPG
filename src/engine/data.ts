@@ -1593,6 +1593,8 @@ export interface MasterAskDef {
   name: string
   desc: string
   lead: string
+  /** 主動找時不列的回應（options 的位置，從 0 算）：例如自己開口請主人教，又「推說累了」說不通 */
+  hide?: number[]
 }
 export type MasterAskGroup = 'serve' | 'close' | 'discipline'
 export const MASTER_ASK_GROUPS: Record<MasterAskGroup, string> = { serve: '服侍', close: '親近', discipline: '管教' }

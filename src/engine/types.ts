@@ -659,6 +659,8 @@ export interface PendingMasterEvent {
   text: string
   /** 事件庫（沒有時是主人的突發事件） */
   pool?: MasterEventPool
+  /** 主角主動找主人開始的（slavery.ts 的 askMaster）：不列 ask.hide 的回應 */
+  asked?: boolean
   /** 事件的主角：調教的奴隸、去娼館接客或受訓的人（沒有時是主角） */
   actor?: string
   /** 娼館受訓：這次一定學會的技能 */
