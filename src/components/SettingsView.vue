@@ -13,11 +13,12 @@ import { defaultLoyalAffinity, LOYAL_MAX, LOYAL_MIN } from '@/engine/npcLife'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
-import { CLASS_WEAPONS_HINT, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultySummary, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
+import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultySummary, RULE_DEFS, type NumericRule } from '@/engine/gameRules'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 import SettingsFilePanel from './SettingsFilePanel.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import ClassWeaponsHint from './ui/ClassWeaponsHint.vue'
 
 const APP_VERSION = __APP_VERSION__
 
@@ -211,7 +212,7 @@ function doReset() {
         <label class="check"><input type="checkbox" :checked="!!game.state.options?.naturalCrit" @change="game.setNaturalCrit(($event.target as HTMLInputElement).checked)" />
           大成功、大失敗只看骰面 <span class="badge">存檔</span><Hint text="勾選時，只有骰出 20 才是大成功、骰出 1 才是大失敗；總和比 DC 高或低 10 以上不再算（最多是成功或失敗）。AI 判定也照這條規則。不勾時維持原本的規則：骰出 20 或總和 ≥ DC+10 大成功，骰出 1 或總和 ≤ DC−10 大失敗。" /></label>
         <label class="check"><input type="checkbox" :checked="!!game.state.options?.classWeapons" @change="game.setClassWeapons(($event.target as HTMLInputElement).checked)" />
-          職業武器限制 <span class="badge">存檔</span><Hint :text="CLASS_WEAPONS_HINT + '打開時，主手拿著職業不能用的武器的人會卸下武器、放回行囊。'" /></label>
+          職業武器限制 <span class="badge">存檔</span><ClassWeaponsHint note="打開時，主手拿著不能用的武器的人會卸下武器、放回行囊。" /></label>
         <RuleFields v-if="game.state" :model-value="saveRules" :groups="['combat']" badge="存檔" @update:model-value="game.setRules" />
       </div>
     </section>

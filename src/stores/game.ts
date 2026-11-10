@@ -17,7 +17,7 @@ import * as leadEvents from '@/engine/leadEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
-import { pitchTarget } from '@/engine/perks'
+import { perkPitch, pitchTarget } from '@/engine/perks'
 import { noteBystanders } from '@/engine/activities'
 import { computed, ref, toRaw, watch } from 'vue'
 import * as actions from '@/engine/actions'
@@ -237,6 +237,8 @@ function load(s: GameState): GameState {
 }
 
 export const useGame = defineStore('game', () => {
+  // 寫說法爭取特質要 AI 判定：不能用時，引擎不建立沒有可選特質的機會（perks.ts 的 perkPitch）
+  watch(() => useSettings().judgesWithAi(), (on) => { perkPitch.ai = on }, { immediate: true })
   // 進行中的遊戲（自動保存的那一份）：啟動時只讀出來放著，在首頁按「繼續」才載入
   const boot = takePreloaded()
   const resume = ref<CurrentData | null>(boot.state ? boot : null)

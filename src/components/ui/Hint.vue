@@ -23,11 +23,18 @@ async function show() {
   if (!r) return
   const w = Math.min(props.width, window.innerWidth - 16)
   const left = Math.max(8, Math.min(r.left + r.width / 2 - w / 2, window.innerWidth - w - 8))
-  const above = r.bottom + 160 > window.innerHeight && r.top > 160
-  pos.value = { left, top: above ? r.top - 8 : r.bottom + 8, above }
   // 不支援 popover 的瀏覽器照舊（對話框外的說明還是看得到）
   const p = pop.value as (HTMLElement & { showPopover?: () => void }) | null
   if (p?.showPopover && !p.matches(':popover-open')) p.showPopover()
+  // 量出小框實際的高度再決定往上或往下：下面放不下、上面空間比較多時往上；兩邊都放不下時貼著視窗邊緣，不超出畫面
+  const h = p?.offsetHeight || 160
+  const below = window.innerHeight - r.bottom - 8
+  const room = r.top - 8
+  const above = h > below && room > below
+  let top = above ? r.top - 8 : r.bottom + 8
+  if (above && h > room) top = Math.min(window.innerHeight - 8, h + 8)
+  if (!above && h > below) top = Math.max(8, window.innerHeight - h - 8)
+  pos.value = { left, top, above }
 }
 /** 聚焦時：只有用鍵盤移過來的才顯示（對話框打開時瀏覽器自動聚焦、點過之後留著的焦點不算） */
 function onFocus() {

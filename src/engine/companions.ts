@@ -203,7 +203,8 @@ export function waitForParty(state: GameState): Report {
     const members = Array.from({ length: memberCount }, () => generateNpc(state, rng, { level: Math.max(1, level - rng.int(0, 2)) }, 'pty'))
     const payChance = w.pay_chance + w.pay_chance_per_cha_mod * Math.max(0, mod(attrOf(pc, 'cha')))
     const pay = rng.chance(payChance) ? Math.round((w.pay_per_level * pc.level * (1 + Math.max(0, mod(attrOf(pc, 'cha'))) * 0.25)) / 5) * 5 : 0
-    return { id: `po-${leader.id}`, leader: leader.id, members: members.map((m) => m.id), pay_cc: pay, location: state.location, day: state.time.day }
+    // 邀請在等完的那一天有效（等到跨過午夜時，記開始那天會一出現就失效）
+    return { id: `po-${leader.id}`, leader: leader.id, members: members.map((m) => m.id), pay_cc: pay, location: state.location, day: report.time.end.day }
   })
   if (offer) {
     ;(state.partyOffers ??= []).push(offer)

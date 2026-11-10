@@ -376,10 +376,35 @@ export function learnablePerks(c: Character): PerkDef[] {
   })
 }
 
-/** 新的取得特質的機會（options 會去掉已經有的；缺陷不是機會，見 effects 的 perk） */
+/**
+ * 寫說法爭取特質要 AI 判定（擲骰的行動交給 AI 判定，而且判定的模型來源設定好了）：
+ * 遊戲畫面依設定更新（stores/game.ts）。不能用 AI 時，沒有可選特質的機會沒有用，不建立
+ */
+export const perkPitch = { ai: true }
+
+/** 提供的特質去掉已經有的、缺陷、不能選的 */
+function usableOptions(c: Character, options: string[]): string[] {
+  return [...new Set(options)].filter((id) => isChoosablePerk(id) && !perkDef(id)?.flaw && !hasPerk(c, id))
+}
+
+/**
+ * 事件、特殊任務給的機會：提供的特質都已經有時，從可學的特質隨機補幾個（數量照原本提供的，沒有寫時照升級的三選一；
+ * 慾望流派的特質不補，同升級）。補不到的時候回傳空的
+ */
+export function fillPerkOptions(c: Character, options: string[], rng: Rng): string[] {
+  const usable = usableOptions(c, options)
+  if (usable.length) return usable
+  const n = [...new Set(options)].length || perkRules.levelup.choices
+  const pool = learnablePerks(c).filter((p) => !p.school)
+  const picks: string[] = []
+  while (picks.length < n && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]!.id)
+  return picks
+}
+
+/** 新的取得特質的機會（options 會去掉已經有的；缺陷不是機會，見 effects 的 perk）。沒有可選的、又不能用 AI 爭取時不建立 */
 export function offerPerks(c: Character, source: string, options: string[], pitch = true): PerkOffer | undefined {
-  const usable = [...new Set(options)].filter((id) => isChoosablePerk(id) && !perkDef(id)?.flaw && !hasPerk(c, id))
-  if (!usable.length && !pitch) return undefined
+  const usable = usableOptions(c, options)
+  if (!usable.length && !(pitch && perkPitch.ai)) return undefined
   const n = (c.perkOffers ?? []).reduce((m, o) => Math.max(m, Number(o.id.split('-')[1]) || 0), 0) + 1
   const offer: PerkOffer = { id: `po-${n}`, source, options: usable, ...(pitch ? { pitch: true } : {}) }
   ;(c.perkOffers ??= []).push(offer)

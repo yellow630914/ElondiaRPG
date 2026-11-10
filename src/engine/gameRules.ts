@@ -72,10 +72,10 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   escapeDc: { group: 'combat', label: '逃跑與撤退的難度', hint: `戰鬥中撤退（預設 DC ${combatRules.flee_dc}）與地下城緊急撤退的 DC 加減。負數比較容易。`, default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
 }
 
-/** 存檔規則「職業武器限制」的說明（新遊戲與設定共用；清單在 gear.json 的 classes[].weapons） */
-export const CLASS_WEAPONS_HINT = `勾選時，主手只能拿職業能用的武器類型（${Object.entries(gearJson.classes as Record<string, { weapons?: string[] }>)
+/** 存檔規則「職業武器限制」：每個職業的主手能拿哪些武器類型（gear.json 的 classes[].weapons；說明小框用表格列出，見 ClassWeaponsHint.vue） */
+export const CLASS_WEAPONS: { cls: string; weapons: string }[] = Object.entries(gearJson.classes as Record<string, { weapons?: string[] }>)
   .filter(([, c]) => c && typeof c === 'object' && c.weapons)
-  .map(([id, c]) => `${className(id)}：${c.weapons!.length ? c.weapons!.join('、') : '不拿武器'}`).join('；')}）。這樣職業技能不會配到說不通的武器，例如拿著鎚子放箭雨。盾牌、法器這類副手不受限制。`
+  .map(([id, c]) => ({ cls: className(id), weapons: c.weapons!.length ? c.weapons!.join('、') : '不拿武器' }))
 
 function pct(n: number): string {
   return `${Math.round(n * 100)}%`
