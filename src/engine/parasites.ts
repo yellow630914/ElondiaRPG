@@ -6,7 +6,7 @@
 // 規則與定義在 data/rules/parasites.json；發作事件在 travel_events.json（scope: parasite）。
 
 import parasitesJson from '@data/rules/parasites.json'
-import { itemDef, lewdRules, type AttrId, type CheckFilter, type Mods } from './data'
+import { enemies, itemDef, lewdRules, type AttrId, type CheckFilter, type Mods } from './data'
 import { addLewdStat } from './lewd'
 import { schoolsOf } from './schools'
 import { placeName, tattooAt, tattoosOf } from './tattoos'
@@ -450,6 +450,8 @@ export function parasiteSummary(c: Pick<Character, 'parasites'>): string {
     // 馴服之後不再寫未馴服時的樣子（會餓、會自己動），免得 AI 照舊描寫它作亂
     if (p.tamed) return `- ${def.name}：已馴服。蠢蠢欲動，但乖乖地在等待你的指令。`
     const state = p.dormant ? '沉睡中（被奴隸印記頂掉）' : `${stageName(p.corruption)}（侵蝕度 ${p.corruption}）`
-    return `- ${def.name}：${state}。${def.desc}`
+    // 苗床：留下它的怪物（docs/FAMILY.md 第 13 節）
+    const by = p.monster ? enemies[p.monster] : undefined
+    return `- ${def.name}${by ? `（${by.name}留下的）` : ''}：${state}。${def.desc}`
   }).filter(Boolean).join('\n')
 }

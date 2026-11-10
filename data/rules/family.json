@@ -122,10 +122,22 @@
       "rest_chance": 0.15,
       "travel_chance": 0.1,
       "step_chance": 0.01
+    },
+    "lactation": {
+      "rest_chance": 0.12,
+      "travel_chance": 0.08,
+      "step_chance": 0.008
+    },
+    "brood": {
+      "rest_chance": 0.2,
+      "travel_chance": 0.12,
+      "step_chance": 0.01
     }
   },
   "lactation": {
     "after_birth_days": 30,
+    "ability": "lact_milking",
+    "milk": { "item": "母乳", "qty": [1, 2], "hours": 0.5 },
     "sensitivity": 5,
     "exposure": 1,
     "combat": {

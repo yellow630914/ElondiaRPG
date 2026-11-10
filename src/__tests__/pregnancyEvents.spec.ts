@@ -44,14 +44,15 @@ beforeEach(() => setContentFilters({ ...DEFAULT_FILTERS, pregnancy: true }))
 afterEach(() => setContentFilters({ ...DEFAULT_FILTERS }))
 
 describe('懷孕的察覺事件：資料', () => {
-  it('察覺事件：主角 6 件、夥伴 3 件；孕期事件：主角 12 件、夥伴 6 件；都帶懷孕的標籤，夥伴的事件用 {a} 寫名字', () => {
+  it('察覺事件：主角 6 件、夥伴 3 件；孕期事件：主角 12 件、夥伴 15 件（3 件親密）；都帶懷孕的標籤，夥伴的事件用 {a} 寫名字', () => {
     const all = pregnancyTemplates()
     const disc = all.filter((t) => !t.known)
     const stage = all.filter((t) => t.known)
     expect(disc.filter((t) => t.subject === 'pc')).toHaveLength(6)
     expect(disc.filter((t) => t.subject === 'companion')).toHaveLength(3)
     expect(stage.filter((t) => t.subject === 'pc')).toHaveLength(12)
-    expect(stage.filter((t) => t.subject === 'companion')).toHaveLength(6)
+    expect(stage.filter((t) => t.subject === 'companion')).toHaveLength(15)
+    expect(stage.filter((t) => t.subject === 'companion' && t.options?.some((o) => o.adult_scene))).toHaveLength(3)
     for (const t of all) {
       expect(t.scope).toBe('pregnancy')
       expect(t.tags).toContain('pregnancy')

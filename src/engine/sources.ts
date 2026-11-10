@@ -3,6 +3,7 @@
 // 和 usage.ts 的「哪裡用到」不同：這裡只是說明，不擋刪除（例如商店依標籤上架、怪物掉落）。
 // 一次掃過全部資料建成索引，之後查詢不再掃描；內容套用（applyContent）後作廢，下次查詢時重建。
 
+import { familyRules } from './pregMarks'
 import mapsJson from '@data/world/maps.json'
 import {
   abilities, attributeRules, DUNGEON_LAYER_NAME, geography, craftRules, dungeonEncounters, enemies, itemRules, landmarks, lewdRules, MASTER_EVENT_POOLS, masterEventPool,
@@ -195,6 +196,10 @@ function build(): Index {
     add('item', p.item, `寄生物「${p.name ?? pid}」`, 'forced')
     add('item', p.tamed?.item, `寄生物「${p.name ?? pid}」（馴服之後）`, 'forced')
     for (const y of p.brood?.yields ?? []) add('item', y.item, `苗床「${p.name ?? pid}」產下`, 'event')
+  }
+  {
+    const milk = (familyRules.lactation as { milk?: { item: string } } | undefined)?.milk
+    if (milk) add('item', milk.item, '泌乳的時候擠奶', 'event')
   }
   for (const m of itemRules.meals?.menu ?? []) add('item', m.name, '用餐', 'shop')
 

@@ -309,6 +309,9 @@ def item_sources():
             add(tamed, f"馴服「{p['name']}」之後換成" + (f"（特殊任務{'、'.join(f'「{q}」' for q in qs)}）" if qs else ''))
         # 苗床（docs/FAMILY.md 第 13 節）：產下時排出的卵、蟲蛻
         for y in (p.get('brood') or {}).get('yields', []): add(y['item'], f"苗床「{p['name']}」產下")
+    # 泌乳的時候擠奶（family.json 的 lactation.milk）
+    milk = ld('data/rules/family.json').get('lactation', {}).get('milk')
+    if milk: add(milk['item'], '泌乳的時候在角色詳情擠奶（一天一次）')
     # 地標
     for l in LMS:
         for part in ('explore', 'visit'):

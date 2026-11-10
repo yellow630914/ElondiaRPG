@@ -476,6 +476,8 @@ export interface ParasiteState {
   since: GameTime
   /** 上一次依時間增長侵蝕度的日子 */
   grown?: number
+  /** 苗床：留下它的怪物（enemies.json 的 id；戰敗、戰鬥中被植入時記下），事件文字的 {m} 與交給 AI 的描述用 */
+  monster?: string
   /** 沉睡：淫紋被奴隸印記頂掉了（不發作、沒有被動效果、侵蝕度凍結），等著到刻印師紋回來 */
   dormant?: boolean
   /** 已經馴服：不會自動發作，可以主動觸發 */
@@ -1076,10 +1078,12 @@ export interface GameState {
   postpartum?: Record<string, number>
   /** 泌乳（成人向，docs/FAMILY.md 第 10 節）：角色 id（主角是 pc）→ 來源；裝備、刺青的來源不存（看身上） */
   lactation?: Record<string, LactationSource[]>
+  /** 上一次擠奶的日子（角色 id，主角是 pc；一天一次，lactation.ts 的 milk） */
+  milked?: Record<string, number>
   /** 嬰兒（不是 NPC，不進 NPC 登錄；docs/FAMILY.md 第 7 節） */
   children?: ChildRecord[]
   /** 等待回應的懷孕察覺事件（pregnancyEvents.ts）：family.json 的事件與懷孕的人 */
-  pregnancyEvent?: { template: string; mother: string }
+  pregnancyEvent?: { template: string; mother: string; /** 苗床的事件：哪一個苗床 */ parasite?: string }
   /** 察覺事件的紀錄：上一次的時間（絕對小時）、最近出現過的事件 */
   pregnancyEvents?: { last?: number; recent?: string[] }
   /** 懷孕的通知（察覺、陣痛、自動生下的嬰兒）：事件視窗按「知道了」寫成一筆日誌 */

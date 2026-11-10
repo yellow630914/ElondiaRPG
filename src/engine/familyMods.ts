@@ -50,6 +50,14 @@ export const FAMILY_GROUPS: FamilyGroup[] = [
     f('event_rules.stage.step_chance', '孕期事件：走動每一步', 0, 0.2, 0.005),
     f('event_rules.cooldown_hours', '兩件事件之間至少隔幾小時', 0, 96, 1),
   ] },
+  { name: '泌乳與苗床的事件', fields: [
+    f('event_rules.lactation.rest_chance', '泌乳的事件：長休之後', 0, 1, 0.05, '泌乳中的主角或隊上的夥伴，每人各擲一次；和懷孕的事件共用冷卻'),
+    f('event_rules.lactation.travel_chance', '泌乳的事件：旅途每天', 0, 1, 0.05),
+    f('event_rules.lactation.step_chance', '泌乳的事件：走動每一步', 0, 0.2, 0.005),
+    f('event_rules.brood.rest_chance', '苗床的事件：長休之後', 0, 1, 0.05, '主角身上每個苗床各擲一次（docs/FAMILY.md 第 13.3 節）'),
+    f('event_rules.brood.travel_chance', '苗床的事件：旅途每天', 0, 1, 0.05),
+    f('event_rules.brood.step_chance', '苗床的事件：走動每一步', 0, 0.2, 0.005),
+  ] },
   { name: '生產', fields: [
     f('birth.temple_cc', '在神殿生的費用（白鸛）', 0, 10000, 10),
     f('birth.dc', '自己生的 DC', 5, 30, 1),

@@ -10,7 +10,7 @@
 
 import { settleImplants } from './brood'
 import { postpartumMaxHp, pregnancyTwoFace } from './pregCombat'
-import { lactationCombat } from './lactation'
+import { lactationAbilities, lactationCombat } from './lactation'
 import { noteFight } from './bestiary'
 import { pcTagLustResist } from './pcTags'
 import { fusedWeapon } from './fusion'
@@ -170,8 +170,8 @@ export interface Combatant {
   slave?: boolean
   /** 淫器展開的武器傷害倍率（fusion.ts；穿著的天數決定） */
   weaponMult?: number
-  /** 被植入的苗床（能力的 brood）：苗床 → 每一層的機率；戰鬥結束時擲（brood.ts 的 settleImplants） */
-  implants?: Record<string, number[]>
+  /** 被植入的苗床（能力的 brood）：苗床 → 每一層的機率與植入的怪物；戰鬥結束時擲（brood.ts 的 settleImplants） */
+  implants?: Record<string, { chance: number; monster?: string }[]>
 }
 
 export type CombatAction =
@@ -696,7 +696,7 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
     // 技能攜帶上限：只帶攜帶中的技能與法術（戲法全帶）
     // 寄生物給的技能不佔攜帶上限（parasites.ts）
-    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c)],
+    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c), ...lactationAbilities(c)],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr + gearDr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
@@ -1815,7 +1815,7 @@ function implantBrood(actor: Combatant, a: AbilityDef, target: Combatant, effect
   if (!a.brood || actor.side !== 'enemy' || target.side !== 'party' || target.ally || !tagsAllowed(['monster_brood', 'pc_unwilling'])) return
   const id = a.brood.parasite ?? (actor.defId ? enemies[actor.defId]?.brood : undefined)
   if (!id) return
-  ;((target.implants ??= {})[id] ??= []).push(a.brood.chance)
+  ;((target.implants ??= {})[id] ??= []).push({ chance: a.brood.chance, ...(actor.defId ? { monster: actor.defId } : {}) })
   effects.push({ type: 'note', target: target.id, text: '被植入了什麼東西' })
 }
 

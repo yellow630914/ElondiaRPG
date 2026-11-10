@@ -216,7 +216,7 @@ describe('戰鬥中被植入', () => {
       const state = game()
       state.options = { ...state.options, broodMult: 3 }
       const combat = startCombat(state, [['lp_brood_wasp', 1]])
-      combat.combatants.find((c) => c.id === pcOf(state).id)!.implants = { brood_wasp_egg: [0.5] }
+      combat.combatants.find((c) => c.id === pcOf(state).id)!.implants = { brood_wasp_egg: [{ chance: 0.5, monster: 'lp_brood_wasp' }] }
       for (const c of combat.combatants) if (c.side === 'enemy') c.hp = 0
       combat.status = 'victory'
       const report = finishCombat(state)

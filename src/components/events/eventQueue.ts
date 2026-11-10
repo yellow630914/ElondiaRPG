@@ -67,7 +67,12 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     if (state.leadEvent) out.push({ id: `lead:${state.leadEvent.lead}`, kind: 'lead', icon: '🔎', title: pendingLeadEvent(state)?.title ?? '線索', blocking: true })
     if (state.trapLure) out.push({ id: `lure:${state.trapLure.area}:${state.time.day}:${state.time.hour}:${state.time.minute ?? 0}`, kind: 'lure', icon: '⚠️', title: '察覺到的陷阱', blocking: true })
     if (state.parasiteEvent) out.push({ id: `parasite:${state.parasiteEvent.template}:${state.parasiteEvents?.last ?? 0}`, kind: 'parasite', icon: '💗', title: pendingParasiteEvent(state)?.title ?? '身上的寄生物', blocking: true })
-    if (state.pregnancyEvent) out.push({ id: `pregnancy:${state.pregnancyEvent.template}:${state.pregnancyEvents?.last ?? 0}`, kind: 'pregnancy', icon: '🍼', title: pendingPregnancyEvent(state)?.title ?? '身體的變化', blocking: true })
+    if (state.pregnancyEvent) {
+      // 懷孕、泌乳、苗床的事件都在這裡（pregnancyEvents.ts）
+      const t = pendingPregnancyEvent(state)
+      const icon = t?.scope === 'lactation' ? '💧' : t?.scope === 'brood' ? '🪺' : '🍼'
+      out.push({ id: `pregnancy:${state.pregnancyEvent.template}:${state.pregnancyEvents?.last ?? 0}`, kind: 'pregnancy', icon, title: t?.title ?? '身體的變化', blocking: true })
+    }
     if (state.pendingBirth) {
       const pb = state.pendingBirth
       const who = state.party.find((m) => (pb.mother === 'pc' ? m.isPlayer : m.id === pb.mother))

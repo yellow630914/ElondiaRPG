@@ -13,7 +13,10 @@ import { hasSchool, schoolsOf } from './schools'
 import { addAffinity, pcOf } from './party'
 import { canLactate, lactatingNow, wornLactation } from './pregMarks'
 import { baseLewd } from './lewd'
-import { withRng } from './state'
+import { commitReport, withRng } from './state'
+import { abilities, itemDef } from './data'
+import { applyEffects } from './effects'
+import { baseReport } from './town'
 import { roll as diceRoll } from './rng'
 import type { Character, GameState, LactationSource, Report } from './types'
 
@@ -28,6 +31,10 @@ interface LactationRules {
   combat: { max: number; taken: number; flesh_mult: number }
   /** 給自由的夥伴用：魅力檢定 DC = base − 淫亂 / lewd_div − 親密度 / affinity_div；失敗親密度 fail_affinity */
   consent: { base: number; lewd_div: number; affinity_div: number; fail_affinity: number }
+  /** 泌乳時戰鬥中多的技能（abilities.json 的 id，「擠奶」） */
+  ability?: string
+  /** 擠奶（角色詳情，一天一次）：得到的物品、數量、花的時間 */
+  milk?: { item: string; qty: [number, number]; hours: number }
 }
 
 export const lactationRules = (familyJson as unknown as { lactation: LactationRules }).lactation
@@ -82,7 +89,14 @@ export function lactationLine(state: GameState, c: Character): string {
   const parts = srcs.map((s) => (s.kind === 'pregnancy' ? (s.until === undefined ? '懷孕後期' : `產後（到第 ${s.until} 天）`) : s.kind === 'brood' ? '苗床' : `${s.ref ?? '事件'}（到第 ${s.until} 天）`))
   const worn = wornLactation(c)
   if (worn) parts.push(`${worn}（戴著的時候）`)
-  return `泌乳中：${parts.join('、')}`
+  const skill = lactationRules.ability ? abilities[lactationRules.ability]?.name : undefined
+  return `泌乳中：${parts.join('、')}${skill ? `；戰鬥中可以用【${skill}】` : ''}`
+}
+
+/** 泌乳時戰鬥中多的技能（「擠奶」，不佔攜帶上限；combat.ts 開戰時加上）。已經學會的不重複 */
+export function lactationAbilities(c: Character): string[] {
+  const id = lactationRules.ability
+  return id && abilities[id] && lactatingNow(c) && !c.abilities.includes(id) ? [id] : []
 }
 
 /** 戰鬥中的效果（修了流派、慾望戰鬥開著時由 combat.ts 呼叫）：慾望上限與受到的慾望的比例 */
@@ -174,4 +188,48 @@ export function effectLactation(state: GameState, target: string, op: 'add' | 'r
   const n = Math.max(1, Math.round(days))
   addLactation(state, key, { kind: 'event', until: state.time.day + n - 1 })
   return `${c.isPlayer ? '你' : c.name}開始泌乳（到第 ${state.time.day + n - 1} 天）`
+}
+
+// ---- 擠奶（角色詳情；docs/FAMILY.md 第 10.5 節） ----
+
+/** 不能擠奶的原因（可以時為 undefined）：泌乳中、不在戰鬥、今天還沒擠過 */
+export function milkBlock(state: GameState, c: Character): string | undefined {
+  if (!lactationRules.milk || !itemDef(lactationRules.milk.item)) return '沒有設定擠奶'
+  if (state.combat) return '戰鬥中'
+  if (!isLactating(state, c)) return `${c.name}沒有在泌乳`
+  if (state.milked?.[keyOf(state, c)] === state.time.day) return '今天已經擠過了'
+  return undefined
+}
+
+/**
+ * 擠奶：得到母乳（一天一次，花一點時間）；自由的夥伴要先說服（和泌乳道具一樣，失敗親密度下降）。
+ * 是親密的場景（成人向的寫手）
+ */
+export function milk(state: GameState, id: string): Report {
+  const c = state.party.find((m) => m.id === id)
+  if (!c) throw new Error('不在隊伍裡')
+  const block = milkBlock(state, c)
+  if (block) throw new Error(block)
+  const r = lactationRules.milk!
+  const report = baseReport(state, 'action', r.hours)
+  if (needsConsent(c)) {
+    const pc = pcOf(state)
+    const dc = consentDc(state, c)
+    const bonus = mod(attrOf(pc, 'cha')) + proficiency(pc.level)
+    const x = withRng(state, (rng) => diceRoll(rng, `1d20${bonus >= 0 ? '+' : ''}${bonus}`))
+    const natural = x.rolls[0] ?? x.total
+    const ok = natural === 20 || (natural !== 1 && x.total >= dc)
+    report.timeline = [{ seq: 1, time: { ...state.time }, actor: pc.id, action: `請${c.name}讓你擠奶`, roll: { dice: x.dice, value: x.total, dc }, result: ok ? 'success' : 'fail' }]
+    if (!ok) {
+      addAffinity(state, report, c.id, lactationRules.consent.fail_affinity, `硬要替${c.name}擠奶`)
+      report.outcome = { result: 'failure', summary: `${c.name}紅著臉推開了你的手。`, tags: ['泌乳'] }
+      return commitReport(state, report)
+    }
+  }
+  const qty = withRng(state, (rng) => rng.int(r.qty[0], Math.max(r.qty[0], r.qty[1])))
+  ;(state.milked ??= {})[keyOf(state, c)] = state.time.day
+  applyEffects(state, report, [{ type: 'item', name: r.item, qty }])
+  report.outcome = { result: 'success', summary: `${c.isPlayer ? '你解開衣襟擠了奶' : `你替${c.name}擠了奶`}，得到${r.item} ×${qty}。`, tags: ['泌乳'] }
+  report.narration = { ...report.narration, adult_scene: `${c.isPlayer ? '主角' : c.name}擠奶：解開衣襟，把脹滿的乳汁一點一點擠進瓶子裡${c.isPlayer ? '' : '（主角動手）'}` }
+  return commitReport(state, report)
 }

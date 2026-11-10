@@ -105,11 +105,15 @@ function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
   return [...new Set((Array.isArray(v) ? v : []).filter((x): x is T => allowed.includes(x as T)))]
 }
 
+/** 事件的種類（scope；road 是預設，不寫） */
+export const EVENT_SCOPES: EventScope[] = ['road', 'town', 'dungeon', 'parasite', 'lead', 'pregnancy', 'lactation', 'brood']
+const BROOD_KINDS = ['egg', 'live', 'parasite'] as const
+
 /** 整理一個事件。城鎮事件沒有高階（不會進臨時地圖的「發現」），選擇的事件至少要有一個選項 */
 /** extraCells：還沒套用、但同一包裡有的自建商店（匯入時） */
 export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean, extraCells: string[] = []): TravelEventMod {
   const L = EVENT_LIMITS
-  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' || raw.scope === 'parasite' || raw.scope === 'lead' || raw.scope === 'pregnancy' ? raw.scope : 'road'
+  const scope: EventScope = raw.scope && (EVENT_SCOPES as string[]).includes(raw.scope) ? raw.scope : 'road'
   // 地下城事件、線索事件、寄生物的發作與懷孕的事件只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
   const kind = raw.kind === 'check' && (scope === 'road' || scope === 'town') ? 'check' : 'choice'
   const out: TravelEventMod = {
@@ -169,6 +173,22 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
     if (races.length) out.father_races = races
     if (typeof raw.mixed === 'boolean') out.mixed = raw.mixed
     if (typeof raw.forced === 'boolean') out.forced = raw.forced
+  } else if (scope === 'lactation') {
+    // 泌乳的事件（docs/FAMILY.md 第 10.4 節）：泌乳中的主角或隊上泌乳的夥伴、時機
+    out.subject = raw.subject === 'companion' ? 'companion' : 'pc'
+    const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
+    if (moments.length && moments.length < Object.keys(PARASITE_MOMENTS).length) out.moments = moments
+    if (raw.in_settlement) out.in_settlement = true
+  } else if (scope === 'brood') {
+    // 苗床的事件（docs/FAMILY.md 第 13.3 節）：主角身上的苗床，種類、階段（支配時就產下了，不列）、時機
+    const kinds = pick(raw.brood_kinds, BROOD_KINDS)
+    if (kinds.length && kinds.length < BROOD_KINDS.length) out.brood_kinds = kinds
+    const max = parasiteRules.stages.length - 1
+    const stages = [...new Set((Array.isArray(raw.stages) ? raw.stages : []).map(Number).filter((n) => Number.isInteger(n) && n >= 0 && n < max))].sort()
+    if (stages.length && stages.length < max) out.stages = stages
+    const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
+    if (moments.length && moments.length < Object.keys(PARASITE_MOMENTS).length) out.moments = moments
+    if (raw.in_settlement) out.in_settlement = true
   } else {
     const cells = pick(raw.cells, [...townEventCells(), ...extraCells])
     if (cells.length) out.cells = cells
@@ -189,7 +209,7 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   const scene = str(raw.scene, L.scene_chars)
   if (scene) out.scene = scene
   // 時段：城鎮、地下城、寄生物才有（旅途照天數走；線索在生成地圖時就放好了）
-  if ((scope === 'town' || scope === 'dungeon' || scope === 'parasite' || scope === 'pregnancy') && (raw.hours === 'day' || raw.hours === 'night')) out.hours = raw.hours
+  if (scope !== 'road' && scope !== 'lead' && (raw.hours === 'day' || raw.hours === 'night')) out.hours = raw.hours
   if (kind === 'check') {
     out.check = check(raw.check) ?? { attr: 'int', dc: 12 }
     const s = outcome(raw.success)
@@ -225,10 +245,12 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
 
 export function newTravelEvent(id: string, scope: EventScope = 'road'): TravelEventMod {
   return sanitizeTravelEvent(id, {
-    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : scope === 'lead' ? '新的線索事件' : scope === 'pregnancy' ? '新的懷孕事件' : '新的旅途事件', text: '',
+    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : scope === 'lead' ? '新的線索事件' : scope === 'pregnancy' ? '新的懷孕事件' : scope === 'lactation' ? '新的泌乳事件' : scope === 'brood' ? '新的苗床事件' : '新的旅途事件', text: '',
     ...(scope === 'dungeon' ? { triggers: ['trap'] as DungeonTrigger[] } : {}),
     ...(scope === 'parasite' ? { tags: ['adult' as const] } : {}),
     ...(scope === 'pregnancy' ? { tags: ['adult' as const, 'pregnancy' as const], subject: 'pc' as const, known: true } : {}),
+    ...(scope === 'lactation' ? { tags: ['adult' as const, 'lactation' as const], subject: 'pc' as const } : {}),
+    ...(scope === 'brood' ? { tags: ['adult' as const, 'monster_brood' as const] } : {}),
     options: [{ label: '答應', success: { text: '' } }, { label: '離開', success: { text: '你沒有多管。' } }],
   }, true)
 }
@@ -304,6 +326,12 @@ export function travelEventWarnings(t: RoadTemplate): string[] {
     if (!t.known && !t.options?.some((o) => o.reveal)) out.push('察覺事件沒有任何會「察覺」的選項：玩家只能等到中期自動察覺')
     if (!t.tags?.includes('pregnancy')) out.push('沒有勾「懷孕」內容標籤')
   }
+  if (t.scope === 'lactation') {
+    const text = JSON.stringify([t.title, t.text, t.options])
+    if (t.subject !== 'companion' && (text.includes('{a}') || text.includes('"$a"'))) out.push('寫了泌乳的夥伴（{a} 或 $a），可是這是主角的事件')
+    if (!t.tags?.includes('lactation')) out.push('沒有勾「泌乳」內容標籤')
+  }
+  if (t.scope === 'brood' && !t.tags?.includes('monster_brood')) out.push('沒有勾「怪物的苗床」內容標籤')
   if (t.scope === 'lead') {
     const text = JSON.stringify([t.title, t.text, t.options, t.offscreen])
     if ((t.cast ?? 0) < 1 && (/\{a他?\}/.test(text) || text.includes('"$a"'))) out.push('寫了登場角色甲（{a} 或 $a），可是登場角色是 0 位')

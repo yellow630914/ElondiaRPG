@@ -17,6 +17,7 @@ import * as leadEvents from '@/engine/leadEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as pregnancy from '@/engine/pregnancy'
 import * as brood from '@/engine/brood'
+import * as lactation from '@/engine/lactation'
 import * as pregnancyEvents from '@/engine/pregnancyEvents'
 import * as children from '@/engine/children'
 import * as deadlines from '@/engine/deadlines'
@@ -1465,6 +1466,7 @@ export const useGame = defineStore('game', () => {
     /** 懷孕與嬰兒（docs/FAMILY.md）：生產、通知、神殿的診察、育幼院、把孩子送到別的地方 */
     answerPregnancyEvent: (i: number) => run((s) => pregnancyEvents.answerPregnancyEvent(s, i)),
     answerBirth: (how: 'temple' | 'self', name?: string, place?: string) => run((s) => pregnancy.answerBirth(s, how, name, place)),
+    milk: (id: string) => run((s) => lactation.milk(s, id)),
     answerBroodBirth: (how: brood.BroodHow, fate?: brood.OffspringFate) => run((s) => brood.answerBroodBirth(s, how, fate)),
     extractBrood: (id: string) => run((s) => brood.extractBrood(s, id)),
     acknowledgeFamilyNotices: () => run((s) => pregnancy.acknowledgeFamilyNotices(s)),

@@ -48,7 +48,7 @@ export interface RoadOption {
   birth_bonus?: number
 }
 /** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts）、地下城與近郊（dungeonEvents.ts）、寄生物的發作（parasiteEvents.ts），或線索池的事件點（leadEvents.ts） */
-export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite' | 'lead' | 'pregnancy'
+export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite' | 'lead' | 'pregnancy' | 'lactation' | 'brood'
 /** 地下城事件的觸發點：觸發陷阱、打開寶箱、採集、在安全房長休之後 */
 export type DungeonTrigger = 'trap' | 'chest' | 'gather' | 'rest'
 export interface RoadTemplate {
@@ -84,11 +84,11 @@ export interface RoadTemplate {
   offscreen?: string
   /** 寄生物：哪一種（parasites.json 的 id） */
   parasite?: string
-  /** 寄生物：哪些階段（0 潛伏、1 發作、2 共生、3 支配；沒有時任何階段） */
+  /** 寄生物、苗床：哪些階段（0 潛伏、1 發作、2 共生、3 支配；沒有時任何階段） */
   stages?: number[]
   /** 寄生物、懷孕：哪些時機（step 走動、travel 旅途、rest 長休之後；沒有時任何時機） */
   moments?: ('step' | 'travel' | 'rest')[]
-  /** 懷孕（docs/FAMILY.md 第 5 節）：誰的事（pc 主角、companion 隊上懷孕的夥伴：文字 {a}、效果 $a） */
+  /** 懷孕、泌乳（docs/FAMILY.md 第 5、10 節）：誰的事（pc 主角、companion 隊上懷孕或泌乳的夥伴：文字 {a}、效果 $a） */
   subject?: 'pc' | 'companion'
   /** 懷孕：true = 孕期事件（已經察覺的人）；沒有 = 察覺事件（還沒察覺的人） */
   known?: boolean
@@ -102,6 +102,8 @@ export interface RoadTemplate {
   mixed?: boolean
   /** 懷孕：true 只有非自願懷上的、false 只有不是非自願的 */
   forced?: boolean
+  /** 苗床的事件（scope: brood，docs/FAMILY.md 第 13 節）：哪些種類（egg 卵生、live 胎生、parasite 寄生；沒有時不限）。文字 {m} 是留下苗床的怪物 */
+  brood_kinds?: ('egg' | 'live' | 'parasite')[]
   /** 懷孕：只在聚落裡 */
   in_settlement?: boolean
   /** 內容標籤（成人向、主角非自願……）：設定裡關掉的不出現 */

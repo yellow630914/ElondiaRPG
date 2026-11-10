@@ -8,7 +8,7 @@
 // 說明見 docs/CONTENT_EDITOR.md。
 
 import { applyFamilyRules, restoreFamilyRules, sanitizeFamilyRules, type FamilyRulesMod } from './familyMods'
-import { STAGE_ORDER } from './pregMarks'
+import { familyRules, STAGE_ORDER } from './pregMarks'
 import type { PregnancyCond } from './data'
 import type { PregnancyStage } from './types'
 import { FILTER_TAGS, type FilterTag } from './content'
@@ -1943,6 +1943,7 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
     if (p.stage_abilities?.some((list) => list.includes(id))) out.push(`寄生物「${p.name ?? pid}」（還沒馴服時依階段給的）`)
     if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後、有獸蟲派時可以用，不分先後）`)
   }
+  if ((familyRules.lactation as { ability?: string } | undefined)?.ability === id) out.push('泌乳的時候（懷孕與泌乳設定，docs/FAMILY.md 第 10.5 節）')
   if (lewdRules.slave_room?.abilities?.includes(id)) out.push('驛站的奴房（可能學會）')
   if (lewdRules.brothel?.patron?.default?.includes(id)) out.push('娼館的娼婦光顧時預設會教的')
   if (state) {

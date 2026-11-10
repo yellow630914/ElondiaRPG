@@ -75,11 +75,20 @@ export function broodBlock(state: GameState, id: string, unwilling = false): str
   return undefined
 }
 
-/** 讓主角變成苗床（透過效果「寄生物」寄生，報告裡記一筆）；不行時回傳空字串 */
-export function giveBrood(state: GameState, report: Report, id: string, unwilling = false): string {
+/** 讓主角變成苗床（透過效果「寄生物」寄生，報告裡記一筆）；monster 是留下它的怪物（記下來給事件與 AI 用）。不行時回傳空字串 */
+export function giveBrood(state: GameState, report: Report, id: string, unwilling = false, monster?: string): string {
   if (broodBlock(state, id, unwilling)) return ''
   const notes = applyEffects(state, report, [{ type: 'parasite', parasite: id, op: 'add' }])
+  const p = parasiteOf(pcOf(state), id)
+  if (p && monster && enemies[monster]) p.monster = monster
   return notes.join('；')
+}
+
+/** 留下這個苗床的怪物：名字與樣子（沒記下時是「不知名的魔物」） */
+export function broodMonster(state: GameState, id: string): { id?: string; name: string; desc?: string } {
+  const m = parasiteOf(pcOf(state), id)?.monster
+  const e = m ? enemies[m] : undefined
+  return e ? { id: e.id, name: e.name, ...(e.desc ? { desc: e.desc } : {}) } : { name: '不知名的魔物' }
 }
 
 /**
@@ -88,12 +97,13 @@ export function giveBrood(state: GameState, report: Report, id: string, unwillin
  */
 export function defeatBrood(state: GameState, report: Report, monsters: (string | undefined)[], degree: Degree): string {
   if (degree !== 'fail' && degree !== 'fumble') return ''
-  const enemy = monsters.map((m) => (m ? enemyBrood(m) : undefined)).find(Boolean)
+  const monster = monsters.find((m) => m && enemyBrood(m))
+  const enemy = monster ? enemyBrood(monster) : undefined
   if (!enemy) return ''
   const chance = (degree === 'fail' ? broodRules().defeat.fail : broodRules().defeat.fumble) * gameRule(state, 'broodMult')
   if (chance <= 0 || broodBlock(state, enemy, true)) return ''
   if (!withRng(state, (rng) => rng.chance(chance))) return ''
-  const note = giveBrood(state, report, enemy, true)
+  const note = giveBrood(state, report, enemy, true, monster)
   return note ? `${note}。` : ''
 }
 
@@ -101,13 +111,14 @@ export function defeatBrood(state: GameState, report: Report, monsters: (string 
  * 戰鬥中被植入（能力的 brood，combat.ts 的 finishCombat）：每一層各擲一次（× 苗床的機率），中了就變成那個苗床；
  * 非自願的來源。回傳日誌的一句話
  */
-export function settleImplants(state: GameState, report: Report, implants: Record<string, number[]> | undefined): string {
+export function settleImplants(state: GameState, report: Report, implants: Record<string, { chance: number; monster?: string }[]> | undefined): string {
   if (!implants) return ''
   const mult = gameRule(state, 'broodMult')
-  for (const [id, chances] of Object.entries(implants)) {
+  for (const [id, layers] of Object.entries(implants)) {
     if (mult <= 0 || broodBlock(state, id, true)) continue
-    if (!withRng(state, (rng) => chances.some((c) => rng.chance(c * mult)))) continue
-    const note = giveBrood(state, report, id, true)
+    const hit = withRng(state, (rng) => layers.find((l) => rng.chance(l.chance * mult)))
+    if (!hit) continue
+    const note = giveBrood(state, report, id, true, hit.monster)
     if (!note) continue
     report.outcome.summary = `${report.outcome.summary ?? ''}戰鬥中被植入的${parasiteDef(id)?.name ?? id}留在了體內。`
     report.outcome.tags = [...(report.outcome.tags ?? []), TAG]
@@ -269,7 +280,8 @@ export function answerBroodBirth(state: GameState, how: BroodHow, fate: Offsprin
     lines.push(`產後虛弱 ${days} 天。`)
     addLactation(state, 'pc', { kind: 'brood', ref: '產後', until: state.time.day + broodRules().live_lactation_days })
     state.broodBirths = (state.broodBirths ?? 0) + 1
-    report.narration = { ...report.narration, length: 'medium', focus: [`主角產下了 ${n} 隻${o.name}（一般的描寫，不是親密場景）`] }
+    const m = broodMonster(state, ev.parasite)
+    report.narration = { ...report.narration, length: 'medium', focus: [`主角產下了 ${n} 隻${o.name}（一般的描寫，不是親密場景）；牠們是${m.name}的後代${m.desc ? `（${m.name}：${m.desc}）` : ''}`] }
   } else if (how === 'symbiosis' && b.symbiosis) {
     lines.push(`你沒有把${def.name}排出來，而是讓它在體內安頓下來，和你一起呼吸。`)
     effects.push({ type: 'perk', perk: b.symbiosis, direct: true })
