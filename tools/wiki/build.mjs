@@ -127,6 +127,7 @@ export const GROUPS = [
     { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
+    { page: 'AI 的上下文與工具調用計畫', src: 'docs/plan/roadmap/AGENT_MODE_PLAN.md', desc: '不編接不上的鉤子、地圖轉文字、伏筆、Agent 模式（R28）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
