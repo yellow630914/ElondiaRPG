@@ -30,6 +30,12 @@ const settings = useSettings()
 // 親密場景還沒記下性經歷（自動記關著、失敗時，可以手動記；docs/LEWD_STATS.md 第 29 節）
 const canRecordSex = computed(() => !!game.state && settings.sexRecords && intimateReport(props.report) && settings.ready('sexlog') && !sexLogged(game.state, props.report.report_id))
 const recordingSex = computed(() => game.recordingSex.has(props.report.report_id))
+// 記錄中不設 disabled（有些瀏覽器停用的按鈕不顯示滑過的說明），改成閃動、按了不重送
+const sexTitle = computed(() => recordingSex.value
+  ? '正在記下性經歷…（等「性經歷記錄」的模型回應；太久沒回應會依「AI 判定逾時」放棄，之後可以再按）'
+  : narration.value?.status === 'streaming'
+    ? '經過寫完之後才能記下性經歷'
+    : '記下性經歷：請「性經歷記錄」的模型讀這段經過，記下誰和誰發生了關係、性侍奉、初體驗（每則日誌只記一次）')
 
 // 回退（stores/undo.ts）：最近幾輪的日誌可以撤銷，連同之後的日誌
 const undoSteps = computed(() => {
@@ -297,9 +303,9 @@ async function copyPrompt() {
         @click="game.narrate(report, { manual: !settings.aiNarration })"
       ><GameIcon name="edit" :size="15" /></button>
       <button
-        v-if="canRecordSex" class="small ghost tool" :disabled="recordingSex || narration?.status === 'streaming'" aria-label="記下性經歷"
-        title="記下性經歷：請「性經歷記錄」的模型讀這段經過，記下誰和誰發生了關係、性侍奉、初體驗（每則日誌只記一次）"
-        @click="game.recordSex(report, undefined, { manual: true })"
+        v-if="canRecordSex" class="small ghost tool" :class="{ recording: recordingSex }" :disabled="!recordingSex && narration?.status === 'streaming'"
+        :aria-disabled="recordingSex" :aria-label="recordingSex ? '正在記下性經歷…' : '記下性經歷'" :title="sexTitle"
+        @click="!recordingSex && game.recordSex(report, undefined, { manual: true })"
       ><GameIcon name="heart" :size="15" /></button>
       <button
         v-if="canContinue" class="small ghost tool" :class="{ active: continuing }" aria-label="續寫"
@@ -371,6 +377,10 @@ async function copyPrompt() {
 .tools { display: flex; justify-content: flex-end; gap: 2px; margin-top: 4px; }
 .tool { display: grid; place-items: center; width: 28px; height: 26px; padding: 0; color: var(--muted); }
 .tool:hover:not(:disabled) { color: var(--accent); }
+/* 正在記下性經歷：心形閃動 */
+.tool.recording { color: #ff8cc8; cursor: progress; animation: sex-pulse 1.1s ease-in-out infinite; }
+@keyframes sex-pulse { 50% { opacity: 0.35; transform: scale(0.85); } }
+:global(html[data-fx='off']) .tool.recording { animation: none; }
 
 .check { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 6px 0; }
 .d20 {

@@ -74,4 +74,27 @@ describe('record sex after an intimate scene', () => {
     await g.recordSex(t, '……')
     expect(providers.completeText).not.toHaveBeenCalled()
   })
+
+  it('gives up after the judge timeout with no reply, so the heart can be pressed again', async () => {
+    const { g, settings, providers } = await setup()
+    const { sexLogged } = await import('@/engine/sexRecord')
+    settings.judgeTimeoutMin = 1
+    // 模型一直不回應：只在被中斷時結束
+    vi.mocked(providers.completeText).mockImplementationOnce((_p, _c, _prompt, signal) => new Promise((_, reject) => {
+      signal!.addEventListener('abort', () => reject(new Error('aborted')))
+    }))
+    const r = scene(g.state!)
+    vi.useFakeTimers()
+    try {
+      const done = g.recordSex(r, '……', { manual: true })
+      await vi.waitFor(() => expect(g.recordingSex.has(r.report_id)).toBe(true))
+      await vi.advanceTimersByTimeAsync(60_000)
+      await done
+    } finally {
+      vi.useRealTimers()
+    }
+    expect(g.recordingSex.has(r.report_id)).toBe(false)
+    expect(sexLogged(g.state!, r.report_id)).toBe(false)
+    expect(g.error).toContain('記下性經歷逾時')
+  })
 })
