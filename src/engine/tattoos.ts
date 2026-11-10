@@ -24,6 +24,8 @@ export interface TattooTemplate {
   adult?: boolean
   /** 紋著的時候泌乳（淫紋・乳泉；docs/FAMILY.md 第 10 節） */
   lactation?: boolean
+  /** 受孕倍率（淫紋・子宮 1.5；docs/FAMILY.md 第 3 節） */
+  fertility?: number
   /** 內容標籤（content.ts）：內容篩選關掉時刺青店不列出 */
   content_tags?: string[]
 }

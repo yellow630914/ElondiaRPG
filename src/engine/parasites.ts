@@ -39,6 +39,8 @@ export interface ParasiteDef {
   stage_abilities?: string[][]
   /** 各階段開戰時帶著的慾望（慾望上限的比例；失控） */
   stage_lust?: number[]
+  /** 受孕倍率（docs/FAMILY.md 第 3 節）：侵蝕度到 min 以上、沒有沉睡時，受孕的機率 × mult */
+  fertility?: { min: number; mult: number }
   /** 解咒：DC 與價錢的基準（侵蝕度越高越難、越貴）；沒有時不能解咒 */
   remove?: { dc: number; price: number }
   /** 刻印師把淫紋紋回來的價錢 */

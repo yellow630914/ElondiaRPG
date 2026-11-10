@@ -16,6 +16,7 @@ import { inferMaterialTier, maxMaterialTier } from '@/engine/materialInfo'
 import { TOOL_KINDS, toolSummary } from '@/engine/tools'
 import { choosablePerks, CRAFT_IDS, craftRules, homeRules, type FurniturePlace } from '@/engine/data'
 import { PLACE_NAME } from '@/engine/homes'
+import { CONTENT_TAGS, FILTER_TAGS } from '@/engine/content'
 import { categoryIconSource, gearIconSource, type IconSource } from '@/engine/itemIcons'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -108,6 +109,14 @@ const materials = computed(() => {
 
 // ---- 欄位 ----
 const use = computed(() => (draft.value.use ??= {}) as ItemUse)
+// 內容標籤（商店照內容篩選上架）
+function toggleContentTag(t: string, on: boolean) {
+  const set = new Set(draft.value.content_tags ?? [])
+  if (on) set.add(t)
+  else set.delete(t)
+  if (set.size) draft.value.content_tags = FILTER_TAGS.filter((x) => set.has(x))
+  else delete draft.value.content_tags
+}
 // 吃喝可以給的非戰鬥狀態（用餐、喝酒、磨利、自建的……；奴隸印記這類由規則加上的除外）
 const conditionList = computed(() => {
   void content.version
@@ -127,7 +136,7 @@ const toolText = computed(() => toolSummary(draft.value.tool))
 // 家具
 const furn = computed(() => (draft.value.furniture ??= { places: ['indoor'] }))
 function setFurnFunction(v: string) {
-  if (v === 'bed' || v === 'workbench' || v === 'garden' || v === 'training') furn.value.function = v
+  if (v === 'bed' || v === 'workbench' || v === 'garden' || v === 'training' || v === 'crib') furn.value.function = v
   else delete furn.value.function
   if (v === 'workbench') furn.value.craft ??= 'smithing'
   else delete furn.value.craft
@@ -392,6 +401,10 @@ function setFuel(v: string) {
       </div>
       <label class="block">描述 <textarea v-model="draft.desc" rows="2" maxlength="200" /></label>
       <label class="check small"><input type="checkbox" :checked="!!draft.adult" @change="draft.adult = ($event.target as HTMLInputElement).checked || undefined" /> 成人向（內容編輯器的篩選用）</label>
+      <div class="row small"><span>內容標籤 <Hint text="設定的內容篩選關掉這些標籤時，商店不賣（例如懷孕的避子湯、泌乳的道具）。" /></span>
+        <label v-for="t in FILTER_TAGS" :key="t" class="check"><input type="checkbox" :checked="draft.content_tags?.includes(t)" @change="toggleContentTag(t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}</label>
+      </div>
+      <label v-if="draft.category === 'equipment'" class="check small"><input type="checkbox" :checked="!!draft.lactation" @change="draft.lactation = ($event.target as HTMLInputElement).checked || undefined" /> 戴著的時候泌乳 <Hint text="泌乳之環這類（docs/FAMILY.md 第 10 節）：內容篩選打開「泌乳」、身體會泌乳的人戴著時泌乳。" /></label>
       <div class="block icon-row"><span>圖示</span><IconField v-model="draft.icon" :fallback="iconFallback" /></div>
       <p v-if="draft.category === 'material'" class="small muted">材料的價格是商人的收購價（全額收購）；其他物品賣出時是一半。</p>
     </FoldSet>
@@ -507,6 +520,10 @@ function setFuel(v: string) {
         </label>
       </div>
       <label class="check small"><input v-model="use.escape" type="checkbox" /> 傳送：全隊立刻脫離戰鬥</label>
+      <div class="row small">
+        <label title="內容篩選打開「泌乳」、身體會泌乳的人才能用；給自由的夥伴要先說服">泌乳幾天 <input v-model.number="use.lactation" type="number" min="0" max="60" class="num" /></label>
+        <label class="check"><input type="checkbox" :checked="!!use.stop_lactation" @change="use.stop_lactation = ($event.target as HTMLInputElement).checked || undefined" /> 斷乳（拿掉道具與事件造成的泌乳）</label>
+      </div>
       <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用 <Hint text="回復生命、法術環以外的效果一律只能在戰鬥中用。" /></label>
     </FoldSet>
 
@@ -576,6 +593,7 @@ function setFuel(v: string) {
             <option value="workbench">高階工作台</option>
             <option value="garden">苗圃（可以播種）</option>
             <option value="training">調教室（成人向：在家調教加值、奴隸每天順從 +1）</option>
+            <option value="crib">搖籃（家裡的嬰兒睡在這裡；可有可無）</option>
           </select>
         </label>
         <label v-if="furn.function === 'training'">調教加值 <input v-model.number="furn.training" type="number" min="1" max="3" /></label>

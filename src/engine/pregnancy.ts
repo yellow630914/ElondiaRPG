@@ -8,6 +8,8 @@
 //   不在隊上的人在他的城裡自動生下，嬰兒照 children.ts 的 autoPlace 自動安排。
 // - 不做流產：生產失敗只會讓產後虛弱變長。
 
+import { tattooTemplate } from './tattoos'
+import { parasiteDef } from './parasites'
 import familyJson from '@data/rules/family.json'
 import { attrParts, rollBreakdown, sumParts } from './rollParts'
 import { addChild, autoPlace, birthPlaceOptions, childrenNote, hasTemple, nurseryRefusal, placeText } from './children'
@@ -29,7 +31,7 @@ import { baseReport } from './town'
 import type { Character, ChildPlace, GameState, PregnancyStage, PregnancyState, Report } from './types'
 
 interface Rules {
-  conception: { base: number; times: Record<string, number>; race: { same: number; mixed: number; low_fertility: Record<string, number> }; max: number; brothel: number; tattoos?: Record<string, number>; parasites?: Record<string, { min: number; mult: number }> }
+  conception: { base: number; times: Record<string, number>; race: { same: number; mixed: number; low_fertility: Record<string, number> }; max: number; brothel: number }
   genders: { carry: string[]; sire: string[]; body_carry: string[]; body_sire: string[] }
   morning_sickness: { stage: PregnancyStage; chance: number; condition: string }
   discover: { auto_stage: PregnancyStage }
@@ -160,9 +162,10 @@ export function conceptionChance(state: GameState, input: ConceiveInput): { chan
   race *= c.race.low_fertility[mother.race] ?? 1
   if (fatherRace !== mother.race) race *= c.race.low_fertility[fatherRace] ?? 1
   let extra = 1
-  for (const t of mother.character?.tattoos ?? []) extra *= c.tattoos?.[t.template ?? ''] ?? 1
+  // 刺青（淫紋・子宮）與寄生物（魅魔的契紋）的受孕倍率：寫在各自的資料（fertility）
+  for (const t of mother.character?.tattoos ?? []) extra *= (t.template ? tattooTemplate(t.template)?.fertility : undefined) ?? 1
   for (const p of mother.character?.parasites ?? []) {
-    const rule = c.parasites?.[p.id]
+    const rule = parasiteDef(p.id)?.fertility
     if (rule && p.corruption >= rule.min && !p.dormant) extra *= rule.mult
   }
   return { chance: Math.min(c.max, c.base * times * race * extra * mult), ...(father ? { father } : {}) }

@@ -65,6 +65,9 @@ export function sanitizeTattooMod(raw: Partial<TattooMod>, custom: boolean): Tat
   if (raw.adult) out.adult = true
   // 泌乳（docs/FAMILY.md 第 10 節）：紋著的時候泌乳；內容標籤（篩選關掉時刺青店不列出）
   if (kind === 'plain' && raw.lactation) out.lactation = true
+  // 受孕倍率（docs/FAMILY.md 第 3 節；1 = 沒有效果，不存）
+  const fert = Math.round(Math.max(0, Math.min(5, Number(raw.fertility) || 1)) * 100) / 100
+  if (kind === 'plain' && fert !== 1) out.fertility = fert
   const tags = [...new Set((Array.isArray(raw.content_tags) ? raw.content_tags : []).filter((t): t is FilterTag => (FILTER_TAGS as string[]).includes(t)))]
   if (tags.length) out.content_tags = tags
   if (custom) out.custom = true

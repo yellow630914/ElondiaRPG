@@ -159,6 +159,12 @@ function remove() {
     game.error = e instanceof Error ? e.message : String(e)
   }
 }
+// 受孕倍率（docs/FAMILY.md 第 3 節）：1 是沒有效果（拿掉）
+function setFertility(k: 'min' | 'mult', v: number) {
+  const f = { min: draft.value.fertility?.min ?? 0, mult: draft.value.fertility?.mult ?? 1, [k]: Number.isFinite(v) ? v : k === 'mult' ? 1 : 0 }
+  if (f.mult === 1) delete draft.value.fertility
+  else draft.value.fertility = f
+}
 </script>
 
 <template>
@@ -215,6 +221,10 @@ function remove() {
     <FoldSet>
       <template #legend>成長與解咒</template>
       <div class="grid">
+        <label><span>受孕倍率 <Hint text="侵蝕度到下一格以上、沒有沉睡時，受孕的機率乘上這個倍率（魅魔的契紋：60 以上 ×1.5）；1 是沒有效果。docs/FAMILY.md 第 3 節。" /></span>
+          <input type="number" min="0" max="5" step="0.1" :value="draft.fertility?.mult ?? 1" @input="setFertility('mult', Number(($event.target as HTMLInputElement).value))" />
+        </label>
+        <label v-if="draft.fertility">侵蝕度從 <input type="number" min="0" max="100" :value="draft.fertility.min" @input="setFertility('min', Number(($event.target as HTMLInputElement).value))" /> 開始</label>
         <label><span>每天自己長 <Hint text="侵蝕度每天自己增加多少（0～50）；發作時屈服也會上升。短期寄生通常很快（內建的種子 30，三天到支配）。" /></span><input v-model.number="draft.grow_per_day" type="number" min="0" :max="L.grow[1]" /></label>
         <label class="check"><input v-model="removable" type="checkbox" /> 可以解咒（神殿、刻印師）</label>
         <template v-if="draft.remove">

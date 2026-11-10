@@ -1,7 +1,7 @@
 # 懷孕、嬰兒、泌乳與怪物的苗床（成人向）
 
 > 上層：[ROADMAP](../ROADMAP.md) R28。依賴：[LEWD_STATS](../../LEWD_STATS.md) 第 29 節（性經歷：受孕在這裡判定）、[ADULT_EVENTS](../../ADULT_EVENTS.md) 第 6 節（寄生物：狀態、階段、事件的做法照這套）、[HOMES](../../HOMES.md)（房子、家具、留守）、[COMPANIONS](../../COMPANIONS.md)（夥伴、NPC 登錄）。
-> **進度（2026-11-10）**：**P1～P4、P5a（事件搬家、孕期事件、事件編輯器）、P5b（條件與效果）完成**，規則寫在 [FAMILY](../../FAMILY.md)；和這份計畫不同的地方記在第 11.1～11.5 節。接著是 P5c、P5d、P6。
+> **進度（2026-11-10）**：**P1～P4、P5a（事件搬家、孕期事件、事件編輯器）、P5b（條件與效果）、P5c（物品、刺青、寄生物的欄位）完成**，規則寫在 [FAMILY](../../FAMILY.md)；和這份計畫不同的地方記在第 11.1～11.5 節。接著是 P5d、P6。
 > **第三版（2026-11-10，定稿）**：所有問題都確認了（第 0 節 10～18），可以開工。第二版加上怪物的苗床（第 12 節，分卵生、胎生、寄生）；第三版讓一般怪物也能在色情戰敗事件造成苗床、放回巢穴沒有後果。做完之後規則寫進新的系統文件 `docs/FAMILY.md`，這份留作設計紀錄。
 
 ## 0. 已決定的事
@@ -415,7 +415,7 @@ interface LactationState {
 | **P2 察覺劇情** ✅ | 主角 6 件、夥伴 3 件的察覺事件；人際關係的近況；`scope: pregnancy` | `travel_events.json`（或新的 `family.json` 的 `events`）、`parasiteEvents.ts` 的做法照抄一份 |
 | **P3 泌乳** ✅ | 狀態、效果、6 樣道具、乳香草、淫紋・乳泉、篩選；給夥伴用的同意檢定 | `lactation.ts`、`items.json`、`gear.json`、`tattoos.json`、`crafts.json`、`lewd.ts`（敏感加值）、`combat.ts` 的 `initLust` |
 | **P4 戰鬥與形象圖** ✅ | 懷孕的雙面效應、泌乳的戰鬥效果、生圖的描述 | `combat.ts`、`portraits` 的提示詞 |
-| **P5 內容編輯器與孕期事件**（P5a、P5b ✅） | 第 10 節，分四批：P5a 事件搬家、孕期事件與事件編輯器；P5b 條件與效果；P5c 物品、刺青、寄生物的欄位；P5d 設定頁。文件：CONTENT_EDITOR、EFFECTS、STORY_QUESTS、CONTENT_DEPENDENCIES、FAMILY | `travel_events.json`、`pregnancyEvents.ts`、`travelEventMods.ts`、`storyFlags.ts`、`effects.ts`、`storyMods.ts`、`mods.ts`、`components/content/*` |
+| **P5 內容編輯器與孕期事件**（P5a、P5b、P5c ✅） | 第 10 節，分四批：P5a 事件搬家、孕期事件與事件編輯器；P5b 條件與效果；P5c 物品、刺青、寄生物的欄位；P5d 設定頁。文件：CONTENT_EDITOR、EFFECTS、STORY_QUESTS、CONTENT_DEPENDENCIES、FAMILY | `travel_events.json`、`pregnancyEvents.ts`、`travelEventMods.ts`、`storyFlags.ts`、`effects.ts`、`storyMods.ts`、`mods.ts`、`components/content/*` |
 | **P6 怪物的苗床** | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
 
 ### 11.1 P1 實作時和計畫不同的地方（2026-11-10）
@@ -458,6 +458,13 @@ interface LactationState {
 - **察覺事件不在走動時擲**，只有孕期事件會。
 - **察覺事件與孕期事件共用冷卻**（12 小時）；最近出現過的避開 6 件。
 - 夥伴的孕期事件裡，主角幫忙揹行李會得到「腰痠背痛」（狀態是給主角的）。
+
+### 11.6 P5b、P5c 實作時和計畫不同的地方（2026-11-10）
+
+- **條件「泌乳」只看主角**；「懷孕」可以選主角或隊伍裡任何一人。
+- **效果「泌乳」的對象只有主角或隊員**（不在隊上的 NPC 沒有角色資料時不做）；「受孕」可以指定不在隊上的 NPC。
+- **用量檢查**：刪固定 NPC 時列出特殊任務裡指定他的懷孕、泌乳效果；事件裡的引用和其他效果一樣不檢查（現在的事件本來就不檢查 NPC 引用）。
+- 補了一個 P1 留下的漏洞：物品的整理會把家具功能「搖籃」丟掉（自建或修改過的搖籃存檔後變成裝飾），這次修好。
 
 P6 和 P1～P5 互不依賴（只共用「產後虛弱」與泌乳的來源），可以在 P1 之後任何時候做。
 

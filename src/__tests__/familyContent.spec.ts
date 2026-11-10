@@ -2,10 +2,15 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_FILTERS, setContentFilters } from '@/engine/content'
 import { applyEffects } from '@/engine/effects'
 import { isLactating, lactationSources } from '@/engine/lactation'
-import { sanitizeCond } from '@/engine/mods'
+import { sanitizeCond, sanitizeItem } from '@/engine/mods'
+import { itemRules } from '@/engine/data'
+import { sanitizeTattooMod } from '@/engine/tattooMods'
+import { addTattoo, tattooRules } from '@/engine/tattoos'
+import { sanitizeParasiteMod } from '@/engine/parasiteMods'
+import { parasiteRules } from '@/engine/parasites'
 import { generateNpc, registerNpc } from '@/engine/npcs'
 import { pcOf } from '@/engine/party'
-import { syncPregnancyMarks } from '@/engine/pregnancy'
+import { conceptionChance, syncPregnancyMarks } from '@/engine/pregnancy'
 import { newGame, withRng } from '@/engine/state'
 import { condMet } from '@/engine/storyFlags'
 import { sanitizeEffects } from '@/engine/storyMods'
@@ -110,5 +115,30 @@ describe('效果：懷孕、泌乳', () => {
     const masc = game()
     pcOf(masc.state).body = 'masc'
     expect(applyEffects(masc.state, report(masc.state), [{ type: 'lactation', op: 'add', target: 'pc', days: 5 }]).join()).toContain('不會泌乳')
+  })
+})
+
+describe('物品、刺青、寄生物的新欄位', () => {
+  it('整理之後保留：泌乳、斷乳、內容標籤、搖籃、受孕倍率', () => {
+    const ring = itemRules.items.find((i) => i.name === '泌乳之環')!
+    expect(sanitizeItem(ring.name, ring as never, false)).toMatchObject({ lactation: true, content_tags: ['lactation'] })
+    const tea = itemRules.items.find((i) => i.name === '催乳茶')!
+    expect(sanitizeItem(tea.name, tea as never, false).use).toMatchObject({ lactation: 3 })
+    const stop = itemRules.items.find((i) => i.name === '斷乳藥')!
+    expect(sanitizeItem(stop.name, stop as never, false).use).toMatchObject({ stop_lactation: true })
+    const crib = itemRules.items.find((i) => i.name === '搖籃')!
+    expect(sanitizeItem(crib.name, crib as never, false).furniture?.function).toBe('crib')
+    expect(sanitizeTattooMod(tattooRules.templates.lewd_womb!, false)).toMatchObject({ fertility: 1.5 })
+    expect(sanitizeTattooMod(tattooRules.templates.lewd_spring!, false)).toMatchObject({ lactation: true, content_tags: ['lactation'] })
+    expect(sanitizeParasiteMod('succubus_mark', parasiteRules.parasites.succubus_mark!).fertility).toEqual({ min: 60, mult: 1.5 })
+  })
+
+  it('受孕倍率從刺青與寄生物的資料讀：淫紋・子宮 ×1.5', () => {
+    const { state, pc } = game()
+    const man = registerNpc(state, withRng(state, (rng) => generateNpc(state, rng, { level: 1, location: state.location, gender: 'male', race: 'human' })))
+    const input = () => ({ report: report(state), mother: 'pc', partners: [{ id: man.id, name: man.name }], times: 1 })
+    expect(conceptionChance(state, input())?.chance).toBeCloseTo(0.15)
+    addTattoo(pc, { kind: 'plain', place: 'belly', name: '淫紋・子宮', desc: '', template: 'lewd_womb' }, state.time)
+    expect(conceptionChance(state, input())?.chance).toBeCloseTo(0.225)
   })
 })

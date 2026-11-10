@@ -10,6 +10,7 @@ import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
 import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
+import { CONTENT_TAGS, FILTER_TAGS } from '@/engine/content'
 
 // 刺青圖樣（普通刺青、誓約印記）的編輯表單。角色身上的刺青是刺上時存的一份，改圖樣只影響之後刺的
 const props = defineProps<{ id: string }>()
@@ -78,6 +79,14 @@ function remove() {
     game.error = e instanceof Error ? e.message : String(e)
   }
 }
+// 內容標籤（內容篩選關掉時刺青店不列出）
+function toggleContentTag(t: string, on: boolean) {
+  const set = new Set(draft.value.content_tags ?? [])
+  if (on) set.add(t)
+  else set.delete(t)
+  if (set.size) draft.value.content_tags = FILTER_TAGS.filter((x) => set.has(x))
+  else delete draft.value.content_tags
+}
 </script>
 
 <template>
@@ -116,6 +125,11 @@ function remove() {
         <label>造成的慾望 + <input type="number" min="0" max="5" :value="draft.lust?.bonus ?? 0" @input="draft.lust = { ...draft.lust, bonus: Number(($event.target as HTMLInputElement).value) || undefined }" /></label>
         <label>另外加的價錢 <input v-model.number="draft.price" type="number" min="0" max="10000" /></label>
         <label class="check"><input v-model="draft.adult" type="checkbox" /> 成人向</label>
+        <label><span>受孕倍率 <Hint text="身上有這個刺青時受孕的機率乘上這個倍率（淫紋・子宮 1.5）；1 是沒有效果。docs/FAMILY.md 第 3 節。" /></span><input type="number" min="0" max="5" step="0.1" :value="draft.fertility ?? 1" @input="draft.fertility = Number(($event.target as HTMLInputElement).value) === 1 ? undefined : Number(($event.target as HTMLInputElement).value)" /></label>
+        <label class="check"><input type="checkbox" :checked="!!draft.lactation" @change="draft.lactation = ($event.target as HTMLInputElement).checked || undefined" /> 紋著的時候泌乳</label>
+      </div>
+      <div class="row small"><span>內容標籤 <Hint text="內容篩選關掉這些標籤時，刺青店不列出這個圖樣（淫紋・乳泉是「泌乳」）。" /></span>
+        <label v-for="t in FILTER_TAGS" :key="t" class="check"><input type="checkbox" :checked="draft.content_tags?.includes(t)" @change="toggleContentTag(t, ($event.target as HTMLInputElement).checked)" /> {{ CONTENT_TAGS[t].name }}</label>
       </div>
     </FoldSet>
     <FoldSet>

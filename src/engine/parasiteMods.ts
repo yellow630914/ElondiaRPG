@@ -135,6 +135,11 @@ export function sanitizeParasiteMod(id: string, raw: Partial<ParasiteMod>, refs:
   if (abil.some((a) => a.length)) out.stage_abilities = abil
   const lust = perStage(raw.stage_lust, (x) => dec(x, L.lust))
   if (lust.some((n) => n)) out.stage_lust = lust
+  // 受孕倍率（docs/FAMILY.md 第 3 節）：侵蝕度從多少開始、倍率（1 = 沒有效果，不存）
+  if (raw.fertility && typeof raw.fertility === 'object') {
+    const mult = Math.round(Math.max(0, Math.min(5, Number(raw.fertility.mult) || 1)) * 100) / 100
+    if (mult !== 1) out.fertility = { min: int(raw.fertility.min, [0, 100], 0), mult }
+  }
   if (raw.remove && typeof raw.remove === 'object') out.remove = { dc: int(raw.remove.dc, L.dc, 14), price: int(raw.remove.price, L.price, 1000) }
   // 刻印師把淫紋紋回來的價錢（沒寫是 500；寫了照寫，0 是免費）
   if (raw.reink_price !== undefined && raw.reink_price !== null && Number.isFinite(Number(raw.reink_price))) out.reink_price = int(raw.reink_price, L.price, 500)
