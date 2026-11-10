@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { settleImplants } from './brood'
 import { postpartumMaxHp, pregnancyTwoFace } from './pregCombat'
 import { lactationCombat } from './lactation'
 import { noteFight } from './bestiary'
@@ -169,6 +170,8 @@ export interface Combatant {
   slave?: boolean
   /** 淫器展開的武器傷害倍率（fusion.ts；穿著的天數決定） */
   weaponMult?: number
+  /** 被植入的苗床（能力的 brood）：苗床 → 每一層的機率；戰鬥結束時擲（brood.ts 的 settleImplants） */
+  implants?: Record<string, number[]>
 }
 
 export type CombatAction =
@@ -1807,6 +1810,15 @@ function slaveMult(a: AbilityDef, target: Combatant): number {
   return a.vs_slave && target.slave ? a.vs_slave : 1
 }
 
+/** 能力的 brood：怪物命中隊伍這邊的人時記一層植入（戰鬥結束時只有主角的會擲，brood.ts 的 settleImplants） */
+function implantBrood(actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[]) {
+  if (!a.brood || actor.side !== 'enemy' || target.side !== 'party' || target.ally || !tagsAllowed(['monster_brood', 'pc_unwilling'])) return
+  const id = a.brood.parasite ?? (actor.defId ? enemies[actor.defId]?.brood : undefined)
+  if (!id) return
+  ;((target.implants ??= {})[id] ??= []).push(a.brood.chance)
+  effects.push({ type: 'note', target: target.id, text: '被植入了什麼東西' })
+}
+
 function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: AbilityDef, targetId?: string, wantedCircle?: number) {
   // 支付代價（升環不多花行動點）
   actor.ap -= abilityApCost(base)
@@ -1863,6 +1875,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
             dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target), crit: r.lucky })
           }
           applyStatuses(combat, rng, actor, a, target, 'hit', effects, statusDice)
+          implantBrood(actor, a, target, effects)
         }
       } else if (a.resolve === 'save') {
         const s = savingThrow(rng, target, a.save ?? 'dex', saveDc(actor, a))
@@ -2513,6 +2526,8 @@ export function finishCombat(state: GameState): Report {
   }
   // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）
   settleLust(state, combat, report)
+  // 怪物的苗床：戰鬥中被植入的（打贏也算，卵已經在體內了；淫鬥場不算）
+  if (!combat.arena) settleImplants(state, report, combat.combatants.find((c) => c.id === pc.id)?.implants)
   // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）；園區改成那個園區的專屬戰敗
   if (combat.arena) settleArena(state, combat, report)
   else if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes, combat.combatants.reduce((n, c) => n + (c.side === 'party' ? c.climaxes ?? 0 : 0), 0)))

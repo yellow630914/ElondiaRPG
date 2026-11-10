@@ -1,6 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_FILTERS, setContentFilters } from '@/engine/content'
-import { enemies, itemDef, perkDef } from '@/engine/data'
+import { finishCombat, startCombat } from '@/engine/combat'
+import { sanitizeAbility, sanitizeEnemy, parasiteUsage } from '@/engine/mods'
+import { sanitizeParasiteMod } from '@/engine/parasiteMods'
+import { abilities, enemies, itemDef, perkDef } from '@/engine/data'
 import { applyDefeatResponse } from '@/engine/defeat'
 import { applyEffects } from '@/engine/effects'
 import { enterLocation, standOn } from '@/engine/grid'
@@ -199,5 +202,41 @@ describe('魔法物品店的取出', () => {
     expect(state.money_cc).toBe(before - parasiteRules.brood_rules!.extract.price)
     const p = parasiteOf(pcOf(state), 'brood_leech')
     expect(p === undefined || p.corruption === 5).toBe(true)
+  })
+})
+
+describe('戰鬥中被植入', () => {
+  it('成人向怪物的能力寫了植入苗床；苗床用使用者的', () => {
+    expect(abilities.lp_ovipositor!.brood).toEqual({ chance: 0.15 })
+    expect(enemies.lp_brood_wasp!.brood).toBe('brood_wasp_egg')
+  })
+
+  it('戰鬥結束時擲植入的層數（打贏也算）；「主角非自願」關掉時不會', () => {
+    const run = () => {
+      const state = game()
+      state.options = { ...state.options, broodMult: 3 }
+      const combat = startCombat(state, [['lp_brood_wasp', 1]])
+      combat.combatants.find((c) => c.id === pcOf(state).id)!.implants = { brood_wasp_egg: [0.5] }
+      for (const c of combat.combatants) if (c.side === 'enemy') c.hp = 0
+      combat.status = 'victory'
+      const report = finishCombat(state)
+      return { state, report }
+    }
+    const { state, report } = run()
+    expect(parasiteOf(pcOf(state), 'brood_wasp_egg')).toBeTruthy()
+    expect(report.outcome.summary).toContain('蜂卵')
+    setContentFilters({ pc_unwilling: false })
+    expect(parasiteOf(pcOf(run().state), 'brood_wasp_egg')).toBeUndefined()
+  })
+})
+
+describe('編輯器的整理', () => {
+  it('怪物的苗床、能力的植入、寄生物的苗床欄位都保留；不是苗床的拿掉', () => {
+    expect(sanitizeEnemy('lp_brood_wasp', enemies.lp_brood_wasp as never, false).brood).toBe('brood_wasp_egg')
+    expect(sanitizeEnemy('wolf', { ...enemies.wolf, brood: 'succubus_mark' } as never, false).brood).toBeUndefined()
+    expect(sanitizeAbility('lp_ovipositor', { ...abilities.lp_ovipositor, brood: { chance: 3, parasite: 'brood_slug' } } as never, false).brood).toEqual({ chance: 1, parasite: 'brood_slug' })
+    expect(sanitizeAbility('lp_ovipositor', { ...abilities.lp_ovipositor, brood: { chance: 0.2, parasite: 'parasite_seed' } } as never, false).brood).toEqual({ chance: 0.2 })
+    for (const [id, d] of BROODS) expect(sanitizeParasiteMod(id, d).brood, id).toEqual(d.brood)
+    expect(parasiteUsage('brood_goblin')).toContain('怪物「哥布林」的苗床')
   })
 })

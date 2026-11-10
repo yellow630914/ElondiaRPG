@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, actionRules, ATTR_IDS, attrName, companionRules, itemRules, type CheckFilter } from '@/engine/data'
+import { abilities, actionRules, ATTR_IDS, attrName, companionRules, itemRules, perkRules, type CheckFilter } from '@/engine/data'
 import { gearRules, SLOTS, slotsFor } from '@/engine/gear'
 import {
   builtinParasite, currentParasite, PARASITE_CATEGORY_NAME, PARASITE_KIND_NAME, PARASITE_LIMITS, TWO_FACE_KEYS, TWO_FACE_NAME,
   type ParasiteCategory, type ParasiteMod,
 } from '@/engine/parasiteMods'
-import { parasiteRules } from '@/engine/parasites'
+import { parasiteRules, type BroodDef, type BroodKind } from '@/engine/parasites'
+import { BROOD_KIND_NAME } from '@/engine/brood'
 import { placeName, TATTOO_PLACES } from '@/engine/tattoos'
 import type { GearSlot } from '@/engine/types'
 import { useContent } from '@/stores/content'
@@ -89,7 +90,36 @@ const problem = computed(() => {
 function setCategory(c: ParasiteCategory) {
   draft.value.category = c
   if (c === 'tameable') draft.value.tamed ??= { scene: '', text: '' }
+  if (c === 'brood') draft.value.brood ??= { kind: 'egg', yields: [] }
+  else delete draft.value.brood
 }
+// 苗床（docs/FAMILY.md 第 13 節）
+const brood = computed(() => (draft.value.brood ??= { kind: 'egg' }) as BroodDef)
+function setBroodKind(k: BroodKind) {
+  const b = brood.value
+  b.kind = k
+  if (k === 'live') {
+    delete b.yields
+    delete b.symbiosis
+    b.offspring ??= { name: '魔物的幼體', count: [1, 2], value_cc: 50 }
+  } else {
+    delete b.offspring
+    b.yields ??= []
+    if (k !== 'parasite') delete b.symbiosis
+  }
+}
+function setOffspring(p: Partial<NonNullable<BroodDef['offspring']>>) {
+  const b = brood.value
+  b.offspring = { ...(b.offspring ?? { name: '魔物的幼體', count: [1, 2], value_cc: 50 }), ...p }
+}
+function setSymbiosis(v: string) {
+  if (v) brood.value.symbiosis = v
+  else delete brood.value.symbiosis
+}
+const materialNames = computed(() => {
+  void content.version
+  return itemRules.items.filter((i) => !i.gear && (i.category === 'material' || i.category === 'consumable')).map((i) => i.name).sort()
+})
 function addEffect(i: number) {
   draft.value.stage_effects![i]!.push({ check: { attrs: ['dex'] }, bonus: -1 })
 }
@@ -179,7 +209,7 @@ function setFertility(k: 'min' | 'mult', v: number) {
     </p>
     <UsageNote :usage="usage" :deletable="!builtin" />
     <p v-if="!sources.length" class="small warn-text">⚠️ 沒有任何特殊任務或事件會讓人被寄生：遊戲裡遇不到它。</p>
-    <p v-if="!outbreaks.length" class="small warn-text">
+    <p v-if="!outbreaks.length && draft.category !== 'brood'" class="small warn-text">
       ⚠️ 沒有發作事件：寄生之後不會發作，侵蝕度也不會自己長（「每天自己長」沒有作用），只有任務或事件的效果會改變它；沒有的話一直停在{{ stages[0]?.name }}{{ draft.category === 'short' ? '，也沒有事件把它拿掉（只能解咒）' : '' }}。
       到「🎲 事件」頁新增事件，「在哪裡」選「寄生物的發作」、選這個寄生物。
     </p>
@@ -193,13 +223,46 @@ function setFertility(k: 'min' | 'mult', v: number) {
             <option v-for="(n, k) in PARASITE_KIND_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
-        <label><span>分類 <Hint text="可馴服：任務線的結局用「寄生物：馴服」把它馴服，之後不再發作、可以主動觸發，得到馴服之後的物品或印記。短期寄生：長得快，長到最後由發作事件把它拿掉（例如種子開花產下），沒有馴服。" /></span>
+        <label><span>分類 <Hint text="可馴服：任務線的結局用「寄生物：馴服」把它馴服，之後不再發作、可以主動觸發，得到馴服之後的物品或印記。短期寄生：長得快，長到最後由發作事件把它拿掉（例如種子開花產下），沒有馴服。苗床：怪物的卵、種、幼蟲，沒有發作事件，長到最後產下（成人向，docs/FAMILY.md 第 13 節）。" /></span>
           <select :value="draft.category" @change="setCategory(($event.target as HTMLSelectElement).value as ParasiteCategory)">
             <option v-for="(n, k) in PARASITE_CATEGORY_NAME" :key="k" :value="k">{{ n }}</option>
           </select>
         </label>
       </div>
       <label class="block"><span>描述 <Hint text="交給 AI 的樣子與習性（還沒馴服時）。" /></span><textarea v-model="draft.desc" rows="2" :maxlength="L.desc_chars" /></label>
+    </FoldSet>
+
+    <FoldSet v-if="draft.category === 'brood'" :key="`brood-${id}`" filled>
+      <template #legend>苗床 <Hint text="怪物留在主角體內的卵、種、幼蟲（docs/FAMILY.md 第 13 節）。沒有發作事件，侵蝕度每天照長（發作被擋掉也長），長到支配時產下。要內容篩選「怪物的苗床」打開。怎麼變成苗床：怪物頁籤的「苗床」（色情戰敗事件）、能力的「植入苗床」、效果「寄生物：寄生」。" /></template>
+      <div class="grid">
+        <label><span>種類 <Hint text="卵生：產下時排出卵（物品）。胎生：要有子宮，懷孕中不會、有胎生的苗床時不會懷孕；共生以上泌乳，產下像生產一樣（產後虛弱、泌乳 15 天），生下的幼體當場處理。寄生：破繭時排出（物品），修了獸蟲派入門的人可以選擇共生得到特質。" /></span>
+          <select :value="brood.kind" @change="setBroodKind(($event.target as HTMLSelectElement).value as BroodKind)">
+            <option v-for="(n, k) in BROOD_KIND_NAME" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
+        <template v-if="brood.kind === 'live'">
+          <label>幼體的名稱 <input :value="brood.offspring?.name ?? ''" maxlength="20" @input="setOffspring({ name: ($event.target as HTMLInputElement).value })" /></label>
+          <label>幾隻：最少 <input type="number" min="1" max="6" :value="brood.offspring?.count[0] ?? 1" class="num" @input="setOffspring({ count: [Number(($event.target as HTMLInputElement).value), brood.offspring?.count[1] ?? 1] })" /></label>
+          <label>最多 <input type="number" min="1" max="6" :value="brood.offspring?.count[1] ?? 1" class="num" @input="setOffspring({ count: [brood.offspring?.count[0] ?? 1, Number(($event.target as HTMLInputElement).value)] })" /></label>
+          <label><span>每隻的價錢 <Hint text="交給魔物學者時每隻換到的錢（銅幣）。" /></span><input type="number" min="0" max="5000" :value="brood.offspring?.value_cc ?? 0" @input="setOffspring({ value_cc: Number(($event.target as HTMLInputElement).value) })" /></label>
+        </template>
+        <label v-if="brood.kind === 'parasite'"><span>共生得到的特質 <Hint text="修了獸蟲派入門的人破繭時可以選擇共生，學會這個特質（苗床拿掉）。沒選時不能共生。" /></span>
+          <select :value="brood.symbiosis ?? ''" @change="setSymbiosis(($event.target as HTMLSelectElement).value)">
+            <option value="">（不能共生）</option>
+            <option v-for="p in perkRules.perks" :key="p.id" :value="p.id">{{ p.name }}</option>
+          </select>
+        </label>
+      </div>
+      <div v-if="brood.kind !== 'live'" class="small">
+        <b>產下的物品</b>
+        <div v-for="(y, i) in brood.yields ?? []" :key="i" class="row small eff">
+          <select v-model="y.item"><option v-for="n in materialNames" :key="n" :value="n">{{ n }}</option></select>
+          <span>最少</span><input v-model.number="y.qty[0]" type="number" min="1" max="20" class="num" />
+          <span>最多</span><input v-model.number="y.qty[1]" type="number" min="1" max="20" class="num" />
+          <button class="small ghost" @click="brood.yields!.splice(i, 1)">✕</button>
+        </div>
+        <button class="small ghost" @click="(brood.yields ??= []).push({ item: materialNames[0] ?? '', qty: [1, 3] })">＋ 物品</button>
+      </div>
     </FoldSet>
 
     <FoldSet v-if="draft.kind === 'gear'" :key="`gear-${id}`" filled>

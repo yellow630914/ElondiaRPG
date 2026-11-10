@@ -97,6 +97,25 @@ export function defeatBrood(state: GameState, report: Report, monsters: (string 
   return note ? `${note}。` : ''
 }
 
+/**
+ * 戰鬥中被植入（能力的 brood，combat.ts 的 finishCombat）：每一層各擲一次（× 苗床的機率），中了就變成那個苗床；
+ * 非自願的來源。回傳日誌的一句話
+ */
+export function settleImplants(state: GameState, report: Report, implants: Record<string, number[]> | undefined): string {
+  if (!implants) return ''
+  const mult = gameRule(state, 'broodMult')
+  for (const [id, chances] of Object.entries(implants)) {
+    if (mult <= 0 || broodBlock(state, id, true)) continue
+    if (!withRng(state, (rng) => chances.some((c) => rng.chance(c * mult)))) continue
+    const note = giveBrood(state, report, id, true)
+    if (!note) continue
+    report.outcome.summary = `${report.outcome.summary ?? ''}戰鬥中被植入的${parasiteDef(id)?.name ?? id}留在了體內。`
+    report.outcome.tags = [...(report.outcome.tags ?? []), TAG]
+    return note
+  }
+  return ''
+}
+
 /** 怪物資料寫的苗床（幼體怪物不寫，見 brood.spec.ts） */
 function enemyBrood(monster: string): string | undefined {
   const id = enemies[monster]?.brood

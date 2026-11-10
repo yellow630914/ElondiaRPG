@@ -789,6 +789,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   if (raw.kind && ENEMY_KINDS[raw.kind]) out.kind = raw.kind
   if (raw.armed) out.armed = true
   if (raw.rut) out.rut = raw.rut === 'field' ? 'field' : true
+  // 怪物的苗床（docs/FAMILY.md 第 13 節）：寄生物的 id；自建的苗床可能還沒套用，名字對就先留著（用的時候再看是不是苗床）
+  if (typeof raw.brood === 'string' && (parasiteDef(raw.brood)?.category === 'brood' || raw.brood.startsWith('mod_par_'))) out.brood = raw.brood
   const girlName = str(raw.girl?.name, 20)
   const girlDesc = str(raw.girl?.desc, 300)
   if (girlName && girlDesc) {
@@ -1677,6 +1679,13 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
   if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
   if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
+  if (raw.brood && typeof raw.brood === 'object') {
+    const p = raw.brood.parasite
+    out.brood = {
+      chance: Math.round(num(raw.brood.chance, 0.01, 1, 0.15) * 100) / 100,
+      ...(typeof p === 'string' && (parasiteDef(p)?.category === 'brood' || p.startsWith('mod_par_')) ? { parasite: p } : {}),
+    }
+  }
   if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
     const t = raw.lust_transfer
     out.lust_transfer = t.mode === 'spread'
@@ -1857,6 +1866,9 @@ export function parasiteUsage(id: string, state?: GameState | null): string[] {
   for (const t of travelEvents.templates) if (has(t)) out.push(t.scope === 'parasite' ? `發作事件「${t.title}」` : `事件「${t.title}」`)
   for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
   if (has(slaveryRules)) out.push('奴隸生活的事件')
+  // 苗床（docs/FAMILY.md 第 13 節）：怪物資料的 brood、能力的「植入苗床」
+  for (const e of Object.values(enemies)) if (e.brood === id) out.push(`怪物「${e.name}」的苗床`)
+  for (const a of Object.values(abilities)) if (a.brood?.parasite === id) out.push(`能力「${a.name}」的植入苗床`)
   for (const c of state?.party ?? []) if (c.parasites?.some((p) => p.id === id)) out.push(`目前存檔的「${c.name}」身上`)
   return out
 }

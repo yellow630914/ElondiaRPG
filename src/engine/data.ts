@@ -1079,6 +1079,11 @@ export interface AbilityDef {
   ap_give?: number
   /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
   exposure?: number
+  /**
+   * 植入苗床（成人向，docs/FAMILY.md 第 13 節）：命中主角時多一層「植入」，戰鬥結束時每一層擲 chance（× 存檔規則「苗床的機率」）。
+   * parasite 沒寫時用使用者（怪物資料）的 brood；使用者沒有苗床時不會植入
+   */
+  brood?: { parasite?: string; chance: number }
   /** 升環（只有法術）：用比 circle 高的法術環施放時，每高一環多的效果（upcast.ts） */
   upcast?: UpcastDef
   desc: string

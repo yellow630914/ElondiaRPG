@@ -5,6 +5,7 @@ import {
   ABILITY_RESOLVES, ABILITY_TARGETS, ABILITY_TYPES, abilityClasses, builtinAbility, type AbilityMod,
 } from '@/engine/mods'
 import { useContent } from '@/stores/content'
+import { parasiteRules } from '@/engine/parasites'
 import { useGame } from '@/stores/game'
 import UsageNote from './UsageNote.vue'
 import Hint from '../ui/Hint.vue'
@@ -79,6 +80,20 @@ const burstKind = computed({
   set: (v: string) => {
     const b = draft.value.burst!
     if (v === 'heal') { b.heal = true; delete b.type } else { delete b.heal; b.type = v }
+  },
+})
+// 植入苗床（成人向）：機率與苗床（沒選時用怪物資料的 brood）
+const broodPct = computed({
+  get: () => (draft.value.brood ? Math.round(draft.value.brood.chance * 100) : undefined),
+  set: (v: number | undefined) => { if (v) draft.value.brood = { ...draft.value.brood, chance: v / 100 }; else delete draft.value.brood },
+})
+const broodChoices = computed(() => Object.entries(parasiteRules.parasites).filter(([, d]) => d.category === 'brood').map(([id, d]) => ({ id, name: d.name })))
+const broodParasite = computed({
+  get: () => draft.value.brood?.parasite ?? '',
+  set: (v: string) => {
+    if (!draft.value.brood) return
+    if (v) draft.value.brood.parasite = v
+    else delete draft.value.brood.parasite
   },
 })
 const requiresPct = computed({
@@ -326,6 +341,14 @@ function remove() {
         <label>自己的慾望至少（%） <input v-model.number="requiresPct" type="number" min="0" max="100" placeholder="—" /></label>
         <label>給目標行動點 <input v-model.number="draft.ap_give" type="number" min="0" max="5" placeholder="—" /></label>
         <label>戰後曝露名聲 + <input v-model.number="draft.exposure" type="number" min="0" max="10" placeholder="—" /></label>
+        <label>植入苗床的機率（%） <Hint text="怪物命中主角時多一層「植入」，戰鬥結束時每一層擲這個機率（× 存檔規則「苗床的機率」），中了就變成苗床（docs/FAMILY.md 第 13 節）。要內容篩選「怪物的苗床」與「主角非自願」都打開。" />
+          <input v-model.number="broodPct" type="number" min="0" max="100" placeholder="—" /></label>
+        <label v-if="draft.brood">植入的苗床
+          <select v-model="broodParasite">
+            <option value="">用這隻怪物的苗床</option>
+            <option v-for="b in broodChoices" :key="b.id" :value="b.id">{{ b.name }}</option>
+          </select>
+        </label>
         <label>慾望在隊友之間移動
           <select v-model="transferMode">
             <option value="">（不移動）</option>

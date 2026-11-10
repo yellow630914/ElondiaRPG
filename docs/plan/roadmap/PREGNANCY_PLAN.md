@@ -416,7 +416,7 @@ interface LactationState {
 | **P3 泌乳** ✅ | 狀態、效果、6 樣道具、乳香草、淫紋・乳泉、篩選；給夥伴用的同意檢定 | `lactation.ts`、`items.json`、`gear.json`、`tattoos.json`、`crafts.json`、`lewd.ts`（敏感加值）、`combat.ts` 的 `initLust` |
 | **P4 戰鬥與形象圖** ✅ | 懷孕的雙面效應、泌乳的戰鬥效果、生圖的描述 | `combat.ts`、`portraits` 的提示詞 |
 | **P5 內容編輯器與孕期事件** ✅ | 第 10 節，分四批：P5a 事件搬家、孕期事件與事件編輯器；P5b 條件與效果；P5c 物品、刺青、寄生物的欄位；P5d 設定頁。文件：CONTENT_EDITOR、EFFECTS、STORY_QUESTS、CONTENT_DEPENDENCIES、FAMILY | `travel_events.json`、`pregnancyEvents.ts`、`travelEventMods.ts`、`storyFlags.ts`、`effects.ts`、`storyMods.ts`、`mods.ts`、`components/content/*` |
-| **P6 怪物的苗床**（P6a ✅） | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
+| **P6 怪物的苗床** ✅ | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
 
 ### 11.1 P1 實作時和計畫不同的地方（2026-11-10）
 
@@ -484,6 +484,12 @@ P6 分兩批：**P6a** 是資料、變成苗床（戰敗、效果）、成長、
 - **取出只在魔法物品店**（沒有煉金術士的格子）。
 - **產仔次數存在 `state.broodBirths`**；稱號的條件 `requires.brood_births`。
 - **園區（淫獸園）的專屬戰敗不改**：還是給原本的東西；園區的怪物照一般的色情戰敗事件擲苗床。
+
+### 11.9 P6b 實作時和計畫不同的地方（2026-11-10）
+
+- **能力的 `brood` 是 `{ chance, parasite? }`**：`parasite` 沒寫時用使用者（怪物資料）的 `brood`，所以同一個能力（例如絞縛）可以給不同的怪物用，各自植入自己的苗床；使用者沒有苗床時不會植入。內建加在產卵管、包覆、絞縛、拉入（各 15%），這四個只有成人向的怪物會用。
+- **植入沒有戰鬥狀態的圖示**：記在戰鬥中的角色身上（`Combatant.implants`），時間軸寫一句「被植入了什麼東西」；戰鬥結束時只擲主角的。淫鬥場的比賽不擲。
+- **苗床的編輯欄位**沒有「要不要子宮」：胎生一律要，卵生、寄生一律不用。
 
 P6 和 P1～P5 互不依賴（只共用「產後虛弱」與泌乳的來源），可以在 P1 之後任何時候做。
 
