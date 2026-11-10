@@ -26,6 +26,11 @@
 | 16 | **一般怪物**（哥布林、狼……）也能造成苗床，但**只在色情戰敗事件**；戰鬥中被植入只有成人向的怪物 |
 | 17 | 魔物幼體「放回巢穴」**沒有任何後果**；其他兩種處理照舊 |
 | 18 | 苗床的天數照第 12 節：卵生約 4 天、胎生約 18 天、寄生約 9 天 |
+| 19 | **孕期事件**：察覺之後到生產前，依階段出現胎動、乾嘔……這類事件（第 10.1 節），併進 P5 |
+| 20 | 事件編輯器**可以**依懷孕的內容區分（父親不明、父親的種族、非自願、父親在不在隊上），但**內建事件不要分太細** |
+| 21 | 孕期事件**可以有成人向的親密場景**（標「成人向」「懷孕」，照內容篩選） |
+| 22 | 內建孕期事件：主角 12 件、夥伴 6 件 |
+| 23 | （照建議，可以再改）察覺事件搬進 `travel_events.json`（`scope: pregnancy`）；效果「受孕」一定受孕（不擲機率，篩選與身體照樣限制），可以讓不在隊上的 NPC 受孕；做「⚙️ 懷孕與泌乳設定」數值頁；主人事件格式的效果可以用「泌乳」、不能用「受孕」；AI 判定不能給泌乳或受孕 |
 
 ## 1. 開關與存檔規則
 
@@ -331,16 +336,76 @@ interface LactationState {
 - 陽剛主角的說明（`prompt.ts` 的 `mascBodyNote`）照舊：陽剛主角不會懷孕，不必改。
 - 生產的日誌是一般日誌，不帶 `adult_scene`。
 
-## 10. 內容編輯器
+## 10. 內容編輯器（P5）
+
+### 10.1 懷孕的事件：察覺事件與孕期事件
+
+察覺事件從 `family.json` 搬進 `travel_events.json`，標 `scope: "pregnancy"`，用「🎲 事件」的編輯器（種類「🍼 懷孕」）。同一個 scope 分兩種：
+
+| 欄位 | 說明 |
+|---|---|
+| `known` | `false`（或不寫）= 察覺事件：還沒察覺的人、受孕滿 `min_days`、未察覺或初期；`true` = 孕期事件：已經察覺的人 |
+| `stages` | 哪些階段（`hidden`、`early`、`mid`、`late`；不寫不限） |
+| `subject` | `pc` 主角、`companion` 隊上懷孕的夥伴（文字 `{a}`、效果 `$a`） |
+| `moments` | `rest` 長休之後、`travel` 旅途每天、`step` 走動（城鎮、地下城、近郊、臨時地圖） |
+| `in_settlement` | 只在聚落裡 |
+| `father` | `unknown` 父親不明、`known` 知道是誰、`in_party` 父親在隊上、`not_in_party`；不寫不限 |
+| `father_races` | 父親是這些種族（父親不明時不成立） |
+| `mixed` | 混血（父親的種族和母親不同） |
+| `forced` | `true` 只有非自願懷上的、`false` 只有不是非自願的 |
+| `requires`、`hours`、`pc_body`、`tags` | 和其他事件一樣（這一期補上檢查；P2 時沒有檢查） |
+| 選項的 `reveal` | `always`／`success`：察覺（只對察覺事件有意義） |
+
+- 受孕時多記父親的種族（`father.race`）、這次經歷是不是非自願（`forced`，看性經歷的 AI 記錄）。
+- **頻率**（`family.json` 的 `event_rules`）：察覺事件照舊（長休 30%、旅途 20%）；孕期事件另外一組（長休 15%、旅途 10%、走動 1%），兩種共用 12 小時的冷卻。
+- **內建**：察覺事件照舊 9 件；孕期事件主角 12 件、夥伴 6 件，**不分父親的種族、非自願**（決定 20），只分階段，少數看「父親在隊上」。部分成人向（決定 21）。
+
+| 階段 | 主角（12） | 夥伴（6） |
+|---|---|---|
+| 初期 | 乾嘔得厲害、突然很想吃某樣東西、聞到血腥味就反胃 | 夥伴吐得臉色發白 |
+| 中期 | 第一次胎動、衣服變緊了、路人的祝福、父親把手放在肚子上（父親在隊上）、孕期變敏感（成人向） | 夥伴讓你摸胎動、夥伴的衣服撐不下了 |
+| 後期 | 腰痠背痛、夜裡腿抽筋、產婆主動來打招呼、和伴侶的親密時光（成人向） | 夥伴走不動了、夥伴夜裡睡不著 |
+
+新的非戰鬥狀態：「胎動的喜悅」（下次長休前魅力 +1）、「腰痠背痛」（下次長休前力量 −1）、「抽筋」（下次長休前靈巧 −1）；產婆的事件給「產婆的叮囑」（這一次生產的 DC −1，記在懷孕記錄的 `birth_dc`）。
+
+### 10.2 條件
+
+特殊任務、事件、地標的「更多條件」多三種（`StoryCond`）：
+
+| 條件 | 寫法 |
+|---|---|
+| 懷孕 | `pregnancy: { who: 'pc' \| 'party', stage_min, stage_max, known }` |
+| 泌乳 | `lactating: true / false`（主角） |
+| 孩子 | `children: { min, max }`（主角有幾個孩子） |
+
+### 10.3 效果
+
+| 效果 | 寫法 | 說明 |
+|---|---|---|
+| 懷孕 | `{ type: 'pregnancy', op: 'conceive' \| 'reveal', target, father?, father_name? }` | 受孕一定成立（決定 23）；篩選關掉、身體不行、已經懷孕、產後虛弱時不做，日誌寫原因。`target` 是主角、某位 NPC 或 `$a`；`father` 是 `pc`、NPC id，或空著＝父親不明 |
+| 泌乳 | `{ type: 'lactation', op: 'add' \| 'remove', target, days? }` | 來源記成 `event`；拿掉只拿事件與道具的 |
+
+- 特殊任務與事件都能用；主人事件格式（主人事件、調教、娼館）只能用「泌乳」。
+- 用了這兩種效果、卻沒有標「懷孕」或「泌乳」內容標籤的任務與事件，編輯器提醒。
+
+### 10.4 物品、刺青、寄生物
 
 | 地方 | 新增 |
 |---|---|
-| 條件 | 「懷孕」：誰（主角、隊上的某人）、階段範圍、察覺了沒；「泌乳」：有沒有 |
-| 效果 | 「懷孕」：受孕（父親是某人或不明）、察覺；不提供中止（決定 3）。「泌乳」：加幾天、拿掉 |
-| 事件 | 「🎲 事件」多一種「🤰 懷孕的察覺」（`scope: pregnancy`）：主角或夥伴、時機（長休後、旅途） |
-| 物品 | 消耗品的「泌乳天數」（`use.lactation`）、「避孕」（`use.contraceptive`）；裝備的「泌乳」（`gear.lactation`）；家具功能多「搖籃」 |
-| 刺青 | 圖樣的「泌乳」（`lactation: true`）、「受孕倍率」（`fertility`） |
-| 寄生物 | 「階段的受孕倍率」（`stage_fertility`） |
+| 物品 | 消耗品的「泌乳幾天」「斷乳」；裝備的「戴著時泌乳」；所有物品的「內容標籤」（關掉時商店不賣）；家具功能「搖籃」 |
+| 刺青 | 圖樣的「紋著時泌乳」「受孕倍率」「內容標籤」 |
+| 寄生物 | 「受孕倍率」（侵蝕度從多少開始、倍率） |
+
+淫紋・子宮與魅魔的契紋的受孕倍率從 `family.json` 的 `conception` 搬到圖樣與寄生物自己的資料（`fertility`），數值不變。
+
+### 10.5 ⚙️ 懷孕與泌乳設定
+
+「🐛 寄生物」頁籤旁邊的固定按鈕，照「⚙️ 事件設定」的做法：`family.json` 的數值（受孕、階段與減值、孕吐、察覺、事件頻率、生產、產後虛弱、育幼院、泌乳、雙面效應）都能改、可以恢復預設。存在 `ContentMods.family`，跟著世界匯出匯入。
+
+### 10.6 引用與保護
+
+- 用量檢查：刪物品時列出種子作物；刪固定 NPC 時列出效果「懷孕」裡指定的對象與父親。
+- 自建的懷孕事件刪掉時，等待中的作廢（`prunePregnancyEvent`）。
 
 ## 11. 工項與分期
 
@@ -350,7 +415,7 @@ interface LactationState {
 | **P2 察覺劇情** ✅ | 主角 6 件、夥伴 3 件的察覺事件；人際關係的近況；`scope: pregnancy` | `travel_events.json`（或新的 `family.json` 的 `events`）、`parasiteEvents.ts` 的做法照抄一份 |
 | **P3 泌乳** ✅ | 狀態、效果、6 樣道具、乳香草、淫紋・乳泉、篩選；給夥伴用的同意檢定 | `lactation.ts`、`items.json`、`gear.json`、`tattoos.json`、`crafts.json`、`lewd.ts`（敏感加值）、`combat.ts` 的 `initLust` |
 | **P4 戰鬥與形象圖** ✅ | 懷孕的雙面效應、泌乳的戰鬥效果、生圖的描述 | `combat.ts`、`portraits` 的提示詞 |
-| **P5 內容編輯器與文件** | 第 10 節；寫 `docs/FAMILY.md`，更新 LEWD_STATS、HOMES、SAVES、CONTENT_EDITOR、CHANGELOG 的「未發布」 | `components/content/*` |
+| **P5 內容編輯器與孕期事件** | 第 10 節，分四批：P5a 事件搬家、孕期事件與事件編輯器；P5b 條件與效果；P5c 物品、刺青、寄生物的欄位；P5d 設定頁。文件：CONTENT_EDITOR、EFFECTS、STORY_QUESTS、CONTENT_DEPENDENCIES、FAMILY | `travel_events.json`、`pregnancyEvents.ts`、`travelEventMods.ts`、`storyFlags.ts`、`effects.ts`、`storyMods.ts`、`mods.ts`、`components/content/*` |
 | **P6 怪物的苗床** | 第 12 節：篩選與存檔規則、寄生物的 `brood` 類、新增 11 種苗床（成人向 8 種、一般怪物 3 種；寄生植物的種子是現有的）、怪物與技能的 `brood`、戰敗與戰鬥後的判定、產下事件、魔物卵與幼體的處理、編輯器；更新 ADULT_EVENTS 第 6 節 | `parasites.json`、`parasites.ts`、`parasiteEvents.ts`、`enemies.json`、`abilities.json`、`defeat.ts`、`combat.ts`、`items.json`、`ParasiteEditor.vue`、`EnemyEditor.vue` |
 
 ### 11.1 P1 實作時和計畫不同的地方（2026-11-10）
