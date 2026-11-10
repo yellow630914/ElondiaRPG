@@ -229,7 +229,7 @@ export interface SexUpdate {
   service?: number
   solo?: number
   /** 這次的對象：每人一筆，sex／service 是和這個人性交、替這個人侍奉的次數（沒寫時兩邊都算） */
-  with?: { name?: string; id?: string; sex?: number; service?: number }[]
+  with?: { name?: string; id?: string; gender?: string; sex?: number; service?: number }[]
   forced?: boolean
   summary?: string
   first_time?: string
@@ -264,6 +264,8 @@ export interface EncounterPartner {
   id?: string
   sex?: boolean
   service?: boolean
+  /** 沒有 id 的對象：AI 寫的性別（受孕判定用，pregnancy.ts；不存進記錄） */
+  gender?: string
 }
 
 export interface EncounterInput {
@@ -361,7 +363,8 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
         const side = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? { on: n > 0 } : undefined)
         const s = side(w.sex)
         const v = side(w.service)
-        return name ? { name, ...(known ? { id: known } : {}), ...(s ? { sex: s.on } : {}), ...(v ? { service: v.on } : {}) } : null
+        const gender = !known ? text(w.gender, 8) : ''
+        return name ? { name, ...(known ? { id: known } : {}), ...(gender ? { gender } : {}), ...(s ? { sex: s.on } : {}), ...(v ? { service: v.on } : {}) } : null
       })
       .filter((w): w is EncounterPartner => !!w)
       .slice(0, caps.partners)

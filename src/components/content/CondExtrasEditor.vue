@@ -249,7 +249,7 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
       <select :value="cond.lactating === undefined ? '' : cond.lactating ? 'yes' : 'no'" @change="setLact(($event.target as HTMLSelectElement).value)">
         <option value="">不限</option><option value="yes">要在泌乳</option><option value="no">要沒有</option>
       </select>
-      主角的孩子 ≥ <input :value="cond.children?.min ?? ''" type="number" min="0" max="99" class="num" placeholder="不限" @change="setKids('min', ($event.target as HTMLInputElement).value)" />
+      主角親生的孩子 ≥ <input :value="cond.children?.min ?? ''" type="number" min="0" max="99" class="num" placeholder="不限" @change="setKids('min', ($event.target as HTMLInputElement).value)" />
       且 ≤ <input :value="cond.children?.max ?? ''" type="number" min="0" max="99" class="num" placeholder="不限" @change="setKids('max', ($event.target as HTMLInputElement).value)" /> 個
     </div>
   </details>

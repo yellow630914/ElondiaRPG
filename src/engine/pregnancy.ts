@@ -15,7 +15,7 @@ import familyJson from '@data/rules/family.json'
 import { attrParts, rollBreakdown, sumParts } from './rollParts'
 import { addChild, autoPlace, birthPlaceOptions, childrenNote, hasTemple, nurseryRefusal, placeText } from './children'
 import { tagsAllowed } from './content'
-import { genderDef, GENDER_IDS, isSettlement, locationById, locationName, npcPool, type AttrId } from './data'
+import { genderDef, GENDER_IDS, locationName, npcPool, type AttrId } from './data'
 import { gameRule } from './gameRules'
 import { characterBody } from './look'
 import { formatMoney } from './money'
@@ -23,6 +23,7 @@ import { hashString, npcRecord } from './npcs'
 import { addNpcNews } from './npcLife'
 import { isLactating, lactationPrompt, lactationSources, pregnancyLactation, pruneLactation } from './lactation'
 import { gainCondition, isFugitive, pcOf } from './party'
+import { inSettlementArea } from './grid'
 import { checkModifiers } from './perks'
 import { familyRules, pregnancyStageName } from './pregMarks'
 import { Rng, roll as diceRoll, withBonus } from './rng'
@@ -120,7 +121,7 @@ export interface ConceiveInput {
   /** 這份記錄的人（pc 或角色 id） */
   mother: string
   /** 和誰性交（sex 是 false 的不算）；沒有對象時是空的 */
-  partners: { id?: string; name: string; sex?: boolean }[]
+  partners: { id?: string; name: string; sex?: boolean; gender?: string }[]
   /** 這次性交幾次 */
   times: number
   /** 這次是非自願的（記在懷孕記錄，孕期事件可以篩選） */
@@ -142,7 +143,7 @@ export function conceptionChance(state: GameState, input: ConceiveInput): { chan
   // 娼館接客：老鴇讓接客的人喝避子湯
   const worker = input.report.narration?.brothel_work
   if (worker && pcKey(state, worker) === key && rules.conception.brothel <= 0) return undefined
-  // 能讓人懷孕的對象：有 id 的看性別；只有名字的當成可以（報告裡有怪物時不算，交給寄生物；關了男性對象時也不算）
+  // 能讓人懷孕的對象：有 id 的看性別；只有名字的看 AI 寫的性別（女性等不算），沒寫性別時當成可以（報告裡有怪物時不算，交給寄生物；關了男性對象時也不算）
   const monsters = !!input.report.others?.some((o) => o.monster)
   const named = input.partners.filter((p) => p.sex !== false && pcKey(state, p.id ?? '') !== key)
   const eligible = named.filter((p) => {
@@ -150,7 +151,9 @@ export function conceptionChance(state: GameState, input: ConceiveInput): { chan
       const who = personOf(state, p.id)
       return who ? canSire(who) : !monsters && tagsAllowed(['male_partner'])
     }
-    return !monsters && tagsAllowed(['male_partner'])
+    if (monsters || !tagsAllowed(['male_partner'])) return false
+    const g = genderDef(p.gender)?.id
+    return !g || g === 'unknown' || rules.genders.sire.includes(g)
   })
   if (named.length && !eligible.length) return undefined
   if (!named.length && monsters) return undefined
@@ -217,9 +220,7 @@ function notify(state: GameState, text: string) {
 
 /** 這個人在不在聚落裡（主角、隊伍看主角的位置） */
 function inSettlement(state: GameState): boolean {
-  if (state.road || state.expedition) return false
-  const loc = locationById(state.location)
-  return isSettlement(loc)
+  return inSettlementArea(state)
 }
 
 /**
@@ -231,9 +232,10 @@ export function familyTick(state: GameState) {
   for (const [id, until] of Object.entries(state.postpartum ?? {})) if (day > until) delete state.postpartum![id]
   for (const [id, p] of Object.entries(state.pregnancies ?? {})) {
     const who = personOf(state, id)
-    if (!who) {
-      // 這個人不在了（自訂內容拿掉的 NPC）：記錄跟著拿掉
+    if (!who || (id !== 'pc' && (state.npcs?.[id] ?? npcRecord(state, id))?.dead)) {
+      // 這個人不在了（自訂內容拿掉的 NPC）或死了：記錄跟著拿掉（不寫流產，只是不再發生；等待中的生產、事件跟著作廢）
       delete state.pregnancies![id]
+      if (state.pregnancyEvent?.mother === id) delete state.pregnancyEvent
       continue
     }
     const stage = stageOf(p, day)

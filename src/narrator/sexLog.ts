@@ -51,13 +51,13 @@ export function buildSexLogPrompt(state: GameState, report: Report, narrative: s
 規則：
 1. 只記名單上的人（id 照名單寫）；沒有發生的事不要記。只是挑逗、愛撫、親吻、看著、被脫衣而沒有性交、性侍奉或自慰的人不要列出。
 2. sex：這次「性交」（插入）的次數；service：這次「性侍奉」（口交、手交、乳交、足交……替對方服務）的次數；solo：這次「自慰」（自己弄到高潮或明顯在自慰）的次數。三項都沒有就不要列出這個人。次數看不出來時填 1。只有自慰時 with 留空。
-3. with：這次的對象（每人一筆）：名單上或在場有 id 的人填 id 與名字；路人、客人、怪物、一群人照經過裡的稱呼寫名字（例如「酒館的客人」「哥布林」），不填 id。每一筆的 sex／service 寫這個人自己和這個對象性交、替這個對象性侍奉的次數（沒有就填 0），例如接了三位客人、只替其中一位口交時，只有那一位的 service 是 1。
+3. with：這次的對象（每人一筆）：名單上或在場有 id 的人填 id 與名字；路人、客人、怪物、一群人照經過裡的稱呼寫名字（例如「酒館的客人」「哥布林」），不填 id，但要填 gender（female 女性、male 男性、futa 扶她、femboy 偽娘、ts；看不出來或一群人男女都有時填 unknown）。每一筆的 sex／service 寫這個人自己和這個對象性交、替這個對象性侍奉的次數（沒有就填 0），例如接了三位客人、只替其中一位口交時，只有那一位的 service 是 1。
 4. 被強迫、被侵犯、不得不從（主人的命令、戰敗後的遭遇……）時 forced 填 true。
 5. summary：這次的經過，一句話（≤ 60 字）。
 6. first_time：只在這個人「目前是處子」而這次第一次性交時填：一句話記下初體驗（≤ 60 字）。
 7. favorite：只在經過明顯表現出這個人最喜歡的對象改變時填（名字）；notes：只在出現新的性癖或偏好時填：更新後的一句話（≤ 60 字），會整個取代原本的。
 8. 只記錄成年的角色。
-只輸出 JSON：{"records":[{"id":"…","sex":0,"service":0,"solo":0,"with":[{"name":"…","id":"…","sex":0,"service":0}],"forced":false,"summary":"…","first_time":"","favorite":"","notes":""}]}；沒有可以記的就輸出 {"records":[]}`
+只輸出 JSON：{"records":[{"id":"…","sex":0,"service":0,"solo":0,"with":[{"name":"…","id":"…","gender":"…","sex":0,"service":0}],"forced":false,"summary":"…","first_time":"","favorite":"","notes":""}]}；沒有可以記的就輸出 {"records":[]}`
   const people = candidates.map((id) => `- ${who(state, id)}\n  目前：${sexRecordText(state, id)}`).join('\n')
   const user = [
     `<people>\n${people}\n</people>`,

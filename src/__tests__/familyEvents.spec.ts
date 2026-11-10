@@ -80,6 +80,8 @@ describe('泌乳的事件', () => {
     const solo = game()
     const n = mate(solo)
     lactate(solo, n.id)
+    // 夥伴的親密事件要親密度夠（family.json 的 event_rules.intimate_affinity）
+    ;(solo.relationships ??= {})[n.id] = { ...(solo.relationships[n.id] ?? {}), affinity: 50 } as never
     expect(roll(solo, 'rest')).toBe(true)
     expect(solo.pregnancyEvent?.mother).toBe(n.id)
     const ev = pendingPregnancyEvent(solo)!

@@ -733,6 +733,8 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   // 成人向：這個回應進入親密場景時，敘事要詳細描寫（事件的主角不是主角本人時，指標記在他身上）
   if (e.scene && (o.adult_scene === 'always' || (o.check && o.adult_scene === (ok ? 'success' : 'fail')))) {
     report.narration = { ...report.narration, length: 'medium', adult_scene: eventText(roles, e.scene), ...(roles.subject !== pc ? { adult_actor: roles.subject.id } : {}) }
+    // 娼館裡的親密場景（被主人推進娼館接客、娼館的打工與受訓事件）：老鴇讓接客的人喝避子湯，不會受孕（pregnancy.ts）
+    if (e.cell === 'brothel' || pool === 'brothel_work' || pool === 'brothel_train') report.narration = { ...report.narration, brothel_work: roles.subject.id }
   }
   // 慾望指標：直接屈服（一定進入親密場景的回應）讓順從成長
   if (o.adult_scene === 'always') addLewd(state, roles.subject, 'submission', 1, report)

@@ -140,7 +140,7 @@ exports[`world editor round trip > enemies: opening and saving without changes k
 
 exports[`world editor round trip > family: opening and saving without changes keeps the data 1`] = `
 {
-  "family": "bb51c885bc57",
+  "family": "d58e723284f8",
 }
 `;
 

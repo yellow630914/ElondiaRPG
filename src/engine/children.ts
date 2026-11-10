@@ -232,6 +232,8 @@ export function moveChild(state: GameState, id: string, to: { kind: 'temple'; lo
 export function childrenNote(state: GameState): string {
   const list = childrenOf(state)
   if (!list.length) return ''
-  return `主角的孩子（嬰兒）：${list.map((c) => `${c.name}（${placeText(state, c.where)}）`).join('、')}`
+  const parent = (p: { id?: string; name: string }) => (p.id === 'pc' ? '主角' : p.name)
+  const parents = (c: ChildRecord) => `母親${parent(c.mother)}、${c.father ? `父親${parent(c.father)}` : '父親不明'}`
+  return `主角照顧的孩子（嬰兒）：${list.map((c) => `${c.name}（${parents(c)}；${placeText(state, c.where)}）`).join('、')}`
 }
 

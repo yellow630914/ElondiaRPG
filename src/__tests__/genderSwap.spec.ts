@@ -54,6 +54,14 @@ describe('gender swap prank', () => {
     expect(() => swapNpcGender(state, rec.id, 'dragon')).toThrow('沒有這種性別')
   })
 
+  it('refuses someone who is pregnant (after the birth it works again)', () => {
+    const { state, rec } = setup()
+    ;(state.pregnancies ??= {})[rec.id] = { conceived: 1, due: 41 }
+    expect(genderSwapBlock(state, rec.id)).toContain('懷孕')
+    delete state.pregnancies[rec.id]
+    expect(genderSwapBlock(state, rec.id)).toBeNull()
+  })
+
   it('refuses the dead', () => {
     const { state, rec } = setup()
     rec.dead = true

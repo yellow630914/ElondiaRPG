@@ -17,6 +17,7 @@ export function genderSwapBlock(state: GameState, id: string): string | null {
   if (state.party.some((m) => m.id === id && m.isPlayer)) return '主角的性別在建角時決定'
   if (!state.npcs?.[id]) return '找不到這個人'
   if (state.npcs[id]!.dead) return '已經過世的人不能改'
+  if (state.pregnancies?.[id]) return '懷孕中的人不能改（生下孩子之後才行）'
   if (!state.relationships?.[id]) return '只能改認識的人'
   return null
 }

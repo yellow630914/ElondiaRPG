@@ -14,11 +14,11 @@
 import familyJson from '@data/rules/family.json'
 import { pcBodyAllowed, tagsAllowed } from './content'
 import { pcEventReport, resolvePcOption } from './dungeonEvents'
-import { isSettlement, locationById } from './data'
 import { characterBody } from './look'
 import { personOf, stageOf, syncPregnancyMarks } from './pregnancy'
 import { broodOf, broodsOf, broodMonster, BROOD_KIND_NAME } from './brood'
 import { isLactating } from './lactation'
+import { inSettlementArea } from './grid'
 import { parasiteDef, parasiteOf, stageName as parasiteStageName, stageOf as parasiteStage } from './parasites'
 import { pcOf } from './party'
 import { applyPendingMove, travelEvents, type RoadTemplate } from './road'
@@ -33,6 +33,8 @@ export type PregnancyTemplate = RoadTemplate
 type Chances = { rest_chance?: number; travel_chance?: number; step_chance?: number }
 interface EventRules {
   rest_chance: number; travel_chance: number; min_days: number; cooldown_hours: number
+  /** 夥伴的事件有和主角的親密場景時，夥伴對主角的親密度至少要多少 */
+  intimate_affinity?: number
   /** 孕期事件（已經察覺的人）的機率 */
   stage?: Chances
   /** 泌乳的事件、苗床的事件的機率 */
@@ -79,7 +81,7 @@ export function unawareMothers(state: GameState): string[] {
 }
 
 function inSettlement(state: GameState): boolean {
-  return !state.road && !state.expedition && isSettlement(locationById(state.location))
+  return inSettlementArea(state)
 }
 
 /** 父親在不在隊上（父親是主角也算） */
@@ -113,7 +115,14 @@ export function pregnancyCandidates(state: GameState, mother: string, moment: Pr
     (t.subject ?? 'pc') === subject
     && !!t.known === !!p.known
     && commonOk(state, t, moment, at, body)
+    && intimateOk(state, t, mother)
     && pregnancyMatches(state, t, mother, p))
+}
+
+/** 夥伴的事件有和主角的親密場景（選項的 adult_scene）時：夥伴對主角的親密度要夠（雇來的陌生人不會主動求歡） */
+function intimateOk(state: GameState, t: RoadTemplate, who: string): boolean {
+  if (who === 'pc' || !t.options?.some((o) => o.adult_scene)) return true
+  return (state.relationships?.[who]?.affinity ?? 0) >= (rules().intimate_affinity ?? 0)
 }
 
 /** 共同的條件：時機、聚落、內容標籤、體型、劇情條件、時段 */
@@ -138,7 +147,7 @@ export function lactationCandidates(state: GameState, who: string, moment: Pregn
   if (!p?.character || !isLactating(state, p.character)) return []
   const subject = who === 'pc' ? 'pc' : 'companion'
   const body = characterBody(p.character)
-  return lactationTemplates().filter((t) => (t.subject ?? 'pc') === subject && commonOk(state, t, moment, at, body))
+  return lactationTemplates().filter((t) => (t.subject ?? 'pc') === subject && commonOk(state, t, moment, at, body) && intimateOk(state, t, who))
 }
 
 /** 苗床的事件：主角身上的這個苗床（種類、階段）、這個時機能出現的 */

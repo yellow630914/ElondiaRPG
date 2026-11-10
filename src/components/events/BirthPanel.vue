@@ -24,7 +24,7 @@ const placeId = computed(() => place.value || places.value[0]?.id || '')
     </p>
     <label class="small field">孩子的名字 <input v-model="name" type="text" maxlength="16" placeholder="空著就照種族的名字庫取一個" /></label>
     <label class="small field">生下來之後放在
-      <select v-model="place">
+      <select :value="placeId" @change="place = ($event.target as HTMLSelectElement).value">
         <option v-for="p in places" :key="p.id" :value="p.id">{{ p.label }}</option>
       </select>
     </label>

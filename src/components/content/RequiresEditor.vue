@@ -49,7 +49,7 @@ const moreSummary = computed(() => {
     if (c.stats || c.charm || c.wearing) out.push('成人向的條件')
     if (c.pregnancy) out.push(c.pregnancy.who === 'party' ? '隊伍裡有人懷孕' : '主角懷孕')
     if (c.lactating !== undefined) out.push(c.lactating ? '主角泌乳' : '主角沒有泌乳')
-    if (c.children) out.push('主角的孩子')
+    if (c.children) out.push('主角親生的孩子')
   }
   return out.join('；')
 })

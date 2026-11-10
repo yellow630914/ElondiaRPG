@@ -11,6 +11,7 @@ import {
   answerBirth, conceptionChance, familyPrompt, familyTick, maybeConceive, pregnancyLine, stageOf, syncPregnancyMarks, templeCheckup,
 } from '@/engine/pregnancy'
 import { newGame, withRng } from '@/engine/state'
+import { condMet } from '@/engine/storyFlags'
 import { baseReport, templeHeal } from '@/engine/town'
 import type { GameState, Report } from '@/engine/types'
 
@@ -106,6 +107,37 @@ describe('懷孕：誰會受孕', () => {
     expect(conceptionChance(state, { report: scene(state), mother: 'pc', partners: [{ id: man.id, name: man.name }], times: 1 })).toBeUndefined()
   })
 
+  it('只有名字的對象看 AI 寫的性別：女性不算，男性、沒寫、看不出來算；關了男性對象時都不算', () => {
+    const { state } = game()
+    const r = scene(state)
+    const of = (gender?: string) => conceptionChance(state, { report: r, mother: 'pc', partners: [{ name: '酒館的客人', ...(gender ? { gender } : {}) }], times: 1 })
+    expect(of('female')).toBeUndefined()
+    expect(of('女性')).toBeUndefined()
+    expect(of('male')?.father).toEqual({ name: '酒館的客人' })
+    expect(of('futa')).toBeDefined()
+    expect(of('unknown')).toBeDefined()
+    expect(of()).toBeDefined()
+    // 一位女性路人＋一位男性路人：只有男性那位算，記成父親
+    expect(conceptionChance(state, { report: r, mother: 'pc', partners: [{ name: '女侍', gender: 'female' }, { name: '旅人', gender: 'male' }], times: 1 })?.father).toEqual({ name: '旅人' })
+    setContentFilters({ ...DEFAULT_FILTERS, pregnancy: true, male_partner: false })
+    expect(of('male')).toBeUndefined()
+  })
+
+  it('AI 記錄的 with 帶 gender：女性路人不會讓主角受孕', () => {
+    const { state } = game()
+    state.options = { ...state.options!, conceptionMult: 100 }
+    for (let i = 0; i < 10; i++) {
+      const r = scene(state)
+      applySexUpdates(state, [{ id: 'pc', sex: 3, with: [{ name: '女侍', gender: 'female' }], summary: '和女侍共度一夜' }], { report: r, candidates: sexCandidates(state, r) })
+    }
+    expect(state.pregnancies?.pc).toBeUndefined()
+    const r = scene(state)
+    applySexUpdates(state, [{ id: 'pc', sex: 3, with: [{ name: '旅人', gender: 'male' }], summary: '和旅人共度一夜' }], { report: r, candidates: sexCandidates(state, r) })
+    expect(state.pregnancies?.pc?.father).toEqual({ name: '旅人' })
+    // 性別不存進性經歷
+    expect(JSON.stringify(state.sexRecords ?? {})).not.toContain('"gender"')
+  })
+
   it('性經歷的 AI 記錄會擲受孕；NPC 私生活（addEncounter）不會', () => {
     const { state } = game()
     const woman = npc(state, 'female')
@@ -187,6 +219,49 @@ describe('生產與嬰兒', () => {
     expect(state.pendingBirth).toBeUndefined()
     expect(childrenOf(state)[0]).toMatchObject({ mother: { id: woman.id }, father: { id: 'pc' }, where: { kind: 'temple', location: woman.location } })
     expect(state.familyNotices?.some((t) => t.includes('生下了孩子'))).toBe(true)
+  })
+
+  it('懷孕的 NPC 死了：懷孕記錄拿掉，不會生產', () => {
+    const { state } = game('男')
+    const woman = npc(state, 'female')
+    conceive(state, woman.id, { id: 'pc', name: '莉雅' })
+    state.npcs![woman.id]!.dead = true
+    state.time = { ...state.time, day: state.pregnancies![woman.id]!.due }
+    familyTick(state)
+    expect(state.pregnancies?.[woman.id]).toBeUndefined()
+    expect(childrenOf(state)).toEqual([])
+  })
+
+  it('近郊不算聚落：到了預產日先陣痛，不跳生產事件', () => {
+    const { state } = game()
+    const man = npc(state, 'male')
+    conceive(state, 'pc', { id: man.id, name: man.name })
+    const key = `${state.location}/outskirts`
+    ;(state.areas ??= {})[key] = { key, location: state.location, name: '近郊', kind: 'wild', width: 1, height: 1, cells: [{ kind: 'floor' }] } as never
+    state.position = { area: key, x: 0, y: 0 }
+    state.time = { ...state.time, day: state.pregnancies!.pc!.due }
+    familyTick(state)
+    expect(state.pendingBirth).toBeUndefined()
+    expect(state.pregnancies!.pc!.labor).toBeDefined()
+  })
+
+  it('AI 那行寫「主角照顧的孩子」與父母；任務條件「孩子」只算主角是父母的', () => {
+    const { state } = game('男')
+    const woman = npc(state, 'female')
+    conceive(state, woman.id, { name: '旅人' })
+    delete state.pregnancies![woman.id]!.father
+    state.time = { ...state.time, day: state.pregnancies![woman.id]!.due }
+    familyTick(state)
+    expect(childrenOf(state)).toHaveLength(1)
+    const note = familyPrompt(state, false)
+    expect(note).toContain('主角照顧的孩子')
+    expect(note).toContain(`母親${woman.name}`)
+    expect(note).toContain('父親不明')
+    expect(condMet(state, { children: { min: 1 } })).toBe(false)
+    expect(condMet(state, { children: { max: 0 } })).toBe(true)
+    childrenOf(state)[0]!.father = { id: 'pc', name: '莉雅' }
+    expect(condMet(state, { children: { min: 1 } })).toBe(true)
+    expect(familyPrompt(state, false)).toContain('父親主角')
   })
 
   it('有房子時自動送到房子（不用搖籃）；搖籃數不夠時不能收起', () => {

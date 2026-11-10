@@ -49,6 +49,7 @@ export const FAMILY_GROUPS: FamilyGroup[] = [
     f('event_rules.stage.travel_chance', '孕期事件：旅途每天', 0, 1, 0.05),
     f('event_rules.stage.step_chance', '孕期事件：走動每一步', 0, 0.2, 0.005),
     f('event_rules.cooldown_hours', '兩件事件之間至少隔幾小時', 0, 96, 1),
+    f('event_rules.intimate_affinity', '夥伴的親密事件：親密度至少', 0, 100, 1, '夥伴的懷孕、泌乳事件裡有和主角的親密場景時，夥伴對主角的親密度要到這個數字才會出現'),
   ] },
   { name: '泌乳與苗床的事件', fields: [
     f('event_rules.lactation.rest_chance', '泌乳的事件：長休之後', 0, 1, 0.05, '泌乳中的主角或隊上的夥伴，每人各擲一次；和懷孕的事件共用冷卻'),

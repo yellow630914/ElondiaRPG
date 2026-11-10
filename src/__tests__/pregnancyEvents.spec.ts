@@ -176,6 +176,18 @@ describe('孕期事件', () => {
     expect(pregnancyCandidates(state, 'pc', 'step').map((t) => t.id)).toContain('pg_st_blessing')
   })
 
+  it('夥伴的親密事件要親密度 40 以上（雇來的、懷別人孩子的夥伴不會主動求歡）', () => {
+    const { state } = game()
+    const m = mate(state)
+    pregnant(state, m.id, 25)
+    state.pregnancies![m.id]!.known = true
+    const ids = () => pregnancyCandidates(state, m.id, 'rest', { ...state.time, hour: 22 }).map((t) => t.id)
+    expect(ids()).not.toContain('pg_mt_want')
+    expect(ids().length).toBeGreaterThan(0)
+    ;(state.relationships ??= {})[m.id] = { ...(state.relationships[m.id] ?? {}), affinity: 40 } as never
+    expect(ids()).toContain('pg_mt_want')
+  })
+
   it('父親在隊上的事件：父親不在時不出現；父親的名字代進 {f}，親密度給父親', () => {
     const { state } = game()
     const dad = mate(state)

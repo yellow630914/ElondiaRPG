@@ -13,7 +13,7 @@ import mapsJson from '@data/world/maps.json'
 import { attrOf, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
 import {
-  attrName, contentRevision, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
+  attrName, contentRevision, isSettlement, dungeonEncounters, npcs as namedNpcs, enemies, geography, itemDef, locationById, regionById, shopRules, wildEncounters, landmarkDef, landmarks, dungeonDepth, dungeonFirstLayer, parkPlaza, type BossLayerId, type LandmarkDef,
   type DungeonLayerId, type EncounterGroup, type Location, type ShopType, specialKey, specialMapLegend, specialMapOfKey, specialMaps, type SpecialMapDef,
 } from './data'
 import { endpointsIn, enterSpecial, onAreaChange, overlayConnections, specialArea, specialDefeat } from './specialMaps'
@@ -475,6 +475,18 @@ export function isRevealed(area: Area, x: number, y: number): boolean {
 /** 安全的室內（特殊地圖勾了 peaceful，例如地標的內部）：一進去就看得到整間 */
 function isRoom(area: Area): boolean {
   return area.kind === 'special' && !!specialMaps[area.special ?? '']?.peaceful
+}
+
+/**
+ * 人在聚落裡嗎（懷孕的生產、苗床的產仔、只在聚落裡的事件）：在聚落的地點，而且站在城裡、自己的房子或城裡的室內，
+ * 近郊、地下城、旅途都不算
+ */
+export function inSettlementArea(state: GameState): boolean {
+  if (state.road || state.expedition) return false
+  if (!isSettlement(locationById(state.location))) return false
+  if (!state.position) return true
+  const area = currentArea(state)
+  return area.kind === 'settlement' || area.kind === 'home' || isRoom(area)
 }
 
 export function reveal(area: Area, x: number, y: number, radius = 1) {

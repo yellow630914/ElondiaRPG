@@ -57,10 +57,10 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
     && (!cond.pc_races?.length || cond.pc_races.includes(state.party.find((m) => m.isPlayer)?.race ?? ''))
     && (!cond.pc_races_none?.length || !cond.pc_races_none.includes(state.party.find((m) => m.isPlayer)?.race ?? ''))
     && afterMet(state, cond.after)
-    // 懷孕、泌乳、孩子（docs/FAMILY.md 第 10.2 節）
+    // 懷孕、泌乳、孩子（docs/FAMILY.md 第 10.2 節；孩子只算主角是父母的，照顧別人的孩子不算）
     && (!cond.pregnancy || pregnancyCondMet(state, cond.pregnancy))
     && (cond.lactating === undefined || lactatingNow(state.party.find((m) => m.isPlayer) ?? { race: '' }) === cond.lactating)
-    && (!cond.children || inRange((state.children ?? []).length, cond.children))
+    && (!cond.children || inRange((state.children ?? []).filter((c) => c.mother.id === 'pc' || c.father?.id === 'pc').length, cond.children))
 }
 
 const minutesOf = (t: GameTime) => ((t.day - 1) * 24 + (t.hour ?? 0)) * 60 + (t.minute ?? 0)

@@ -13,7 +13,7 @@ import { tagsAllowed } from './content'
 import { pcEventReport } from './dungeonEvents'
 import { applyEffects } from './effects'
 import { gameRule } from './gameRules'
-import { currentCell } from './grid'
+import { currentCell, inSettlementArea } from './grid'
 import { addLactation } from './lactation'
 import { formatMoney } from './money'
 import { activeParasites, parasiteDef, parasiteOf, parasiteRules, parasitesOf, stageOf, type BroodDef, type BroodKind, type BroodRules } from './parasites'
@@ -25,7 +25,7 @@ import { attrParts, rollBreakdown, sumParts } from './rollParts'
 import { roll as diceRoll, withBonus } from './rng'
 import { hasSchool } from './schools'
 import { addHours, commitReport, withRng } from './state'
-import { enemies, isSettlement, locationById, type AttrId, type Degree } from './data'
+import { enemies, type AttrId, type Degree } from './data'
 import { hasTemple } from './children'
 import type { Character, GameState, Report } from './types'
 
@@ -169,7 +169,7 @@ export type OffspringFate = 'nest' | 'scholar' | 'temple'
 export interface BroodOption { id: BroodHow; label: string; disabled?: string }
 
 function inSettlement(state: GameState): boolean {
-  return !state.road && !state.expedition && isSettlement(locationById(state.location))
+  return inSettlementArea(state)
 }
 
 /** 隊伍裡和主角最親的夥伴（幫忙產卵） */
