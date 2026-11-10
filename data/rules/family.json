@@ -1,5 +1,5 @@
 {
-  "$comment": "懷孕與嬰兒（成人向，docs/FAMILY.md）。受孕只在性經歷的 AI 記錄時判定（sexRecord.ts 的 applySexUpdates），NPC 私生活不會受孕。conception：受孕的機率（base 基礎、times 這次性交幾次的倍率、race 種族、max 上限；brothel 娼館接客的倍率，0 = 不會；tattoos 身上有這個圖樣的刺青時的倍率；parasites 這個寄生物的侵蝕度到 min 以上、沒有沉睡時的倍率）。stages：階段（at 是已經懷了幾天佔孕期的比例，從這個比例起算這個階段）。checks：各階段平常的檢定加減（check 是適用的範圍，和寄生物的 stage_effects 同一種格式；bonus 負數是減值；靈巧的檢定包括潛行）。discover：察覺（auto_stage 到這個階段自動察覺）。birth：生產（temple_cc 在神殿生的費用、dc 自己生的 DC、wild_dc 在野外、healer_bonus 隊伍裡有治療的人減多少、healer_classes 誰算、labor_hours 陣痛之後幾小時在原地生）。postpartum：產後虛弱（days 成功、fail_days 失敗、check 所有檢定的減值）。nursery：神殿的育幼院（fee_cc 每天的寄養費、escort_cc_per_day 護送到別的城每天路程的費用）。genders：誰能懷孕（carry）、誰能讓人懷孕（sire）；主角對應不到的性別看體型（body_carry、body_sire）。events：察覺劇情（P2），沿用事件模板的格式（data/rules/travel_events.json 的 templates）：subject 是誰的事（pc 主角、companion 隊上的夥伴；夥伴的事件文字裡的 {a} 換成那位夥伴、效果的 $a 是那位夥伴）、moments 時機（rest 長休之後、travel 旅途每天）、in_settlement 只在聚落裡；選項的 reveal：選了就察覺（always）或檢定成功才察覺（success）。event_rules：長休之後、旅途每天擲的機率，受孕之後至少幾天才會出現，兩次之間至少隔幾小時。",
+  "$comment": "懷孕與嬰兒（成人向，docs/FAMILY.md）。受孕只在性經歷的 AI 記錄時判定（sexRecord.ts 的 applySexUpdates），NPC 私生活不會受孕。conception：受孕的機率（base 基礎、times 這次性交幾次的倍率、race 種族、max 上限；brothel 娼館接客的倍率，0 = 不會；tattoos 身上有這個圖樣的刺青時的倍率；parasites 這個寄生物的侵蝕度到 min 以上、沒有沉睡時的倍率）。stages：階段（at 是已經懷了幾天佔孕期的比例，從這個比例起算這個階段）。checks：各階段平常的檢定加減（check 是適用的範圍，和寄生物的 stage_effects 同一種格式；bonus 負數是減值；靈巧的檢定包括潛行）。discover：察覺（auto_stage 到這個階段自動察覺）。birth：生產（temple_cc 在神殿生的費用、dc 自己生的 DC、wild_dc 在野外、healer_bonus 隊伍裡有治療的人減多少、healer_classes 誰算、labor_hours 陣痛之後幾小時在原地生）。postpartum：產後虛弱（days 成功、fail_days 失敗、check 所有檢定的減值）。nursery：神殿的育幼院（fee_cc 每天的寄養費、escort_cc_per_day 護送到別的城每天路程的費用）。genders：誰能懷孕（carry）、誰能讓人懷孕（sire）；主角對應不到的性別看體型（body_carry、body_sire）。events：察覺劇情（P2），沿用事件模板的格式（data/rules/travel_events.json 的 templates）：subject 是誰的事（pc 主角、companion 隊上的夥伴；夥伴的事件文字裡的 {a} 換成那位夥伴、效果的 $a 是那位夥伴）、moments 時機（rest 長休之後、travel 旅途每天）、in_settlement 只在聚落裡；選項的 reveal：選了就察覺（always）或檢定成功才察覺（success）。event_rules：長休之後、旅途每天擲的機率，受孕之後至少幾天才會出現，兩次之間至少隔幾小時。lactation：泌乳（docs/FAMILY.md 第 10 節）：after_birth_days 生產後還泌乳幾天、sensitivity 敏感的有效值加多少、exposure 在聚落裡胸前真空或曝露時曝露名聲每天多加多少、combat 戰鬥中（修了流派）慾望上限與受到的慾望的比例與肉體派的倍率、consent 給自由的夥伴用道具的魅力檢定（DC = base − 淫亂 / lewd_div − 親密度 / affinity_div，失敗親密度 fail_affinity）。",
   "conception": {
     "base": 0.15,
     "times": {
@@ -474,5 +474,21 @@
     "travel_chance": 0.2,
     "min_days": 3,
     "cooldown_hours": 12
+  },
+  "lactation": {
+    "after_birth_days": 30,
+    "sensitivity": 5,
+    "exposure": 1,
+    "combat": {
+      "max": 0.1,
+      "taken": 0.1,
+      "flesh_mult": 1.2
+    },
+    "consent": {
+      "base": 15,
+      "lewd_div": 10,
+      "affinity_div": 25,
+      "fail_affinity": -2
+    }
   }
 }

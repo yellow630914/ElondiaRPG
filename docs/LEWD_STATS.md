@@ -83,6 +83,7 @@
 
 ## 5. 其他的連動
 
+- **泌乳**（內容篩選「泌乳」打開時）：敏感的有效值 +5，在聚落裡胸前真空或曝露時曝露名聲每天多 +1，戰鬥中（修了流派）慾望上限與受到的慾望 +10%。見 [FAMILY](FAMILY.md) 第 10 節。
 - **效果** `lewd`：`{ "type": "lewd", "stat": "submission", "delta": 5, "target": "pc" }`，曝露名聲記在目前的地區（[EFFECTS](EFFECTS.md)）。
 - **條件** `stats`：`{ "stats": { "exposure": { "min": 40 } } }`，看主角的有效值，曝露名聲看目前的地區（`storyFlags.ts` 的 `condMet`）。
 - **AI 判定**：可能進入親密場景的行動（自由行動、主人的要求、打工、光顧娼婦、特殊任務、戰敗事件、獻媚、誘惑、嘗試脫縛）多一種效果 `lewd`，每人每項一次、±3（`actions.json` 的 `caps.lewd`）。

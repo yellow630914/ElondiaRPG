@@ -1,9 +1,9 @@
-# 懷孕與嬰兒（成人向）
+# 懷孕、嬰兒與泌乳（成人向）
 
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[LEWD_STATS](LEWD_STATS.md) 第 29 節（性經歷：受孕在這裡判定）、[HOMES](HOMES.md)（房子、搖籃）、[COMPANIONS](COMPANIONS.md)（夥伴、NPC 登錄）、[EVENTS](EVENTS.md)（生產、通知）。被依賴：[PROMPTS](PROMPTS.md)（給 AI 的資料）、[SAVES](SAVES.md)（`state.pregnancies`、`children`）。
-> 程式：`src/engine/pregnancy.ts`（受孕、階段、察覺、生產、診察、給 AI 的資料）、`src/engine/pregnancyEvents.ts`（察覺事件）、`src/engine/children.ts`（嬰兒、育幼院、房子、自動安排）、`src/engine/pregMarks.ts`（檢定減值）；資料：`data/rules/family.json`。
-> 畫面：事件視窗的察覺事件（`events/RoadEventPanel.vue` 的 `pregnancy`）、「🍼 要生了」（`events/BirthPanel.vue`）與「🍼 家人的消息」；神殿的「診察」「育幼院」（`NurseryPanel.vue`）；房屋區塊的「孩子」；隊伍視窗的「家人」；角色詳情慾望指標底下的一行。
-> 設計紀錄與還沒做的部分（泌乳、戰鬥的雙面效應、怪物的苗床、內容編輯器）：[計畫 R28](plan/roadmap/PREGNANCY_PLAN.md)。
+> 程式：`src/engine/pregnancy.ts`（受孕、階段、察覺、生產、診察、給 AI 的資料）、`src/engine/pregnancyEvents.ts`（察覺事件）、`src/engine/children.ts`（嬰兒、育幼院、房子、自動安排）、`src/engine/pregMarks.ts`（檢定減值、誰能泌乳）、`src/engine/lactation.ts`（泌乳）；資料：`data/rules/family.json`。
+> 畫面：事件視窗的察覺事件（`events/RoadEventPanel.vue` 的 `pregnancy`）、「🍼 要生了」（`events/BirthPanel.vue`）與「🍼 家人的消息」；神殿的「診察」「育幼院」（`NurseryPanel.vue`）；房屋區塊的「孩子」；隊伍視窗的「家人」；角色詳情慾望指標底下的懷孕與泌乳各一行。
+> 設計紀錄與還沒做的部分（懷孕在戰鬥中的雙面效應、形象圖、怪物的苗床、內容編輯器）：[計畫 R28](plan/roadmap/PREGNANCY_PLAN.md)。
 
 ## 1. 開關
 
@@ -12,6 +12,7 @@
 | 內容篩選「懷孕」 | 設定 → 成人內容的內容篩選（`content.ts` 的 `pregnancy`） | **關** | 關掉時不擲受孕、商店不賣避子湯與搖籃。已經懷孕的照常進行到生產，已經生下的孩子照常在 |
 | 存檔規則「受孕機率」 | 設定 → 成人內容的存檔規則（`conceptionMult`） | 1 倍（0～3） | 0 = 不會受孕 |
 | 存檔規則「孕期天數」 | 同上（`pregnancyDays`） | 40 天（10～120） | 階段照比例縮放；只影響之後才懷上的 |
+| 內容篩選「泌乳」 | 同上（`lactation`） | **關** | 第 10 節；和「懷孕」各自獨立 |
 
 性經歷整個關掉、或「AI 記下性經歷」沒有記這則日誌時，也不會受孕（受孕跟著性經歷的記錄判定）。
 
@@ -136,9 +137,47 @@
 | 懷孕（未察覺） | 初期以後只寫症狀（「最近容易累、聞到油味就想吐」） | 同左 |
 | 產後虛弱 | 「剛生完孩子，產後虛弱」 | 同左 |
 | 孩子 | 「主角的孩子（嬰兒）：某某（某城的神殿育幼院）」一行 | **不送** |
+| 泌乳 | **不送** | 「正在泌乳：主角、某某」 |
 
-程式在 `pregnancy.ts` 的 `familyPrompt`（`narrator/compose.ts` 的主角資料、`narrator/judge.ts` 的 `pcDetail`）。
+孩子和泌乳不會出現在同一份提示詞裡。程式在 `pregnancy.ts` 的 `familyPrompt`（`narrator/compose.ts` 的主角資料、`narrator/judge.ts` 的 `pcDetail`）。
 
 ## 9. 存檔
 
-`pregnancies`、`postpartum`、`children`、`pendingBirth`、`familyNotices` 與角色的 `pregMark` 都是選填欄位，舊存檔沒有時當成空的，不用轉換，存檔格式不變。
+`pregnancies`、`postpartum`、`children`、`pendingBirth`、`familyNotices`、`pregnancyEvent`、`pregnancyEvents`、`lactation` 與角色的 `pregMark` 都是選填欄位，舊存檔沒有時當成空的，不用轉換，存檔格式不變。
+
+## 10. 泌乳
+
+和懷孕是兩個獨立的狀態（內容篩選「泌乳」，預設關），懷孕後期只是來源之一。程式在 `lactation.ts`，數值在 `family.json` 的 `lactation`。
+
+### 10.1 誰能泌乳
+
+女性、扶她、TS；對應不到的性別（主角自由輸入、未知）看體型（陰柔、中性）。**陽剛體型的主角**不能用泌乳道具、刺青店不列出淫紋・乳泉；戴上泌乳之環也不會泌乳（`pregMarks.ts` 的 `canLactate`）。
+
+### 10.2 來源
+
+存在 `state.lactation`（角色 id → 來源清單），到期的在每次結算時拿掉。裝備與刺青不存，看身上（`wornLactation`）。
+
+| 來源 | 持續 | 哪裡拿 |
+|---|---|---|
+| 懷孕後期 | 從後期開始，到生產後 30 天 | 自動（篩選關著時記著來源、不生效） |
+| **催乳茶**（消耗品，40 白鸛） | 3 天 | 雜貨店（城市以上）；煉金 2：乳香草 ×2 |
+| **魔乳果**（食物，30 白鸛） | 5 天 | 菜圃種「魔乳果苗」（雜貨店、魔法物品店，20 白鸛），7 天成熟，收成 1～2 |
+| **催乳藥劑**（消耗品，320 白鸛） | 14 天 | 魔法物品店（魅氣 3 以上）；煉金 4：淫獸的媚腺、乳香草 ×2 |
+| **泌乳之環**（穿孔飾品，900 白鸛，敏感 +5） | 戴著的時候 | 珠寶店（魅氣 3 以上） |
+| **淫紋・乳泉**（胸口的淫紋，+500 白鸛，慾望上限 +10%） | 紋著的時候 | 刺青店 |
+| **斷乳藥**（消耗品，50 白鸛） | 拿掉道具與事件的泌乳（懷孕的不行） | 雜貨店、神殿；煉金 2：藥草 ×2 |
+
+材料**乳香草**：菜圃種「乳香草種子」（雜貨店，8 白鸛），4 天成熟，收成 2～3。這些東西在內容篩選關掉「泌乳」時商店不賣（物品的 `content_tags`）。
+
+同一樣道具再用一次，取比較晚的到期日（不疊加天數）。
+
+**給別人用**：主角自己、奴隸直接用。自由的夥伴（自願、雇傭）要先答應：主角擲魅力（調整值＋熟練），DC = 15 − 淫亂 / 10 − 親密度 / 25；不肯時道具不會用掉，親密度 −2。
+
+### 10.3 效果
+
+- **敏感的有效值 +5**（`lewd.ts` 的 `lewdOf`；角色詳情的敏感跟著變）。
+- **曝露名聲**：在聚落裡，胸前真空（上身沒穿內衣而外衣會走光）或曝露度 2 以上時，這一帶的曝露名聲每天多 +1。
+- **戰鬥**（慾望戰鬥開著、修了任何流派）：慾望上限 +10%、受到的慾望 +10%；修了肉體派 ×1.2（+12%）。
+- 角色詳情的慾望指標底下多一行「💧 泌乳中：催乳茶（到第 N 天）、泌乳之環（戴著的時候）」。
+- **交給 AI**：只在成人向的敘事與判定寫「正在泌乳：某某」（第 8 節）。
+- **嬰兒的餵養不連到泌乳**：育幼院和房子裡的孩子怎麼吃一律抽象處理。

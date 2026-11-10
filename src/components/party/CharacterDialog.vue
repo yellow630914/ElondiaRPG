@@ -10,6 +10,8 @@ import { perksOf } from '@/engine/perks'
 import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT } from '@/engine/lewd'
 import { encounterText, sexRecordItems, sexRecordOf, virginWord } from '@/engine/sexRecord'
 import { pregnancyLine } from '@/engine/pregnancy'
+import { lactationLine } from '@/engine/lactation'
+import { lactationSensitivity } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { isOwnSlave } from '@/engine/ownedSlaves'
 import { MOD_NAME } from '@/engine/gear'
@@ -81,6 +83,8 @@ const sexId = computed(() => (m.value.isPlayer ? 'pc' : m.value.id))
 const sexRec = computed(() => sexRecordOf(s.value, sexId.value))
 // 懷孕（察覺之後）與產後虛弱（docs/FAMILY.md 第 4.4 節）
 const pregLine = computed(() => pregnancyLine(s.value, sexId.value))
+// 泌乳（docs/FAMILY.md 第 10 節）
+const lactLine = computed(() => lactationLine(s.value, m.value))
 const sexItems = computed<StatItem[]>(() => sexRecordItems(s.value, sexId.value).map((x) => ({ label: x.label, value: x.value, ...(x.value.length > 12 ? { wide: true } : {}) })))
 const sexDraft = reactive({ virgin: true, partners: 0, times: 0, servicePartners: 0, serviceTimes: 0, solo: 0, favorite: '', notes: '' })
 function resetSexDraft() {
@@ -254,6 +258,7 @@ function saveTags() {
             <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派從受訓學（娼館、神殿、裁縫店……）；拘束具平常是檢定減值，修了流派又上了鎖，戰鬥中反轉成增益。" /></h4>
             <StatGrid :items="lewdItems" />
             <p v-if="pregLine" class="small preg">🍼 {{ pregLine }}</p>
+            <p v-if="lactLine" class="small preg">💧 {{ lactLine }}（敏感 +{{ lactationSensitivity() }}）</p>
           </div>
           <div>
             <p v-if="isNoncombatant(m)" class="small muted">無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>

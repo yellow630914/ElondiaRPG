@@ -1900,6 +1900,10 @@ export interface ItemUse {
   /** 傳送：全隊立刻脫離戰鬥 */
   escape?: boolean
   combat_only?: boolean
+  /** 泌乳幾天（docs/FAMILY.md 第 10 節；內容篩選「泌乳」打開、有乳房的人才能用） */
+  lactation?: number
+  /** 拿掉道具與事件造成的泌乳（懷孕的不行） */
+  stop_lactation?: boolean
 }
 
 export interface ItemDef {
@@ -1943,6 +1947,8 @@ export interface ItemDef {
   adult?: boolean
   /** 內容標籤（content.ts）：設定的內容篩選關掉這些標籤時，商店不賣（例如懷孕的避子湯、搖籃） */
   content_tags?: string[]
+  /** 裝備：戴著的時候泌乳（泌乳之環；docs/FAMILY.md 第 10 節） */
+  lactation?: boolean
   /** 鎖（lewd.json 的 locks）：可以替身上的拘束具上鎖，雙面效應的戰鬥增益才生效 */
   lock?: LockGrade
   /** 鑰匙（docs/LEWD_STATS.md 第 16 節）：打開這個等級以下的鎖，用一次就沒了 */

@@ -22,6 +22,10 @@ export interface TattooTemplate {
   /** 刺這個圖樣另外加的價錢 */
   price?: number
   adult?: boolean
+  /** 紋著的時候泌乳（淫紋・乳泉；docs/FAMILY.md 第 10 節） */
+  lactation?: boolean
+  /** 內容標籤（content.ts）：內容篩選關掉時刺青店不列出 */
+  content_tags?: string[]
 }
 
 export const tattooRules = tattooJson as unknown as {

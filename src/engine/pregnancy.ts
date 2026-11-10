@@ -18,6 +18,7 @@ import { characterBody } from './look'
 import { formatMoney } from './money'
 import { hashString, npcRecord } from './npcs'
 import { addNpcNews } from './npcLife'
+import { lactationPrompt, lactationSources, pregnancyLactation, pruneLactation } from './lactation'
 import { gainCondition, isFugitive } from './party'
 import { checkModifiers } from './perks'
 import { familyRules, pregnancyStageName } from './pregMarks'
@@ -188,11 +189,12 @@ export function syncPregnancyMarks(state: GameState) {
   const mark = (c: Character, key: string) => {
     const p = state.pregnancies?.[key]
     const pp = isPostpartum(state, key)
-    if (!p && !pp) {
+    const lact = lactationSources(state, key).length > 0
+    if (!p && !pp && !lact) {
       delete c.pregMark
       return
     }
-    c.pregMark = { ...(p ? { stage: p.known ? stageOf(p, state.time.day) : 'hidden', known: !!p.known } : {}), ...(pp ? { postpartum: true } : {}) }
+    c.pregMark = { ...(p ? { stage: p.known ? stageOf(p, state.time.day) : 'hidden', known: !!p.known } : {}), ...(pp ? { postpartum: true } : {}), ...(lact ? { lactating: true } : {}) }
   }
   for (const m of state.party) mark(m, m.isPlayer ? 'pc' : m.id)
   for (const rec of Object.values(state.npcs ?? {})) if (rec.character) mark(rec.character, rec.id)
@@ -224,6 +226,8 @@ export function familyTick(state: GameState) {
       continue
     }
     const stage = stageOf(p, day)
+    // 懷孕後期開始泌乳（篩選「泌乳」關著時存著來源、不生效）
+    if (atLeast(stage, 'late') && !lactationSources(state, id).some((s) => s.kind === 'pregnancy')) pregnancyLactation(state, id, false)
     if (!p.known && atLeast(stage, rules.discover.auto_stage)) {
       const near = who.inParty || (who.staying && !who.staying.startsWith('tavern:')) || who.location === state.location
       if (near) {
@@ -249,6 +253,7 @@ export function familyTick(state: GameState) {
     }
   }
   if (state.pendingBirth && !state.pregnancies?.[state.pendingBirth.mother]) delete state.pendingBirth
+  pruneLactation(state)
   syncPregnancyMarks(state)
 }
 
@@ -287,6 +292,8 @@ function newborn(state: GameState, motherId: string, p: PregnancyState, name: st
 function finishPregnancy(state: GameState, id: string, postDays: number) {
   delete state.pregnancies![id]
   ;(state.postpartum ??= {})[id] = state.time.day + postDays - 1
+  // 生產後還泌乳一段時間
+  pregnancyLactation(state, id, true)
 }
 
 /** 不在隊上的人自動生下：嬰兒照 autoPlace 安排（留守在房子的人，嬰兒留在那棟房子） */
@@ -453,5 +460,8 @@ export function familyPrompt(state: GameState, adult: boolean): string {
     const kids = childrenNote(state)
     if (kids) lines.push(kids)
   }
+  // 泌乳只交給成人向的敘事與判定（docs/FAMILY.md 第 10 節）
+  const lact = adult ? lactationPrompt(state).trim() : ''
+  if (lact) lines.push(lact)
   return lines.length ? `\n${lines.join('\n')}` : ''
 }

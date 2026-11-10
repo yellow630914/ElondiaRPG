@@ -1072,6 +1072,8 @@ export interface GameState {
   pregnancies?: Record<string, PregnancyState>
   /** 產後虛弱：角色 id → 到哪一天為止（含） */
   postpartum?: Record<string, number>
+  /** 泌乳（成人向，docs/FAMILY.md 第 10 節）：角色 id（主角是 pc）→ 來源；裝備、刺青的來源不存（看身上） */
+  lactation?: Record<string, LactationSource[]>
   /** 嬰兒（不是 NPC，不進 NPC 登錄；docs/FAMILY.md 第 7 節） */
   children?: ChildRecord[]
   /** 等待回應的懷孕察覺事件（pregnancyEvents.ts）：family.json 的事件與懷孕的人 */
@@ -1268,6 +1270,16 @@ export interface PregnancyMark {
   known?: boolean
   /** 產後虛弱 */
   postpartum?: boolean
+  /** 泌乳（state.lactation 有還沒到期的來源；裝備與刺青的來源另外看身上，見 pregMarks.ts 的 lactatingNow） */
+  lactating?: boolean
+}
+
+/** 泌乳的來源：懷孕後期、胎生的苗床、道具、事件（until 是到哪一天為止，含；沒有時一直有效，例如懷孕中） */
+export interface LactationSource {
+  kind: 'pregnancy' | 'brood' | 'item' | 'event'
+  until?: number
+  /** 哪一樣道具、哪一件事 */
+  ref?: string
 }
 
 /** 嬰兒在哪裡：神殿的育幼院（寄養費從 since 起算、繳到 paidUntil 那天為止）或自己的房子 */

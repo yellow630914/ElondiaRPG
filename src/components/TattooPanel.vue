@@ -3,7 +3,7 @@ import { pcTagMult } from '@/engine/pcTags'
 import { computed, reactive, ref, watch } from 'vue'
 import { ATTR_IDS, attrName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { inkKind, inkPrice, orderTattoo, removePrice, shopRefusal, tattooShop, type TattooShopId } from '@/engine/tattooShop'
+import { inkKind, inkPrice, orderTattoo, removePrice, shopRefusal, tattooShop, templateBlock, type TattooShopId } from '@/engine/tattooShop'
 import { cureOffers, reinkOffers } from '@/engine/parasiteEvents'
 import {
   freePlaces, oathError, oathText, placeName, tattooError, tattooKindName, tattooName, tattooRules, tattoosOf,
@@ -23,7 +23,8 @@ const kind = computed(() => inkKind(props.shop))
 const refusal = computed(() => shopRefusal(s.value, props.shop))
 
 // ---- 刺青 ----
-const templates = computed(() => Object.entries(tattooRules.templates).filter(([, t]) => t.kind === kind.value))
+// 內容篩選關掉、主角的身體刺不了的圖樣（淫紋・乳泉）不列出（tattooShop.ts 的 templateBlock）
+const templates = computed(() => Object.entries(tattooRules.templates).filter(([id, t]) => t.kind === kind.value && !templateBlock(s.value, id)))
 const mode = ref<string>('')
 const place = ref<TattooPlace | ''>('')
 const custom = reactive({ name: '', desc: '', attrs: {} as Record<string, number> })

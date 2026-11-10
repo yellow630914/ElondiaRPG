@@ -8,6 +8,7 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { lactationCombat } from './lactation'
 import { noteFight } from './bestiary'
 import { pcTagLustResist } from './pcTags'
 import { fusedWeapon } from './fusion'
@@ -499,6 +500,10 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const of = outfitCombat(ch)
     addMods(of.mods)
     f.lustMods.bonus += of.lustBonus
+    // 泌乳（docs/FAMILY.md 第 10 節）：修了流派的人慾望上限與受到的慾望都多一點，肉體派更多
+    const lac = lactationCombat(state, ch)
+    if (lac.max) f.lustMax = Math.round(f.lustMax * (1 + lac.max))
+    if (lac.taken) f.lustMods.taken *= 1 + lac.taken
     // 寄生類的雙面效應：修了流派的人，還沒馴服的寄生物依階段有加成
     const pt = parasiteTwoFace(ch)
     addMods(pt.mods)

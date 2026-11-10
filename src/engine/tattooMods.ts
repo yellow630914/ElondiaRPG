@@ -1,6 +1,7 @@
 // 刺青的自訂內容（docs/CONTENT_EDITOR.md）：刺青圖樣（普通刺青、誓約印記）、奴隸印記的模板，以及印記的用途與權重。
 // 內建的可以修改，自建的沒有被用到時可以刪除。角色身上的刺青與印記是刺上時存的一份，改模板只影響之後刺的。
 
+import { FILTER_TAGS, type FilterTag } from './content'
 import { ATTR_IDS, slaveryRules, stories, type AttrId, type ContractDef } from './data'
 import { isTattooPlace, oathError, tattooRules, type TattooTemplate } from './tattoos'
 import { storyEffects } from './usage'
@@ -62,6 +63,10 @@ export function sanitizeTattooMod(raw: Partial<TattooMod>, custom: boolean): Tat
   const price = clamp(raw.price, [0, 10000], 0)
   if (price) out.price = price
   if (raw.adult) out.adult = true
+  // 泌乳（docs/FAMILY.md 第 10 節）：紋著的時候泌乳；內容標籤（篩選關掉時刺青店不列出）
+  if (kind === 'plain' && raw.lactation) out.lactation = true
+  const tags = [...new Set((Array.isArray(raw.content_tags) ? raw.content_tags : []).filter((t): t is FilterTag => (FILTER_TAGS as string[]).includes(t)))]
+  if (tags.length) out.content_tags = tags
   if (custom) out.custom = true
   return out
 }

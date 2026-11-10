@@ -2,6 +2,8 @@
 // 刺青店刺普通刺青、刻印師刻誓約印記；洗刺青：刺青店只洗普通刺青，刻印師與神殿都能洗（神殿便宜但要聲望）。
 // 奴隸印記的解除另外走解除印記（slavery.ts 的 unmarkOffers，有檢定）。
 
+import { tagsAllowed } from './content'
+import { canLactate } from './pregMarks'
 import { pcTagMult } from './pcTags'
 import { recalc } from './character'
 import { locationById } from './data'
@@ -72,10 +74,21 @@ export function removePrice(shop: TattooShopId, kind: TattooKind, tamed = true):
 /** 要刺的刺青：圖樣，或自己描述（名稱、外觀；誓約要屬性的加減） */
 export type InkOrder = { template: string; place: TattooPlace } | { kind: 'plain' | 'oath'; name: string; desc: string; place: TattooPlace; attrs?: NewTattoo['attrs'] }
 
+/** 這個圖樣現在不能刺的原因：內容篩選關掉了它的標籤、會泌乳的圖樣而主角的身體不會泌乳（docs/FAMILY.md 第 10 節） */
+export function templateBlock(state: GameState, id: string): string | undefined {
+  const tpl = tattooTemplate(id)
+  if (!tpl) return '沒有這個圖樣'
+  if (!tagsAllowed(tpl.content_tags)) return '內容篩選關掉了這種刺青'
+  if (tpl.lactation && !canLactate(pcOf(state))) return '你的身體不會泌乳'
+  return undefined
+}
+
 export function orderTattoo(state: GameState, order: InkOrder): NewTattoo {
   if ('template' in order) {
     const tpl = tattooTemplate(order.template)
     if (!tpl) throw new Error('沒有這個圖樣')
+    const block = templateBlock(state, order.template)
+    if (block) throw new Error(block)
     return { kind: tpl.kind, place: order.place, name: tpl.name, desc: tpl.desc, template: order.template, ...(tpl.attrs ? { attrs: { ...tpl.attrs } } : {}) }
   }
   const name = order.name.trim().slice(0, 20)

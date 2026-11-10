@@ -841,6 +841,9 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   }
   if (u.save?.attr && ATTR_IDS.includes(u.save.attr) && (out.damage || out.apply)) out.save = { attr: u.save.attr, dc: int(u.save.dc, 5, 30, 13) }
   if (u.escape) out.escape = true
+  // 泌乳（docs/FAMILY.md 第 10 節）：幾天、斷乳
+  if (u.lactation) out.lactation = int(u.lactation, 1, 60, 3)
+  if (u.stop_lactation) out.stop_lactation = true
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
   if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.lust || out.revive || out.cleanse || out.escape) {
@@ -921,6 +924,7 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  if (raw.lactation && category === 'equipment') out.lactation = true
   // 內容標籤（商店照內容篩選上架，例如懷孕的避子湯、搖籃）
   const ctags = [...new Set((Array.isArray(raw.content_tags) ? raw.content_tags : []).filter((t): t is FilterTag => (FILTER_TAGS as string[]).includes(t)))]
   if (ctags.length) out.content_tags = ctags
