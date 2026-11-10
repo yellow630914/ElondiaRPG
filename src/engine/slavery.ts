@@ -547,7 +547,18 @@ export function askMaster(state: GameState, id: string): PendingMasterEvent {
   const e = slaveryRules.master_events.events.find((x) => x.id === id)!
   syncMasterHome(state)
   state.masterAskDay = state.time.day
-  return startMasterEvent(state, e, e.ask!.lead)
+  const p = startMasterEvent(state, e, e.ask!.lead)
+  if (e.ask!.hide?.length) p.asked = true
+  return p
+}
+
+/** 現在這件主奴事件能選的回應（主動找主人時不列 ask.hide 的；index 是在 options 裡的位置） */
+export function eventChoices(state: GameState): { option: MasterEventOption; index: number }[] {
+  const e = pendingEventDef(state)
+  const hide = state.pendingMasterEvent?.asked ? new Set(e.ask?.hide ?? []) : new Set<number>()
+  const all = e.options.map((option, index) => ({ option, index }))
+  const shown = all.filter((x) => !hide.has(x.index))
+  return shown.length ? shown : all
 }
 
 function pickEvent(rng: Rng, list: MasterEventDef[]): MasterEventDef {
@@ -673,7 +684,7 @@ const POOL_TAG: Record<MasterEventPool, string> = { master: '主人', owner: '�
 export function answerMasterEvent(state: GameState, index: number): Report {
   const e = pendingEventDef(state)
   const o0 = e.options[index]
-  if (!o0) throw new Error('沒有這個選項')
+  if (!o0 || !eventChoices(state).some((x) => x.index === index)) throw new Error('沒有這個選項')
   const pm = state.pendingMasterEvent!
   const pool = pendingPool(state)
   const roles = eventRoles(state)

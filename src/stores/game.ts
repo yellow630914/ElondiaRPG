@@ -566,9 +566,20 @@ export const useGame = defineStore('game', () => {
     const prompt = settings.language === 'zh-Hans' ? { system: toSimplifiedText(built.prompt.system), user: toSimplifiedText(built.prompt.user) } : built.prompt
     recordingSex.value.add(report.report_id)
     const src = settings.sourceFor('sexlog')
+    // 和 AI 判定共用「AI 判定逾時」：太久沒有任何回應就放棄（每收到一段文字或思考重新計時），按鈕才不會一直停用
+    const controller = new AbortController()
+    const idleMs = judgeTimeout(settings.judgeTimeoutMin) * 60_000
+    let timedOut = false
+    let idle: ReturnType<typeof setTimeout> | undefined
+    const alive = () => {
+      clearTimeout(idle)
+      if (idleMs) idle = setTimeout(() => { timedOut = true; controller.abort() }, idleMs)
+    }
     try {
       const { completeText } = await import('@/narrator/providers')
-      const raw = extractJson(await completeText(src.provider, src.config, prompt, undefined, (u) => addUsage(report.report_id, u, originOf('sexlog', src)))) as { records?: unknown }
+      alive()
+      const raw = extractJson(await completeText(src.provider, src.config, prompt, controller.signal, (u) => addUsage(report.report_id, u, originOf('sexlog', src)), alive, alive)) as { records?: unknown }
+      clearTimeout(idle)
       // 等 AI 的時候讀了別的檔、或回退掉這則日誌：不要寫進去
       if (state.value !== s || !s.reports.some((r) => r.report_id === report.report_id) || sexRecord.sexLogged(s, report.report_id)) return
       const updated = sexRecord.applySexUpdates(s, raw.records, { report, candidates: built.candidates })
@@ -577,8 +588,11 @@ export const useGame = defineStore('game', () => {
       if (updated.length) flash(`📒 記下性經歷：${updated.map((id) => social.nameOf(s, id)).join('、')}`)
       else if (opts.manual) flash('📒 這段經過沒有需要記下的性經歷')
     } catch (e) {
-      error.value = `AI 記下性經歷失敗：${e instanceof Error ? e.message : String(e)}（可以在日誌上再按一次）`
+      error.value = timedOut
+        ? `AI 記下性經歷逾時：${judgeTimeout(settings.judgeTimeoutMin)} 分鐘沒有回應（可以在日誌上再按一次心形；逾時在設定的「AI 判定逾時」調）`
+        : `AI 記下性經歷失敗：${e instanceof Error ? e.message : String(e)}（可以在日誌上再按一次）`
     } finally {
+      clearTimeout(idle)
       recordingSex.value.delete(report.report_id)
     }
   }

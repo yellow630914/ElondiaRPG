@@ -53,7 +53,7 @@ NEW = [
          sc("看阿雅和水手們", "主角在黑檀之夜的地下室，看著{cast}被一群高大黝黑的水手輪流享用。她一邊沉溺其中，一邊回頭看著主角；結束後裹著外套回到主角身邊，把一切都說給主角聽。",
             "在一旁看著阿雅被高大黝黑的水手們享用。", ["adult", "ntr", "non_virgin"], hours=3, cast=[{"npc": "npc_aya"}], affinity=3),
          sc("和阿雅一起侍奉水手們", "主角和{cast}一起跪在黑檀之夜那群高大黝黑的水手中間，兩個人一起侍奉他們，阿雅握著主角的手不放。",
-            "和阿雅一起侍奉水手們（陰柔、中性體型的主角）。", ["adult", "ntr", "non_virgin"], hours=3, pc_body=["fem", "andro"], cast=[{"npc": "npc_aya"}], affinity=3),
+            "和阿雅一起侍奉水手們（陰柔、中性體型的主角）。", ["adult", "ntr", "non_virgin", "male_partner"], hours=3, pc_body=["fem", "andro"], cast=[{"npc": "npc_aya"}], affinity=3),
      ]},
     {"id": "lm_succubus_banquet", "name": "魅魔的宴會廳", "emoji": "🥀", "location": "bloodplume", "at": {"area": "bloodplume/noble", "x": 4, "y": 2},
      "types": ["official"], "desc": "黑薔薇樓上的宴會廳。卡珊卓每隔幾天為你辦一場只有魅魔的宴會。",

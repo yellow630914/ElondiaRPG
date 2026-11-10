@@ -167,6 +167,8 @@ interface SavedSettings {
   effects: FxLevel | 'auto'
   /** 戰鬥中新回合、輪到敵方、輪到我方時的提示橫幅（特效關閉時也不顯示） */
   turnBanner: boolean
+  /** 「這裡的人」預設摺起來：不因為身邊有人自動展開，要自己點開 */
+  peopleCollapsed: boolean
   /** 背景圖：依所在的地區、城鎮、地下城換背景（見 src/assets/backgrounds） */
   background: boolean
   /** 背景圖的亮度（百分比，20～100；越低越暗，面板上的字越清楚） */
@@ -231,6 +233,7 @@ function defaults(): SavedSettings {
     loreBudget: 12000,
     effects: 'auto',
     turnBanner: true,
+    peopleCollapsed: false,
     background: true,
     backgroundBrightness: 60,
     panelOpacity: 80,
@@ -340,6 +343,7 @@ export const useSettings = defineStore('settings', () => {
   const loreBudget = ref(initial.loreBudget)
   const effects = ref(initial.effects)
   const turnBanner = ref(initial.turnBanner !== false)
+  const peopleCollapsed = ref(initial.peopleCollapsed === true)
   /** 實際用的特效等級 */
   const effectsLevel = (): FxLevel => (effects.value === 'auto' ? (reducedMotion() ? 'lite' : 'full') : effects.value)
   // 樣式表用 html[data-fx] 決定播哪些 CSS 動畫
@@ -351,7 +355,7 @@ export const useSettings = defineStore('settings', () => {
   const panelOpacity = ref(initial.panelOpacity)
 
   watch(
-    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, sexRecords, npcPairs, npcLoyalAffinity, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, background, backgroundBrightness, panelOpacity],
+    [sources, routes, judgeWritesNarrative, narrateKinds, aiNarration, aiJudge, aiDesign, abilityRerolls, longRestGap, stepMinutes, creationGearBudget, logKeep, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, sexRecords, npcPairs, npcLoyalAffinity, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, turnBanner, peopleCollapsed, background, backgroundBrightness, panelOpacity],
     () => {
       const data: SavedSettings = {
         sources: sources.value,
@@ -393,6 +397,7 @@ export const useSettings = defineStore('settings', () => {
         loreBudget: loreBudget.value,
         effects: effects.value,
         turnBanner: turnBanner.value !== false,
+        peopleCollapsed: peopleCollapsed.value === true,
         background: background.value !== false,
         backgroundBrightness: Math.max(20, Math.min(100, Math.round(Number(backgroundBrightness.value) || 60))),
         panelOpacity: Math.max(40, Math.min(100, Math.round(Number(panelOpacity.value) || 80))),
@@ -490,7 +495,7 @@ export const useSettings = defineStore('settings', () => {
   const logKeepLimit = () => Math.max(50, Math.min(5000, Math.floor(Number(logKeep.value) || 200)))
 
   return {
-    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, sexRecords, npcPairs, npcLoyalAffinity, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, background, backgroundBrightness, panelOpacity,
+    sources, routes, judgeWritesNarrative, narrateKinds, autoNarrates, aiNarration, aiJudge, aiDesign, judgesWithAi, designs, abilityRerolls, rerollLimit, longRestGap, stepMinutes, creationGearBudget, gearBudget, logKeep, logKeepLimit, contentFilters, defeatAdult, defeatCompanion, mascBodyContent, npcLife, npcLifeDays, npcLifeAi, sexRecordAi, sexRecords, npcPairs, npcLoyalAffinity, leadPoolDays, judgeTimeoutMin, monsterGirl, monsterGirlChance, defeatAlways, backupBeforeSwitch, language, uiLanguage, loreBudget, effects, effectsLevel, turnBanner, peopleCollapsed, background, backgroundBrightness, panelOpacity,
     sourceReady, sourceIndex, sourceFor, ready, splitJudgeNarrative, narrationFeature, copySource, addSource, removeSource,
   }
 })

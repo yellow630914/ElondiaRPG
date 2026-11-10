@@ -3,7 +3,7 @@
 
 import type { LoreItem, LoreOverride } from './lore'
 import { defaultRegexRules, normalizeRegexRules, type RegexRule } from './regex'
-import { LENGTH_SCALES, type LengthScale } from './prompt'
+import { CUSTOM_LENGTH_MAX, CUSTOM_LENGTH_MIN, DEFAULT_CUSTOM_LENGTH, LENGTH_SCALES, LENGTHS, POVS, type CustomLength, type LengthScale, type Pov } from './prompt'
 
 /**
  * 條目要套用到哪種請求：
@@ -47,6 +47,10 @@ export interface PromptConfig {
   loreInJudge: boolean
   /** 正文篇幅：整體偏短、標準、偏長 */
   lengthScale: LengthScale
+  /** 篇幅選「自訂」時每一檔的字數（下限、上限） */
+  customLength: CustomLength
+  /** 正文的視角：依日誌、第二人稱、第三人稱、第一人稱（寫在每次請求最後的「本次要求」） */
+  pov: Pov
   /** 前後銜接：敘事與判定帶上一段正文的結尾，以及之後沒有寫成正文的事（幕間） */
   continuity: boolean
   /** 變化正文的寫法：每次在本次要求指定不同的切入方式與收尾 */
@@ -268,10 +272,30 @@ export function defaultPromptConfig(): PromptConfig {
     customLore: [],
     loreInJudge: false,
     lengthScale: 'standard',
+    customLength: cloneLength(DEFAULT_CUSTOM_LENGTH),
+    pov: 'auto',
     continuity: true,
     variety: true,
     regex: defaultRegexRules(),
   }
+}
+
+function cloneLength(c: CustomLength): CustomLength {
+  return { short: [...c.short], medium: [...c.medium], long: [...c.long] }
+}
+
+/** 自訂篇幅：夾在範圍內的整數，下限不大於上限；壞掉的那一檔用預設 */
+export function sanitizeCustomLength(raw: unknown): CustomLength {
+  const out = cloneLength(DEFAULT_CUSTOM_LENGTH)
+  if (!raw || typeof raw !== 'object') return out
+  const clamp = (v: unknown) => Math.max(CUSTOM_LENGTH_MIN, Math.min(CUSTOM_LENGTH_MAX, Math.round(Number(v))))
+  for (const k of LENGTHS) {
+    const pair = (raw as Record<string, unknown>)[k]
+    if (!Array.isArray(pair) || pair.length !== 2 || !pair.every((v) => Number.isFinite(Number(v)) && v !== '' && v !== null)) continue
+    const [a, b] = [clamp(pair[0]), clamp(pair[1])]
+    out[k] = [Math.min(a, b), Math.max(a, b)]
+  }
+  return out
 }
 
 /** version 1 的條目沒有「成人場景」：原本套用到敘事的，成人場景也照舊套用 */
@@ -305,6 +329,8 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     customLore: Array.isArray(r.customLore) ? r.customLore.filter((e) => e && typeof e.uid === 'number') : [],
     loreInJudge: !!r.loreInJudge,
     lengthScale: LENGTH_SCALES.includes(r.lengthScale as LengthScale) ? (r.lengthScale as LengthScale) : base.lengthScale,
+    customLength: sanitizeCustomLength(r.customLength),
+    pov: POVS.includes(r.pov as Pov) ? (r.pov as Pov) : base.pov,
     // 舊的設定沒有這兩項：開啟
     continuity: r.continuity !== false,
     variety: r.variety !== false,

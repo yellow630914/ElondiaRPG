@@ -225,7 +225,7 @@ SCENES['lm_td_wild_horse'] = [
     {**scene('看燁婉寧和人馬族們', '在角落的毛氈上看著燁婉寧被雄性的人馬族們享用。', '主角在野馬帳角落的毛氈上，看著{cast}被一群高大的雄性人馬族輪流享用：嬌小的可敦一邊沉溺其中，一邊回頭看著主角；結束後她裹著斗篷爬回主角身邊，把一切都說給主角聽。',
              ['npc_td_wanning'], ['tdwn_club'], tags=('adult', 'ntr', 'non_virgin'), hours=3, spot={'x': 8, 'y': 1}, spot_name='角落的毛氈')},
     {**scene('和燁婉寧一起侍奉人馬族們', '和燁婉寧一起侍奉雄性的人馬族們（陰柔、中性體型的主角）。', '主角和{cast}一起跪在野馬帳那群高大的雄性人馬族中間，兩個人一起侍奉他們，燁婉寧握著主角的手不放。',
-             ['npc_td_wanning'], ['tdwn_club'], tags=('adult', 'ntr', 'non_virgin'), hours=3, spot={'x': 4, 'y': 1}, spot_name='火塘邊'), 'pc_body': ['fem', 'andro']},
+             ['npc_td_wanning'], ['tdwn_club'], tags=('adult', 'ntr', 'non_virgin', 'male_partner'), hours=3, spot={'x': 4, 'y': 1}, spot_name='火塘邊'), 'pc_body': ['fem', 'andro']},
 ]
 
 

@@ -269,6 +269,7 @@ function buy(d: Deal) {
                     <span class="incart small" :title="cart.buy[d.id] ? `購物車裡有 ${cart.buy[d.id]} 個` : undefined"><template v-if="cart.buy[d.id]"><GameIcon name="cart" :size="13" />{{ cart.buy[d.id] }}</template></span>
                   </div>
                   <div v-if="expanded === d.id" class="more small">
+                    <div class="muted">類別：{{ categoryName(s, itemName(d)) }}</div>
                     <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
                     <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
                     <PriceSteps v-if="buyWhy(d)" :b="buyWhy(d)!" />
@@ -283,7 +284,7 @@ function buy(d: Deal) {
         </template>
         <template v-else>
           <!-- 行囊 -->
-          <section class="col">
+          <section class="col bag-pane">
             <div class="row head-row">
               <h3 class="head"><GameIcon name="backpack" :size="17" />你的行囊</h3>
               <input v-model="bagQuery" class="grow search" type="search" placeholder="搜尋行囊" />
@@ -300,7 +301,7 @@ function buy(d: Deal) {
               </button>
             </nav>
             <p v-if="!bag.length" class="small muted">{{ bagAll.length ? '沒有符合篩選的東西。' : onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
-            <div v-if="bag.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="c">類別</span><span class="r">收購</span><span /><span /><span /></div>
+            <div v-if="bag.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="r">收購</span><span /><span /><span /></div>
             <div class="list">
               <template v-for="g in bagGroups" :key="g.id">
                 <div class="group-head small">{{ g.name }}<span class="muted">{{ g.items.length }}</span></div>
@@ -309,7 +310,6 @@ function buy(d: Deal) {
                     <div class="line" @click="sellWhy = sellWhy === i.name ? null : i.name">
                       <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>
                       <span class="what"><strong class="nm">{{ i.name }}</strong><span class="qty small">×{{ i.qty }}</span><span class="sub small muted">{{ categoryName(s, i.name) }}</span></span>
-                      <span class="cat small muted">{{ categoryName(s, i.name) }}</span>
                       <span class="price" :title="i.price !== null ? '收購價（一個；點一下看怎麼算）' : undefined">{{ i.price !== null ? num(i.price) : '' }}</span>
                       <span class="stock" />
                       <span v-if="i.price !== null" class="steps" @click.stop>
@@ -322,6 +322,7 @@ function buy(d: Deal) {
                       <span v-if="i.price !== null" class="incart small" :title="cart.sell[i.name] ? `購物車裡要賣 ${cart.sell[i.name]} 個` : undefined"><template v-if="cart.sell[i.name]"><GameIcon name="cart" :size="13" />{{ cart.sell[i.name] }}</template></span>
                     </div>
                     <div v-if="sellWhy === i.name" class="more small">
+                      <div class="muted">類別：{{ categoryName(s, i.name) }}</div>
                       <div v-if="itemEffect(s, i.name)" class="effect" :title="materialRecipesFull(i.name) || undefined">{{ itemEffect(s, i.name) }}</div>
                       <div v-if="itemText(s, i.name)" class="muted">{{ itemText(s, i.name) }}</div>
                       <PriceSteps v-if="i.price !== null && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
@@ -387,15 +388,21 @@ function buy(d: Deal) {
 .steps { display: inline-flex; gap: 2px; justify-content: flex-end; }
 .steps button { width: 26px; height: 26px; padding: 0; line-height: 1; }
 .no { grid-column: 6 / -1; text-align: right; white-space: nowrap; }
+/* 行囊：沒有類別欄（類別在分組標題與點開的詳情），名稱欄寬一點 */
+.bag-pane { --shop-cols: 30px minmax(0, 1fr) 56px 40px 114px 38px; }
+.bag-pane .no { grid-column: 5 / -1; }
+/* 很長的名字換行，不截成「…」 */
+.bag-pane .what:not(.marquee) { white-space: normal; overflow-wrap: anywhere; }
 /* 手機：圖示、名稱（類別小字在名稱下面）、價錢一排；庫存、按鈕、購物車換到下一排 */
 @media (max-width: 720px) {
-  .shop-dialog { --shop-cols: 30px minmax(0, 1fr) auto; }
-  .thead .c, .thead > span:nth-child(n + 5), .item-row .line .cat { display: none; }
+  .shop-dialog, .bag-pane { --shop-cols: 30px minmax(0, 1fr) auto; }
+  .thead .c, .thead > span:nth-child(n + 5), .bag-pane .thead > span:nth-child(n + 4), .item-row .line .cat { display: none; }
   .what .sub { display: block; margin: 0; }
-  .item-row .line .stock { grid-column: 2; grid-row: 2; }
+  /* 「剩 N」靠左，不被右邊的按鈕蓋住 */
+  .item-row .line .stock { grid-column: 2; grid-row: 2; text-align: left; }
   .item-row .line .steps { grid-column: 2 / -1; grid-row: 2; justify-self: end; margin-right: 44px; }
   .item-row .line .incart { grid-column: 3; grid-row: 2; }
-  .item-row .line .no { grid-column: 2 / -1; grid-row: 2; }
+  .item-row .line .no, .bag-pane .item-row .line .no { grid-column: 2 / -1; grid-row: 2; }
   .item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) auto; row-gap: 2px; }
   .item-row .line.special-line .stock { grid-column: 2; }
   .item-row .line.special-line .btns { grid-column: 2 / -1; flex-wrap: wrap; }

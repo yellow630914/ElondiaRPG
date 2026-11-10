@@ -130,9 +130,11 @@ describe('炎華之地', () => {
 
   it('gives every southern landmark a place on the map and a person, and offers the first errand at 龍安府 guild', () => {
     const lms = Object.values(landmarks).filter((l) => l.id.startsWith('lm_yh_'))
-    // 19 個，加上 R26 打工線的狀元客舍、畫舫碼頭、珠船塢、大車店的大炕
-    expect(lms.length).toBe(23)
+    // 19 個，加上 R26 打工線的狀元客舍、畫舫碼頭、珠船塢、大車店的大炕，與蘇婉貞的 NTR 線開放的無面樓
+    expect(lms.length).toBe(24)
     const s = newGame({ name: '測試者', race: 'hualong', classId: 'fighter', seed: 2, birthplace: 'longan' })
+    // 無面樓在蘇婉貞的 NTR 線走完之前是普通的道路
+    setFlag(s, 'yasz_club')
     for (const l of lms) {
       // 地標要擺得上地圖（站得上去）
       s.location = l.location
@@ -140,9 +142,10 @@ describe('炎華之地', () => {
       if (l.interior) expect(specialMaps[l.interior]?.location, l.id).toBe(l.location)
     }
     const yh = (namedNpcs as { npcs: { id: string; landmark?: string; location: string }[] }).npcs.filter((n) => n.id.startsWith('npc_yh_'))
-    // 36 位，加上 R26 打工、巡禮與祭典的委託人 8 位
-    expect(yh.length).toBe(44)
-    for (const l of lms.filter((x) => !['lm_yh_rainbow_bridge'].includes(x.id))) expect(yh.some((n) => n.landmark === l.id), `${l.id} 沒有人`).toBe(true)
+    // 36 位，加上 R26 打工、巡禮與祭典的委託人 8 位、蘇婉貞
+    expect(yh.length).toBe(45)
+    // 無面樓的人（蘇婉貞）是依劇情旗標站進去的，平常不待在那裡
+    for (const l of lms.filter((x) => !['lm_yh_rainbow_bridge', 'lm_yh_faceless'].includes(x.id))) expect(yh.some((n) => n.landmark === l.id), `${l.id} 沒有人`).toBe(true)
     for (const n of yh) if (n.landmark) expect(landmarks[n.landmark]?.location, n.id).toBe(n.location)
     // 新手的第一條委託：龍安府公會
     const g = newGame({ name: '測試者', race: 'hualong', classId: 'fighter', seed: 2, birthplace: 'longan' })
@@ -153,7 +156,8 @@ describe('炎華之地', () => {
   it('gives the eight adult characters three adult quests each, and the four group quests their partners', () => {
     const lines = ['蕭鳳儀', '溫如玉', '玄霜', '青蘿', '胡三娘', '赤鬟', '溫懿', '胡玉綃']
     const ya = stories.filter((s) => s.id.startsWith('ya'))
-    expect(ya.length).toBe(24)
+    // 八位各三條，加上蘇婉貞的四條（club_lines42.py：一、二，三分成純愛與 NTR）
+    expect(ya.length).toBe(28)
     for (const name of lines) {
       const l = ya.filter((s) => s.summary.includes(`（${name}・`))
       expect(l.map((s) => s.rank), name).toEqual(['D', 'C', 'B'])
@@ -174,8 +178,9 @@ describe('炎華之地', () => {
     // 地標的場景：旗標由這些任務設定
     const sets = new Set(stories.flatMap((s) => s.nodes.flatMap((n) => [n.success, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]).flatMap((o) => o?.set_flags ?? [])))
     const scenes = Object.values(landmarks).filter((l) => l.id.startsWith('lm_yh_')).flatMap((l) => l.scenes ?? [])
-    // 成人向角色與多人任務的 10 個，加上 R26 打工線回去上工的 8 個
-    expect(scenes.length).toBe(18)
+    // 成人向角色與多人任務的 10 個，加上 R26 打工線回去上工的 8 個、蘇婉貞的 4 個（無面樓 3、御街夜市 1）、
+    // 走進無面樓的沈知瀾與瑤汀 4 個（club_lines43.py）
+    expect(scenes.length).toBe(26)
     for (const sc of scenes) {
       expect(sc.tags, sc.title).toContain('adult')
       for (const f of sc.requires!.flags!) expect(sets.has(f), `${sc.title} ${f}`).toBe(true)

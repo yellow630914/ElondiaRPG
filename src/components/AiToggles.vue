@@ -25,26 +25,17 @@ const SEX_HINT = `開啟：親密場景的日誌寫完經過之後（沒有寫�
 </script>
 
 <template>
+  <!-- 分成四組，每組一個小標題、底下的開關縮排：判定、寫出經過（底下是種類）、AI 設計、性經歷（成人向） -->
   <div class="ai-toggles">
-    <div class="row-line">
+    <div class="group small muted">判定</div>
+    <div class="row-line sub">
       <label class="check"><input v-model="settings.aiJudge" type="checkbox" /> 擲骰的行動交給 AI 判定</label>
       <Hint :text="JUDGE_HINT" :width="340" />
       <span v-if="settings.aiJudge && !settings.ready('judge')" class="small warn">模型來源未設定，目前依規則判定</span>
     </div>
 
-    <div class="group small muted">AI 設計</div>
-    <div v-for="d in AI_DESIGNS" :key="d.id" class="row-line sub">
-      <label class="check"><input v-model="settings.aiDesign[d.id]" type="checkbox" /> {{ d.name }}</label>
-      <Hint :text="DESIGN_HINT[d.id]" :width="320" />
-      <span v-if="settings.aiDesign[d.id] && !settings.ready(d.id)" class="small warn">模型來源未設定，目前不會呼叫</span>
-    </div>
-
-    <div v-if="settings.sexRecords" class="row-line">
-      <label class="check"><input v-model="settings.sexRecordAi" type="checkbox" /> AI 記下性經歷（成人向）</label>
-      <Hint :text="SEX_HINT" :width="340" />
-      <span v-if="settings.sexRecordAi && !settings.ready('sexlog')" class="small warn">「性經歷記錄」的模型來源未設定</span>
-    </div>
-    <div class="row-line">
+    <div class="group small muted">寫出經過</div>
+    <div class="row-line sub">
       <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述：自動寫出經過</label>
       <Hint :text="NARRATION_HINT" :width="340" />
       <span v-if="settings.aiNarration && !settings.ready('narration')" class="small warn">「敘事正文」的模型來源未設定</span>
@@ -56,14 +47,33 @@ const SEX_HINT = `開啟：親密場景的日誌寫完經過之後（沒有寫�
         <span class="muted">{{ k.desc }}</span>
       </label>
     </div>
+
+    <div class="group small muted">AI 設計</div>
+    <div v-for="d in AI_DESIGNS" :key="d.id" class="row-line sub">
+      <label class="check"><input v-model="settings.aiDesign[d.id]" type="checkbox" /> {{ d.name }}</label>
+      <Hint :text="DESIGN_HINT[d.id]" :width="320" />
+      <span v-if="settings.aiDesign[d.id] && !settings.ready(d.id)" class="small warn">模型來源未設定，目前不會呼叫</span>
+    </div>
+
+    <template v-if="settings.sexRecords">
+      <div class="group small muted">性經歷（成人向）</div>
+      <div class="row-line sub">
+        <label class="check"><input v-model="settings.sexRecordAi" type="checkbox" /> 親密場景之後自動請 AI 記下</label>
+        <Hint :text="SEX_HINT" :width="340" />
+        <span v-if="!settings.ready('sexlog')" class="small warn">「性經歷記錄」的模型來源未設定，自動、手動都不會記</span>
+      </div>
+      <div v-if="settings.ready('sexlog')" class="row-line sub small muted">{{ settings.sexRecordAi ? '自動記錄失敗或逾時時，' : '關掉時，' }}親密場景日誌右下角的 ♥ 可以手動記。</div>
+    </template>
   </div>
 </template>
 
 <style scoped>
 .ai-toggles { display: grid; gap: 6px; }
 .row-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
-.row-line.sub, .kinds { padding-left: 22px; }
-.group { margin-top: 2px; }
+.row-line.sub { padding-left: 14px; }
+.kinds { padding-left: 36px; }
+.group { margin-top: 4px; font-weight: bold; }
+.group:first-child { margin-top: 0; }
 .check { display: flex; gap: 6px; align-items: center; }
 .check input { flex-shrink: 0; }
 .kinds { display: grid; gap: 4px; }

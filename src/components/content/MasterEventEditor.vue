@@ -90,6 +90,25 @@ function toggleCheck(o: MasterEventOption, on: boolean) {
     if (o.adult_scene === 'success' || o.adult_scene === 'fail') delete o.adult_scene
   }
 }
+/** 主動找時不列的回應（ask.hide 記 options 的位置） */
+function toggleAskHide(i: number, on: boolean) {
+  const ask = draft.value.ask
+  if (!ask) return
+  const hide = new Set(ask.hide ?? [])
+  if (on) hide.add(i)
+  else hide.delete(i)
+  if (hide.size) ask.hide = [...hide].sort((a, b) => a - b)
+  else delete ask.hide
+}
+/** 移除回應：ask.hide 的位置跟著往前移 */
+function removeOption(i: number) {
+  draft.value.options.splice(i, 1)
+  const ask = draft.value.ask
+  if (!ask?.hide) return
+  const hide = ask.hide.filter((x) => x !== i).map((x) => (x > i ? x - 1 : x))
+  if (hide.length) ask.hide = hide
+  else delete ask.hide
+}
 function addOption() {
   draft.value.options.push({ label: '新的回應', result: '' })
 }
@@ -188,6 +207,9 @@ function remove() {
           <label>名稱 <input v-model="draft.ask.name" maxlength="16" placeholder="例如：陪主人用餐" /></label>
           <label style="flex: 1 1 100%">一句說明 <input v-model="draft.ask.desc" maxlength="80" /></label>
           <label style="flex: 1 1 100%">開頭 <Hint text="主角主動去找主人的那一句，接在事件描述前面；{master} 換成主人的名字。例如：你端上飯菜，在{master}身旁候著。" /> <input v-model="draft.ask.lead" maxlength="120" /></label>
+          <span style="flex: 1 1 100%" class="row">主動找時不列 <Hint text="主角自己開口之後說不通的回應（例如請主人教你，又「推說累了」）。主人的突發事件照常列出；至少要留一個能選。" />
+            <label v-for="(o, i) in draft.options" :key="i" class="check"><input type="checkbox" :checked="!!draft.ask.hide?.includes(i)" @change="toggleAskHide(i, ($event.target as HTMLInputElement).checked)" /> {{ o.label || `回應 ${i + 1}` }}</label>
+          </span>
         </div>
       </template>
     </FoldSet>
@@ -234,7 +256,7 @@ function remove() {
           </select>
           <label v-if="draft.teaches?.length" class="check" title="成功時（沒有檢定時一定）學會事件掛的一個還沒學的技能"><input v-model="o.learn" type="checkbox" /> 學會掛的技能</label>
           <label>小時 <input v-model.number="o.hours" type="number" min="0.25" max="24" step="0.25" class="num" :placeholder="String(draft.hours)" /></label>
-          <button class="small" :disabled="draft.options.length <= 1" @click="draft.options.splice(i, 1)" title="移除">✕</button>
+          <button class="small" :disabled="draft.options.length <= 1" @click="removeOption(i)" title="移除">✕</button>
         </div>
         <template v-if="o.check">
           <label class="block small">成功 <input v-model="o.success" :maxlength="L.result_chars" class="grow" /></label>

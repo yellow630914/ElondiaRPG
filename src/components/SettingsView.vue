@@ -138,7 +138,7 @@ function doReset() {
       <!-- 自己一行（不和上面的勾選接在一起）；輸入完夾成 0～30 的整數，空白還原成 3 -->
       <label class="small timeout">
         AI 判定逾時 <input v-model.number="settings.judgeTimeoutMin" type="number" min="0" max="30" step="1" style="width: 70px" @change="settings.judgeTimeoutMin = judgeTimeout(settings.judgeTimeoutMin)" /> 分鐘
-        <Hint text="AI 判定這麼久沒有任何回應（連一個字或一段思考都沒有）就放棄，行動保留，可以重試或改用規則判定。只要模型還在回應就不會被切斷。0 = 不限。0～30，預設 3。判定中也可以按卡片上的「取消」。" />
+        <Hint text="AI 判定這麼久沒有任何回應（連一個字或一段思考都沒有）就放棄，行動保留，可以重試或改用規則判定。AI 記下性經歷也用這個時間，逾時後可以在日誌上再按一次心形。只要模型還在回應就不會被切斷。0 = 不限。0～30，預設 3。判定中也可以按卡片上的「取消」。" />
       </label>
       <p class="small note">
         <template v-if="settings.splitJudgeNarrative()">
@@ -314,9 +314,23 @@ function doReset() {
           <label v-for="t in FILTER_TAGS" :key="t" class="check" :title="CONTENT_TAGS[t].desc">
             <input v-model="settings.contentFilters[t]" type="checkbox" /> {{ CONTENT_TAGS[t].name }}
           </label>
-          <label class="check" title="主角、夥伴與 NPC 的性經歷（是不是處子、人數、次數、初體驗……）。取消勾選：角色詳情、人際關係、世界編輯器都不顯示，AI 不記錄、提示詞不附，NPC 的私生活不擲成人向的事，奴隸身價不看性經歷。已經記下的保留，重新勾選就恢復">
-            <input v-model="settings.sexRecords" type="checkbox" /> 性經歷
+        </div>
+        <!-- 性經歷自己一塊：「記錄性經歷」是總開關，AI 自動記下縮排在它底下（不和內容篩選的標籤混在一起） -->
+        <div class="sex-block">
+          <label class="check">
+            <input v-model="settings.sexRecords" type="checkbox" /> 記錄性經歷
+            <Hint text="主角、夥伴與 NPC 的性經歷（是不是處子、人數、次數、初體驗……）。取消勾選：角色詳情、人際關係、世界編輯器都不顯示，AI 不記錄、提示詞不附，NPC 的私生活不擲成人向的事，奴隸身價不看性經歷。已經記下的保留，重新勾選就恢復。" />
           </label>
+          <template v-if="settings.sexRecords">
+            <label class="check sub">
+              <input v-model="settings.sexRecordAi" type="checkbox" /> 親密場景之後自動請 AI 記下
+              <Hint text="開啟：親密場景的日誌寫完經過之後，請「性經歷記錄」的模型讀這段經過，記下誰和誰發生了關係、性侍奉、初體驗、最喜歡的人與性癖（判定時不記）。關閉：不自動呼叫，日誌右下角的 ♥ 可以手動記。等太久沒有回應時依「AI 判定逾時」放棄。" />
+            </label>
+            <p class="small muted sub">
+              <template v-if="!settings.ready('sexlog')"><span class="warn">「性經歷記錄」的模型來源還沒設定（設定 → 模型），自動、手動都不會記。</span></template>
+              <template v-else>用「{{ settings.sourceFor('sexlog').name }}」記錄。{{ settings.sexRecordAi ? '自動記錄失敗或逾時時，' : '' }}親密場景日誌右下角的 ♥ 可以手動記，記錄中心形會閃動。</template>
+            </p>
+          </template>
         </div>
         <label>
           <span class="lab">戰敗色情事件 <Hint text="戰敗後敵人（發情的怪物、惡人……）起意的事件。關閉「主角非自願」時也不會發生。" /></span>
@@ -395,6 +409,12 @@ function doReset() {
       </label>
     </div>
   </section>
+  <section v-if="page === 'display'" class="panel">
+    <h2 class="head"><GameIcon name="users" :size="20" />面板</h2>
+    <div class="form">
+      <label class="check"><input v-model="settings.peopleCollapsed" type="checkbox" /> 「這裡的人」預設摺起來 <Hint text="開著時，「這裡的人」平常是摺起來的，身邊有人走近也不會自己展開，要點標題才打開（換地點後又摺起來）。關掉時身邊有人就自動展開、沒人就收起。" /></label>
+    </div>
+  </section>
 
   <section v-if="page === 'save'" class="panel">
     <h2 class="head"><GameIcon name="save" :size="20" />存檔</h2>
@@ -428,6 +448,9 @@ function doReset() {
 .body-warn .warn-icon { color: var(--danger); flex: none; margin-top: 2px; }
 .form { display: grid; gap: 12px; max-width: 560px; }
 .warn-line { margin: -4px 0 0; color: var(--accent); }
+.sex-block { display: grid; gap: 4px; }
+.sex-block .sub { padding-left: 24px; margin: 0; }
+.sex-block .warn { color: var(--warn); }
 .tabs { gap: 6px; margin-bottom: 10px; }
 .tabs button { display: inline-flex; align-items: center; gap: 6px; }
 .tabs button.active { border-color: var(--accent); color: var(--accent); }

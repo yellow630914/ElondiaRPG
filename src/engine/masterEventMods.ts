@@ -119,6 +119,9 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
     const askLead = str(ask?.lead, 120)
     if (ask && askName && askLead && (MASTER_ASK_GROUP_IDS as string[]).includes(ask.group as string)) {
       out.ask = { group: ask.group as MasterAskGroup, name: askName, desc: str(ask.desc, 80), lead: askLead }
+      // 主動找時不列的回應：只留有效的位置，而且至少留一個能選
+      const hide = [...new Set((Array.isArray(ask.hide) ? ask.hide : []).filter((i): i is number => Number.isInteger(i) && i >= 0 && i < out.options.length))].sort((a, b) => a - b)
+      if (hide.length && hide.length < out.options.length) out.ask.hide = hide
     }
   }
   const teaches = [...new Set((raw.teaches ?? []).filter(lewdAbility))].slice(0, L.teaches)

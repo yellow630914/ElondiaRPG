@@ -4,7 +4,8 @@ import { setContentFilters } from '@/engine/content'
 import { slaveryRules } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
 import { npcRecord } from '@/engine/npcs'
-import { answerMasterEvent, askableEvents, askMaster, askMasterBlocked, masterCandidates, startAsSlave } from '@/engine/slavery'
+import { answerMasterEvent, askableEvents, askMaster, askMasterBlocked, eventChoices, masterCandidates, startAsSlave, startMasterEvent } from '@/engine/slavery'
+import { sanitizeMasterEvent } from '@/engine/masterEventMods'
 import { setAffinity } from '@/engine/social'
 import { newGame } from '@/engine/state'
 import { contractOf } from '@/engine/tattoos'
@@ -72,5 +73,37 @@ describe('主動找主人', () => {
     const free = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 3 })
     expect(askMasterBlocked(free)).toBe('你沒有被主人帶著')
     expect(askableEvents(free)).toEqual([])
+  })
+})
+
+describe('主動找主人時不列說不通的回應（ask.hide）', () => {
+  it('自己開口請主人教，就不會出現「推說累了」；主人的突發事件照常列出', () => {
+    const state = slave()
+    setAffinity(state, masterId(state), 60)
+    askMaster(state, 'teach')
+    const labels = eventChoices(state).map((x) => x.option.label)
+    expect(labels).not.toContain('推說累了想休息')
+    expect(labels).toHaveLength(2)
+    const hidden = slaveryRules.master_events.events.find((e) => e.id === 'teach')!.ask!.hide![0]!
+    expect(() => answerMasterEvent(state, hidden)).toThrow('沒有這個選項')
+    answerMasterEvent(state, eventChoices(state)[0]!.index)
+    // 同一件事由主人發起時，所有回應都在
+    startMasterEvent(state, slaveryRules.master_events.events.find((e) => e.id === 'teach')!)
+    expect(eventChoices(state).map((x) => x.option.label)).toContain('推說累了想休息')
+  })
+
+  it('寫了 ask 的事件裡，hide 都指向存在的回應，而且至少留一個', () => {
+    for (const e of slaveryRules.master_events.events) {
+      if (!e.ask?.hide) continue
+      for (const i of e.ask.hide) expect(e.options[i]).toBeDefined()
+      expect(e.ask.hide.length).toBeLessThan(e.options.length)
+    }
+  })
+
+  it('內容編輯器存檔時去掉無效的位置、不能全部藏起來', () => {
+    const base = { weight: 1, text: '測試', options: [{ label: 'a', result: '' }, { label: 'b', result: '' }] }
+    const ask = { group: 'serve', name: '測試', desc: '', lead: '你去找{master}。' }
+    expect(sanitizeMasterEvent('x', { ...base, ask: { ...ask, hide: [1, 5, -1, 1] } } as never, true)?.ask?.hide).toEqual([1])
+    expect(sanitizeMasterEvent('x', { ...base, ask: { ...ask, hide: [0, 1] } } as never, true)?.ask?.hide).toBeUndefined()
   })
 })
