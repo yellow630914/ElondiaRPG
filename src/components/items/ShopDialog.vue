@@ -79,23 +79,19 @@ const expanded = ref<string | null>(null)
 const toggle = (id: string) => { expanded.value = expanded.value === id ? null : id }
 const groupName = (g: Group) => (g === 'special' ? '特別交易' : itemRules.categories[g])
 
-const buyQty = reactive<Record<string, number>>({})
 /** 還沒放進購物車的存貨 */
 const leftOf = (d: Deal) => d.stock - (cart.buy[d.id] ?? 0)
-const qtyOf = (d: Deal) => Math.max(1, Math.min(leftOf(d), Math.floor(buyQty[d.id] ?? 1) || 1))
 /** 談好價之後要改購物車：先提醒（改了就照原價交易） */
 const okToChange = () => !cartBargainHeld(s.value, props.type, cartFromRecords(cart)) || confirm(CHANGE_WARNING)
 function addBuy(d: Deal, all = false) {
   if (leftOf(d) <= 0 || !okToChange()) return
-  cart.buy[d.id] = (cart.buy[d.id] ?? 0) + (all ? leftOf(d) : qtyOf(d))
-  buyQty[d.id] = 1
+  cart.buy[d.id] = (cart.buy[d.id] ?? 0) + (all ? leftOf(d) : 1)
 }
-/** 從購物車拿掉（數量照輸入框，最多拿到 0） */
-function removeBuy(d: Deal) {
+/** 從購物車拿掉一個，或全部拿掉 */
+function removeBuy(d: Deal, all = false) {
   const inCart = cart.buy[d.id] ?? 0
   if (inCart <= 0 || !okToChange()) return
-  const n = Math.min(inCart, Math.max(1, Math.floor(buyQty[d.id] ?? 1) || 1))
-  if (inCart - n > 0) cart.buy[d.id] = inCart - n
+  if (!all && inCart > 1) cart.buy[d.id] = inCart - 1
   else delete cart.buy[d.id]
 }
 const price = (d: Deal) => dealMoney(s.value, key.value, d)
@@ -156,33 +152,31 @@ const bagGroups = computed(() => {
     ...g, items: [...g.items].sort((a, b) => Number(b.price !== null) - Number(a.price !== null) || tier(b.name) - tier(a.name)),
   }))
 })
-const sellQty = reactive<Record<string, number>>({})
 /** 展開了收購價拆解的物品 */
 const sellWhy = ref<string | null>(null)
 const buyWhy = (d: Deal) => buyBreakdown(s.value, key.value, d)
 const buyWhyText = (d: Deal) => { const b = buyWhy(d); return b ? `${breakdownText(b)}\n（點一下展開）` : undefined }
 const sellLeft = (name: string, have: number) => have - (cart.sell[name] ?? 0)
-const sellN = (name: string, have: number) => Math.max(1, Math.min(sellLeft(name, have), Math.floor(sellQty[name] ?? 1) || 1))
 function addSell(name: string, have: number, all = false) {
   if (sellLeft(name, have) <= 0 || !okToChange()) return
-  cart.sell[name] = (cart.sell[name] ?? 0) + (all ? sellLeft(name, have) : sellN(name, have))
-  sellQty[name] = 1
+  cart.sell[name] = (cart.sell[name] ?? 0) + (all ? sellLeft(name, have) : 1)
 }
-function removeSell(name: string) {
+/** 從購物車拿掉一個（或全部）要賣的 */
+function removeSell(name: string, all = false) {
   const inCart = cart.sell[name] ?? 0
   if (inCart <= 0 || !okToChange()) return
-  const n = Math.min(inCart, Math.max(1, Math.floor(sellQty[name] ?? 1) || 1))
-  if (inCart - n > 0) cart.sell[name] = inCart - n
+  if (!all && inCart > 1) cart.sell[name] = inCart - 1
   else delete cart.sell[name]
 }
+/** 價格欄只寫數字（單位在右上角的錢與表頭） */
+const num = (n: number) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
 
 // ---- 結果 ----
 function done(r: Report | undefined) {
   if (r) last.value = r.outcome.summary ?? ''
 }
 function buy(d: Deal) {
-  done(game.buyDeal(props.type, d.id, isItemDeal(d) ? qtyOf(d) : 1))
-  buyQty[d.id] = 1
+  done(game.buyDeal(props.type, d.id, 1))
 }
 
 </script>
@@ -257,26 +251,22 @@ function buy(d: Deal) {
                   </div>
                 </li>
               </ul>
+              <div v-if="itemDeals.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="c">類別</span><span class="r">價格</span><span /><span /><span /></div>
               <ul v-if="itemDeals.length" class="plain rows">
                 <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
                   <div class="line" @click="toggle(d.id)">
                     <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
-                    <span class="what marquee"><span class="what-in">
-                      <strong>{{ d.title }}</strong>
-                      <span class="small muted">{{ categoryName(s, itemName(d)) }}</span>
-                      <span v-if="itemEffect(s, itemName(d))" class="small effect">{{ itemEffect(s, itemName(d)) }}</span>
-                    </span></span>
-                    <span class="price" :title="buyWhyText(d)">{{ costText(s, key, d) }}</span>
+                    <span class="what"><strong class="nm">{{ d.title }}</strong><span class="sub small muted">{{ categoryName(s, itemName(d)) }}</span></span>
+                    <span class="cat small muted">{{ categoryName(s, itemName(d)) }}</span>
+                    <span class="price" :title="buyWhyText(d)">{{ num(price(d)) }}</span>
                     <span class="stock small muted">{{ d.stock < 20 ? `剩 ${leftOf(d)}` : '' }}</span>
-                    <span class="incart small" :title="cart.buy[d.id] ? `購物車裡有 ${cart.buy[d.id]} 個` : undefined"><template v-if="cart.buy[d.id]"><GameIcon name="cart" :size="13" />{{ cart.buy[d.id] }}</template></span>
-                    <span class="btns" @click.stop>
-                      <input v-model.number="buyQty[d.id]" class="num" type="number" min="1" :max="Math.max(1, leftOf(d), cart.buy[d.id] ?? 0)" placeholder="1" :disabled="d.stock <= 1" aria-label="數量" />
-                      <span class="stepper">
-                        <button class="small" :disabled="!cart.buy[d.id]" title="從購物車拿掉" aria-label="從購物車拿掉" @click="removeBuy(d)"><GameIcon name="minus" :size="14" /></button>
-                        <button class="small" :disabled="leftOf(d) <= 0" title="加進購物車" aria-label="加進購物車" @click="addBuy(d)"><GameIcon name="plus" :size="14" /></button>
-                      </span>
-                      <button class="small all" :disabled="leftOf(d) <= 0" :title="`剩下的 ${leftOf(d)} 個全部加進購物車`" @click="addBuy(d, true)"><GameIcon name="cart" :size="14" />全部</button>
+                    <span class="steps" @click.stop>
+                      <button class="small" :disabled="!cart.buy[d.id]" title="全部拿出購物車" aria-label="全部拿出購物車" @click="removeBuy(d, true)">«</button>
+                      <button class="small" :disabled="!cart.buy[d.id]" title="從購物車拿出一個" aria-label="從購物車拿出一個" @click="removeBuy(d)">‹</button>
+                      <button class="small" :disabled="leftOf(d) <= 0" title="放進購物車一個" aria-label="放進購物車一個" @click="addBuy(d)">›</button>
+                      <button class="small" :disabled="leftOf(d) <= 0" :title="`剩下的 ${leftOf(d)} 個全部放進購物車`" aria-label="剩下的全部放進購物車" @click="addBuy(d, true)">»</button>
                     </span>
+                    <span class="incart small" :title="cart.buy[d.id] ? `購物車裡有 ${cart.buy[d.id]} 個` : undefined"><template v-if="cart.buy[d.id]"><GameIcon name="cart" :size="13" />{{ cart.buy[d.id] }}</template></span>
                   </div>
                   <div v-if="expanded === d.id" class="more small">
                     <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
@@ -310,32 +300,26 @@ function buy(d: Deal) {
               </button>
             </nav>
             <p v-if="!bag.length" class="small muted">{{ bagAll.length ? '沒有符合篩選的東西。' : onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
+            <div v-if="bag.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="c">類別</span><span class="r">收購</span><span /><span /><span /></div>
             <div class="list">
               <template v-for="g in bagGroups" :key="g.id">
                 <div class="group-head small">{{ g.name }}<span class="muted">{{ g.items.length }}</span></div>
                 <ul class="plain rows">
                   <li v-for="i in g.items" :key="i.name" class="item-row" :class="{ open: sellWhy === i.name, dim: i.price === null }">
-                    <div class="line bag-line" @click="sellWhy = sellWhy === i.name ? null : i.name">
+                    <div class="line" @click="sellWhy = sellWhy === i.name ? null : i.name">
                       <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>
-                      <span class="what marquee"><span class="what-in">
-                        <strong>{{ i.name }}</strong>
-                        <span class="qty small">×{{ i.qty }}</span>
-                        <span class="small muted">{{ categoryName(s, i.name) }}</span>
-                        <span v-if="itemEffect(s, i.name)" class="small effect">{{ itemEffect(s, i.name) }}</span>
-                      </span></span>
-                      <span class="price" :title="i.price !== null ? '收購價（一個）' : undefined">{{ i.price !== null ? formatMoney(i.price) : '' }}</span>
-                      <span class="incart small" :title="cart.sell[i.name] ? `購物車裡要賣 ${cart.sell[i.name]} 個` : undefined"><template v-if="cart.sell[i.name]"><GameIcon name="cart" :size="13" />{{ cart.sell[i.name] }}</template></span>
-                      <span class="btns" @click.stop>
-                        <template v-if="i.price !== null">
-                          <input v-model.number="sellQty[i.name]" class="num" type="number" min="1" :max="Math.max(1, sellLeft(i.name, i.qty), cart.sell[i.name] ?? 0)" placeholder="1" :disabled="i.qty <= 1" aria-label="數量" />
-                          <span class="stepper">
-                            <button class="small" :disabled="!cart.sell[i.name]" title="從購物車拿掉" aria-label="從購物車拿掉" @click="removeSell(i.name)"><GameIcon name="minus" :size="14" /></button>
-                            <button class="small" :disabled="sellLeft(i.name, i.qty) <= 0" title="加進購物車（賣出）" aria-label="加進購物車（賣出）" @click="addSell(i.name, i.qty)"><GameIcon name="plus" :size="14" /></button>
-                          </span>
-                          <button class="small all" :disabled="sellLeft(i.name, i.qty) <= 0" :title="`剩下的 ${sellLeft(i.name, i.qty)} 個全部加進購物車（賣出）`" @click="addSell(i.name, i.qty, true)"><GameIcon name="cart" :size="14" />全部</button>
-                        </template>
-                        <span v-else class="small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
+                      <span class="what"><strong class="nm">{{ i.name }}</strong><span class="qty small">×{{ i.qty }}</span><span class="sub small muted">{{ categoryName(s, i.name) }}</span></span>
+                      <span class="cat small muted">{{ categoryName(s, i.name) }}</span>
+                      <span class="price" :title="i.price !== null ? '收購價（一個；點一下看怎麼算）' : undefined">{{ i.price !== null ? num(i.price) : '' }}</span>
+                      <span class="stock" />
+                      <span v-if="i.price !== null" class="steps" @click.stop>
+                        <button class="small" :disabled="!cart.sell[i.name]" title="全部拿出購物車" aria-label="全部拿出購物車" @click="removeSell(i.name, true)">«</button>
+                        <button class="small" :disabled="!cart.sell[i.name]" title="從購物車拿出一個" aria-label="從購物車拿出一個" @click="removeSell(i.name)">‹</button>
+                        <button class="small" :disabled="sellLeft(i.name, i.qty) <= 0" title="放進購物車一個（賣出）" aria-label="放進購物車一個（賣出）" @click="addSell(i.name, i.qty)">›</button>
+                        <button class="small" :disabled="sellLeft(i.name, i.qty) <= 0" :title="`剩下的 ${sellLeft(i.name, i.qty)} 個全部放進購物車（賣出）`" aria-label="剩下的全部放進購物車（賣出）" @click="addSell(i.name, i.qty, true)">»</button>
                       </span>
+                      <span v-else class="no small muted">{{ isUniqueItem(s, i.name) ? '獨特裝備不能賣' : '這間店不收' }}</span>
+                      <span v-if="i.price !== null" class="incart small" :title="cart.sell[i.name] ? `購物車裡要賣 ${cart.sell[i.name]} 個` : undefined"><template v-if="cart.sell[i.name]"><GameIcon name="cart" :size="13" />{{ cart.sell[i.name] }}</template></span>
                     </div>
                     <div v-if="sellWhy === i.name" class="more small">
                       <div v-if="itemEffect(s, i.name)" class="effect" :title="materialRecipesFull(i.name) || undefined">{{ itemEffect(s, i.name) }}</div>
@@ -389,28 +373,46 @@ function buy(d: Deal) {
 .item-row { padding: 0; border-bottom: 1px solid var(--border); }
 .item-row:last-child { border-bottom: none; }
 .item-row.open { background: #c99a4510; }
-.item-row .line { display: grid; grid-template-columns: 30px minmax(0, 1fr) 5.5em 3em 3em auto; gap: 8px; align-items: center; min-height: 44px; padding: 3px 8px; cursor: pointer; }
+.item-row .line { display: grid; grid-template-columns: var(--shop-cols); gap: 6px; align-items: center; min-height: 40px; padding: 3px 8px; cursor: pointer; }
 .item-row .line:hover { background: #c99a450a; }
-/* 特別交易：價錢、庫存、買下與交涉；行囊：收購價、購物車、數量與按鈕 */
-.item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) 5.5em 3em auto; }
-.item-row .line.bag-line { grid-template-columns: 30px minmax(0, 1fr) 5.5em 3em auto; }
+/* 特別交易：價錢（可能是東西或時數，照寫）、庫存、買下與交涉 */
+.item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) auto 3em auto; gap: 8px; }
 .item-row.dim .line { opacity: 0.55; }
-/* 手機：圖示、名稱、價錢一排，庫存與按鈕換到下一排 */
+/* 一般商品與行囊的欄位：圖示、物品、類別、價格、剩、« ‹ › »、購物車；表頭用同一組（固定寬度，表頭與每一列才對得齊） */
+.shop-dialog { --shop-cols: 30px minmax(0, 1fr) 76px 56px 40px 114px 38px; }
+.thead { display: grid; grid-template-columns: var(--shop-cols); gap: 6px; padding: 0 9px 3px; border-bottom: 1px solid var(--border); }
+.thead .r { text-align: right; }
+.cat { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.what .sub { display: none; }
+.steps { display: inline-flex; gap: 2px; justify-content: flex-end; }
+.steps button { width: 26px; height: 26px; padding: 0; line-height: 1; }
+.no { grid-column: 6 / -1; text-align: right; white-space: nowrap; }
+/* 手機：圖示、名稱（類別小字在名稱下面）、價錢一排；庫存、按鈕、購物車換到下一排 */
 @media (max-width: 720px) {
-  .item-row .line, .item-row .line.special-line, .item-row .line.bag-line { grid-template-columns: 30px minmax(0, 1fr) auto; row-gap: 2px; }
-  .item-row .line .stock { grid-column: 2; }
-  .item-row .line .incart { grid-column: 3; }
-  .item-row .line .btns { grid-column: 2 / -1; flex-wrap: wrap; }
+  .shop-dialog { --shop-cols: 30px minmax(0, 1fr) auto; }
+  .thead .c, .thead > span:nth-child(n + 5), .item-row .line .cat { display: none; }
+  .what .sub { display: block; margin: 0; }
+  .item-row .line .stock { grid-column: 2; grid-row: 2; }
+  .item-row .line .steps { grid-column: 2 / -1; grid-row: 2; justify-self: end; margin-right: 44px; }
+  .item-row .line .incart { grid-column: 3; grid-row: 2; }
+  .item-row .line .no { grid-column: 2 / -1; grid-row: 2; }
+  .item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) auto; row-gap: 2px; }
+  .item-row .line.special-line .stock { grid-column: 2; }
+  .item-row .line.special-line .btns { grid-column: 2 / -1; flex-wrap: wrap; }
 }
 .what { min-width: 0; }
 /* 名稱、類別、行情、效果放不下時截斷成「…」（不跑馬燈；點一下展開看完整說明） */
 .what .what-in { display: inline; white-space: nowrap; }
 .what .what-in > * + * { margin-left: 6px; }
+/* 名稱放得下就完整顯示，放不下才截斷 */
+.what .nm { display: inline; }
+.what:not(.marquee) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.what .qty { margin-left: 4px; }
 .stock { text-align: right; white-space: nowrap; }
 .btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
 .btns .num { width: 52px; height: 28px; padding: 2px 6px; }
-/* 購物車裡有幾個：固定寬度的一欄，不擠動旁邊的輸入框與按鈕 */
-.incart { display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; min-width: 3em; color: var(--accent); font-weight: 600; white-space: nowrap; }
+/* 購物車裡有幾個：最右邊固定寬度的一欄 */
+.incart { display: inline-flex; align-items: center; justify-content: flex-end; gap: 2px; color: var(--accent); font-weight: 600; white-space: nowrap; }
 /* 減號與加號連成一組 */
 .stepper { display: inline-flex; }
 .stepper button { border-radius: 0; padding: 2px 8px; }
