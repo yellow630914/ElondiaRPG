@@ -24,7 +24,7 @@ afterEach(() => {
   applyContent(emptyMods())
 })
 
-const AREAS = ['lm_wives_salon', 'lm_maid_cafe', 'lm_ebony_night', 'lm_succubus_banquet', 'lm_idol_backstage', 'lm_honor_hole']
+const AREAS = ['lm_wives_salon', 'lm_maid_cafe', 'lm_ebony_night', 'lm_succubus_banquet', 'lm_idol_backstage', 'lm_honor_hole', 'lm_yh_faceless']
 
 function at(id: string, flags: string[], body?: 'masc' | 'fem' | 'andro'): GameState {
   const l = landmarks[id]!
@@ -150,6 +150,126 @@ describe('special areas unlocked by the storylines', () => {
   })
 })
 
+describe('other characters following into the special areas (club_lines42.py)', () => {
+  const story = (id: string) => stories.find((s) => s.id === id)!
+
+  it('needs the place already open and the character as a lover, and is marked NTR', () => {
+    for (const [id, flags] of [
+      ['belv_ebony_night', ['belv_lover', 'aya_club']], ['amelia_ebony_night', ['ame_lover', 'aya_club']],
+      ['serena_honor_hole', ['ser_lover', 'wl_1_done']], ['clara_honor_hole', ['clara_lover', 'wl_1_done']],
+    ] as const) {
+      const s = story(id)
+      expect(s.start.requires?.flags, id).toEqual(flags)
+      expect(s.tags, id).toContain('ntr')
+      expect(s.rank, id).toBe('B')
+    }
+  })
+
+  it('adds Belvia and Amelia to the Ebony Night only after their own quests, and never opens the club by itself', () => {
+    expect(titles(at('lm_ebony_night', ['aya_club', 'belv_club'], 'masc'))).toEqual(['看阿雅和水手們', '看貝爾維婭定規矩'])
+    const fem = at('lm_ebony_night', ['aya_club', 'belv_club', 'ame_club'], 'fem')
+    expect(titles(fem)).toEqual(['看阿雅和水手們', '和阿雅一起侍奉水手們', '看貝爾維婭定規矩', '站在貝爾維婭旁邊', '聽艾蜜莉亞唱船歌', '和艾蜜莉亞一起唱'])
+    const r = playLandmarkScene(fem, index(fem, '看貝爾維婭定規矩'))
+    expect(r.narration?.adult_scene).toContain('貝爾維婭')
+    // 共用地標的冷卻（場景演到過了午夜，所以剩兩天）
+    expect(sceneBlocked(fem, index(fem, '看阿雅和水手們'))).toMatch(/^\d 天後才能再來$/)
+    // 沒走阿雅的 NTR 線：地標照樣不出現
+    const state = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'soriel' })
+    setFlag(state, 'belv_club')
+    expect(landmarkHidden(state, landmarks.lm_ebony_night!)).toBe(true)
+  })
+
+  it('adds Serena and Clara to the honor hole, and hides them with NTR turned off', () => {
+    const state = at('lm_honor_hole', ['wl_1_done', 'ser_hole', 'clara_hole'])
+    expect(titles(state)).toEqual(['當服務的一方', '當被服務的一方', '替瑟蕾娜拿著髮簪', '讓瑟蕾娜猜哪一個是你', '替紫丁香記筆記', '讓克拉拉閉著眼睛猜'])
+    setContentFilters({ ntr: false })
+    expect(titles(state)).toEqual(['當服務的一方', '當被服務的一方'])
+  })
+
+  it('opens the Faceless House in 龍安府 only after Su Wanzhen\'s NTR ending, with her inside at night', () => {
+    const lines = stories.filter((s) => s.id.startsWith('yasz_'))
+    expect(lines.map((s) => [s.id, s.rank])).toEqual([['yasz_widow', 'D'], ['yasz_banquet', 'C'], ['yasz_arch', 'B'], ['yasz_faceless', 'B']])
+    const door = story('yasz_banquet').nodes.find((n) => n.id === 'door')!.options!
+    expect(door[1]!.tags).toEqual(['ntr'])
+    expect(JSON.stringify(story('yasz_faceless'))).toContain('yasz_club')
+    expect(JSON.stringify(story('yasz_arch'))).not.toContain('yasz_club')
+    expect(story('yasz_faceless').tags).toContain('ntr')
+    expect(landmarks.lm_yh_faceless!.open).toMatchObject({ flags: ['yasz_club'], hidden: true, adult: true, hours: 'night' })
+    expect(titles(at('lm_yh_faceless', ['yasz_club'], 'masc'))).toEqual(['看戴著儺面的婉貞', '沒有名字的一夜'])
+    const fem = at('lm_yh_faceless', ['yasz_club'], 'fem')
+    expect(titles(fem)).toEqual(['看戴著儺面的婉貞', '戴著儺面陪她入席', '沒有名字的一夜'])
+    expect(npcRecord(fem, 'npc_yh_su_wanzhen')?.stage).toBeDefined()
+    expect(peopleHere(fem).map((p) => p.rec.id)).toContain('npc_yh_su_wanzhen')
+    // 純愛線：無面樓不開，御街夜市多一個場景
+    const love = newGame({ name: '艾倫', race: 'human', classId: 'fighter', seed: 4, birthplace: 'longan' })
+    setFlag(love, 'yasz_lover')
+    expect(landmarkHidden(love, landmarks.lm_yh_faceless!)).toBe(true)
+    expect(landmarks.lm_yh_night_market!.scenes!.find((s) => s.title === '不戴面具的夜市')?.requires?.flags).toEqual(['yasz_lover'])
+  })
+})
+
+describe('more characters following into the special areas (club_lines43.py)', () => {
+  const story = (id: string) => stories.find((s) => s.id === id)!
+  const QUESTS: [string, string, string[]][] = [
+    ['kar_ebony_night', 'lm_ebony_night', ['kar_lover', 'aya_club']],
+    ['oboro_ebony_night', 'lm_ebony_night', ['oboro_lover', 'aya_club']],
+    ['camilla_honor_hole', 'lm_honor_hole', ['wl_lovers', 'wl_1_done']],
+    ['zero_honor_hole', 'lm_honor_hole', ['zero_lover', 'wl_1_done']],
+    ['club_chihuan_wild', 'lm_td_wild_horse', ['yach_lover', 'tdwn_club']],
+    ['club_urina_wild', 'lm_td_wild_horse', ['tdur_lover', 'tdwn_club']],
+    ['club_hailan_wild', 'lm_td_wild_horse', ['tdch_lover', 'tdch_x_done', 'tdwn_club']],
+    ['club_shen_faceless', 'lm_yh_faceless', ['ycsz_lover', 'ycsz_x_done', 'yasz_club']],
+    ['club_yaoting_faceless', 'lm_yh_faceless', ['ycyt_lover', 'ycyt_x_done', 'yasz_club']],
+  ]
+
+  it('needs the place already open and the character as a lover, is marked NTR, and unlocks her scenes there', () => {
+    for (const [id, lm, flags] of QUESTS) {
+      const s = story(id)
+      expect(s.start.requires?.flags, id).toEqual(flags)
+      expect(s.tags, id).toContain('ntr')
+      // 地標的開放旗標一定在接取條件裡
+      expect(flags, id).toEqual(expect.arrayContaining(landmarks[lm]!.open!.flags!))
+      const done = s.nodes.at(-1)!.options!.map((o) => o.success!.set_flags![0]!)
+      expect(new Set(done).size, id).toBe(1)
+      expect(landmarks[lm]!.scenes!.some((sc) => sc.requires?.flags?.includes(done[0]!)), id).toBe(true)
+    }
+    for (const id of ['lm_ebony_night', 'lm_honor_hole', 'lm_td_wild_horse']) expect(landmarks[id]!.scenes, id).toHaveLength(8)
+  })
+
+  it('shows each new scene only after her own quest, with NTR switched on', () => {
+    expect(titles(at('lm_ebony_night', ['aya_club', 'kar_club', 'oboro_club'], 'masc'))).toEqual(['看阿雅和水手們', '看卡蓮下戰帖', '看朧潛入'])
+    expect(titles(at('lm_honor_hole', ['wl_1_done', 'cam_hole', 'zero_hole']))).toEqual(['當服務的一方', '當被服務的一方', '替卡蜜拉數瓶子', '替零號記錄體溫'])
+    const wild = at('lm_td_wild_horse', ['tdwn_club', 'yach_wild', 'tdur_wild', 'tdch_wild'], 'fem')
+    expect(titles(wild)).toHaveLength(8)
+    const masked = at('lm_yh_faceless', ['yasz_club', 'ycsz_mask', 'ycyt_mask'], 'masc')
+    expect(titles(masked)).toEqual(['看戴著儺面的婉貞', '沒有名字的一夜', '看瀾生套話', '替瑤汀拿著月琴'])
+    setContentFilters({ ntr: false })
+    expect(titles(masked)).toEqual(['沒有名字的一夜'])
+  })
+})
+
+describe('quests set inside a special area', () => {
+  it('only use its interior when the area is already open, or the quest itself takes you in', () => {
+    // 以前野馬帳的任務點都在野馬帳的內部，地標卻要任務完成才出現，第一個任務點永遠走不到
+    const bad: string[] = []
+    for (const s of stories) {
+      // 任務的結果把隊伍送進去的地圖（special_map）
+      const outcomes = s.nodes.flatMap((n) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])])
+      const takes = new Set(outcomes.map((o) => o?.special_map).filter(Boolean))
+      for (const n of s.nodes) {
+        if (n.at.where !== 'special') continue
+        const l = Object.values(landmarks).find((x) => x.interior === n.at.special_map && x.open?.hidden)
+        if (!l) continue
+        const need = l.open!.flags ?? []
+        const has = s.start.requires?.flags ?? []
+        if (!need.every((f) => has.includes(f)) && !takes.has(n.at.special_map)) bad.push(`${s.id}/${n.id} → ${l.id}`)
+      }
+    }
+    expect(bad).toEqual([])
+    expect(stories.find((s) => s.id === 'tdwn_wild_horse')!.nodes.every((n) => n.at.where === 'outskirts' && n.at.location === 'yinghe')).toBe(true)
+  })
+})
+
 describe('landmark scenes in the content editor', () => {
   it('keeps the fields that make sense and drops the rest', () => {
     const sc = sanitizeScene({
@@ -159,6 +279,15 @@ describe('landmark scenes in the content editor', () => {
     })!
     expect(sc).toEqual({ title: '測試', scene: '{cast}在這裡', tags: ['adult'], cast: [{ npc: 'npc_mimi', flags: ['x'] }], hours: 2, affinity: 30, own_cooldown: true, requires: { flags: ['a'] } })
     expect(sanitizeScene({ title: '沒有經過', scene: '' })).toBeUndefined()
+  })
+
+  it('keeps up to twelve scenes on one landmark', () => {
+    const l = JSON.parse(JSON.stringify(landmarks.lm_ebony_night)) as { scenes: { title: string }[] }
+    const more = Array.from({ length: 6 }, (_, i) => ({ ...l.scenes[0]!, title: `多出來的場景${i + 1}` }))
+    const m = sanitizeLandmarkMod('lm_ebony_night', { ...l, scenes: [...l.scenes, ...more] } as never)
+    // 原本 8 個，加 6 個：留前 12 個
+    expect(m.scenes).toHaveLength(12)
+    expect(m.scenes!.at(-1)!.title).toBe('多出來的場景4')
   })
 
   it('saves a landmark with its scenes and the adult switch', () => {
