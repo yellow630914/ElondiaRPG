@@ -39,8 +39,8 @@ import type { Character, GameState, GearSlot, Negotiation, NpcNews, NpcRecord } 
 import { PARASITE_LOCK } from '@/engine/parasites'
 import { lockName } from '@/engine/schools'
 import {
-  assemble, continuitySections, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, lengthHint, loreText, sharedSystemSections, styleLead, styleSection,
-  type LengthScale, type LoreLike, type Prompt,
+  assemble, continuitySections, endNotesSection, fillDefeatRules, fillSceneRules, LANGUAGE_NAME, lengthHint, loreText, povHint, sharedSystemSections, styleLead, styleSection,
+  type CustomLength, type LengthScale, type LoreLike, type Pov, type Prompt,
 } from './prompt'
 import type { Continuity } from './continuity'
 import type { PromptEntry } from './promptConfig'
@@ -212,6 +212,10 @@ export interface JudgePromptOptions {
   monsters?: string
   /** 正文篇幅（順便寫經過時） */
   lengthScale?: LengthScale
+  /** 篇幅選「自訂」時每一檔的字數 */
+  customLength?: CustomLength
+  /** 順便寫經過時的視角（提示詞設定） */
+  pov?: Pov
   /** 上一段正文的結尾與幕間發生的事（提示詞設定開啟「前後銜接」時） */
   continuity?: Continuity
   /** 順便寫經過時，這次的切入方式（提示詞設定開啟「變化正文的寫法」時） */
@@ -254,12 +258,12 @@ function sceneSection(opts: JudgePromptOptions, player: string, narrative: boole
   return narrative ? `${flag}填了 adult_scene 時，narrative 依下面的成人場景規則詳細描寫：\n${fillSceneRules(opts.sceneRules, player)}${opts.bodyNote ? `\n${opts.bodyNote}` : ''}` : flag
 }
 
-function narrativeLength(p: ActionPending, scale: LengthScale): string {
+function narrativeLength(p: ActionPending, scale: LengthScale, custom?: CustomLength): string {
   const s = p.adultScene
-  const medium = lengthHint('medium', scale)
+  const medium = lengthHint('medium', scale, custom)
   if (s && (!s.on || s.on.length === 5)) return `${medium}（親密場景是主體）`
   // 自由行動和敘事一樣預設中等篇幅
-  return p.kind === 'free' ? medium : `${lengthHint('short', scale)}；有親密場景時${medium}`
+  return p.kind === 'free' ? medium : `${lengthHint('short', scale, custom)}；有親密場景時${medium}`
 }
 
 /** 這次行動會（或可能）進入的親密場景 */
@@ -497,8 +501,8 @@ ${outcomes || '- 無固定機制結果，依你的 effects 決定'}
       key: 'request', title: '本次要求', part: 'user',
       text: narrative
         ? `本次要求：
-- narrative 視角：第二人稱，以「你」指稱主角${pc.name}
-- narrative 篇幅：${narrativeLength(p, opts.lengthScale ?? 'standard')}${opts.variety ? `\n- narrative 這次的寫法：${opts.variety}` : ''}${continuity.judgeNote}
+- narrative 視角：${povHint(opts.pov, undefined, pc.name)}
+- narrative 篇幅：${narrativeLength(p, opts.lengthScale ?? 'standard', opts.customLength)}${opts.variety ? `\n- narrative 這次的寫法：${opts.variety}` : ''}${continuity.judgeNote}
 請判定這次行動，只輸出 JSON。`
         : `${continuity.judgeNote ? `${continuity.judgeNote.trim()}\n` : ''}請判定這次行動，只輸出 JSON（narrative 留空）。`,
     },

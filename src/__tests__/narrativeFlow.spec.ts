@@ -122,6 +122,30 @@ describe('narration length', () => {
     const r = act(state, '在廣場上看看有什麼新鮮事')
     expect(composeNarration(state, r, options({ lengthScale: 'longer' })).prompt.system).toBe(composeNarration(state, r, options()).prompt.system)
   })
+
+  it('uses the custom word counts when the length is set to custom', () => {
+    const state = game()
+    const r = act(state, '在廣場上看看有什麼新鮮事')
+    const customLength = { short: [300, 500], medium: [1200, 1800], long: [2000, 3000] } as ComposeOptions['config']['customLength']
+    expect(composeNarration(state, r, options({ lengthScale: 'custom', customLength })).prompt.user).toContain('篇幅：約 1200～1800 字')
+    // 判定時順便寫的經過也照這個
+    const p = prepareAction(state, { kind: 'free', text: '在廣場上看看有什麼新鮮事' })
+    expect(composeJudge(state, p, options({ lengthScale: 'custom', customLength })).prompt.user).toContain('narrative 篇幅：約 1200～1800 字')
+  })
+})
+
+describe('narration point of view', () => {
+  it('writes second person by default and follows the point-of-view setting in narration and judging', () => {
+    const state = game()
+    const r = act(state, '在廣場上看看有什麼新鮮事')
+    expect(composeNarration(state, r, options()).prompt.user).toContain('視角：第二人稱，以「你」指稱主角艾倫')
+    expect(composeNarration(state, r, options({ pov: 'third' })).prompt.user).toContain('視角：第三人稱，以名字「艾倫」')
+    expect(composeNarration(state, r, options({ pov: 'first' })).prompt.user).toContain('視角：第一人稱')
+    const p = prepareAction(state, { kind: 'free', text: '散步' })
+    expect(composeJudge(state, p, options({ pov: 'first' })).prompt.user).toContain('narrative 視角：第一人稱')
+    // 只改本次要求，system 不變（可以共用快取）
+    expect(composeNarration(state, r, options({ pov: 'third' })).prompt.system).toBe(composeNarration(state, r, options()).prompt.system)
+  })
 })
 
 describe('continuity between narrations', () => {
@@ -220,5 +244,12 @@ describe('prompt settings', () => {
     expect(c).toMatchObject({ lengthScale: 'standard', continuity: true, variety: true })
     expect(normalizeConfig({ lengthScale: 'longer', continuity: false, variety: false })).toMatchObject({ lengthScale: 'longer', continuity: false, variety: false })
     expect(normalizeConfig({ lengthScale: 'huge' }).lengthScale).toBe('standard')
+    expect(c).toMatchObject({ pov: 'auto', customLength: { short: [200, 400], medium: [500, 900], long: [1000, 1500] } })
+    expect(normalizeConfig({ pov: 'third' }).pov).toBe('third')
+    expect(normalizeConfig({ pov: 'fourth' }).pov).toBe('auto')
+    // 自訂篇幅：夾在範圍內、下限不大於上限，壞掉的那一檔用預設
+    expect(normalizeConfig({ lengthScale: 'custom', customLength: { short: [900, 100], medium: [10, 99999], long: 'x' } })).toMatchObject({
+      lengthScale: 'custom', customLength: { short: [100, 900], medium: [50, 6000], long: [1000, 1500] },
+    })
   })
 })

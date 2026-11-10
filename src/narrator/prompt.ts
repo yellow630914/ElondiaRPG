@@ -39,8 +39,12 @@ export interface PromptOptions {
   sceneRules?: string
   /** 陽剛體型的主角玩照陰柔、中性主角寫的成人內容時：接在成人場景規則後面的說明（mascBodyNote） */
   bodyNote?: string
-  /** 正文篇幅：整體偏短、標準、偏長（沒有時是標準） */
+  /** 正文篇幅：整體偏短、標準、偏長、自訂（沒有時是標準） */
   lengthScale?: LengthScale
+  /** 篇幅選「自訂」時每一檔的字數 */
+  customLength?: CustomLength
+  /** 正文的視角（提示詞設定；沒有時依日誌，通常是第二人稱） */
+  pov?: Pov
   /** 上一段正文的結尾與幕間發生的事（提示詞設定開啟「前後銜接」時） */
   continuity?: Continuity
   /** 開啟「變化正文的寫法」時：這次的切入方式與收尾（見 varietyHint） */
@@ -76,19 +80,44 @@ export function loreText(items: LoreLike[]): string {
 
 export const LANGUAGE_NAME = { 'zh-Hant': '繁體中文', 'zh-Hans': '简体中文' } as const
 
-/** 正文篇幅：提示詞設定的「正文篇幅」整體調整每一檔的字數 */
-export type LengthScale = 'shorter' | 'standard' | 'longer'
-export const LENGTH_SCALES: LengthScale[] = ['shorter', 'standard', 'longer']
-export const LENGTH_SCALE_NAME: Record<LengthScale, string> = { shorter: '偏短', standard: '標準', longer: '偏長' }
-type Length = 'short' | 'medium' | 'long'
-const LENGTH_HINT: Record<LengthScale, Record<Length, string>> = {
+/** 正文篇幅：提示詞設定的「正文篇幅」整體調整每一檔的字數；custom 是玩家自己填的字數（customLength） */
+export type LengthScale = 'shorter' | 'standard' | 'longer' | 'custom'
+export const LENGTH_SCALES: LengthScale[] = ['shorter', 'standard', 'longer', 'custom']
+export const LENGTH_SCALE_NAME: Record<LengthScale, string> = { shorter: '偏短', standard: '標準', longer: '偏長', custom: '自訂' }
+export type Length = 'short' | 'medium' | 'long'
+export const LENGTHS: Length[] = ['short', 'medium', 'long']
+export const LENGTH_NAME: Record<Length, string> = { short: '短篇', medium: '中篇', long: '長篇' }
+/** 自訂篇幅：每一檔的字數下限與上限 */
+export type CustomLength = Record<Length, [number, number]>
+/** 自訂篇幅的預設（和「標準」一樣）與可以填的範圍 */
+export const DEFAULT_CUSTOM_LENGTH: CustomLength = { short: [200, 400], medium: [500, 900], long: [1000, 1500] }
+export const CUSTOM_LENGTH_MIN = 50
+export const CUSTOM_LENGTH_MAX = 6000
+const LENGTH_HINT: Record<Exclude<LengthScale, 'custom'>, Record<Length, string>> = {
   shorter: { short: '約 150～300 字', medium: '約 400～700 字', long: '約 800～1200 字' },
   standard: { short: '約 200～400 字', medium: '約 500～900 字', long: '約 1000～1500 字' },
   longer: { short: '約 400～700 字', medium: '約 900～1400 字', long: '約 1500～2200 字' },
 }
 
-export function lengthHint(length: Length, scale: LengthScale = 'standard'): string {
+export function lengthHint(length: Length, scale: LengthScale = 'standard', custom?: CustomLength): string {
+  if (scale === 'custom') {
+    const [lo, hi] = (custom ?? DEFAULT_CUSTOM_LENGTH)[length] ?? DEFAULT_CUSTOM_LENGTH[length]
+    return lo === hi ? `約 ${lo} 字` : `約 ${lo}～${hi} 字`
+  }
   return (LENGTH_HINT[scale] ?? LENGTH_HINT.standard)[length]
+}
+
+/** 正文的視角：auto 依日誌（通常是第二人稱，少數日誌指定第三人稱） */
+export type Pov = 'auto' | 'second' | 'third' | 'first'
+export const POVS: Pov[] = ['auto', 'second', 'third', 'first']
+export const POV_NAME: Record<Pov, string> = { auto: '依日誌（通常第二人稱）', second: '第二人稱（你）', third: '第三人稱（主角的名字）', first: '第一人稱（我）' }
+
+/** 「本次要求」的視角那一行 */
+export function povHint(setting: Pov | undefined, reportPov: string | undefined, player: string): string {
+  const pov = !setting || setting === 'auto' ? (reportPov === 'third_person' ? 'third' : 'second') : setting
+  if (pov === 'third') return `第三人稱，以名字「${player}」或他／她稱呼主角，不用「你」`
+  if (pov === 'first') return `第一人稱，從主角${player}的角度以「我」敘述，不用「你」`
+  return `第二人稱，以「你」指稱主角${player}`
 }
 
 /** 正文的切入方式與收尾：依日誌編號輪替，連續兩則不會一樣（放在本次要求，不影響快取） */
@@ -316,10 +345,10 @@ export function styleLead(before: string): string {
 export function buildPrompt(report: Report, lore: LoreLike[] | { constant: LoreLike[]; triggered: LoreLike[] }, opts: PromptOptions): Prompt {
   const lang = LANGUAGE_NAME[opts.language]
   const { constant, triggered } = Array.isArray(lore) ? { constant: [], triggered: lore } : lore
-  const pov = report.narration?.pov === 'third_person' ? '第三人稱' : `第二人稱，以「你」指稱主角${opts.playerName}`
+  const pov = povHint(opts.pov, report.narration?.pov, opts.playerName)
   const scene = adultSceneOf(report)
   // 親密場景至少寫中等篇幅
-  const length = lengthHint(scene && (report.narration?.length ?? 'medium') === 'short' ? 'medium' : report.narration?.length ?? 'medium', opts.lengthScale)
+  const length = lengthHint(scene && (report.narration?.length ?? 'medium') === 'short' ? 'medium' : report.narration?.length ?? 'medium', opts.lengthScale, opts.customLength)
   const continuity = continuitySections(opts.continuity)
 
   const filled = fillRules(opts.rules?.trim() ? opts.rules : DEFAULT_NARRATION_RULES, { language: lang, player: opts.playerName })
