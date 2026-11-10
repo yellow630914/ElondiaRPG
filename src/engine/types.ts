@@ -1253,10 +1253,14 @@ export interface PregnancyState {
   conceived: number
   /** 預產日（受孕當下照存檔規則算好；之後改存檔規則不影響已經懷上的） */
   due: number
-  /** 父親；沒有 = 父親不明 */
-  father?: { id?: string; name: string }
+  /** 父親；沒有 = 父親不明。race：受孕時父親的種族（查得到時） */
+  father?: { id?: string; name: string; race?: string }
   /** 哪一則日誌受孕的 */
   report?: string
+  /** 那次經歷是非自願的（性經歷的 AI 記錄的 forced） */
+  forced?: boolean
+  /** 這次生產的 DC 減多少（產婆的叮囑……孕期事件的選項） */
+  birth_dc?: number
   /** 察覺了沒 */
   known?: boolean
   knownDay?: number

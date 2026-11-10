@@ -25,7 +25,7 @@ import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory }
 import { addCounters, condMet, flagKey, openFor } from './storyFlags'
 import { gateCheck } from './security'
 import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
-import type { GameState, Report, RollPart, RoadState, TimelineEntry } from './types'
+import type { GameState, PregnancyStage, Report, RollPart, RoadState, TimelineEntry } from './types'
 import { checkParts, rollBreakdown, sumParts, toolParts } from './rollParts'
 import { pcBodyAllowed, tagsAllowed, type ContentTag } from './content'
 import { characterBody } from './look'
@@ -42,9 +42,13 @@ export interface RoadOption {
   label: string; check?: StoryCheck; success?: StoryOutcome; fail?: StoryOutcome
   /** 成人向：這個選項進入親密場景（模板的 scene）：always 一定、success / fail 檢定成功或失敗時 */
   adult_scene?: 'always' | 'success' | 'fail'
+  /** 懷孕的察覺事件：選了就察覺（always）或檢定成功才察覺（success）（docs/FAMILY.md 第 5 節） */
+  reveal?: 'always' | 'success'
+  /** 懷孕的事件：這次生產的 DC 減多少（產婆的叮囑；記在懷孕記錄的 birth_dc） */
+  birth_bonus?: number
 }
 /** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts）、地下城與近郊（dungeonEvents.ts）、寄生物的發作（parasiteEvents.ts），或線索池的事件點（leadEvents.ts） */
-export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite' | 'lead'
+export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite' | 'lead' | 'pregnancy'
 /** 地下城事件的觸發點：觸發陷阱、打開寶箱、採集、在安全房長休之後 */
 export type DungeonTrigger = 'trap' | 'chest' | 'gather' | 'rest'
 export interface RoadTemplate {
@@ -82,8 +86,24 @@ export interface RoadTemplate {
   parasite?: string
   /** 寄生物：哪些階段（0 潛伏、1 發作、2 共生、3 支配；沒有時任何階段） */
   stages?: number[]
-  /** 寄生物：哪些時機（step 走動、travel 旅途、rest 長休之後；沒有時任何時機） */
+  /** 寄生物、懷孕：哪些時機（step 走動、travel 旅途、rest 長休之後；沒有時任何時機） */
   moments?: ('step' | 'travel' | 'rest')[]
+  /** 懷孕（docs/FAMILY.md 第 5 節）：誰的事（pc 主角、companion 隊上懷孕的夥伴：文字 {a}、效果 $a） */
+  subject?: 'pc' | 'companion'
+  /** 懷孕：true = 孕期事件（已經察覺的人）；沒有 = 察覺事件（還沒察覺的人） */
+  known?: boolean
+  /** 懷孕：哪些階段（沒有時不限） */
+  preg_stages?: PregnancyStage[]
+  /** 懷孕：父親不明（unknown）、知道是誰（known）、在隊上（in_party）、不在隊上（not_in_party）；文字 {f}、效果 $f 是父親 */
+  father?: 'unknown' | 'known' | 'in_party' | 'not_in_party'
+  /** 懷孕：父親是這些種族（父親不明時不成立） */
+  father_races?: string[]
+  /** 懷孕：混血（父親的種族和母親不同） */
+  mixed?: boolean
+  /** 懷孕：true 只有非自願懷上的、false 只有不是非自願的 */
+  forced?: boolean
+  /** 懷孕：只在聚落裡 */
+  in_settlement?: boolean
   /** 內容標籤（成人向、主角非自願……）：設定裡關掉的不出現 */
   tags?: ContentTag[]
   /** 只給這些體型的主角 */

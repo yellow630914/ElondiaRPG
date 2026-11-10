@@ -96,6 +96,8 @@ export const CASES: Record<string, () => Case> = {
   specialMaps: () => ({ editor: SpecialMapEditor, keys: sample(Object.keys(specialMaps), 10), props: (id) => ({ id }) }),
   shops: () => ({ editor: ShopEditor, keys: sample(Object.keys(shopRules.types), 15), props: (id) => ({ id }) }),
   events: () => ({ editor: TravelEventEditor, keys: sample(travelEvents.templates.map((t) => t.id), 30), props: (id) => ({ id }) }),
+  // 懷孕的事件（察覺與孕期）：全部打開一次（抽樣很難抽到）
+  pregnancyEvents: () => ({ editor: TravelEventEditor, keys: travelEvents.templates.filter((t) => t.scope === 'pregnancy').map((t) => t.id), props: (id) => ({ id }) }),
   masterEvents: () => ({ editor: MasterEventEditor, keys: sample(allMasterEvents().map((e) => e.def.id), 20), props: (id) => ({ id }) }),
   npcs: () => ({ editor: NpcEditor, keys: sample(npcs.map((n) => n.id), 30), props: (id) => ({ id }) }),
   stories: () => ({ editor: StoryEditor, keys: cover(stories, (d) => shape({ start: d.start, tags: d.tags, rewards: d.rewards, time_limit: d.time_limit }), 20).map((d) => d.id), props: (id) => ({ id }) }),

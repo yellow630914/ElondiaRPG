@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DEFAULT_FILTERS, setContentFilters, tagsAllowed } from '@/engine/content'
 import { generateNpc, registerNpc } from '@/engine/npcs'
 import { pcOf } from '@/engine/party'
-import { familyTick } from '@/engine/pregnancy'
+import { birthDc, familyTick } from '@/engine/pregnancy'
+import { travelEvents } from '@/engine/road'
 import {
   answerPregnancyEvent, maybePregnancyEvent, pendingPregnancyEvent, pregnancyCandidates, pregnancyTemplates, prunePregnancyEvent, unawareMothers,
 } from '@/engine/pregnancyEvents'
 import { newGame, withRng } from '@/engine/state'
+import { sanitizeTravelEvent, travelEventWarnings } from '@/engine/travelEventMods'
 import type { Character, GameState } from '@/engine/types'
 
 function game() {
@@ -42,15 +44,23 @@ beforeEach(() => setContentFilters({ ...DEFAULT_FILTERS, pregnancy: true }))
 afterEach(() => setContentFilters({ ...DEFAULT_FILTERS }))
 
 describe('懷孕的察覺事件：資料', () => {
-  it('主角 6 件、夥伴 3 件，都帶懷孕的標籤；夥伴的事件用 {a} 寫名字', () => {
+  it('察覺事件：主角 6 件、夥伴 3 件；孕期事件：主角 12 件、夥伴 6 件；都帶懷孕的標籤，夥伴的事件用 {a} 寫名字', () => {
     const all = pregnancyTemplates()
-    expect(all.filter((t) => t.subject === 'pc')).toHaveLength(6)
-    expect(all.filter((t) => t.subject === 'companion')).toHaveLength(3)
+    const disc = all.filter((t) => !t.known)
+    const stage = all.filter((t) => t.known)
+    expect(disc.filter((t) => t.subject === 'pc')).toHaveLength(6)
+    expect(disc.filter((t) => t.subject === 'companion')).toHaveLength(3)
+    expect(stage.filter((t) => t.subject === 'pc')).toHaveLength(12)
+    expect(stage.filter((t) => t.subject === 'companion')).toHaveLength(6)
     for (const t of all) {
+      expect(t.scope).toBe('pregnancy')
       expect(t.tags).toContain('pregnancy')
-      expect(t.options?.some((o) => o.reveal)).toBe(true)
-      expect(t.options?.some((o) => !o.reveal)).toBe(true)
       if (t.subject === 'companion') expect(t.text).toContain('{a}')
+      if (!t.known) expect(t.options?.some((o) => o.reveal)).toBe(true)
+      else expect(t.options?.some((o) => o.reveal)).toBe(false)
+      expect(travelEventWarnings(t)).toEqual([])
+      // 內建的事件經過整理不變（編輯器打開再存不會改到）
+      expect(sanitizeTravelEvent(t.id, t, false)).toEqual(t)
     }
   })
 })
@@ -145,5 +155,77 @@ describe('懷孕的察覺事件：回應', () => {
     familyTick(state)
     expect(state.pregnancies![rec.id]!.known).toBe(true)
     expect(state.npcLife?.news[rec.id]?.at(-1)?.text).toContain('懷孕了')
+  })
+})
+
+describe('孕期事件', () => {
+  it('已經察覺的人照階段出現孕期事件；察覺事件不再出現', () => {
+    const { state } = game()
+    pregnant(state, 'pc', 10)
+    state.pregnancies!.pc!.known = true
+    const early = pregnancyCandidates(state, 'pc', 'rest').map((t) => t.id)
+    expect(early).toContain('pg_st_retch')
+    expect(early).not.toContain('pg_pc_morning')
+    expect(early).not.toContain('pg_st_quickening')
+    state.time = { ...state.time, day: state.pregnancies!.pc!.conceived + 20 }
+    const mid = pregnancyCandidates(state, 'pc', 'rest').map((t) => t.id)
+    expect(mid).toContain('pg_st_quickening')
+    expect(mid).not.toContain('pg_st_retch')
+    // 走動也有孕期事件（路人的祝福只在聚落裡）
+    expect(pregnancyCandidates(state, 'pc', 'step').map((t) => t.id)).toContain('pg_st_blessing')
+  })
+
+  it('父親在隊上的事件：父親不在時不出現；父親的名字代進 {f}，親密度給父親', () => {
+    const { state } = game()
+    const dad = mate(state)
+    pregnant(state, 'pc', 20)
+    state.pregnancies!.pc!.known = true
+    state.pregnancies!.pc!.father = { name: '旅人' }
+    expect(pregnancyCandidates(state, 'pc', 'rest').map((t) => t.id)).not.toContain('pg_st_father_touch')
+    state.pregnancies!.pc!.father = { id: dad.id, name: dad.name }
+    expect(pregnancyCandidates(state, 'pc', 'rest').map((t) => t.id)).toContain('pg_st_father_touch')
+    state.pregnancyEvent = { template: 'pg_st_father_touch', mother: 'pc' }
+    expect(pendingPregnancyEvent(state)!.title).toBe(`${dad.name}的手`)
+    const r = answerPregnancyEvent(state, 0)
+    expect(r.changes.affinity?.[0]).toMatchObject({ npc: dad.id })
+    expect(pcOf(state).status).toContain('fetal_joy')
+  })
+
+  it('產婆的叮囑讓這次生產的 DC 低 1', () => {
+    const { state } = game()
+    pregnant(state, 'pc', 33)
+    state.pregnancies!.pc!.known = true
+    state.pregnancyEvent = { template: 'pg_st_midwife', mother: 'pc' }
+    answerPregnancyEvent(state, 0)
+    expect(state.pregnancies!.pc!.birth_dc).toBe(1)
+    state.pendingBirth = { mother: 'pc' }
+    expect(birthDc(state)).toBe(11)
+  })
+
+  it('編輯器的篩選：父親不明、種族、混血、非自願', () => {
+    const { state } = game()
+    pregnant(state, 'pc', 20)
+    const p = state.pregnancies!.pc!
+    p.known = true
+    delete p.father
+    const base = { ...pregnancyTemplates().find((t) => t.id === 'pg_st_tight')! }
+    delete base.in_settlement
+    const check = (extra: object) => {
+      travelEvents.templates.push({ ...base, id: 'zz_test', ...extra })
+      const ok = pregnancyCandidates(state, 'pc', 'rest').some((t) => t.id === 'zz_test')
+      travelEvents.templates.pop()
+      return ok
+    }
+    expect(check({ father: 'unknown' })).toBe(true)
+    p.father = { id: 'x', name: '龍', race: 'hualong' }
+    expect(check({ father: 'unknown' })).toBe(false)
+    expect(check({ father_races: ['hualong'] })).toBe(true)
+    expect(check({ father_races: ['elf'] })).toBe(false)
+    expect(check({ mixed: true })).toBe(true)
+    expect(check({ mixed: false })).toBe(false)
+    expect(check({ forced: true })).toBe(false)
+    p.forced = true
+    expect(check({ forced: true })).toBe(true)
+    expect(check({ requires: { flags: ['never_set'] } })).toBe(false)
   })
 })

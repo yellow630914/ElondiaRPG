@@ -120,6 +120,8 @@ export interface ConceiveInput {
   partners: { id?: string; name: string; sex?: boolean }[]
   /** 這次性交幾次 */
   times: number
+  /** 這次是非自願的（記在懷孕記錄，孕期事件可以篩選） */
+  forced?: boolean
 }
 
 /** 這次的受孕機率與父親（不會受孕時 undefined；給測試與說明用） */
@@ -148,7 +150,9 @@ export function conceptionChance(state: GameState, input: ConceiveInput): { chan
   if (named.length && !eligible.length) return undefined
   if (!named.length && monsters) return undefined
   const fatherRef = eligible.length === 1 ? eligible[0]! : undefined
-  const father = fatherRef ? { ...(fatherRef.id ? { id: pcKey(state, fatherRef.id) } : {}), name: fatherRef.name } : undefined
+  const fatherKey = fatherRef?.id ? pcKey(state, fatherRef.id) : undefined
+  const fatherRaceOf = fatherKey ? personOf(state, fatherKey)?.race : undefined
+  const father = fatherRef ? { ...(fatherKey ? { id: fatherKey } : {}), name: fatherRef.name, ...(fatherRaceOf ? { race: fatherRaceOf } : {}) } : undefined
   const c = rules.conception
   const times = c.times[String(Math.min(3, input.times))] ?? 1
   const fatherRace = father?.id ? personOf(state, father.id)?.race ?? mother.race : mother.race
@@ -177,6 +181,7 @@ export function maybeConceive(state: GameState, input: ConceiveInput): boolean {
     due: day + Math.round(gameRule(state, 'pregnancyDays')),
     ...(odds.father ? { father: odds.father } : {}),
     report: input.report.report_id,
+    ...(input.forced ? { forced: true } : {}),
   }
   syncPregnancyMarks(state)
   return true
@@ -330,7 +335,8 @@ export function birthDc(state: GameState): number {
   const b = rules.birth
   const motherChar = pb ? personOf(state, pb.mother)?.character : undefined
   const healer = state.party.some((m) => m !== motherChar && b.healer_classes.includes(m.class))
-  return (pb?.wild ? b.wild_dc : b.dc) - (healer ? b.healer_bonus : 0)
+  const bonus = pb ? state.pregnancies?.[pb.mother]?.birth_dc ?? 0 : 0
+  return (pb?.wild ? b.wild_dc : b.dc) - (healer ? b.healer_bonus : 0) - bonus
 }
 
 /** 生下來的嬰兒可以放哪裡（這座城的房子、神殿；都沒有時照自動安排） */

@@ -198,8 +198,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (town.report) return { report: town.report }
   // 寄生物的發作：旅途上一格一天，其他地方一步
   parasiteEvents.maybeParasiteEvent(s, s.road && !s.side ? 'travel' : 'step')
-  // 懷孕的察覺事件：旅途上每天（一格）
-  if (s.road && !s.side) pregnancyEvents.maybePregnancyEvent(s, 'travel')
+  // 懷孕的事件（察覺、孕期）：旅途上每天（一格），其他地方一步
+  pregnancyEvents.maybePregnancyEvent(s, s.road && !s.side ? 'travel' : 'step')
   return r
 }
 

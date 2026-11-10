@@ -2,7 +2,7 @@
 // 內建的事件可以改、不能刪；自建的事件沒有被用到的地方，隨時可以刪（等待中的事件會作廢）。
 // 另外一筆「事件設定」（key 是 rules）：旅途各種路段的機率、事件種類的權重，城鎮事件與地下城事件的機率與冷卻。
 
-import { ATTR_IDS, SKILL_IDS, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
+import { ATTR_IDS, SKILL_IDS, attributeRules, geography, shopRules, type AttrId, type LocationType, type RouteMode, type StoryCheck, type StoryOutcome } from './data'
 import { sanitizeCond } from './mods'
 import { parasiteDef, parasiteRules } from './parasites'
 import { DEFAULT_LAYER_DC } from './dungeonEvents'
@@ -12,6 +12,7 @@ import { BODIES } from './traits'
 import { sanitizeOutcome } from './storyMods'
 import { TOWN_EVENT_CELLS } from './townEvents'
 import { MODE_NAME } from './travel'
+import type { PregnancyStage } from './types'
 
 export interface TravelEventMod extends RoadTemplate {
   custom?: boolean
@@ -31,6 +32,11 @@ export const DUNGEON_TRIGGERS: Record<DungeonTrigger, string> = { trap: '觸發�
 export const PARASITE_MOMENTS: Record<NonNullable<RoadTemplate['moments']>[number], string> = { step: '走動', travel: '旅途', rest: '長休之後' }
 /** 地下城事件的層：0 近郊、1 淺層 … 4 底層 */
 export const EVENT_LAYERS = ['近郊', '淺層', '中層', '深層', '底層'] as const
+/** 懷孕的階段（docs/FAMILY.md 第 4 節） */
+export const PREG_STAGE_IDS: PregnancyStage[] = ['hidden', 'early', 'mid', 'late']
+export const PREG_STAGE_NAME: Record<PregnancyStage, string> = { hidden: '未察覺', early: '初期', mid: '中期', late: '後期' }
+/** 懷孕的事件：父親的條件 */
+export const FATHER_FILTERS: Record<NonNullable<RoadTemplate['father']>, string> = { unknown: '父親不明', known: '知道父親是誰', in_party: '父親在隊上', not_in_party: '父親不在隊上' }
 const DEFAULT_DUNGEON: DungeonEventRules = { chance: { trap: 0, chest: 0, gather: 0, rest: 0 }, cooldown_hours: 4, repeat_days: 3 }
 export const ROUTE_MODES = Object.keys(MODE_NAME) as RouteMode[]
 export const LOCATION_TYPE_NAME: Record<Exclude<LocationType, 'dungeon'>, string> = {
@@ -103,8 +109,8 @@ function pick<T extends string>(v: unknown, allowed: readonly T[]): T[] {
 /** extraCells：還沒套用、但同一包裡有的自建商店（匯入時） */
 export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, custom: boolean, extraCells: string[] = []): TravelEventMod {
   const L = EVENT_LIMITS
-  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' || raw.scope === 'parasite' || raw.scope === 'lead' ? raw.scope : 'road'
-  // 地下城事件、線索事件與寄生物的發作只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
+  const scope: EventScope = raw.scope === 'town' || raw.scope === 'dungeon' || raw.scope === 'parasite' || raw.scope === 'lead' || raw.scope === 'pregnancy' ? raw.scope : 'road'
+  // 地下城事件、線索事件、寄生物的發作與懷孕的事件只有選擇（事件發生在主角身上，主角自己決定怎麼應付）
   const kind = raw.kind === 'check' && (scope === 'road' || scope === 'town') ? 'check' : 'choice'
   const out: TravelEventMod = {
     id,
@@ -149,6 +155,20 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
     if (stages.length && stages.length < parasiteRules.stages.length) out.stages = stages
     const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
     if (moments.length && moments.length < Object.keys(PARASITE_MOMENTS).length) out.moments = moments
+  } else if (scope === 'pregnancy') {
+    // 懷孕的事件（docs/FAMILY.md 第 5 節）：察覺事件或孕期事件、誰的事、時機、懷孕的條件
+    out.subject = raw.subject === 'companion' ? 'companion' : 'pc'
+    if (raw.known) out.known = true
+    const stages = pick(raw.preg_stages, PREG_STAGE_IDS)
+    if (stages.length && stages.length < PREG_STAGE_IDS.length) out.preg_stages = stages
+    const moments = pick(raw.moments, Object.keys(PARASITE_MOMENTS) as NonNullable<RoadTemplate['moments']>)
+    if (moments.length && moments.length < Object.keys(PARASITE_MOMENTS).length) out.moments = moments
+    if (raw.in_settlement) out.in_settlement = true
+    if (raw.father && raw.father in FATHER_FILTERS) out.father = raw.father
+    const races = pick(raw.father_races, Object.keys(attributeRules.races))
+    if (races.length) out.father_races = races
+    if (typeof raw.mixed === 'boolean') out.mixed = raw.mixed
+    if (typeof raw.forced === 'boolean') out.forced = raw.forced
   } else {
     const cells = pick(raw.cells, [...townEventCells(), ...extraCells])
     if (cells.length) out.cells = cells
@@ -169,7 +189,7 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   const scene = str(raw.scene, L.scene_chars)
   if (scene) out.scene = scene
   // 時段：城鎮、地下城、寄生物才有（旅途照天數走；線索在生成地圖時就放好了）
-  if ((scope === 'town' || scope === 'dungeon' || scope === 'parasite') && (raw.hours === 'day' || raw.hours === 'night')) out.hours = raw.hours
+  if ((scope === 'town' || scope === 'dungeon' || scope === 'parasite' || scope === 'pregnancy') && (raw.hours === 'day' || raw.hours === 'night')) out.hours = raw.hours
   if (kind === 'check') {
     out.check = check(raw.check) ?? { attr: 'int', dc: 12 }
     const s = outcome(raw.success)
@@ -188,6 +208,12 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
       const f = c ? outcome(o?.fail) : undefined
       if (f) opt.fail = f
       if (out.scene && (o?.adult_scene === 'always' || (c && (o?.adult_scene === 'success' || o?.adult_scene === 'fail')))) opt.adult_scene = o.adult_scene
+      // 懷孕的事件：察覺（察覺事件才有）、這次生產的 DC 減多少
+      if (scope === 'pregnancy' && !out.known && (o?.reveal === 'always' || (c && o?.reveal === 'success'))) opt.reveal = o.reveal
+      if (scope === 'pregnancy' && o?.birth_bonus) {
+        const b = Math.round(num(o.birth_bonus, 0, 5, 0))
+        if (b) opt.birth_bonus = b
+      }
       return opt
     })
     if (options.length) out.options = options
@@ -199,9 +225,10 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
 
 export function newTravelEvent(id: string, scope: EventScope = 'road'): TravelEventMod {
   return sanitizeTravelEvent(id, {
-    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : scope === 'lead' ? '新的線索事件' : '新的旅途事件', text: '',
+    scope, kind: 'choice', title: scope === 'town' ? '新的城鎮事件' : scope === 'dungeon' ? '新的地下城事件' : scope === 'parasite' ? '新的發作' : scope === 'lead' ? '新的線索事件' : scope === 'pregnancy' ? '新的懷孕事件' : '新的旅途事件', text: '',
     ...(scope === 'dungeon' ? { triggers: ['trap'] as DungeonTrigger[] } : {}),
     ...(scope === 'parasite' ? { tags: ['adult' as const] } : {}),
+    ...(scope === 'pregnancy' ? { tags: ['adult' as const, 'pregnancy' as const], subject: 'pc' as const, known: true } : {}),
     options: [{ label: '答應', success: { text: '' } }, { label: '離開', success: { text: '你沒有多管。' } }],
   }, true)
 }
@@ -267,6 +294,12 @@ export function travelEventWarnings(t: RoadTemplate): string[] {
   if (!t.text) out.push('沒有描述')
   if (t.scope === 'parasite' && t.parasite && !parasiteDef(t.parasite)) out.push(`找不到寄生物「${t.parasite}」：這件發作事件不會發生（選一種存在的寄生物）`)
   if (t.tier === 'advanced' && t.kind === 'check' && !t.options?.length) out.push('高階的檢定事件成功後沒有選項')
+  if (t.scope === 'pregnancy') {
+    const text = JSON.stringify([t.title, t.text, t.options])
+    if (t.subject !== 'companion' && (text.includes('{a}') || text.includes('"$a"'))) out.push('寫了懷孕的夥伴（{a} 或 $a），可是這是主角的事件')
+    if (!t.known && !t.options?.some((o) => o.reveal)) out.push('察覺事件沒有任何會「察覺」的選項：玩家只能等到中期自動察覺')
+    if (!t.tags?.includes('pregnancy')) out.push('沒有勾「懷孕」內容標籤')
+  }
   if (t.scope === 'lead') {
     const text = JSON.stringify([t.title, t.text, t.options, t.offscreen])
     if ((t.cast ?? 0) < 1 && (/\{a他?\}/.test(text) || text.includes('"$a"'))) out.push('寫了登場角色甲（{a} 或 $a），可是登場角色是 0 位')

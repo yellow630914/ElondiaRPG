@@ -371,7 +371,7 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
       firstNote: text(u.first_time, 120), report: ctx.report.report_id, anonKey: `anon:${ctx.report.report_id}`,
     })
     // 受孕只在這裡判定（AI 記下的經歷）；NPC 私生活走 addEncounter，不會受孕（docs/FAMILY.md）
-    if (sex) maybeConceive(state, { report: ctx.report, mother: id, partners, times: sex })
+    if (sex) maybeConceive(state, { report: ctx.report, mother: id, partners, times: sex, forced: u.forced === true })
     const rec = ensureRecord(state, id)
     const favorite = text(u.favorite, 16)
     if (favorite) rec.favorite = favorite

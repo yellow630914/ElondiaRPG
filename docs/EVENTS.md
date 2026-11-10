@@ -16,7 +16,7 @@
 | ⛓️ 主人的要求 | 主角是奴隸時，走動或旅途上隨機發生；調教自己的奴隸、娼館接客或受訓（🌹）結束時也用同一個格式 | 是 | `MasterEventPanel` |
 | ⚠️ 地下城事件 | 地下城與近郊觸發陷阱、打開寶箱、採集、在安全房長休之後（成人向，見 [ADULT_EVENTS](ADULT_EVENTS.md)） | 是 | `events/RoadEventPanel`（`dungeon`） |
 | 💗 寄生物的發作 | 身上的寄生物在走動、旅途或長休之後發作（[ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） | 是 | `events/RoadEventPanel`（`parasite`） |
-| 🍼 懷孕的察覺 | 還沒察覺懷孕的主角或隊上的夥伴，長休之後、旅途上依機率（[FAMILY](FAMILY.md) 第 5.1 節） | 是 | `events/RoadEventPanel`（`pregnancy`） |
+| 🍼 懷孕的事件 | 懷孕的主角或隊上的夥伴：還沒察覺時的察覺事件、察覺之後的孕期事件（胎動、乾嘔……），長休之後、旅途、走動時依機率（[FAMILY](FAMILY.md) 第 5 節） | 是 | `events/RoadEventPanel`（`pregnancy`） |
 | 🍼 要生了 | 主角或隊上的夥伴到了預產日、人在聚落裡（或陣痛 24 小時還沒進聚落），見 [FAMILY](FAMILY.md) 第 6 節 | 是 | `events/BirthPanel` |
 | 🧭 旅途事件 | 旅途上走到 ❔ 事件格 | 是 | `events/RoadEventPanel` |
 | ⭐ 特殊任務的任務點 | 走到解鎖的任務點（[STORY_QUESTS](STORY_QUESTS.md)）；不緊急的可以「稍候」，緊急的只能處理或放棄任務 | 是 | `StoryNodeCard` |

@@ -62,7 +62,7 @@ describe('懷孕：誰會受孕', () => {
     const { state } = game('男')
     const woman = npc(state, 'female')
     expect(conceptionChance(state, { report: scene(state), mother: 'pc', partners: [{ id: woman.id, name: woman.name }], times: 1 })).toBeUndefined()
-    expect(conceptionChance(state, { report: scene(state), mother: woman.id, partners: [{ id: 'pc', name: '莉雅' }], times: 1 })?.father).toEqual({ id: 'pc', name: '莉雅' })
+    expect(conceptionChance(state, { report: scene(state), mother: woman.id, partners: [{ id: 'pc', name: '莉雅' }], times: 1 })?.father).toMatchObject({ id: 'pc', name: '莉雅' })
     const her = game().state
     const other = npc(her, 'female')
     expect(conceptionChance(her, { report: scene(her), mother: 'pc', partners: [{ id: other.id, name: other.name }], times: 1 })).toBeUndefined()
@@ -74,7 +74,7 @@ describe('懷孕：誰會受孕', () => {
     const a = npc(state, 'male')
     const b = npc(state, 'male')
     const r = scene(state)
-    expect(conceptionChance(state, { report: r, mother: 'pc', partners: [{ id: a.id, name: a.name }], times: 1 })?.father).toEqual({ id: a.id, name: a.name })
+    expect(conceptionChance(state, { report: r, mother: 'pc', partners: [{ id: a.id, name: a.name }], times: 1 })?.father).toEqual({ id: a.id, name: a.name, race: 'human' })
     expect(conceptionChance(state, { report: r, mother: 'pc', partners: [{ id: a.id, name: a.name }, { id: b.id, name: b.name }], times: 1 })?.father).toBeUndefined()
     expect(conceptionChance(state, { report: r, mother: 'pc', partners: [], times: 1 })?.father).toBeUndefined()
   })

@@ -337,8 +337,8 @@ export function longRest(state: GameState, place: RestPlace): Report {
   if (place === 'safe') maybeDungeonEvent(state, 'rest', slept)
   // 醒來的時候：寄生物可能發作
   maybeParasiteEvent(state, 'rest', slept)
-  // 懷孕的察覺事件
-  maybePregnancyEvent(state, 'rest')
+  // 懷孕的事件（察覺、孕期）：時段看入睡的時間
+  maybePregnancyEvent(state, 'rest', slept)
   return committed
 }
 

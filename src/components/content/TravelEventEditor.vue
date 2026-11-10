@@ -5,7 +5,8 @@ import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { parasiteRules } from '@/engine/parasites'
-import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, PARASITE_MOMENTS, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
+import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, FATHER_FILTERS, PARASITE_MOMENTS, PREG_STAGE_IDS, PREG_STAGE_NAME, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
+import { attributeRules } from '@/engine/data'
 import type { DungeonTrigger, EventScope } from '@/engine/road'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -45,8 +46,9 @@ const town = computed(() => draft.value.scope === 'town')
 const dungeon = computed(() => draft.value.scope === 'dungeon')
 const parasite = computed(() => draft.value.scope === 'parasite')
 const lead = computed(() => draft.value.scope === 'lead')
-// 發生在主角身上的事件（地下城事件、線索事件、寄生物的發作）：只有選擇，主角自己擲
-const onPc = computed(() => dungeon.value || parasite.value || lead.value)
+const pregnancy = computed(() => draft.value.scope === 'pregnancy')
+// 發生在主角身上的事件（地下城事件、線索事件、寄生物的發作、懷孕的事件）：只有選擇，主角自己擲
+const onPc = computed(() => dungeon.value || parasite.value || lead.value || pregnancy.value)
 function setHours(v: string) {
   if (v === 'day' || v === 'night') draft.value.hours = v
   else delete draft.value.hours
@@ -56,8 +58,36 @@ provide('eventCast', computed(() => (lead.value ? draft.value.cast ?? 0 : 0)))
 const parasiteIds = Object.keys(parasiteRules.parasites)
 // 選項裡新增寄生物效果時，預設是這件發作事件自己的寄生物（EffectsEditor）
 provide('eventParasite', computed(() => (parasite.value ? draft.value.parasite : undefined)))
+// 懷孕的事件：效果的親密度可以指定懷孕的夥伴（$a）與孩子的父親（$f）
+provide('eventPregnancy', computed(() => (pregnancy.value ? { companion: draft.value.subject === 'companion' } : undefined)))
+const raceIds = Object.keys(attributeRules.races)
+function toggleStage(v: string, on: boolean) {
+  const set = new Set<string>(draft.value.preg_stages ?? [])
+  if (on) set.add(v)
+  else set.delete(v)
+  if (set.size) draft.value.preg_stages = PREG_STAGE_IDS.filter((x) => set.has(x))
+  else delete draft.value.preg_stages
+}
+function toggleRace(v: string, on: boolean) {
+  const set = new Set<string>(draft.value.father_races ?? [])
+  if (on) set.add(v)
+  else set.delete(v)
+  if (set.size) draft.value.father_races = [...set]
+  else delete draft.value.father_races
+}
+function setTri(field: 'mixed' | 'forced', v: string) {
+  if (v === 'yes') draft.value[field] = true
+  else if (v === 'no') draft.value[field] = false
+  else delete draft.value[field]
+}
+function setKnown(v: boolean) {
+  if (v) {
+    draft.value.known = true
+    for (const o of draft.value.options ?? []) delete o.reveal
+  } else delete draft.value.known
+}
 function setScope(v: string) {
-  const scope = (['town', 'dungeon', 'parasite', 'lead'].includes(v) ? v : undefined) as EventScope | undefined
+  const scope = (['town', 'dungeon', 'parasite', 'lead', 'pregnancy'].includes(v) ? v : undefined) as EventScope | undefined
   draft.value.scope = scope
   if (scope === 'dungeon') {
     setKind('choice')
@@ -67,6 +97,11 @@ function setScope(v: string) {
   if (scope === 'parasite') {
     setKind('choice')
     draft.value.parasite ??= parasiteIds[0]
+  }
+  if (scope === 'pregnancy') {
+    setKind('choice')
+    draft.value.subject ??= 'pc'
+    draft.value.tags = [...new Set([...(draft.value.tags ?? []), 'adult' as const, 'pregnancy' as const])]
   }
 }
 function toggleNum(field: 'layers' | 'stages', v: number, on: boolean) {
@@ -136,11 +171,11 @@ function remove() {
 <template>
   <div class="editor">
     <EditorHeader
-      :title="`${town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : lead ? '🔎' : '🧭'} ${draft.title || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
+      :title="`${town ? '🏘️' : dungeon ? '⚠️' : parasite ? '💗' : lead ? '🔎' : pregnancy ? '🍼' : '🧭'} ${draft.title || '（未命名）'}`" :kind="builtin ? 'builtin' : 'custom'" :edited="edited" :dirty="dirty"
       @save="save" @discard="reset" @restore="restore" @remove="remove"
     />
     <p class="small muted">
-      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : lead ? '線索事件：地區的線索池擲到「事件」時，照地點與層抽一件放在地圖上一格，走到那一格時發生。登場角色在擲線索池時決定（一半是這個地區主角認識的冒險者，其他是新生成的）；文字寫 {a}、{b}（名字）與 {a他}、{b他}（照性別換成他或她），效果的角色選「登場角色甲／乙」。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
+      id：{{ id }}。{{ town ? '城鎮事件：走上聚落裡符合的設施時，依「事件設定」的機率與冷卻出現。' : dungeon ? '地下城事件：在地下城與近郊觸發陷阱、打開寶箱、採集或在安全房長休之後，依「事件設定」的機率與冷卻出現。' : parasite ? '寄生物的發作：身上有這個寄生物（沒馴服、沒沉睡）時，走動、旅途或長休之後依 parasites.json 的機率（乘上存檔規則「寄生發作的機率」與階段的倍率）出現；選項的結果通常是侵蝕度的加減（效果「寄生物的侵蝕度」）。' : pregnancy ? (draft.known ? '孕期事件：已經察覺懷孕的人（主角或隊上的夥伴），依階段在長休之後、旅途每天或走動時依「⚙️ 懷孕與泌乳設定」的機率出現（胎動、乾嘔……）。' : '察覺事件：還沒察覺懷孕的人，受孕幾天之後在長休之後或旅途每天出現；選項的「察覺」讓這個人察覺懷孕，沒察覺的之後還會再遇到，到中期一律自動察覺。') + ' 夥伴的事件文字寫 {a}（那位夥伴），父親寫 {f}（父親是主角時寫成「你」）；效果的親密度可以選「懷孕的夥伴」「孩子的父親」。' : lead ? '線索事件：地區的線索池擲到「事件」時，照地點與層抽一件放在地圖上一格，走到那一格時發生。登場角色在擲線索池時決定（一半是這個地區主角認識的冒險者，其他是新生成的）；文字寫 {a}、{b}（名字）與 {a他}、{b他}（照性別換成他或她），效果的角色選「登場角色甲／乙」。' : '旅途事件：出發時依路段的機率與種類權重擲好，放在旅途的格子上。' }}
       {{ onPc ? '事件發生在主角身上：檢定由主角自己擲。' : '檢定由隊伍裡最擅長那個屬性的人來擲。' }}
     </p>
     <p v-for="w in warnings" :key="w" class="small warn-text">⚠️ {{ w }}</p>
@@ -156,6 +191,7 @@ function remove() {
             <option value="dungeon">地下城與近郊</option>
             <option value="parasite">寄生物的發作</option>
             <option value="lead">線索事件（線索池的事件點）</option>
+            <option value="pregnancy">懷孕的事件（察覺、孕期）</option>
           </select>
         </label>
         <label v-if="!onPc">種類
@@ -185,7 +221,7 @@ function remove() {
           </select>
         </label>
         <label v-if="dungeon">同一事件幾天後才會再出現 <input v-model.number="draft.cooldown_days" type="number" min="0" max="60" class="num" :placeholder="String(travelEvents.dungeon?.repeat_days ?? 3)" /></label>
-        <label v-if="town || dungeon || parasite"><span>時段 <Hint text="時段不對時不會抽到這個事件。適合「今晚」「半夜」這類場景；地下城與寄生物也看外面的時間，長休時看入睡的時間（醒來時已經是早上）。旅途、線索事件與寄生物在旅途中的發作不看時段。" /></span>
+        <label v-if="town || dungeon || parasite || pregnancy"><span>時段 <Hint text="時段不對時不會抽到這個事件。適合「今晚」「半夜」這類場景；地下城與寄生物也看外面的時間，長休時看入睡的時間（醒來時已經是早上）。旅途、線索事件與寄生物在旅途中的發作不看時段。" /></span>
           <select :value="draft.hours ?? ''" @change="setHours(($event.target as HTMLSelectElement).value)">
             <option value="">不限</option>
             <option value="day">只在白天（6～18 點）</option>
@@ -236,6 +272,56 @@ function remove() {
       <div class="row small"><b>時機</b>
         <label v-for="(n, k) in PARASITE_MOMENTS" :key="k" class="check">
           <input type="checkbox" :checked="draft.moments?.includes(k)" @change="toggle('moments', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
+        </label>
+      </div>
+    </FoldSet>
+    <FoldSet v-else-if="pregnancy">
+      <template #legend>懷孕 <Hint text="每一項沒勾、沒選時不限。父親的種族、混血看受孕時記下的父親（父親不明時，有寫種族或混血的條件都不成立）；非自願看懷上的那次經歷。" /></template>
+      <div class="grid">
+        <label>種類
+          <select :value="draft.known ? 'stage' : 'discover'" @change="setKnown(($event.target as HTMLSelectElement).value === 'stage')">
+            <option value="discover">察覺事件（還沒察覺的人）</option>
+            <option value="stage">孕期事件（已經察覺的人）</option>
+          </select>
+        </label>
+        <label>誰的事
+          <select v-model="draft.subject">
+            <option value="pc">主角</option>
+            <option value="companion">隊上懷孕的夥伴（{a}）</option>
+          </select>
+        </label>
+        <label>父親
+          <select :value="draft.father ?? ''" @change="draft.father = (($event.target as HTMLSelectElement).value || undefined) as TravelEventMod['father']">
+            <option value="">不限</option>
+            <option v-for="(n, k) in FATHER_FILTERS" :key="k" :value="k">{{ n }}</option>
+          </select>
+        </label>
+        <label>混血
+          <select :value="draft.mixed === undefined ? '' : draft.mixed ? 'yes' : 'no'" @change="setTri('mixed', ($event.target as HTMLSelectElement).value)">
+            <option value="">不限</option><option value="yes">父親和母親不同種族</option><option value="no">同種族</option>
+          </select>
+        </label>
+        <label>怎麼懷上的
+          <select :value="draft.forced === undefined ? '' : draft.forced ? 'yes' : 'no'" @change="setTri('forced', ($event.target as HTMLSelectElement).value)">
+            <option value="">不限</option><option value="yes">只有非自願懷上的</option><option value="no">只有不是非自願的</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" :checked="!!draft.in_settlement" @change="draft.in_settlement = ($event.target as HTMLInputElement).checked || undefined" /> 只在聚落裡</label>
+      </div>
+      <div class="row small"><b>階段</b>
+        <label v-for="st in PREG_STAGE_IDS" :key="st" class="check">
+          <input type="checkbox" :checked="draft.preg_stages?.includes(st)" @change="toggleStage(st, ($event.target as HTMLInputElement).checked)" /> {{ PREG_STAGE_NAME[st] }}
+        </label>
+      </div>
+      <div class="row small"><b>時機</b>
+        <label v-for="(n, k) in PARASITE_MOMENTS" :key="k" class="check">
+          <input type="checkbox" :checked="draft.moments?.includes(k)" @change="toggle('moments', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}
+        </label>
+        <Hint text="察覺事件只在長休之後、旅途擲（走動不擲）；孕期事件三種時機都擲。" />
+      </div>
+      <div class="row small"><b>父親的種族</b>
+        <label v-for="r in raceIds" :key="r" class="check">
+          <input type="checkbox" :checked="draft.father_races?.includes(r)" @change="toggleRace(r, ($event.target as HTMLInputElement).checked)" /> {{ attributeRules.races[r]?.name ?? r }}
         </label>
       </div>
     </FoldSet>
@@ -300,7 +386,7 @@ function remove() {
           <label class="check"><input type="checkbox" :checked="!!o.check" @change="toggleCheck(o, ($event.target as HTMLInputElement).checked)" /> 要檢定</label>
           <template v-if="o.check">
             <CheckRow :check="o.check" />
-            <Hint v-if="onPc" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : lead ? '事件點所在的層' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
+            <Hint v-if="onPc && !pregnancy" :text="`14 是「普通」：實際 DC 依${parasite ? '主角等級與侵蝕度的階段' : lead ? '事件點所在的層' : '地下城的層'}調整，寫 12 就是比普通容易 2、寫 16 比普通難 2。`" />
           </template>
           <select v-if="draft.scene" v-model="o.adult_scene" class="small" title="這個選項進入親密場景">
             <option :value="undefined">不進入親密場景</option>
@@ -308,6 +394,12 @@ function remove() {
             <option v-if="o.check" value="success">成功時進入</option>
             <option v-if="o.check" value="fail">失敗時進入</option>
           </select>
+          <select v-if="pregnancy && !draft.known" v-model="o.reveal" class="small" title="選了這個選項會不會察覺懷孕">
+            <option :value="undefined">不會察覺</option>
+            <option value="always">選了就察覺</option>
+            <option v-if="o.check" value="success">成功時察覺</option>
+          </select>
+          <label v-if="pregnancy" class="small" title="這次生產的 DC 減多少（例如產婆的叮囑）；有檢定時成功才算">生產 DC − <input v-model.number="o.birth_bonus" type="number" min="0" max="5" class="num" /></label>
           <button class="small" @click="draft.options!.splice(i, 1)" title="移除">✕</button>
         </div>
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" optional event />

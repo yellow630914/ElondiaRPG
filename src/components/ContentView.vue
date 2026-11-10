@@ -61,7 +61,7 @@ import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
 import { travelEvents } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
-import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, newTravelEvent } from '@/engine/travelEventMods'
+import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, newTravelEvent, PREG_STAGE_NAME } from '@/engine/travelEventMods'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -330,7 +330,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   dungeons: [],
   shops: [],
   events: [
-    { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作'], ['lead', '🔎 線索事件']] },
+    { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作'], ['lead', '🔎 線索事件'], ['pregnancy', '🍼 懷孕的事件']] },
     placeDef('沒有限制地點'),
     { model: eventHours, name: '時段', all: '所有時段', options: () => [['day', '☀️ 只在白天'], ['night', '🌙 只在夜裡'], ['none', '不限時段']] },
     adultDef, tagDef_, bodyDef, flagDef,
@@ -522,13 +522,14 @@ const rows = computed<Row[]>(() => {
       .filter((t) => bodyMatch(t.pc_body))
       .filter((t) => flagMatch(t))
       .map((t) => ({
-        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.scope === 'lead' ? '🔎' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}${t.hours === 'night' ? ' 🌙' : t.hours === 'day' ? ' ☀️' : ''}`,
+        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.scope === 'lead' ? '🔎' : t.scope === 'pregnancy' ? '🍼' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}${t.hours === 'night' ? ' 🌙' : t.hours === 'day' ? ' ☀️' : ''}`,
         note: t.scope === 'town' ? `城鎮・${t.kind === 'check' ? '檢定' : '選擇'}`
           : t.scope === 'parasite' ? `發作・${parasiteRules.parasites[t.parasite ?? '']?.name ?? t.parasite}${t.stages?.length ? `・${t.stages.map((i) => parasiteRules.stages[i]?.name).join('、')}` : ''}`
+          : t.scope === 'pregnancy' ? `${t.known ? '孕期' : '察覺'}・${t.subject === 'companion' ? '夥伴' : '主角'}${t.preg_stages?.length ? `・${t.preg_stages.map((x) => PREG_STAGE_NAME[x]).join('、')}` : ''}${t.tags?.includes('adult') && t.scene ? '・親密場景' : ''}`
           : t.scope === 'lead' ? `線索・登場 ${t.cast ?? 0} 人${t.layers?.length ? `・${t.layers.map((i) => EVENT_LAYERS[i]).join('、')}` : ''}`
           : t.scope === 'dungeon' ? `地下城・${(t.triggers ?? []).map((x) => DUNGEON_TRIGGERS[x]).join('、')}${t.tags?.includes('adult') ? '・成人向' : ''}`
           : `${(t.modes ?? []).map((m) => MODE_NAME[m]).join('、') || '任何路段'}・${t.kind === 'check' ? '檢定' : '選擇'}`,
-        status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : t.scope === 'parasite' ? 2.5 : t.scope === 'lead' ? 2.7 : 0,
+        status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : t.scope === 'parasite' ? 2.5 : t.scope === 'pregnancy' ? 2.6 : t.scope === 'lead' ? 2.7 : 0,
       }))
     list = evs.sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'masterEvents') {
@@ -720,7 +721,7 @@ function create() {
       select(id)
     } else if (sub.value === 'events') {
       const id = newModId('event')
-      content.saveTravelEvent(id, newTravelEvent(id, eventScope.value === 'town' || eventScope.value === 'dungeon' || eventScope.value === 'parasite' || eventScope.value === 'lead' ? eventScope.value : 'road'))
+      content.saveTravelEvent(id, newTravelEvent(id, eventScope.value === 'town' || eventScope.value === 'dungeon' || eventScope.value === 'parasite' || eventScope.value === 'lead' || eventScope.value === 'pregnancy' ? eventScope.value : 'road'))
       select(id)
     } else if (sub.value === 'masterEvents') {
       const id = newModId('mevent')
