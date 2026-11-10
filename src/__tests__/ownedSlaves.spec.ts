@@ -5,7 +5,7 @@ import { buySlave, marketStock } from '@/engine/companions'
 import { enterLocation, getArea, placeAt } from '@/engine/grid'
 import { buyHome, lotsOf } from '@/engine/homes'
 import { isOwnSlave, ownedSlaves } from '@/engine/ownedSlaves'
-import { ensureRoster } from '@/engine/population'
+import { ensureRoster, isHostile } from '@/engine/population'
 import { pcOf } from '@/engine/party'
 import { newGame } from '@/engine/state'
 
@@ -33,5 +33,12 @@ describe('主角擁有的奴隸', () => {
     expect(list[0]!.inParty).toBe(false)
     expect(list[0]!.member.id).toBe(slave.id)
     expect(list[0]!.where).toContain(home.name)
+
+    // 惡人、以前打過的奴隸送回家：在房子裡（不是聚落）也不顯示敵對，可以照常互動
+    const rec = state.npcs![slave.id]!
+    rec.tags = [...(rec.tags ?? []), 'villain']
+    rec.hostile = true
+    expect(isHostile(state, rec, 'home')).toBe(false)
+    expect(isHostile(state, rec, 'wild')).toBe(false)
   })
 })

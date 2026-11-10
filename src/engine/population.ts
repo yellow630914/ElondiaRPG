@@ -495,6 +495,9 @@ export function isUnhireable(id: string): boolean {
  * 在城裡，惡人與關係差的人不會動手（只有被攻擊過的人保持敵對）。
  */
 export function isHostile(state: GameState, rec: NpcRecord, areaKind = currentArea(state).kind): boolean {
+  // 留在自己房子裡、寄放在酒館的夥伴與奴隸是主角的人：惡人、親密度低、以前打過都不算敵對
+  // （房子的地圖不是聚落，以前戰後收為奴隸的惡人送回家就一直顯示敵對）
+  if (rec.staying && rec.character) return false
   if (rec.hostile) return true
   if (areaKind === 'settlement' || npcKind(rec) !== 'adventurer') return false
   // 好人：被攻擊過才會動手
