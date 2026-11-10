@@ -1553,7 +1553,7 @@ export function assertNoStandoff(state: GameState) {
   if (state.standoff) throw new Error('先處理眼前的對峙')
   if (state.pendingMark) throw new Error('先完成契約印記的刻印')
   if (state.pendingMasterEvent) throw new Error('先回應主人的要求')
-  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent) throw new Error('先應付眼前的處境')
+  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent || state.pregnancyEvent) throw new Error('先應付眼前的處境')
   if (state.pendingBirth) throw new Error('先處理生產')
   if (state.trapLure) throw new Error('先決定要不要觸發察覺到的陷阱')
   if (state.pendingDefeat) throw new Error('先應付眼前的處境')

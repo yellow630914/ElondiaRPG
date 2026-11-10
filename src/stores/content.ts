@@ -32,6 +32,7 @@ import { pruneTownEvent } from '@/engine/townEvents'
 import { pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { pruneLeadEvent } from '@/engine/leadEvents'
 import { pruneParasiteEvent } from '@/engine/parasiteEvents'
+import { prunePregnancyEvent } from '@/engine/pregnancyEvents'
 import { builtinCounter, counterUsage, sanitizeCounter, type CounterMod } from '@/engine/counterMods'
 import { cleanCounterId } from '@/engine/mods'
 import { sanitizeBindRules, type BindRulesMod } from '@/engine/bindRulesMods'
@@ -242,6 +243,7 @@ export const useContent = defineStore('content', () => {
       pruneDungeonEvent(game.state)
       pruneLeadEvent(game.state)
       pruneParasiteEvent(game.state)
+      prunePregnancyEvent(game.state)
     }
     version.value++
     persist()

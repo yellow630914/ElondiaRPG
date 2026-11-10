@@ -1074,6 +1074,10 @@ export interface GameState {
   postpartum?: Record<string, number>
   /** 嬰兒（不是 NPC，不進 NPC 登錄；docs/FAMILY.md 第 7 節） */
   children?: ChildRecord[]
+  /** 等待回應的懷孕察覺事件（pregnancyEvents.ts）：family.json 的事件與懷孕的人 */
+  pregnancyEvent?: { template: string; mother: string }
+  /** 察覺事件的紀錄：上一次的時間（絕對小時）、最近出現過的事件 */
+  pregnancyEvents?: { last?: number; recent?: string[] }
   /** 懷孕的通知（察覺、陣痛、自動生下的嬰兒）：事件視窗按「知道了」寫成一筆日誌 */
   familyNotices?: string[]
   /** 等待回應的生產（主角或隊上的夥伴）：母親的 id 與是不是在野外生 */

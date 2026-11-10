@@ -16,6 +16,7 @@ import * as dungeonEvents from '@/engine/dungeonEvents'
 import * as leadEvents from '@/engine/leadEvents'
 import * as parasiteEvents from '@/engine/parasiteEvents'
 import * as pregnancy from '@/engine/pregnancy'
+import * as pregnancyEvents from '@/engine/pregnancyEvents'
 import * as children from '@/engine/children'
 import * as deadlines from '@/engine/deadlines'
 import * as restraints from '@/engine/restraints'
@@ -197,6 +198,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (town.report) return { report: town.report }
   // 寄生物的發作：旅途上一格一天，其他地方一步
   parasiteEvents.maybeParasiteEvent(s, s.road && !s.side ? 'travel' : 'step')
+  // 懷孕的察覺事件：旅途上每天（一格）
+  if (s.road && !s.side) pregnancyEvents.maybePregnancyEvent(s, 'travel')
   return r
 }
 
@@ -215,6 +218,7 @@ function load(s: GameState): GameState {
   townEvents.pruneTownEvent(s)
   dungeonEvents.pruneDungeonEvent(s)
   parasiteEvents.pruneParasiteEvent(s)
+  pregnancyEvents.prunePregnancyEvent(s)
   leadEvents.pruneLeadEvent(s)
   // 武器與防具類型由裝備決定（自訂內容可能改過底材）
   for (const m of s.party) if (m.gear) syncGear(m, classes[m.class]?.weapon)
@@ -639,7 +643,7 @@ export const useGame = defineStore('game', () => {
 
   /** 走完這一步之後有要先處理的事（戰鬥、事件、等待判定、擋路的任務點……）：停下來 */
   function mustStop(s: GameState): boolean {
-    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || s.pendingBirth || story.blockingNode(s))
+    return !!(s.combat || s.pendingAction || s.pendingDefeat || s.pendingMark || s.pendingMasterEvent || s.townEvent || s.roadEvent || s.dungeonEvent || s.parasiteEvent || s.leadEvent || s.trapLure || s.pendingBirth || s.pregnancyEvent || story.blockingNode(s))
   }
 
   function walkTo(x: number, y: number) {
@@ -1441,9 +1445,9 @@ export const useGame = defineStore('game', () => {
     /** 一路往前走，遇到事件、戰鬥或抵達時停下 */
     walkRoad: () => run((s) => {
       for (let i = 0; i < 80; i++) {
-        if (!s.road || s.side || s.roadEvent || s.parasiteEvent || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
+        if (!s.road || s.side || s.roadEvent || s.parasiteEvent || s.pregnancyEvent || s.pendingBirth || s.combat || s.pendingMasterEvent || s.standoff || s.pendingAction || story.blockingNode(s)) return {}
         const r = afterMove(s, grid.move(s, 1, 0))
-        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent || s.parasiteEvent) return r
+        if (r.report || r.combat || s.roadEvent || s.pendingMasterEvent || s.parasiteEvent || s.pregnancyEvent || s.pendingBirth) return r
       }
       return {}
     }),
@@ -1458,6 +1462,7 @@ export const useGame = defineStore('game', () => {
     declineTrapLure: () => run((s) => dungeonEvents.declineTrapLure(s)),
     answerParasiteEvent: (i: number) => run((s) => parasiteEvents.answerParasiteEvent(s, i)),
     /** 懷孕與嬰兒（docs/FAMILY.md）：生產、通知、神殿的診察、育幼院、把孩子送到別的地方 */
+    answerPregnancyEvent: (i: number) => run((s) => pregnancyEvents.answerPregnancyEvent(s, i)),
     answerBirth: (how: 'temple' | 'self', name?: string, place?: string) => run((s) => pregnancy.answerBirth(s, how, name, place)),
     acknowledgeFamilyNotices: () => run((s) => pregnancy.acknowledgeFamilyNotices(s)),
     templeCheckup: () => run((s) => pregnancy.templeCheckup(s)),

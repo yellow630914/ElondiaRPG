@@ -17,6 +17,7 @@ import { gameRule } from './gameRules'
 import { characterBody } from './look'
 import { formatMoney } from './money'
 import { hashString, npcRecord } from './npcs'
+import { addNpcNews } from './npcLife'
 import { gainCondition, isFugitive } from './party'
 import { checkModifiers } from './perks'
 import { familyRules, pregnancyStageName } from './pregMarks'
@@ -228,6 +229,7 @@ export function familyTick(state: GameState) {
       if (near) {
         p.known = true
         p.knownDay = day
+        if (!who.inParty) addNpcNews(state, id, `看起來懷孕了（預產第 ${p.due} 天）。`)
         notify(state, who.id === 'pc' ? `你的肚子已經藏不住了：你懷孕了（${pregnancyStageName(stage)}，預產第 ${p.due} 天）。` : `${who.name}的肚子看得出來了：懷孕了（${pregnancyStageName(stage)}，預產第 ${p.due} 天）。`)
       }
     }
@@ -297,6 +299,7 @@ function autoBirth(state: GameState, id: string, p: PregnancyState, who: Person)
   addChild(state, { ...baby, born: state.time.day, ...(p.father ? { father: p.father } : {}), where })
   finishPregnancy(state, id, familyRules.postpartum.days)
   notify(state, `${who.name}在${locationName(who.location ?? state.location)}生下了孩子${baby.name}，送到了${placeText(state, where)}。`)
+  addNpcNews(state, id, `生下了孩子${baby.name}。`)
 }
 
 /** 生產事件的選項：在神殿生（這座城有神殿、錢夠）或自己生（擲信仰） */

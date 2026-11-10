@@ -90,6 +90,7 @@ function openParty(member?: string) {
         </div>
       </section>
       <RoadEventPanel v-else-if="current.kind === 'parasite'" parasite />
+      <RoadEventPanel v-else-if="current.kind === 'pregnancy'" pregnancy />
       <BirthPanel v-else-if="current.kind === 'birth'" />
       <section v-else-if="current.kind === 'family'" class="panel lure">
         <h3 class="title">🍼 家人的消息</h3>
