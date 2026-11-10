@@ -395,6 +395,12 @@ function doReset() {
       </label>
     </div>
   </section>
+  <section v-if="page === 'display'" class="panel">
+    <h2 class="head"><GameIcon name="users" :size="20" />面板</h2>
+    <div class="form">
+      <label class="check"><input v-model="settings.peopleCollapsed" type="checkbox" /> 「這裡的人」預設摺起來 <Hint text="開著時，「這裡的人」平常是摺起來的，身邊有人走近也不會自己展開，要點標題才打開（換地點後又摺起來）。關掉時身邊有人就自動展開、沒人就收起。" /></label>
+    </div>
+  </section>
 
   <section v-if="page === 'save'" class="panel">
     <h2 class="head"><GameIcon name="save" :size="20" />存檔</h2>

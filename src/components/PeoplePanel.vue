@@ -1,3 +1,9 @@
+<script lang="ts">
+import { ref as moduleRef } from 'vue'
+/** 篩選：可互動（身邊、沒被制伏的人）或全部；桌面版與手機版共用，切換後一直記著（重新整理回到可互動） */
+const filter = moduleRef<'can' | 'all'>('can')
+</script>
+
 <script setup lang="ts">
 import { npcPerksOf, perksOf } from '@/engine/perks'
 import { computed, reactive, ref, watch } from 'vue'
@@ -14,6 +20,7 @@ import { npcActivity } from '@/engine/activities'
 import { inActiveSquad } from '@/engine/squads'
 import type { NpcRecord } from '@/engine/types'
 import { parseUse, useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import { floatText } from '@/fx/fx'
 import { stateKey } from '@/fx/seen'
 import AbilityPicker from './AbilityPicker.vue'
@@ -27,7 +34,12 @@ import { isMobile, OPEN_ACTION_EVENT } from './mobile/mobile'
 // 這裡的人：和主角同一個地點、同一個地區的 NPC（見 docs/NPC_SYSTEM.md 第 7 節）
 const game = useGame()
 const s = computed(() => game.state!)
-const people = computed(() => game.here)
+const settings = useSettings()
+const everyone = computed(() => game.here)
+/** 可互動：在身邊（同一格或相鄰）、沒有被制伏（被制伏的只能在戰後處置裡處理） */
+const canTalk = (p: PresentNpc) => p.dist <= 1 && !s.value.captives?.npcs.includes(p.rec.id)
+const canCount = computed(() => everyone.value.filter(canTalk).length)
+const people = computed(() => (filter.value === 'can' ? everyone.value.filter(canTalk) : everyone.value))
 const groups = computed(() => ([
   { key: 'staff', title: '店主與職員', icon: 'store', items: people.value.filter((p) => p.staff) },
   { key: 'adventurer', title: '冒險者', icon: 'sword', items: people.value.filter((p) => !p.staff && p.kind === 'adventurer') },
@@ -38,10 +50,13 @@ const groups = computed(() => ([
 }))
 const where = computed(() => game.area.name)
 // 身邊（同一格或相鄰）的人才能互動：沒有時自動收起，有人走近時自動打開；也可以點標題手動切換。
-// 店主與職員、冒險者、普通人三組也一樣：那一組身邊有人才展開
-const nearCount = computed(() => people.value.filter((p) => p.dist <= 1).length)
-const expanded = ref(nearCount.value > 0)
-watch(() => nearCount.value > 0, (has) => { expanded.value = has })
+// 店主與職員、冒險者、普通人三組也一樣：那一組身邊有人才展開。
+// 設定「這裡的人預設摺起來」時不自動展開，要自己點開；換了地點又摺起來
+const nearCount = computed(() => everyone.value.filter((p) => p.dist <= 1).length)
+const expanded = ref(!settings.peopleCollapsed && canCount.value > 0)
+watch(() => canCount.value > 0, (has) => { if (!settings.peopleCollapsed) expanded.value = has })
+watch(() => [s.value.location, game.area.name], () => { if (settings.peopleCollapsed) expanded.value = false })
+watch(() => settings.peopleCollapsed, (on) => { expanded.value = !on && canCount.value > 0 })
 // 等待判定、或有擋住行動的事件（刻印、主人的要求、戰敗事件）時，互動按鈕停用
 const busy = computed(() => !!s.value.pendingAction || game.judging || !!s.value.pendingMark || !!s.value.pendingMasterEvent || !!s.value.pendingDefeat)
 
@@ -213,14 +228,19 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
     <div class="row head">
       <h3>
         <button class="ghost fold" :class="{ open: expanded }" :aria-expanded="expanded" :title="expanded ? '收起' : '展開'" @click="expanded = !expanded">
-          <GameIcon name="users" :size="18" />這裡的人 <span class="sub muted">{{ where }}・{{ people.length }} 人，身邊 {{ nearCount }} 人</span>
+          <GameIcon name="users" :size="18" />這裡的人 <span class="sub muted">{{ where }}・{{ everyone.length }} 人，身邊 {{ nearCount }} 人</span>
           <GameIcon name="right" :size="13" class="chev" />
         </button>
       </h3>
       <JudgeToggle />
     </div>
     <template v-if="expanded">
-    <p v-if="!people.length" class="small muted">這裡現在沒有別人。</p>
+    <div v-if="everyone.length" class="filter" role="group" aria-label="篩選">
+      <button class="small" :class="{ on: filter === 'can' }" :aria-pressed="filter === 'can'" title="只列身邊、可以直接互動的人" @click="filter = 'can'">可互動 {{ canCount }}</button>
+      <button class="small" :class="{ on: filter === 'all' }" :aria-pressed="filter === 'all'" title="列出這一區所有的人（遠處的要先走近）" @click="filter = 'all'">全部 {{ everyone.length }}</button>
+    </div>
+    <p v-if="!everyone.length" class="small muted">這裡現在沒有別人。</p>
+    <p v-else-if="!people.length" class="small muted">身邊沒有可以互動的人。這一區還有 {{ everyone.length }} 人，切到「全部」看他們在哪裡。</p>
 
     <div>
     <FoldMenu v-for="g in groups" :id="`people.${g.key}`" :key="g.key" class="group" :icon="g.icon" :label="g.title" :detail="g.detail" :badge="g.items.length" :auto="g.near > 0">
@@ -348,6 +368,9 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
 .line > .name-tag :deep(.name) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .known { color: var(--accent); border-color: var(--gold-lo); }
 .why { margin: 0; }
+.filter { display: flex; gap: 4px; margin: 2px 0 4px; }
+.filter button { min-height: 0; padding: 1px 10px; }
+.filter button.on { border-color: var(--accent); color: var(--accent); background: #c99a4522; }
 .bad { color: var(--danger); border-color: var(--danger); }
 li.far .line, li.far .doing { opacity: 0.7; }
 /* 正在做什麼：名字下面一行，對齊頭像右邊 */
