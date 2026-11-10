@@ -104,6 +104,7 @@ export function storyGraph(def: StoryDef, others: StoryDef[] = stories, extra: R
     if (r.pc_tags?.length) conds.push('主角的身分')
     if (r.pc_races?.length || r.pc_races_none?.length) conds.push('主角的種族')
     if (r.stats || r.charm || r.wearing) conds.push('成人向條件')
+    if (r.pregnancy || r.lactating !== undefined || r.children) conds.push('懷孕、泌乳或孩子')
     if (n.wear?.length) conds.push(`限定穿著 ${n.wear.join('、')}`)
     const ports: GraphPort[] = portsOf(n).map((p, i) => {
       const o = p.outcome

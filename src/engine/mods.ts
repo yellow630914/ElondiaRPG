@@ -7,6 +7,9 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
+import { STAGE_ORDER } from './pregMarks'
+import type { PregnancyCond } from './data'
+import type { PregnancyStage } from './types'
 import { FILTER_TAGS, type FilterTag } from './content'
 import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents } from './road'
@@ -1291,7 +1294,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; pc_races?: unknown; pc_races_none?: unknown; after?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; pc_races?: unknown; pc_races_none?: unknown; after?: unknown; pregnancy?: unknown; lactating?: unknown; children?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1356,8 +1359,23 @@ function cond(v: unknown): NpcDef['requires'] {
   const afterStory = typeof ao.story === 'string' ? ao.story.trim().slice(0, 60) : ''
   const afterDays = typeof ao.days === 'number' && Number.isFinite(ao.days) ? Math.max(1, Math.min(60, Math.round(ao.days))) : 1
   const after = afterStory ? { story: afterStory, ...(typeof ao.node === 'string' && ao.node.trim() ? { node: ao.node.trim().slice(0, 40) } : {}), days: afterDays } : undefined
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || pcRaces.length || pcRacesNone.length || after
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(pcRaces.length ? { pc_races: pcRaces } : {}), ...(pcRacesNone.length ? { pc_races_none: pcRacesNone } : {}), ...(after ? { after } : {}) }
+  // 懷孕（誰、階段範圍、察覺了沒）、泌乳、孩子的數量（docs/FAMILY.md 第 10.2 節）
+  const po = r.pregnancy && typeof r.pregnancy === 'object' ? r.pregnancy as Record<string, unknown> : undefined
+  const stageOk = (x: unknown): x is PregnancyStage => typeof x === 'string' && (STAGE_ORDER as string[]).includes(x)
+  const pregnancy: PregnancyCond | undefined = po ? {
+    ...(po.who === 'party' ? { who: 'party' as const } : {}),
+    ...(stageOk(po.stage_min) ? { stage_min: po.stage_min } : {}),
+    ...(stageOk(po.stage_max) ? { stage_max: po.stage_max } : {}),
+    ...(typeof po.known === 'boolean' ? { known: po.known } : {}),
+  } : undefined
+  const lactating = typeof r.lactating === 'boolean' ? r.lactating : undefined
+  const ko = r.children && typeof r.children === 'object' ? r.children as { min?: unknown; max?: unknown } : {}
+  const kn = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(99, Math.round(n))) : undefined)
+  const children = { ...(kn(ko.min) !== undefined ? { min: kn(ko.min) } : {}), ...(kn(ko.max) !== undefined ? { max: kn(ko.max) } : {}) }
+  const hasKids = Object.keys(children).length > 0
+  const hasFamily = !!pregnancy || lactating !== undefined || hasKids
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || pcRaces.length || pcRacesNone.length || after || hasFamily
+    ? { ...(pregnancy ? { pregnancy } : {}), ...(lactating !== undefined ? { lactating } : {}), ...(hasKids ? { children } : {}), ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(pcRaces.length ? { pc_races: pcRaces } : {}), ...(pcRacesNone.length ? { pc_races_none: pcRacesNone } : {}), ...(after ? { after } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }

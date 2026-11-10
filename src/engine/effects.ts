@@ -7,6 +7,8 @@
 // applyEffects 在報告提交前呼叫：金錢、物品、親密度、聲望、經驗、旗標寫進 report.changes，由 commitReport 套用；
 // 入隊、離隊、狀態、生命值等直接修改狀態，並記錄在 report.changes。數值上限由呼叫端（例如主動行動）負責夾住。
 
+import { effectConceive, effectReveal } from './pregnancy'
+import { effectLactation } from './lactation'
 import { attachParasite, changeCorruption, detachParasite, tameParasite } from './parasites'
 import { pcBodyAllowed, tagsAllowed } from './content'
 import { characterBody } from './look'
@@ -135,12 +137,19 @@ export type RewardEffect =
   | { type: 'ability_pool'; pool: MasterEventPool; target?: string; fallback?: RewardEffect[] }
   /** 圖紙（底材 id，記在 state.blueprints；docs/CRAFTING.md 2.2 節） */
   | { type: 'blueprint'; base: string }
+  /**
+   * 懷孕（docs/FAMILY.md 第 10.3 節）：conceive 一定受孕（篩選、身體、已經懷孕時不做）、reveal 察覺。
+   * target：pc、隊員或 NPC 的 id；father：pc 或角色 id，空著＝父親不明（father_name 可以只寫名字）
+   */
+  | { type: 'pregnancy'; op: 'conceive' | 'reveal'; target: string; father?: string; father_name?: string }
+  /** 泌乳：add 泌乳 days 天、remove 拿掉事件與道具的泌乳。target：pc 或隊員的 id */
+  | { type: 'lactation'; op: 'add' | 'remove'; target: string; days?: number }
 
 export const EFFECT_TYPES: RewardEffect['type'][] = [
   'money', 'item', 'affinity', 'reputation', 'xp', 'flag', 'companion', 'join_party', 'leave',
   'relationship_text', 'memory', 'condition', 'hp', 'enslave_player', 'free', 'change_master', 'quest_reward', 'quest_flag', 'meet', 'ability', 'slot', 'hit_dice', 'mark', 'gear',
   'intel', 'start_story', 'master_home', 'strict', 'home_extend', 'perk', 'lose_perk', 'tattoo', 'remove_tattoo', 'force_equip', 'restrain',
-  'parasite', 'corruption', 'lewd', 'ability_pool', 'rumor', 'blueprint',
+  'parasite', 'corruption', 'lewd', 'ability_pool', 'rumor', 'blueprint', 'pregnancy', 'lactation',
 ]
 
 /** NPC 參照：已登場的 id，或是一份規格（生成新角色）。 */
@@ -452,6 +461,16 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
         const who = e.target ? state.party.find((m) => m.id === e.target) ?? pcOf(state) : pcOf(state)
         const d = addLewd(state, who, e.stat, e.delta, report)
         if (d) notes.push(`${who.name}的${lewdName(e.stat)} ${d > 0 ? '+' : ''}${d}`)
+        break
+      }
+      case 'pregnancy': {
+        const line = e.op === 'reveal' ? effectReveal(state, e.target) : effectConceive(state, report, e.target, e.father, e.father_name)
+        if (line) notes.push(line)
+        break
+      }
+      case 'lactation': {
+        const line = effectLactation(state, e.target, e.op, e.days)
+        if (line) notes.push(line)
         break
       }
       case 'force_equip': {

@@ -155,3 +155,23 @@ export function lactationPrompt(state: GameState): string {
   const who = state.party.filter((m) => isLactating(state, m)).map((m) => (m.isPlayer ? '主角' : m.name))
   return who.length ? `\n正在泌乳：${who.join('、')}（乳房脹滿、會泌出乳汁）` : ''
 }
+
+/**
+ * 效果「泌乳」（特殊任務、事件、主人事件；docs/FAMILY.md 第 10.3 節）：add 泌乳 days 天（來源記成事件）、
+ * remove 拿掉事件與道具的泌乳。篩選關掉、身體不會泌乳時不做（回傳原因）
+ */
+export function effectLactation(state: GameState, target: string, op: 'add' | 'remove', days = 3): string {
+  if (!tagsAllowed(['lactation'])) return ''
+  const pcId = state.party.find((m) => m.isPlayer)?.id
+  const key = target === 'pc' || target === pcId ? 'pc' : target
+  const c = key === 'pc' ? pcOf(state) : state.party.find((m) => m.id === key) ?? state.npcs?.[key]?.character
+  if (!c) return ''
+  if (op === 'remove') {
+    removeLactation(state, key, ['item', 'event'])
+    return ''
+  }
+  if (!canLactate(c)) return `${c.isPlayer ? '你' : c.name}的身體不會泌乳`
+  const n = Math.max(1, Math.round(days))
+  addLactation(state, key, { kind: 'event', until: state.time.day + n - 1 })
+  return `${c.isPlayer ? '你' : c.name}開始泌乳（到第 ${state.time.day + n - 1} 天）`
+}

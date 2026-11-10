@@ -489,3 +489,44 @@ export function bodyImageNotes(state: GameState, id: string): string[] {
   if (who?.character && isLactating(state, who.character)) out.push('乳房脹滿、正在泌乳（lactating）')
   return out
 }
+
+// ---- 效果「懷孕」（特殊任務、事件寫的；docs/FAMILY.md 第 10.3 節） ----
+
+/**
+ * 效果「受孕」：一定受孕（不擲機率）；內容篩選關掉、身體不行、已經懷孕、產後虛弱時不做，回傳原因。
+ * target 是 pc、隊員或 NPC 的 id；father 是 pc、角色 id，或空著＝父親不明（father_name 可以只寫名字）
+ */
+export function effectConceive(state: GameState, report: Report, target: string, father?: string, fatherName?: string): string {
+  if (!tagsAllowed(['pregnancy'])) return ''
+  const key = pcKey(state, target)
+  const mother = personOf(state, key)
+  if (!mother) return ''
+  const who = key === 'pc' ? '你' : mother.name
+  if (!canCarry(mother)) return `${who}的身體不會懷孕`
+  if (state.pregnancies?.[key]) return `${who}已經懷孕了`
+  if (isPostpartum(state, key)) return `${who}才剛生完孩子`
+  const fKey = father ? pcKey(state, father) : undefined
+  const f = fKey ? personOf(state, fKey) : undefined
+  const name = f?.name ?? fatherName?.trim()
+  const day = report.time.end.day
+  ;(state.pregnancies ??= {})[key] = {
+    conceived: day,
+    due: day + Math.round(gameRule(state, 'pregnancyDays')),
+    ...(name ? { father: { ...(f ? { id: fKey! } : {}), name, ...(f?.race ? { race: f.race } : {}) } } : {}),
+    report: report.report_id,
+  }
+  syncPregnancyMarks(state)
+  return ''
+}
+
+/** 效果「察覺」：讓這個人察覺懷孕（沒懷孕或已經察覺時不做） */
+export function effectReveal(state: GameState, target: string): string {
+  const key = pcKey(state, target)
+  const p = state.pregnancies?.[key]
+  if (!p || p.known) return ''
+  p.known = true
+  p.knownDay = state.time.day
+  syncPregnancyMarks(state)
+  const who = key === 'pc' ? '你' : personOf(state, key)?.name ?? ''
+  return `${who}懷孕了（預產第 ${p.due} 天）`
+}

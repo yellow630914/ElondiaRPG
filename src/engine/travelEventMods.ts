@@ -294,6 +294,10 @@ export function travelEventWarnings(t: RoadTemplate): string[] {
   if (!t.text) out.push('沒有描述')
   if (t.scope === 'parasite' && t.parasite && !parasiteDef(t.parasite)) out.push(`找不到寄生物「${t.parasite}」：這件發作事件不會發生（選一種存在的寄生物）`)
   if (t.tier === 'advanced' && t.kind === 'check' && !t.options?.length) out.push('高階的檢定事件成功後沒有選項')
+  // 用了懷孕、泌乳的效果卻沒勾內容標籤：篩選關掉的玩家照樣會遇到這件事件（效果本身不會作用）
+  const effects = JSON.stringify([t.success, t.fail, t.options])
+  if (effects.includes('"type":"pregnancy"') && !t.tags?.includes('pregnancy')) out.push('用了「懷孕」的效果，事件最好勾「懷孕」內容標籤')
+  if (effects.includes('"type":"lactation"') && !t.tags?.includes('lactation')) out.push('用了「泌乳」的效果，事件最好勾「泌乳」內容標籤')
   if (t.scope === 'pregnancy') {
     const text = JSON.stringify([t.title, t.text, t.options])
     if (t.subject !== 'companion' && (text.includes('{a}') || text.includes('"$a"'))) out.push('寫了懷孕的夥伴（{a} 或 $a），可是這是主角的事件')

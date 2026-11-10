@@ -4,11 +4,11 @@
 
 import familyJson from '@data/rules/family.json'
 import { tagsAllowed } from './content'
-import { genderDef, itemDef, type CheckFilter } from './data'
+import { genderDef, itemDef, type CheckFilter, type PregnancyCond } from './data'
 import { characterBody } from './look'
 import { tattooTemplate } from './tattoos'
 import type { CheckCtx } from './perks'
-import type { Character, PregnancyStage } from './types'
+import type { Character, GameState, PregnancyStage, PregnancyState } from './types'
 
 interface FamilyRules {
   stages: { id: PregnancyStage; name: string; at: number }[]
@@ -64,4 +64,30 @@ export function wornLactation(c: Pick<Character, 'gear' | 'tattoos'>): string | 
 export function lactatingNow(c: Pick<Character, 'race' | 'gender' | 'body' | 'isPlayer' | 'gear' | 'tattoos' | 'pregMark'>): boolean {
   if (!tagsAllowed(['lactation']) || !canLactate(c)) return false
   return !!c.pregMark?.lactating || !!wornLactation(c)
+}
+
+// ---- 條件用的懷孕判斷（storyFlags.ts 的 condMet；不引用 pregnancy.ts，避免循環引用） ----
+
+/** 懷孕的階段（照 family.json 的比例） */
+export function stageAt(p: Pick<PregnancyState, 'conceived' | 'due'>, day: number): PregnancyStage {
+  const f = (day - p.conceived) / Math.max(1, p.due - p.conceived)
+  let stage: PregnancyStage = 'hidden'
+  for (const s of familyRules.stages) if (f >= s.at) stage = s.id
+  return stage
+}
+
+export const STAGE_ORDER: PregnancyStage[] = ['hidden', 'early', 'mid', 'late']
+
+/** 懷孕的條件（docs/FAMILY.md 第 10.2 節）：主角或隊伍裡任何一人懷孕、階段在範圍內、察覺與否相符 */
+export function pregnancyCondMet(state: Pick<GameState, 'pregnancies' | 'party' | 'time'>, c: PregnancyCond): boolean {
+  const keys = c.who === 'party' ? state.party.map((m) => (m.isPlayer ? 'pc' : m.id)) : ['pc']
+  return keys.some((k) => {
+    const p = state.pregnancies?.[k]
+    if (!p) return false
+    if (c.known !== undefined && !!p.known !== c.known) return false
+    const i = STAGE_ORDER.indexOf(stageAt(p, state.time.day))
+    if (c.stage_min && i < STAGE_ORDER.indexOf(c.stage_min)) return false
+    if (c.stage_max && i > STAGE_ORDER.indexOf(c.stage_max)) return false
+    return true
+  })
 }

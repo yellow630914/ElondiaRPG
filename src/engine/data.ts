@@ -34,7 +34,7 @@ import lewdJson from '@data/rules/lewd.json'
 import landmarksJson from '@data/world/landmarks.json'
 import specialMapsJson from '@data/world/special_maps.json'
 import type { RewardEffect } from './effects'
-import type { GearSlot, GearSpec, GuildRank, LewdStat, QuestKind, SkillQuality, TattooPlace } from './types'
+import type { GearSlot, GearSpec, GuildRank, LewdStat, PregnancyStage, QuestKind, SkillQuality, TattooPlace } from './types'
 import type { Lighting } from './light'
 
 // ---- 地理 ----
@@ -219,7 +219,15 @@ export interface StoryCond {
    * 「三天後來取件」「三天後在餘燼裂隙」——時間照常走，玩家這幾天可以做別的事。那個任務還沒結束時不成立
    */
   after?: AfterCond
+  /** 懷孕（docs/FAMILY.md 第 10.2 節）：主角（pc）或隊伍裡任何一人（party）懷孕，階段範圍、察覺了沒 */
+  pregnancy?: PregnancyCond
+  /** 主角在泌乳（true）或沒有（false） */
+  lactating?: boolean
+  /** 主角有幾個孩子（含邊界） */
+  children?: CounterRange
 }
+
+export interface PregnancyCond { who?: 'pc' | 'party'; stage_min?: PregnancyStage; stage_max?: PregnancyStage; known?: boolean }
 
 export interface AfterCond { story: string; node?: string; days: number }
 
