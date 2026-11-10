@@ -1,6 +1,7 @@
 // 慾望指標（成人向；docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從記在角色身上，曝露名聲依地區記在存檔。
 // 規則與數值在 data/rules/lewd.json。戰鬥的換算在 combat.ts（慾望上限、受到的慾望、初始慾望……）。
 
+import { familyRules, lactatingNow } from './pregMarks'
 import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
@@ -44,10 +45,17 @@ export function gearLewd(c: Pick<Character, 'gear'>): Record<LewdStat, number> {
 }
 
 /** 有效值：基本值加上裝備的加值（0～100） */
-export function lewdOf(c: Pick<Character, 'lewd' | 'gear'>): Record<LewdStat, number> {
+export function lewdOf(c: Pick<Character, 'lewd' | 'gear'> & Partial<Pick<Character, 'race' | 'gender' | 'body' | 'isPlayer' | 'tattoos' | 'pregMark'>>): Record<LewdStat, number> {
   const base = baseLewd(c)
   const gear = gearLewd(c)
-  return Object.fromEntries(LEWD_STATS.map((k) => [k, clamp(base[k] + gear[k])])) as Record<LewdStat, number>
+  // 泌乳：敏感的有效值加一點（docs/FAMILY.md 第 10 節）
+  const lact = c.race && lactatingNow(c as Character) ? lactationSensitivity() : 0
+  return Object.fromEntries(LEWD_STATS.map((k) => [k, clamp(base[k] + gear[k] + (k === 'sensitivity' ? lact : 0))])) as Record<LewdStat, number>
+}
+
+/** 泌乳時敏感的有效值加多少（family.json 的 lactation.sensitivity） */
+export function lactationSensitivity(): number {
+  return (familyRules.lactation as { sensitivity?: number } | undefined)?.sensitivity ?? 0
 }
 
 /** 分段的名稱（每 20 一段）。順從：身上有奴隸契約時用被迫者的分段 */
@@ -181,7 +189,7 @@ export function currentRegion(state: Pick<GameState, 'location'>): string {
  * 符合的慾望稱號（lewd.json 的 titles，由上往下最多 max 個）：五項慾望指標（有效值；曝露名聲看所在地區）、
  * 至少有一個身分標籤、所在地勢力的聲望。目前只顯示在角色詳情，不影響檢定、價格或 AI
  */
-export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'reputation'>, c: Character): LewdTitleDef[] {
+export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'reputation' | 'broodBirths'>, c: Character): LewdTitleDef[] {
   const t = lewdRules.titles
   if (!t) return []
   const v = lewdOf(c)
@@ -193,6 +201,7 @@ export function lewdTitles(state: Pick<GameState, 'exposure' | 'location' | 'rep
     const q = d.requires
     if (q.pc_tags?.length && !c.tags?.some((tag) => q.pc_tags!.includes(tag))) return false
     if (q.reputation && !inRange(rep, q.reputation)) return false
+    if (q.brood_births && (!c.isPlayer || !inRange(state.broodBirths ?? 0, q.brood_births))) return false
     return Object.entries(q.stats ?? {}).every(([k, r]) => inRange(k === 'exposure' ? exposure : v[k as LewdStat], r))
   }).slice(0, t.max)
 }
@@ -300,6 +309,9 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       if (wears(m, (b) => !!b.restraint)) bonus(d.restraint)
       // 在聚落裡真空的日子
       if (inTown && d.vacuum && vacuumSides(m).length) bonus(d.vacuum)
+      // 泌乳：胸前真空或曝露時，乳汁滲出來被人看見（docs/FAMILY.md 第 10 節）
+      const lactExp = (familyRules.lactation as { exposure?: number } | undefined)?.exposure ?? 0
+      if (inTown && lactExp && lactatingNow(m) && (vacuumSides(m).includes('top') || exposureLevel(m) >= 2)) addLewd(state, m, 'exposure', lactExp, undefined, loc.region)
       // 被鎖住的拘束具：主人鎖上的（契約還在時）或陷阱鎖住的
       if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || g.locked.startsWith(TRAP_LOCK)))) bonus(d.locked)
       // 奴隸印記的順從累積（條款的 submission_every）

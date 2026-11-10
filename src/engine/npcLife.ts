@@ -274,6 +274,11 @@ export function rollOnce(state: GameState, rec0: NpcRecord, day: number, ctx: Lu
 }
 
 /** 寫進近況：同一天已經有一則（例如被別人挑成對象）就接在後面 */
+/** 別的系統寫一則近況（懷孕、生下孩子……；docs/FAMILY.md）：同一天的接在同一則後面 */
+export function addNpcNews(state: GameState, id: string, text: string) {
+  pushNews(state, id, { day: state.time.day, text })
+}
+
 function pushNews(state: GameState, id: string, news: NpcNews) {
   const life = lifeOf(state)
   const list = (life.news[id] ??= [])

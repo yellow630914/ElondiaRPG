@@ -51,6 +51,7 @@ import TravelEventEditor from './content/TravelEventEditor.vue'
 import MasterEventEditor from './content/MasterEventEditor.vue'
 import { allMasterEvents, builtinMasterEvent, masterEventById, newMasterEvent, POOL_IDS } from '@/engine/masterEventMods'
 import EventRulesEditor from './content/EventRulesEditor.vue'
+import FamilyRulesEditor from './content/FamilyRulesEditor.vue'
 import BindRulesEditor from './content/BindRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ImportPickerDialog from './content/ImportPickerDialog.vue'
@@ -59,9 +60,9 @@ import StorylineOverview from './content/StorylineOverview.vue'
 import type { RefKey } from '@/engine/contentRefs'
 import ItemIcon from './items/ItemIcon.vue'
 import ContentIcon from './icons/ContentIcon.vue'
-import { travelEvents } from '@/engine/road'
+import { travelEvents, type EventScope } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
-import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, newTravelEvent } from '@/engine/travelEventMods'
+import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, EVENT_SCOPES, newTravelEvent, PREG_STAGE_NAME } from '@/engine/travelEventMods'
 import { isMobile, pushLayer } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
@@ -330,7 +331,7 @@ const FILTERS: Record<Sub, FilterDef[]> = {
   dungeons: [],
   shops: [],
   events: [
-    { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作'], ['lead', '🔎 線索事件']] },
+    { model: eventScope, name: '種類', all: '所有事件', options: () => [['road', '🧭 旅途事件'], ['town', '🏘️ 城鎮事件'], ['dungeon', '⚠️ 地下城事件'], ['parasite', '💗 寄生物的發作'], ['lead', '🔎 線索事件'], ['pregnancy', '🍼 懷孕的事件'], ['lactation', '💧 泌乳的事件'], ['brood', '🪺 苗床的事件']] },
     placeDef('沒有限制地點'),
     { model: eventHours, name: '時段', all: '所有時段', options: () => [['day', '☀️ 只在白天'], ['night', '🌙 只在夜裡'], ['none', '不限時段']] },
     adultDef, tagDef_, bodyDef, flagDef,
@@ -378,6 +379,8 @@ const COUNTERS_KEY = '|counters'
 const BIND_RULES_KEY = '|bind_rules'
 /** 特殊任務頁的「故事線總覽」 */
 const STORYLINES_KEY = '|storylines'
+/** 懷孕與泌乳設定（寄生物頁籤的固定按鈕；docs/FAMILY.md 第 12 節） */
+const FAMILY_RULES_KEY = '|family'
 /** 每一頁只有一筆的設定：放在清單上方的固定按鈕（不跟著篩選消失） */
 const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() => {
   void content.version
@@ -385,6 +388,7 @@ const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() 
   if (iconsTab.value) return []
   if (sub.value === 'events') return [{ key: 'rules', label: '⚙️ 事件設定', edited: !!m.eventRules?.rules }]
   if (sub.value === 'tattoos') return [{ key: 'rules', label: '⚙️ 印記設定', edited: !!m.markRules?.rules }]
+  if (sub.value === 'parasites') return [{ key: FAMILY_RULES_KEY, label: '⚙️ 懷孕與泌乳設定', edited: !!m.family?.rules }]
   if (sub.value === 'bases') return [{ key: BIND_RULES_KEY, label: '⚙️ 雙面效應設定', edited: !!m.bindRules?.rules }]
   if (sub.value === 'stories') return [{ key: STORYLINES_KEY, label: '🗺️ 故事線總覽', edited: false }, { key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
   return []
@@ -522,13 +526,14 @@ const rows = computed<Row[]>(() => {
       .filter((t) => bodyMatch(t.pc_body))
       .filter((t) => flagMatch(t))
       .map((t) => ({
-        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.scope === 'lead' ? '🔎' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}${t.hours === 'night' ? ' 🌙' : t.hours === 'day' ? ' ☀️' : ''}`,
+        key: t.id, name: `${t.scope === 'town' ? '🏘️' : t.scope === 'dungeon' ? '⚠️' : t.scope === 'parasite' ? '💗' : t.scope === 'lead' ? '🔎' : t.scope === 'pregnancy' ? '🍼' : t.scope === 'lactation' ? '💧' : t.scope === 'brood' ? '🪺' : t.tier === 'advanced' ? '✨' : '🧭'} ${t.title}${t.hours === 'night' ? ' 🌙' : t.hours === 'day' ? ' ☀️' : ''}`,
         note: t.scope === 'town' ? `城鎮・${t.kind === 'check' ? '檢定' : '選擇'}`
           : t.scope === 'parasite' ? `發作・${parasiteRules.parasites[t.parasite ?? '']?.name ?? t.parasite}${t.stages?.length ? `・${t.stages.map((i) => parasiteRules.stages[i]?.name).join('、')}` : ''}`
+          : t.scope === 'pregnancy' ? `${t.known ? '孕期' : '察覺'}・${t.subject === 'companion' ? '夥伴' : '主角'}${t.preg_stages?.length ? `・${t.preg_stages.map((x) => PREG_STAGE_NAME[x]).join('、')}` : ''}${t.tags?.includes('adult') && t.scene ? '・親密場景' : ''}`
           : t.scope === 'lead' ? `線索・登場 ${t.cast ?? 0} 人${t.layers?.length ? `・${t.layers.map((i) => EVENT_LAYERS[i]).join('、')}` : ''}`
           : t.scope === 'dungeon' ? `地下城・${(t.triggers ?? []).map((x) => DUNGEON_TRIGGERS[x]).join('、')}${t.tags?.includes('adult') ? '・成人向' : ''}`
           : `${(t.modes ?? []).map((m) => MODE_NAME[m]).join('、') || '任何路段'}・${t.kind === 'check' ? '檢定' : '選擇'}`,
-        status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : t.scope === 'parasite' ? 2.5 : t.scope === 'lead' ? 2.7 : 0,
+        status: st(!!m.travelEvents?.[t.id], !builtinTravelEvent(t.id)), sort: t.scope === 'town' ? 1 : t.scope === 'dungeon' ? 2 : t.scope === 'parasite' ? 2.5 : t.scope === 'pregnancy' ? 2.6 : t.scope === 'lactation' ? 2.62 : t.scope === 'brood' ? 2.64 : t.scope === 'lead' ? 2.7 : 0,
       }))
     list = evs.sort((a, b) => (a.status === 'custom' ? -1 : 0) - (b.status === 'custom' ? -1 : 0) || a.sort - b.sort)
   } else if (sub.value === 'masterEvents') {
@@ -603,7 +608,7 @@ const current = computed(() => {
     : sub.value === 'dungeons' ? !!content.mods.dungeons?.[key]
     : sub.value === 'events' ? key === 'rules' || travelEvents.templates.some((t) => t.id === key)
     : sub.value === 'masterEvents' ? !!masterEventById(key)
-    : sub.value === 'parasites' ? !!parasiteRules.parasites[key]
+    : sub.value === 'parasites' ? key === FAMILY_RULES_KEY || !!parasiteRules.parasites[key]
     : sub.value === 'npcTags' ? !!npcTags.tags[key]
     : sub.value === 'classes' ? editableClassIds().includes(key)
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
@@ -720,7 +725,7 @@ function create() {
       select(id)
     } else if (sub.value === 'events') {
       const id = newModId('event')
-      content.saveTravelEvent(id, newTravelEvent(id, eventScope.value === 'town' || eventScope.value === 'dungeon' || eventScope.value === 'parasite' || eventScope.value === 'lead' ? eventScope.value : 'road'))
+      content.saveTravelEvent(id, newTravelEvent(id, eventScope.value && eventScope.value !== 'road' && (EVENT_SCOPES as string[]).includes(eventScope.value) ? eventScope.value as EventScope : 'road'))
       select(id)
     } else if (sub.value === 'masterEvents') {
       const id = newModId('mevent')
@@ -1104,6 +1109,7 @@ function resetAll() {
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
           <MarkEditor v-else :id="current.slice(2)" :key="current" @deleted="select('')" />
         </template>
+        <FamilyRulesEditor v-else-if="sub === 'parasites' && current === FAMILY_RULES_KEY" key="family-rules" />
         <ParasiteEditor v-else-if="sub === 'parasites'" :id="current" :key="`par-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'events'">
           <EventRulesEditor v-if="current === 'rules'" key="ev-rules" />

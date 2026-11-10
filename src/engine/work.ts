@@ -128,6 +128,7 @@ export function applyWork(state: GameState, report: Report, target: string, degr
       if (ev) extra = `${who.isPlayer ? '' : who.name}${ev}。`
     }
     if (worker) report.narration = { ...report.narration, adult_actor: worker.id }
+    if (who) report.narration = { ...report.narration, brothel_work: who.id }
   }
   if (worker) return `你${freeWorker(worker) ? '請' : '派'}${worker.name}去做了 ${hours} 小時的${job.name}，${pay > 0 ? `${share < 1 ? '分到你手上的' : '交到你手上的'}工錢 ${formatMoney(pay)}` : '一分錢也沒拿回來'}。${extra}`
   return `做了 ${hours} 小時的${job.name}，${pay > 0 ? `賺到 ${formatMoney(pay)}` : '一分錢也沒拿到'}。${extra}`

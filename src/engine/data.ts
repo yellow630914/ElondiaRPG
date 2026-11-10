@@ -34,7 +34,7 @@ import lewdJson from '@data/rules/lewd.json'
 import landmarksJson from '@data/world/landmarks.json'
 import specialMapsJson from '@data/world/special_maps.json'
 import type { RewardEffect } from './effects'
-import type { GearSlot, GearSpec, GuildRank, LewdStat, QuestKind, SkillQuality, TattooPlace } from './types'
+import type { GearSlot, GearSpec, GuildRank, LewdStat, PregnancyStage, QuestKind, SkillQuality, TattooPlace } from './types'
 import type { Lighting } from './light'
 
 // ---- 地理 ----
@@ -158,7 +158,7 @@ export interface LewdTitleDef {
   id: string
   name: string
   desc: string
-  requires: { stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>; pc_tags?: string[]; reputation?: CounterRange }
+  requires: { stats?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission' | 'exposure', CounterRange>>; pc_tags?: string[]; reputation?: CounterRange; /** 主角產下過幾次胎生的苗床（只看主角） */ brood_births?: CounterRange }
 }
 
 /** 老師會教的特質與條件 */
@@ -219,7 +219,15 @@ export interface StoryCond {
    * 「三天後來取件」「三天後在餘燼裂隙」——時間照常走，玩家這幾天可以做別的事。那個任務還沒結束時不成立
    */
   after?: AfterCond
+  /** 懷孕（docs/FAMILY.md 第 10.2 節）：主角（pc）或隊伍裡任何一人（party）懷孕，階段範圍、察覺了沒 */
+  pregnancy?: PregnancyCond
+  /** 主角在泌乳（true）或沒有（false） */
+  lactating?: boolean
+  /** 主角有幾個孩子（含邊界） */
+  children?: CounterRange
 }
+
+export interface PregnancyCond { who?: 'pc' | 'party'; stage_min?: PregnancyStage; stage_max?: PregnancyStage; known?: boolean }
 
 export interface AfterCond { story: string; node?: string; days: number }
 
@@ -1071,6 +1079,11 @@ export interface AbilityDef {
   ap_give?: number
   /** 用了之後，戰後曝露名聲 +這個數（寬衣） */
   exposure?: number
+  /**
+   * 植入苗床（成人向，docs/FAMILY.md 第 13 節）：命中主角時多一層「植入」，戰鬥結束時每一層擲 chance（× 存檔規則「苗床的機率」）。
+   * parasite 沒寫時用使用者（怪物資料）的 brood；使用者沒有苗床時不會植入
+   */
+  brood?: { parasite?: string; chance: number }
   /** 升環（只有法術）：用比 circle 高的法術環施放時，每高一環多的效果（upcast.ts） */
   upcast?: UpcastDef
   desc: string
@@ -1154,6 +1167,8 @@ export interface EnemyDef {
    * field 是只在近郊、旅途、地下城的遭遇（特殊任務的戰鬥任務點要寫 rut 才擲，淫鬥場不擲）
    */
   rut?: boolean | 'field'
+  /** 怪物的苗床（docs/FAMILY.md 第 13 節）：色情戰敗事件沒能擺脫時，可能讓主角變成這個苗床（parasites.json 的 id） */
+  brood?: string
   /** 魔物娘的樣子（設定「魔物娘」打開時，交給 AI 的名字與外觀換成這個；docs/MONSTERS.md 的「魔物娘」） */
   girl?: MonsterGirl
   /** 一定帶著的特徵（例如層主天生巨大） */
@@ -1902,6 +1917,10 @@ export interface ItemUse {
   /** 傳送：全隊立刻脫離戰鬥 */
   escape?: boolean
   combat_only?: boolean
+  /** 泌乳幾天（docs/FAMILY.md 第 10 節；內容篩選「泌乳」打開、有乳房的人才能用） */
+  lactation?: number
+  /** 拿掉道具與事件造成的泌乳（懷孕的不行） */
+  stop_lactation?: boolean
 }
 
 export interface ItemDef {
@@ -1943,6 +1962,10 @@ export interface ItemDef {
   master_force?: { tags?: string[] }
   /** 成人向的物品：內容編輯器的篩選用 */
   adult?: boolean
+  /** 內容標籤（content.ts）：設定的內容篩選關掉這些標籤時，商店不賣（例如懷孕的避子湯、搖籃） */
+  content_tags?: string[]
+  /** 裝備：戴著的時候泌乳（泌乳之環；docs/FAMILY.md 第 10 節） */
+  lactation?: boolean
   /** 鎖（lewd.json 的 locks）：可以替身上的拘束具上鎖，雙面效應的戰鬥增益才生效 */
   lock?: LockGrade
   /** 鑰匙（docs/LEWD_STATS.md 第 16 節）：打開這個等級以下的鎖，用一次就沒了 */
@@ -2283,8 +2306,8 @@ export type FurniturePlace = 'indoor' | 'yard' | 'basement'
 
 export interface FurnitureSpec {
   places: FurniturePlace[]
-  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃；training：調教室的家具（docs/LEWD_STATS.md 第 19 節） */
-  function?: 'bed' | 'workbench' | 'garden' | 'training'
+  /** bed：在家長休；workbench：高階工作台（craft）；garden：可以播種的苗圃；training：調教室的家具（docs/LEWD_STATS.md 第 19 節）；crib：搖籃（家裡的嬰兒，docs/FAMILY.md） */
+  function?: 'bed' | 'workbench' | 'garden' | 'training' | 'crib'
   craft?: CraftId
   /** 調教室的家具：在家調教時的檢定加值 */
   training?: number

@@ -122,7 +122,7 @@ export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger, at:
 
 /** 有別的事情等著回應時不發生 */
 function busy(state: GameState): boolean {
-  return !!(state.dungeonEvent || state.parasiteEvent || state.leadEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent || state.trapLure)
+  return !!(state.dungeonEvent || state.parasiteEvent || state.pregnancyEvent || state.pendingBirth || state.pendingBroodBirth || state.leadEvent || state.combat || state.standoff || state.pendingMasterEvent || state.pendingAction || state.townEvent || state.trapLure)
 }
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)

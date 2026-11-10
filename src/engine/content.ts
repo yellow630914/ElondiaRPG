@@ -1,8 +1,8 @@
 // 成人向內容一律存在；AI 依日誌有沒有親密場景（narration.adult_scene）分流，見 narrator/compose.ts。
 
-// ---- 內容標籤與篩選（特殊任務的標籤；設定裡可以關閉 NTR、非處女、主角非自願、男性對象） ----
+// ---- 內容標籤與篩選（特殊任務的標籤；設定裡可以關閉 NTR、非處女、主角非自願、男性對象、懷孕、泌乳） ----
 
-export type ContentTag = 'adult' | 'ntr' | 'non_virgin' | 'pc_unwilling' | 'male_partner'
+export type ContentTag = 'adult' | 'ntr' | 'non_virgin' | 'pc_unwilling' | 'male_partner' | 'pregnancy' | 'lactation' | 'monster_brood'
 export type FilterTag = Exclude<ContentTag, 'adult'>
 export const CONTENT_TAGS: Record<ContentTag, { name: string; desc: string }> = {
   adult: { name: '成人向', desc: '有露骨的性描寫' },
@@ -10,11 +10,17 @@ export const CONTENT_TAGS: Record<ContentTag, { name: string; desc: string }> = 
   non_virgin: { name: '非處女', desc: '角色在故事開始前就有性經驗（人妻、娼妓、過去的遭遇……）' },
   pc_unwilling: { name: '主角非自願', desc: '主角在不情願的情況下被侵犯（灌醉、色情寶箱怪、戰敗……）' },
   male_partner: { name: '男性對象', desc: '親密的對象是傳統的男性角色（不是偽娘、中性的角色）' },
+  pregnancy: { name: '懷孕', desc: '親密場景之後可能受孕：懷孕、察覺、生產與嬰兒（預設關閉）' },
+  lactation: { name: '泌乳', desc: '懷孕後期與催乳的道具讓人泌乳（預設關閉）' },
+  monster_brood: { name: '怪物的苗床', desc: '怪物把卵、種或幼蟲留在主角體內，幾天後產下（預設關閉）' },
 }
 export const CONTENT_TAG_IDS = Object.keys(CONTENT_TAGS) as ContentTag[]
-export const FILTER_TAGS: FilterTag[] = ['ntr', 'non_virgin', 'pc_unwilling', 'male_partner']
+export const FILTER_TAGS: FilterTag[] = ['ntr', 'non_virgin', 'pc_unwilling', 'male_partner', 'pregnancy', 'lactation', 'monster_brood']
 
-let filters: Record<FilterTag, boolean> = { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true }
+/** 內容篩選的預設：懷孕、泌乳、怪物的苗床預設關閉，其他打開 */
+export const DEFAULT_FILTERS: Record<FilterTag, boolean> = { ntr: true, non_virgin: true, pc_unwilling: true, male_partner: true, pregnancy: false, lactation: false, monster_brood: false }
+
+let filters: Record<FilterTag, boolean> = { ...DEFAULT_FILTERS }
 
 /** 設定的內容篩選：false 的標籤不出現 */
 export function setContentFilters(f: Partial<Record<FilterTag, boolean>>) {

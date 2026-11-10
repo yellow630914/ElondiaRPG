@@ -236,6 +236,8 @@
     { "id": "hive_bond", "name": "蟲巢共生", "category": "lewd", "school": "beast", "desc": "獸蟲派進階。造成的毒傷害 +25%；毒傷害再 ×0.75。",
       "effects": [{"offense": {"poison": 0.25}}, {"resist": {"poison": -0.25}}], "requires": {"perks": ["school_beast"]},
       "train": { "cells": ["magic", "informant"], "attr": "int" } },
+    { "id": "brood_symbiote", "name": "蟲巢的共生體", "category": "lewd", "school": "beast", "desc": "獸蟲派。和體內破繭的幼蟲共生：毒傷害 ×0.85。（苗床的寄生破繭時選擇共生得到，docs/FAMILY.md 第 13 節）",
+      "effects": [{"resist": {"poison": -0.15}}], "requires": {"perks": ["school_beast"]} },
     { "id": "pure_heart", "name": "清心寡慾", "category": "lewd", "school": "abstinence", "desc": "禁慾派進階。淫亂的增加減半；消退慾望的效果（清心這類）+50%。",
       "effects": [], "lust": {"growth": {"lewdness": -0.5}, "relief": 0.5}, "requires": {"perks": ["school_abstinence"]},
       "train": { "cells": ["temple"], "attr": "fai" } },

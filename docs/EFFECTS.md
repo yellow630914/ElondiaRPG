@@ -48,6 +48,8 @@
 | `lewd` | 慾望指標的加減：`stat`（`lewdness`／`sensitivity`／`endurance`／`submission`／`exposure`）、`delta`，`target` 預設主角；曝露名聲記在目前的地區（[LEWD_STATS](LEWD_STATS.md)） |
 | `parasite` | 主角的寄生物（`parasites.json`）：`op` 是 `add` 寄生、`tame` 馴服、`remove` 拿掉（見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） |
 | `corruption` | 寄生物的侵蝕度加減（`parasite`、`delta`）；休眠或已經馴服的寄生物不變 |
+| `pregnancy` | 懷孕（[FAMILY](FAMILY.md) 第 11 節）：`op` 是 `conceive`（一定受孕）或 `reveal`（察覺）；`target` 是 `pc`、隊員或 NPC 的 id（懷孕的事件可以寫 `$a`）；受孕的 `father` 是 `pc` 或角色 id，空著是父親不明（`father_name` 可以只寫名字）。內容篩選關掉「懷孕」、身體不會懷孕、已經懷孕、產後虛弱時不做 |
+| `lactation` | 泌乳：`op` 是 `add`（泌乳 `days` 天，來源記成事件）或 `remove`（拿掉事件與道具的泌乳）；`target` 是 `pc` 或隊員的 id。內容篩選關掉「泌乳」、身體不會泌乳時不做。主人事件格式也能用 |
 
 完整清單是 `effects.ts` 的 `EFFECT_TYPES`；特殊任務編輯器只開放其中一部分（見 [STORY_QUESTS](STORY_QUESTS.md) 第 2 節）。
 

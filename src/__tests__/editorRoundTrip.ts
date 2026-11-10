@@ -16,6 +16,7 @@ import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
 import AbilityEditor from '@/components/content/AbilityEditor.vue'
 import BindRulesEditor from '@/components/content/BindRulesEditor.vue'
+import FamilyRulesEditor from '@/components/content/FamilyRulesEditor.vue'
 import ConditionEditor from '@/components/content/ConditionEditor.vue'
 import EnemyEditor from '@/components/content/EnemyEditor.vue'
 import EventRulesEditor from '@/components/content/EventRulesEditor.vue'
@@ -96,12 +97,15 @@ export const CASES: Record<string, () => Case> = {
   specialMaps: () => ({ editor: SpecialMapEditor, keys: sample(Object.keys(specialMaps), 10), props: (id) => ({ id }) }),
   shops: () => ({ editor: ShopEditor, keys: sample(Object.keys(shopRules.types), 15), props: (id) => ({ id }) }),
   events: () => ({ editor: TravelEventEditor, keys: sample(travelEvents.templates.map((t) => t.id), 30), props: (id) => ({ id }) }),
+  // 懷孕、泌乳、苗床的事件：全部打開一次（抽樣很難抽到）
+  pregnancyEvents: () => ({ editor: TravelEventEditor, keys: travelEvents.templates.filter((t) => ['pregnancy', 'lactation', 'brood'].includes(t.scope ?? '')).map((t) => t.id), props: (id) => ({ id }) }),
   masterEvents: () => ({ editor: MasterEventEditor, keys: sample(allMasterEvents().map((e) => e.def.id), 20), props: (id) => ({ id }) }),
   npcs: () => ({ editor: NpcEditor, keys: sample(npcs.map((n) => n.id), 30), props: (id) => ({ id }) }),
   stories: () => ({ editor: StoryEditor, keys: cover(stories, (d) => shape({ start: d.start, tags: d.tags, rewards: d.rewards, time_limit: d.time_limit }), 20).map((d) => d.id), props: (id) => ({ id }) }),
   rules: () => ({ editor: EventRulesEditor, keys: ['eventRules'], props: () => ({}) }),
   markRules: () => ({ editor: MarkRulesEditor, keys: ['markRules'], props: () => ({}) }),
   bindRules: () => ({ editor: BindRulesEditor, keys: ['bindRules'], props: () => ({}) }),
+  family: () => ({ editor: FamilyRulesEditor, keys: ['family'], props: () => ({}) }),
 }
 
 const hash = (v: unknown) => createHash('sha1').update(JSON.stringify(v)).digest('hex').slice(0, 12)

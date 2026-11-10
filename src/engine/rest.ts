@@ -18,6 +18,8 @@ import { teachAbility } from './effects'
 import { addLewd } from './lewd'
 import { currentArea, currentCell, DUNGEON_LAYERS } from './grid'
 import { comfortOf, hasBed, homeOfArea } from './homes'
+import { morningSickness } from './pregnancy'
+import { maybePregnancyEvent } from './pregnancyEvents'
 import { formatMoney } from './money'
 import { clearInviteCooldowns } from './companions'
 import { addAffinity, addCondition, isBound, isFugitive, leaderGroup, leaderOf, leaveParty, pcOf, punish, recapturePlayer, removeCondition } from './party'
@@ -99,10 +101,12 @@ export function restEventBlock(state: GameState): string | null {
   if (state.standoff) return '先處理眼前的對峙'
   if (state.pendingMark) return '先完成契約印記的刻印'
   if (state.pendingMasterEvent) return '先回應主人的要求'
-  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent) return '先應付眼前的處境'
+  if (state.dungeonEvent || state.parasiteEvent || state.leadEvent || state.pregnancyEvent) return '先應付眼前的處境'
   if (state.trapLure) return '先決定要不要觸發察覺到的陷阱'
   if (state.townEvent || state.roadEvent) return '先決定怎麼應付眼前的事'
   if (state.pendingDefeat) return '先應付眼前的處境'
+  if (state.pendingBirth) return '先處理生產'
+  if (state.pendingBroodBirth) return '先處理體內的苗床'
   if (state.captives?.npcs.length) return '先決定怎麼處置被制伏的人'
   if (state.pendingJoins?.length) return '先決定要不要讓想入隊的人加入（騰出位子或放棄）'
   const story = blockingNode(state)
@@ -316,6 +320,8 @@ export function longRest(state: GameState, place: RestPlace): Report {
   const home = place === 'home' ? homeOfArea(state, area) : undefined
   const rested = !!home && comfortOf(home) >= homeRules.comfort_rested
   if (rested) for (const m of state.party) addCondition(m, 'well_rested', report)
+  // 懷孕初期：一早起來可能孕吐（docs/FAMILY.md）
+  morningSickness(state, report)
   clearInviteCooldowns(state)
   const room = place === 'slave_room' ? slaveRoomNight(state, report) : []
   const checks = restChecks(state, report, place)
@@ -332,6 +338,8 @@ export function longRest(state: GameState, place: RestPlace): Report {
   if (place === 'safe') maybeDungeonEvent(state, 'rest', slept)
   // 醒來的時候：寄生物可能發作
   maybeParasiteEvent(state, 'rest', slept)
+  // 懷孕的事件（察覺、孕期）：時段看入睡的時間
+  maybePregnancyEvent(state, 'rest', slept)
   return committed
 }
 

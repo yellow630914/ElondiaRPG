@@ -9,6 +9,11 @@ import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
 import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT } from '@/engine/lewd'
 import { encounterText, sexRecordItems, sexRecordOf, virginWord } from '@/engine/sexRecord'
+import { pregnancyLine } from '@/engine/pregnancy'
+import { lactationLine, milkBlock } from '@/engine/lactation'
+import { postpartumMaxHp, pregnancyTwoFace } from '@/engine/pregCombat'
+import { pregnancyStageName } from '@/engine/pregMarks'
+import { lactationSensitivity } from '@/engine/lewd'
 import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { isOwnSlave } from '@/engine/ownedSlaves'
 import { MOD_NAME } from '@/engine/gear'
@@ -78,6 +83,12 @@ const combat = computed<StatItem[]>(() => {
 // 性經歷（docs/LEWD_STATS.md 第 29 節）：主角記在 pc，其他人用自己的 id
 const sexId = computed(() => (m.value.isPlayer ? 'pc' : m.value.id))
 const sexRec = computed(() => sexRecordOf(s.value, sexId.value))
+// 懷孕（察覺之後）與產後虛弱（docs/FAMILY.md 第 4.4 節）
+const pregLine = computed(() => pregnancyLine(s.value, sexId.value))
+// 泌乳（docs/FAMILY.md 第 10 節）
+const lactLine = computed(() => lactationLine(s.value, m.value))
+// 擠奶（一天一次）：只有隊伍裡的人
+const milkWhy = computed(() => (s.value.party.some((x) => x.id === m.value.id) ? milkBlock(s.value, m.value) : '不在隊伍裡'))
 const sexItems = computed<StatItem[]>(() => sexRecordItems(s.value, sexId.value).map((x) => ({ label: x.label, value: x.value, ...(x.value.length > 12 ? { wide: true } : {}) })))
 const sexDraft = reactive({ virgin: true, partners: 0, times: 0, servicePartners: 0, serviceTimes: 0, solo: 0, favorite: '', notes: '' })
 function resetSexDraft() {
@@ -141,6 +152,15 @@ const lewdItems = computed<StatItem[]>(() => {
       wide: true,
     })
   }
+  // 懷孕的雙面效應與產後虛弱（docs/FAMILY.md 第 4.3、6 節）
+  if (x.pregMark?.known && x.pregMark.stage && x.pregMark.stage !== 'hidden') {
+    const pf = pregnancyTwoFace(x)
+    const parts = Object.entries(pf.mods).filter(([, n]) => n).map(([k, n]) => `${MOD_NAME[k] ?? k} ${signed(n ?? 0)}`)
+    const down = Object.entries(pf.allyDown ?? {}).filter(([, n]) => n).map(([k, n]) => `${MOD_NAME[k] ?? k} ${signed(n ?? 0)}`)
+    if (down.length) parts.push(`有隊友倒下時${down.join('、')}`)
+    items.push({ label: '懷孕', value: pregnancyStageName(x.pregMark.stage), note: parts.length ? `戰鬥中：${parts.join('・')}` : schools.length ? '' : '沒修流派：只有平常的檢定減值', wide: true })
+  }
+  if (x.pregMark?.postpartum) items.push({ label: '產後虛弱', value: `生命上限 ×${postpartumMaxHp(x)}`, note: '戰鬥中；所有檢定 -1', wide: true })
   // 稱號（第 28 節，只是稱號）
   const titles = lewdTitles(s.value, x)
   if (titles.length) items.push({ label: '稱號', value: titles.map((t) => t.name).join('、'), note: titles.map((t) => t.desc).join(' '), wide: true })
@@ -250,6 +270,10 @@ function saveTags() {
             <!-- 慾望指標放在五維屬性底下；右欄是戰鬥數值與性經歷 -->
             <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派從受訓學（娼館、神殿、裁縫店……）；拘束具平常是檢定減值，修了流派又上了鎖，戰鬥中反轉成增益。" /></h4>
             <StatGrid :items="lewdItems" />
+            <p v-if="pregLine" class="small preg">🍼 {{ pregLine }}</p>
+            <p v-if="lactLine" class="small preg">💧 {{ lactLine }}（敏感 +{{ lactationSensitivity() }}）
+              <button v-if="milkWhy !== '不在隊伍裡'" class="small" :disabled="!!milkWhy" :title="milkWhy ?? '擠出母乳（一天一次）'" @click="game.milk(m.id)">擠奶</button>
+            </p>
           </div>
           <div>
             <p v-if="isNoncombatant(m)" class="small muted">無法戰鬥：同行但不參與戰鬥、不分經驗。戰敗時依親密度救助（搬救兵）或逃跑（在聚落等你）。</p>

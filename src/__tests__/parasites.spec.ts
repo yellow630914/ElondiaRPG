@@ -57,7 +57,8 @@ describe('parasites', () => {
       if (def.item) expect(itemDef(def.item), def.item).toBeTruthy()
       if (def.tamed?.item) expect(itemDef(def.tamed.item)?.gear?.unique, def.tamed.item).toBeTruthy()
       for (const sid of def.stories ?? []) expect(stories.some((s) => s.id === sid), sid).toBe(true)
-      expect(parasiteTemplates().filter((t) => t.parasite === id).length, id).toBeGreaterThanOrEqual(def.kind === 'seed' ? 3 : 10)
+      // 苗床沒有發作事件（brood.spec.ts）
+      if (def.category !== 'brood') expect(parasiteTemplates().filter((t) => t.parasite === id).length, id).toBeGreaterThanOrEqual(def.kind === 'seed' ? 3 : 10)
     }
     for (const t of parasiteTemplates()) {
       expect(t.tags, t.id).toContain('adult')

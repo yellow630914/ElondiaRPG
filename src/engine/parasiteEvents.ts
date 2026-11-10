@@ -24,6 +24,7 @@ import { checkModifiers, modifierNote } from './perks'
 import { applyPendingMove, travelEvents, type RoadTemplate } from './road'
 import { roll as diceRoll, withBonus } from './rng'
 import { abandonStory } from './story'
+import { broodOf, broodTick } from './brood'
 import { commitReport, withRng } from './state'
 import { condMet, flagKey } from './storyFlags'
 import { shopRefusal, tattooShopHere } from './tattooShop'
@@ -69,7 +70,7 @@ export function flaresOn(state: GameState, p: ParasiteState): boolean {
 
 /** 有別的事情等著處理的時候不發作 */
 function busy(state: GameState): boolean {
-  return !!(state.parasiteEvent || state.dungeonEvent || state.leadEvent || state.trapLure || state.townEvent || state.roadEvent || state.combat || state.standoff
+  return !!(state.parasiteEvent || state.pregnancyEvent || state.pendingBirth || state.pendingBroodBirth || state.dungeonEvent || state.leadEvent || state.trapLure || state.townEvent || state.roadEvent || state.combat || state.standoff
     || state.pendingMasterEvent || state.pendingAction || state.pendingMark)
 }
 
@@ -81,8 +82,10 @@ export function maybeParasiteEvent(state: GameState, trigger: ParasiteTrigger, a
   const pc = pcOf(state)
   if (!parasitesOf(pc).length) return false
   // 發作關掉時也要把日子往前推（不增長），之後恢復才不會一次補上
-  growParasites(pc, state.time, (p) => !flaresOn(state, p))
+  // 苗床照長（發作被擋掉也長；篩選「怪物的苗床」關掉時停），長到支配時跳出產下的事件（brood.ts）
+  growParasites(pc, state.time, (p) => (broodOf(p.id) ? !tagsAllowed(['monster_brood']) : !flaresOn(state, p)))
   if (busy(state)) return false
+  if (broodTick(state)) return true
   const now = hoursOf(state.time)
   const log = state.parasiteEvents
   if (log?.last !== undefined && now - log.last < parasiteRules.cooldown_hours) return false

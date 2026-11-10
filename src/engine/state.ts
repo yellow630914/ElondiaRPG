@@ -16,6 +16,7 @@ import type { Character, ContractRef, EquippedGear, GameOptions, GameState, Game
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
 import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
+import { familyTick } from './pregnancy'
 import { pcTagStartItems, sanitizePcTags } from './pcTags'
 import { startCrafts } from './crafting'
 import { occupationFor } from './npcs'
@@ -504,6 +505,7 @@ export function advanceTime(state: GameState, hours: number) {
   const prevDay = state.time.day
   state.time = addHours(state.time, hours)
   lewdDaily(state, prevDay, state.time.day)
+  familyTick(state)
 }
 
 export function addHours(time: GameTime, hours: number): Required<GameTime> {
@@ -621,5 +623,7 @@ export function commitReport(state: GameState, report: Report): Report {
 
   state.reports.push(report)
   recordMemory(state, report)
+  // 懷孕：察覺、陣痛、生產（docs/FAMILY.md）
+  familyTick(state)
   return report
 }

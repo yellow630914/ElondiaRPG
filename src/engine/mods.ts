@@ -7,6 +7,11 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
+import { applyFamilyRules, restoreFamilyRules, sanitizeFamilyRules, type FamilyRulesMod } from './familyMods'
+import { familyRules, STAGE_ORDER } from './pregMarks'
+import type { PregnancyCond } from './data'
+import type { PregnancyStage } from './types'
+import { FILTER_TAGS, type FilterTag } from './content'
 import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
@@ -139,6 +144,8 @@ export interface ContentMods {
   eventRules: Record<string, EventRulesMod>
   /** 雙面效應的設定（只有 rules 一筆；舊的自訂內容沒有這一欄） */
   bindRules?: Record<string, BindRulesMod>
+  /** 懷孕與泌乳的設定（只有 rules 一筆；docs/FAMILY.md 第 12 節；舊的自訂內容沒有這一欄） */
+  family?: Record<string, FamilyRulesMod>
   /** 主人事件格式的事件（主人的突發事件、調教、娼館；舊的自訂內容沒有這一欄） */
   masterEvents?: Record<string, MasterEventMod>
   /** 類別的圖示（依類別 id；舊的自訂內容沒有這一欄） */
@@ -288,6 +295,7 @@ function restore() {
   restoreSpecialMaps()
   restoreTravelEvents()
   restoreBindRules()
+  restoreFamilyRules()
   restoreMasterEvents()
   restoreCounters()
   setCategoryIcons({})
@@ -631,6 +639,7 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
   tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
   tryEach('雙面效應設定', mods.bindRules ?? {}, (_id, m) => applyBindRules(sanitizeBindRules(m)))
+  tryEach('懷孕與泌乳設定', mods.family ?? {}, (_id, m) => applyFamilyRules(sanitizeFamilyRules(m)))
   tryEach('主奴與娼館的事件', mods.masterEvents ?? {}, (id, m) => applyMasterEvent(id, sanitizeMasterEvent(id, m, !!m.custom)))
   setCategoryIcons(Object.fromEntries(Object.entries(mods.categoryIcons ?? {}).map(([k, v]) => [k, v.icon])))
   // 自建的底材與裝備：建角時也能選
@@ -780,6 +789,8 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
   if (raw.kind && ENEMY_KINDS[raw.kind]) out.kind = raw.kind
   if (raw.armed) out.armed = true
   if (raw.rut) out.rut = raw.rut === 'field' ? 'field' : true
+  // 怪物的苗床（docs/FAMILY.md 第 13 節）：寄生物的 id；自建的苗床可能還沒套用，名字對就先留著（用的時候再看是不是苗床）
+  if (typeof raw.brood === 'string' && (parasiteDef(raw.brood)?.category === 'brood' || raw.brood.startsWith('mod_par_'))) out.brood = raw.brood
   const girlName = str(raw.girl?.name, 20)
   const girlDesc = str(raw.girl?.desc, 300)
   if (girlName && girlDesc) {
@@ -840,6 +851,9 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   }
   if (u.save?.attr && ATTR_IDS.includes(u.save.attr) && (out.damage || out.apply)) out.save = { attr: u.save.attr, dc: int(u.save.dc, 5, 30, 13) }
   if (u.escape) out.escape = true
+  // 泌乳（docs/FAMILY.md 第 10 節）：幾天、斷乳
+  if (u.lactation) out.lactation = int(u.lactation, 1, 60, 3)
+  if (u.stop_lactation) out.stop_lactation = true
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
   if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.lust || out.revive || out.cleanse || out.escape) {
@@ -920,6 +934,10 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (forge.length) out.forge = { materials: [...new Set(forge)] }
   if (raw.event) out.event = true
   if (raw.adult) out.adult = true
+  if (raw.lactation && category === 'equipment') out.lactation = true
+  // 內容標籤（商店照內容篩選上架，例如懷孕的避子湯、搖籃）
+  const ctags = [...new Set((Array.isArray(raw.content_tags) ? raw.content_tags : []).filter((t): t is FilterTag => (FILTER_TAGS as string[]).includes(t)))]
+  if (ctags.length) out.content_tags = ctags
   // 貿易類別：沒寫（或寫了不認得的）照其他欄位推
   if (isTradeCategory(raw.trade_category)) out.trade_category = raw.trade_category
   // 材料的等級：手動填的才記（沒填照用途推）
@@ -966,7 +984,7 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
     const places = (Array.isArray(f.places) ? f.places : []).filter((p): p is FurniturePlace => p === 'indoor' || p === 'yard' || p === 'basement')
     out.furniture = {
       places: places.length ? [...new Set(places)] : ['indoor'],
-      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' || f.function === 'training' ? { function: f.function } : {}),
+      ...(f.function === 'bed' || f.function === 'workbench' || f.function === 'garden' || f.function === 'training' || f.function === 'crib' ? { function: f.function } : {}),
       ...(f.function === 'workbench' ? { craft: CRAFT_IDS.includes(f.craft as never) ? f.craft : 'smithing' } : {}),
       ...(f.function === 'training' ? { training: int(f.training, 1, 3, 1) } : {}),
       ...(int(f.comfort, 0, 10, 0) ? { comfort: int(f.comfort, 0, 10, 0) } : {}),
@@ -1262,6 +1280,7 @@ export function normalizeMods(raw: unknown): ContentMods {
   }
   if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
   if (r.bindRules?.rules) (out.bindRules ??= {}).rules = sanitizeBindRules(r.bindRules.rules)
+  if (r.family?.rules) (out.family ??= {}).rules = sanitizeFamilyRules(r.family.rules)
   for (const [id, v] of Object.entries(r.masterEvents ?? {})) {
     if (typeof id === 'string' && id.length <= 60 && v && typeof v === 'object') (out.masterEvents ??= {})[id] = sanitizeMasterEvent(id, v, !!v.custom || !builtinMasterEvent(id))
   }
@@ -1283,7 +1302,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; pc_races?: unknown; pc_races_none?: unknown; after?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; pc_races?: unknown; pc_races_none?: unknown; after?: unknown; pregnancy?: unknown; lactating?: unknown; children?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1348,8 +1367,23 @@ function cond(v: unknown): NpcDef['requires'] {
   const afterStory = typeof ao.story === 'string' ? ao.story.trim().slice(0, 60) : ''
   const afterDays = typeof ao.days === 'number' && Number.isFinite(ao.days) ? Math.max(1, Math.min(60, Math.round(ao.days))) : 1
   const after = afterStory ? { story: afterStory, ...(typeof ao.node === 'string' && ao.node.trim() ? { node: ao.node.trim().slice(0, 40) } : {}), days: afterDays } : undefined
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || pcRaces.length || pcRacesNone.length || after
-    ? { ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(pcRaces.length ? { pc_races: pcRaces } : {}), ...(pcRacesNone.length ? { pc_races_none: pcRacesNone } : {}), ...(after ? { after } : {}) }
+  // 懷孕（誰、階段範圍、察覺了沒）、泌乳、孩子的數量（docs/FAMILY.md 第 10.2 節）
+  const po = r.pregnancy && typeof r.pregnancy === 'object' ? r.pregnancy as Record<string, unknown> : undefined
+  const stageOk = (x: unknown): x is PregnancyStage => typeof x === 'string' && (STAGE_ORDER as string[]).includes(x)
+  const pregnancy: PregnancyCond | undefined = po ? {
+    ...(po.who === 'party' ? { who: 'party' as const } : {}),
+    ...(stageOk(po.stage_min) ? { stage_min: po.stage_min } : {}),
+    ...(stageOk(po.stage_max) ? { stage_max: po.stage_max } : {}),
+    ...(typeof po.known === 'boolean' ? { known: po.known } : {}),
+  } : undefined
+  const lactating = typeof r.lactating === 'boolean' ? r.lactating : undefined
+  const ko = r.children && typeof r.children === 'object' ? r.children as { min?: unknown; max?: unknown } : {}
+  const kn = (n: unknown) => (typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(99, Math.round(n))) : undefined)
+  const children = { ...(kn(ko.min) !== undefined ? { min: kn(ko.min) } : {}), ...(kn(ko.max) !== undefined ? { max: kn(ko.max) } : {}) }
+  const hasKids = Object.keys(children).length > 0
+  const hasFamily = !!pregnancy || lactating !== undefined || hasKids
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || pcRaces.length || pcRacesNone.length || after || hasFamily
+    ? { ...(pregnancy ? { pregnancy } : {}), ...(lactating !== undefined ? { lactating } : {}), ...(hasKids ? { children } : {}), ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(pcRaces.length ? { pc_races: pcRaces } : {}), ...(pcRacesNone.length ? { pc_races_none: pcRacesNone } : {}), ...(after ? { after } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }
@@ -1645,6 +1679,13 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
   if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
   if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
+  if (raw.brood && typeof raw.brood === 'object') {
+    const p = raw.brood.parasite
+    out.brood = {
+      chance: Math.round(num(raw.brood.chance, 0.01, 1, 0.15) * 100) / 100,
+      ...(typeof p === 'string' && (parasiteDef(p)?.category === 'brood' || p.startsWith('mod_par_')) ? { parasite: p } : {}),
+    }
+  }
   if (raw.lust_transfer && (raw.lust_transfer.mode === 'spread' || raw.lust_transfer.mode === 'take')) {
     const t = raw.lust_transfer
     out.lust_transfer = t.mode === 'spread'
@@ -1825,6 +1866,9 @@ export function parasiteUsage(id: string, state?: GameState | null): string[] {
   for (const t of travelEvents.templates) if (has(t)) out.push(t.scope === 'parasite' ? `發作事件「${t.title}」` : `事件「${t.title}」`)
   for (const l of Object.values(landmarks)) if (has(l)) out.push(`地標「${l.name}」`)
   if (has(slaveryRules)) out.push('奴隸生活的事件')
+  // 苗床（docs/FAMILY.md 第 13 節）：怪物資料的 brood、能力的「植入苗床」
+  for (const e of Object.values(enemies)) if (e.brood === id) out.push(`怪物「${e.name}」的苗床`)
+  for (const a of Object.values(abilities)) if (a.brood?.parasite === id) out.push(`能力「${a.name}」的植入苗床`)
   for (const c of state?.party ?? []) if (c.parasites?.some((p) => p.id === id)) out.push(`目前存檔的「${c.name}」身上`)
   return out
 }
@@ -1899,6 +1943,7 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
     if (p.stage_abilities?.some((list) => list.includes(id))) out.push(`寄生物「${p.name ?? pid}」（還沒馴服時依階段給的）`)
     if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後、有獸蟲派時可以用，不分先後）`)
   }
+  if ((familyRules.lactation as { ability?: string } | undefined)?.ability === id) out.push('泌乳的時候（懷孕與泌乳設定，docs/FAMILY.md 第 10.5 節）')
   if (lewdRules.slave_room?.abilities?.includes(id)) out.push('驛站的奴房（可能學會）')
   if (lewdRules.brothel?.patron?.default?.includes(id)) out.push('娼館的娼婦光顧時預設會教的')
   if (state) {

@@ -8,6 +8,9 @@
 //
 // 戰鬥狀態存在 GameState.combat，可隨存檔保存；結束後由 finishCombat 產生戰報。
 
+import { settleImplants } from './brood'
+import { postpartumMaxHp, pregnancyTwoFace } from './pregCombat'
+import { lactationAbilities, lactationCombat } from './lactation'
 import { noteFight } from './bestiary'
 import { pcTagLustResist } from './pcTags'
 import { fusedWeapon } from './fusion'
@@ -137,6 +140,8 @@ export interface Combatant {
   climaxes?: number
   /** 敵方：被高潮的傷害打倒（慾望勝利） */
   lustDefeated?: boolean
+  /** 同一邊有人倒下了（懷孕後期的雙面效應用；每回合開始時更新） */
+  allyDown?: boolean
   /**
    * 慾望指標（docs/LEWD_STATS.md）換算的修正：受到的慾望倍率（敏感）、消退的倍率與自己增加的慾望倍率（淫亂）、
    * 傷害轉成慾望的比例加成（順從）、造成的魅惑傷害加值（曝露名聲）。沒有時都是 1 或 0
@@ -146,6 +151,8 @@ export interface Combatant {
     /** 流派特質（docs/LEWD_STATS.md 第 6 節）：引爆的傷害倍率加成、消退慾望的倍率加成、受到幸運一擊時改成慾望的比例、
      * 慾望一半以上時每回合回復的生命、高潮時回復最大生命的比例、生命低於一半時的戰鬥修正 */
     burst?: number; relief?: number; critConvert?: number; regen?: number; climaxHeal?: number; wounded?: Mods
+    /** 懷孕後期的雙面效應：有隊友倒下時的戰鬥修正（docs/FAMILY.md 第 4.3 節；allyDown 每回合開始時更新） */
+    allyDown?: Mods
     /** 分擔慾望的效率：主角記 pc，隊友記對主角的親密度（lewd.json 的 combat.bond_step） */
     pc?: boolean; affinity?: number
   }
@@ -163,6 +170,8 @@ export interface Combatant {
   slave?: boolean
   /** 淫器展開的武器傷害倍率（fusion.ts；穿著的天數決定） */
   weaponMult?: number
+  /** 被植入的苗床（能力的 brood）：苗床 → 每一層的機率與植入的怪物；戰鬥結束時擲（brood.ts 的 settleImplants） */
+  implants?: Record<string, { chance: number; monster?: string }[]>
 }
 
 export type CombatAction =
@@ -499,6 +508,14 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const of = outfitCombat(ch)
     addMods(of.mods)
     f.lustMods.bonus += of.lustBonus
+    // 懷孕的雙面效應（docs/FAMILY.md 第 4.3 節）：修了流派的人，察覺之後依階段有加成；後期在有隊友倒下時傷害再加
+    const preg = pregnancyTwoFace(ch)
+    addMods(preg.mods)
+    if (preg.allyDown) f.lustMods.allyDown = preg.allyDown
+    // 泌乳（docs/FAMILY.md 第 10 節）：修了流派的人慾望上限與受到的慾望都多一點，肉體派更多
+    const lac = lactationCombat(state, ch)
+    if (lac.max) f.lustMax = Math.round(f.lustMax * (1 + lac.max))
+    if (lac.taken) f.lustMods.taken *= 1 + lac.taken
     // 寄生類的雙面效應：修了流派的人，還沒馴服的寄生物依階段有加成
     const pt = parasiteTwoFace(ch)
     addMods(pt.mods)
@@ -671,14 +688,15 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
   return {
     threat: Math.round(cls.start * threatMult * (1 + (gear.mods.threat ?? 0))), threatMult,
     id: c.id, name: c.name, side: 'party', level: c.level, attrs: attrsOf(c), prof: proficiency(c.level),
-    hp: c.hp, maxHp: c.maxHp, tempHp,
+    // 產後虛弱：戰鬥中生命上限變低（docs/FAMILY.md 第 6 節）
+    hp: Math.min(c.hp, Math.round(c.maxHp * postpartumMaxHp(c))), maxHp: Math.round(c.maxHp * postpartumMaxHp(c)), tempHp,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
     // 魔導束縛契約：只能施放 spell_cap 環以下的法術
     slots: slotsLeft(c).slice(0, spellCap(c)),
     slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
     // 技能攜帶上限：只帶攜帶中的技能與法術（戲法全帶）
     // 寄生物給的技能不佔攜帶上限（parasites.ts）
-    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c)],
+    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c), ...lactationAbilities(c)],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr + gearDr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),
@@ -914,6 +932,8 @@ function modsOf(c: Combatant): Required<Mods> {
   add(c.baseMods)
   // 流派特質：生命低於一半時（刑罰派）
   if (c.lustMods?.wounded && c.hp * 2 < c.maxHp) add(c.lustMods.wounded)
+  // 懷孕後期：有隊友倒下時（每回合開始時更新）
+  if (c.lustMods?.allyDown && c.allyDown) add(c.lustMods.allyDown)
   for (const s of c.statuses) {
     const def = statusDef(s.id)
     add(def.mods)
@@ -1790,6 +1810,15 @@ function slaveMult(a: AbilityDef, target: Combatant): number {
   return a.vs_slave && target.slave ? a.vs_slave : 1
 }
 
+/** 能力的 brood：怪物命中隊伍這邊的人時記一層植入（戰鬥結束時只有主角的會擲，brood.ts 的 settleImplants） */
+function implantBrood(actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[]) {
+  if (!a.brood || actor.side !== 'enemy' || target.side !== 'party' || target.ally || !tagsAllowed(['monster_brood', 'pc_unwilling'])) return
+  const id = a.brood.parasite ?? (actor.defId ? enemies[actor.defId]?.brood : undefined)
+  if (!id) return
+  ;((target.implants ??= {})[id] ??= []).push({ chance: a.brood.chance, ...(actor.defId ? { monster: actor.defId } : {}) })
+  effects.push({ type: 'note', target: target.id, text: '被植入了什麼東西' })
+}
+
 function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: AbilityDef, targetId?: string, wantedCircle?: number) {
   // 支付代價（升環不多花行動點）
   actor.ap -= abilityApCost(base)
@@ -1846,6 +1875,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
             dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target), crit: r.lucky })
           }
           applyStatuses(combat, rng, actor, a, target, 'hit', effects, statusDice)
+          implantBrood(actor, a, target, effects)
         }
       } else if (a.resolve === 'save') {
         const s = savingThrow(rng, target, a.save ?? 'dex', saveDc(actor, a))
@@ -2074,6 +2104,8 @@ const LINGERING_CONTROL = new Set(['taunt', 'silence', 'confuse'])
 
 function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   actor.usedTurn = {}
+  // 懷孕後期的雙面效應：同一邊有人倒下了沒有
+  for (const f of combat.combatants) if (f.lustMods?.allyDown) f.allyDown = combat.combatants.some((o) => o !== f && o.side === f.side && o.hp <= 0)
   actor.ap = Math.min(actor.apMax, actor.ap + Math.max(0, actor.apRegen + modsOf(actor).ap_regen))
   let canAct = true
   // 潮之新娘：慾望全部消退
@@ -2494,6 +2526,8 @@ export function finishCombat(state: GameState): Report {
   }
   // 慾望戰鬥：戰後留下的狀態、慾望勝利與高潮寫進戰報（交給成人場景的寫手）
   settleLust(state, combat, report)
+  // 怪物的苗床：戰鬥中被植入的（打贏也算，卵已經在體內了；淫鬥場不算）
+  if (!combat.arena) settleImplants(state, report, combat.combatants.find((c) => c.id === pc.id)?.implants)
   // 成人向的戰敗事件：沒有人搬來救兵時，起意的敵人圍上來（敘事停在動手前，等玩家回應）；園區改成那個園區的專屬戰敗
   if (combat.arena) settleArena(state, combat, report)
   else if (combat.status === 'defeat' && !rescued && !parkDefeat(state, report)) withRng(state, (rng) => rollDefeatEvent(state, rng, report, foes, combat.combatants.reduce((n, c) => n + (c.side === 'party' ? c.climaxes ?? 0 : 0), 0)))

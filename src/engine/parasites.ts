@@ -6,7 +6,7 @@
 // 規則與定義在 data/rules/parasites.json；發作事件在 travel_events.json（scope: parasite）。
 
 import parasitesJson from '@data/rules/parasites.json'
-import { itemDef, lewdRules, type AttrId, type CheckFilter, type Mods } from './data'
+import { enemies, itemDef, lewdRules, type AttrId, type CheckFilter, type Mods } from './data'
 import { addLewdStat } from './lewd'
 import { schoolsOf } from './schools'
 import { placeName, tattooAt, tattoosOf } from './tattoos'
@@ -22,8 +22,10 @@ export interface ParasiteStage {
 export interface ParasiteDef {
   name: string
   kind: 'gear' | 'mark' | 'seed'
-  /** 分類：可馴服（任務線把它馴服）、短期寄生（長到最後由發作事件拿掉）；沒寫時有 tamed 是可馴服（parasiteMods.ts 的 parasiteCategory） */
-  category?: 'tameable' | 'short'
+  /** 分類：可馴服（任務線把它馴服）、短期寄生（長到最後由發作事件拿掉）、苗床（怪物造成，長到支配時產下；docs/FAMILY.md 第 13 節）；沒寫時有 tamed 是可馴服（parasiteMods.ts 的 parasiteCategory） */
+  category?: 'tameable' | 'short' | 'brood'
+  /** 苗床：卵生、胎生（要有子宮）、寄生；產下的物品、胎生的幼體、寄生共生時的特質 */
+  brood?: BroodDef
   desc: string
   /** 寄生裝備：寄生的物品（items.json）與鎖住的欄位 */
   item?: string
@@ -39,6 +41,8 @@ export interface ParasiteDef {
   stage_abilities?: string[][]
   /** 各階段開戰時帶著的慾望（慾望上限的比例；失控） */
   stage_lust?: number[]
+  /** 受孕倍率（docs/FAMILY.md 第 3 節）：侵蝕度到 min 以上、沒有沉睡時，受孕的機率 × mult */
+  fertility?: { min: number; mult: number }
   /** 解咒：DC 與價錢的基準（侵蝕度越高越難、越貴）；沒有時不能解咒 */
   remove?: { dc: number; price: number }
   /** 刻印師把淫紋紋回來的價錢 */
@@ -59,6 +63,28 @@ export interface ParasiteDef {
   }
 }
 
+export type BroodKind = 'egg' | 'live' | 'parasite'
+
+export interface BroodDef {
+  kind: BroodKind
+  /** 產下（卵生）、排出（寄生）的物品與數量範圍 */
+  yields?: { item: string; qty: [number, number] }[]
+  /** 胎生的魔物幼體：名字、幾隻、交給魔物學者每隻多少錢 */
+  offspring?: { name: string; count: [number, number]; value_cc: number }
+  /** 寄生：修了獸蟲派的人破繭時可以共生，得到這個特質 */
+  symbiosis?: string
+}
+
+/** 苗床的共用規則（parasites.json 的 brood_rules） */
+export interface BroodRules {
+  defeat: { fail: number; fumble: number }
+  extract: { dc: number; price: number; attr: AttrId }
+  egg_check: { attr: AttrId; dc: number }
+  parasite_check: { attr: AttrId; dc: number }
+  live_lactation_days: number
+  title_births: number
+}
+
 export interface ParasiteRules {
   step_chance: number
   travel_chance: number
@@ -70,6 +96,7 @@ export interface ParasiteRules {
   /** 解咒的地方：神殿用信仰、刻印師用智力 */
   remove: Record<'temple' | 'carver', { name: string; attr: AttrId }>
   parasites: Record<string, ParasiteDef>
+  brood_rules?: BroodRules
 }
 
 export const parasiteRules = parasitesJson as unknown as ParasiteRules
@@ -423,6 +450,8 @@ export function parasiteSummary(c: Pick<Character, 'parasites'>): string {
     // 馴服之後不再寫未馴服時的樣子（會餓、會自己動），免得 AI 照舊描寫它作亂
     if (p.tamed) return `- ${def.name}：已馴服。蠢蠢欲動，但乖乖地在等待你的指令。`
     const state = p.dormant ? '沉睡中（被奴隸印記頂掉）' : `${stageName(p.corruption)}（侵蝕度 ${p.corruption}）`
-    return `- ${def.name}：${state}。${def.desc}`
+    // 苗床：留下它的怪物（docs/FAMILY.md 第 13 節）
+    const by = p.monster ? enemies[p.monster] : undefined
+    return `- ${def.name}${by ? `（${by.name}留下的）` : ''}：${state}。${def.desc}`
   }).filter(Boolean).join('\n')
 }

@@ -10,10 +10,11 @@ import { pendingTownEvent } from '@/engine/townEvents'
 import { pendingDungeonEvent } from '@/engine/dungeonEvents'
 import { pendingLeadEvent } from '@/engine/leadEvents'
 import { pendingParasiteEvent } from '@/engine/parasiteEvents'
+import { pendingPregnancyEvent } from '@/engine/pregnancyEvents'
 import type { GameState } from '@/engine/types'
 import { contractOf } from '@/engine/tattoos'
 
-export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'story' | 'join' | 'suggestion' | 'levelup' | 'perk' | 'classes'
+export type GameEventKind = 'defeat' | 'standoff' | 'captives' | 'mark' | 'master' | 'road' | 'town' | 'dungeon' | 'lead' | 'lure' | 'parasite' | 'pregnancy' | 'birth' | 'brood' | 'story' | 'join' | 'suggestion' | 'family' | 'levelup' | 'perk' | 'classes'
 
 export interface GameEvent {
   /** 同一件事一直是同一個 id（用來判斷是不是新的事件、記住「稍後」） */
@@ -66,6 +67,18 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     if (state.leadEvent) out.push({ id: `lead:${state.leadEvent.lead}`, kind: 'lead', icon: '🔎', title: pendingLeadEvent(state)?.title ?? '線索', blocking: true })
     if (state.trapLure) out.push({ id: `lure:${state.trapLure.area}:${state.time.day}:${state.time.hour}:${state.time.minute ?? 0}`, kind: 'lure', icon: '⚠️', title: '察覺到的陷阱', blocking: true })
     if (state.parasiteEvent) out.push({ id: `parasite:${state.parasiteEvent.template}:${state.parasiteEvents?.last ?? 0}`, kind: 'parasite', icon: '💗', title: pendingParasiteEvent(state)?.title ?? '身上的寄生物', blocking: true })
+    if (state.pregnancyEvent) {
+      // 懷孕、泌乳、苗床的事件都在這裡（pregnancyEvents.ts）
+      const t = pendingPregnancyEvent(state)
+      const icon = t?.scope === 'lactation' ? '💧' : t?.scope === 'brood' ? '🪺' : '🍼'
+      out.push({ id: `pregnancy:${state.pregnancyEvent.template}:${state.pregnancyEvents?.last ?? 0}`, kind: 'pregnancy', icon, title: t?.title ?? '身體的變化', blocking: true })
+    }
+    if (state.pendingBirth) {
+      const pb = state.pendingBirth
+      const who = state.party.find((m) => (pb.mother === 'pc' ? m.isPlayer : m.id === pb.mother))
+      out.push({ id: `birth:${pb.mother}:${pb.wild ? 1 : 0}`, kind: 'birth', icon: '🍼', title: who?.isPlayer ? '要生了' : `${who?.name ?? ''}要生了`, blocking: true })
+    }
+    if (state.pendingBroodBirth) out.push({ id: `brood:${state.pendingBroodBirth.parasite}`, kind: 'brood', icon: '🪺', title: '體內的東西要出來了', blocking: true })
     if (state.roadEvent) out.push({ id: `road:${state.roadEvent.x}:${state.roadEvent.template}`, kind: 'road', icon: '🧭', title: roadTemplate(state.roadEvent.template)?.title ?? '旅途上的事', blocking: true })
     // 走到特殊任務的任務點：處理、稍候（不緊急的）或放棄（緊急的）
     const story = blockingNode(state)
@@ -79,6 +92,8 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
   }
   // 新職業（武夫、仙術師）之前的存檔：要不要把炎華之地的一批冒險者改成新職業（只問一次，可以稍後）
   if (state.classRebalance?.offer && !state.classRebalance.done) out.push({ id: 'classes:rebalance', kind: 'classes', icon: '🎓', title: '炎華之地的新職業', blocking: false })
+  // 懷孕的通知（察覺、陣痛、不在隊上的人生下的孩子）：按「知道了」寫成一筆日誌
+  if (state.familyNotices?.length) out.push({ id: `family:${hash(state.familyNotices)}`, kind: 'family', icon: '🍼', title: '家人的消息', blocking: false })
   for (const s of state.suggestions ?? []) {
     const name = state.relationships?.[s.npc]?.name ?? s.npc
     out.push({ id: `suggestion:${s.id}`, kind: 'suggestion', icon: '💞', title: `${name}和你的關係有了變化`, blocking: false, ref: s.id })

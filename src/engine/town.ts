@@ -28,6 +28,7 @@ import { shortestPath } from './world'
 import { gameRule, rewardMoney } from './gameRules'
 import { squadMates } from './squads'
 import { rollBreakdown, sumParts } from './rollParts'
+import { nurseryRefusal } from './children'
 
 export { INN_CC_PER_PERSON } from './rest'
 export const RATION_CC = 5
@@ -81,6 +82,8 @@ export function templeCost(state: GameState): number {
 /** 在神殿接受治療：受傷的隊員 HP 回滿，不推進到隔天，也不回復法術環。 */
 export function templeHeal(state: GameState): Report {
   assertNotFugitive(state, '神殿')
+  const owed = nurseryRefusal(state)
+  if (owed) throw new Error(owed)
   const cost = templeCost(state)
   if (cost === 0) throw new Error('沒有需要治療的隊員')
   if (state.money_cc < cost) throw new Error('金錢不足')

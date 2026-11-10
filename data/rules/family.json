@@ -1,0 +1,173 @@
+{
+  "$comment": "懷孕與嬰兒（成人向，docs/FAMILY.md）。受孕只在性經歷的 AI 記錄時判定（sexRecord.ts 的 applySexUpdates），NPC 私生活不會受孕。conception：受孕的機率（base 基礎、times 這次性交幾次的倍率、race 種族、max 上限；brothel 娼館接客的倍率，0 = 不會；刺青與寄生物的受孕倍率寫在各自的資料：tattoos.json 圖樣的 fertility、parasites.json 的 fertility）。stages：階段（at 是已經懷了幾天佔孕期的比例，從這個比例起算這個階段）。checks：各階段平常的檢定加減（check 是適用的範圍，和寄生物的 stage_effects 同一種格式；bonus 負數是減值；靈巧的檢定包括潛行）。discover：察覺（auto_stage 到這個階段自動察覺）。birth：生產（temple_cc 在神殿生的費用、dc 自己生的 DC、wild_dc 在野外、healer_bonus 隊伍裡有治療的人減多少、healer_classes 誰算、labor_hours 陣痛之後幾小時在原地生）。postpartum：產後虛弱（days 成功、fail_days 失敗、check 所有檢定的減值）。nursery：神殿的育幼院（fee_cc 每天的寄養費、escort_cc_per_day 護送到別的城每天路程的費用）。genders：誰能懷孕（carry）、誰能讓人懷孕（sire）；主角對應不到的性別看體型（body_carry、body_sire）。察覺事件與孕期事件在 travel_events.json 的 templates（scope: pregnancy，docs/FAMILY.md 第 5 節）。event_rules：察覺事件在長休之後、旅途每天擲的機率，受孕之後至少幾天才會出現，兩次之間至少隔幾小時（兩種事件共用）；stage 是孕期事件（已經察覺的人）的機率（長休之後、旅途每天、走動每一步）。lactation：泌乳（docs/FAMILY.md 第 10 節）：after_birth_days 生產後還泌乳幾天、sensitivity 敏感的有效值加多少、exposure 在聚落裡胸前真空或曝露時曝露名聲每天多加多少、combat 戰鬥中（修了流派）慾望上限與受到的慾望的比例與肉體派的倍率、consent 給自由的夥伴用道具的魅力檢定（DC = base − 淫亂 / lewd_div − 親密度 / affinity_div，失敗親密度 fail_affinity）。two_face：懷孕的雙面效應（P4）：修了任何流派、慾望戰鬥開著時，各階段（察覺之後）的戰鬥修正；late_ally_down 後期在有隊友倒下時另外加的修正。postpartum.combat_max_hp：產後虛弱時戰鬥中的生命上限比例。",
+  "conception": {
+    "base": 0.15,
+    "times": {
+      "1": 1,
+      "2": 1.3,
+      "3": 1.5
+    },
+    "race": {
+      "same": 1,
+      "mixed": 0.6,
+      "low_fertility": {
+        "elf": 0.6,
+        "demon": 0.5,
+        "hualong": 0.5
+      }
+    },
+    "max": 0.6,
+    "brothel": 0
+  },
+  "genders": {
+    "carry": [
+      "female",
+      "futa"
+    ],
+    "sire": [
+      "male",
+      "femboy",
+      "ts",
+      "futa"
+    ],
+    "body_carry": [
+      "fem",
+      "andro"
+    ],
+    "body_sire": [
+      "masc"
+    ]
+  },
+  "stages": [
+    {
+      "id": "hidden",
+      "name": "未察覺",
+      "at": 0
+    },
+    {
+      "id": "early",
+      "name": "初期",
+      "at": 0.2
+    },
+    {
+      "id": "mid",
+      "name": "中期",
+      "at": 0.4
+    },
+    {
+      "id": "late",
+      "name": "後期",
+      "at": 0.75
+    }
+  ],
+  "checks": {
+    "mid": [
+      {
+        "check": {
+          "attrs": [
+            "dex"
+          ]
+        },
+        "bonus": -1
+      }
+    ],
+    "late": [
+      {
+        "check": {
+          "attrs": [
+            "dex"
+          ]
+        },
+        "bonus": -2
+      }
+    ]
+  },
+  "morning_sickness": {
+    "stage": "early",
+    "chance": 0.3,
+    "condition": "morning_sickness"
+  },
+  "discover": {
+    "auto_stage": "mid"
+  },
+  "birth": {
+    "temple_cc": 200,
+    "attr": "fai",
+    "dc": 12,
+    "wild_dc": 16,
+    "healer_bonus": 2,
+    "healer_classes": [
+      "cleric",
+      "paladin",
+      "druid"
+    ],
+    "labor_hours": 24
+  },
+  "postpartum": {
+    "days": 3,
+    "fail_days": 6,
+    "check": 1,
+    "combat_max_hp": 0.8
+  },
+  "nursery": {
+    "fee_cc": 10,
+    "escort_cc_per_day": 30
+  },
+  "event_rules": {
+    "rest_chance": 0.3,
+    "travel_chance": 0.2,
+    "min_days": 3,
+    "cooldown_hours": 12,
+    "stage": {
+      "rest_chance": 0.15,
+      "travel_chance": 0.1,
+      "step_chance": 0.01
+    },
+    "lactation": {
+      "rest_chance": 0.12,
+      "travel_chance": 0.08,
+      "step_chance": 0.008
+    },
+    "brood": {
+      "rest_chance": 0.2,
+      "travel_chance": 0.12,
+      "step_chance": 0.01
+    }
+  },
+  "lactation": {
+    "after_birth_days": 30,
+    "ability": "lact_milking",
+    "milk": { "item": "母乳", "qty": [1, 2], "hours": 0.5 },
+    "sensitivity": 5,
+    "exposure": 1,
+    "combat": {
+      "max": 0.1,
+      "taken": 0.1,
+      "flesh_mult": 1.2
+    },
+    "consent": {
+      "base": 15,
+      "lewd_div": 10,
+      "affinity_div": 25,
+      "fail_affinity": -2
+    }
+  },
+  "two_face": {
+    "early": {
+      "save": 1
+    },
+    "mid": {
+      "save": 1,
+      "dr": 1
+    },
+    "late": {
+      "save": 2,
+      "dr": 1
+    },
+    "late_ally_down": {
+      "damage": 2
+    },
+    "fit_school": "flesh",
+    "fit": 1.0
+  }
+}

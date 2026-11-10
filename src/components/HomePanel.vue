@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { craftRules, homeRules, itemDef } from '@/engine/data'
+import { craftRules, genderName, homeRules, itemDef, raceName } from '@/engine/data'
 import {
   comfortOf, describeHome, furnitureIn, hasBed, homeOfArea, lotHere, lotPrice, ownHomeOfArea, PLACE_NAME, placeOf, residents, stayRefusal,
 } from '@/engine/homes'
 import { cropStatus, plotPlace, seedsFor } from '@/engine/garden'
 import { formatMoney } from '@/engine/money'
+import { childrenAtHome, hasTemple } from '@/engine/children'
 import { useGame } from '@/stores/game'
 import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
@@ -48,6 +49,9 @@ const comfort = computed(() => (home.value ? comfortOf(home.value) : 0))
 const benches = computed(() => all.value.filter((f) => itemDef(f.name)?.furniture?.function === 'workbench').map((f) => `${f.name}（${craftRules.skills[itemDef(f.name)!.furniture!.craft!].name}）`))
 const staying = computed(() => (home.value ? residents(s.value, home.value.id) : []))
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer))
+// 住在家裡的嬰兒（docs/FAMILY.md 第 7.3 節）
+const kids = computed(() => (home.value ? childrenAtHome(s.value, home.value.id) : []))
+const templeHere = computed(() => (home.value ? hasTemple(home.value.location) : false))
 const floorName = (key: string) => home.value?.areas[key]?.name.split('・').at(-1) ?? ''
 
 // 苗圃：播種、收成、拔掉
@@ -157,6 +161,18 @@ function rename() {
         <li v-for="m in companions" :key="m.id" class="row">
           <NameTag :id="m.id" />
           <button class="small" :disabled="!!stayRefusal(m)" :title="stayRefusal(m)" @click="game.stayHome(m.id)">留在家裡</button>
+        </li>
+      </ul>
+    </FoldMenu>
+
+    <FoldMenu v-if="kids.length" id="home.kids" icon="heart" label="孩子" detail="住在家裡的嬰兒（不用寄養費，不一定要有搖籃）" :badge="kids.length" open>
+      <ul class="plain">
+        <li v-for="k in kids" :key="k.id" class="row">
+          <span>🍼 {{ k.name }} <span class="muted">（{{ genderName(k.gender) }}・{{ raceName(k.race) }}・{{ s.time.day - k.born }} 天大・母親{{ k.mother.name }}・父親{{ k.father?.name ?? '不明' }}）</span></span>
+          <span class="row">
+            <button class="small" @click="game.visitChild(k.id)">抱抱</button>
+            <button class="small" :disabled="!templeHere" :title="templeHere ? '' : '這座城沒有神殿'" @click="game.moveChild(k.id, { kind: 'temple', location: home.location })">送去育幼院</button>
+          </span>
         </li>
       </ul>
     </FoldMenu>

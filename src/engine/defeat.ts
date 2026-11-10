@@ -11,6 +11,7 @@
 // 改由還在場、符合設定的隊友裡魅力最高的那位遇到（無法戰鬥的隊員戰敗時已經跑開了，不算）。
 // 起意的檢定、三個選項與自己描述的反應都由那位隊友擲骰（玩家直接替隊友選擇），結果的指標與狀態也記在隊友身上。
 
+import { defeatBrood } from './brood'
 import { attrOf, mod } from './character'
 import { adultScene, defeatAdultAllowed, defeatAlwaysOn, defeatCompanionAllowed } from './content'
 import { characterBody } from './look'
@@ -200,9 +201,12 @@ export function applyDefeatResponse(state: GameState, report: Report, degree: De
   // 圍上來的怪物記在報告的其他人裡（敘事附上怪物的外觀，魔物娘的設定也照這裡）
   const monsters = ev.foes.filter((f) => f.monster && !(report.others ?? []).some((o) => o.monster === f.monster && o.name === f.name))
   if (monsters.length) report.others = [...(report.others ?? []), ...monsters.map((f, i) => ({ id: `defeat-foe-${i + 1}`, name: f.name, monster: f.monster! }))]
+  // 怪物的苗床（brood.ts）：主角自己沒能擺脫、吃了大虧時，圍上來的怪物可能在體內留下卵或種
+  const brood = mate ? '' : defeatBrood(state, report, ev.foes.map((f) => f.monster), degree)
+  if (brood) report.narration = { ...report.narration, focus: [...(report.narration.focus ?? []), '怪物在主角體內留下了卵或種'] }
   delete state.pendingDefeat
   afterDefeat(state)
-  return lost > 0 ? `被搜走了 ${formatMoney(lost)}。` : ''
+  return (lost > 0 ? `被搜走了 ${formatMoney(lost)}。` : '') + brood
 }
 
 /** 敵人的類型的結果原本寫給主角（target: pc、沒寫對象的指標）：換成被圍住的隊友 */

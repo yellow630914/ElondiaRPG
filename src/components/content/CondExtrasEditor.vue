@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { attributeRules, BIND_KINDS, lewdRules, stories, storyCounters, type AfterCond, type BindKind, type CounterRange, type ParasiteRange, type StoryCond, type WearingCond } from '@/engine/data'
+import { attributeRules, BIND_KINDS, lewdRules, stories, storyCounters, type AfterCond, type BindKind, type CounterRange, type ParasiteRange, type PregnancyCond, type StoryCond, type WearingCond } from '@/engine/data'
+import { PREG_STAGE_IDS, PREG_STAGE_NAME } from '@/engine/travelEventMods'
 import { charmRules } from '@/engine/charm'
 import { LEWD_KEYS, lewdName } from '@/engine/lewd'
 import { pcTagChoices } from '@/engine/pcTags'
@@ -31,7 +32,27 @@ function put(next: Partial<StoryCond>) {
   if (!out.pc_races?.length) delete out.pc_races
   if (!out.pc_races_none?.length) delete out.pc_races_none
   if (!out.after) delete out.after
+  if (!out.pregnancy) delete out.pregnancy
+  if (out.lactating === undefined) delete out.lactating
+  if (!out.children || (out.children.min === undefined && out.children.max === undefined)) delete out.children
   cond.value = out
+}
+
+// 懷孕、泌乳、孩子（docs/FAMILY.md 第 10.2 節）
+const STAGES = PREG_STAGE_IDS
+function setPreg(v: Partial<PregnancyCond> | null) {
+  if (v === null) return put({ pregnancy: undefined })
+  const next: PregnancyCond = { ...(cond.value.pregnancy ?? {}), ...v }
+  for (const k of Object.keys(next) as (keyof PregnancyCond)[]) if (next[k] === undefined) delete next[k]
+  put({ pregnancy: next })
+}
+function setLact(v: string) {
+  put({ lactating: v === 'yes' ? true : v === 'no' ? false : undefined })
+}
+function setKids(side: 'min' | 'max', v: string) {
+  const r: CounterRange = { ...(cond.value.children ?? {}), [side]: num(v) }
+  if (r[side] === undefined) delete r[side]
+  put({ children: r })
 }
 const any = computed({
   get: () => cond.value.flags_any,
@@ -200,6 +221,38 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
     主角不是這些種族
     <label v-for="[id, r] in raceList" :key="'n' + id" class="check"><input type="checkbox" :checked="cond.pc_races_none?.includes(id)" @change="togglePcRace('pc_races_none', id, ($event.target as HTMLInputElement).checked)" /> {{ r.name }}</label>
   </div>
+  <details class="small" :open="!!(cond.pregnancy || cond.lactating !== undefined || cond.children)">
+    <summary>懷孕、泌乳、孩子（成人向）</summary>
+    <div class="row small">
+      懷孕
+      <template v-if="cond.pregnancy">
+        <select :value="cond.pregnancy.who ?? 'pc'" @change="setPreg({ who: ($event.target as HTMLSelectElement).value === 'party' ? 'party' : undefined })">
+          <option value="pc">主角</option><option value="party">隊伍裡任何一人</option>
+        </select>
+        階段從
+        <select :value="cond.pregnancy.stage_min ?? ''" @change="setPreg({ stage_min: (($event.target as HTMLSelectElement).value || undefined) as PregnancyCond['stage_min'] })">
+          <option value="">不限</option><option v-for="st in STAGES" :key="st" :value="st">{{ PREG_STAGE_NAME[st] }}</option>
+        </select>
+        到
+        <select :value="cond.pregnancy.stage_max ?? ''" @change="setPreg({ stage_max: (($event.target as HTMLSelectElement).value || undefined) as PregnancyCond['stage_max'] })">
+          <option value="">不限</option><option v-for="st in STAGES" :key="st" :value="st">{{ PREG_STAGE_NAME[st] }}</option>
+        </select>
+        <select :value="cond.pregnancy.known === undefined ? '' : cond.pregnancy.known ? 'yes' : 'no'" @change="setPreg({ known: ($event.target as HTMLSelectElement).value === 'yes' ? true : ($event.target as HTMLSelectElement).value === 'no' ? false : undefined })">
+          <option value="">察覺不限</option><option value="yes">已經察覺</option><option value="no">還沒察覺</option>
+        </select>
+        <button class="small" title="移除" @click="setPreg(null)">✕</button>
+      </template>
+      <button v-else class="small" @click="setPreg({})">＋ 要懷孕</button>
+    </div>
+    <div class="row small">
+      主角泌乳
+      <select :value="cond.lactating === undefined ? '' : cond.lactating ? 'yes' : 'no'" @change="setLact(($event.target as HTMLSelectElement).value)">
+        <option value="">不限</option><option value="yes">要在泌乳</option><option value="no">要沒有</option>
+      </select>
+      主角的孩子 ≥ <input :value="cond.children?.min ?? ''" type="number" min="0" max="99" class="num" placeholder="不限" @change="setKids('min', ($event.target as HTMLInputElement).value)" />
+      且 ≤ <input :value="cond.children?.max ?? ''" type="number" min="0" max="99" class="num" placeholder="不限" @change="setKids('max', ($event.target as HTMLInputElement).value)" /> 個
+    </div>
+  </details>
   <details class="small" :open="!!(cond.stats || cond.charm || cond.wearing)">
     <summary>成人向的條件（慾望指標、魅氣濃度、戴著什麼）</summary>
     <div class="row small">

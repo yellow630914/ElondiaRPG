@@ -63,6 +63,8 @@ const DEFAULTS: Partial<Record<RewardEffect['type'], () => RewardEffect>> = {
   parasite: () => ({ type: 'parasite', parasite: defaultParasite(), op: 'add' }),
   corruption: () => ({ type: 'corruption', parasite: defaultParasite(), delta: 10 }),
   lewd: () => ({ type: 'lewd', stat: 'lewdness', delta: 1 }),
+  pregnancy: () => ({ type: 'pregnancy', op: 'conceive', target: eventPregnancy?.value?.companion ? '$a' : 'pc' }),
+  lactation: () => ({ type: 'lactation', op: 'add', target: 'pc', days: 3 }),
   ability_pool: () => ({ type: 'ability_pool', pool: 'master', fallback: [{ type: 'lewd', stat: 'lewdness', delta: 3 }] }),
   strict: () => ({ type: 'strict', delta: 1 }),
   home_extend: () => ({ type: 'home_extend', hours: 24 }),
@@ -76,6 +78,9 @@ const parasiteIds = Object.keys(parasiteRules.parasites)
 const eventParasite = inject<Ref<string | undefined> | undefined>('eventParasite', undefined)
 // 線索事件的登場角色（TravelEventEditor）：好感、入隊可以指定甲（$a）、乙（$b）
 const eventCast = inject<Ref<number> | undefined>('eventCast', undefined)
+// 懷孕的事件（TravelEventEditor）：親密度可以指定懷孕的夥伴（$a，夥伴的事件才有）與孩子的父親（$f）
+// 懷孕、泌乳的事件：$a 是那位夥伴（label 是選單上的名字），father 為 false 時沒有「孩子的父親」
+const eventPregnancy = inject<Ref<{ companion: boolean; label?: string; father?: boolean } | undefined> | undefined>('eventPregnancy', undefined)
 function defaultParasite(): string {
   const own = eventParasite?.value
   return own && parasiteIds.includes(own) ? own : parasiteIds[0]!
@@ -196,7 +201,9 @@ function setBase(r: Row, base: string) {
       <template v-else-if="r.type === 'affinity' || r.type === 'companion'">
         <select v-model="r.npc">
           <option v-if="master && r.type === 'affinity'" value="master">主人</option>
-          <option v-if="(eventCast ?? 0) >= 1 || r.npc === '$a'" value="$a">登場角色甲</option>
+          <option v-if="eventPregnancy?.companion || (r.npc === '$a' && eventPregnancy)" value="$a">{{ eventPregnancy?.label ?? '懷孕的夥伴' }}</option>
+          <option v-if="(eventPregnancy && eventPregnancy.father !== false) || r.npc === '$f'" value="$f">孩子的父親</option>
+          <option v-if="!eventPregnancy && ((eventCast ?? 0) >= 1 || r.npc === '$a')" value="$a">登場角色甲</option>
           <option v-if="(eventCast ?? 0) >= 2 || r.npc === '$b'" value="$b">登場角色乙</option>
           <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
         </select>
@@ -300,6 +307,34 @@ function setBase(r: Row, base: string) {
         <select v-model="r.stat"><option v-for="k in LEWD_KEYS" :key="k" :value="k">{{ lewdName(k) }}</option></select>
         <input v-model.number="r.delta" type="number" min="-100" max="100" class="num" />
         <Hint text="主角的慾望指標（docs/LEWD_STATS.md）；曝露名聲記在目前的地區。" />
+      </template>
+      <template v-else-if="r.type === 'pregnancy'">
+        <select v-model="r.op"><option value="conceive">受孕</option><option value="reveal">察覺</option></select>
+        <select v-model="r.target">
+          <option value="pc">主角</option>
+          <option v-if="eventPregnancy?.companion || r.target === '$a'" value="$a">{{ eventPregnancy?.label ?? '懷孕的夥伴' }}</option>
+          <option v-if="(eventCast ?? 0) >= 1 && !eventPregnancy" value="$a">登場角色甲</option>
+          <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
+        </select>
+        <template v-if="r.op === 'conceive'">
+          父親
+          <select :value="r.father ?? ''" @change="r.father = ($event.target as HTMLSelectElement).value || undefined">
+            <option value="">不明（或只寫名字）</option>
+            <option value="pc">主角</option>
+            <option v-for="n in namedNpcs" :key="n.id" :value="n.id">{{ n.name }}</option>
+          </select>
+          <input v-if="!r.father" v-model="r.father_name" maxlength="16" placeholder="父親的名字（選填）" />
+        </template>
+        <Hint text="受孕一定成立（不擲機率）；內容篩選關掉「懷孕」、對象的身體不會懷孕、已經懷孕或剛生完時不做。任務或事件要勾「懷孕」內容標籤。" />
+      </template>
+      <template v-else-if="r.type === 'lactation'">
+        <select v-model="r.op"><option value="add">泌乳</option><option value="remove">停止泌乳</option></select>
+        <select v-model="r.target">
+          <option value="pc">主角</option>
+          <option v-if="eventPregnancy?.companion || r.target === '$a'" value="$a">{{ eventPregnancy?.label ?? '懷孕的夥伴' }}</option>
+        </select>
+        <template v-if="r.op === 'add'"><input v-model.number="r.days" type="number" min="1" max="60" class="num" />天</template>
+        <Hint text="內容篩選關掉「泌乳」、對象的身體不會泌乳時不做；停止只拿掉事件與道具的泌乳（懷孕的不行）。任務或事件要勾「泌乳」內容標籤。" />
       </template>
       <template v-else-if="r.type === 'ability_pool'">
         <select v-model="r.pool"><option v-for="(n, k) in MASTER_EVENT_POOLS" :key="k" :value="k">{{ n }}</option></select>

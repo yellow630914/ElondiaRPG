@@ -3,6 +3,7 @@
 // 開新遊戲時選一個世界，存檔記住它（state.world）；讀檔、繼續時自動切到那個世界，遊戲進行中不能切換。
 // 存在 localStorage；每次修改後立刻（同步）重新套用到遊戲資料，表單才讀得到新的值。
 
+import { sanitizeFamilyRules, type FamilyRulesMod } from '@/engine/familyMods'
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { abilities, enemies, geography, itemDef, locationName, npcs as namedNpcs, specialMaps, stories } from '@/engine/data'
@@ -32,6 +33,7 @@ import { pruneTownEvent } from '@/engine/townEvents'
 import { pruneDungeonEvent } from '@/engine/dungeonEvents'
 import { pruneLeadEvent } from '@/engine/leadEvents'
 import { pruneParasiteEvent } from '@/engine/parasiteEvents'
+import { prunePregnancyEvent } from '@/engine/pregnancyEvents'
 import { builtinCounter, counterUsage, sanitizeCounter, type CounterMod } from '@/engine/counterMods'
 import { cleanCounterId } from '@/engine/mods'
 import { sanitizeBindRules, type BindRulesMod } from '@/engine/bindRulesMods'
@@ -83,9 +85,9 @@ interface WorldsFile {
 export interface WorldRef { id: string; name: string }
 
 type Section = Exclude<keyof ContentMods, 'version'>
-const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'parasites', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'masterEvents', 'categoryIcons', 'counters', 'npcTags', 'classes']
+const MOD_SECTIONS: Section[] = ['statuses', 'conditions', 'tattoos', 'marks', 'parasites', 'markRules', 'dungeons', 'landmarks', 'specialMaps', 'shops', 'abilities', 'perks', 'materials', 'bases', 'items', 'enemies', 'npcs', 'stories', 'travelEvents', 'eventRules', 'bindRules', 'family', 'masterEvents', 'categoryIcons', 'counters', 'npcTags', 'classes']
 export const MOD_SECTION_NAMES: Record<Section, string> = {
-  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', parasites: '寄生物', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城', npcTags: '身分標籤', classes: '職業',
+  statuses: '狀態', conditions: '非戰鬥狀態', tattoos: '刺青圖樣', parasites: '寄生物', marks: '奴隸印記', markRules: '印記設定', landmarks: '地標', specialMaps: '特殊地圖', shops: '商店', abilities: '技能', perks: '特質', materials: '材料', bases: '底材', items: '物品', enemies: '怪物', npcs: '固定 NPC', stories: '特殊任務', travelEvents: '事件', eventRules: '事件設定', bindRules: '雙面效應設定', family: '懷孕與泌乳設定', masterEvents: '主奴與娼館的事件', categoryIcons: '類別圖示', counters: '劇情計數器', dungeons: '地下城', npcTags: '身分標籤', classes: '職業',
 }
 
 export interface ModsDiffEntry {
@@ -104,7 +106,7 @@ export interface ModsDiff {
 
 export function modLabel(section: Section, id: string, v: unknown): string {
   const o = v as { name?: string; title?: string }
-  if (section === 'markRules' || section === 'eventRules' || section === 'bindRules') return MOD_SECTION_NAMES[section]
+  if (section === 'markRules' || section === 'eventRules' || section === 'bindRules' || section === 'family') return MOD_SECTION_NAMES[section]
   if (section === 'categoryIcons') return `${MOD_SECTION_NAMES[section]}「${itemRules.categories[id as ItemCategory] ?? id}」`
   if (section === 'shops') return `${MOD_SECTION_NAMES[section]}「${shopRules.types[id as ShopType]?.name ?? id}」`
   const name = section === 'items' ? id : o.title ?? o.name ?? id
@@ -242,6 +244,7 @@ export const useContent = defineStore('content', () => {
       pruneDungeonEvent(game.state)
       pruneLeadEvent(game.state)
       pruneParasiteEvent(game.state)
+      prunePregnancyEvent(game.state)
     }
     version.value++
     persist()
@@ -988,6 +991,15 @@ export const useContent = defineStore('content', () => {
     delete mods.value.eventRules?.rules
     save()
   }
+  /** 懷孕與泌乳設定（docs/FAMILY.md 第 12 節） */
+  function saveFamilyRules(draft: FamilyRulesMod) {
+    ;(mods.value.family ??= {}).rules = sanitizeFamilyRules(draft)
+    save()
+  }
+  function restoreFamilyRulesMod() {
+    delete mods.value.family?.rules
+    save()
+  }
   function saveBindRules(draft: Partial<BindRulesMod>) {
     ;(mods.value.bindRules ??= {}).rules = sanitizeBindRules(draft)
     save()
@@ -1180,8 +1192,9 @@ export const useContent = defineStore('content', () => {
     problems.value = applyContent(mods.value)
     const diff: ModsDiff = { incoming, added: [], changed: [], same: 0 }
     for (const section of MOD_SECTIONS) {
-      const mine = mods.value[section] as Record<string, unknown>
-      for (const [id, v] of Object.entries(incoming[section] as Record<string, unknown>)) {
+      // 選填的區塊（懷孕與泌乳設定……）兩邊都可能沒有
+      const mine = (mods.value[section] ?? {}) as Record<string, unknown>
+      for (const [id, v] of Object.entries((incoming[section] ?? {}) as Record<string, unknown>)) {
         const entry = { key: `${section}:${id}`, section, id, label: modLabel(section, id, v) }
         if (!(id in mine)) diff.added.push(entry)
         else if (JSON.stringify(mine[id]) !== JSON.stringify(v)) diff.changed.push(entry)
@@ -1203,7 +1216,7 @@ export const useContent = defineStore('content', () => {
         merged.add(e.id)
         if (mods.value.stories[e.id]) before[e.id] = mods.value.stories[e.id]!
       }
-      ;(mods.value[e.section] as Record<string, unknown>)[e.id] = (diff.incoming[e.section] as Record<string, unknown>)[e.id]
+      ;((mods.value as unknown as Record<string, Record<string, unknown>>)[e.section] ??= {})[e.id] = (diff.incoming[e.section] as Record<string, unknown>)[e.id]
       n++
     }
     // 合併進來的特殊任務有錯誤時不收：保留這個瀏覽器原本的版本
@@ -1372,7 +1385,7 @@ export const useContent = defineStore('content', () => {
     saveNpc, deleteNpc, restoreNpc, promoteNpc, saveStory, deleteStory, restoreStory, savePerk, deletePerk, restorePerk, knownFlags,
     saveAbility, deleteAbility, restoreAbility, saveStatus, deleteStatus, restoreStatus, saveCondition, deleteCondition, restoreCondition,
     saveShop, setShopTraining, restoreShop, deleteShop, saveLandmark, restoreLandmark, deleteLandmark, saveSpecialMap, restoreSpecialMap, deleteSpecialMap, saveDungeon, deleteDungeon, removeEnemyFromDungeons, saveTattoo, deleteTattoo, restoreTattoo, saveNpcTag, deleteNpcTag, restoreNpcTag, saveClass, deleteClass, restoreClass, setClassAbilities, saveParasite, deleteParasite, restoreParasite, saveMark, deleteMark, restoreMark, saveMarkRules, restoreMarkRules,
-    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
+    saveTravelEvent, restoreTravelEvent, deleteTravelEvent, saveMasterEvent, restoreMasterEvent, deleteMasterEvent, saveCounter, deleteCounter, restoreCounter, saveEventRules, restoreEventRules, saveFamilyRules, restoreFamilyRules: restoreFamilyRulesMod, saveBindRules, restoreBindRules, saveCategoryIcon, restoreCategoryIcons, persistFailed,
     exportMods, importMods, resetAll, diffMods, mergeMods, exportBuiltinWorld, importBuiltinWorld,
     importSource, analyzeSource, compareImport, packageFor, precheckImport, checkGenerated, importPackage, exportPicked,
   }

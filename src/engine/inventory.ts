@@ -1,5 +1,6 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
+import { useLactationItem } from './lactation'
 import { pcWords } from './pcWords'
 import { PARASITE_LOCK } from './parasites'
 import { hasPerk, learnablePerks, offerPerks } from './perks'
@@ -116,7 +117,7 @@ export function readIntelItem(state: GameState, name: string): Report {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length || !!use.lactation || !!use.stop_lactation)) || !!toolDef(itemDef(name)?.tool)?.condition
 }
 
 /** 消耗品效果的一行說明 */
@@ -127,6 +128,8 @@ export function useSummary(use?: ItemUse): string {
   if (use.perks?.length) parts.push(`讀了有機會學會特質：${use.perks.map((id) => perkDef(id)?.name ?? id).join('、')}`)
   if (use.abilities?.length) parts.push(`每讀一次學會下一個能力：${use.abilities.map((id) => `${abilities[id]?.name ?? id}（${abilities[id]?.unlock ?? 1} 級）`).join('、')}`)
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
+  if (use.lactation) parts.push(`${use.lactation} 天內泌乳`)
+  if (use.stop_lactation) parts.push('停止道具與事件造成的泌乳')
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
   if (use.cleanse) parts.push(`解除${use.cleanse.map((id) => statusDef(id).name).join('、')}`)
@@ -183,6 +186,14 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
     report.time.end = addHours(report.time.start, 4)
     report.changes.skills_gained = [{ actor: m.id, skill: a.name, quality: abilityQuality(a), source: 'study' }]
     text = `學會了【${a.name}】${carried ? '' : '（攜帶的技能已滿，先放進技能庫）'}`
+  } else if (def.use.lactation || def.use.stop_lactation) {
+    // 泌乳的道具（docs/FAMILY.md 第 10 節）：自由的夥伴要先答應，不肯的話道具不會用掉
+    const r = useLactationItem(state, report, m, name, def.use)
+    if (r.refused) {
+      report.outcome.summary = `${r.text}。`
+      return commitReport(state, report)
+    }
+    text = r.text
   } else if (def.use.condition) {
     const got = gainCondition(m, def.use.condition, report)
     if (!got) throw new Error(`${m.name}${companionRules.conditions[def.use.condition]?.group === 'meal' ? '已經吃得比這更好了' : '已經喝不下了'}`)

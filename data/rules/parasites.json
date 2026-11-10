@@ -1,5 +1,5 @@
 {
-  "$comment": "寄生物（見 docs/ADULT_EVENTS.md 第 6 節）：侵蝕度 0～100 依 stages 分階段（min 是門檻，chance_mult 是這個階段發作的機率倍率）。發作：走動每一步 step_chance、旅途每天 travel_chance、長休之後 rest_chance（都再乘上存檔規則「寄生發作的機率」），兩次至少隔 cooldown_hours 小時。dc 是發作檢定的普通難度：base + 主角等級 × per_level（四捨五入）+ 階段的加減；選項寫的 DC 以 14 為「普通」，實際 DC = 普通難度 +（寫的 DC − 14）+ 存檔規則「事件檢定的難度」。remove 是解咒的地方（神殿、刻印師）與擲骰的屬性。parasites：kind gear（寄生裝備：item 物品鎖在 slot 欄位）、mark（淫紋：刻在 place 的詛咒印記）、seed（寄生種子）；grow_per_day 每天自己增長的侵蝕度；stage_effects 各階段的被動效果（檢定加減）；remove 解咒的 DC 與價錢基準（DC + 侵蝕度/10、價錢 ×(1 + 侵蝕度/100)）；reink_price 刻印師紋回來的價錢；stories 解咒時中止的任務線（連同 flag_prefix 開頭的劇情旗標一起清掉，之後再被寄生可以重來）；tamed 馴服之後的物品或印記、主動觸發的親密場景（scene）、結果（text）與狀態（buff）。",
+  "$comment": "寄生物（見 docs/ADULT_EVENTS.md 第 6 節）：侵蝕度 0～100 依 stages 分階段（min 是門檻，chance_mult 是這個階段發作的機率倍率）。發作：走動每一步 step_chance、旅途每天 travel_chance、長休之後 rest_chance（都再乘上存檔規則「寄生發作的機率」），兩次至少隔 cooldown_hours 小時。dc 是發作檢定的普通難度：base + 主角等級 × per_level（四捨五入）+ 階段的加減；選項寫的 DC 以 14 為「普通」，實際 DC = 普通難度 +（寫的 DC − 14）+ 存檔規則「事件檢定的難度」。remove 是解咒的地方（神殿、刻印師）與擲骰的屬性。parasites：kind gear（寄生裝備：item 物品鎖在 slot 欄位）、mark（淫紋：刻在 place 的詛咒印記）、seed（寄生種子）；grow_per_day 每天自己增長的侵蝕度；stage_effects 各階段的被動效果（檢定加減）；remove 解咒的 DC 與價錢基準（DC + 侵蝕度/10、價錢 ×(1 + 侵蝕度/100)）；reink_price 刻印師紋回來的價錢；stories 解咒時中止的任務線（連同 flag_prefix 開頭的劇情旗標一起清掉，之後再被寄生可以重來）；tamed 馴服之後的物品或印記、主動觸發的親密場景（scene）、結果（text）與狀態（buff）。 category brood：怪物的苗床（docs/FAMILY.md 第 13 節）：brood.kind 是 egg 卵生、live 胎生（要有子宮）、parasite 寄生；yields 產下的物品（數量範圍）、offspring 胎生的魔物幼體（名字、幾隻、交給魔物學者每隻多少錢）、symbiosis 寄生破繭時修了獸蟲派可以共生得到的特質。brood_rules：苗床的共用規則（戰敗擲的機率、取出的 DC 與價錢、產下的檢定、產後泌乳的天數、稱號要產幾次）。",
   "step_chance": 0.01,
   "travel_chance": 0.3,
   "rest_chance": 0.25,
@@ -128,6 +128,10 @@
     "succubus_mark": {
       "name": "魅魔的契紋",
       "kind": "mark",
+      "fertility": {
+        "min": 60,
+        "mult": 1.5
+      },
       "place": "belly",
       "mark": {
         "name": "魅魔的契紋",
@@ -280,6 +284,675 @@
         "dc": 12,
         "price": 400
       }
+    },
+    "brood_wasp_egg": {
+      "name": "蜂卵",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "產卵寄生蜂產在體內的一串卵，溫溫的，一天比一天沉。",
+      "grow_per_day": 25,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 10,
+        "price": 150
+      },
+      "brood": {
+        "kind": "egg",
+        "yields": [
+          {
+            "item": "蜂卵",
+            "qty": [
+              2,
+              6
+            ]
+          }
+        ]
+      }
+    },
+    "brood_spider_egg": {
+      "name": "蛛卵",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "包在黏絲裡的一團蛛卵，在肚子裡輕輕滾動。",
+      "grow_per_day": 25,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 10,
+        "price": 150
+      },
+      "brood": {
+        "kind": "egg",
+        "yields": [
+          {
+            "item": "蛛卵",
+            "qty": [
+              2,
+              5
+            ]
+          }
+        ]
+      }
+    },
+    "brood_snake_egg": {
+      "name": "蛇卵",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "蛇魔產下的幾顆軟殼卵，滑溜溜地擠在一起。",
+      "grow_per_day": 25,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 10,
+        "price": 150
+      },
+      "brood": {
+        "kind": "egg",
+        "yields": [
+          {
+            "item": "蛇卵",
+            "qty": [
+              1,
+              4
+            ]
+          }
+        ]
+      }
+    },
+    "brood_tentacle": {
+      "name": "觸手之種",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "觸手留在子宮裡的種，正一點一點長成小小的觸手。",
+      "grow_per_day": 5,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -2
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 14,
+        "price": 800
+      },
+      "brood": {
+        "kind": "live",
+        "offspring": {
+          "name": "觸手的幼體",
+          "count": [
+            1,
+            3
+          ],
+          "value_cc": 120
+        }
+      }
+    },
+    "brood_slime": {
+      "name": "史萊姆的核",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "史萊姆在體內留下的核，吸收著養分慢慢分裂。",
+      "grow_per_day": 5,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -2
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 14,
+        "price": 800
+      },
+      "brood": {
+        "kind": "live",
+        "offspring": {
+          "name": "小史萊姆",
+          "count": [
+            1,
+            3
+          ],
+          "value_cc": 60
+        }
+      }
+    },
+    "brood_goblin": {
+      "name": "哥布林的種",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "哥布林留下的種，在子宮裡長得飛快。",
+      "grow_per_day": 5,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -2
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 14,
+        "price": 800
+      },
+      "brood": {
+        "kind": "live",
+        "offspring": {
+          "name": "哥布林的幼崽",
+          "count": [
+            1,
+            3
+          ],
+          "value_cc": 40
+        }
+      }
+    },
+    "brood_beast": {
+      "name": "獸種",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "野獸留下的種，在子宮裡長成毛茸茸的小東西。",
+      "grow_per_day": 5,
+      "stage_effects": [
+        [],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "dex"
+              ]
+            },
+            "bonus": -2
+          }
+        ]
+      ],
+      "remove": {
+        "dc": 14,
+        "price": 800
+      },
+      "brood": {
+        "kind": "live",
+        "offspring": {
+          "name": "幼獸",
+          "count": [
+            1,
+            3
+          ],
+          "value_cc": 50
+        }
+      }
+    },
+    "brood_slug": {
+      "name": "蛞蝓的幼體",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "淫蛞蝓的幼體鑽進了體內，黏黏地吸著養分。",
+      "grow_per_day": 10,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          },
+          {
+            "check": {
+              "attrs": [
+                "int"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 11,
+        "price": 200
+      },
+      "brood": {
+        "kind": "parasite",
+        "yields": [
+          {
+            "item": "蟲蛻",
+            "qty": [
+              1,
+              3
+            ]
+          }
+        ],
+        "symbiosis": "brood_symbiote"
+      }
+    },
+    "brood_leech": {
+      "name": "水蛭的幼體",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "水蛭的幼體吸附在體內，一點一點地吸血。",
+      "grow_per_day": 10,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          },
+          {
+            "check": {
+              "attrs": [
+                "int"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 11,
+        "price": 200
+      },
+      "brood": {
+        "kind": "parasite",
+        "yields": [
+          {
+            "item": "蟲蛻",
+            "qty": [
+              1,
+              2
+            ]
+          }
+        ],
+        "symbiosis": "brood_symbiote"
+      }
+    },
+    "brood_spore": {
+      "name": "孢子",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "異界的孢子在體內生根，偶爾讓人咳出粉狀的東西。",
+      "grow_per_day": 10,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          },
+          {
+            "check": {
+              "attrs": [
+                "int"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 11,
+        "price": 200
+      },
+      "brood": {
+        "kind": "parasite",
+        "yields": [
+          {
+            "item": "孢子囊",
+            "qty": [
+              2,
+              4
+            ]
+          }
+        ],
+        "symbiosis": "brood_symbiote"
+      }
+    },
+    "brood_worm": {
+      "name": "蟲的幼體",
+      "kind": "seed",
+      "category": "brood",
+      "desc": "巨蟲的幼體在體內蜷著，餓的時候會鑽來鑽去。",
+      "grow_per_day": 10,
+      "stage_effects": [
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        [
+          {
+            "check": {
+              "attrs": [
+                "str"
+              ]
+            },
+            "bonus": -1
+          },
+          {
+            "check": {
+              "attrs": [
+                "int"
+              ]
+            },
+            "bonus": -1
+          }
+        ],
+        []
+      ],
+      "remove": {
+        "dc": 11,
+        "price": 200
+      },
+      "brood": {
+        "kind": "parasite",
+        "yields": [
+          {
+            "item": "蟲蛻",
+            "qty": [
+              1,
+              3
+            ]
+          }
+        ],
+        "symbiosis": "brood_symbiote"
+      }
     }
+  },
+  "brood_rules": {
+    "defeat": {
+      "fail": 0.3,
+      "fumble": 0.6
+    },
+    "extract": {
+      "dc": 12,
+      "price": 200,
+      "attr": "int"
+    },
+    "egg_check": {
+      "attr": "str",
+      "dc": 12
+    },
+    "parasite_check": {
+      "attr": "fai",
+      "dc": 12
+    },
+    "live_lactation_days": 15,
+    "title_births": 3
   }
 }

@@ -223,6 +223,8 @@ export interface Report {
     adult_actor?: string
     /** 戰鬥中只有挑逗、剝衣（沒有人高潮或屈服）時的成人場景：一樣交給成人場景的寫手，但不算親密場景（淫亂不因此成長）。adult_scene 被別的場景換掉時就不再相同 */
     tease?: string
+    /** 在娼館接客的人（角色 id）：老鴇讓接客的人喝避子湯，這次不會受孕（docs/FAMILY.md） */
+    brothel_work?: string
   }
   lore_keys?: string[]
   /** 存檔規則「職業武器限制」：這次入隊、歸隊時收進行囊的武器（誰的什麼、為什麼）；commitReport 接在摘要後面 */
@@ -380,6 +382,8 @@ export interface Character {
   tattoos?: Tattoo[]
   /** 身上的寄生物（寄生裝備、淫紋、寄生種子；只有主角會有，見 engine/parasites.ts） */
   parasites?: ParasiteState[]
+  /** 懷孕與產後虛弱的標記（檢定減值用；真正的記錄在 state.pregnancies，每次結算時同步，見 engine/pregnancy.ts 的 syncPregnancyMarks） */
+  pregMark?: PregnancyMark
   /** 淫紋拿掉（解咒、撕毀）時，原本被它蓋掉的刺青：刻印師可以紋回來（parasite 是當時蓋掉它的寄生物） */
   coveredTattoos?: { parasite: string; tattoo: Tattoo }[]
   /** 已花掉的生命骰（總數 = 等級） */
@@ -472,6 +476,8 @@ export interface ParasiteState {
   since: GameTime
   /** 上一次依時間增長侵蝕度的日子 */
   grown?: number
+  /** 苗床：留下它的怪物（enemies.json 的 id；戰敗、戰鬥中被植入時記下），事件文字的 {m} 與交給 AI 的描述用 */
+  monster?: string
   /** 沉睡：淫紋被奴隸印記頂掉了（不發作、沒有被動效果、侵蝕度凍結），等著到刻印師紋回來 */
   dormant?: boolean
   /** 已經馴服：不會自動發作，可以主動觸發 */
@@ -878,6 +884,12 @@ export interface GameOptions {
   /** 主人的突發事件、寄生物的發作、地下城事件的機率倍率 */
   masterEventMult?: number
   parasiteMult?: number
+  /** 受孕機率的倍率（0 = 不會受孕；docs/FAMILY.md） */
+  conceptionMult?: number
+  /** 孕期幾天（docs/FAMILY.md） */
+  pregnancyDays?: number
+  /** 怪物的苗床的機率倍率（0 = 不會變成苗床；docs/FAMILY.md 第 13 節） */
+  broodMult?: number
   dungeonEventMult?: number
   /** 成人向地下城事件的比重（1～8 倍；普通的地下城事件不變） */
   adultDungeonMult?: number
@@ -1062,6 +1074,28 @@ export interface GameState {
   trapLure?: { area: string }
   /** 地下城事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子 */
   dungeonEvents?: { last?: number; seen: Record<string, number> }
+  /** 懷孕（成人向，docs/FAMILY.md）：角色 id（主角是 pc）→ 記錄 */
+  pregnancies?: Record<string, PregnancyState>
+  /** 產後虛弱：角色 id → 到哪一天為止（含） */
+  postpartum?: Record<string, number>
+  /** 泌乳（成人向，docs/FAMILY.md 第 10 節）：角色 id（主角是 pc）→ 來源；裝備、刺青的來源不存（看身上） */
+  lactation?: Record<string, LactationSource[]>
+  /** 上一次擠奶的日子（角色 id，主角是 pc；一天一次，lactation.ts 的 milk） */
+  milked?: Record<string, number>
+  /** 嬰兒（不是 NPC，不進 NPC 登錄；docs/FAMILY.md 第 7 節） */
+  children?: ChildRecord[]
+  /** 等待回應的懷孕察覺事件（pregnancyEvents.ts）：family.json 的事件與懷孕的人 */
+  pregnancyEvent?: { template: string; mother: string; /** 苗床的事件：哪一個苗床 */ parasite?: string }
+  /** 察覺事件的紀錄：上一次的時間（絕對小時）、最近出現過的事件 */
+  pregnancyEvents?: { last?: number; recent?: string[] }
+  /** 懷孕的通知（察覺、陣痛、自動生下的嬰兒）：事件視窗按「知道了」寫成一筆日誌 */
+  familyNotices?: string[]
+  /** 等待回應的生產（主角或隊上的夥伴）：母親的 id 與是不是在野外生 */
+  pendingBirth?: { mother: string; wild?: boolean }
+  /** 等待回應的苗床產下（brood.ts）：長到支配的苗床 */
+  pendingBroodBirth?: { parasite: string }
+  /** 主角產下過幾次胎生的苗床（稱號「魔物的苗床」） */
+  broodBirths?: number
   /** 寄生物等待回應的發作事件（parasiteEvents.ts）：模板與寄生物 */
   parasiteEvent?: { template: string; parasite: string }
   /** 寄生物發作的紀錄：上一次的時間（絕對小時）、最近發作過的事件（避免連續重複） */
@@ -1219,4 +1253,65 @@ export interface NpcLifeState {
   followed?: string[]
   /** 可以和其他 NPC 發生關係的人（人際關係裡打開的，預設沒有人；docs/NPC_SYSTEM.md 第 14 節） */
   pairs?: string[]
+}
+
+// ---- 懷孕與嬰兒（docs/FAMILY.md） ----
+
+export type PregnancyStage = 'hidden' | 'early' | 'mid' | 'late'
+
+/** 一位懷孕的人（state.pregnancies 的值） */
+export interface PregnancyState {
+  /** 受孕的日子 */
+  conceived: number
+  /** 預產日（受孕當下照存檔規則算好；之後改存檔規則不影響已經懷上的） */
+  due: number
+  /** 父親；沒有 = 父親不明。race：受孕時父親的種族（查得到時） */
+  father?: { id?: string; name: string; race?: string }
+  /** 哪一則日誌受孕的 */
+  report?: string
+  /** 那次經歷是非自願的（性經歷的 AI 記錄的 forced） */
+  forced?: boolean
+  /** 這次生產的 DC 減多少（產婆的叮囑……孕期事件的選項） */
+  birth_dc?: number
+  /** 察覺了沒 */
+  known?: boolean
+  knownDay?: number
+  /** 預產日到了、人不在聚落：陣痛開始的時間（絕對小時） */
+  labor?: number
+}
+
+/** 角色身上的懷孕標記（檢定減值、顯示用） */
+export interface PregnancyMark {
+  stage?: PregnancyStage
+  known?: boolean
+  /** 產後虛弱 */
+  postpartum?: boolean
+  /** 泌乳（state.lactation 有還沒到期的來源；裝備與刺青的來源另外看身上，見 pregMarks.ts 的 lactatingNow） */
+  lactating?: boolean
+}
+
+/** 泌乳的來源：懷孕後期、胎生的苗床、道具、事件（until 是到哪一天為止，含；沒有時一直有效，例如懷孕中） */
+export interface LactationSource {
+  kind: 'pregnancy' | 'brood' | 'item' | 'event'
+  until?: number
+  /** 哪一樣道具、哪一件事 */
+  ref?: string
+}
+
+/** 嬰兒在哪裡：神殿的育幼院（寄養費從 since 起算、繳到 paidUntil 那天為止）或自己的房子 */
+export type ChildPlace =
+  | { kind: 'temple'; location: string; since: number; paidUntil: number }
+  | { kind: 'home'; home: string }
+
+export interface ChildRecord {
+  id: string
+  name: string
+  gender: string
+  race: string
+  /** 出生的日子 */
+  born: number
+  mother: { id: string; name: string }
+  /** 沒有 = 父親不明 */
+  father?: { id?: string; name: string }
+  where: ChildPlace
 }

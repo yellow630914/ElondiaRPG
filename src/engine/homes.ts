@@ -15,6 +15,7 @@ import type { Rng } from './rng'
 import { addHours, addItem, commitReport, newReportId, player, removeItem, withRng } from './state'
 import { locationMult } from './trade'
 import { formatMoney } from './money'
+import { cribRefusal } from './children'
 import { resolveMasterHome } from './homeResolver'
 import type { Character, GameState, Home, Report } from './types'
 
@@ -403,7 +404,7 @@ export const PLACE_NAME: Record<FurniturePlace, string> = { indoor: '室內', ya
 export function furnitureSummary(f: FurnitureSpec | undefined): string {
   if (!f) return ''
   const fn = f.function === 'bed' ? '床' : f.function === 'workbench' ? `${f.craft ? craftRules.skills[f.craft].name : ''}的高階工作台`
-    : f.function === 'garden' ? '苗圃' : f.function === 'training' ? `調教室（在家調教 +${f.training ?? 0}）` : ''
+    : f.function === 'garden' ? '苗圃' : f.function === 'training' ? `調教室（在家調教 +${f.training ?? 0}）` : f.function === 'crib' ? '搖籃' : ''
   return [fn, f.comfort ? `舒適 +${f.comfort}` : '', `放在${f.places.map((p) => PLACE_NAME[p]).join('、')}`].filter(Boolean).join('，')
 }
 
@@ -463,6 +464,10 @@ export function takeFurniture(state: GameState, area: Area, x: number, y: number
   const cell = area.cells[y * area.width + x]
   if (!cell?.furniture) throw new Error('這一格沒有家具')
   if (cell.crop) throw new Error('苗圃上還種著東西，先收成或拔掉')
+  if (itemDef(cell.furniture)?.furniture?.function === 'crib') {
+    const refused = cribRefusal(state, ownHomeOfArea(state, area)!)
+    if (refused) throw new Error(refused)
+  }
   addItem(state.inventory, cell.furniture, 1)
   delete cell.furniture
 }

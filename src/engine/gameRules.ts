@@ -9,6 +9,7 @@ import securityJson from '@data/rules/security.json'
 import slaveryJson from '@data/rules/slavery.json'
 import parasitesJson from '@data/rules/parasites.json'
 import lewdJson from '@data/rules/lewd.json'
+import familyJson from '@data/rules/family.json'
 import gearJson from '@data/rules/gear.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
@@ -62,6 +63,9 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   submissionDecay: { group: 'lewd', label: '順從每次回落多少', hint: `沒有奴隸契約時，順從每 ${lewdJson.daily.free_submission_every} 天回落一次，每次幾點（預設 1）。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
   lewdnessDecay: { group: 'lewd', label: '淫亂每次回落多少', hint: `${lewdJson.daily.idle_days} 天以上沒有親密場景時，淫亂每天回落一次，每次幾點（預設 1），降到預設為止。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
   brothelEventMult: { group: 'adult_events', label: '娼館事件的機率', hint: `在娼館打工（接客）結束時發生事件的機率乘上這個倍率（預設 ${pct(lewdJson.brothel.work_event.base)}，淫亂越高越容易，最高 ${pct(lewdJson.brothel.work_event.max)}）。0 表示不會發生。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
+  conceptionMult: { group: 'adult_events', label: '受孕機率', hint: `親密場景之後受孕的機率乘上這個倍率（預設每次 ${pct(familyJson.conception.base)}，依次數與種族加減，最高 ${pct(familyJson.conception.max)}）。只在設定的內容篩選打開「懷孕」時才會受孕；0 表示不會受孕。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會受孕' },
+  pregnancyDays: { group: 'adult_events', label: '孕期天數', hint: '懷孕到生產要幾天（預設 40），各階段照比例縮放。只影響之後才懷上的。成人向內容。', default: 40, min: 10, max: 120, step: 1, unit: '天' },
+  broodMult: { group: 'adult_events', label: '苗床的機率', hint: `色情戰敗事件沒能擺脫（${pct(parasitesJson.brood_rules?.defeat.fail ?? 0)}）或吃了大虧（${pct(parasitesJson.brood_rules?.defeat.fumble ?? 0)}）時，怪物讓主角變成苗床的機率乘上這個倍率。只在設定的內容篩選打開「怪物的苗床」時才會；0 表示不會。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   eventDc: { group: 'adventure', label: '事件檢定的難度', hint: '地下城事件（普通與成人向的都算）與寄生物發作的檢定 DC 加減（這兩種事件的 DC 本來就依層、主角等級與侵蝕度的階段調整）。負數比較容易。', default: 0, min: -10, max: 10, step: 1, unit: 'DC' },
   lustMult: { group: 'lust', label: '慾望戰鬥', hint: '戰鬥中所有慾望增加的倍率（慾望攻擊、媚毒、自己增加的慾望……）。慾望滿了會高潮：我方停止行動一回合、失去一部分生命（不會因此死亡，一場高潮三次倒下）；敵方受到一部分生命的真實傷害（比例見下面三項）。0 表示關閉：沒有慾望條，色情技能不能用，敵人也不用慾望攻擊。成人向內容。', default: 1, min: 0, max: 2, step: 0.25, unit: '倍', zero: '關閉' },
   climaxHpParty: { group: 'lust', label: '高潮扣的生命：我方', hint: `我方（主角、夥伴、在場的友方）慾望滿了高潮時，失去最大生命的這個百分比（預設 ${pct(combatRules.lust.party_climax_hp)}）。最多扣到剩 1，不會因此死亡；一場戰鬥第 ${combatRules.lust.down_after} 次高潮照樣倒下。0 表示高潮不扣生命。成人向內容。`, default: Math.round(combatRules.lust.party_climax_hp * 100), min: 0, max: 100, step: 1, unit: '%', zero: '不扣生命' },

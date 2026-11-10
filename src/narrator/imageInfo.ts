@@ -1,6 +1,7 @@
 // 插圖生成：服務的模板（ChatGPT、NovelAI、ComfyUI）、角色形象插圖的提示詞、生圖提示詞的預處理（交給大語言模型改寫）。
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
+import { bodyImageNotes } from '@/engine/pregnancy'
 import { className, genderName, lewdRules, raceImageName } from '@/engine/data'
 import { currentRegion, exposureAt, lewdOf, npcLewd, vacuumSides } from '@/engine/lewd'
 import { gearName, gearRules } from '@/engine/gear'
@@ -190,7 +191,8 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
     race: raceImageName(m?.race ?? rec!.race),
     role: m ? className(m.class) : npcTitle(rec!),
     level: m?.level ?? rec?.level,
-    appearance: appearanceOf(id, m?.appearance ?? rec?.appearance),
+    // 懷孕（中期以後）與泌乳：接在外貌後面（docs/FAMILY.md）
+    appearance: [appearanceOf(id, m?.appearance ?? rec?.appearance), ...bodyImageNotes(state, id)].filter(Boolean).join('；'),
     personality: m?.personality ?? rec?.personality ?? '',
     background: m?.background ?? rec?.background ?? '',
     gear: [...gear, ...defGear],

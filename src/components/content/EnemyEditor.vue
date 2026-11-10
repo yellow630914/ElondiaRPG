@@ -7,6 +7,8 @@ import {
 import { BOSS_LAYER_IDS, DUNGEON_LAYER_NAME, type BossLayerId, type DungeonLayerId } from '@/engine/data'
 import { dungeonLayersOf, enemyInDungeons, isCustomDungeon, type DungeonMod } from '@/engine/dungeonMods'
 import { useContent } from '@/stores/content'
+import { parasiteRules } from '@/engine/parasites'
+import { BROOD_KIND_NAME } from '@/engine/brood'
 import { useGame } from '@/stores/game'
 import AffinityRows from './AffinityRows.vue'
 import UsageNote from './UsageNote.vue'
@@ -49,6 +51,15 @@ const dirty = computed(() => JSON.stringify(draft.value) !== saved.value || JSON
 const iconFallback = computed<DrawSource>(() => {
   const band = monsterBand(draft.value.level)
   return { kind: 'path', path: monsterArtPath(draft.value.kind, band), color: MONSTER_BAND_COLOR[band] }
+})
+// 苗床（寄生物頁籤裡類別是苗床的）
+const broodChoices = computed(() => {
+  void content.version
+  return Object.entries(parasiteRules.parasites).filter(([, d]) => d.category === 'brood').map(([id, d]) => ({ id, name: `${d.name}（${d.brood ? BROOD_KIND_NAME[d.brood.kind] : ''}）` }))
+})
+const broodId = computed({
+  get: () => draft.value.brood ?? '',
+  set: (v: string) => { if (v) draft.value.brood = v; else delete draft.value.brood },
 })
 // 發情：不會、在哪裡都可能、只在近郊・旅途・地下城
 const rutMode = computed<'' | 'any' | 'field'>({
@@ -294,6 +305,12 @@ function remove() {
             <option value="">不會</option>
             <option value="any">在哪裡都可能</option>
             <option value="field">只在野外（近郊、旅途、地下城）</option>
+          </select>
+        </label>
+        <label>苗床 <Hint text="成人向（docs/FAMILY.md 第 13 節）：色情戰敗事件沒能擺脫、吃了大虧時，可能在主角體內留下這個苗床；能力寫了「植入苗床」也用這個。幼體的怪物不要寫。苗床在「🐛 寄生物」頁籤。" />
+          <select v-model="broodId">
+            <option value="">（沒有）</option>
+            <option v-for="b in broodChoices" :key="b.id" :value="b.id">{{ b.name }}</option>
           </select>
         </label>
       </div>

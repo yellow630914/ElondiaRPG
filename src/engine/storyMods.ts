@@ -76,13 +76,13 @@ export const STORY_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', gear: '裝備', xp: '經驗值', reputation: '聲望', affinity: '親密度', memory: '記憶', ability: '學會能力', companion: '正式入隊', hp: '生命值',
   start_story: '開始特殊任務', enslave_player: '主角淪為奴隸', perk: '特質（取得的機會）', lose_perk: '失去特質', tattoo: '刺青', remove_tattoo: '洗掉刺青',
   condition: '非戰鬥狀態', parasite: '寄生物', corruption: '寄生物的侵蝕度', lewd: '慾望指標', ability_pool: '學會事件庫的技能',
-  restrain: '陷阱鎖（鎖上拘束具）',
+  restrain: '陷阱鎖（鎖上拘束具）', pregnancy: '懷孕（受孕、察覺）', lactation: '泌乳',
 }
 /** 主人事件格式（主人事件、調教、娼館；docs/CONTENT_EDITOR.md）的效果可以用的種類 */
 export const MASTER_EVENT_EFFECTS: Partial<Record<RewardEffect['type'], string>> = {
   money: '金錢', item: '物品', xp: '經驗值', affinity: '親密度', memory: '記憶', condition: '非戰鬥狀態', hp: '生命值', tattoo: '刺青',
   lewd: '慾望指標', ability: '學會能力', ability_pool: '學會事件庫的技能', strict: '嚴加看管', home_extend: '延長離家期限', master_home: '帶回主人的家',
-  force_equip: '強制裝備', flag: '旗標',
+  force_equip: '強制裝備', flag: '旗標', lactation: '泌乳',
 }
 /** 可以用效果給予或拿掉的非戰鬥狀態（奴隸印記、逃亡、暫時離隊由程式管理） */
 export const EFFECT_CONDITIONS = () => Object.keys(companionRules.conditions).filter((k) => !k.startsWith('$') && !['slave_mark', 'fugitive', 'away'].includes(k))
@@ -213,6 +213,21 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
       case 'corruption': {
         const delta = Math.round(num(x.delta, -100, 100, 0))
         if (typeof x.parasite === 'string' && parasiteDef(x.parasite) && delta) out.push({ type: 'corruption', parasite: x.parasite, delta })
+        break
+      }
+      case 'pregnancy': {
+        // 懷孕（docs/FAMILY.md 第 10.3 節）：受孕或察覺；對象一定要寫，父親是角色 id 或只寫名字（空著＝父親不明）
+        const target = str(x.target, 60)
+        if (!target || !['conceive', 'reveal'].includes(x.op as string)) break
+        const father = x.op === 'conceive' ? str(x.father, 60) : ''
+        const fatherName = x.op === 'conceive' && !father ? str(x.father_name, 16) : ''
+        out.push({ type: 'pregnancy', op: x.op as 'conceive' | 'reveal', target, ...(father ? { father } : {}), ...(fatherName ? { father_name: fatherName } : {}) })
+        break
+      }
+      case 'lactation': {
+        const target = str(x.target, 60) || 'pc'
+        if (x.op === 'remove') out.push({ type: 'lactation', op: 'remove', target })
+        else out.push({ type: 'lactation', op: 'add', target, days: Math.round(num(x.days, 1, 60, 3)) })
         break
       }
       case 'lewd': {
@@ -552,6 +567,10 @@ export function storyCheck(def: StoryDef, others: StoryDef[] = stories): StoryPr
   }
   // 親密場景只在成人向的任務裡
   if (!(def.tags ?? []).includes('adult') && def.nodes.some((n) => outcomesOf(n).some(({ o }) => o.scene))) err.push('有結果寫了親密場景，但任務沒有標「成人向」')
+  // 懷孕、泌乳的效果要勾內容標籤（篩選關掉的玩家才不會開到這個任務）
+  const usesEffect = (type: string) => def.nodes.some((n) => outcomesOf(n).some(({ o }) => (o.effects ?? []).some((e) => e.type === type)))
+  if (usesEffect('pregnancy') && !(def.tags ?? []).includes('pregnancy')) warn.push('用了「懷孕」的效果，任務最好勾「懷孕」內容標籤')
+  if (usesEffect('lactation') && !(def.tags ?? []).includes('lactation')) warn.push('用了「泌乳」的效果，任務最好勾「泌乳」內容標籤')
   // 故事裡死去的角色要是固定 NPC
   for (const n of def.nodes) for (const { o } of outcomesOf(n)) for (const d of o.deaths ?? []) if (!npcIds.has(d)) err.push(`「${n.title}」的結果裡死去的角色 ${d} 不存在`)
   // 用到的劇情計數器要存在

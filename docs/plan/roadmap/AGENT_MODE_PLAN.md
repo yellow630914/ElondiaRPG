@@ -1,6 +1,6 @@
 # AI 的上下文與工具調用（Agent 模式）計畫
 
-> 上層：[ROADMAP](../ROADMAP.md) R28。狀態：**還沒開始**（2026-11-10 排入，先當測試性功能做）。
+> 上層：[ROADMAP](../ROADMAP.md) R29。狀態：**還沒開始**（2026-11-10 排入，先當測試性功能做）。
 > 系統文件：[PROMPTS](../../PROMPTS.md)（敘事、判定的提示詞）、[ACTIONS](../../ACTIONS.md)（AI 判定）、[LEWD_STATS](../../LEWD_STATS.md) 第 29 節（性經歷記錄）、[TRAVEL_EVENTS](../../TRAVEL_EVENTS.md) 第 5 節（線索池）。
 > 做完的部分寫回系統文件，從這裡刪掉，在[已完成](COMPLETED.md)記一段；玩家看得到的改動寫進 CHANGELOG 的「未發布」。
 
