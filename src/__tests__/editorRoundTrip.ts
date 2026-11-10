@@ -16,6 +16,7 @@ import { parasiteRules } from '@/engine/parasites'
 import { useContent } from '@/stores/content'
 import AbilityEditor from '@/components/content/AbilityEditor.vue'
 import BindRulesEditor from '@/components/content/BindRulesEditor.vue'
+import FamilyRulesEditor from '@/components/content/FamilyRulesEditor.vue'
 import ConditionEditor from '@/components/content/ConditionEditor.vue'
 import EnemyEditor from '@/components/content/EnemyEditor.vue'
 import EventRulesEditor from '@/components/content/EventRulesEditor.vue'
@@ -104,6 +105,7 @@ export const CASES: Record<string, () => Case> = {
   rules: () => ({ editor: EventRulesEditor, keys: ['eventRules'], props: () => ({}) }),
   markRules: () => ({ editor: MarkRulesEditor, keys: ['markRules'], props: () => ({}) }),
   bindRules: () => ({ editor: BindRulesEditor, keys: ['bindRules'], props: () => ({}) }),
+  family: () => ({ editor: FamilyRulesEditor, keys: ['family'], props: () => ({}) }),
 }
 
 const hash = (v: unknown) => createHash('sha1').update(JSON.stringify(v)).digest('hex').slice(0, 12)

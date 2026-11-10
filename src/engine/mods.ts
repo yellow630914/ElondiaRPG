@@ -7,6 +7,7 @@
 // - 自建的底材或材料會自動產生「底材 × 同類材料」的制式裝備。
 // 說明見 docs/CONTENT_EDITOR.md。
 
+import { applyFamilyRules, restoreFamilyRules, sanitizeFamilyRules, type FamilyRulesMod } from './familyMods'
 import { STAGE_ORDER } from './pregMarks'
 import type { PregnancyCond } from './data'
 import type { PregnancyStage } from './types'
@@ -143,6 +144,8 @@ export interface ContentMods {
   eventRules: Record<string, EventRulesMod>
   /** 雙面效應的設定（只有 rules 一筆；舊的自訂內容沒有這一欄） */
   bindRules?: Record<string, BindRulesMod>
+  /** 懷孕與泌乳的設定（只有 rules 一筆；docs/FAMILY.md 第 12 節；舊的自訂內容沒有這一欄） */
+  family?: Record<string, FamilyRulesMod>
   /** 主人事件格式的事件（主人的突發事件、調教、娼館；舊的自訂內容沒有這一欄） */
   masterEvents?: Record<string, MasterEventMod>
   /** 類別的圖示（依類別 id；舊的自訂內容沒有這一欄） */
@@ -292,6 +295,7 @@ function restore() {
   restoreSpecialMaps()
   restoreTravelEvents()
   restoreBindRules()
+  restoreFamilyRules()
   restoreMasterEvents()
   restoreCounters()
   setCategoryIcons({})
@@ -635,6 +639,7 @@ export function applyContent(mods: ContentMods): string[] {
   tryEach('事件', mods.travelEvents ?? {}, (id, m) => applyTravelEvent(id, sanitizeTravelEvent(id, m, !!m.custom)))
   tryEach('事件設定', mods.eventRules ?? {}, (_id, m) => applyEventRules(sanitizeEventRules(m)))
   tryEach('雙面效應設定', mods.bindRules ?? {}, (_id, m) => applyBindRules(sanitizeBindRules(m)))
+  tryEach('懷孕與泌乳設定', mods.family ?? {}, (_id, m) => applyFamilyRules(sanitizeFamilyRules(m)))
   tryEach('主奴與娼館的事件', mods.masterEvents ?? {}, (id, m) => applyMasterEvent(id, sanitizeMasterEvent(id, m, !!m.custom)))
   setCategoryIcons(Object.fromEntries(Object.entries(mods.categoryIcons ?? {}).map(([k, v]) => [k, v.icon])))
   // 自建的底材與裝備：建角時也能選
@@ -1273,6 +1278,7 @@ export function normalizeMods(raw: unknown): ContentMods {
   }
   if (r.eventRules?.rules) out.eventRules.rules = sanitizeEventRules(r.eventRules.rules)
   if (r.bindRules?.rules) (out.bindRules ??= {}).rules = sanitizeBindRules(r.bindRules.rules)
+  if (r.family?.rules) (out.family ??= {}).rules = sanitizeFamilyRules(r.family.rules)
   for (const [id, v] of Object.entries(r.masterEvents ?? {})) {
     if (typeof id === 'string' && id.length <= 60 && v && typeof v === 'object') (out.masterEvents ??= {})[id] = sanitizeMasterEvent(id, v, !!v.custom || !builtinMasterEvent(id))
   }

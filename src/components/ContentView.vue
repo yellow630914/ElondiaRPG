@@ -51,6 +51,7 @@ import TravelEventEditor from './content/TravelEventEditor.vue'
 import MasterEventEditor from './content/MasterEventEditor.vue'
 import { allMasterEvents, builtinMasterEvent, masterEventById, newMasterEvent, POOL_IDS } from '@/engine/masterEventMods'
 import EventRulesEditor from './content/EventRulesEditor.vue'
+import FamilyRulesEditor from './content/FamilyRulesEditor.vue'
 import BindRulesEditor from './content/BindRulesEditor.vue'
 import CategoryIconsEditor from './content/CategoryIconsEditor.vue'
 import ImportPickerDialog from './content/ImportPickerDialog.vue'
@@ -378,6 +379,8 @@ const COUNTERS_KEY = '|counters'
 const BIND_RULES_KEY = '|bind_rules'
 /** 特殊任務頁的「故事線總覽」 */
 const STORYLINES_KEY = '|storylines'
+/** 懷孕與泌乳設定（寄生物頁籤的固定按鈕；docs/FAMILY.md 第 12 節） */
+const FAMILY_RULES_KEY = '|family'
 /** 每一頁只有一筆的設定：放在清單上方的固定按鈕（不跟著篩選消失） */
 const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() => {
   void content.version
@@ -385,6 +388,7 @@ const SETTINGS = computed<{ key: string; label: string; edited: boolean }[]>(() 
   if (iconsTab.value) return []
   if (sub.value === 'events') return [{ key: 'rules', label: '⚙️ 事件設定', edited: !!m.eventRules?.rules }]
   if (sub.value === 'tattoos') return [{ key: 'rules', label: '⚙️ 印記設定', edited: !!m.markRules?.rules }]
+  if (sub.value === 'parasites') return [{ key: FAMILY_RULES_KEY, label: '⚙️ 懷孕與泌乳設定', edited: !!m.family?.rules }]
   if (sub.value === 'bases') return [{ key: BIND_RULES_KEY, label: '⚙️ 雙面效應設定', edited: !!m.bindRules?.rules }]
   if (sub.value === 'stories') return [{ key: STORYLINES_KEY, label: '🗺️ 故事線總覽', edited: false }, { key: COUNTERS_KEY, label: `🔢 劇情計數器（${Object.keys(storyCounters).length}）`, edited: Object.keys(m.counters ?? {}).length > 0 }]
   return []
@@ -604,7 +608,7 @@ const current = computed(() => {
     : sub.value === 'dungeons' ? !!content.mods.dungeons?.[key]
     : sub.value === 'events' ? key === 'rules' || travelEvents.templates.some((t) => t.id === key)
     : sub.value === 'masterEvents' ? !!masterEventById(key)
-    : sub.value === 'parasites' ? !!parasiteRules.parasites[key]
+    : sub.value === 'parasites' ? key === FAMILY_RULES_KEY || !!parasiteRules.parasites[key]
     : sub.value === 'npcTags' ? !!npcTags.tags[key]
     : sub.value === 'classes' ? editableClassIds().includes(key)
     : sub.value === 'tattoos' ? key === 'rules' || (key.startsWith('t:') ? !!tattooRules.templates[key.slice(2)] : !!slaveryRules.contracts[key.slice(2)])
@@ -1105,6 +1109,7 @@ function resetAll() {
           <TattooEditor v-else-if="current.startsWith('t:')" :id="current.slice(2)" :key="current" @deleted="select('')" />
           <MarkEditor v-else :id="current.slice(2)" :key="current" @deleted="select('')" />
         </template>
+        <FamilyRulesEditor v-else-if="sub === 'parasites' && current === FAMILY_RULES_KEY" key="family-rules" />
         <ParasiteEditor v-else-if="sub === 'parasites'" :id="current" :key="`par-${current}`" @deleted="select('')" />
         <template v-else-if="sub === 'events'">
           <EventRulesEditor v-if="current === 'rules'" key="ev-rules" />
