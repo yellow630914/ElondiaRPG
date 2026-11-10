@@ -206,6 +206,27 @@ describe('other characters following into the special areas (club_lines42.py)', 
     expect(landmarkHidden(love, landmarks.lm_yh_faceless!)).toBe(true)
     expect(landmarks.lm_yh_night_market!.scenes!.find((s) => s.title === '不戴面具的夜市')?.requires?.flags).toEqual(['yasz_lover'])
   })
+
+  // 11/10 實測決定：關掉「非處女」時整條線一起篩掉（她是寡婦，故事開始前就去過無面樓），不會在純愛的三斷掉
+  it('tags every Su Wanzhen quest non-virgin, so the filter hides the whole line', () => {
+    for (const s of stories.filter((x) => x.id.startsWith('yasz_'))) expect(s.tags, s.id).toContain('non_virgin')
+  })
+
+  // 「天亮時」的任務點只在白天，夜裡做完上一點要等到天亮
+  it('runs the "at dawn" nodes of the club lines only by day', () => {
+    const dawn = stories.flatMap((s) => s.nodes.filter((n) => n.title.startsWith('天亮時')).map((n) => [s.id, n] as const))
+    expect(dawn.length).toBeGreaterThanOrEqual(7)
+    for (const [id, n] of dawn) expect(n.hours, `${id}:${n.id}`).toBe('day')
+  })
+
+  // 主角一起參與、對象是一群男性的場景都標「男性對象」（關掉時只剩旁觀的場景）
+  it('marks every scene where the hero joins the crowd as male partner', () => {
+    for (const id of ['lm_ebony_night', 'lm_td_wild_horse', 'lm_yh_faceless']) {
+      for (const sc of landmarks[id]!.scenes!) {
+        if (sc.tags?.includes('ntr') && sc.pc_body) expect(sc.tags, sc.title).toContain('male_partner')
+      }
+    }
+  })
 })
 
 describe('more characters following into the special areas (club_lines43.py)', () => {

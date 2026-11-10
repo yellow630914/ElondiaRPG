@@ -51008,6 +51008,7 @@
           "enemies": [["td_kheshig", 2]],
           "success": { "text": "怯薛被打了出去。帳裡的人馬族們大笑著把帳門重新拉上，有人拍了拍你的肩膀：「下次也來。」", "set_flags": ["tdwn_club_safe"] },
           "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "day",
           "urgent": true
         },
         {
@@ -55693,7 +55694,7 @@
       "id": "yasz_widow",
       "title": "牌坊下的寡婦",
       "summary": "龍安府蘇御史家的寡婦蘇婉貞，守節三年，禮部就要替她立一座貞節牌坊。那天夜裡，你在御街夜市撿到了她掉落的一張儺面。（蘇婉貞・一）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "D",
       "merit": 8,
       "start": {
@@ -55760,7 +55761,7 @@
       "id": "yasz_banquet",
       "title": "無面宴",
       "summary": "禮部的人要來看牌坊的地了。蘇婉貞說，她想在那之前再去一次無面樓——最後一次。她求你陪她去，替她甩掉婆家的眼線。（蘇婉貞・二）",
-      "tags": ["adult"],
+      "tags": ["adult", "non_virgin"],
       "rank": "C",
       "merit": 10,
       "start": {
@@ -55957,6 +55958,7 @@
           "enemies": [["yh_imperial_guard", 2]],
           "success": { "text": "禁軍被樓裡的客人們推推搡搡地擠出了門，管家的燈籠掉在地上滅了。門口的老嫗慢吞吞地關上門：「無面樓裡，沒有人有臉。」她把那張黑底金紋的面具塞回你手裡，「下次也來。」", "set_flags": ["yasz_club_safe"] },
           "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "day",
           "urgent": true
         },
         {
@@ -56367,6 +56369,7 @@
           "enemies": [["td_raider_veteran", 2]],
           "success": { "text": "悍匪被打了出去，連令牌都丟在毛氈上。帳裡的公馬們笑著把帳門拉上，帶頭的那匹撿起令牌塞給赤鬟：「妳贏了。鷹河的路，妳的船隨便走。」", "set_flags": ["yach_wild_safe"] },
           "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "day",
           "urgent": true
         },
         {
@@ -56449,6 +56452,7 @@
           "enemies": [["td_kheshig", 2]],
           "success": { "text": "怯薛被野馬帳的公馬們和你一起轟了出去。帶頭的那匹黑馬甩掉脖子上的韁繩，恭恭敬敬地遞回給烏日娜：「下次也來。……騎我。」", "set_flags": ["tdur_wild_safe"] },
           "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "day",
           "urgent": true
         },
         {
@@ -56530,7 +56534,8 @@
           "kind": "check",
           "check": { "attr": "cha", "dc": 15 },
           "success": { "text": "你把海蘭的弓高高舉起，告訴他們：首領在裡面，是她自己要來的，今晚的事等她自己說。年輕人們面面相覷，最後慢慢放下了弓，退到坡下等著。帳裡傳來海蘭低低的笑聲。", "set_flags": ["tdch_wild_safe"] },
-          "fail": { "text": "帶頭的年輕人推開你，你只好擋在帳門口繼續跟他們周旋。再試一次。", "retry": true }
+          "fail": { "text": "帶頭的年輕人推開你，你只好擋在帳門口繼續跟他們周旋。再試一次。", "retry": true },
+          "hours": "day"
         },
         {
           "id": "answer",
@@ -56612,6 +56617,7 @@
           "enemies": [["yh_deathsworn", 2]],
           "success": { "text": "死士被樓裡的面具客們推推搡搡地擠了出去。門口的老嫗慢吞吞地關上門：「無面樓裡，沒有人有臉——也沒有人有名字。」沈知瀾靠在柱子上大口喘氣，攤開手心，上面的字刻得都滲出血了。", "set_flags": ["ycsz_mask_safe"] },
           "fail": { "text": "你們被打退了。喘口氣，準備好再來。", "retry": true },
+          "hours": "day",
           "urgent": true
         },
         {
@@ -56693,7 +56699,8 @@
           "kind": "check",
           "check": { "attr": "dex", "dc": 14 },
           "success": { "text": "你撿起那張浪花面具扣回她臉上，用披帛裹住她，從帷幔後面把她抱上了二樓。樓下的人找了一圈，只看見一群戴面具的人在喝酒——老嫗在樓梯口淡淡地說：「無面樓裡，沒有人有臉。」", "set_flags": ["ycyt_mask_safe"] },
-          "fail": { "text": "人群擠過來，你只好先把她護在身後。再試一次。", "retry": true }
+          "fail": { "text": "人群擠過來，你只好先把她護在身後。再試一次。", "retry": true },
+          "hours": "day"
         },
         {
           "id": "answer",

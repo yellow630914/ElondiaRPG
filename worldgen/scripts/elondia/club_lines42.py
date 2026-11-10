@@ -222,7 +222,7 @@ STORIES.append(story(
                      'text': '她愣住了，像是從來沒有人問過她這個問題。很久之後，她輕輕點了點頭，又搖了搖頭：「……我不知道。我只知道，摘下來的時候，我好想哭。」她把面具貼在胸口，「謝謝您問我。」',
                      'set_flags': ['yasz_1_done'], 'effects': [aff(SU, 10, '問她快不快樂'), mem('問蘇婉貞戴上儺面的時候快不快樂；她說不知道，只知道摘下來的時候好想哭。')], 'complete': True}},
              ]),
-    ], tags=['adult']))
+    ], tags=['adult', 'non_virgin']))
 
 STORIES.append(story(
     'yasz_banquet', 'C', '無面宴',
@@ -248,7 +248,7 @@ STORIES.append(story(
                      'set_flags': ['yasz_2_done', 'yasz_ntr'], 'effects': [aff(SU, 10, '在樓下等她'), mem('你在無面樓的樓下等蘇婉貞到天亮；她摘下面具出來的時候，笑得比面具還放肆。', 3)],
                      'complete': True, 'time': {'until': 'morning'}}},
              ]),
-    ], tags=['adult']))
+    ], tags=['adult', 'non_virgin']))
 
 STORIES.append(story(
     'yasz_arch', 'B', '牌坊之前',
@@ -294,7 +294,7 @@ STORIES.append(story(
               '兩個披甲的禁軍踹開了門，身後跟著一個提著燈籠的老僕——是蘇御史府上的管家。「少夫人一定在這裡。」管家舉著燈籠，一張一張地照過那些面具，「御史大人說了，找到了，就當場摘下來。」',
               cell('longan', 'tavern'), 'yasz_club_seen', [['yh_imperial_guard', 2]],
               '禁軍被樓裡的客人們推推搡搡地擠出了門，管家的燈籠掉在地上滅了。門口的老嫗慢吞吞地關上門：「無面樓裡，沒有人有臉。」她把那張黑底金紋的面具塞回你手裡，「下次也來。」',
-              win_flags=['yasz_club_safe'], urgent=True),
+              hours='day', win_flags=['yasz_club_safe'], urgent=True),
         node('answer', '在無面樓的二樓回答蘇婉貞',
              '蘇婉貞坐在你身邊，披帛裹著肩膀，面具放在膝上，臉上還有淚痕。她沒有道歉，只是看著你：「這就是我。白天是要立牌坊的蘇家寡婦，夜裡是誰都可以的女人。」她握住你的手，「你看見了。你還要不要我？」',
              cell('longan', 'tavern'), 'yasz_club_safe', 'choice', allies=[SU], options=[
