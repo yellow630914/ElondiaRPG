@@ -89,6 +89,9 @@ jobs:
     steps:
       - id: deploy
         uses: actions/deploy-pages@v4
+        with:
+          # 檔案多時 GitHub Pages 同步得比較久：等 30 分鐘（預設 10 分鐘）
+          timeout: 1800000
 
   release:
     needs: [test, build]
