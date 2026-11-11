@@ -8,7 +8,7 @@ import { actionRules, economy, itemDef, itemRules, lewdRules, locationById, mulR
 import { adultScene, type AdultScene } from './content'
 import { currentArea } from './grid'
 import { formatMoney } from './money'
-import { addLewdStat, lewdOf } from './lewd'
+import { addLewdStat, lewdOf, lewdPowerOf } from './lewd'
 import { characterFor, npcKind, npcRecord, npcTitle, registerNpc } from './npcs'
 import { addAffinity, pcOf } from './party'
 import { isGuarded, nearbyPeople, presentHere } from './population'
@@ -149,7 +149,7 @@ export function seduceDcMod(c: Character): number {
   if (faith) mulResist(resist, { lust: faith })
   const r = -(resist.lust ?? 0)
   const fromResist = r > 0 ? Math.floor(r / (k.resist_per ?? 0.1) + 1e-9) : Math.ceil(r / (k.resist_per ?? 0.1) - 1e-9)
-  return fromResist - Math.floor(lewdOf(c).lewdness / (k.lewd_per ?? 10))
+  return fromResist - Math.floor(lewdPowerOf(c).lewdness / (k.lewd_per ?? 10))
 }
 
 /**

@@ -52,7 +52,7 @@ import type {
 import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
 import { flagKey, hasFlag } from './storyFlags'
-import { addLewd, exposureAt, exposureLevel, growLewd, lewdOf } from './lewd'
+import { addLewd, exposureAt, exposureLevel, growLewd, lewdPowerOf } from './lewd'
 import { bindsOf, lockedBound, lustTotals, outfitCombat, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, RULE_DEFS, type DifficultyDef } from './gameRules'
 import { rollBreakdown, sumParts } from './rollParts'
@@ -466,7 +466,7 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     // 慾望指標：忍耐加上限，敏感改變受到的慾望，淫亂帶著慾望上場、消退得慢、自己增加的慾望多，順從讓轉換更有效，
     // 曝露名聲（在這個地區）讓魅惑傷害變高；信仰讓人比較不受魅惑
     const L = lewdRules.combat
-    const v = lewdOf(ch)
+    const v = lewdPowerOf(ch)
     f.lustMax += Math.floor(v.endurance / L.endurance_max_div)
     // 非戰鬥狀態的慾望上限（壯陽料理）
     const condMax = ch.status.reduce((s, id) => s + (companionRules.conditions[id]?.combat_lust_max ?? 0), 0)

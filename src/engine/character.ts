@@ -9,7 +9,7 @@ import {
   type AbilityDef, type AffinityMap, type AttrId, type Attrs, type Mods, type NpcDef, type WeaponDef,
   mulResist,
 } from './data'
-import { gearBonuses, gearName, gearRules, generateLoadout, startingGear, syncGear, wearDefaultUnderwear } from './gear'
+import { bonusesOff, gearBonuses, gearName, onlyNegative, gearRules, generateLoadout, startingGear, syncGear, wearDefaultUnderwear } from './gear'
 import { bodyOf } from './traits'
 import { dressNpc } from './outfits'
 import { tattoosOf, tattooSummary } from './tattoos'
@@ -82,7 +82,10 @@ export function addAttrProvider(p: AttrProvider): () => void {
 
 /** 裝備給的屬性加減：每件一個來源；同一項合計超過上限（gear.json 的 attrs.cap）時加一項扣回來 */
 function gearAttrSources(c: Character): AttrSource[] {
-  const list = Object.values(c.gear ?? {}).filter((g) => g?.spec.attrs).map((g) => ({ label: `裝備【${g!.name}】`, attrs: g!.spec.attrs! }))
+  // 額外飾品欄的拘束具：只算扣分（gear.ts 的 bonusesOff）
+  const list = Object.entries(c.gear ?? {}).filter(([, g]) => g?.spec.attrs)
+    .map(([slot, g]) => ({ label: `裝備【${g!.name}】`, attrs: bonusesOff(slot, g!.spec) ? onlyNegative(g!.spec.attrs!) : g!.spec.attrs! }))
+    .filter((x) => Object.values(x.attrs).some(Boolean))
   const cap = gearRules.attrs.cap
   const over: Partial<Attrs> = {}
   for (const a of ATTR_IDS) {

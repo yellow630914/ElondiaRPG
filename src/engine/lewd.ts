@@ -8,7 +8,7 @@ import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, lockedByThing, type LewdKey, type LewdTitleDef, type NpcSexSeed } from './data'
 import { experienceLewdness, npcSexSeed } from './sexRecord'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
-import { gearLewdOf, gearRules, type VacuumSide } from './gear'
+import { bonusesOff, gearLewdOf, gearRules, type VacuumSide } from './gear'
 import { gameRule } from './gameRules'
 import { characterBody } from './look'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
@@ -34,9 +34,9 @@ export function baseLewd(c: Pick<Character, 'lewd'>): LewdStats {
 /** 身上裝備的加值合計（每項全身 ±total_cap） */
 export function gearLewd(c: Pick<Character, 'gear'>): Record<LewdStat, number> {
   const out = { lewdness: 0, sensitivity: 0, endurance: 0, submission: 0 }
-  for (const g of Object.values(c.gear ?? {})) {
+  for (const [slot, g] of Object.entries(c.gear ?? {})) {
     if (!g) continue
-    const b = gearLewdOf(g.spec)
+    const b = gearLewdOf(g.spec, bonusesOff(slot, g.spec))
     for (const k of LEWD_STATS) out[k] += b[k] ?? 0
   }
   const cap = lewdRules.gear.total_cap
@@ -44,13 +44,32 @@ export function gearLewd(c: Pick<Character, 'gear'>): Record<LewdStat, number> {
   return out
 }
 
-/** 有效值：基本值加上裝備的加值（0～100） */
+/**
+ * 有效值：基本值（含泌乳）先夾在 0～100，再加上裝備的加值。
+ * 只有裝備能把指標推過 100（最多 100 + total_cap）；機制用的是 lewdPowerOf（超過 100 的部分邊際遞減）。
+ */
 export function lewdOf(c: Pick<Character, 'lewd' | 'gear'> & Partial<Pick<Character, 'race' | 'gender' | 'body' | 'isPlayer' | 'tattoos' | 'pregMark'>>): Record<LewdStat, number> {
   const base = baseLewd(c)
   const gear = gearLewd(c)
   // 泌乳：敏感的有效值加一點（docs/FAMILY.md 第 10 節）
   const lact = c.race && lactatingNow(c as Character) ? lactationSensitivity() : 0
-  return Object.fromEntries(LEWD_STATS.map((k) => [k, clamp(base[k] + gear[k] + (k === 'sensitivity' ? lact : 0))])) as Record<LewdStat, number>
+  const top = 100 + lewdRules.gear.total_cap
+  return Object.fromEntries(LEWD_STATS.map((k) => [k, Math.max(0, Math.min(top, clamp(base[k] + (k === 'sensitivity' ? lact : 0)) + gear[k]))])) as Record<LewdStat, number>
+}
+
+/**
+ * 指標的效力：100 以內照算；超過 100 的部分邊際遞減：100 + over_scale × (1 − 100 ÷ 值)。
+ * over_scale 80 時 150 → 127、200 → 140（以前的 1.4 倍），再怎麼堆也不會到 180。
+ */
+export function lewdPower(v: number): number {
+  if (v <= 100) return v
+  return Math.round(100 + (lewdRules.gear.over_scale ?? 80) * (1 - 100 / v))
+}
+
+/** 每項指標的效力（戰鬥、檢定、身價這些機制都用這個；畫面顯示與故事條件用 lewdOf 的原值） */
+export function lewdPowerOf(c: Parameters<typeof lewdOf>[0]): Record<LewdStat, number> {
+  const v = lewdOf(c)
+  return Object.fromEntries(LEWD_STATS.map((k) => [k, lewdPower(v[k])])) as Record<LewdStat, number>
 }
 
 /** 泌乳時敏感的有效值加多少（family.json 的 lactation.sensitivity） */
@@ -353,7 +372,7 @@ export function slaveValueMult(stats: Record<LewdStat, number>, lewdSkills: numb
 
 /** 這個人的身價倍率：指標與學會的色情技能 */
 export function slaveValueOf(c: Pick<Character, 'lewd' | 'gear' | 'abilities'>): number {
-  return slaveValueMult(lewdOf(c), c.abilities.filter((id) => abilities[id]?.classes.includes('lewd')).length)
+  return slaveValueMult(lewdPowerOf(c), c.abilities.filter((id) => abilities[id]?.classes.includes('lewd')).length)
 }
 
 // ---- 給 AI ----

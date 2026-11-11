@@ -13,7 +13,7 @@ import {
   type LustPerk, type PerkDef, type PerkEffect,
   mulResist,
 } from './data'
-import { gearRules } from './gear'
+import { bonusesOff, gearRules } from './gear'
 import { conditionModifiers } from './party'
 import { pregnancyModifiers } from './pregMarks'
 import { Rng as RngImpl, type Rng } from './rng'
@@ -100,8 +100,10 @@ export function perkModifiers(c: PerkHolder, ctx: CheckCtx): { label: string; va
 /** 身上獨特裝備的檢定加值（每件一行；同樣的加值可以疊加） */
 export function gearCheckModifiers(c: Pick<Character, 'gear'>, ctx: CheckCtx): { label: string; value: number }[] {
   const out: { label: string; value: number }[] = []
-  for (const g of Object.values(c.gear ?? {})) {
+  for (const [slot, g] of Object.entries(c.gear ?? {})) {
     const u = g?.spec.unique
+    // 額外飾品欄的拘束具：加值不算、減值照算
+    if (u && u.bonus > 0 && bonusesOff(slot, g!.spec)) continue
     if (u && matches(u.check, ctx)) out.push({ label: `${g!.spec.curse ? '詛咒' : '獨特裝備'}【${g!.name}】`, value: u.bonus })
   }
   return out

@@ -2527,7 +2527,7 @@ export const lewdRules = lewdJson as unknown as {
     bond_step: number; bond_share: number; bond_max: number
   }
   gear: {
-    item_cap: number; total_cap: number; exposure_slots: string[]
+    item_cap: number; total_cap: number; over_scale?: number; exposure_slots: string[]
     outfit: Partial<Record<'regular' | 'anime' | 'adult', { exposure?: number; lewd?: LewdBonus }>>
     restraint: { lewd?: LewdBonus }
     underwear_visible: number; naked: number

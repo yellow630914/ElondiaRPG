@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { classWeaponBlock, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
+import { bonusesOff, classWeaponBlock, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
@@ -184,6 +184,9 @@ const totals = computed(() => {
           <button class="small" :disabled="inCombat || !lockPick" @click="lockIt">上鎖</button>
         </template>
         <button v-else-if="current.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+      </div>
+      <div v-if="current && bonusesOff(selected, current.spec)" class="lock-row small">
+        <GameIcon name="warning" :size="14" /><span>放在額外飾品欄：拘束具的加成（附魔、材料特性、正的檢定加值、慾望指標加值）不生效，減值照算</span>
       </div>
       <div v-if="fused" class="lock-row small">
         <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>

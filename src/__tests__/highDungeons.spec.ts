@@ -224,7 +224,8 @@ describe('高等地下城的材料與底材', () => {
   })
 
   it('地下城專屬的底材只靠層主掉落：不在隨機裝備、AI 的清單與制式品裡，也不能打造', () => {
-    const exclusive = Object.entries(gearRules.bases).filter(([, b]) => b.exclusive).map(([id]) => id)
+    // 詛咒具也是 exclusive（不能打造），但不是層主掉落，另外測（cursed.spec）
+    const exclusive = Object.entries(gearRules.bases).filter(([, b]) => b.exclusive && !b.restraint).map(([id]) => id)
     expect(exclusive.length).toBe(10)
     const random = new Set(randomBases())
     const ordinary = new Set(ordinaryBases())

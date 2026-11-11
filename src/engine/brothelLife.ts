@@ -6,7 +6,7 @@ import { gameRule } from './gameRules'
 import { abilities, attrName, lewdRules, masterEventPool, npcs as namedNpcs, type AbilityDef, type Degree, type MasterEventDef } from './data'
 import { naturalCritOnly } from './checks'
 import { applyEffects, teachAbility } from './effects'
-import { lewdOf, npcLewd } from './lewd'
+import { lewdPowerOf, npcLewd } from './lewd'
 import { formatMoney } from './money'
 import { npcRecord } from './npcs'
 import { madamId } from './population'
@@ -52,7 +52,7 @@ export function rankWage(state: GameState, who: string): number {
 /** 打工結束時發生事件的機率：淫亂越高越容易 */
 export function workEventChance(c: Character): number {
   const r = rules().work_event
-  return Math.min(r.max, r.base + lewdOf(c).lewdness * r.per_lewd)
+  return Math.min(r.max, r.base + lewdPowerOf(c).lewdness * r.per_lewd)
 }
 
 /** 這個人能抽到的打工事件：頭牌等級夠，掛的技能還沒全學過（不掛技能的事件也算） */
@@ -195,7 +195,7 @@ export function proposeDc(state: GameState, m: Character): number {
   const rec = npcRecord(state, m.id)
   const aff = state.relationships?.[m.id]?.affinity ?? 0
   const tags = (rec?.tags ?? []).reduce((s, t) => s + (r.tags[t] ?? 0), 0)
-  return Math.round(r.dc - lewdOf(m).lewdness / r.lewd_div - aff / r.affinity_div + tags)
+  return Math.round(r.dc - lewdPowerOf(m).lewdness / r.lewd_div - aff / r.affinity_div + tags)
 }
 
 /** 提議一位自由的夥伴今天去娼館接客：主角擲魅力；成功時今天都可以派，失敗親密度下降 */

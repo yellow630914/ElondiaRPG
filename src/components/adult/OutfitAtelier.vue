@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { craftRules } from '@/engine/data'
+import { craftRules, lewdRules } from '@/engine/data'
 import { craftPlan, craftRarity, craftTarget, forgeOf, outfitCommission, outfitLewdBonus } from '@/engine/craft'
 import { baseShown, baseSlotName, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, rarityName, type BaseSlot } from '@/engine/gear'
 import { baseExposure, lewdName } from '@/engine/lewd'
@@ -27,9 +27,21 @@ onMounted(() => {
   if (type) game.shopState(type)
 })
 
+// ---- 淫服／拘束具 ----
+// 拘束具也在這裡委託（詛咒具這類專屬底材不能做）；拘束具穿在額外飾品欄時加成不生效（gear.ts 的 bonusesOff）。
+const MODES = [['outfit', '👗 淫服'], ['restraint', '⛓️ 拘束具']] as const
+const mode = ref<(typeof MODES)[number][0]>('outfit')
+const isOutfit = computed(() => mode.value === 'outfit')
+function pickMode(m: (typeof MODES)[number][0]) {
+  mode.value = m
+  slot.value = ''
+  basePick.value = ''
+  filter.value = 'all'
+}
+
 // ---- 部位 ----
 const bases = computed(() => Object.entries(gearRules.bases)
-  .filter(([id, b]) => b.outfit === 'adult' && !b.restraint && !b.exclusive && baseShown(id))
+  .filter(([id, b]) => !b.exclusive && baseShown(id) && (isOutfit.value ? b.outfit === 'adult' && !b.restraint : !!b.restraint))
   .map(([id, b]) => ({ id, ...b, exposure: baseExposure(id) }))
   .sort((a, b) => a.price - b.price))
 const slots = computed(() => [
@@ -39,12 +51,17 @@ const slots = computed(() => [
 const slot = ref<BaseSlot | ''>('')
 const slotNow = computed(() => (slot.value && slots.value.includes(slot.value) ? slot.value : slots.value.includes('body' as BaseSlot) ? 'body' as BaseSlot : slots.value[0]!))
 const countOf = (x: string) => bases.value.filter((b) => b.slot === x).length
+/** 拘束具的種類與拘束等級（例：手部拘束 2） */
+const bindOf = (id: string) => {
+  const b = gearRules.bases[id]!
+  return b.bind_kind ? `${lewdRules.two_face.kinds[b.bind_kind]?.name ?? b.bind_kind}${b.bind ? ` ${b.bind}` : ''}` : '拘束具'
+}
 
 // ---- 款式 ----
 const FILTERS = [['all', '全部'], ['covered', '遮得住（曝露 0～1）'], ['bold', '大膽（曝露 2～3）']] as const
 const filter = ref<(typeof FILTERS)[number][0]>('all')
 const styles = computed(() => bases.value.filter((b) => b.slot === slotNow.value
-  && (filter.value === 'all' || (filter.value === 'covered' ? b.exposure <= 1 : b.exposure >= 2))))
+  && (!isOutfit.value || filter.value === 'all' || (filter.value === 'covered' ? b.exposure <= 1 : b.exposure >= 2))))
 const basePick = ref('')
 const base = computed(() => (styles.value.some((b) => b.id === basePick.value) ? basePick.value : styles.value[0]?.id ?? bases.value[0]!.id))
 function pickSlot(x: BaseSlot) {
@@ -95,8 +112,12 @@ function order() {
 </script>
 
 <template>
-  <AppDialog :open="open" title="淫服訂製" icon="shirt" width="1240px" variant="atelier" @close="emit('close')">
+  <AppDialog :open="open" :title="isOutfit ? '淫服訂製' : '拘束具訂製'" icon="shirt" width="1240px" variant="atelier" @close="emit('close')">
     <template #frame><AdultDeco kind="atelier" /></template>
+    <div class="modes">
+      <button v-for="[k, n] in MODES" :key="k" class="mode" :class="{ on: mode === k }" @click="pickMode(k)">{{ n }}</button>
+      <span v-if="!isOutfit" class="muted small">拘束具穿在額外飾品欄時只留下減值，加成不生效</span>
+    </div>
     <div class="atelier">
 
       <section class="card">
@@ -105,18 +126,19 @@ function order() {
           <button v-for="x in slots" :key="x" class="slot-chip" :class="{ on: x === slotNow }" @click="pickSlot(x)">{{ baseSlotName(x) }}<i>{{ countOf(x) }}</i></button>
         </div>
         <h3 class="mt-h"><span class="step">2</span>款式 <small>・{{ baseSlotName(slotNow) }}（{{ styles.length }} 款）</small></h3>
-        <div class="filters">
+        <div v-if="isOutfit" class="filters">
           <button v-for="[k, n] in FILTERS" :key="k" class="small" :class="{ on: filter === k }" @click="filter = k">{{ n }}</button>
         </div>
         <div class="styles">
           <button v-for="b in styles" :key="b.id" class="style" :class="{ on: b.id === base }" @click="basePick = b.id">
             <span class="nm">{{ b.name }}</span>
-            <span class="meta">曝露 <span class="hearts">{{ hearts(b.exposure) }}<span class="off">{{ empty(b.exposure) }}</span></span></span>
+            <span v-if="isOutfit" class="meta">曝露 <span class="hearts">{{ hearts(b.exposure) }}<span class="off">{{ empty(b.exposure) }}</span></span></span>
+            <span v-else class="meta bind">⛓️ {{ bindOf(b.id) }}</span>
             <span class="meta stats-line" :title="statsOf(b.id, firstMaterial(b.kind))">{{ statsOf(b.id, firstMaterial(b.kind)) }}</span>
           </button>
           <p v-if="!styles.length" class="muted small">這個部位沒有符合的款式。</p>
         </div>
-        <h3 class="mt-h"><span class="step">3</span>布料</h3>
+        <h3 class="mt-h"><span class="step">3</span>{{ isOutfit ? '布料' : '材料' }}</h3>
         <div class="mats">
           <button v-for="m in materials" :key="m.id" class="mat" :class="{ on: m.id === mat, lock: !canDo(m.tier) }" :disabled="!canDo(m.tier)" @click="matPick = m.id">
             <b>{{ m.name }}<template v-if="!canDo(m.tier)"> 🔒</template></b>
@@ -139,7 +161,8 @@ function order() {
 
         <section class="order">
           <h4>{{ gearName({ base, material: mat }) }}<span v-if="stat" class="bonus">・{{ lewdName(stat) }} +{{ bonus }}</span></h4>
-          <div class="slotline">{{ baseSlotName(gearRules.bases[base]!.slot as BaseSlot) }}・成人向・曝露 <span class="hearts">{{ hearts(baseExposure(base)) }}<span class="off">{{ empty(baseExposure(base)) }}</span></span></div>
+          <div v-if="isOutfit" class="slotline">{{ baseSlotName(gearRules.bases[base]!.slot as BaseSlot) }}・成人向・曝露 <span class="hearts">{{ hearts(baseExposure(base)) }}<span class="off">{{ empty(baseExposure(base)) }}</span></span></div>
+          <div v-else class="slotline">{{ baseSlotName(gearRules.bases[base]!.slot as BaseSlot) }}・⛓️ {{ bindOf(base) }}</div>
           <dl>
             <dt>數值</dt><dd>{{ statsOf(base, mat) || '沒有加成' }}</dd>
             <dt>慾望</dt><dd :class="{ bonus: stat }">{{ stat ? `${lewdName(stat)} +${bonus}` : '不加' }}</dd>
@@ -171,13 +194,17 @@ function order() {
       </div>
     </div>
     <p class="note muted small">
-      檢定、DC、工錢、材料、稀有度和附魔都和一般的委託打造一樣（店主擲 d20 + 手藝 ×2）；慾望指標的加成依布料等級：第 1 級 +4、第 2 級 +6、第 3 級 +8、第 4 級以上 +10。
-      <Hint text="布料上鎖代表店主的手藝還做不了那一級。成人向服裝只在成人用品店委託打造。" />
+      檢定、DC、工錢、材料、稀有度和附魔都和一般的委託打造一樣（店主擲 d20 + 手藝 ×2）；慾望指標的加成依材料等級：第 1 級 +4、第 2 級 +6、第 3 級 +8、第 4 級以上 +10。
+      <Hint text="材料上鎖代表店主的手藝還做不了那一級。成人向服裝與拘束具只在成人用品店委託打造（自己打造也可以，慾望指標的加成照自己的指標打折）；詛咒具做不出來。" />
     </p>
   </AppDialog>
 </template>
 
 <style scoped>
+.modes { display: flex; gap: 8px; align-items: center; margin: -4px 0 10px; flex-wrap: wrap; position: relative; z-index: 1; }
+.mode { padding: 4px 14px; border-radius: 14px; border: 1px solid #b03a6266; background: #fffaf0; }
+.mode.on { background: #b03a62; color: #fff; font-weight: 700; }
+.style .bind { color: #6c4bd1; }
 .atelier { --tone: #b03a62; --tone-soft: #b03a6226; display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 14px; align-items: start; }
 .card { background: #fff3; border: 1px solid #5a3f2255; border-radius: 4px; padding: 10px 12px; }
 h3 { margin: 0 0 8px; font-size: var(--fs-md, 15px); display: flex; align-items: center; gap: 6px; }

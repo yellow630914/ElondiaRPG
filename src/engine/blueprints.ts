@@ -30,13 +30,15 @@ export function grantBlueprint(state: GameState, base: string): boolean {
   return true
 }
 
-/** 可以有圖紙的底材：一般的底材（拘束具、專屬底材不算） */
+/** 可以有圖紙的底材：專屬底材（詛咒具等）以外的底材，拘束具也有 */
 export function blueprintBases(): string[] {
-  return Object.entries(gearRules.bases).filter(([, b]) => !b.restraint && !b.exclusive).map(([id]) => id)
+  return Object.entries(gearRules.bases).filter(([, b]) => !b.exclusive).map(([id]) => id)
 }
+/** 成人用品店打造的底材（成人向服裝、拘束具）：圖紙在成人用品店賣 */
+const adultCraftBase = (b: string) => gearRules.bases[b]?.outfit === 'adult' || !!gearRules.bases[b]?.restraint
 
 /** 店的種類 → 這間店打造的材料種類（金屬與木材在鐵匠鋪、皮革與布料在裁縫店、寶石在珠寶店） */
-const SHOP_KINDS: Partial<Record<ShopType, string[]>> = { smithy: ['metal', 'wood'], tailor: ['leather', 'cloth'], jeweler: ['jewel'] }
+const SHOP_KINDS: Partial<Record<ShopType, string[]>> = { smithy: ['metal', 'wood'], tailor: ['leather', 'cloth'], jeweler: ['jewel'], adult_shop: ['metal', 'wood', 'leather', 'cloth', 'jewel'] }
 
 /** 隨機一張還沒有的圖紙（kinds 限定材料種類；都有了時 undefined） */
 export function randomBlueprint(state: GameState, rng: Rng, kinds?: string[], maxBasePrice = Infinity): string | undefined {
@@ -50,7 +52,9 @@ export function blueprintDeals(state: GameState, rng: Rng, type: ShopType, small
   if (!kinds) return []
   const r = blueprintRules()
   const max = small ? r.village_max_base_price : Infinity
-  const pool = blueprintBases().filter((b) => !hasBlueprint(state, b) && kinds.includes(gearRules.bases[b]!.kind) && gearRules.bases[b]!.price <= max)
+  // 成人用品店只賣成人向服裝與拘束具的圖紙，其他店不賣這兩類
+  const adult = type === 'adult_shop'
+  const pool = blueprintBases().filter((b) => !hasBlueprint(state, b) && kinds.includes(gearRules.bases[b]!.kind) && gearRules.bases[b]!.price <= max && adultCraftBase(b) === adult)
   const picked = [...pool].sort(() => rng.next() - 0.5).slice(0, rng.int(r.shop[0], r.shop[1]))
   return picked.map((b) => ({
     id: `blueprint:${b}`,

@@ -28,7 +28,7 @@ import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHom
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
-import { growLewd, addLewd, lewdOf } from './lewd'
+import { growLewd, addLewd, lewdPowerOf } from './lewd'
 import { blackMarketHere } from './underworld'
 import type { Character, ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
@@ -754,7 +754,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
 /** 屈服或抵抗的回應：順從（慾望指標）高的人屈服比較容易、抵抗比較難 */
 export function stanceModifiers(c: Character, stance: MasterEventOption['stance']): { label: string; value: number }[] {
   if (!stance) return []
-  const n = Math.floor(lewdOf(c).submission / lewdRules.master_tool.stance_per)
+  const n = Math.floor(lewdPowerOf(c).submission / lewdRules.master_tool.stance_per)
   return n ? [{ label: stance === 'submit' ? '順從・屈服' : '順從・抵抗', value: stance === 'submit' ? n : -n }] : []
 }
 

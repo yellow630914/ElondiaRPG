@@ -11,7 +11,8 @@ import re
 
 
 def base(slot, name, kind, price, desc, bind, bind_kind, **extra):
-    return {"slot": slot, "name": name, "kind": kind, "price": price, "restraint": True, "bind": bind, "bind_kind": bind_kind, **extra, "adult": True, "desc": desc}
+    # exclusive：專屬底材，不能打造、沒有圖紙（詛咒具只從陷阱、地下城與事件拿到）
+    return {"slot": slot, "name": name, "kind": kind, "price": price, "restraint": True, "exclusive": True, "bind": bind, "bind_kind": bind_kind, **extra, "adult": True, "desc": desc}
 
 
 BASES = {

@@ -42,7 +42,8 @@
   },
   "gear": {
     "item_cap": 10,
-    "total_cap": 20,
+    "total_cap": 100,
+    "over_scale": 80,
     "exposure_slots": ["body", "legs", "underwear_top", "underwear_bottom"],
     "outfit": {
       "adult": { "exposure": 2, "lewd": { "lewdness": 5 } }

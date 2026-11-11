@@ -16,6 +16,7 @@ import { CELL_NAME, currentArea, currentCell, type CellKind } from './grid'
 import { memberOrResident } from './homes'
 import { formatMoney } from './money'
 import { withRng } from './state'
+import { baseLewd } from './lewd'
 import type { Character, GameState, GearSpec, LewdStat, Report } from './types'
 
 export interface CraftPlan {
@@ -74,13 +75,17 @@ export function forgeOf(name: string): string[] {
 /** 哪種材料到哪裡打造 */
 export const CRAFT_SHOP: Record<MaterialKind, CellKind> = { metal: 'smithy', wood: 'smithy', leather: 'tailor', cloth: 'tailor', jewel: 'jeweler' }
 
-/** 成人向服裝的委託打造（docs/LEWD_STATS.md 第 25 節）：只在這種店（成人用品店），一般的店不接 */
+/** 成人向服裝與拘束具的委託打造（docs/LEWD_STATS.md 第 25 節）：只在這種店（成人用品店），一般的店不接 */
 export const outfitCommission = () => lewdRules.outfit_commission
 const isAdultOutfit = (base: string) => gearRules.bases[base]?.outfit === 'adult'
+/** 打造得出來的拘束具（詛咒具這類專屬底材除外） */
+export const isCraftRestraint = (base: string) => !!gearRules.bases[base]?.restraint && !gearRules.bases[base]?.exclusive
+/** 成人用品店打造的：成人向服裝與拘束具（可以加慾望指標） */
+export const isAdultCraft = (base: string) => isAdultOutfit(base) || isCraftRestraint(base)
 
 /** 這個底材要到哪種店委託（成人向服裝到成人用品店，其他照材料） */
 export function craftShopFor(base: string): CellKind {
-  return isAdultOutfit(base) ? outfitCommission().shop as CellKind : CRAFT_SHOP[gearRules.bases[base]!.kind]
+  return isAdultCraft(base) ? outfitCommission().shop as CellKind : CRAFT_SHOP[gearRules.bases[base]!.kind]
 }
 
 /** 站的這間店接不接這個底材的委託 */
@@ -90,9 +95,9 @@ export function commissionHere(state: GameState, base: string): boolean {
   return craftShopFor(base) === cell
 }
 
-/** 委託成人向服裝時可以加的慾望指標與加成（依材料等級；不是成人向服裝時 undefined） */
+/** 委託成人向服裝、拘束具時可以加的慾望指標與加成（依材料等級；不是這兩類時 undefined） */
 export function outfitLewdBonus(base: string, material: string): number | undefined {
-  if (!isAdultOutfit(base)) return undefined
+  if (!isAdultCraft(base)) return undefined
   const t = outfitCommission().bonus_by_tier
   const tier = gearRules.materials[material]?.tier ?? 1
   return t[Math.min(tier, t.length) - 1]
@@ -101,8 +106,8 @@ export function outfitLewdBonus(base: string, material: string): number | undefi
 /** 這裡可以打造的材料類型 */
 export function craftKindsHere(state: GameState): MaterialKind[] {
   const cell = currentCell(state).kind
-  // 成人用品店：只接成人向服裝，材料照底材（布、皮、寶石）
-  if (cell === outfitCommission().shop) return ['cloth', 'leather', 'jewel']
+  // 成人用品店：只接成人向服裝與拘束具，材料照底材
+  if (cell === outfitCommission().shop) return ['metal', 'wood', 'leather', 'cloth', 'jewel']
   // 自建的商店：接哪些材料類型看商店的設定
   const custom = isCustomShopId(cell) ? shopRules.types[cell] : undefined
   if (custom) return (custom.craft ?? []) as MaterialKind[]
@@ -136,7 +141,8 @@ export function parseCraftTarget(target?: string): { base: string; material: str
   const [base, material] = (head ?? '').split(':')
   if (!base || !material || !gearRules.bases[base] || !gearRules.materials[material]) throw new Error('請選擇要打造的裝備與材料')
   if (gearRules.bases[base]!.kind !== gearRules.materials[material]!.kind) throw new Error('這種材料不能拿來做這件裝備')
-  if (gearRules.bases[base]!.restraint || gearRules.bases[base]!.exclusive) throw new Error(`${gearRules.bases[base]!.name}不能打造`)
+  // 拘束具可以打造（詛咒具這類專屬底材不行）
+  if (gearRules.bases[base]!.exclusive) throw new Error(`${gearRules.bases[base]!.name}不能打造`)
   const aux = rest.map((x) => {
     const i = x.lastIndexOf('*')
     return { name: i >= 0 ? x.slice(0, i) : x, qty: Math.max(1, Math.round(Number(i >= 0 ? x.slice(i + 1) : 1)) || 1) }
@@ -304,7 +310,7 @@ export function setupCraft(state: GameState, target?: string) {
   const { base, material, aux, opts } = parseCraftTarget(target)
   const kind = gearRules.bases[base]!.kind
   if (!commissionHere(state, base)) throw new Error(`${gearRules.bases[base]!.name}要到${CELL_NAME[craftShopFor(base)]}打造`)
-  if (opts.lewd && !isAdultOutfit(base)) throw new Error('只有成人向服裝可以加慾望指標')
+  if (opts.lewd && !isAdultCraft(base)) throw new Error('只有成人向服裝與拘束具可以加慾望指標')
   const plan = craftPlan(state, base, material, aux, undefined, opts)
   if (plan.blocked) throw new Error(plan.blocked)
   const name = gearName({ base, material })
@@ -384,7 +390,7 @@ function finishCraft(state: GameState, report: Report, plan: CraftPlan, degree: 
   let spec: GearSpec
   const plainPiece = degree === 'partial' && !boosted
   if (gear) {
-    spec = sanitizeGearSpec({ ...gear.spec, rarity }, { maxLevel: 99, maxRarity: rarity, base, material })!
+    spec = sanitizeGearSpec({ ...gear.spec, rarity }, { maxLevel: 99, maxRarity: rarity, base, material, restraint: true })!
     if (plainPiece) delete spec.enchants
   } else {
     spec = { base, material, ...(rarity !== gearRules.materials[material]!.rarity ? { rarity } : {}) }
@@ -419,8 +425,19 @@ export function parseMakeTarget(state: GameState, target?: string): { crafter: C
   return { crafter, ...parseCraftTarget(at > 0 ? target!.slice(at + 1) : target) }
 }
 
+/**
+ * 自己打造時加的慾望指標：委託的加成（依材料等級）× 做的人自己那一項的基本值 / 100（四捨五入；裝備的加值不算）。
+ * 例如月影絲（委託 +8）、淫亂 50 的人做：+4
+ */
+export function selfLewdBonus(crafter: Pick<Character, 'lewd'>, stat: LewdStat, base: string, material: string): number {
+  const full = outfitLewdBonus(base, material)
+  if (!full) return 0
+  return Math.round(full * Math.min(100, Math.max(0, baseLewd(crafter)[stat] ?? 0)) / 100)
+}
+
 export function setupMake(state: GameState, target?: string) {
   const { crafter, base, material, aux, opts } = parseMakeTarget(state, target)
+  if (opts.lewd && !isAdultCraft(base)) throw new Error('只有成人向服裝與拘束具可以加慾望指標')
   const refusal = crafterRefusal(state, crafter)
   if (refusal) throw new Error(`${crafter.name}不肯動手：${refusal}`)
   const plan = craftPlan(state, base, material, aux, crafter, opts)
@@ -450,7 +467,9 @@ export function setupMake(state: GameState, target?: string) {
 export function applyMake(state: GameState, report: Report, target: string, degree: Degree, gear?: Extract<RewardEffect, { type: 'gear' }>): string {
   const { crafter, base, material, aux, opts } = parseMakeTarget(state, target)
   const plan = craftPlan(state, base, material, aux, crafter, opts)
-  const text = finishCraft(state, report, plan, degree, gear)
+  // 自己打造成人向服裝、拘束具：選的慾望指標照做的人自己的指標加成
+  const bonus = opts.lewd ? selfLewdBonus(crafter, opts.lewd, base, material) : 0
+  const text = finishCraft(state, report, plan, degree, gear, bonus ? { [opts.lewd!]: bonus } : undefined)
   const xp = craftXpFor(plan.tier, degree) * Math.max(1, plan.units)
   if (!xp) return text
   const level = gainCraftXp(crafter, plan.craft, xp)

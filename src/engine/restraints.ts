@@ -6,7 +6,7 @@
 import { classDef, CURSE_LOCK, itemDef, itemRules, lewdRules, LOCK_GRADES, lockedByThing, type Degree, type LockGrade } from './data'
 import { slotName, syncGear } from './gear'
 import { recalc } from './character'
-import { addLewdStat, lewdOf } from './lewd'
+import { addLewdStat, lewdPowerOf } from './lewd'
 import { PARASITE_LOCK } from './parasites'
 import { isFugitive, pcOf, punish } from './party'
 import { bindsOf, lockName } from './schools'
@@ -52,7 +52,7 @@ export function unbindDc(m: Character, slot: GearSlot): { dc: number; parts: { l
     { label: lockName(s.lock), value: r.lock_dc[s.lock] ?? 0 },
     { label: `拘束程度 ${s.bind}`, value: s.bind * r.bind_dc },
   ]
-  const ease = Math.floor(lewdOf(m).endurance / r.endurance_per)
+  const ease = Math.floor(lewdPowerOf(m).endurance / r.endurance_per)
   if (ease) parts.push({ label: '忍耐', value: -ease })
   return { dc: r.base + parts.reduce((a, p) => a + p.value, 0), parts: parts.filter((p) => p.value) }
 }

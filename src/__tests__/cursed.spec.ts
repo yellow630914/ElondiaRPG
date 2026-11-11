@@ -69,6 +69,8 @@ describe('詛咒具', () => {
     expect(cursed.length).toBe(13)
     for (const i of cursed) expect(notForSale(i), i.name).toBe(true)
     expect(itemDef('產卵肛塞')!.gear!.lock).toBe('rune')
+    // 詛咒具的底材是 exclusive：打造不出來（拘束具一般可以打造）
+    for (const i of cursed) expect(gearRules.bases[i.gear!.base]!.exclusive, i.name).toBe(true)
   })
 
   it('神殿的「解開詛咒具」列出隊上每一件與價錢；淫器合煉不收詛咒具', () => {

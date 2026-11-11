@@ -110,7 +110,7 @@ describe('master forced gear', () => {
 })
 
 describe('restraint bases', () => {
-  it('give nothing but the item’s attributes, and stay out of crafting and random gear', async () => {
+  it('give nothing but the item’s attributes, and stay out of random gear', async () => {
     const { gearStats, ordinaryBases, randomGear, creationSlots, sanitizeGearSpec } = await import('@/engine/gear')
     const { Rng } = await import('@/engine/rng')
     const restraints = Object.entries(gearRules.bases).filter(([, b]) => b.restraint).map(([id]) => id)
@@ -138,14 +138,21 @@ describe('restraint bases', () => {
     for (let n = 0; n < 300; n++) expect(restraints).not.toContain(randomGear(rng, 10).base)
     for (const s of creationSlots('fighter')) for (const id of restraints) expect(s.bases).not.toContain(id)
     expect(sanitizeGearSpec({ base: 'slave_collar', material: 'iron' }, { maxLevel: 20 })).toBeUndefined()
+    // 打造出來的（finishCraft 帶 restraint: true）才收；詛咒具這類專屬底材永遠不收
+    expect(sanitizeGearSpec({ base: 'slave_collar', material: 'iron' }, { maxLevel: 20, restraint: true })?.base).toBe('slave_collar')
+    expect(sanitizeGearSpec({ base: 'suppress_collar', material: 'iron' }, { maxLevel: 20, restraint: true })).toBeUndefined()
   })
 
-  it('cannot be commissioned', async () => {
+  it('are commissioned only at the adult shop; cursed bases cannot be crafted at all', async () => {
     const state = game()
     const { prepareAction } = await import('@/engine/actions')
+    const { commissionHere } = await import('@/engine/craft')
     const { standOn } = await import('@/engine/grid')
     standOn(state, 'smithy')
     state.money_cc = 100000
-    expect(() => prepareAction(state, { kind: 'craft', target: 'slave_collar:iron', text: '' })).toThrow('項圈不能打造')
+    expect(commissionHere(state, 'slave_collar')).toBe(false)
+    expect(() => prepareAction(state, { kind: 'craft', target: 'slave_collar:iron', text: '' })).toThrow('成人用品店')
+    expect(() => prepareAction(state, { kind: 'craft', target: 'suppress_collar:iron', text: '' })).toThrow('不能打造')
+    expect(gearRules.bases.suppress_collar!.exclusive).toBe(true)
   })
 })

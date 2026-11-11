@@ -7,7 +7,7 @@ import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeNam
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
-import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT } from '@/engine/lewd'
+import { bandName, exposureAt, exposureLevel, forcedSubmission, gearLewd, LEWD_STATS, lewdName, lewdOf, lewdTitles, vacuumBonus, vacuumSides, VACUUM_TEXT, lewdPower } from '@/engine/lewd'
 import { encounterText, sexRecordItems, sexRecordOf, virginWord } from '@/engine/sexRecord'
 import { pregnancyLine } from '@/engine/pregnancy'
 import { lactationLine, milkBlock } from '@/engine/lactation'
@@ -120,7 +120,7 @@ const lewdItems = computed<StatItem[]>(() => {
   const items: StatItem[] = LEWD_STATS.map((k) => ({
     label: lewdName(k),
     value: v[k],
-    note: `${bandName(k, v[k], k === 'submission' && forcedSubmission(x))}${gear[k] ? `（裝備 ${signed(gear[k])}）` : ''}`,
+    note: `${bandName(k, v[k], k === 'submission' && forcedSubmission(x))}${gear[k] ? `（裝備 ${signed(gear[k])}）` : ''}${v[k] > 100 ? `・效力 ${lewdPower(v[k])}（超過 100 的部分遞減）` : ''}`,
   }))
   const region = locationById(s.value.location).region
   const exp = exposureAt(s.value, x.id, region)

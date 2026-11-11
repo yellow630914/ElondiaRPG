@@ -83,15 +83,30 @@ export const OUTFIT_KINDS: Record<OutfitKind, string> = { regular: '常規服裝
 const LEWD_STAT_IDS: LewdStat[] = ['lewdness', 'sensitivity', 'endurance', 'submission']
 
 /** 一件裝備的加值：底材的預設（成人向服裝、束縛用的底材）加上物品寫的，每項 ±item_cap */
-export function gearLewdOf(spec: GearSpec): Partial<Record<LewdStat, number>> {
+/**
+ * 拘束具放在額外飾品欄：好處不算（附魔、材料特性、屬性與檢定的加值、物品自己的慾望指標加值），
+ * 扣分與拘束、雙面效應照算（docs/ITEMS.md 第 2 節）
+ */
+export function bonusesOff(slot: string, spec: GearSpec): boolean {
+  return isExtraSlot(slot as GearSlot) && !!gearRules.bases[spec.base]?.restraint
+}
+/** 只留負的（扣分） */
+export function onlyNegative<T extends object>(m: T | undefined): T {
+  return Object.fromEntries(Object.entries(m ?? {}).filter(([, v]) => typeof v === 'number' && v < 0)) as T
+}
+
+/** 一件裝備的慾望指標加值（底材的預設＋物品自己的；off：放在額外飾品欄的拘束具，物品自己的只算扣分） */
+export function gearLewdOf(spec: GearSpec, off = false): Partial<Record<LewdStat, number>> {
   const base = gearRules.bases[spec.base]
   const out: Partial<Record<LewdStat, number>> = {}
   const add = (b?: Partial<Record<LewdStat, number>>) => {
     for (const k of LEWD_STAT_IDS) if (b?.[k]) out[k] = (out[k] ?? 0) + b[k]!
   }
-  if (base?.outfit) add(lewdRules.gear.outfit[base.outfit]?.lewd)
-  if (base?.restraint) add(lewdRules.gear.restraint.lewd)
-  add(spec.lewd)
+  // off：拘束具放在額外飾品欄，只留下負的（底材預設的加值也不算）
+  const keep = (b?: Partial<Record<LewdStat, number>>) => (off ? onlyNegative(b) : b)
+  if (base?.outfit) add(keep(lewdRules.gear.outfit[base.outfit]?.lewd))
+  if (base?.restraint) add(keep(lewdRules.gear.restraint.lewd))
+  add(keep(spec.lewd))
   const cap = lewdRules.gear.item_cap
   for (const k of LEWD_STAT_IDS) if (out[k] !== undefined) out[k] = Math.max(-cap, Math.min(cap, out[k]!))
   return out
@@ -492,12 +507,14 @@ export function gearBonuses(c: Pick<Character, 'gear'>): { mods: Mods; resist: A
   const resist: AffinityMap = {}
   const offense: AffinityMap = {}
   let threat = 0
-  for (const g of Object.values(c.gear ?? {})) {
+  for (const [slot, g] of Object.entries(c.gear ?? {})) {
     if (!g || !gearKnown(g.spec)) continue
     const s = gearStats(g.spec)
-    addMods(mods, s.mods)
-    mulResist(resist, s.resist)
-    addMap(offense, s.offense)
+    // 額外飾品欄的拘束具：好處不算（抗性是負的才是好處）
+    const off = bonusesOff(slot, g.spec)
+    addMods(mods, off ? onlyNegative(s.mods) : s.mods)
+    mulResist(resist, off ? Object.fromEntries(Object.entries(s.resist).filter(([, v]) => (v ?? 0) > 0)) : s.resist)
+    addMap(offense, off ? onlyNegative(s.offense) : s.offense)
     threat += s.threat
   }
   return { mods, resist, offense, threat: Math.round(threat * 100) / 100 }
@@ -938,6 +955,8 @@ export interface GearLimits {
   /** 固定底材或材料（打造時由玩家選定） */
   base?: string
   material?: string
+  /** 打造拘束具（底材是拘束具也收） */
+  restraint?: boolean
 }
 
 /**
@@ -947,8 +966,8 @@ export interface GearLimits {
 export function sanitizeGearSpec(raw: unknown, limits: GearLimits): GearSpec | undefined {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>
   const base = limits.base ?? findBase(r.base ?? r.slot)
-  // 束縛用的底材不給 AI 用
-  if (!base || gearRules.bases[base]!.restraint || gearRules.bases[base]!.exclusive) return undefined
+  // 束縛用的底材不給 AI 用（打造拘束具時由打造指定底材：limits.restraint）
+  if (!base || (gearRules.bases[base]!.restraint && !limits.restraint) || gearRules.bases[base]!.exclusive) return undefined
   const kind = gearRules.bases[base]!.kind
   let material = limits.material ?? findMaterial(r.material, kind) ?? materialOf(kind, 1)
   if (gearRules.materials[material]!.level > limits.maxLevel) {

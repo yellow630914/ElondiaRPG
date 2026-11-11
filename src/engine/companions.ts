@@ -50,7 +50,7 @@ import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
 import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
-import { lewdOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
+import { lewdPowerOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { sexValueOf } from './sexRecord'
 import { gameRule } from './gameRules'
 import { blackMarketHere, underworldAskBlocked, underworldEscorted, underworldEscortFlag, underworldFlag, underworldLandmarks, underworldOf } from './underworld'
@@ -679,7 +679,7 @@ export function negotiateDc(state: GameState): number {
 
 /** 順從（慾望指標）讓人更難離開主人：每 master_tool.submission_dc_per 點，逃離與談判解約的 DC +1 */
 export function submissionDc(c: Character): number {
-  return Math.floor(lewdOf(c).submission / lewdRules.master_tool.submission_dc_per)
+  return Math.floor(lewdPowerOf(c).submission / lewdRules.master_tool.submission_dc_per)
 }
 
 export function escapeDc(state: GameState): number {

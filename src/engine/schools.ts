@@ -7,7 +7,7 @@
 
 import { BIND_KINDS, lewdRules, type BindKind, type LewdSchool, type LockGrade, type LustPerk, type Mods } from './data'
 import { gearRules } from './gear'
-import { lewdOf } from './lewd'
+import { lewdPowerOf } from './lewd'
 import { PARASITE_LOCK } from './parasites'
 import { matches, perksOf, type CheckCtx } from './perks'
 import { contractOf } from './tattoos'
@@ -119,7 +119,7 @@ export function bindModifiers(c: Character, ctx: CheckCtx): { label: string; val
   const binds = bindsOf(c)
   if (!binds.length) return []
   const r = lewdRules.two_face
-  const ease = Math.floor(lewdOf(c).endurance / r.endurance_per)
+  const ease = Math.floor(lewdPowerOf(c).endurance / r.endurance_per)
   const out: { label: string; value: number }[] = []
   for (const b of binds) {
     const k = r.kinds[b.kind]
@@ -185,7 +185,7 @@ export function outfitModifiers(c: Character, ctx: CheckCtx): { label: string; v
   const r = lewdRules.outfit_two_face
   const n = adultOutfitPieces(c)
   if (!n || !ctx.kind || !r.penalty_kinds.includes(ctx.kind) || !ctx.vsTags?.some((t) => r.penalty_tags.includes(t))) return []
-  const value = Math.max(0, Math.min(r.penalty_max, n * r.penalty_per) - Math.floor(lewdOf(c).endurance / r.endurance_per))
+  const value = Math.max(0, Math.min(r.penalty_max, n * r.penalty_per) - Math.floor(lewdPowerOf(c).endurance / r.endurance_per))
   return value ? [{ label: `淫服（${n} 件）`, value: -value }] : []
 }
 

@@ -29,7 +29,7 @@ import { applyMarking, applyMasterEventResponse, applyPermit, applyReturn, apply
 import { applyInteraction } from './interactions'
 import { applyPatron } from './brothel'
 import { applyWork } from './work'
-import { bandName, currentRegion, exposureAt, LEWD_KEYS, lewdOf } from './lewd'
+import { bandName, currentRegion, exposureAt, LEWD_KEYS, lewdPowerOf } from './lewd'
 import { applyCraft, applyMake, craftPart, parseCraftTarget } from './craft'
 import { applyProduce } from './recipes'
 import { applyInvent } from './invention'
@@ -289,7 +289,7 @@ const clamp = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, v
 function lewdModifiers(state: GameState, c: Character, kind: string, vsTags?: string[]): { label: string; value: number }[] {
   const out: { label: string; value: number }[] = []
   if (kind === 'flatter' || kind === 'seduce') {
-    const v = lewdOf(c).lewdness
+    const v = lewdPowerOf(c).lewdness
     const bonus = v >= 80 ? 2 : v >= 60 ? 1 : 0
     if (bonus) out.push({ label: `淫亂（${bandName('lewdness', v)}）`, value: bonus })
   }

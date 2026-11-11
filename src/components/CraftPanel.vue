@@ -2,7 +2,9 @@
 import { blueprintName, blueprintRules } from '@/engine/blueprints'
 import { computed, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
-import { canCraftHere, commissionHere, craftPlan, craftRarity, craftTarget, forgeOf, makeTarget, outfitCommission, selfFeeName, type AuxItem } from '@/engine/craft'
+import { canCraftHere, commissionHere, craftPlan, craftRarity, craftTarget, forgeOf, isAdultCraft, makeTarget, outfitCommission, selfFeeName, selfLewdBonus, type AuxItem } from '@/engine/craft'
+import { lewdName } from '@/engine/lewd'
+import type { LewdStat } from '@/engine/types'
 import { craftForKind, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import {
   baseShown, baseSlotName, baseType, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, MATERIAL_KIND_NAME, rarityName, rarityPoints, sortBaseTypes, type BaseSlot,
@@ -47,7 +49,8 @@ const crafter = computed(() => who.value.find((w) => w.member.id === crafterId.v
 // ---- 部位 → 類型 → 底材 ----
 // 委託：只列這間店做得出來的底材（鐵匠鋪：金屬、木材；裁縫店：皮革、布料；珠寶店：寶石；成人向服裝只在成人用品店）；自己動手：全部
 const bases = computed(() => Object.entries(gearRules.bases)
-  .filter(([id, b]) => !b.restraint && !b.exclusive && baseShown(id) && (make.value || commissionHere(s.value, id)))
+  // 拘束具只能自己動手打造（委託在成人用品店的訂製畫面）；詛咒具這類專屬底材不能打造
+  .filter(([id, b]) => !b.exclusive && (!b.restraint || make.value) && baseShown(id) && (make.value || commissionHere(s.value, id)))
   .map(([id, b]) => ({ id, ...b, type: baseType(id) }))
   .sort((a, b) => a.price - b.price))
 const slots = computed(() => [
@@ -135,7 +138,15 @@ function addAux() {
   aux.value.push({ name: auxPick.value, qty: 1 })
   auxPick.value = ''
 }
-const opts = computed(() => ({ ...(usePick.value ? { use: usePick.value } : {}), ...(buy.value ? { buy: true } : {}) }))
+// 自己打造成人向服裝、拘束具：另外選一項慾望指標，加成照做的人自己的指標（craft.ts 的 selfLewdBonus）
+const lewdPick = ref<LewdStat | ''>('')
+const lewdStats = computed(() => (make.value && isAdultCraft(base.value)
+  ? outfitCommission().stats.map((st) => ({ st, bonus: selfLewdBonus(crafter.value, st, base.value, mat.value) }))
+  : []))
+const opts = computed(() => ({
+  ...(usePick.value ? { use: usePick.value } : {}), ...(buy.value ? { buy: true } : {}),
+  ...(lewdPick.value && lewdStats.value.some((x) => x.st === lewdPick.value && x.bonus > 0) ? { lewd: lewdPick.value } : {}),
+}))
 const plan = computed(() => craftPlan(s.value, base.value, mat.value, aux.value, make.value ? crafter.value : undefined, opts.value))
 const skill = computed(() => craftRules.skills[plan.value.craft])
 /** 這間店有賣能做成這種材料的東西 */
@@ -279,6 +290,15 @@ function craft() {
     <!-- 成品 -->
     <div class="result">
       <h3>{{ name }} <span class="muted">{{ slotLabel(gearRules.bases[base]!.slot) }}・{{ type }}</span></h3>
+      <div v-if="lewdStats.length" class="lewd-row">
+        <label>慾望指標
+          <select v-model="lewdPick">
+            <option value="">不加</option>
+            <option v-for="x in lewdStats" :key="x.st" :value="x.st" :disabled="!x.bonus">{{ lewdName(x.st) }} +{{ x.bonus }}</option>
+          </select>
+        </label>
+        <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：委託的加成（依材料等級 +4～+10）× 做的人自己那一項的基本值 ÷ 100。委託成人用品店照材料等級給滿。" />
+      </div>
       <div :class="line ? 'stat' : 'muted'">
         數值：{{ line || '這個材料做出來沒有加成' }}<template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>
       </div>
@@ -372,6 +392,7 @@ table { width: 100%; border-collapse: collapse; }
 .kv { display: flex; flex-wrap: wrap; gap: 4px 16px; }
 .aux-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .aux-row .qty { width: 46px; }
+.lewd-row { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
 .aux-row .x { padding: 0 4px; }
 .warn { color: var(--danger); }
 .blockers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
