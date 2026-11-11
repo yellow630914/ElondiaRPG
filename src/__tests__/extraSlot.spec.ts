@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { creationSlots, EXTRA_SLOT, gearName, generateLoadout, slotsFor } from '@/engine/gear'
+import { creationSlots, EXTRA_SLOT, EXTRA_SLOTS, gearName, gearRules, generateLoadout, SLOTS, slotName, slotsFor } from '@/engine/gear'
 import { forceEquip } from '@/engine/forcedGear'
 import { enterLocation } from '@/engine/grid'
 import { putOn } from '@/engine/inventory'
@@ -19,6 +19,14 @@ function game(): GameState {
 const spec = (base: string, material = 'leather') => ({ base, material })
 
 describe('額外飾品欄', () => {
+  it('兩格額外飾品欄都在 gear.json 的 slots 裡（有名字、SLOTS 列得到）', () => {
+    for (const s of EXTRA_SLOTS) {
+      expect(SLOTS).toContain(s)
+      expect(slotName(s)).toBe('額外飾品')
+    }
+    expect(Object.keys(gearRules.slots)).toHaveLength(18)
+  })
+
   it('飾品與拘束具可以放，護具與服裝不行；原本的部位滿了才放額外飾品欄', () => {
     expect(slotsFor(spec('ring_swift', 'copper'))).toEqual(['ring_1', 'ring_2', 'extra_1', 'extra_2'])
     expect(slotsFor(spec('blindfold'))).toContain(EXTRA_SLOT)

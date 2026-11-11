@@ -5,7 +5,11 @@ import { enterLocation, standOn } from '@/engine/grid'
 import { equipItem, unequipItem } from '@/engine/inventory'
 import { pcOf } from '@/engine/party'
 import { gearCheckModifiers } from '@/engine/perks'
-import { cutLock, keysFor, parseUnbindTarget, stuckRestraint, uncurse, uncurseFee } from '@/engine/restraints'
+import { cursedGearOf, cutLock, keysFor, parseUnbindTarget, stuckRestraint, uncurse, uncurseFee } from '@/engine/restraints'
+import { cellAt, currentArea, move } from '@/engine/grid'
+import { gearRules } from '@/engine/gear'
+import { fusionCandidates } from '@/engine/fusion'
+import { arriveAt } from './helpers/travel'
 import { addItem, newGame } from '@/engine/state'
 import { baseReport } from '@/engine/town'
 import { notForSale } from '@/engine/trade'
@@ -65,5 +69,52 @@ describe('詛咒具', () => {
     expect(cursed.length).toBe(13)
     for (const i of cursed) expect(notForSale(i), i.name).toBe(true)
     expect(itemDef('產卵肛塞')!.gear!.lock).toBe('rune')
+  })
+
+  it('神殿的「解開詛咒具」列出隊上每一件與價錢；淫器合煉不收詛咒具', () => {
+    const state = game()
+    const pc = pcOf(state)
+    expect(cursedGearOf(state)).toEqual([])
+    addItem(state.inventory, '壓制項圈', 2)
+    equipItem(state, '壓制項圈', pc.id)
+    const slot = slotOf(state, '壓制項圈')
+    expect(cursedGearOf(state)).toEqual([{ member: pc.id, memberName: pc.name, slot, name: '壓制項圈', fee: lewdRules.unbind.uncurse!.fee_cc.rune }])
+    standOn(state, 'adult_shop')
+    expect(fusionCandidates(state).restraints).not.toContain('壓制項圈')
+  })
+
+  it('寶箱的詛咒具扣上來時，換下來的裝備放回行囊（寶箱裡還有別的東西也一樣）', () => {
+    const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 3, gender: '女', body: 'fem' })
+    enterLocation(state)
+    arriveAt(state, 'snake_creek')
+    const pc = pcOf(state)
+    addItem(state.inventory, '姿勢項圈', 1)
+    equipItem(state, '姿勢項圈', pc.id)
+    const chests = gearRules.chests as unknown as Record<string, { items: [string, number][] } | string>
+    const saved = Object.fromEntries(Object.entries(chests).filter(([, v]) => typeof v === 'object').map(([k, v]) => [k, (v as { items: [string, number][] }).items]))
+    try {
+      for (const k of Object.keys(saved)) (chests[k] as { items: [string, number][] }).items = [['壓制項圈', 1], ['治療藥劑', 1]]
+      const area = currentArea(state)
+      area.layer = 0
+      let opened = false
+      for (let i = 0; i < area.cells.length && !opened; i++) {
+        if (area.cells[i]!.kind !== 'floor') continue
+        const x = i % area.width, y = Math.floor(i / area.width)
+        for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]] as const) {
+          if (cellAt(area, x + dx, y + dy)?.kind !== 'floor') continue
+          state.position = { area: area.key, x, y }
+          area.cells[(y + dy) * area.width + x + dx] = { kind: 'chest', level: 3 } as never
+          move(state, dx, dy)
+          opened = true
+          break
+        }
+      }
+      expect(opened).toBe(true)
+    } finally {
+      for (const [k, v] of Object.entries(saved)) (chests[k] as { items: [string, number][] }).items = v
+    }
+    expect(pc.gear!.accessory?.name).toBe('壓制項圈')
+    expect(state.inventory.find((i) => i.name === '姿勢項圈')?.qty).toBe(1)
+    expect(state.inventory.find((i) => i.name === '治療藥劑')?.qty ?? 0).toBeGreaterThan(0)
   })
 })
