@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { attrOf } from '@/engine/character'
 import { itemDef, lewdRules } from '@/engine/data'
 import { commissionHere, craftPlan, isAdultCraft, makeTarget, outfitLewdBonus, selfLewdBonus, setupMake } from '@/engine/craft'
-import { bonusesOff, gearLewdOf } from '@/engine/gear'
+import { bonusesOff, gearLewdOf, gearRules } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { gearLewd, lewdOf, lewdPower, lewdPowerOf } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
@@ -59,9 +59,12 @@ describe('打造拘束具', () => {
 
   it('自己打造的慾望指標加成照自己那一項的基本值打折', () => {
     const full = outfitLewdBonus('leather_cuffs', 'leather')!
-    expect(selfLewdBonus({ lewd: { lewdness: 0, sensitivity: 0, endurance: 0, submission: 50 } }, 'submission', 'leather_cuffs', 'leather')).toBe(Math.round(full / 2))
+    expect(selfLewdBonus({ lewd: { lewdness: 0, sensitivity: 0, endurance: 0, submission: 50 } }, 'submission', 'leather_cuffs', 'leather')).toBe(Math.round((full + 1) / 2))
     expect(selfLewdBonus({ lewd: { lewdness: 0, sensitivity: 0, endurance: 0, submission: 0 } }, 'submission', 'leather_cuffs', 'leather')).toBe(0)
-    expect(selfLewdBonus({ lewd: { lewdness: 0, sensitivity: 0, endurance: 0, submission: 100 } }, 'submission', 'leather_cuffs', 'leather')).toBe(full)
+    expect(selfLewdBonus({ lewd: { lewdness: 0, sensitivity: 0, endurance: 0, submission: 100 } }, 'submission', 'leather_cuffs', 'leather')).toBe(full + 1)
+    // 指標 100 自己做比委託多 1～2：第 1、2 級 +1，第 3 級以上 +2
+    const s100 = { lewd: { lewdness: 0, sensitivity: 0, endurance: 0, submission: 100 } }
+    expect([1, 2, 3, 4].map((t) => { const m = Object.entries(gearRules.materials).find(([, x]) => x.kind === 'leather' && x.tier === t)![0]; return selfLewdBonus(s100, 'submission', 'leather_cuffs', m) })).toEqual([5, 7, 10, 12])
     // 一般裝備不能加
     const state = game()
     const pc = pcOf(state)

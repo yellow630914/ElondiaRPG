@@ -630,7 +630,7 @@ OUTFIT_TWO_FACE = {
 }
 # 淫服訂做改成成人用品店的委託打造（2026-11）：lewd.json 的 outfit_commission
 OUTFIT_COMMISSION = {
-    "$comment": "成人向服裝的委託打造（docs/LEWD_STATS.md 第 25 節）：成人向服裝（底材的 outfit = adult）只在 shop 這種店委託打造，DC、材料、價格都和一般的委託打造一樣；可以另外選一項慾望指標（stats），加成依材料等級（bonus_by_tier：第 1、2、3、4 級以上）。",
+    "$comment": "成人向服裝與拘束具的委託打造（docs/LEWD_STATS.md 第 25 節）：成人向服裝（底材的 outfit = adult）與拘束具（restraint，exclusive 的除外）只在 shop 這種店委託打造，DC、材料、價格都和一般的委託打造一樣；可以另外選一項慾望指標（stats），加成依材料等級（bonus_by_tier：第 1、2、3、4 級以上）。自己動手打造時加成 = (bonus_by_tier + self_extra_by_tier) × 做的人自己那一項的基本值 ÷ 100：指標 100 的人比委託多 1～2。",
     "shop": "adult_shop",
     "stats": [
         "lewdness",
@@ -643,7 +643,8 @@ OUTFIT_COMMISSION = {
         6,
         8,
         10
-    ]
+    ],
+    "self_extra_by_tier": [1, 1, 2, 2]
 }
 LUST = lambda x: {"offense": {"lust": x}}
 AUCTION_ITEMS = [

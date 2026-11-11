@@ -432,7 +432,11 @@ export function parseMakeTarget(state: GameState, target?: string): { crafter: C
 export function selfLewdBonus(crafter: Pick<Character, 'lewd'>, stat: LewdStat, base: string, material: string): number {
   const full = outfitLewdBonus(base, material)
   if (!full) return 0
-  return Math.round(full * Math.min(100, Math.max(0, baseLewd(crafter)[stat] ?? 0)) / 100)
+  // 指標 100 的人比委託多一點（self_extra_by_tier，依材料等級 +1～+2）
+  const extra = outfitCommission().self_extra_by_tier ?? []
+  const tier = gearRules.materials[material]?.tier ?? 1
+  const top = full + (extra.length ? extra[Math.min(tier, extra.length) - 1] ?? 0 : 0)
+  return Math.round(top * Math.min(100, Math.max(0, baseLewd(crafter)[stat] ?? 0)) / 100)
 }
 
 export function setupMake(state: GameState, target?: string) {

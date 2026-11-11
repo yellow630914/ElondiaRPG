@@ -297,7 +297,7 @@ function craft() {
             <option v-for="x in lewdStats" :key="x.st" :value="x.st" :disabled="!x.bonus">{{ lewdName(x.st) }} +{{ x.bonus }}</option>
           </select>
         </label>
-        <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：委託的加成（依材料等級 +4～+10）× 做的人自己那一項的基本值 ÷ 100。委託成人用品店照材料等級給滿。" />
+        <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：（委託的加成 + 1～2）× 做的人自己那一項的基本值 ÷ 100：指標 100 時第 1、2、3、4 級以上分別是 +5、+7、+10、+12，比成人用品店委託（+4、+6、+8、+10）多一點。" />
       </div>
       <div :class="line ? 'stat' : 'muted'">
         數值：{{ line || '這個材料做出來沒有加成' }}<template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>

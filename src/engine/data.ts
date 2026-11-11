@@ -2544,7 +2544,7 @@ export const lewdRules = lewdJson as unknown as {
   }
   /** shop：在哪一種店的格子訂做（地下街的拘束具店；沒寫時是裁縫店） */
   /** 成人向服裝的委託打造：哪種店、可以加的慾望指標、依材料等級的加成（docs/LEWD_STATS.md 第 25 節） */
-  outfit_commission: { shop: string; stats: LewdStat[]; bonus_by_tier: number[] }
+  outfit_commission: { shop: string; stats: LewdStat[]; bonus_by_tier: number[]; self_extra_by_tier?: number[] }
   auction: {
     lots: number; start_ratio: number; rival_ratio: [number, number]; step: number; consign_ratio: [number, number]; consign_fee: number
     watch_chance: number; watch_flag: string; pool: [string, number][]
