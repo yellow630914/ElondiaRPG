@@ -103,7 +103,7 @@
     "lust_surge": { "name": "情慾高漲", "kind": "buff", "lust_tick": 8, "mods": { "damage": 1 } },
     "charm_veil": { "name": "魅惑光環", "kind": "buff", "attacked_disadvantage": true },
     "charm_glow": { "name": "魅惑的光", "kind": "buff", "lust_tick": 5 },
-    "pain_pleasure": { "name": "痛即是悅", "kind": "buff", "convert": 0.5 },
+    "pain_pleasure": { "name": "痛即是悅", "kind": "buff", "convert": 0.3 },
     "guarded": { "name": "受到侍奉", "kind": "buff", "guard": 0.5, "charges": 1 },
     "enduring": { "name": "忍耐", "kind": "buff", "lust_max": 0.5, "lust_hold": true },
     "groveling": { "name": "跪伏", "kind": "buff", "mods": { "dr": 2 } },

@@ -181,7 +181,7 @@ describe('慾望戰鬥：技能', () => {
     expect(after.filter((t) => t.actor === me.id && t.action === '情焰')).toEqual([])
   })
 
-  it('痛即是悅：受到的生命傷害一半改成慾望；肉盾侍奉：攻擊由侍奉者承受', () => {
+  it('痛即是悅：受到的生命傷害三成改成慾望；肉盾侍奉：攻擊由侍奉者承受', () => {
     const { state, me, foe } = fight([], [['goblin', 2]])
     myTurn(state, me)
     addItem(state.inventory, '法術卷軸（普通）', 2)
@@ -190,7 +190,7 @@ describe('慾望戰鬥：技能', () => {
     act(state, { type: 'item', item: '法術卷軸（普通）', target: foe.id })
     const lost = 500 - foe.hp
     expect(foe.lust).toBeGreaterThan(0)
-    expect(Math.abs((foe.lust ?? 0) - lost)).toBeLessThanOrEqual(1)
+    expect(Math.abs((foe.lust ?? 0) - (lost + (foe.lust ?? 0)) * 0.3)).toBeLessThanOrEqual(1)
 
     myTurn(state, me)
     const other = state.combat!.combatants.find((c) => c.side === 'enemy' && c !== foe)!
