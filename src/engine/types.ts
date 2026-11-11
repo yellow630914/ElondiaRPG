@@ -235,7 +235,7 @@ export interface Report {
 
 /** 裝備欄位（gear.json 的 slots） */
 export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'ring_1' | 'ring_2'
-  | 'piercing_1' | 'piercing_2' | 'leg_accessory' | 'underwear_top' | 'underwear_bottom' | 'extra_1' | 'extra_2'
+  | 'piercing_1' | 'piercing_2' | 'leg_accessory' | 'underwear_top' | 'underwear_bottom' | 'extra_1' | 'extra_2' | 'extra_3' | 'extra_4' | 'extra_5' | 'extra_6' | 'extra_7' | 'extra_8'
 
 /** 一件裝備的組成：底材 × 材料（＋稀有度與附魔） */
 export interface GearSpec {
@@ -927,6 +927,8 @@ export interface GameOptions {
   lustMult?: number
   /** 拘束具雙面效應的全身上限（docs/LEWD_STATS.md 第 7 節）：命中、迴避、豁免、傷害、減傷各一項；行動點回復；先攻 */
   bindCapStat?: number
+  /** 額外飾品欄的格數（0～8，預設 2） */
+  extraSlots?: number
   bindCapAp?: number
   bindCapInit?: number
   /** 慾望滿了高潮時失去最大生命的百分比：我方、小怪（與 NPC 敵人）、頭目（combat.ts 的 climax） */

@@ -211,7 +211,7 @@ let repairNotice: string | null = null
 function load(s: GameState): GameState {
   migrate(s)
   // 壞檔救濟：被帶回主人的家時沒有結束的旅途（v0.5.1 以前）
-  repairNotice = [road.repairStrandedRoad(s), ...inventory.enforceClassWeapons(s).map((x) => `${x}。`)].filter(Boolean).join(' ') || null
+  repairNotice = [road.repairStrandedRoad(s), ...inventory.enforceClassWeapons(s).map((x) => `${x}。`), ...inventory.enforceExtraSlots(s).map((x) => `${x}。`)].filter(Boolean).join(' ') || null
   // 自訂內容刪掉的特殊任務：中斷，任務同行的夥伴離隊
   story.pruneStories(s)
   // 自訂內容刪掉的事件：等待中的作廢
@@ -1051,6 +1051,7 @@ export const useGame = defineStore('game', () => {
     clearUndo()
     stopWalk()
     state.value = newGame({ name, race, classId, ...(bonus ? { bonus } : {}), ...profile })
+    inventory.enforceExtraSlots(state.value)
     state.value.world = { id: content.active, name: content.activeName }
     grid.enterLocation(state.value)
     population.ensureRoster(state.value, state.value.location)
@@ -1653,6 +1654,11 @@ export const useGame = defineStore('game', () => {
       // 數值規則整組換掉；其他的規則（難度、自訂難度、勾選的規則）照留
       const rest = Object.fromEntries(Object.entries(state.value.options ?? {}).filter(([k]) => !(k in RULE_DEFS)))
       state.value.options = { defeatLoot: 'half', ...rest, ...sanitizeRules(rules) }
+      // 額外飾品欄調少時，超出的格子裡的裝備收進行囊（寫一筆日誌）
+      if (inventory.extraOverflow(state.value)) {
+        run((s) => inventory.stowedReport(s, inventory.enforceExtraSlots(s)), { narrate: false })
+        return
+      }
       save()
     },
     /** 這個存檔允不允許在遊戲中更換主角的身分標籤 */

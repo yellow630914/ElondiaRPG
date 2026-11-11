@@ -10,7 +10,7 @@ import {
   abilities, attrName, classDef, raceName, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK, CURSE_LOCK, lockedByThing,
   type ItemIntel, type ItemUse, type LockGrade,
 } from './data'
-import { classWeaponBlock, gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, registerGear, slotNameFor, slotsFor, syncGear, wearName } from './gear'
+import { EXTRA_SLOTS, classWeaponBlock, gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, registerGear, setExtraSlotCount, slotNameFor, slotOpen, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
 import { discoverLead, hiddenLeadFor, leadPoolOn } from './leads'
 import type { Lead } from './types'
@@ -413,9 +413,43 @@ export function setClassWeapons(state: GameState, on: boolean): Report | null {
 }
 
 /**
+ * 存檔規則「額外飾品欄的格數」：設定目前開放的格數，超出的格子裡的裝備收進行囊（上了鎖或主人強迫的留在身上，直到解開）。
+ * 讀檔、開新遊戲、改規則、夥伴入隊時呼叫；回傳日誌用的說明
+ */
+export function enforceExtraSlots(state: GameState, members: Character[] = state.party): string[] {
+  setExtraSlotCount(gameRule(state, 'extraSlots'))
+  const out: string[] = []
+  for (const m of members) {
+    for (const slot of EXTRA_SLOTS) {
+      const g = m.gear?.[slot]
+      if (!g || slotOpen(slot) || g.lock || g.locked) continue
+      delete m.gear![slot]
+      recalc(m)
+      addItem(state.inventory, gearSpecOf(state, g.name) ? g.name : registerGear(state, g.spec, g.name), 1)
+      out.push(`${m.name}的${g.name}收進了行囊（額外飾品欄只開 ${gameRule(state, 'extraSlots')} 格）`)
+    }
+  }
+  return out
+}
+
+/**
  * 存檔規則「職業武器限制」（docs/ITEMS.md 第 2.2 節）：主手拿著職業不能用的武器時卸下、放回行囊。
  * 打開規則時、讀檔時、有人入隊時呼叫；規則關著或沒有人要卸時回傳空陣列。被鎖住的（主人強迫的）不動。
  */
+/** 設定目前開放的額外飾品欄格數，回傳有沒有人的裝備在關掉的格子裡、要收起來（不動裝備） */
+export function extraOverflow(state: GameState): boolean {
+  setExtraSlotCount(gameRule(state, 'extraSlots'))
+  return state.party.some((m) => EXTRA_SLOTS.some((slot) => { const g = m.gear?.[slot]; return !!g && !slotOpen(slot) && !g.lock && !g.locked }))
+}
+
+/** 改存檔規則「額外飾品欄的格數」後收進行囊的裝備：寫一筆日誌 */
+export function stowedReport(state: GameState, stowed: string[]): Report {
+  const report = itemReport(state, 0)
+  report.outcome.summary = `改了存檔規則「額外飾品欄的格數」：${stowed.join('；')}。`
+  report.outcome.tags = ['額外飾品欄']
+  return commitReport(state, report)
+}
+
 export function enforceClassWeapons(state: GameState, members: Character[] = state.party): string[] {
   if (!state.options?.classWeapons) return []
   const out: string[] = []

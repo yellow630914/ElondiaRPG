@@ -52,7 +52,7 @@ export function restrainPc(state: GameState, report: Report, item: string, lock:
   const pc = pcOf(state)
   const options = freeSlotsFor(pc, spec)
   const native = options.filter((x) => !isExtraSlot(x))
-  // 原本的部位都被鎖住時放額外飾品欄（兩格，空的優先）
+  // 原本的部位都被鎖住時放額外飾品欄（開放的格子，空的優先）
   const extras = options.filter(isExtraSlot)
   const slot = native.find((x) => !pc.gear?.[x]) ?? native[0] ?? extras.find((x) => !pc.gear?.[x]) ?? extras[0]
   // 種族穿不了（人馬族戴不上步鍊、腳鐐這類戴在腳上的）

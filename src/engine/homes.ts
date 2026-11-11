@@ -9,7 +9,7 @@ import { snapshot } from './character'
 import { craftRules, geography, homeRules, itemDef, lewdRules, locationById, type FurniturePlace, type FurnitureSpec, type HomeDistrict } from './data'
 import { blocksFor, placeAt, position, settlementKey, type Area, type Cell } from './grid'
 import { npcRecord, registerNpc } from './npcs'
-import { enforceClassWeapons } from './inventory'
+import { enforceClassWeapons, enforceExtraSlots } from './inventory'
 import { partyMax, partyRoom } from './party'
 import type { Rng } from './rng'
 import { addHours, addItem, commitReport, newReportId, player, removeItem, withRng } from './state'
@@ -545,7 +545,7 @@ export function unparkMember(state: GameState, id: string, stowed: string[] = []
   delete rec.stayingSince
   delete rec.at
   state.party.push(m)
-  stowed.push(...enforceClassWeapons(state, [m]))
+  stowed.push(...enforceClassWeapons(state, [m]), ...enforceExtraSlots(state, [m]))
   return m
 }
 
