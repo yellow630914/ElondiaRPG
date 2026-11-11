@@ -504,7 +504,7 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const master = contractOf(ch)?.master
     if (master && fighters.some((o) => o.side === f.side && (o.id === master || o.npcId === master) && o !== f)) addMods(t.master)
     if (bound) addMods(t.bound)
-    const tf = twoFaceCombat(ch)
+    const tf = twoFaceCombat(ch, state)
     addMods(tf.mods)
     // 淫服的雙面效應：縱欲、露出派每件淫服有加成，禁慾派反過來
     const of = outfitCombat(ch)

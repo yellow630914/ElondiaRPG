@@ -13,7 +13,7 @@ import { contractTerms, makeContract, type MarkChoice } from './slavery'
 import { clearContract, contractOf, setContract } from './tattoos'
 import type { Character, CompanionChange, ContractRef, GameState, MarkTerms, NpcRecord, Report } from './types'
 import { addStrict, sendToMasterHome, syncMasterHome } from './masterHome'
-import { enforceClassWeapons } from './inventory'
+import { enforceClassWeapons, enforceExtraSlots } from './inventory'
 
 const JOIN_TEXT: Record<Bond, string> = {
   hired: '在酒館受雇加入隊伍的冒險夥伴。',
@@ -123,7 +123,7 @@ export function joinParty(state: GameState, rec: NpcRecord, bond: Bond, report?:
   }
   state.party.push(member)
   // 存檔規則「職業武器限制」：帶著職業不能用的武器入隊時，武器收進行囊
-  const stowed = enforceClassWeapons(state, [member])
+  const stowed = [...enforceClassWeapons(state, [member]), ...enforceExtraSlots(state, [member])]
   if (report && stowed.length) (report.stowed ??= []).push(...stowed)
   if (namedNpcs.some((n) => n.id === rec.id) && !state.recruited.includes(rec.id)) state.recruited.push(rec.id)
   if (report && !report.party.some((p) => p.id === member.id)) report.party.push(snapshot(member, undefined, pcOf(state)))

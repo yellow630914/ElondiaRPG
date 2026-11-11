@@ -1,8 +1,8 @@
-import { describe, expect, it } from 'vitest'
-import { creationSlots, EXTRA_SLOT, EXTRA_SLOTS, gearName, gearRules, generateLoadout, SLOTS, slotName, slotsFor } from '@/engine/gear'
+import { afterEach, describe, expect, it } from 'vitest'
+import { creationSlots, EXTRA_SLOT, EXTRA_SLOTS, gearName, gearRules, generateLoadout, setExtraSlotCount, SLOTS, slotName, slotsFor } from '@/engine/gear'
 import { forceEquip } from '@/engine/forcedGear'
 import { enterLocation } from '@/engine/grid'
-import { putOn } from '@/engine/inventory'
+import { enforceExtraSlots, extraOverflow, putOn } from '@/engine/inventory'
 import { pcOf } from '@/engine/party'
 import { Rng } from '@/engine/rng'
 import { bindModifiers } from '@/engine/schools'
@@ -19,12 +19,14 @@ function game(): GameState {
 const spec = (base: string, material = 'leather') => ({ base, material })
 
 describe('額外飾品欄', () => {
-  it('兩格額外飾品欄都在 gear.json 的 slots 裡（有名字、SLOTS 列得到）', () => {
+  afterEach(() => setExtraSlotCount(2))
+
+  it('八格額外飾品欄都在 gear.json 的 slots 裡（有名字、SLOTS 列得到）', () => {
     for (const s of EXTRA_SLOTS) {
       expect(SLOTS).toContain(s)
       expect(slotName(s)).toBe('額外飾品')
     }
-    expect(Object.keys(gearRules.slots)).toHaveLength(18)
+    expect(Object.keys(gearRules.slots)).toHaveLength(24)
   })
 
   it('飾品與拘束具可以放，護具與服裝不行；原本的部位滿了才放額外飾品欄', () => {
@@ -67,5 +69,53 @@ describe('額外飾品欄', () => {
     const rng = new Rng(1)
     const worn = Array.from({ length: 30 }, () => generateLoadout('fighter', 15, rng)).filter((g) => g[EXTRA_SLOT])
     expect(worn.length).toBeGreaterThan(5)
+  })
+
+  it('存檔規則調多：可以放進更多格；調成 0：沒有額外飾品欄', () => {
+    const state = game()
+    state.options = { ...state.options!, extraSlots: 4 }
+    enforceExtraSlots(state)
+    expect(slotsFor(spec('ring_swift', 'copper'))).toEqual(['ring_1', 'ring_2', 'extra_1', 'extra_2', 'extra_3', 'extra_4'])
+    const pc = pcOf(state)
+    const ring = spec('ring_swift', 'copper')
+    for (let i = 0; i < 6; i++) putOn(pc, gearName(ring), ring)
+    expect(pc.gear?.extra_4?.spec.base).toBe('ring_swift')
+    state.options = { ...state.options!, extraSlots: 0 }
+    enforceExtraSlots(state)
+    expect(slotsFor(ring)).toEqual(['ring_1', 'ring_2'])
+    expect(creationSlots('fighter').some((x) => EXTRA_SLOTS.includes(x.slot))).toBe(false)
+  })
+
+  it('調少時超出的格子收進行囊，上了鎖的留在身上', () => {
+    const state = game()
+    state.options = { ...state.options!, extraSlots: 4 }
+    enforceExtraSlots(state)
+    const pc = pcOf(state)
+    const ring = spec('ring_swift', 'copper')
+    const name = gearName(ring)
+    pc.gear!.extra_2 = { name, spec: ring }
+    pc.gear!.extra_3 = { name, spec: ring }
+    pc.gear!.extra_4 = { name: '眼罩', spec: spec('blindfold'), lock: 'white' }
+    const before = state.inventory.find((x) => x.name === name)?.qty ?? 0
+    state.options = { ...state.options!, extraSlots: 1 }
+    expect(extraOverflow(state)).toBe(true)
+    const lines = enforceExtraSlots(state)
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toContain('只開 1 格')
+    expect(pc.gear?.extra_2).toBeUndefined()
+    expect(pc.gear?.extra_3).toBeUndefined()
+    expect(pc.gear?.extra_4?.name).toBe('眼罩')
+    expect(state.inventory.find((x) => x.name === name)?.qty).toBe(before + 2)
+    // 再跑一次沒有東西要收
+    expect(extraOverflow(state)).toBe(false)
+    expect(enforceExtraSlots(state)).toEqual([])
+  })
+
+  it('預設 2 格：舊存檔沒有這個規則照兩格', () => {
+    const state = game()
+    delete state.options!.extraSlots
+    setExtraSlotCount(5)
+    enforceExtraSlots(state)
+    expect(slotsFor(spec('ring_swift', 'copper'))).toEqual(['ring_1', 'ring_2', 'extra_1', 'extra_2'])
   })
 })

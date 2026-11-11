@@ -132,7 +132,7 @@ const lewdItems = computed<StatItem[]>(() => {
   items.push({ label: '流派', value: schools.length ? schools.map(schoolName).join('、') : '沒有', note: schools.includes('servitude') ? (hasMaster(x) ? '有主人：隸從派全效' : '沒有主人：隸從派一半效果') : '' })
   const binds = bindsOf(x)
   if (binds.length) {
-    const tf = twoFaceCombat(x)
+    const tf = twoFaceCombat(x, s.value)
     items.push({
       label: '拘束',
       value: binds.map((b) => `${b.name}（${bindLabel(b.kind, b.bind)}${b.lock ? `・${lockName(b.lock)}` : ''}）`).join('、'),

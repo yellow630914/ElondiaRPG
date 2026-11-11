@@ -7,7 +7,7 @@ import { pruneParasites, refreshParasiteMarks } from './parasites'
 import { pruneLocations } from './pruneLocations'
 import { abilities, attributeRules, classDef, classes, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
-import { creationGear, gearRules, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
+import { creationGear, gearRules, setExtraSlotCount, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
 import { contractTerms, termsFromTemplate, type SlaveStart } from './slavery'
 import { backfillEventMemories, ensureRelationship, MEMORY_RULES_VERSION, recordMemory, setAffinity } from './social'
@@ -90,6 +90,8 @@ export function newGame(opts: NewGameOptions): GameState {
   const appearance = clip(lookAppearance(look, clip(opts.appearance, 400)), 600)
   const background = clip(opts.background, 800)
   // 建角時挑的裝備：不合法時（例如預算不夠）丟錯，畫面上會先擋下來
+  // 存檔規則「額外飾品欄的格數」：建角的欄位照這一局的規則
+  setExtraSlotCount(gameRule({ options: opts.options as GameOptions }, 'extraSlots'))
   if (opts.gear) {
     pc.gear = creationGear(opts.classId, opts.gear, Math.max(0, opts.gearBudget ?? gearRules.creation.default_budget), opts.race, !!opts.options?.classWeapons)
     syncGear(pc, classDef(opts.classId).weapon)

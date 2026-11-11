@@ -79,7 +79,7 @@ const filterText = (f: CheckFilter) => {
       :title="'⚙️ 雙面效應設定'" :kind="'rules'" :edited="edited" :dirty="dirty"
       @save="save" @discard="reset" @restore="restore"
     />
-    <HelpText text="拘束具（底材的「拘束」種類與程度 1～3，物品可以有自己的程度）平常是檢定的減值；修了任何慾望流派、而且上了鎖時，戰鬥中反轉成增益（乘上鎖的倍率，流派契合再乘）。慾望戰鬥關閉時沒有增益，減值照算。" />
+    <HelpText text="拘束具（底材的「拘束」種類與程度 1～3，物品可以有自己的程度）平常是檢定的減值；修了任何慾望流派、而且上了鎖時，戰鬥中反轉成增益（乘上鎖的倍率，流派契合再乘，每件無條件捨去）。全身加總的上限在存檔規則（設定的成人內容頁「拘束具增益上限」）。慾望戰鬥關閉時沒有增益，減值照算。" />
     <FoldSet>
       <template #legend>倍率</template>
       <div class="grid">

@@ -106,10 +106,32 @@ describe('雙面效應與鎖', () => {
     expect(twoFaceCombat(pc).active).toEqual([])
     pc.gear!.wrists!.lock = 'white'
     expect(twoFaceCombat(pc)).toMatchObject({ mods: { dr: 3 }, immune: ['disarmed'] })
+    // 倍率每件無條件捨去；全身加總照存檔規則封頂（預設減傷 3）
+    const open = { options: { bindCapStat: 20 } } as never
     pc.perks = ['school_bondage']
-    expect(twoFaceCombat(pc).mods.dr).toBe(4)
+    expect(twoFaceCombat(pc, open).mods.dr).toBe(3)
     pc.gear!.wrists!.lock = 'gold'
-    expect(twoFaceCombat(pc).mods.dr).toBe(Math.round(3 * 1.3 * 1.2))
+    expect(twoFaceCombat(pc, open).mods.dr).toBe(Math.floor(3 * 1.3 * 1.2))
+    expect(twoFaceCombat(pc).mods.dr).toBe(3)
+  })
+
+  it('雙面效應的全身上限：多件疊加照存檔規則封頂，1 × 1.56 不會變成 2', () => {
+    const pc = pcOf(game())
+    pc.perks = ['school_bondage', 'school_flesh']
+    for (const [slot, base] of [['wrists', 'armbinder'], ['accessory', 'collar_chain'], ['legs', 'leg_binder'], ['feet', 'ballet_boots'], ['piercing_1', 'shock_pads'], ['underwear_bottom', 'thrust_dildo']] as const) {
+      wear(pc, slot, base)
+      pc.gear![slot]!.lock = 'gold'
+    }
+    const free = twoFaceCombat(pc, { options: { bindCapStat: 20, bindCapAp: 5, bindCapInit: 20 } } as never)
+    // 每件行動點回復 1 × 1.56 捨去成 1：限制行走 3 兩件、持續刺激兩件 → 4
+    expect(free.mods.ap_regen).toBe(4)
+    expect(free.mods.dr).toBeGreaterThan(3)
+    const capped = twoFaceCombat(pc)
+    expect(capped.mods).toMatchObject({ dr: 3, ap_regen: 1 })
+    expect(capped.initiative).toBe(5)
+    const none = twoFaceCombat(pc, { options: { bindCapStat: 0, bindCapAp: 0, bindCapInit: 0 } } as never)
+    expect(none.mods.dr ?? 0).toBe(0)
+    expect(none.initiative).toBe(0)
   })
 
   it('上鎖用掉行囊裡的鎖，打開或卸下時放回來；程度 2 的眼罩不免疫致盲', () => {

@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { bonusesOff, classWeaponBlock, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
+import { bonusesOff, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
@@ -11,11 +11,13 @@ import { formatMoney } from '@/engine/money'
 import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { gameRule } from '@/engine/gameRules'
 import { characterBody } from '@/engine/look'
 import { VACUUM_TEXT, vacuumSides } from '@/engine/lewd'
 import GameIcon from '../ui/GameIcon.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
+import SlotButton from './SlotButton.vue'
 import { signed, SLOT_ICON } from './memberInfo'
 import { specRarity } from '../items/itemInfo'
 
@@ -31,8 +33,16 @@ const vacuumSlot = computed<Partial<Record<GearSlot, string>>>(() => {
 })
 const inCombat = computed(() => !!s.value.combat)
 
-const LEFT: GearSlot[] = ['head', 'accessory', 'body', 'underwear_top', 'wrists', 'main_hand', 'belt', 'legs', 'extra_1']
-const RIGHT: GearSlot[] = ['piercing_1', 'piercing_2', 'ring_1', 'ring_2', 'off_hand', 'underwear_bottom', 'leg_accessory', 'feet', 'extra_2']
+// 三組：武器與穿著（人形兩側，由上到下）、飾品、額外飾品
+const LEFT: GearSlot[] = ['head', 'body', 'underwear_top', 'wrists', 'main_hand']
+const RIGHT: GearSlot[] = ['belt', 'legs', 'underwear_bottom', 'feet', 'off_hand']
+const JEWELS: GearSlot[] = ['accessory', 'leg_accessory', 'ring_1', 'ring_2', 'piercing_1', 'piercing_2']
+// 額外飾品欄：存檔規則開放的格數；關掉的格子裡還有上了鎖的東西時也列出來（解開之後收進行囊）
+const extraOpen = computed(() => Math.min(EXTRA_SLOTS.length, gameRule(s.value, 'extraSlots')))
+const EXTRAS = computed(() => {
+  const used = EXTRA_SLOTS.reduce((n, slot, i) => (m.value.gear?.[slot] ? i + 1 : n), 0)
+  return EXTRA_SLOTS.slice(0, Math.max(extraOpen.value, used))
+})
 
 const selected = ref<GearSlot>('main_hand')
 const onlySlot = ref(true)
@@ -136,23 +146,23 @@ const totals = computed(() => {
 <template>
   <div class="equip">
     <div class="doll">
-      <div v-for="(col, ci) in [LEFT, RIGHT]" :key="ci" class="col" :class="ci ? 'right' : 'left'">
-        <button
-          v-for="slot in col" :key="slot" class="slot ghost"
-          :class="[{ sel: selected === slot, filled: m.gear?.[slot], blocked: blocked(slot), locked: lockedGear(m, slot) }, m.gear?.[slot] ? `r-${rarityOf(m.gear[slot]!.spec)}` : '']"
-          :title="blocked(slot) ? `${slotName(slot)}：這個種族無法使用` : m.gear?.[slot] ? `${m.gear[slot]!.name}\n${gearSummary(m.gear[slot]!.spec)}` : vacuumSlot[slot] ? `${slotName(slot)}：真空（${vacuumSlot[slot]}，外面那件會走光，曝露度 +1）` : slotName(slot)"
-          @click="selected = slot"
-        >
-          <span class="box">
-            <ItemIcon v-if="m.gear?.[slot] && !lockedGear(m, slot)" :name="m.gear[slot]!.name" :spec="m.gear[slot]!.spec" :size="24" />
-            <GameIcon v-else :name="lockedGear(m, slot) ? 'lock' : slotIcon(slot)" :size="20" />
-          </span>
-          <span class="txt"><span class="sn">{{ slotName(slot) }}</span><span class="in" :class="{ vacuum: !m.gear?.[slot] && vacuumSlot[slot] }">{{ blocked(slot) ? '無法使用' : m.gear?.[slot]?.name ?? (vacuumSlot[slot] ? '真空' : '—') }}</span></span>
-        </button>
+      <div class="sec-title">武器與穿著</div>
+      <div class="wear">
+        <div v-for="(col, ci) in [LEFT, RIGHT]" :key="ci" class="col" :class="ci ? 'right' : 'left'">
+          <SlotButton v-for="slot in col" :key="slot" :slot-id="slot" :member="m" :selected="selected === slot" :vacuum="vacuumSlot[slot]" :right="!!ci" @pick="selected = slot" />
+        </div>
+        <div class="fig"><BodyFigure :body="characterBody(m)" /></div>
       </div>
-      <div class="fig">
-        <BodyFigure :body="characterBody(m)" />
+      <div class="sec-title">飾品</div>
+      <div class="grid3">
+        <SlotButton v-for="slot in JEWELS" :key="slot" :slot-id="slot" :member="m" :selected="selected === slot" @pick="selected = slot" />
       </div>
+      <template v-if="EXTRAS.length">
+      <div class="sec-title">額外飾品 <span class="sec-note">開放 {{ extraOpen }} 格・存檔規則可調・拘束具放這裡只算減值</span></div>
+      <div class="grid3">
+        <SlotButton v-for="slot in EXTRAS" :key="slot" :slot-id="slot" :member="m" :selected="selected === slot" @pick="selected = slot" />
+      </div>
+      </template>
       <div class="totals"><span v-for="t in totals" :key="t" class="tag">{{ t }}</span></div>
     </div>
 
@@ -240,10 +250,17 @@ const totals = computed(() => {
 <style scoped>
 .equip { display: grid; grid-template-columns: 440px minmax(0, 1fr); gap: 18px; align-items: start; }
 .doll {
-  display: grid; grid-template-columns: 150px 1fr 150px; gap: 6px; padding: 14px 10px;
+  display: grid; gap: 6px; padding: 12px 10px;
   background: #3a2a1a; border: 3px solid #2a1a0e; box-shadow: inset 0 0 0 1px #c99a45, inset 0 0 30px #000; color: #efe4cc;
 }
 .col { display: grid; gap: 6px; align-content: start; }
+.wear { display: grid; grid-template-columns: 150px 1fr 150px; gap: 6px; }
+.wear .col.right { grid-column: 3; grid-row: 1; }
+.wear .fig { grid-column: 2; grid-row: 1; }
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sec-title { font-size: var(--fs-xs); color: #f0d083; letter-spacing: .1em; border-bottom: 1px solid #c99a4555; padding: 6px 2px 3px; display: flex; gap: 8px; align-items: baseline; }
+.sec-title:first-child { padding-top: 0; }
+.sec-note { color: #9a8768; letter-spacing: 0; }
 .slot {
   display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 6px; align-items: center; padding: 3px; text-align: left;
   background: #0006; border: 1px solid #ffffff14; border-radius: 2px; color: #efe4cc;
@@ -289,6 +306,6 @@ const totals = computed(() => {
 .delta.up { color: var(--good); } .delta.down { color: var(--danger); }
 .warn { color: var(--danger); margin-top: 2px; }
 @media (max-width: 1000px) { .equip { grid-template-columns: minmax(0, 1fr); } }
-@media (max-width: 520px) { .doll { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); padding: 10px 4px; } }
+@media (max-width: 520px) { .wear { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr); } .grid3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .doll { padding: 10px 4px; } }
 .in.vacuum { color: var(--accent); }
 </style>

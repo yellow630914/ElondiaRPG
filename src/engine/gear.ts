@@ -235,8 +235,19 @@ export function baseSlotName(slot: BaseSlot): string {
   return gearRules.slots[(group?.[0] ?? slot) as GearSlot] ?? slot
 }
 
-/** 額外飾品欄（docs/ITEMS.md 第 2 節）：首飾、戒指、穿孔飾品、腿部飾品，以及任何部位的拘束具都能放；兩格 */
-export const EXTRA_SLOTS: GearSlot[] = ['extra_1', 'extra_2']
+/** 額外飾品欄（docs/ITEMS.md 第 2 節）：首飾、戒指、穿孔飾品、腿部飾品，以及任何部位的拘束具都能放；最多 8 格，用幾格照存檔規則 extraSlots */
+export const EXTRA_SLOTS: GearSlot[] = ['extra_1', 'extra_2', 'extra_3', 'extra_4', 'extra_5', 'extra_6', 'extra_7', 'extra_8']
+/** 這個存檔開放幾格額外飾品欄（存檔規則 extraSlots；讀檔、開新遊戲、改規則時由 inventory.ts 的 enforceExtraSlots 設定） */
+let extraCount = 2
+export function setExtraSlotCount(n: number) {
+  extraCount = Math.max(0, Math.min(EXTRA_SLOTS.length, Math.round(n)))
+}
+/** 目前開放的額外飾品欄 */
+export function activeExtraSlots(): GearSlot[] {
+  return EXTRA_SLOTS.slice(0, extraCount)
+}
+/** 這一格現在能不能用：額外飾品欄超過存檔規則的格數就不能用 */
+export const slotOpen = (slot: GearSlot) => !isExtraSlot(slot) || activeExtraSlots().includes(slot)
 /** 第一格額外飾品欄（NPC 的隨機裝備只放這一格） */
 export const EXTRA_SLOT: GearSlot = 'extra_1'
 export const isExtraSlot = (slot: GearSlot) => EXTRA_SLOTS.includes(slot)
@@ -436,7 +447,7 @@ export function baseSlotsFor(baseId: string, race?: string): GearSlot[] {
   const slot = base.slot
   let own = [...(gearRules.slot_groups[slot] ?? [slot as GearSlot])]
   // 原本的部位排前面：原本的部位有空時先放那裡，都滿了才放額外飾品欄
-  const extra = fitsExtra(base) ? EXTRA_SLOTS : []
+  const extra = fitsExtra(base) ? activeExtraSlots() : []
   if (race === undefined) return [...own, ...extra]
   if (base.races?.length && !base.races.includes(race)) return []
   const rule = gearRules.races[race]
@@ -659,7 +670,7 @@ export function creationSlots(classId: string, race?: string, classWeapons = fal
   const listed: Partial<Record<GearSlot, string[]>> = { main_hand: t.main, off_hand: t.off, body: t.body }
   const out: CreationSlot[] = []
   for (const slot of SLOTS) {
-    if (blocked.has(slot)) continue
+    if (blocked.has(slot) || !slotOpen(slot)) continue
     const fromClass = listed[slot]
     if (fromClass) {
       // 職業清單，加上世界裡自建、放得進這個欄位的底材（護甲不能比職業的護甲類型重；清單是空的欄位不加）
@@ -706,6 +717,7 @@ export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> =
   head: 'armor', body: 'armor', legs: 'armor', wrists: 'armor', feet: 'armor', belt: 'armor',
   accessory: 'accessory', ring_1: 'accessory', ring_2: 'accessory', piercing_1: 'accessory', piercing_2: 'accessory', leg_accessory: 'accessory',
   underwear_top: 'accessory', underwear_bottom: 'accessory', extra_1: 'accessory', extra_2: 'accessory',
+  extra_3: 'accessory', extra_4: 'accessory', extra_5: 'accessory', extra_6: 'accessory', extra_7: 'accessory', extra_8: 'accessory',
 }
 
 /** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */
@@ -833,7 +845,7 @@ export function generateLoadout(classId: string, level: number, rng: Rng, race?:
   const extra = new Rng((rng.state ^ 0x5bd1e995) | 0)
   if (extra.chance(jewelChance)) {
     const base = extra.pick(Object.values(JEWELRY_BASES).flat())
-    if (!blocked.has(EXTRA_SLOT) && (!race || baseSlotsFor(base, race).includes(EXTRA_SLOT))) out[EXTRA_SLOT] = piece(base, rollTier(extra, gearRules.bases[base]!.kind, level))
+    if (slotOpen(EXTRA_SLOT) && !blocked.has(EXTRA_SLOT) && (!race || baseSlotsFor(base, race).includes(EXTRA_SLOT))) out[EXTRA_SLOT] = piece(base, rollTier(extra, gearRules.bases[base]!.kind, level))
   }
   return out
 }

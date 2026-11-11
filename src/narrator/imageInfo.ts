@@ -4,7 +4,7 @@
 import { bodyImageNotes } from '@/engine/pregnancy'
 import { className, genderName, lewdRules, raceImageName } from '@/engine/data'
 import { currentRegion, exposureAt, lewdOf, npcLewd, vacuumSides } from '@/engine/lewd'
-import { gearName, gearRules } from '@/engine/gear'
+import { gearName, gearRules, isExtraSlot } from '@/engine/gear'
 import { npcOutfit } from '@/engine/outfits'
 import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
@@ -164,7 +164,7 @@ function wornGear(gear: Partial<Record<GearSlot, EquippedGear>> | undefined, rac
     const hidden = !!over && !!gear?.[over]
     names.push(hidden ? `${g.name}（穿在裡面）` : g.name)
     // 額外飾品欄：照底材原本的部位（腿部飾品要拉遠構圖）
-    if (!hidden) visible.push(slot === 'extra_1' || slot === 'extra_2' ? gearRules.bases[g.spec?.base ?? '']?.slot ?? slot : slot)
+    if (!hidden) visible.push(isExtraSlot(slot) ? gearRules.bases[g.spec?.base ?? '']?.slot ?? slot : slot)
   }
   return { names, visible }
 }
