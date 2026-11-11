@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, type Ref } from 'vue'
 import WorldBar from './WorldBar.vue'
-import { abilities, className, classes, npcClassWeight, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, npcTags, NPC_TAG_GROUPS, type NpcKind, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
+import { abilities, lewdRules, className, classes, npcClassWeight, geography, companionRules, contractDef, describeCondition, describeStatus, enemies, genderName, raceName, tagDef, itemDef, itemRules, landmarks, landmarkTypes, locationById, MASTER_EVENT_POOLS, type MasterEventPool, npcs as namedNpcs, npcTags, NPC_TAG_GROUPS, type NpcKind, regionById, perkDef, perkRules, shopRules, slaveryRules, specialMaps, statuses, stories, storyCounters, type ShopType } from '@/engine/data'
 import { newShop, newShopId, shopAsCustom } from '@/engine/shopMods'
 import { builtinLandmark, newLandmark, newLandmarkId } from '@/engine/landmarkMods'
 import { builtinSpecialMap, newSpecialMap, newSpecialMapId } from '@/engine/specialMapMods'
@@ -180,6 +180,8 @@ const BASE_SLOTS = baseSlots()
 // 底材、裝備：欄位、材料類型；特質：分類
 const gearSlot = ref('')
 const matKind = ref('')
+// 底材、物品：拘束類（拘束具、各種拘束、詛咒具、主人會強制戴上的、成人向服裝）
+const bindFilter = ref('')
 const perkCat = ref('')
 const tagKind = ref('')
 // 職業：依施法類型篩選
@@ -299,6 +301,27 @@ const bodyDef: FilterDef = { model: bodyFilter, name: '主角形象', all: '所�
 const placeDef = (none?: string): FilterDef => ({ model: placeFilter, name: '地點', all: '所有地點', options: () => [...(options.value.places ?? []), ...(none ? [['none', none] as Opt] : [])] })
 const slotDef: FilterDef = { model: gearSlot, name: '欄位', all: '所有欄位', options: () => entries(BASE_SLOTS) }
 const matKindDef: FilterDef = { model: matKind, name: '材料類型', all: '所有材料類型', options: () => entries(KINDS) }
+const BIND_BASE_OPTS = (): Opt[] => [
+  ['restraint', '⛓️ 拘束具（全部）'],
+  ...Object.entries(lewdRules.two_face.kinds).map(([k, v]) => [`kind:${k}`, `⛓️ ${v.name}`] as Opt),
+  ['outfit', '👗 成人向服裝'],
+  ['none', '不是拘束具'],
+]
+const bindBaseDef: FilterDef = { model: bindFilter, name: '拘束', all: '拘束（不限）', options: BIND_BASE_OPTS }
+const bindItemDef: FilterDef = { model: bindFilter, name: '拘束', all: '拘束（不限）', options: () => [...BIND_BASE_OPTS().slice(0, -1), ['curse', '☠️ 詛咒具'], ['master', '主人會強制戴上'], ['none', '不是拘束具']] }
+/** 底材是不是符合「拘束」篩選 */
+function bindMatch(baseId: string | undefined, item?: { gear?: { curse?: boolean }; master_force?: unknown }): boolean {
+  const k = bindFilter.value
+  if (!k) return true
+  const b = baseId ? gearRules.bases[baseId] : undefined
+  if (k === 'restraint') return !!b?.restraint
+  if (k === 'outfit') return b?.outfit === 'adult'
+  if (k === 'none') return !b?.restraint
+  if (k === 'curse') return !!item?.gear?.curse
+  if (k === 'master') return !!item?.master_force
+  if (k.startsWith('kind:')) return !!b?.restraint && b.bind_kind === k.slice(5)
+  return true
+}
 const FILTERS: Record<Sub, FilterDef[]> = {
   enemies: [
     { model: enemyKind, name: '種類', all: '所有種類', options: () => entries(ENEMY_KINDS) },
@@ -312,9 +335,10 @@ const FILTERS: Record<Sub, FilterDef[]> = {
     { model: itemSource, name: '取得方式', all: '所有取得方式', options: () => entries(ITEM_SOURCE_NAME) },
     { ...slotDef, when: () => category.value === 'equipment' },
     { ...matKindDef, when: () => category.value === 'equipment' },
+    bindItemDef,
     adultDef,
   ],
-  bases: [slotDef, matKindDef, adultDef],
+  bases: [bindBaseDef, slotDef, matKindDef, adultDef],
   classes: [{ model: classCaster, name: '施法', all: '所有職業', options: () => entries(CASTER_NAME) }],
   materials: [matKindDef],
   abilities: [
@@ -430,6 +454,7 @@ const rows = computed<Row[]>(() => {
       .filter((i) => !category.value || i.category === category.value)
       .filter((i) => !itemSource.value || !!sources.value.get(i.name)?.has(itemSource.value as ItemSourceKind))
       .filter((i) => adultMatch(!!i.adult))
+      .filter((i) => !bindFilter.value || (!!i.gear && bindMatch(i.gear.base, i)))
       .filter((i) => category.value !== 'equipment' || ((!gearSlot.value || gearRules.bases[i.gear?.base ?? '']?.slot === gearSlot.value)
         && (!matKind.value || gearRules.materials[i.gear?.material ?? '']?.kind === matKind.value)))
       .map((i) => ({ key: i.name, name: i.name, note: `${itemRules.categories[i.category]}・${formatMoney(i.price_cc)}`, status: st(!!m.items[i.name], !!m.items[i.name]?.custom) }))
@@ -575,7 +600,8 @@ const rows = computed<Row[]>(() => {
     list = Object.entries(gearRules.bases)
       .filter(([, b]) => (!gearSlot.value || b.slot === gearSlot.value) && (!matKind.value || b.kind === matKind.value))
       .filter(([, b]) => adultMatch(!!b.adult || b.outfit === 'adult'))
-      .map(([id, b]) => ({ key: id, name: b.name, note: `${KINDS[b.kind]}・${formatMoney(b.price)}`, status: st(!!m.bases[id], !builtinBase(id)) }))
+      .filter(([id]) => bindMatch(id))
+      .map(([id, b]) => ({ key: id, name: b.name, note: `${KINDS[b.kind]}${b.restraint ? `・⛓️ ${b.bind_kind ? lewdRules.two_face.kinds[b.bind_kind]?.name ?? '' : '拘束具'}${b.bind ? ` ${b.bind}` : ''}` : ''}・${formatMoney(b.price)}`, status: st(!!m.bases[id], !builtinBase(id)) }))
   } else {
     list = Object.entries(gearRules.materials)
       .filter(([, x]) => !matKind.value || x.kind === matKind.value)
