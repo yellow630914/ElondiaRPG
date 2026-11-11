@@ -307,7 +307,7 @@ function buy(d: Deal) {
                   <li v-for="i in g.items" :key="i.name" class="item-row" :class="{ open: sellWhy === i.name, dim: i.price === null }">
                     <div class="line" @click="sellWhy = sellWhy === i.name ? null : i.name">
                       <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>
-                      <span class="what"><strong class="nm">{{ i.name }}</strong><span class="qty small">×{{ i.qty }}</span><span class="sub small muted">{{ categoryName(s, i.name) }}</span></span>
+                      <span class="what"><strong class="nm">{{ i.name }}</strong><span class="qty small" :title="cart.sell[i.name] ? `行囊裡有 ${i.qty} 個，購物車裡要賣 ${cart.sell[i.name]} 個` : undefined">×{{ sellLeft(i.name, i.qty) }}</span><span class="sub small muted">{{ categoryName(s, i.name) }}</span></span>
                       <span class="price" :title="i.price !== null ? '收購價（一個；點一下看怎麼算）' : undefined">{{ i.price !== null ? num(i.price) : '' }}</span>
                       <span v-if="i.price !== null" class="steps" @click.stop>
                         <button class="small" :disabled="!cart.sell[i.name]" title="全部拿出購物車" aria-label="全部拿出購物車" @click="removeSell(i.name, true)">«</button>

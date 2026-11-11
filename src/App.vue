@@ -401,7 +401,7 @@ onBeforeUnmount(() => {
   <AppDialog :open="showInventory" title="行囊" icon="backpack" width="1000px" @close="showInventory = false">
     <InventoryView />
   </AppDialog>
-  <AppDialog :open="showRelations" title="人際關係與冒險記憶" icon="heart" width="1200px" @close="showRelations = false">
+  <AppDialog :open="showRelations" title="人際關係與冒險記憶" icon="heart" width="1200px" fixed @close="showRelations = false">
     <RelationsView />
   </AppDialog>
   <AppDialog :open="showNotebook" title="冒險筆記" icon="notebook" width="900px" @close="showNotebook = false">

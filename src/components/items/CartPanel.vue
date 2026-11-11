@@ -103,15 +103,6 @@ function checkout() {
         </tbody>
       </table>
     </div>
-    <div v-if="!empty" class="sum">
-      <span>買入 {{ formatMoney(quote.buyTotal) }}</span>
-      <span>賣出 {{ formatMoney(quote.sellTotal) }}</span>
-      <strong class="net">{{ money(quote.net) }}</strong>
-      <span v-if="quote.bargain" class="small muted">
-        （今天交涉{{ DEGREE_NAME[quote.bargain.degree] }}<template v-if="quote.net !== quote.listNet">，原價{{ money(quote.listNet) }}</template><template v-if="!quote.held">；購物車改過了，照原價</template>）
-      </span>
-    </div>
-
     <div v-if="haggling && !empty" class="haggle small">
       <div class="row">
         {{ quote.listNet >= 0 ? '我想付' : '我想收' }}
@@ -133,14 +124,25 @@ function checkout() {
       </div>
     </div>
 
-    <ul v-if="!empty && quote.blocked" class="warn small plain"><li v-for="b in quote.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
-    <div v-if="!empty" class="row actions">
-      <button class="small" :disabled="busy" @click="clear()">清空</button>
-      <span class="grow" />
-      <button v-if="!haggling" class="small" :disabled="busy || bargained" :title="bargained ? '今天已經和這間店交涉過了' : ''" @click="haggling = true">
-        {{ bargained ? '今天交涉過了' : '整車交涉' }}
-      </button>
-      <button class="primary" :disabled="busy || !!quote.blocked" @click="checkout">結帳（{{ money(quote.net) }}）</button>
+    <!-- 合計與結帳：黏在對話框底部，購物車東西多時也不用捲就按得到 -->
+    <div v-if="!empty" class="foot">
+      <div class="sum">
+        <span>買入 {{ formatMoney(quote.buyTotal) }}</span>
+        <span>賣出 {{ formatMoney(quote.sellTotal) }}</span>
+        <strong class="net">{{ money(quote.net) }}</strong>
+        <span v-if="quote.bargain" class="small muted">
+          （今天交涉{{ DEGREE_NAME[quote.bargain.degree] }}<template v-if="quote.net !== quote.listNet">，原價{{ money(quote.listNet) }}</template><template v-if="!quote.held">；購物車改過了，照原價</template>）
+        </span>
+      </div>
+      <ul v-if="quote.blocked" class="warn small plain"><li v-for="b in quote.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
+      <div class="row actions">
+        <button class="small" :disabled="busy" @click="clear()">清空</button>
+        <span class="grow" />
+        <button v-if="!haggling" class="small" :disabled="busy || bargained" :title="bargained ? '今天已經和這間店交涉過了' : ''" @click="haggling = true">
+          {{ bargained ? '今天交涉過了' : '整車交涉' }}
+        </button>
+        <button class="primary" :disabled="busy || !!quote.blocked" @click="checkout">結帳（{{ money(quote.net) }}）</button>
+      </div>
     </div>
   </section>
 </template>
@@ -165,5 +167,6 @@ td { padding: 3px 4px; border-bottom: 1px dashed color-mix(in srgb, currentColor
 .out th, .out td { text-align: center; }
 .warn { color: var(--danger); margin: 0; padding: 0; list-style: none; }
 .actions { justify-content: flex-end; }
+.foot { position: sticky; bottom: -18px; z-index: 2; display: grid; gap: 6px; margin: 0 -10px -8px; padding: 8px 10px; background: linear-gradient(var(--panel), var(--panel)), var(--parchment-2); border-top: 1px solid var(--border); box-shadow: 0 -6px 10px -8px #0006; }
 @media (max-width: 760px) { .lists { grid-template-columns: 1fr; } }
 </style>

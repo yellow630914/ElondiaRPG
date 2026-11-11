@@ -1,11 +1,11 @@
 <script setup lang="ts">
 // 人際關係的人物詳情（二級視窗）：左半邊是形象圖，右半邊是好感、所在、按鈕（勾選放在按鈕下面），
 // 下面分成「概況」「共同記憶」「近況與性經歷」三個分頁。人際關係視窗的左邊列表點一個人時打開。
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { genderName, GENDER_IDS, locationName, raceName } from '@/engine/data'
 import { formatTime } from '@/engine/state'
-import { nameOf as npcName, type Memory } from '@/engine/social'
+import { nameOf as npcName } from '@/engine/social'
 import { npcRecord, npcTitle } from '@/engine/npcs'
 import { canPromote } from '@/engine/promoteNpc'
 import { canLive, isFollowed, livingNpcs, newsOf, newsText } from '@/engine/npcLife'
@@ -14,13 +14,16 @@ import { encounterText, sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 import { useGame } from '@/stores/game'
 import { useContent, VANILLA_NAME } from '@/stores/content'
 import { useSettings } from '@/stores/settings'
+import { portraitKey, usePortraits } from '@/stores/portraits'
 import AppDialog from './AppDialog.vue'
 import NameTag from './NameTag.vue'
 import PortraitBox from './PortraitBox.vue'
+import MemoryList from './MemoryList.vue'
 import GameIcon from './ui/GameIcon.vue'
 
-const props = defineProps<{ id: string | null; where: string }>()
-const emit = defineEmits<{ close: [] }>()
+/** ids：人際關係列表目前的順序（照篩選與排序），‹ › 與左右鍵照這個順序換人 */
+const props = defineProps<{ id: string | null; where: string; ids: string[] }>()
+const emit = defineEmits<{ close: []; open: [id: string] }>()
 
 const game = useGame()
 const settings = useSettings()
@@ -52,7 +55,34 @@ watch(() => props.id, () => {
   tab.value = 'info'
   editing.value = false
   swapping.value = false
-  memLimit.value = 30
+})
+
+// ---- ‹ › 換上一個／下一個人（鍵盤左右鍵也可以） ----
+const pos = computed(() => (props.id ? props.ids.indexOf(props.id) : -1))
+function step(d: number) {
+  const next = props.ids[pos.value + d]
+  if (pos.value >= 0 && next) emit('open', next)
+}
+const root = ref<HTMLElement | null>(null)
+function onKey(e: KeyboardEvent) {
+  if (!props.id || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') || e.altKey || e.ctrlKey || e.metaKey) return
+  const t = e.target as HTMLElement | null
+  if (t && (t.closest('input, textarea, select, [contenteditable="true"]'))) return
+  // 只在人物詳情是最上層的視窗時換人（形象圖放大、工作台開著時不要）
+  const top = [...document.querySelectorAll('dialog[open]')].at(-1)
+  if (!root.value || !top?.contains(root.value)) return
+  e.preventDefault()
+  step(e.key === 'ArrowLeft' ? -1 : 1)
+}
+onMounted(() => window.addEventListener('keydown', onKey))
+onBeforeUnmount(() => window.removeEventListener('keydown', onKey))
+
+// 沒有形象圖時左欄縮成窄欄，右邊吃滿
+const portraits = usePortraits()
+const hasPic = computed(() => {
+  if (!props.id) return false
+  const k = portraitKey(s.value, props.id)
+  return !!portraits.urls[k] || !!portraits.jobs[k]
 })
 
 // ---- 按鈕與勾選 ----
@@ -125,20 +155,8 @@ function saveEdit() {
 const suggestions = computed(() => (s.value.suggestions ?? []).filter((x) => x.npc === props.id))
 const suggestionDraft = reactive<Record<string, string>>({})
 
-// ---- 共同記憶（只列有這個人的，新的在前） ----
-const memLimit = ref(30)
+// ---- 共同記憶（只列有這個人的，新的在前；清單和主畫面的冒險記憶共用 MemoryList.vue） ----
 const memories = computed(() => (s.value.memories ?? []).filter((m) => props.id && m.participants.includes(props.id)).slice().reverse())
-const STARS = { 1: '★', 2: '★★', 3: '★★★' } as const
-const editingMemory = ref<string | null>(null)
-const memoryDraft = ref('')
-function editSummary(m: Memory) {
-  editingMemory.value = m.id
-  memoryDraft.value = m.summary
-}
-function saveSummary(id: string) {
-  game.editMemory(id, { summary: memoryDraft.value.trim() })
-  editingMemory.value = null
-}
 
 const pct = (v: number) => `${(v + 100) / 2}%`
 const showLife = computed(() => settings.sexRecords || news.value.length > 0)
@@ -146,7 +164,14 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
 
 <template>
   <AppDialog :open="!!id && !!r" :title="r?.name ?? ''" icon="heart" width="1040px" @close="emit('close')">
-    <div v-if="id && r" class="detail">
+    <template #head>
+      <span v-if="pos >= 0 && ids.length > 1" class="nav">
+        <button class="small" :disabled="pos <= 0" title="上一個人（←）" aria-label="上一個人" @click="step(-1)">‹</button>
+        <span class="small muted">{{ pos + 1 }} / {{ ids.length }}</span>
+        <button class="small" :disabled="pos >= ids.length - 1" title="下一個人（→）" aria-label="下一個人" @click="step(1)">›</button>
+      </span>
+    </template>
+    <div v-if="id && r" ref="root" class="detail" :class="{ nopic: !hasPic }">
       <!-- 左半邊：形象圖 -->
       <div class="pic">
         <PortraitBox :id="id" size="fill" />
@@ -173,7 +198,7 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
           <button class="small" :class="{ primary: editing }" @click="editing ? (editing = false) : startEdit()"><GameIcon name="edit" :size="13" /> {{ editing ? '取消編輯' : '編輯' }}</button>
           <button
             v-if="settings.npcLife && followable" class="small" :class="{ primary: followed }"
-            :title="followed ? '取消關注（親密度夠高、留在家裡或離隊的夥伴照樣會自己成長）' : '關注：不在你身邊時也會自己成長（升級、換裝、受傷休養），每隔幾天有一則近況'"
+            :title="followed ? '取消關注（親密度夠高、留在家裡或離隊的夥伴照樣會自己成長）' : living ? '關注：每隔幾天有一則近況（這個人不用關注也會自己成長：升級、換裝、受傷休養）' : '關注：不在你身邊時也會自己成長（升級、換裝、受傷休養），每隔幾天有一則近況'"
             @click="game.setFollowed(id, !followed)"
           ><GameIcon name="star" :size="13" /> {{ followed ? '已關注' : '關注' }}</button>
           <button v-if="settings.npcLife && unpolished && settings.ready(newsFeature)" class="small" title="請 AI 依他的性格與和你的記憶，把近況寫成一段" @click="game.polishNews([id])"><GameIcon name="feather" :size="13" /> 近況寫成一段</button>
@@ -189,12 +214,11 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
             </div>
           </div>
         </div>
-        <div v-if="settings.npcLife && (living || (settings.npcPairs && !inParty))" class="checks small">
+        <div v-if="settings.npcLife && settings.npcPairs && !inParty" class="checks small">
           <label
-            v-if="settings.npcPairs && !inParty" class="check"
+            class="check"
             title="成人向：這個人的私生活會不會和別人發生關係——一夜情、替人性侍奉、娼妓接客，以及和其他認識的 NPC（兩個人都打開、住在同一座城才會）。預設關閉，關著時只會自慰。和你的親密度到設定的門檻以上的人也只會自慰（設定 → 遊戲規則 → NPC）"
           ><input type="checkbox" :checked="pairable" @change="game.setNpcPairs(id, ($event.target as HTMLInputElement).checked)" /> 可以和別人發生關係（成人向）</label>
-          <span v-if="living && !followed" class="muted">不用關注也會自己成長</span>
         </div>
         <div v-if="swapping" class="row small swap">
           把{{ r.name }}變成
@@ -211,84 +235,69 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
           <button v-if="showLife" :class="{ on: tab === 'life' }" @click="tab = 'life'; editing = false">近況與性經歷</button>
         </nav>
 
-        <!-- 概況 -->
-        <template v-if="tab === 'info'">
-          <div v-for="sg in suggestions" :key="sg.id" class="suggestion small">
-            <div class="muted">AI 提議更新「與{{ pcName }}的關係」（目前：{{ r.toPlayer || '—' }}）</div>
-            <textarea v-model="suggestionDraft[sg.id]" rows="2" :placeholder="sg.text" />
-            <div class="row">
-              <button class="small primary" @click="game.acceptSuggestion(sg.id, suggestionDraft[sg.id] || sg.text)">採用</button>
-              <button class="small" @click="game.rejectSuggestion(sg.id)">不採用</button>
-            </div>
-          </div>
-          <dl v-if="!editing" class="small">
-            <dt>外貌</dt><dd>{{ r.appearance || '—' }}</dd>
-            <dt>與{{ pcName }}</dt><dd>{{ r.toPlayer || '—' }}</dd>
-            <template v-if="Object.keys(r.toOthers).length">
-              <dt>與他人</dt>
-              <dd><div v-for="(text, oid) in r.toOthers" :key="oid">{{ nameOf(String(oid)) }}：{{ text }}</div></dd>
-            </template>
-            <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
-          </dl>
-          <form v-else class="edit small" @submit.prevent="saveEdit">
-            <label>外貌<textarea v-model="draft.appearance" rows="3" /></label>
-            <label>與{{ pcName }}的關係<textarea v-model="draft.toPlayer" rows="2" /></label>
-            <label>別名（以頓號分隔）<input v-model="draft.aliases" /></label>
-            <div>與他人的關係</div>
-            <div v-for="(o, i) in draft.others" :key="i" class="row">
-              <select v-model="o.id">
-                <option v-for="other in others" :key="other.id" :value="other.id">{{ other.name }}</option>
-                <option v-if="!others.some((x) => x.id === o.id)" :value="o.id">{{ nameOf(o.id) }}</option>
-              </select>
-              <input v-model="o.text" style="flex: 1" />
-              <button type="button" class="small" @click="draft.others.splice(i, 1)">刪除</button>
-            </div>
-            <button v-if="others.length" type="button" class="small" @click="draft.others.push({ id: others[0]!.id, text: '' })">＋ 新增關係</button>
-            <div class="row">
-              <button class="small primary" type="submit">儲存</button>
-              <button class="small" type="button" @click="editing = false">取消</button>
-            </div>
-          </form>
-        </template>
-
-        <!-- 共同記憶 -->
-        <template v-else-if="tab === 'memories'">
-          <p v-if="!memories.length" class="small muted">還沒有和{{ r.name }}一起的記憶。</p>
-          <ul class="plain mems">
-            <li v-for="m in memories.slice(0, memLimit)" :key="m.id" class="mem">
-              <div class="row small meta">
-                <span>{{ formatTime(m.time) }}</span>
-                <span>{{ m.scene ?? locationName(m.location) }}</span>
-                <span v-if="m.merged" class="tag">合併 {{ m.merged }} 筆</span>
-                <span class="spacer" />
-                <button class="small star" :title="'重要程度：' + ['', '日常', '重要', '難忘'][m.importance]" @click="game.editMemory(m.id, { importance: ((m.importance % 3) + 1) as Memory['importance'] })">{{ STARS[m.importance] }}</button>
-                <button class="small" :class="{ pinned: m.pinned }" :title="m.pinned ? '取消釘選' : '釘選：交給 AI 時一定找得到'" @click="game.editMemory(m.id, { pinned: !m.pinned })"><GameIcon name="bookmark" :size="12" /></button>
+        <!-- 分頁內容：自己捲動，上面的名字、按鈕、分頁列不動 -->
+        <div class="tabbody">
+          <!-- 概況 -->
+          <template v-if="tab === 'info'">
+            <div v-for="sg in suggestions" :key="sg.id" class="suggestion small">
+              <div class="muted">AI 提議更新「與{{ pcName }}的關係」（目前：{{ r.toPlayer || '—' }}）</div>
+              <textarea v-model="suggestionDraft[sg.id]" rows="2" :placeholder="sg.text" />
+              <div class="row">
+                <button class="small primary" @click="game.acceptSuggestion(sg.id, suggestionDraft[sg.id] || sg.text)">採用</button>
+                <button class="small" @click="game.rejectSuggestion(sg.id)">不採用</button>
               </div>
-              <div v-if="editingMemory !== m.id" class="summary small" title="點一下編輯" @click="editSummary(m)">{{ m.summary }}</div>
-              <div v-else class="row">
-                <textarea v-model="memoryDraft" rows="2" style="flex: 1" />
-                <button class="small primary" @click="saveSummary(m.id)">儲存</button>
-                <button class="small" @click="editingMemory = null">取消</button>
-              </div>
-            </li>
-          </ul>
-          <button v-if="memories.length > memLimit" class="small more-mem" @click="memLimit += 30">顯示更早的 30 筆（還有 {{ memories.length - memLimit }} 筆）</button>
-        </template>
-
-        <!-- 近況與性經歷 -->
-        <template v-else>
-          <template v-if="news.length">
-            <h4>近況</h4>
-            <div v-for="n in news.slice(0, 10)" :key="`${n.day}-${n.text}`" class="small news">第 {{ n.day }} 天：{{ newsText(n) }}</div>
-          </template>
-          <template v-if="settings.sexRecords">
-            <h4>性經歷</h4>
-            <dl class="small">
-              <template v-for="x in sexRecordItems(s, id)" :key="x.label"><dt>{{ x.label }}</dt><dd>{{ x.value }}</dd></template>
+            </div>
+            <dl v-if="!editing" class="small">
+              <dt>外貌</dt><dd>{{ r.appearance || '—' }}</dd>
+              <dt>與{{ pcName }}</dt><dd>{{ r.toPlayer || '—' }}</dd>
+              <template v-if="Object.keys(r.toOthers).length">
+                <dt>與他人</dt>
+                <dd><div v-for="(text, oid) in r.toOthers" :key="oid">{{ nameOf(String(oid)) }}：{{ text }}</div></dd>
+              </template>
+              <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
             </dl>
-            <div v-for="e in sexRecordOf(s, id).recent" :key="`${e.day}-${e.report}`" class="small news">{{ encounterText(e) }}</div>
+            <form v-else class="edit small" @submit.prevent="saveEdit">
+              <label>外貌<textarea v-model="draft.appearance" rows="3" /></label>
+              <label>與{{ pcName }}的關係<textarea v-model="draft.toPlayer" rows="2" /></label>
+              <label>別名（以頓號分隔）<input v-model="draft.aliases" /></label>
+              <div>與他人的關係</div>
+              <div v-for="(o, i) in draft.others" :key="i" class="row">
+                <select v-model="o.id">
+                  <option v-for="other in others" :key="other.id" :value="other.id">{{ other.name }}</option>
+                  <option v-if="!others.some((x) => x.id === o.id)" :value="o.id">{{ nameOf(o.id) }}</option>
+                </select>
+                <input v-model="o.text" style="flex: 1" />
+                <button type="button" class="small" @click="draft.others.splice(i, 1)">刪除</button>
+              </div>
+              <button v-if="others.length" type="button" class="small" @click="draft.others.push({ id: others[0]!.id, text: '' })">＋ 新增關係</button>
+              <div class="row">
+                <button class="small primary" type="submit">儲存</button>
+                <button class="small" type="button" @click="editing = false">取消</button>
+              </div>
+            </form>
           </template>
-        </template>
+
+          <!-- 共同記憶 -->
+          <template v-else-if="tab === 'memories'">
+            <p v-if="!memories.length" class="small muted">還沒有和{{ r.name }}一起的記憶。</p>
+            <MemoryList :items="memories" :reset-key="id" />
+          </template>
+
+          <!-- 近況與性經歷 -->
+          <template v-else>
+            <template v-if="news.length">
+              <h4>近況</h4>
+              <div v-for="n in news.slice(0, 10)" :key="`${n.day}-${n.text}`" class="small news">第 {{ n.day }} 天：{{ newsText(n) }}</div>
+            </template>
+            <template v-if="settings.sexRecords">
+              <h4>性經歷</h4>
+              <dl class="small">
+                <template v-for="x in sexRecordItems(s, id)" :key="x.label"><dt>{{ x.label }}</dt><dd>{{ x.value }}</dd></template>
+              </dl>
+              <div v-for="e in sexRecordOf(s, id).recent" :key="`${e.day}-${e.report}`" class="small news">{{ encounterText(e) }}</div>
+            </template>
+          </template>
+        </div>
       </div>
     </div>
   </AppDialog>
@@ -297,8 +306,22 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
 <style scoped>
 /* 左半邊是形象圖，右半邊是資料；窄的時候（手機）上下排 */
 .detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-@media (max-width: 760px) { .detail { grid-template-columns: minmax(0, 1fr); } .pic { max-width: 220px; justify-self: center; width: 100%; } }
-.info { display: grid; gap: 8px; min-width: 0; align-content: start; }
+/* 沒有形象圖：左欄縮成窄欄（生成／上傳），右邊吃滿 */
+.detail.nopic { grid-template-columns: 190px minmax(0, 1fr); }
+/* 電腦版：左右兩欄都不超過視窗高度；形象圖不動，右邊只有分頁內容捲動 */
+.pic { position: sticky; top: 0; max-height: calc(100vh - 140px); overflow-y: auto; }
+.info { display: flex; flex-direction: column; gap: 8px; min-width: 0; max-height: calc(100vh - 140px); }
+.info > * { flex: none; }
+.info > .tabbody { flex: 0 1 auto; min-height: 0; overflow-y: auto; display: grid; gap: 8px; align-content: start; padding-right: 4px; }
+.nav { display: inline-flex; align-items: center; gap: 6px; margin-left: auto; }
+.nav button { min-width: 30px; padding: 0 8px; }
+.nav + :deep(.close) { margin-left: 8px; }
+@media (max-width: 760px) {
+  .detail, .detail.nopic { grid-template-columns: minmax(0, 1fr); }
+  .pic { max-width: 220px; justify-self: center; width: 100%; position: static; max-height: none; overflow: visible; }
+  .info { max-height: none; }
+  .info > .tabbody { overflow: visible; }
+}
 .name-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: var(--fs-lg); }
 .stage-line { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
 .stage-line b { font-variant-numeric: tabular-nums; }
@@ -328,14 +351,5 @@ h4 { margin: 4px 0 2px; font-size: var(--fs-sm, 0.9rem); color: var(--accent); }
 .edit textarea { width: 100%; }
 .suggestion { display: grid; gap: 4px; padding: 6px 8px; border: 1px dashed var(--accent); border-radius: var(--radius); }
 .suggestion textarea { width: 100%; }
-.mems { display: grid; gap: 0; }
-.mem { display: grid; gap: 2px; padding: 5px 0; border-bottom: 1px solid var(--border); }
-.meta { gap: 8px; color: var(--muted); }
-.spacer { flex: 1; }
-.star { color: var(--accent); }
-.pinned { border-color: var(--accent); color: var(--accent); }
-.summary { cursor: text; }
-.summary:hover { color: var(--accent); }
-.more-mem { justify-self: center; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 </style>
