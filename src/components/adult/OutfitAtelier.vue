@@ -89,6 +89,8 @@ const text = ref('')
 function order() {
   void game.perform({ kind: 'craft', target: craftTarget(base.value, mat.value, [], opts.value), text: text.value })
   text.value = ''
+  // 下單後關掉，讓結果（或判定卡）在日誌裡看得到
+  emit('close')
 }
 </script>
 

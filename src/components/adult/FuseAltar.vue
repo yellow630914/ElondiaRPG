@@ -128,7 +128,7 @@ const marks = computed(() => Array.from({ length: rules.days }, (_, i) => rules.
 .sub { margin: -4px 0 8px; }
 .altar { --tone: #6c4bd1; --tone-soft: #6c4bd11f; display: grid; grid-template-columns: minmax(0, 1fr) 300px minmax(0, 1fr); gap: 16px; align-items: stretch; }
 .owned { --tone: #6c4bd1; --tone-soft: #6c4bd11f; margin-top: 14px; }
-.card { background: #fff3; border: 1px solid #5a3f2255; border-radius: 4px; padding: 10px 12px; }
+.card { position: relative; z-index: 1; background: #fff3; border: 1px solid #5a3f2255; border-radius: 4px; padding: 10px 12px; }
 h3 { margin: 0 0 8px; font-size: var(--fs-md, 15px); display: flex; gap: 6px; align-items: baseline; }
 h3 small { color: var(--muted); font-weight: 400; }
 button { font: inherit; }
@@ -147,9 +147,12 @@ button { font: inherit; }
 .mini i { height: 7px; border-radius: 2px; background: #33231a1a; }
 .mini i.on { background: #8a6be6; }
 /* 中間：法陣、預覽、按鈕 */
-.circle { position: relative; display: grid; place-items: center; }
-.adult-hexa { width: 250px; height: 250px; }
-.core { position: absolute; text-align: center; width: 88px; line-height: 1.25; }
+/* 六芒星是背景：放大、淡淡的，壓在預覽與按鈕後面 */
+.center { position: relative; }
+.circle { position: relative; display: grid; place-items: center; height: 250px; }
+.adult-hexa { position: absolute; left: 50%; top: 125px; width: 360px; height: 360px; transform: translate(-50%, -50%); opacity: 0.3; pointer-events: none; z-index: 0; }
+.core { position: relative; z-index: 1; text-align: center; width: 120px; line-height: 1.25; }
+.preview, .go { position: relative; z-index: 1; }
 .core b { display: block; font-size: 13px; overflow-wrap: anywhere; }
 .core span { font-size: 12px; color: var(--muted); }
 .preview { background: #fffaf0aa; border: 1px solid #6c4bd155; border-radius: 4px; padding: 10px 12px; margin-top: 10px; }
@@ -170,7 +173,8 @@ button { font: inherit; }
 
 @media (max-width: 1000px) {
   .altar { grid-template-columns: minmax(0, 1fr); }
-  .adult-hexa { width: 170px; height: 170px; }
+  .circle { height: 140px; }
+  .adult-hexa { top: 70px; width: 300px; height: 300px; }
   .it.own { grid-template-columns: 30px minmax(0, 1fr) auto; }
   .it.own .days { grid-column: 2 / -1; }
   .note { margin-bottom: 24px; }

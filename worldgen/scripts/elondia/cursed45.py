@@ -73,7 +73,7 @@ def dg(id_, layers, title, text, scene, item_, escape_attr, dc, escape_text, giv
              "success": {"text": escape_text},
              "fail": {"text": f"慢了一步。{give_text}", "effects": [{"type": "restrain", "item": item_}]}, "adult_scene": "fail"},
             {"label": "用信仰壓住咒文", "check": {"attr": "fai", "dc": dc + 1},
-             "success": {"text": "你唸出一段禱詞，咒文暗了下去，那東西掉在地上碎成了鐵屑。", "effects": [{"type": "xp", "amount": 30}]},
+             "success": {"text": "你唸出一段禱詞，咒文暗了下去，那東西掉在地上碎成了碎屑。", "effects": [{"type": "xp", "amount": 30}]},
              "fail": {"text": f"禱詞只讓咒文閃了一下。{give_text}", "effects": [{"type": "restrain", "item": item_}, {"type": "lewd", "stat": "submission", "delta": 1}]}},
             {"label": "不掙扎，任它扣上",
              "success": {"text": f"你沒有躲。{give_text}心裡居然有一點點期待。", "effects": [{"type": "restrain", "item": item_}, {"type": "lewd", "stat": "submission", "delta": 2}]}},
@@ -98,7 +98,7 @@ DUNGEON = [
 
 TOWN = [
     {"id": "tn_curse_gift", "scope": "town", "tier": "normal", "kind": "choice", "cells": ["tavern", "inn"], "category": "trouble",
-     "tags": ["adult", "pc_unwilling"], "cooldown_days": 20, "title": "陌生人的禮物",
+     "tags": ["adult", "pc_unwilling"], "pc_body": ["fem", "andro"], "cooldown_days": 20, "title": "陌生人的禮物",
      "text": "一個面帶微笑的貴婦人在你身邊坐下，拿出一個精緻的頸環：「這和你很配，送你。」她不等你回答，就伸手要替你戴上。",
      "scene": "吐真項圈扣上後，主角被貴婦人問了一連串羞恥的問題，每一句都只能照實回答",
      "options": [
@@ -111,7 +111,7 @@ TOWN = [
           "fail": {"text": "你沒看出什麼不對，任她替你戴上——咒文亮起時已經太遲了。", "effects": [{"type": "restrain", "item": "吐真項圈"}]}},
      ]},
     {"id": "tn_curse_corset", "scope": "town", "tier": "normal", "kind": "choice", "cells": ["tailor", "shop"], "category": "trouble",
-     "tags": ["adult", "pc_unwilling"], "cooldown_days": 20, "title": "試穿的束腰",
+     "tags": ["adult", "pc_unwilling"], "pc_body": ["fem", "andro"], "cooldown_days": 20, "title": "試穿的束腰",
      "text": "店員熱心地拿來一件束腰要你試穿，說是新到的款式。你剛扣上最後一個扣子，束腰上就亮起了一圈淫紋，還叮叮噹噹地響了起來。",
      "scene": "戴著播報束腰的主角走在街上，束腰一路響著鈴、亮著淫紋，路人紛紛回頭",
      "options": [

@@ -21,6 +21,8 @@ import { useGame } from '@/stores/game'
 import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
+import UncursePanel from './UncursePanel.vue'
+import { cursedGearOf } from '@/engine/restraints'
 import AdultShopMenu from './adult/AdultShopMenu.vue'
 import GuardStatus from './GuardStatus.vue'
 import { isWanted, palacePersuadeDc } from '@/engine/security'
@@ -210,13 +212,18 @@ const banner = computed(() => {
   return null
 })
 // 神殿、雜貨店選單的其他項目（交易與折扣以外）
-const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | null>(null)
+const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | 'uncurse' | null>(null)
 const templeMenu = computed<MenuItem[]>(() => [
   {
     id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
     badge: templeCost(s.value) ? formatMoney(templeCost(s.value)) : '不需要', disabled: templeCost(s.value) === 0 || s.value.money_cc < templeCost(s.value),
   },
   { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
+  // 詛咒具（docs/LEWD_STATS.md 第 7.2 節）：隊上有人戴著時才顯示
+  ...(cursedGearOf(s.value).length ? [{
+    id: 'uncurse', icon: 'unlock', label: '解開詛咒具', detail: '請神官解開隊上的詛咒具（解開後詛咒具會碎掉）',
+    badge: `${cursedGearOf(s.value).length} 件`, tone: 'bad',
+  } as MenuItem] : []),
   // 懷孕與嬰兒（docs/FAMILY.md）：內容篩選打開「懷孕」或已經有孩子寄在這裡時才顯示
   ...(tagsAllowed(['pregnancy']) || Object.keys(s.value.pregnancies ?? {}).length ? [{
     id: 'checkup', icon: 'search', label: '診察', detail: '請修女看看隊伍裡有沒有人懷孕（包括還沒察覺的）',
@@ -232,7 +239,7 @@ const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'mar
 function onExtra(id: string) {
   if (id === 'heal') game.templeHeal()
   else if (id === 'checkup') game.templeCheckup()
-  else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood') extraOpen.value = id
+  else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood' || id === 'uncurse') extraOpen.value = id
 }
 // 公會的選單：委託板在對話框裡
 const showBoard = ref(false)
@@ -322,6 +329,9 @@ const shopDesc = computed(() => {
           </AppDialog>
           <AppDialog :open="extraOpen === 'nursery'" title="育幼院" icon="heart" width="640px" @close="extraOpen = null">
             <NurseryPanel />
+          </AppDialog>
+          <AppDialog :open="extraOpen === 'uncurse'" title="解開詛咒具" icon="unlock" width="560px" @close="extraOpen = null">
+            <UncursePanel />
           </AppDialog>
         </template>
 

@@ -14,7 +14,8 @@ import type { Character, GameState, GearSpec, Report } from './types'
 export const fusionRules = () => lewdRules.fusion
 
 const specOf = (state: GameState, name: string) => gearSpecOf(state, name)
-const isRestraint = (spec?: GearSpec) => !!spec && gearKnown(spec) && !!gearRules.bases[spec.base]?.bind && !spec.fused
+// 詛咒具不能合煉（合出來的淫器還是詛咒具，解咒時連武器一起碎掉）
+const isRestraint = (spec?: GearSpec) => !!spec && gearKnown(spec) && !!gearRules.bases[spec.base]?.bind && !spec.fused && !spec.curse
 const isWeapon = (spec?: GearSpec) => !!spec && gearKnown(spec) && !!gearStats(spec).weapon && !spec.fused
 
 /** 站在能合煉的店（lewd.json 的 fusion.shops：成人用品店） */

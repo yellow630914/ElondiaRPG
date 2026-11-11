@@ -41,7 +41,7 @@ export function drawAtelier(svg: SVGSVGElement, w: number, h: number) {
       const off = Math.sin((i * 4) / per * Math.PI * 2 + phase) * amp
       d += `${i ? 'L' : 'M'}${(x - dy * off).toFixed(1)} ${(y + dx * off).toFixed(1)}`
     })
-    el('path', { d: `${d}Z`, fill: 'none', stroke: color, 'stroke-width': width, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.85 }, g)
+    el('path', { d: `${d}Z`, fill: 'none', stroke: color, 'stroke-width': width, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.55 }, g)
   }
   strand(0, '#a8203d', 1.6)
   strand(Math.PI, '#d0476b', 1.3)
@@ -51,7 +51,7 @@ export function drawAtelier(svg: SVGSVGElement, w: number, h: number) {
     const nx = -dy, ny = dx, s = i % 46 < 23 ? 1 : -1
     const bx = x + nx * 4, by = y + ny * 4
     const ex = bx + nx * 9 + dx * 8 * s, ey = by + ny * 9 + dy * 8 * s
-    el('path', { d: `M${bx} ${by} Q${bx + nx * 10} ${by + ny * 10} ${ex} ${ey} q${-dx * 4 * s + nx * 3} ${-dy * 4 * s + ny * 3} ${-dx * 2 * s} ${-dy * 2 * s}`, fill: 'none', stroke: '#c23a5e', 'stroke-width': 1.1, opacity: 0.8 }, g)
+    el('path', { d: `M${bx} ${by} Q${bx + nx * 10} ${by + ny * 10} ${ex} ${ey} q${-dx * 4 * s + nx * 3} ${-dy * 4 * s + ny * 3} ${-dx * 2 * s} ${-dy * 2 * s}`, fill: 'none', stroke: '#c23a5e', 'stroke-width': 1.1, opacity: 0.5 }, g)
     const lx = ex - dx * 3 * s, ly = ey - dy * 3 * s
     el('ellipse', { cx: lx, cy: ly, rx: 3.2, ry: 1.6, fill: '#d0476b', opacity: 0.55, transform: `rotate(${Math.atan2(dy, dx) * 57.3 + 35 * s} ${lx} ${ly})` }, g)
   })
@@ -68,8 +68,8 @@ export function drawAtelier(svg: SVGSVGElement, w: number, h: number) {
   el('path', { d: 'M0 0 L58 -2.2 L62 0 L58 2.2 Z', fill: `url(#${needleId})`, stroke: '#6b6f7a', 'stroke-width': 0.6 }, needle)
   el('ellipse', { cx: 6, cy: 0, rx: 3.4, ry: 1, fill: '#ecdcb6', stroke: '#6b6f7a', 'stroke-width': 0.5 }, needle)
   el('path', { d: `M${nx0 + 5} ${ny0 + 1} C ${nx0 - 14} ${ny0 + 14}, ${nx0 - 34} ${ny0 - 10}, ${nx0 - 64} ${m + 2}`, fill: 'none', stroke: '#a8203d', 'stroke-width': 1.5, 'stroke-linecap': 'round' }, g)
-  // 左下角：紅線編的淫紋（中央雙層心形、兩側翼刃、上方小心形、下方垂尖），歪一點、半透明
-  const wrap = el('g', { transform: `translate(${small ? 96 : 140} ${h - (small ? 64 : 78)}) rotate(-11) scale(${small ? 0.72 : 1})`, opacity: 0.62 }, svg)
+  // 左下角：紅線編的淫紋（中央雙層心形、兩側翼刃、上方小心形、下方垂尖），歪一點；是背景，很淡（不搶布料卡的字）
+  const wrap = el('g', { transform: `translate(${small ? 96 : 140} ${h - (small ? 64 : 78)}) rotate(-11) scale(${small ? 0.72 : 1})`, opacity: 0.22 }, svg)
   const mark = el('g', { class: 'glow-pink' }, wrap)
   const half = (hg: Element) => {
     const shape = (d: string, fillOp = 0.22, c = '#a8203d', sw = 1.8) => {

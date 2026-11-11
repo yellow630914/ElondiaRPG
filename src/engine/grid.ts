@@ -1571,7 +1571,8 @@ function openChest(state: GameState, area: Area, level: number, relic = false): 
       if (--i.qty <= 0) items.splice(items.indexOf(i), 1)
     }
   }
-  if (items.length) report.changes.items_gained = items
+  // 詛咒具扣上時換下來的裝備（restrainPc 已經放進 items_gained）要留著
+  if (items.length) report.changes.items_gained = [...items, ...(report.changes.items_gained ?? [])]
   report.outcome = {
     result: 'success',
     summary: `${relic ? `在${area.name}找到冒險者的遺物，從他們留下的行囊裡翻出` : `在${area.name}打開一個寶箱：`}${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name)), ...(foundBlueprint ? [blueprintName(foundBlueprint)] : [])].join('、')}。`,

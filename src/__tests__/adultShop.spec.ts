@@ -36,6 +36,8 @@ describe('成人用品店（地下街）', () => {
     const restraints = items.filter((n) => itemDef(n)?.gear && gearRules.bases[itemDef(n)!.gear!.base]?.restraint)
     expect(restraints.length).toBeGreaterThanOrEqual(shopRules.types.adult_shop!.restraints![0])
     expect(items).toContain('白鐵鎖')
+    // 淫服訂製用的布料與皮也有賣（第 1、2 級）
+    for (const n of ['亞麻布', '絲綢布匹', '鞣製皮革', '硬化獸皮']) expect(items, n).toContain(n)
     expect(items.some((n) => n.endsWith('鑰匙'))).toBe(false)
     for (const i of itemRules.items.filter((x) => x.key)) expect(i.tags, i.name).not.toContain('adult_shop')
   })

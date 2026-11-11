@@ -13,6 +13,7 @@ import { bindsOf, lockName } from './schools'
 import { masterNearby } from './slavery'
 import { contractOf } from './tattoos'
 import { currentCell } from './grid'
+import { nurseryRefusal } from './children'
 import { formatMoney } from './money'
 import { commitReport } from './state'
 import { baseReport } from './town'
@@ -200,6 +201,8 @@ export function uncurseFee(m: Character, slot: GearSlot): number | undefined {
 export function uncurse(state: GameState, memberId: string, slot: GearSlot): Report {
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   if (!uncurseHere(state)) throw new Error('要在神殿才能解咒')
+  const owed = nurseryRefusal(state)
+  if (owed) throw new Error(owed)
   const m = state.party.find((x) => x.id === memberId)
   if (!m) throw new Error('沒有這個隊員')
   const s = stuckRestraint(m, slot)
@@ -214,4 +217,12 @@ export function uncurse(state: GameState, memberId: string, slot: GearSlot): Rep
   r.outcome.summary = `神官替${m.name}解開了${s.name}上的詛咒，收費 ${formatMoney(fee)}。詛咒散去，${s.name}碎成了灰。`
   r.outcome.tags = ['解咒']
   return commitReport(state, r)
+}
+
+/** 隊上每一件詛咒具與解咒的價錢（神殿的「解開詛咒具」） */
+export function cursedGearOf(state: GameState): { member: string; memberName: string; slot: GearSlot; name: string; fee: number }[] {
+  return state.party.flatMap((m) => (Object.keys(m.gear ?? {}) as GearSlot[]).flatMap((slot) => {
+    const fee = uncurseFee(m, slot)
+    return fee === undefined ? [] : [{ member: m.id, memberName: m.name, slot, name: m.gear![slot]!.name, fee }]
+  }))
 }

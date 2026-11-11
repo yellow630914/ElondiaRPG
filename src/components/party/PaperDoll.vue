@@ -173,7 +173,7 @@ const totals = computed(() => {
       <p v-else class="muted small empty">{{ blocked(selected) ? '這個種族無法使用這個欄位。' : '這一格沒有裝備。' }}</p>
       <div v-if="current && bind" class="lock-row small">
         <GameIcon :name="bind.lock ? 'lock' : 'unlock'" :size="14" />
-        <span v-if="bind.lock">{{ current.locked ? (stuck?.trap ? '陷阱的' : '主人的') : !current.lock && current.spec.lock ? '自帶的' : '' }}{{ lockName(bind.lock) }}</span>
+        <span v-if="bind.lock">{{ current.locked ? (stuck?.curse ? '詛咒的' : stuck?.trap ? '陷阱的' : '主人的') : !current.lock && current.spec.lock ? '自帶的' : '' }}{{ lockName(bind.lock) }}</span>
         <span v-else class="muted">沒有上鎖</span>
         <span class="muted">{{ bindNote }}</span>
         <template v-if="lockable(current)">
