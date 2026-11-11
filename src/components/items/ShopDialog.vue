@@ -229,12 +229,11 @@ function buy(d: Deal) {
                   <div class="line special-line" @click="toggle(d.id)">
                     <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
                     <span class="what marquee"><span class="what-in">
-                      <strong>{{ d.title }}</strong>
+                      <strong>{{ d.title }}</strong><span v-if="d.stock < 20" class="qty small">×{{ d.stock }}</span>
                       <ContentTagChips v-if="dealStory(d)" :tags="dealStory(d)!.tags" />
                       <span class="small effect">{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</span>
                     </span></span>
                     <span class="price">{{ costText(s, key, d) }}</span>
-                    <span class="stock small muted">{{ d.stock < 20 ? `剩 ${d.stock}` : '' }}</span>
                     <span class="btns" @click.stop>
                       <button class="small primary" :disabled="busy || !affordable(d)" @click="buy(d)">買下</button>
                       <button v-if="price(d) > 0" class="small" :disabled="d.haggled || busy" @click="haggling = haggling === d.id ? null : d.id">{{ d.haggled ? '已交涉' : '交涉' }}</button>
@@ -251,15 +250,14 @@ function buy(d: Deal) {
                   </div>
                 </li>
               </ul>
-              <div v-if="itemDeals.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="c">類別</span><span class="r">價格</span><span /><span /><span /></div>
+              <div v-if="itemDeals.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="c">類別</span><span class="r">價格</span><span /><span /></div>
               <ul v-if="itemDeals.length" class="plain rows">
                 <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
                   <div class="line" @click="toggle(d.id)">
                     <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
-                    <span class="what"><strong class="nm">{{ d.title }}</strong><span class="sub small muted">{{ categoryName(s, itemName(d)) }}</span></span>
+                    <span class="what"><strong class="nm">{{ d.title }}</strong><span v-if="d.stock < 20" class="qty small" :title="`還剩 ${leftOf(d)} 個（購物車裡的不算）`">×{{ leftOf(d) }}</span><span class="sub small muted">{{ categoryName(s, itemName(d)) }}</span></span>
                     <span class="cat small muted">{{ categoryName(s, itemName(d)) }}</span>
                     <span class="price" :title="buyWhyText(d)">{{ num(price(d)) }}</span>
-                    <span class="stock small muted">{{ d.stock < 20 ? `剩 ${leftOf(d)}` : '' }}</span>
                     <span class="steps" @click.stop>
                       <button class="small" :disabled="!cart.buy[d.id]" title="全部拿出購物車" aria-label="全部拿出購物車" @click="removeBuy(d, true)">«</button>
                       <button class="small" :disabled="!cart.buy[d.id]" title="從購物車拿出一個" aria-label="從購物車拿出一個" @click="removeBuy(d)">‹</button>
@@ -301,7 +299,7 @@ function buy(d: Deal) {
               </button>
             </nav>
             <p v-if="!bag.length" class="small muted">{{ bagAll.length ? '沒有符合篩選的東西。' : onlySellable ? '沒有這間店收的東西。' : '行囊是空的。' }}</p>
-            <div v-if="bag.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="r">收購</span><span /><span /><span /></div>
+            <div v-if="bag.length" class="thead small muted" aria-hidden="true"><span /><span>物品</span><span class="r">收購</span><span /><span /></div>
             <div class="list">
               <template v-for="g in bagGroups" :key="g.id">
                 <div class="group-head small">{{ g.name }}<span class="muted">{{ g.items.length }}</span></div>
@@ -311,7 +309,6 @@ function buy(d: Deal) {
                       <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>
                       <span class="what"><strong class="nm">{{ i.name }}</strong><span class="qty small">×{{ i.qty }}</span><span class="sub small muted">{{ categoryName(s, i.name) }}</span></span>
                       <span class="price" :title="i.price !== null ? '收購價（一個；點一下看怎麼算）' : undefined">{{ i.price !== null ? num(i.price) : '' }}</span>
-                      <span class="stock" />
                       <span v-if="i.price !== null" class="steps" @click.stop>
                         <button class="small" :disabled="!cart.sell[i.name]" title="全部拿出購物車" aria-label="全部拿出購物車" @click="removeSell(i.name, true)">«</button>
                         <button class="small" :disabled="!cart.sell[i.name]" title="從購物車拿出一個" aria-label="從購物車拿出一個" @click="removeSell(i.name)">‹</button>
@@ -342,7 +339,7 @@ function buy(d: Deal) {
 <style scoped>
 .head { display: flex; align-items: center; gap: 6px; }
 .head :deep(.game-icon), .money :deep(.game-icon) { color: var(--accent); }
-.shop-dialog { display: grid; gap: 10px; }
+.shop-dialog { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; }
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .shop-bar { display: flex; flex-wrap: nowrap; gap: 8px; justify-content: space-between; align-items: flex-start; }
 .shop-bar .money { flex: none; }
@@ -350,7 +347,7 @@ function buy(d: Deal) {
 .tag.ok { border-color: var(--accent); color: var(--accent); margin-left: 6px; }
 .error { color: var(--danger); margin: 0; }
 .last { color: var(--accent); margin: 0; }
-.cols { display: grid; grid-template-columns: 1.25fr 1fr; gap: 14px; align-items: start; }
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; align-items: start; }
 @media (max-width: 760px) { .cols { grid-template-columns: minmax(0, 1fr); } }
 .col { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; min-width: 0; }
 .col h3 { margin: 0; color: var(--accent-2); }
@@ -377,10 +374,10 @@ function buy(d: Deal) {
 .item-row .line { display: grid; grid-template-columns: var(--shop-cols); gap: 6px; align-items: center; min-height: 40px; padding: 3px 8px; cursor: pointer; }
 .item-row .line:hover { background: #c99a450a; }
 /* 特別交易：價錢（可能是東西或時數，照寫）、庫存、買下與交涉 */
-.item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) auto 3em auto; gap: 8px; }
+.item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) auto auto; gap: 8px; }
 .item-row.dim .line { opacity: 0.55; }
-/* 一般商品與行囊的欄位：圖示、物品、類別、價格、剩、« ‹ › »、購物車；表頭用同一組（固定寬度，表頭與每一列才對得齊） */
-.shop-dialog { --shop-cols: 30px minmax(0, 1fr) 76px 56px 40px 114px 38px; }
+/* 一般商品與行囊的欄位：圖示、物品（名稱後面是 ×數量）、類別、價格、« ‹ › »、購物車；表頭用同一組（固定寬度，表頭與每一列才對得齊） */
+.shop-dialog { --shop-cols: 30px minmax(0, 1fr) 76px 56px 114px 38px; }
 .thead { display: grid; grid-template-columns: var(--shop-cols); gap: 6px; padding: 0 9px 3px; border-bottom: 1px solid var(--border); }
 .thead .r { text-align: right; }
 .cat { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -389,7 +386,7 @@ function buy(d: Deal) {
 .steps button { width: 26px; height: 26px; padding: 0; line-height: 1; }
 .no { grid-column: 6 / -1; text-align: right; white-space: nowrap; }
 /* 行囊：沒有類別欄（類別在分組標題與點開的詳情），名稱欄寬一點 */
-.bag-pane { --shop-cols: 30px minmax(0, 1fr) 56px 40px 114px 38px; }
+.bag-pane { --shop-cols: 30px minmax(0, 1fr) 56px 114px 38px; }
 .bag-pane .no { grid-column: 5 / -1; }
 /* 很長的名字換行，不截成「…」 */
 .bag-pane .what:not(.marquee) { white-space: normal; overflow-wrap: anywhere; }
@@ -398,13 +395,10 @@ function buy(d: Deal) {
   .shop-dialog, .bag-pane { --shop-cols: 30px minmax(0, 1fr) auto; }
   .thead .c, .thead > span:nth-child(n + 5), .bag-pane .thead > span:nth-child(n + 4), .item-row .line .cat { display: none; }
   .what .sub { display: block; margin: 0; }
-  /* 「剩 N」靠左，不被右邊的按鈕蓋住 */
-  .item-row .line .stock { grid-column: 2; grid-row: 2; text-align: left; }
   .item-row .line .steps { grid-column: 2 / -1; grid-row: 2; justify-self: end; margin-right: 44px; }
   .item-row .line .incart { grid-column: 3; grid-row: 2; }
   .item-row .line .no, .bag-pane .item-row .line .no { grid-column: 2 / -1; grid-row: 2; }
   .item-row .line.special-line { grid-template-columns: 30px minmax(0, 1fr) auto; row-gap: 2px; }
-  .item-row .line.special-line .stock { grid-column: 2; }
   .item-row .line.special-line .btns { grid-column: 2 / -1; flex-wrap: wrap; }
 }
 .what { min-width: 0; }
@@ -415,7 +409,6 @@ function buy(d: Deal) {
 .what .nm { display: inline; }
 .what:not(.marquee) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .what .qty { margin-left: 4px; }
-.stock { text-align: right; white-space: nowrap; }
 .btns { display: inline-flex; gap: 4px; align-items: center; justify-content: flex-end; }
 .btns .num { width: 52px; height: 28px; padding: 2px 6px; }
 /* 購物車裡有幾個：最右邊固定寬度的一欄 */
