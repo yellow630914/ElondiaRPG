@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { affinityStage } from '@/engine/character'
 import { locationById, locationName } from '@/engine/data'
 import { formatTime } from '@/engine/state'
@@ -16,9 +16,12 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import { isFollowed, newsOf } from '@/engine/npcLife'
 import { useSettings } from '@/stores/settings'
+import { isMobile } from './mobile/mobile'
 
 const game = useGame()
 const settings = useSettings()
+// 手機：「人物｜記憶」兩個分頁（電腦版左右兩欄）
+const side = ref<'people' | 'memories'>('people')
 const s = computed(() => game.state!)
 // 所在：在隊伍裡、留在房子或寄放在酒館；其他人寫今天在哪（和地圖上擺人用同一套，另一片大陸時註明；population.ts 的 whereaboutsOf）
 const awayById = computed(() => new Map(awayCompanions(s.value).map((a) => [a.id, a])))
@@ -84,15 +87,40 @@ function affinityPct(v: number) {
 }
 
 // ---- 共同記憶 ----
+// 一頁 30 筆、依天分段；篩選：人、地點、重要程度（重要以上、難忘、釘選）、內容搜尋。記憶本身不刪，只是預設不全部畫出來
+const PAGE = 30
 const filterPerson = ref('')
 const filterLocation = ref('')
-const memories = computed(() =>
-  [...(s.value.memories ?? [])]
+const filterLevel = ref<'all' | 'important' | 'unforgettable' | 'pinned'>('all')
+const memQuery = ref('')
+const memLimit = ref(PAGE)
+watch([filterPerson, filterLocation, filterLevel, memQuery], () => { memLimit.value = PAGE })
+const allMemories = computed(() => s.value.memories ?? [])
+const mergedCount = computed(() => allMemories.value.reduce((n, m) => n + (m.merged ?? 0), 0))
+const pinnedCount = computed(() => allMemories.value.filter((m) => m.pinned).length)
+const memories = computed(() => {
+  const q = memQuery.value.trim()
+  return [...allMemories.value]
     .filter((m) => !filterPerson.value || m.participants.includes(filterPerson.value))
     .filter((m) => !filterLocation.value || m.location === filterLocation.value)
-    .reverse(),
-)
-const memoryLocations = computed(() => [...new Set((s.value.memories ?? []).map((m) => m.location))])
+    .filter((m) => filterLevel.value === 'all' || (filterLevel.value === 'important' ? m.importance >= 2 : filterLevel.value === 'unforgettable' ? m.importance === 3 : !!m.pinned))
+    .filter((m) => !q || m.summary.includes(q) || (m.scene ?? '').includes(q) || m.participants.some((id) => nameOf(id).includes(q)))
+    .reverse()
+})
+/** 這一頁的記憶依天分段（新的在前） */
+const memoryDays = computed(() => {
+  const out: { day: number; items: Memory[] }[] = []
+  for (const m of memories.value.slice(0, memLimit.value)) {
+    const last = out.at(-1)
+    if (last && last.day === m.time.day) last.items.push(m)
+    else out.push({ day: m.time.day, items: [m] })
+  }
+  return out
+})
+const memoryLocations = computed(() => [...new Set(allMemories.value.map((m) => m.location))])
+/** 點一下展開（超過兩行的才看得完）；展開時有「編輯」 */
+const openMemory = ref<string | null>(null)
+const hhmm = (t: Memory['time']) => `${String(t.hour ?? 0).padStart(2, '0')}:${String(t.minute ?? 0).padStart(2, '0')}`
 
 const editingMemory = ref<string | null>(null)
 const memoryDraft = ref('')
@@ -132,8 +160,12 @@ const suggestions = computed(() => s.value.suggestions ?? [])
 </script>
 
 <template>
+  <nav v-if="isMobile" class="ptabs">
+    <button :class="{ on: side === 'people' }" @click="side = 'people'">人物 {{ rels.length }}</button>
+    <button :class="{ on: side === 'memories' }" @click="side = 'memories'">記憶 {{ allMemories.length }}</button>
+  </nav>
   <div class="layout">
-    <section class="panel">
+    <section v-show="!isMobile || side === 'people'" class="panel">
       <h2 class="head"><GameIcon name="heart" :size="20" />人際關係 <Hint text="主角認識的角色。親密度由遊戲中的互動決定；外貌與關係描述可以自行編輯，會在相關事件中提供給 AI 參考。" /></h2>
       <p v-if="rels.length === 0" class="muted small">還沒有認識任何人。到酒館招募夥伴吧。</p>
       <div v-else class="row rel-filter">
@@ -185,19 +217,27 @@ const suggestions = computed(() => s.value.suggestions ?? [])
 
     <RelationDetail :id="openId" :where="openId ? whereNow(openId) : ''" @close="openId = null" />
 
-    <section class="panel">
+    <section v-show="!isMobile || side === 'memories'" class="panel">
       <h2 class="head"><GameIcon name="notes" :size="20" />冒險記憶 <Hint text="主角經歷過的事件。生成文本時，會依參與人、地點與時間找出相關的記憶交給 AI。釘選的記憶一定會被找到。" /></h2>
 
+      <p class="small muted count">共 {{ allMemories.length }} 筆<template v-if="mergedCount">（舊的日常合併過 {{ mergedCount }} 筆）</template><template v-if="memories.length !== allMemories.length">・符合 {{ memories.length }} 筆</template></p>
       <div class="row filters small">
-        <select v-model="filterPerson">
+        <input v-model="memQuery" class="q" type="search" placeholder="搜尋記憶的內容或人名" />
+        <select v-model="filterPerson" aria-label="人">
           <option value="">所有人</option>
           <option v-for="r in rels" :key="r.id" :value="r.id">{{ r.name }}</option>
         </select>
-        <select v-model="filterLocation">
+        <select v-model="filterLocation" aria-label="地點">
           <option value="">所有地點</option>
           <option v-for="id in memoryLocations" :key="id" :value="id">{{ locationName(id) }}</option>
         </select>
       </div>
+      <nav class="row chips small">
+        <button class="small" :class="{ active: filterLevel === 'all' }" @click="filterLevel = 'all'">全部</button>
+        <button class="small" :class="{ active: filterLevel === 'important' }" title="重要（★★）與難忘（★★★）" @click="filterLevel = 'important'">★★ 重要以上</button>
+        <button class="small" :class="{ active: filterLevel === 'unforgettable' }" @click="filterLevel = 'unforgettable'">★★★ 難忘</button>
+        <button class="small" :class="{ active: filterLevel === 'pinned' }" title="釘選的記憶：交給 AI 時一定找得到" @click="filterLevel = 'pinned'"><GameIcon name="bookmark" :size="12" /> 釘選 {{ pinnedCount }}</button>
+      </nav>
 
       <details class="add small">
         <summary>手動新增記憶</summary>
@@ -216,31 +256,42 @@ const suggestions = computed(() => s.value.suggestions ?? [])
       </details>
 
       <p v-if="memories.length === 0" class="muted small">沒有符合的記憶。</p>
-      <ul class="plain">
-        <li v-for="m in memories" :key="m.id" class="memory">
-          <div class="row small meta">
-            <span>{{ formatTime(m.time) }}</span>
-            <span>{{ m.scene ?? locationName(m.location) }}</span>
-            <span class="muted">{{ m.participants.map(nameOf).join('、') }}</span>
-            <span v-if="m.merged" class="tag" title="記憶超過 200 筆時，舊的日常記憶會合併成摘要">合併 {{ m.merged }} 筆</span>
-            <span class="spacer" />
-            <button
-              class="small star"
-              :title="'重要程度：' + ['', '日常', '重要', '難忘'][m.importance]"
-              @click="game.editMemory(m.id, { importance: ((m.importance % 3) + 1) as Memory['importance'] })"
-            >{{ STARS[m.importance] }}</button>
-            <button class="small" :class="{ pinned: m.pinned }" @click="game.editMemory(m.id, { pinned: !m.pinned })">
-              <GameIcon name="bookmark" :size="12" /> {{ m.pinned ? '已釘選' : '釘選' }}
-            </button>
-          </div>
-          <div v-if="editingMemory !== m.id" class="summary" @click="editSummary(m)">{{ m.summary }}</div>
-          <div v-else class="row">
-            <textarea v-model="memoryDraft" rows="2" style="flex: 1" />
-            <button class="small primary" @click="saveSummary(m.id)">儲存</button>
-            <button class="small danger" @click="removeMemory(m.id)">刪除</button>
-          </div>
-        </li>
-      </ul>
+      <template v-for="g in memoryDays" :key="g.day">
+        <div class="day small">第 {{ g.day }} 天</div>
+        <ul class="plain">
+          <li v-for="m in g.items" :key="m.id" class="memory" :class="{ merged: m.merged }">
+            <div class="row small meta">
+              <span>{{ m.merged ? `合併 ${m.merged} 筆` : hhmm(m.time) }}</span>
+              <b>{{ m.scene ?? locationName(m.location) }}</b>
+              <span class="who muted" :title="m.participants.map(nameOf).join('、')">{{ m.participants.map(nameOf).join('、') }}</span>
+              <span class="spacer" />
+              <button
+                class="small icon star"
+                :title="'重要程度：' + ['', '日常', '重要', '難忘'][m.importance] + '（點一下換）'"
+                @click="game.editMemory(m.id, { importance: ((m.importance % 3) + 1) as Memory['importance'] })"
+              >{{ STARS[m.importance] }}</button>
+              <button class="small icon" :class="{ pinned: m.pinned }" :title="m.pinned ? '已釘選（點一下取消）' : '釘選：交給 AI 時一定找得到'" :aria-label="m.pinned ? '取消釘選' : '釘選'" @click="game.editMemory(m.id, { pinned: !m.pinned })">
+                <GameIcon name="bookmark" :size="12" />
+              </button>
+            </div>
+            <div v-if="editingMemory !== m.id" class="summary" :class="{ open: openMemory === m.id }" :title="openMemory === m.id ? '' : '點一下看完整內容'" @click="openMemory = openMemory === m.id ? null : m.id">{{ m.summary }}</div>
+            <div v-if="openMemory === m.id && editingMemory !== m.id" class="row">
+              <button class="small" @click="editSummary(m)"><GameIcon name="edit" :size="12" /> 編輯</button>
+            </div>
+            <div v-else-if="editingMemory === m.id" class="row">
+              <textarea v-model="memoryDraft" rows="3" style="flex: 1" />
+              <div class="col-btns">
+                <button class="small primary" @click="saveSummary(m.id)">儲存</button>
+                <button class="small" @click="editingMemory = null">取消</button>
+                <button class="small danger" @click="removeMemory(m.id)">刪除</button>
+              </div>
+            </div>
+          </li>
+        </ul>
+      </template>
+      <div v-if="memories.length > memLimit" class="more-mem">
+        <button class="small" @click="memLimit += PAGE">顯示更早的 {{ Math.min(PAGE, memories.length - memLimit) }} 筆（還有 {{ memories.length - memLimit }} 筆）</button>
+      </div>
     </section>
   </div>
 </template>
@@ -270,15 +321,33 @@ const suggestions = computed(() => s.value.suggestions ?? [])
 .icons { display: inline-flex; gap: 4px; align-items: center; flex: none; }
 .badge { font-size: 11px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; padding: 0 4px; white-space: nowrap; }
 .hint-ai { margin: 0 0 6px; color: var(--accent); }
-.filters { margin-bottom: 8px; }
+.filters { margin-bottom: 6px; gap: 6px; }
+.filters .q { flex: 1 1 10em; min-width: 0; }
+.count { margin: -4px 0 6px; }
+.chips { gap: 4px; margin-bottom: 8px; }
+.chips button.active { border-color: var(--accent); color: var(--accent); }
+.day { color: var(--accent-2, var(--accent)); font-weight: bold; margin: 8px 0 0; }
+.memory { padding: 5px 0; border-bottom: 1px solid var(--border); }
+.memory.merged .summary { color: var(--muted); }
+.meta { gap: 8px; flex-wrap: nowrap; min-width: 0; }
+.meta > span:first-child { white-space: nowrap; }
+.meta b { font-weight: normal; white-space: nowrap; }
+.meta .who { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.icon { padding: 0 6px; min-height: 0; height: 24px; flex: none; }
+/* 內容最多兩行，點一下展開 */
+.summary { cursor: pointer; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.summary.open { display: block; overflow: visible; }
+.col-btns { display: grid; gap: 4px; }
+.more-mem { text-align: center; margin-top: 10px; }
+.ptabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 8px; }
+.ptabs button { flex: 1; border: none; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 8px 0; }
+.ptabs button.on { border-bottom-color: var(--accent); color: var(--accent); font-weight: bold; }
 .add { margin-bottom: 8px; display: grid; gap: 6px; }
 .add textarea { width: 100%; margin-top: 6px; }
-.memory { display: grid; gap: 4px; }
-.meta { gap: 10px; }
+.memory { display: grid; gap: 3px; }
 .spacer { flex: 1; }
 .star { color: var(--accent); }
 .pinned { border-color: var(--accent); color: var(--accent); }
-.summary { cursor: text; }
 .summary:hover { color: var(--accent); }
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
