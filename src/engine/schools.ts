@@ -11,7 +11,8 @@ import { lewdPowerOf } from './lewd'
 import { PARASITE_LOCK } from './parasites'
 import { matches, perksOf, type CheckCtx } from './perks'
 import { contractOf } from './tattoos'
-import type { Character, GearSlot } from './types'
+import type { Character, GameState, GearSlot } from './types'
+import { gameRule } from './gameRules'
 
 /** 所有流派（lewd.json 的順序） */
 export function schoolIds(): string[] {
@@ -149,8 +150,8 @@ export interface TwoFace {
   active: { name: string; kind: BindKind; mult: number }[]
 }
 
-/** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算 */
-export function twoFaceCombat(c: Character): TwoFace {
+/** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算；全身加總照存檔規則封頂（沒給 state 時用預設的上限） */
+export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> | null): TwoFace {
   const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [] }
   const schools = schoolsOf(c)
   if (!schools.length) return out
@@ -160,7 +161,8 @@ export function twoFaceCombat(c: Character): TwoFace {
     const k = lewdRules.two_face.kinds[b.kind]
     const row = k.combat[b.bind - 1] ?? {}
     for (const [key, v] of Object.entries(row)) {
-      const n = Math.round((v ?? 0) * mult)
+      // 每件無條件捨去（1 × 1.56 不會變成 2）
+      const n = Math.trunc((v ?? 0) * mult)
       if (!n) continue
       if (key === 'initiative') out.initiative += n
       else out.mods[key as keyof Mods] = (out.mods[key as keyof Mods] ?? 0) + n
@@ -169,6 +171,13 @@ export function twoFaceCombat(c: Character): TwoFace {
     if (b.bind >= 3) for (const s of k.immune ?? []) if (!out.immune.includes(s)) out.immune.push(s)
     out.active.push({ name: b.name, kind: b.kind, mult: Math.round(mult * 100) / 100 })
   }
+  // 全身合計的上限（存檔規則 bindCapStat、bindCapAp、bindCapInit）：穿再多件也不會一直疊
+  const stat = gameRule(state, 'bindCapStat')
+  for (const [k, v] of Object.entries(out.mods)) {
+    const c = k === 'ap_regen' ? gameRule(state, 'bindCapAp') : stat
+    if ((v ?? 0) > c) out.mods[k as keyof Mods] = c
+  }
+  out.initiative = Math.min(gameRule(state, 'bindCapInit'), out.initiative)
   return out
 }
 

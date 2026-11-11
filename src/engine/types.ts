@@ -925,6 +925,10 @@ export interface GameOptions {
   submissionDecay?: number
   lewdnessDecay?: number
   lustMult?: number
+  /** 拘束具雙面效應的全身上限（docs/LEWD_STATS.md 第 7 節）：命中、迴避、豁免、傷害、減傷各一項；行動點回復；先攻 */
+  bindCapStat?: number
+  bindCapAp?: number
+  bindCapInit?: number
   /** 慾望滿了高潮時失去最大生命的百分比：我方、小怪（與 NPC 敵人）、頭目（combat.ts 的 climax） */
   climaxHpParty?: number
   climaxHpMinion?: number

@@ -80,7 +80,7 @@ describe('S9-2 拘束具', () => {
     equipItem(state, '囚徒的符文枷', pc.id)
     const slot = slotOf(state, '囚徒的符文枷')
     expect(bindsOf(pc)[0]).toMatchObject({ kind: 'hands', bind: 3, lock: 'rune' })
-    expect(twoFaceCombat(pc).mods.dr).toBe(Math.round(3 * 1.2 * 1.2))
+    expect(twoFaceCombat(pc, { options: { bindCapStat: 20 } } as never).mods.dr).toBe(Math.floor(3 * 1.2 * 1.2))
     expect(lockable(pc.gear![slot])).toBe(false)
     expect(() => lockGear(state, pc.id, slot, '白鐵鎖')).toThrow('已經上鎖')
     expect(() => unlockGear(state, pc.id, slot)).toThrow('沒有上鎖')
