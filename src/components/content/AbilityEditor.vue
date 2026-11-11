@@ -375,7 +375,7 @@ function remove() {
         </template>
       </div>
       <div class="row small">
-        <label class="check"><input v-model="burstOn" type="checkbox" /> 引爆 <Hint text="消耗全部的慾望，造成慾望 × 倍率 + 屬性調整值的傷害（或治療目標）；用了立刻結束回合，下一回合脫力。" /></label>
+        <label class="check"><input v-model="burstOn" type="checkbox" /> 引爆 <Hint text="消耗全部的慾望（最多算同級基本慾望上限的 1.5 倍，combat.json 的 lust.burst_cap），造成慾望 × 倍率 + 屬性調整值的傷害（或治療目標）；用了立刻結束回合，下一回合脫力。" /></label>
         <template v-if="draft.burst">
           倍率 <input v-model.number="draft.burst.mult" type="number" min="0.1" max="3" step="0.05" class="num" />
           <select v-model="burstKind">

@@ -1978,7 +1978,7 @@ function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   if (a.burst && spent > 0) {
     // 慾焰（縱欲派）：引爆的傷害倍率加成
     // 引爆算進去的慾望最多到同等級基本慾望上限的 burst_cap 倍（忍耐、狀態把上限堆得很高時不會無限放大）
-    const cap = (lustRules() as { burst_cap?: number }).burst_cap
+    const cap = lustRules().burst_cap
     const used = cap ? Math.min(spent, Math.round(lustMaxFor(actor.level) * cap)) : spent
     const amount = Math.floor((Math.floor(used * a.burst.mult) + mod(actor.attrs[attrFor(actor, a)])) * (1 + (actor.lustMods?.burst ?? 0)))
     if (a.burst.heal) heal(target, amount, effects)
