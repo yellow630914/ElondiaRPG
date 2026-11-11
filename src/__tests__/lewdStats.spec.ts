@@ -33,18 +33,19 @@ describe('慾望指標：數值與分段', () => {
     expect(bandName('exposure', 100)).toBe('人盡皆知')
   })
 
-  it('成人向服裝與束縛用的底材給加值；物品寫的加值每件 ±10、全身 ±total_cap', () => {
+  it('成人向服裝與束縛用的底材給加值；物品寫的加值每件 ±item_cap、全身 ±total_cap', () => {
     const { pc } = game()
     wear(pc, 'body', 'bunny_suit')
     expect(gearLewd(pc).lewdness).toBe(5)
     wear(pc, 'accessory', 'slave_collar')
     expect(gearLewd(pc)).toMatchObject({ submission: 5, endurance: 3 })
     wear(pc, 'head', 'bunny_ears', { lewd: { lewdness: 30 } })
-    // 兔耳：成人向 +5 加上寫的 +30，單件最多 +10
-    expect(gearLewd(pc).lewdness).toBe(15)
-    wear(pc, 'feet', 'heels', { lewd: { lewdness: 10 } })
+    // 兔耳：成人向 +5 加上寫的 +30，單件最多 +20（item_cap）
+    expect(lewdRules.gear.item_cap).toBe(20)
     expect(gearLewd(pc).lewdness).toBe(25)
-    expect(lewdOf(pc).lewdness).toBe(lewdRules.defaults.lewdness + 25)
+    wear(pc, 'feet', 'heels', { lewd: { lewdness: 10 } })
+    expect(gearLewd(pc).lewdness).toBe(35)
+    expect(lewdOf(pc).lewdness).toBe(lewdRules.defaults.lewdness + 35)
     // 全身最多 total_cap（暫時調小來測）
     const cap = lewdRules.gear.total_cap
     lewdRules.gear.total_cap = 20
