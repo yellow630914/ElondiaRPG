@@ -6,34 +6,19 @@ import { formatTime } from '@/engine/state'
 import { nameOf as npcName, type Memory, type Relationship } from '@/engine/social'
 import { useGame } from '@/stores/game'
 import NameTag from './NameTag.vue'
-import { canPromote } from '@/engine/promoteNpc'
-import { npcRecord } from '@/engine/npcs'
+import RelationDetail from './RelationDetail.vue'
+import { npcRecord, npcTitle } from '@/engine/npcs'
 import { awayCompanions, awayLabel } from '@/engine/away'
 import { whereaboutsOf } from '@/engine/population'
 import { allyPlacements } from '@/engine/story'
-import { useContent, VANILLA_NAME } from '@/stores/content'
-import PortraitBox from './PortraitBox.vue'
+import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
-import { canLive, isFollowed, livingNpcs, newsOf, newsText } from '@/engine/npcLife'
+import { isFollowed, newsOf } from '@/engine/npcLife'
 import { useSettings } from '@/stores/settings'
-import { genderSwapBlock } from '@/engine/genderSwap'
-import { genderName, GENDER_IDS } from '@/engine/data'
-import { encounterText, sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
 
 const game = useGame()
-// 私生活和別人發生關係（一夜情、性侍奉、接客、和其他 NPC）：設定是總開關，這裡個別打開（預設關閉；npcLife.ts 的 canPair）
-const pairable = (id: string) => !!s.value.npcLife?.pairs?.includes(id)
-const inParty = (id: string) => s.value.party.some((m) => m.id === id)
-// 有成人向私生活的近況交給「性經歷記錄」的來源寫
-const newsFeature = (id: string) => (newsOf(s.value, id).some((n) => !n.story && n.adult) ? 'sexlog' : 'life')
-// 性經歷（成人向，docs/LEWD_STATS.md 第 29 節）：摺起來，標題只寫經驗與人數
-function sexBrief(id: string): string {
-  const items = sexRecordItems(s.value, id)
-  const rec = sexRecordOf(s.value, id)
-  return `${items[0]?.value ?? ''}・${rec.partners} 人・${rec.times} 次`
-}
-const content = useContent()
+const settings = useSettings()
 const s = computed(() => game.state!)
 // 所在：在隊伍裡、留在房子或寄放在酒館；其他人寫今天在哪（和地圖上擺人用同一套，另一片大陸時註明；population.ts 的 whereaboutsOf）
 const awayById = computed(() => new Map(awayCompanions(s.value).map((a) => [a.id, a])))
@@ -45,18 +30,26 @@ function whereNow(id: string): string {
   if (a) return `${a.place.kind === 'home' ? '留在' : '寄放在'}${awayLabel(a.place)}${a.days ? `（${a.days} 天）` : ''}`
   return whereaboutsOf(s.value, id, allies.value)
 }
-
-// 生成的人存成固定 NPC（存進目前的世界）
-function promotable(id: string): boolean {
-  void content.version
-  return canPromote(s.value, id)
-}
-function promote(id: string, name: string) {
-  if (!confirm(`把「${name}」存成目前世界的固定 NPC？之後可以在內容頁籤的「固定 NPC」編輯。`)) return
-  game.promoteNpc(id)
-  if (!game.error) game.flash(`已把「${name}」存成固定 NPC`)
-}
 const rels = computed(() => Object.values(s.value.relationships ?? {}))
+
+// ---- 列表一列的內容 ----
+/** 打開人物詳情（二級視窗）的人 */
+const openId = ref<string | null>(null)
+/** 名字旁邊的小字：隊友寫等級，其他人寫職業或身分 */
+function titleOf(id: string): string {
+  const m = s.value.party.find((x) => x.id === id)
+  if (m) return `Lv.${m.level}`
+  const rec = npcRecord(s.value, id)
+  return rec ? `${npcTitle(rec)}${rec.kind === 'adventurer' ? ` Lv.${rec.level}` : ''}` : ''
+}
+const followed = (id: string) => isFollowed(s.value, id)
+const pairable = (id: string) => !!s.value.npcLife?.pairs?.includes(id)
+/** 上次見面之後的近況幾則 */
+function newNews(id: string): number {
+  const seen = s.value.relationships?.[id]?.lastSeen?.time.day ?? 0
+  return newsOf(s.value, id).filter((n) => n.day >= seen).length
+}
+const suggestionFor = (id: string) => (s.value.suggestions ?? []).some((x) => x.npc === id)
 
 // ---- 篩選：名字、身分、好感、排序 ----
 const relQuery = ref('')
@@ -84,60 +77,6 @@ const pcName = computed(() => s.value.party.find((m) => m.isPlayer)?.name ?? '�
 
 function nameOf(id: string): string {
   return npcName(s.value, id)
-}
-
-// ---- 歡愉的惡作劇：改隨機 NPC 的性別（固定 NPC 不開放，見 engine/genderSwap.ts） ----
-const swapping = ref<string | null>(null)
-const swapTo = ref('')
-const swappable = (id: string) => !!game.state && !genderSwapBlock(game.state, id)
-const genderOfNpc = (id: string) => (game.state ? npcRecord(game.state, id)?.gender ?? '' : '')
-const swappedNpc = (id: string) => !!game.state?.npcs?.[id]?.genderSwap
-function startSwap(id: string) {
-  swapping.value = id
-  swapTo.value = GENDER_IDS.find((g) => g !== genderOfNpc(id)) ?? ''
-}
-function doSwap(id: string, name: string) {
-  if (!swapTo.value) return
-  if (!confirm(`歡愉的惡作劇：把「${name}」變成${genderName(swapTo.value)}？\n外貌會照新的性別重新寫一份（之後可以再編輯），預設的內衣跟著換，身上其他的衣服不會換；目前的形象圖會退成舊版。以前的日誌與記憶不會改，交給 AI 時會說明性別改過了。`)) return
-  game.swapNpcGender(id, swapTo.value)
-  swapping.value = null
-}
-
-// ---- 人際關係編輯 ----
-const editing = ref<string | null>(null)
-// NPC 自己的日子（npcLife.ts）：會自己成長的人、近況（新的在前，最多三則）、關注
-const settings = useSettings()
-const living = computed(() => {
-  void game.state?.time.day
-  void game.state?.npcLife
-  return game.state ? new Set(livingNpcs(game.state).map((r) => r.id)) : new Set<string>()
-})
-const news = (id: string) => (game.state ? [...newsOf(game.state, id)].reverse().slice(0, 3) : [])
-const followable = (id: string) => {
-  const rec = game.state ? npcRecord(game.state, id) : undefined
-  return !!rec && !rec.dead && canLive(rec)
-}
-const followed = (id: string) => !!game.state && isFollowed(game.state, id)
-const unpolished = (id: string) => news(id).some((n) => !n.story)
-
-const draft = reactive({ appearance: '', toPlayer: '', aliases: '', others: [] as { id: string; text: string }[] })
-
-function startEdit(r: Relationship) {
-  editing.value = r.id
-  draft.appearance = r.appearance
-  draft.toPlayer = r.toPlayer
-  draft.aliases = (r.aliases ?? []).join('、')
-  draft.others = Object.entries(r.toOthers).map(([id, text]) => ({ id, text }))
-}
-
-function saveEdit(id: string) {
-  game.editRelationship(id, {
-    appearance: draft.appearance.trim(),
-    toPlayer: draft.toPlayer.trim(),
-    aliases: draft.aliases.split(/[、,，]/).map((x) => x.trim()),
-    toOthers: Object.fromEntries(draft.others.map((o) => [o.id, o.text.trim()])),
-  })
-  editing.value = null
 }
 
 function affinityPct(v: number) {
@@ -188,9 +127,8 @@ function addMemory() {
 
 const STARS = { 1: '★', 2: '★★', 3: '★★★' } as const
 
-// ---- AI 提議的關係更新 ----
+// ---- AI 提議的關係更新：列表上只提示，採用在人物詳情的「概況」 ----
 const suggestions = computed(() => s.value.suggestions ?? [])
-const suggestionDraft = reactive<Record<string, string>>({})
 </script>
 
 <template>
@@ -220,110 +158,32 @@ const suggestionDraft = reactive<Record<string, string>>({})
         <span class="small muted">{{ shownRels.length }} / {{ rels.length }} 人</span>
       </div>
 
-      <div v-if="suggestions.length" class="suggestions">
-        <h3 class="small">AI 提議更新「與{{ pcName }}的關係」</h3>
-        <div v-for="sg in suggestions" :key="sg.id" class="suggestion small">
-          <div><NameTag :id="sg.npc" /> <span class="muted">目前：{{ s.relationships?.[sg.npc]?.toPlayer }}</span></div>
-          <textarea v-model="suggestionDraft[sg.id]" rows="2" :placeholder="sg.text" />
-          <div class="row">
-            <button class="small primary" @click="game.acceptSuggestion(sg.id, suggestionDraft[sg.id] || sg.text)">採用</button>
-            <button class="small" @click="game.rejectSuggestion(sg.id)">不採用</button>
-          </div>
-        </div>
-      </div>
+      <p v-if="suggestions.length" class="small hint-ai"><GameIcon name="sparkles" :size="13" /> AI 提議更新 {{ suggestions.length }} 位的「與{{ pcName }}的關係」：點有「AI 提議」標記的人，在「概況」採用或不採用。</p>
 
       <p v-if="rels.length && !shownRels.length" class="muted small">沒有符合的人。</p>
-      <article v-for="r in shownRels" :key="r.id" class="rel">
-        <div class="row" style="justify-content: space-between">
-          <NameTag :id="r.id" />
-          <span class="small">{{ affinityStage(r.affinity) }}（{{ r.affinity }}）</span>
-        </div>
-        <div class="small where"><GameIcon name="pin" :size="12" /> {{ whereNow(r.id) }}</div>
-        <div class="affinity"><span :style="{ left: affinityPct(r.affinity) }" /></div>
-        <PortraitBox v-if="game.state" :id="r.id" size="small" />
-
-        <template v-if="editing !== r.id">
-          <dl class="small">
-            <template v-if="genderOfNpc(r.id)"><dt>性別</dt><dd>{{ genderName(genderOfNpc(r.id)) }}<span v-if="swappedNpc(r.id)" class="muted">（歡愉的惡作劇改過）</span></dd></template>
-            <dt>外貌</dt><dd>{{ r.appearance || '—' }}</dd>
-            <dt>與{{ pcName }}</dt><dd>{{ r.toPlayer || '—' }}</dd>
-            <template v-if="Object.keys(r.toOthers).length">
-              <dt>與他人</dt>
-              <dd>
-                <div v-for="(text, id) in r.toOthers" :key="id">{{ nameOf(String(id)) }}：{{ text }}</div>
-              </dd>
-            </template>
-            <template v-if="r.aliases?.length"><dt>別名</dt><dd>{{ r.aliases.join('、') }}</dd></template>
-            <template v-if="r.firstMet"><dt>初次見面</dt><dd>{{ formatTime(r.firstMet.time) }}・{{ locationName(r.firstMet.location) }}</dd></template>
-            <dt v-if="settings.sexRecords">性經歷</dt>
-            <dd v-if="settings.sexRecords">
-              <details class="sex">
-                <summary>{{ sexBrief(r.id) }}</summary>
-                <div v-for="x in sexRecordItems(s, r.id)" :key="x.label">{{ x.label }}：{{ x.value }}</div>
-                <div v-for="e in sexRecordOf(s, r.id).recent" :key="`${e.day}-${e.report}`" class="news">{{ encounterText(e) }}</div>
-              </details>
-            </dd>
-            <template v-if="news(r.id).length">
-              <dt>近況</dt>
-              <dd><div v-for="n in news(r.id)" :key="n.day" class="news">第 {{ n.day }} 天：{{ newsText(n) }}</div></dd>
-            </template>
-          </dl>
-          <div class="row">
-            <button class="small" @click="startEdit(r)">編輯</button>
-            <button
-              v-if="settings.npcLife && followable(r.id)" class="small" :class="{ primary: followed(r.id) }"
-              :title="followed(r.id) ? '取消關注（親密度夠高、留在家裡或離隊的夥伴照樣會自己成長）' : '關注：不在你身邊時也會自己成長（升級、換裝、受傷休養），每隔幾天有一則近況'"
-              @click="game.setFollowed(r.id, !followed(r.id))"
-            ><GameIcon name="star" :size="13" /> {{ followed(r.id) ? '已關注' : '關注' }}</button>
-            <span v-if="settings.npcLife && living.has(r.id) && !followed(r.id)" class="small muted">會自己成長</span>
-            <label
-              v-if="settings.npcLife && settings.npcPairs && !inParty(r.id)" class="small check pairs"
-              title="成人向：這個人的私生活會不會和別人發生關係——一夜情、替人性侍奉、娼妓接客，以及和其他認識的 NPC（兩個人都打開、住在同一座城才會）。預設關閉，關著時只會自慰。和你的親密度到設定的門檻以上的人也只會自慰（設定 → 遊戲規則 → NPC）"
-            ><input type="checkbox" :checked="pairable(r.id)" @change="game.setNpcPairs(r.id, ($event.target as HTMLInputElement).checked)" /> 可以和別人發生關係</label>
-            <button v-if="settings.npcLife && unpolished(r.id) && settings.ready(newsFeature(r.id))" class="small" title="請 AI 依他的性格與和你的記憶，把近況寫成一段" @click="game.polishNews([r.id])"><GameIcon name="feather" :size="13" /> 寫成一段</button>
-            <button
-              v-if="promotable(r.id)" class="small"
-              :title="(content.readOnly ? `${VANILLA_NAME}不能直接修改：會自動建立自己的世界，這場遊戲也改用它。` : '') + '把這個人目前的樣子（能力值、技能、特質、裝備、出沒的地方）存進目前的世界，之後可以在內容頁籤編輯；親密度與記憶延續'"
-              @click="promote(r.id, r.name)"
-            ><GameIcon name="bookmark" :size="13" /> 存成固定 NPC</button>
-            <button v-if="swappable(r.id) && swapping !== r.id" class="small" title="歡愉的惡作劇：改變這個人的性別（只有隨機產生的人可以；固定 NPC 的劇情照原本的性別寫）" @click="startSwap(r.id)">🎭 歡愉的惡作劇</button>
-          </div>
-          <div v-if="swapping === r.id" class="row small swap">
-            把{{ r.name }}變成
-            <select v-model="swapTo">
-              <option v-for="g in GENDER_IDS" :key="g" :value="g" :disabled="g === genderOfNpc(r.id)">{{ genderName(g) }}</option>
-            </select>
-            <button class="small primary" :disabled="!swapTo" @click="doSwap(r.id, r.name)">施展</button>
-            <button class="small ghost" @click="swapping = null">取消</button>
-          </div>
-        </template>
-
-        <form v-else class="edit small" @submit.prevent="saveEdit(r.id)">
-          <label>外貌<textarea v-model="draft.appearance" rows="2" /></label>
-          <label>與{{ pcName }}的關係<textarea v-model="draft.toPlayer" rows="2" /></label>
-          <label>別名（以頓號分隔）<input v-model="draft.aliases" /></label>
-          <div>與他人的關係</div>
-          <div v-for="(o, i) in draft.others" :key="i" class="row">
-            <select v-model="o.id">
-              <option v-for="other in rels.filter((x) => x.id !== r.id)" :key="other.id" :value="other.id">{{ other.name }}</option>
-              <option v-if="!rels.some((x) => x.id === o.id)" :value="o.id">{{ nameOf(o.id) }}</option>
-            </select>
-            <input v-model="o.text" style="flex: 1" />
-            <button type="button" class="small" @click="draft.others.splice(i, 1)">刪除</button>
-          </div>
-          <button
-            v-if="rels.length > 1"
-            type="button"
-            class="small"
-            @click="draft.others.push({ id: rels.find((x) => x.id !== r.id)!.id, text: '' })"
-          >＋ 新增關係</button>
-          <div class="row">
-            <button class="small primary" type="submit">儲存</button>
-            <button class="small" type="button" @click="editing = null">取消</button>
-          </div>
-        </form>
-      </article>
+      <!-- 一個人一列：頭像、名字、好感、今天在哪、小圖示；點一下打開人物詳情（RelationDetail.vue） -->
+      <ul class="plain people">
+        <li v-for="r in shownRels" :key="r.id">
+          <button class="person" :class="{ sel: openId === r.id }" @click="openId = r.id">
+            <Avatar :id="r.id" :size="42" />
+            <span class="nm"><NameTag :id="r.id" /><span v-if="titleOf(r.id)" class="small muted">{{ titleOf(r.id) }}</span></span>
+            <span class="stage small">{{ affinityStage(r.affinity) }} <b>{{ r.affinity }}</b></span>
+            <span class="sub2 small">
+              <span class="aff" :title="`親密度 ${r.affinity}`"><i :style="{ left: affinityPct(r.affinity) }" /></span>
+              <span class="where muted" :title="whereNow(r.id)"><GameIcon name="pin" :size="11" /> {{ whereNow(r.id) }}</span>
+              <span class="icons">
+                <span v-if="settings.npcLife && followed(r.id)" title="已關注">⭐</span>
+                <span v-if="settings.npcLife && settings.npcPairs && pairable(r.id)" title="私生活可以和別人發生關係">💞</span>
+                <span v-if="settings.npcLife && newNews(r.id)" class="badge" title="上次見面之後的近況">近況 {{ newNews(r.id) }}</span>
+                <span v-if="suggestionFor(r.id)" class="badge" title="AI 提議更新與主角的關係，點開在「概況」採用或不採用">AI 提議</span>
+              </span>
+            </span>
+          </button>
+        </li>
+      </ul>
     </section>
+
+    <RelationDetail :id="openId" :where="openId ? whereNow(openId) : ''" @close="openId = null" />
 
     <section class="panel">
       <h2 class="head"><GameIcon name="notes" :size="20" />冒險記憶 <Hint text="主角經歷過的事件。生成文本時，會依參與人、地點與時間找出相關的記憶交給 AI。釘選的記憶一定會被找到。" /></h2>
@@ -392,23 +252,28 @@ const suggestionDraft = reactive<Record<string, string>>({})
 .rel-filter > span { white-space: nowrap; }
 .head :deep(.game-icon) { color: var(--accent); }
 .layout { display: grid; grid-template-columns: minmax(300px, 1fr) minmax(320px, 1.2fr); gap: 14px; align-items: start; }
-.rel { border-top: 1px solid var(--border); padding: 10px 0; display: grid; gap: 6px; }
-.news { margin-bottom: 2px; }
-.pairs { display: inline-flex; align-items: center; gap: 4px; }
-.affinity { position: relative; height: 6px; border-radius: 3px; background: linear-gradient(90deg, var(--danger), #5a4a33 50%, var(--good)); }
-.affinity span { position: absolute; top: -3px; width: 4px; height: 12px; margin-left: -2px; background: var(--text); border-radius: 2px; }
-dl { display: grid; grid-template-columns: auto 1fr; gap: 2px 10px; margin: 0; }
-dt { color: var(--muted); }
-dd { margin: 0; }
-.edit { display: grid; gap: 6px; }
-.edit label { display: grid; gap: 2px; }
+/* 一個人一列：頭像｜名字（身分小字）｜好感；第二行是好感條、今天在哪、小圖示 */
+.people { display: grid; }
+.people > li { border-bottom: 1px solid var(--border); }
+.person { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; width: 100%; padding: 7px 6px; border: 0; box-shadow: none; border-radius: 0; background: none; text-align: left; cursor: pointer; font: inherit; color: inherit; min-height: 0; }
+.person:hover, .person.sel { background: #c99a4514; }
+.person.sel { outline: 1px solid var(--gold-lo, var(--accent)); border-radius: 3px; }
+.person > :first-child { grid-row: span 2; }
+.nm { display: flex; align-items: baseline; gap: 6px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.nm > .small { overflow: hidden; text-overflow: ellipsis; flex-shrink: 100; }
+.stage { white-space: nowrap; text-align: right; }
+.stage b { font-variant-numeric: tabular-nums; }
+.sub2 { grid-column: 2 / -1; display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sub2 .where { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.aff { position: relative; width: 72px; height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--danger), #5a4a33 50%, var(--good)); flex: none; }
+.aff i { position: absolute; top: -3px; width: 4px; height: 11px; margin-left: -2px; background: var(--text); border-radius: 2px; box-shadow: 0 0 0 1px var(--panel, #f3e6c8); }
+.icons { display: inline-flex; gap: 4px; align-items: center; flex: none; }
+.badge { font-size: 11px; border: 1px solid var(--accent); color: var(--accent); border-radius: 3px; padding: 0 4px; white-space: nowrap; }
+.hint-ai { margin: 0 0 6px; color: var(--accent); }
 .filters { margin-bottom: 8px; }
 .add { margin-bottom: 8px; display: grid; gap: 6px; }
 .add textarea { width: 100%; margin-top: 6px; }
 .memory { display: grid; gap: 4px; }
-.suggestions { border: 1px dashed var(--accent); border-radius: 6px; padding: 8px; margin-bottom: 8px; display: grid; gap: 8px; }
-.suggestion { display: grid; gap: 4px; }
-.suggestion textarea { width: 100%; }
 .meta { gap: 10px; }
 .spacer { flex: 1; }
 .star { color: var(--accent); }
@@ -418,6 +283,4 @@ dd { margin: 0; }
 @media (max-width: 860px) {
   .layout { grid-template-columns: 1fr; }
 }
-/* 今天在哪：名字下面一行 */
-.where { color: var(--muted); display: flex; align-items: center; gap: 4px; margin: 2px 0 4px; }
 </style>

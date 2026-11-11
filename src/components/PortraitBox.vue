@@ -9,7 +9,8 @@ import GameIcon from './ui/GameIcon.vue'
 // 角色的形象插圖（一般模式）：顯示、生成（插圖設定的服務）、✨ 微調（以這張為底重畫）、翻看舊版、上傳、刪除；點圖片放大。
 // 想看或改提示詞、調強度、塗遮罩時按「進階」打開工作台（PortraitStudio）。large 時按鈕排在圖片下面
 const PortraitStudio = defineAsyncComponent(() => import('./PortraitStudio.vue'))
-const props = withDefaults(defineProps<{ id: string; size?: 'large' | 'small' }>(), { size: 'large' })
+/** large：固定 260px 寬；fill：和 large 一樣的版面，寬度跟著外框（人際關係的人物詳情，圖佔左半邊）；small：小縮圖 */
+const props = withDefaults(defineProps<{ id: string; size?: 'large' | 'small' | 'fill' }>(), { size: 'large' })
 const game = useGame()
 const image = useImageSettings()
 const portraits = usePortraits()
@@ -21,7 +22,7 @@ const record = computed(() => portraits.records[key.value])
 const builtin = computed(() => !!url.value && !record.value)
 const job = computed(() => portraits.jobs[key.value])
 const canDescribe = computed(() => !!portraitSubject(s.value, props.id))
-const large = computed(() => props.size === 'large')
+const large = computed(() => props.size !== 'small')
 const zoom = ref(false)
 const studio = ref(false)
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -83,7 +84,7 @@ const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
 </script>
 
 <template>
-  <div class="portrait" :class="size">
+  <div class="portrait" :class="[large ? 'large' : 'small', { fill: size === 'fill' }]">
     <div class="top">
       <div class="left">
         <button v-if="url" class="frame" title="點一下放大" @click="zoom = true"><img :src="url" alt="形象圖" /></button>
@@ -140,6 +141,7 @@ button :deep(.game-icon) { vertical-align: -0.2em; }
 .top { display: flex; gap: 10px; align-items: flex-start; }
 /* 大的：圖片在上、按鈕與微調在下，整欄固定寬度，不擠右邊的設定 */
 .large { width: 260px; }
+.large.fill { width: 100%; }
 .large .top { flex-direction: column; align-items: stretch; gap: 6px; }
 .large .left { justify-items: stretch; }
 .small .top { gap: 6px; }
