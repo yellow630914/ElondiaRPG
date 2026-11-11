@@ -20,7 +20,7 @@ const spec = (base: string, material = 'leather') => ({ base, material })
 
 describe('額外飾品欄', () => {
   it('飾品與拘束具可以放，護具與服裝不行；原本的部位滿了才放額外飾品欄', () => {
-    expect(slotsFor(spec('ring_swift', 'copper'))).toEqual(['ring_1', 'ring_2', EXTRA_SLOT])
+    expect(slotsFor(spec('ring_swift', 'copper'))).toEqual(['ring_1', 'ring_2', 'extra_1', 'extra_2'])
     expect(slotsFor(spec('blindfold'))).toContain(EXTRA_SLOT)
     expect(slotsFor(spec('maid_dress', 'linen'))).not.toContain(EXTRA_SLOT)
     expect(slotsFor(spec('panties', 'linen'))).not.toContain(EXTRA_SLOT)
@@ -29,6 +29,8 @@ describe('額外飾品欄', () => {
     expect(putOn(pc, gearName(ring), ring).target).toBe('ring_1')
     expect(putOn(pc, gearName(ring), ring).target).toBe('ring_2')
     expect(putOn(pc, gearName(ring), ring).target).toBe(EXTRA_SLOT)
+    // 額外飾品欄有兩格
+    expect(putOn(pc, gearName(ring), ring).target).toBe('extra_2')
   })
 
   it('拘束具放在額外飾品欄時原本的部位空著，雙面效應照算', () => {

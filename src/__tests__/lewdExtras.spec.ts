@@ -40,9 +40,11 @@ describe('淫服的雙面效應', () => {
 })
 
 describe('淫服裁縫鋪', () => {
-  it('魅氣濃的城鎮的裁縫店可以訂做帶指標加成的淫服', () => {
+  it('魅氣濃的城鎮，地下街的拘束具店可以訂做帶指標加成的淫服；裁縫店不再訂做', () => {
     const state = game()
     standOn(state, 'tailor')
+    expect(outfitTailorHere(state)).toBe(false)
+    expect(standOn(state, 'bondage')).toBe(true)
     expect(outfitTailorHere(state)).toBe(true)
     const o = outfitOrder('bunny_suit', 'moonsilk', 'lewdness')
     expect(o.bonus).toBe(8)
@@ -52,7 +54,7 @@ describe('淫服裁縫鋪', () => {
     const name = Object.keys(state.customItems ?? {}).find((n) => n.startsWith('訂做的'))!
     expect(state.customItems![name]!.gear?.lewd).toEqual({ lewdness: 8 })
     const other = game('rhineburg')
-    standOn(other, 'tailor')
+    standOn(other, 'bondage')
     expect(outfitTailorHere(other)).toBe(false)
   })
 })

@@ -24,7 +24,8 @@
       "jeweler": ["珠寶店", "寶飾坊", "金銀鋪"],
       "magic": ["魔法物品店", "秘藥坊", "魔導具屋"],
       "informant": ["情報屋", "消息鋪"],
-      "temple": ["神殿", "聖堂", "祈禱所"]
+      "temple": ["神殿", "聖堂", "祈禱所"],
+      "bondage": ["拘束具店", "皮具坊", "秘具舖"]
     },
     "regions": {
       "central": {
@@ -81,7 +82,8 @@
       "jeweler": ["{air}；玻璃櫃裡的戒指與項鍊閃閃發亮。", "{air}，店主拿著放大鏡端詳著寶石。", "{air}；門口站著一位神情嚴肅的守衛。"],
       "magic": ["{air}；架上的藥瓶與卷軸散發著淡淡的光。", "{air}，空氣裡有股說不出的草藥與硫磺味。", "{air}；櫃台後的水晶球裡雲霧翻湧。"],
       "informant": ["{air}；昏暗的角落裡，有人壓低聲音交談。", "{air}，桌上攤著幾張畫滿記號的地圖。", "{air}；這裡的消息不便宜，但很少出錯。"],
-      "temple": ["{air}；神像前的燭火終日不滅。", "{air}，神官們低聲誦唸著禱詞。", "{air}；受傷的人在這裡接受治療與祝福。"]
+      "temple": ["{air}；神像前的燭火終日不滅。", "{air}，神官們低聲誦唸著禱詞。", "{air}；受傷的人在這裡接受治療與祝福。"],
+      "bondage": ["{air}；牆上一排排掛著皮帶、鐵環與鎖鏈。", "{air}，玻璃櫃裡擺著形狀古怪的玩具。", "{air}；簾子後面是給客人試戴的小隔間。"]
     },
     "greeting": {
       "tavern": ["坐吧，旅人。要來杯什麼？", "歡迎！今天的燉肉剛起鍋。", "找人還是找酒？兩樣這裡都有。"],
@@ -92,7 +94,8 @@
       "jeweler": ["請看，這些都是精挑細選的好貨。", "對寶石有興趣嗎？", "動手前請先告訴我一聲。"],
       "magic": ["小心別碰那個瓶子……好，可以了。", "在找什麼魔法道具嗎？", "這些卷軸可不是給外行人玩的。"],
       "informant": ["想知道什麼？先談價錢。", "消息有新的，也有舊的。", "坐近一點，說話小聲點。"],
-      "temple": ["願神祝福你，旅人。", "受傷了嗎？過來讓我看看。", "在這裡，你可以安心休息。"]
+      "temple": ["願神祝福你，旅人。", "受傷了嗎？過來讓我看看。", "在這裡，你可以安心休息。"],
+      "bondage": ["第一次來？先從手銬試起吧。", "要自己用，還是給別人戴？", "鎖另外算錢。鑰匙？那可不賣。"]
     },
     "overrides": {
       "$comment": "手寫的店名：地點 id → 店型 → { name, desc, greeting }（都可以只寫一部分，沒寫的用規則生成）",
@@ -166,7 +169,7 @@
       "cell": "smithy",
       "keeper": { "classes": ["fighter", "barbarian", "wufu"], "title": "鐵匠", "tags": ["merchant"] },
       "catalog_tag": "smith",
-      "restraints": [1, 2],
+      "restraints": [0, 1],
       "outfits": [0, 1],
       "buys": ["equipment", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
@@ -184,7 +187,7 @@
       "cell": "tailor",
       "keeper": { "classes": ["bard", "rogue"], "title": "裁縫", "tags": ["merchant"] },
       "catalog_tag": "tailor",
-      "restraints": [1, 3],
+      "restraints": [1, 2],
       "outfits": [2, 4],
       "buys": ["equipment", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
@@ -220,7 +223,6 @@
       "cell": "magic",
       "keeper": { "classes": ["wizard", "bard", "xianshi"], "title": "店主", "tags": ["merchant"] },
       "catalog_tag": "magic",
-      "restraints": [0, 1],
       "buys": ["scroll", "consumable", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory"],
       "random": { "consumables": 4, "materials": 5, "material_markup": 2, "max_material_price": [150, 300, 600, 1500],
@@ -239,6 +241,21 @@
       "ai_effects": ["memory", "flag", "affinity", "item"],
       "info": { "point_prices": [60, 80, 120, 180, 260, 360], "points_per_day": 3, "valid_days": 5, "$comment": "情報分兩種（見 docs/TRAVEL_EVENTS.md 第 5 節）：事件點（在這座城的近郊或 7 天內的地下城某一層放一個事件：盤踞的強敵、藏寶處、流浪商人；價格依層數：近郊、周邊、淺層、中層、深層、底層；valid_days 天內有效），以及特殊任務的消息（stories.json 的 start.kind = informant）。另外還賣進行中委託的線索（委託檢定 +5）。" },
       "specials": []
+    },
+    "bondage": {
+      "name": "拘束具店",
+      "emoji": "🔗",
+      "desc": "地下街裡專賣拘束具與調教道具的店：口枷、手銬、鎖鏈、貞操具、玩具，還有鎖；魅氣濃的城鎮也照身材訂做淫服。",
+      "ai": true,
+      "cell": "bondage",
+      "keeper": {"classes": ["rogue", "bard"], "title": "店主", "tags": ["merchant"]},
+      "catalog_tag": "bondage",
+      "restraints": [8, 12],
+      "buys": ["equipment"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [
+        {"id": "fitting", "title": "請店主幫忙試戴", "desc": "店主替你挑一件、扣上、再解開，順便講解怎麼鎖最牢。", "gives": [{"type": "money", "amount": 30}], "gets": [{"type": "affinity", "npc": "keeper", "delta": 1}], "stock": 1, "flavor": "店主一邊示範扣環與鎖頭，一邊說起哪位貴客訂了什麼怪東西"}
+      ]
     },
     "wanderer": {
       "name": "流浪商人",

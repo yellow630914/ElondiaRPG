@@ -25,7 +25,7 @@ describe('centaur gear slots', () => {
     expect(slotNameFor('underwear_bottom', 'centaur')).toBe('後蹄')
     expect(slotNameFor('underwear_bottom', 'human')).toBe(gearRules.slots.underwear_bottom)
     expect(baseSlotsFor('horseshoe', 'centaur')).toEqual(['feet', 'underwear_bottom'])
-    expect(baseSlotsFor('hoof_bells', 'centaur')).toEqual(['leg_accessory', 'extra_1'])
+    expect(baseSlotsFor('hoof_bells', 'centaur')).toEqual(['leg_accessory', 'extra_1', 'extra_2'])
     // 一般的鞋子、褲子、腿部飾品、內褲：人馬族不能穿（也不能塞進額外飾品欄）
     for (const b of ['boots', 'trousers', 'long_skirt', 'anklet_wind', 'thigh_band']) expect(baseSlotsFor(b, 'centaur'), b).toEqual([])
     const panties = Object.entries(gearRules.bases).find(([, b]) => b.slot === 'underwear_bottom')![0]

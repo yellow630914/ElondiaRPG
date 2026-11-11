@@ -116,7 +116,13 @@ describe('restraint bases', () => {
     const restraints = Object.entries(gearRules.bases).filter(([, b]) => b.restraint).map(([id]) => id)
     expect(restraints).toEqual(['slave_collar', 'manacles', 'shackles', 'spiked_collar', 'choker', 'chastity_belt', 'leather_harness', 'silk_binding',
       'blindfold', 'armbinder', 'hobble_chain', 'ballet_boots', 'rope_harness', 'shibari', 'vibe_egg', 'nipple_clamps',
-      'lace_veil', 'full_hood', 'ribbon_cuffs', 'leather_cuffs', 'ankle_bells', 'vibe_plug', 'steel_corset', 'silk_gag', 'ball_gag', 'muzzle_gag'])
+      'lace_veil', 'full_hood', 'ribbon_cuffs', 'leather_cuffs', 'ankle_bells', 'vibe_plug', 'steel_corset', 'silk_gag', 'ball_gag', 'muzzle_gag',
+      // 拘束具擴充（worldgen/scripts/elondia/bondage44.py）
+      'ring_gag', 'spider_gag', 'deepthroat_gag', 'harness_gag', 'bit_gag', 'tube_gag', 'nose_hook', 'ear_plugs', 'posture_collar',
+      'leash_collar', 'bind_cuffs', 'arm_cuffs', 'fist_mitts', 'box_binder', 'front_chain', 'back_chain', 'collar_chain', 'waist_chain',
+      'thigh_chain', 'nipple_chain', 'waist_cuff', 'chastity_bra', 'massage_bra', 'thigh_cuffs', 'calf_cuffs', 'ankle_cuffs', 'leg_binder',
+      'puppy_suit', 'tongue_stud', 'nipple_suckers', 'clit_ring', 'labia_rings', 'labia_clamps', 'anal_plug', 'tail_plug', 'dildo',
+      'vibe_dildo', 'thrust_dildo', 'double_dildo', 'wired_egg', 'shock_pads', 'urethral_lock'])
     for (const i of itemRules.items.filter((x) => x.master_force)) {
       expect(restraints, i.name).toContain(i.gear!.base)
       const s = gearStats(i.gear!)

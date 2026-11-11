@@ -32,7 +32,7 @@ const vacuumSlot = computed<Partial<Record<GearSlot, string>>>(() => {
 const inCombat = computed(() => !!s.value.combat)
 
 const LEFT: GearSlot[] = ['head', 'accessory', 'body', 'underwear_top', 'wrists', 'main_hand', 'belt', 'legs', 'extra_1']
-const RIGHT: GearSlot[] = ['piercing_1', 'piercing_2', 'ring_1', 'ring_2', 'off_hand', 'underwear_bottom', 'leg_accessory', 'feet']
+const RIGHT: GearSlot[] = ['piercing_1', 'piercing_2', 'ring_1', 'ring_2', 'off_hand', 'underwear_bottom', 'leg_accessory', 'feet', 'extra_2']
 
 const selected = ref<GearSlot>('main_hand')
 const onlySlot = ref(true)

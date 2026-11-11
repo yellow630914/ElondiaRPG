@@ -34,7 +34,7 @@ import { gameRule } from './gameRules'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
-  shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant',
+  shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant', bondage: 'bondage',
 }
 
 /**

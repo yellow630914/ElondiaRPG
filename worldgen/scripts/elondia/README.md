@@ -36,12 +36,13 @@
 | `east_p9_fest.py` | `data/rules/stories.json`、`items.json`、`gear.json`、`abilities.json`、`lewd.json`、`data/world/npcs.json`、`data/worldbook/elondia.worldbook.json` | 炎華之地的巡禮與祭典（R26 第二批，成人向）：龍母祠的求子香五站、四個祭典各三個任務、五位委託人、五件獨特裝備、五個獨特技能與技能書、新底材紅蓋頭與褻褲和它們的制式品、世界書的龍母祠。寫檔的函式借 `east_p9_work.py` 的。要排在 `east_p9_work.py` 之後（用到肚兜；兩支都把委託人接在 npcs.json 最後，順序反過來時委託人的排列會不同）、`east_p4a_races.py` 之後（它寫神祇信仰）。可以重跑 |
 | `underworld39.py` | `data/world/special_maps.json`、`landmarks.json` | 地下街（[SPECIAL_MAPS](../../../docs/SPECIAL_MAPS.md) 第 9 節）：有黑市或魅氣 3 以上的聚落各一張隱藏地圖（`sm_uw_<地點>`），裡面擺黑市與地下淫鬥場的地標（`lm_uw_black_<地點>`、`lm_uw_arena_<地點>`），並把黑檀之夜、榮譽洞、月下拍賣會搬進去。要排在 `work26.py`、`lust_s8.py` 之後（它們會重寫地標）。可以重跑 |
 | `club_lines42.py` | `data/rules/stories.json`、`data/world/npcs.json`、`landmarks.json`、`special_maps.json`、`data/worldbook/elondia.worldbook.json` | 特殊區域的延伸線：貝爾維婭、艾蜜莉亞走進黑檀之夜，瑟蕾娜、克拉拉走進榮譽洞（各一個任務，完成後那個地標多兩個場景）；炎華南域的新角色蘇婉貞（四個任務）與龍安府瓦舍的「無面樓」（地標、內部、場景），純愛線在御街夜市多一個場景。要排在 `east_p3_places.py`、`east_p3_npcs.py`、`east_p4e_group.py`、`east_p7_people.py`、`east_p9_work.py`、`underworld39.py` 之後（它們會整筆重寫地標、南域的 NPC 或場景）。可以重跑 |
+| `bondage44.py` | `data/rules/gear.json`、`items.json`、`shops.json`、`lewd.json`、`data/world/special_maps.json` | 拘束具擴充（[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 7.1、25 節）：42 種拘束具與調教道具的底材、47 件店貨（鎖鏈有長短款）；原本的拘束具改標籤（基礎款兩邊賣、其他只在拘束具店）；內建店種 `bondage`「拘束具店」擺進每條地下街；原本的店上架的拘束具件數調少；淫服訂做搬到拘束具店。要排在 `lust_s9.py`、`underworld39.py` 之後（它們會重寫拘束具、商店件數與地下街）。可以重跑 |
 | `club_lines43.py` | `data/rules/stories.json`、`data/world/landmarks.json` | 特殊區域的延伸線・第二批：卡蓮、朧（黑檀之夜），卡蜜拉、零號（榮譽洞），赤鬟、烏日娜、海蘭（野馬帳），沈知瀾、瑤汀（無面樓），各一個任務與她們的場景。要排在 `club_lines42.py` 之後（它建立無面樓）。可以重跑 |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 | `../../tools/guide/guide.py` | `docs/guide/` | 給玩家的遊戲攻略，同步到 wiki（`data/` 改過之後都要重跑；沒重跑時測試 `guide.spec.ts` 會失敗） |
 
-建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `npc_looks40.py` → `club_lines42.py` → `club_lines43.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
+建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `bondage44.py` → `npc_looks40.py` → `club_lines42.py` → `club_lines43.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
 
 ## 一次性（已經套用過，留作紀錄）
 

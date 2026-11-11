@@ -4,7 +4,7 @@
 
 import { itemRules, raceName, lewdRules, LOCK_GRADES, TRAP_LOCK, type LockGrade } from './data'
 import { tagsAllowed } from './content'
-import { EXTRA_SLOT, gearKnown, gearRules, slotNameFor, slotsFor } from './gear'
+import { gearKnown, gearRules, isExtraSlot, slotNameFor, slotsFor } from './gear'
 import { freeSlotsFor, putOn } from './inventory'
 import { npcRecord } from './npcs'
 import { pcOf } from './party'
@@ -32,7 +32,7 @@ export function forceEquip(state: GameState, report: Report, master: string, ite
   const spec = itemRules.items.find((i) => i.name === name)!.gear!
   const pc = pcOf(state)
   // 戴在原本的部位，不放額外飾品欄（docs/ITEMS.md 第 2 節）
-  const native = freeSlotsFor(pc, spec).filter((x) => x !== EXTRA_SLOT)
+  const native = freeSlotsFor(pc, spec).filter((x) => !isExtraSlot(x))
   const { target, back } = putOn(pc, name, spec, native.find((x) => !pc.gear?.[x]) ?? native[0], master)
   // 拘束具：主人用自己的鎖鎖上（依身分，雙面效應的倍率）
   if (gearRules.bases[spec.base]?.bind) pc.gear![target]!.lock = masterLockGrade(rec?.tags ?? [])
@@ -51,8 +51,10 @@ export function restrainPc(state: GameState, report: Report, item: string, lock:
   if (!spec || !gearKnown(spec) || !gearRules.bases[spec.base]?.bind) return ''
   const pc = pcOf(state)
   const options = freeSlotsFor(pc, spec)
-  const native = options.filter((x) => x !== EXTRA_SLOT)
-  const slot = native.find((x) => !pc.gear?.[x]) ?? native[0] ?? (options.includes(EXTRA_SLOT) ? EXTRA_SLOT : undefined)
+  const native = options.filter((x) => !isExtraSlot(x))
+  // 原本的部位都被鎖住時放額外飾品欄（兩格，空的優先）
+  const extras = options.filter(isExtraSlot)
+  const slot = native.find((x) => !pc.gear?.[x]) ?? native[0] ?? extras.find((x) => !pc.gear?.[x]) ?? extras[0]
   // 種族穿不了（人馬族戴不上步鍊、腳鐐這類戴在腳上的）
   if (!slotsFor(spec, pc.race).length) return `${raceName(pc.race)}戴不上${item}`
   if (!slot) return `${item}沒有地方戴（那些部位都被鎖住了）`

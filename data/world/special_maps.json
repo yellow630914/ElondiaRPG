@@ -556,6 +556,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -573,6 +574,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -590,6 +592,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -607,6 +610,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -624,6 +628,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -641,6 +646,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -658,6 +664,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -675,6 +682,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -692,6 +700,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -709,6 +718,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -726,6 +736,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -743,6 +754,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",
@@ -760,6 +772,7 @@
       "lighting": "lit",
       "peaceful": true,
       "underworld": true,
+      "shops": [{"shop": "bondage", "x": 4, "y": 4}],
       "grid": [
         "#########",
         "#.......#",

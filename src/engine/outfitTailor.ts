@@ -1,5 +1,5 @@
-// 淫服裁縫鋪（成人向，docs/LEWD_STATS.md 第 25 節；規則在 lewd.json 的 outfit_tailor）：
-// 魅氣濃的城鎮，裁縫店可以訂做成人向服裝，選一項慾望指標加成（加成依材料）。
+// 淫服訂做（成人向，docs/LEWD_STATS.md 第 25 節；規則在 lewd.json 的 outfit_tailor）：
+// 魅氣濃的城鎮，地下街的拘束具店（outfit_tailor.shop，沒寫時是裁縫店）可以訂做成人向服裝，選一項慾望指標加成（加成依材料）。
 
 import { charmLevel } from './charm'
 import { lewdRules, locationById } from './data'
@@ -13,10 +13,10 @@ import type { GameState, GearSpec, LewdStat, Report } from './types'
 
 export const outfitTailorRules = () => lewdRules.outfit_tailor
 
-/** 站在魅氣濃的城鎮的裁縫店 */
+/** 站在魅氣濃的城鎮、可以訂做淫服的店（地下街的拘束具店） */
 export function outfitTailorHere(state: GameState): boolean {
   const loc = locationById(state.location)
-  return loc.type !== 'dungeon' && currentCell(state).kind === 'tailor' && charmLevel(loc.id) >= outfitTailorRules().charm_min
+  return loc.type !== 'dungeon' && currentCell(state).kind === (outfitTailorRules().shop ?? 'tailor') && charmLevel(loc.id) >= outfitTailorRules().charm_min
 }
 
 /** 可以訂做的底材（成人向服裝）與各自能用的材料（有加成的） */

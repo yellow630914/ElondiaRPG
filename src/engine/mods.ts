@@ -817,7 +817,7 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
 }
 
 const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info', 'furniture']
-export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info']
+export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info', 'bondage']
 const LOCATIONS = ['village', 'town', 'city', 'capital']
 
 function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {

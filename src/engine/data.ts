@@ -2058,7 +2058,7 @@ export function saveItems(): ItemDef[] {
   return [...saveItemIndex.values()]
 }
 
-export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer'
+export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'bondage'
 /** 自建的商店：id 是 shop_ 開頭（只有小寫英文與數字），地圖格子的種類就是這個 id */
 export type CustomShopId = `shop_${string}`
 export type ShopType = BuiltinShopType | CustomShopId
@@ -2067,7 +2067,7 @@ export function isCustomShopId(id: string): id is CustomShopId {
   return CUSTOM_SHOP_ID.test(id)
 }
 /** 可以指定固定 NPC 擔任店主的內建店種（流浪商人不是固定的店）；自建的商店也可以 */
-export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant']
+export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'bondage']
 /** 商店的設定（自建的商店被刪掉時丟出錯誤） */
 export function shopDef(type: ShopType): ShopTypeDef {
   const d = shopRules.types[type]
@@ -2538,7 +2538,8 @@ export const lewdRules = lewdJson as unknown as {
     penalty_tags: string[]; penalty_kinds: string[]; penalty_per: number; penalty_max: number; endurance_per: number; max_pieces: number
     schools: Record<string, { lust_bonus?: number; evade?: number; save?: number }>
   }
-  outfit_tailor: { charm_min: number; fee_mult: number; fee_base: number; stats: LewdStat[]; bonus: Record<string, number> }
+  /** shop：在哪一種店的格子訂做（地下街的拘束具店；沒寫時是裁縫店） */
+  outfit_tailor: { shop?: string; charm_min: number; fee_mult: number; fee_base: number; stats: LewdStat[]; bonus: Record<string, number> }
   auction: {
     lots: number; start_ratio: number; rival_ratio: [number, number]; step: number; consign_ratio: [number, number]; consign_fee: number
     watch_chance: number; watch_flag: string; pool: [string, number][]

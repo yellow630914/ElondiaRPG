@@ -220,8 +220,11 @@ export function baseSlotName(slot: BaseSlot): string {
   return gearRules.slots[(group?.[0] ?? slot) as GearSlot] ?? slot
 }
 
-/** 額外飾品欄（docs/ITEMS.md 第 2 節）：首飾、戒指、穿孔飾品、腿部飾品，以及任何部位的拘束具都能放 */
+/** 額外飾品欄（docs/ITEMS.md 第 2 節）：首飾、戒指、穿孔飾品、腿部飾品，以及任何部位的拘束具都能放；兩格 */
+export const EXTRA_SLOTS: GearSlot[] = ['extra_1', 'extra_2']
+/** 第一格額外飾品欄（NPC 的隨機裝備只放這一格） */
 export const EXTRA_SLOT: GearSlot = 'extra_1'
+export const isExtraSlot = (slot: GearSlot) => EXTRA_SLOTS.includes(slot)
 const EXTRA_BASE_SLOTS: BaseSlot[] = ['accessory', 'ring', 'piercing', 'leg_accessory']
 
 /** 這種底材能不能放進額外飾品欄 */
@@ -231,7 +234,7 @@ export function fitsExtra(base: Pick<BaseDef, 'slot' | 'restraint' | 'bind'> | u
 
 /** 這種底材能不能放進這個欄位（額外飾品欄要傳底材，才看得出是不是拘束具） */
 export function baseFits(baseSlot: BaseSlot, slot: GearSlot, base?: Pick<BaseDef, 'slot' | 'restraint' | 'bind'>): boolean {
-  if (slot === EXTRA_SLOT) return fitsExtra(base ?? { slot: baseSlot })
+  if (isExtraSlot(slot)) return fitsExtra(base ?? { slot: baseSlot })
   return baseSlot === slot || !!gearRules.slot_groups[baseSlot]?.includes(slot)
 }
 
@@ -416,7 +419,7 @@ export function baseSlotsFor(baseId: string, race?: string): GearSlot[] {
   const slot = base.slot
   let own = [...(gearRules.slot_groups[slot] ?? [slot as GearSlot])]
   // 原本的部位排前面：原本的部位有空時先放那裡，都滿了才放額外飾品欄
-  const extra = fitsExtra(base) ? [EXTRA_SLOT] : []
+  const extra = fitsExtra(base) ? EXTRA_SLOTS : []
   if (race === undefined) return [...own, ...extra]
   if (base.races?.length && !base.races.includes(race)) return []
   const rule = gearRules.races[race]
@@ -683,7 +686,7 @@ export const SLOT_CATEGORY: Record<GearSlot, 'weapon' | 'armor' | 'accessory'> =
   main_hand: 'weapon', off_hand: 'weapon',
   head: 'armor', body: 'armor', legs: 'armor', wrists: 'armor', feet: 'armor', belt: 'armor',
   accessory: 'accessory', ring_1: 'accessory', ring_2: 'accessory', piercing_1: 'accessory', piercing_2: 'accessory', leg_accessory: 'accessory',
-  underwear_top: 'accessory', underwear_bottom: 'accessory', extra_1: 'accessory',
+  underwear_top: 'accessory', underwear_bottom: 'accessory', extra_1: 'accessory', extra_2: 'accessory',
 }
 
 /** 建角時每個欄位可以選的所有裝備（底材 × 第 1～max_tier 級材料），預算都算好了 */

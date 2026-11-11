@@ -45,7 +45,7 @@ import { attrParts, checkParts, rollBreakdown, sumParts } from './rollParts'
 export type CellKind =
   | 'floor' | 'wall' | 'water'
   | 'inn' | 'guild' | 'tavern' | 'shop' | 'temple' | 'gate' | 'link' | 'brothel'
-  | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'tattoo' | 'carver'
+  | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'tattoo' | 'carver' | 'bondage'
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
   | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
@@ -183,7 +183,7 @@ const maps = mapsJson as unknown as {
 export const CELL_NAME: Record<CellKind, string> = {
   floor: '道路', wall: '牆', water: '水道',
   inn: '旅店', guild: '冒險者公會', tavern: '酒館', shop: '雜貨店', temple: '神殿', gate: '城門', link: '通道', brothel: '娼館',
-  smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商', tattoo: '刺青店', carver: '刻印師',
+  smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商', tattoo: '刺青店', carver: '刻印師', bondage: '拘束具店',
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
   road: '路', waypoint: '途經', arrive: '目的地', event: '事件', merchant: '流浪商人',
@@ -193,7 +193,7 @@ export const CELL_NAME: Record<CellKind, string> = {
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
 export const CELL_ICON: Partial<Record<CellKind, string>> = {
   inn: '🛏️', guild: '🏛️', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', link: '➡️', brothel: '🏮',
-  smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️', tattoo: '🖋️', carver: '🔏',
+  smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️', tattoo: '🖋️', carver: '🔏', bondage: '🔗',
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
   waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',
@@ -557,6 +557,15 @@ export function standOn(state: GameState, kind: CellKind): boolean {
     placeAt(state, getArea(state, l.at.area), l.at.x, l.at.y)
     return true
   }
+  // 擺在這座城的特殊地圖裡的商店（例如地下街的拘束具店）
+  for (const [id, def] of Object.entries(specialMaps)) {
+    if (def.location !== state.location) continue
+    const s = def.shops?.find((x) => (shopRules.types[x.shop as ShopType]?.custom ? x.shop : shopRules.types[x.shop as ShopType]?.cell) === kind)
+    if (!s) continue
+    enterSpecial(state, id)
+    placeAt(state, getArea(state, specialKey(id)), s.x, s.y)
+    return true
+  }
   return false
 }
 
@@ -568,7 +577,7 @@ export function placeAt(state: GameState, area: Area, x: number, y: number) {
 
 // ---- 走過的地方（交給 AI 的前後銜接，見 narrator/continuity.ts） ----
 
-const SPOT_KINDS = new Set<string>(['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'lot', 'manor', 'merchant'])
+const SPOT_KINDS = new Set<string>(['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'bondage', 'lot', 'manor', 'merchant'])
 const TRAIL_MAX = 12
 
 /** 站的地方叫什麼：區域名稱，站在設施或地標上時加上它的名字 */

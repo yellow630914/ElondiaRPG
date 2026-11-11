@@ -188,6 +188,7 @@ exports[`world editor round trip > pregnancyEvents: opening and saving without c
 
 exports[`world editor round trip > shops: opening and saving without changes keeps the data 1`] = `
 {
+  "bondage": "06c801a1bd82",
   "general": "06c801a1bd82",
   "informant": "06c801a1bd82",
   "jeweler": "06c801a1bd82",
