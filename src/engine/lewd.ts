@@ -100,12 +100,16 @@ export function npcLewd(def: { id: string; tags?: string[]; lewd?: Partial<Recor
 
 // ---- 服裝的曝露度 ----
 
-function slotExposure(c: Pick<Character, 'gear'>, slot: string): number {
-  const g = c.gear?.[slot as keyof NonNullable<Character['gear']>]
-  if (!g) return 0
-  const base = gearRules.bases[g.spec.base]
+/** 一種底材的曝露度（底材自己的 exposure，沒寫時照服裝種類） */
+export function baseExposure(id: string): number {
+  const base = gearRules.bases[id]
   if (base?.exposure !== undefined) return base.exposure
   return base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0
+}
+
+function slotExposure(c: Pick<Character, 'gear'>, slot: string): number {
+  const g = c.gear?.[slot as keyof NonNullable<Character['gear']>]
+  return g ? baseExposure(g.spec.base) : 0
 }
 
 type Wearer = Pick<Character, 'gear'> & Partial<Pick<Character, 'race' | 'gender' | 'body'>>

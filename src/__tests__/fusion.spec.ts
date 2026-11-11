@@ -13,9 +13,9 @@ import { addItem, newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
 
 function game(): GameState {
-  const state = newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 4, birthplace: 'rhineburg' })
+  const state = newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 4, birthplace: 'albena' })
   enterLocation(state)
-  standOn(state, 'smithy')
+  expect(standOn(state, 'adult_shop')).toBe(true)
   state.money_cc = 10000
   addItem(state.inventory, '鐵長劍', 1)
   addItem(state.inventory, '皮眼罩', 1)

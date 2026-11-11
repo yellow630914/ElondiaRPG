@@ -18,7 +18,8 @@ import { ICON_PATHS, type IconName } from './ui/iconPaths'
 // icon 可以是介面圖示的名稱（見 ui/iconPaths.ts），也可以是 emoji。
 // fixed：有分頁的對話框固定高度（等於視窗高度），切分頁時標題與分頁列不會跳動
 // stay：不要因為開始了談判或等待中的行動而自動關掉（談判自己的對話框）
-const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean; fixed?: boolean; stay?: boolean }>(), { width: '960px', icon: undefined })
+// variant：對話框多一個樣式類別 variant-<名稱>，搭配 frame 插槽放邊框裝飾（例如成人用品店的 AdultDeco）
+const props = withDefaults(defineProps<{ open: boolean; title: string; icon?: string; width?: string; inlineError?: boolean; fixed?: boolean; stay?: boolean; variant?: string }>(), { width: '960px', icon: undefined, variant: undefined })
 const emit = defineEmits<{ close: [] }>()
 const el = ref<HTMLDialogElement | null>(null)
 
@@ -74,7 +75,8 @@ function onClick(e: MouseEvent) {
 </script>
 
 <template>
-  <dialog ref="el" class="app-dialog parchment paper" :class="{ fixed, mobile: isMobile }" :style="{ '--dialog-width': width }" @close="onClose" @click="onClick">
+  <dialog ref="el" class="app-dialog parchment paper" :class="[{ fixed, mobile: isMobile }, variant ? `variant-${variant}` : '']" :style="{ '--dialog-width': width }" @close="onClose" @click="onClick">
+    <slot v-if="open" name="frame" />
     <div class="dialog-inner">
       <header class="dialog-head">
         <button v-if="isMobile" class="back ghost" @click="emit('close')"><GameIcon name="right" :size="16" class="flip" />返回</button>

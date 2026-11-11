@@ -21,7 +21,7 @@ import { useGame } from '@/stores/game'
 import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
-import FusePanel from './FusePanel.vue'
+import AdultShopMenu from './adult/AdultShopMenu.vue'
 import GuardStatus from './GuardStatus.vue'
 import { isWanted, palacePersuadeDc } from '@/engine/security'
 import MarketPanel from './MarketPanel.vue'
@@ -347,7 +347,7 @@ const shopDesc = computed(() => {
               <button class="small" :disabled="s.money_cc < o.price" @click="game.extractBrood(o.id)">取出（{{ formatMoney(o.price) }}）</button>
             </div>
           </div>
-          <FusePanel />
+          <AdultShopMenu />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">

@@ -17,7 +17,7 @@ const specOf = (state: GameState, name: string) => gearSpecOf(state, name)
 const isRestraint = (spec?: GearSpec) => !!spec && gearKnown(spec) && !!gearRules.bases[spec.base]?.bind && !spec.fused
 const isWeapon = (spec?: GearSpec) => !!spec && gearKnown(spec) && !!gearStats(spec).weapon && !spec.fused
 
-/** 站在能合煉的店（鐵匠鋪） */
+/** 站在能合煉的店（lewd.json 的 fusion.shops：成人用品店） */
 export function fusionHere(state: GameState): boolean {
   return fusionRules().shops.includes(currentCell(state).kind)
 }
@@ -41,7 +41,7 @@ function report(state: GameState, summary: string): Report {
 
 /** 合煉：武器和拘束具各一件，收費，換成一件淫器 */
 export function fuseGear(state: GameState, weapon: string, restraint: string): Report {
-  if (!fusionHere(state)) throw new Error('要在鐵匠鋪才能合煉')
+  if (!fusionHere(state)) throw new Error('要在成人用品店才能合煉')
   const c = fusionCandidates(state)
   if (!c.weapons.includes(weapon)) throw new Error(`行囊裡沒有可以合煉的武器「${weapon}」`)
   if (!c.restraints.includes(restraint)) throw new Error(`行囊裡沒有可以合煉的拘束具「${restraint}」`)
@@ -50,7 +50,7 @@ export function fuseGear(state: GameState, weapon: string, restraint: string): R
   const base = specOf(state, restraint)!
   const spec: GearSpec = { ...base, fused: { weapon: specOf(state, weapon)!, weaponName: weapon, restraint } }
   const name = registerGear(state, spec, `淫器・${restraint}`, `平常是${restraint}，戰鬥時展開成${weapon}。`)
-  const r = report(state, `鐵匠把${weapon}和${restraint}合煉成「${name}」，收費 ${formatMoney(fee)}。`)
+  const r = report(state, `店主把${weapon}和${restraint}合煉成「${name}」，收費 ${formatMoney(fee)}。`)
   r.changes.money_cc = -fee
   r.changes.items_lost = [{ name: weapon, qty: 1 }, { name: restraint, qty: 1 }]
   r.changes.items_gained = [{ name, qty: 1, owner: 'pc' }]
@@ -59,14 +59,14 @@ export function fuseGear(state: GameState, weapon: string, restraint: string): R
 
 /** 拆開：還原成原本的武器與拘束具，不收錢 */
 export function splitGear(state: GameState, name: string): Report {
-  if (!fusionHere(state)) throw new Error('要在鐵匠鋪才能拆開')
+  if (!fusionHere(state)) throw new Error('要在成人用品店才能拆開')
   const f = specOf(state, name)?.fused
   if (!f || !state.inventory.some((i) => i.name === name && i.qty > 0)) throw new Error(`行囊裡沒有淫器「${name}」`)
   const weapon = itemDef(f.weaponName)?.gear ? f.weaponName : registerGear(state, f.weapon, f.weaponName)
   const restraintSpec: GearSpec = { ...specOf(state, name)! }
   delete restraintSpec.fused
   const restraint = itemDef(f.restraint)?.gear ? f.restraint : registerGear(state, restraintSpec, f.restraint)
-  const r = report(state, `鐵匠把「${name}」拆回${weapon}和${restraint}。`)
+  const r = report(state, `店主把「${name}」拆回${weapon}和${restraint}。`)
   r.changes.items_lost = [{ name, qty: 1 }]
   r.changes.items_gained = [{ name: weapon, qty: 1, owner: 'pc' }, { name: restraint, qty: 1, owner: 'pc' }]
   for (const m of state.party) delete m.wornDays?.[name]
