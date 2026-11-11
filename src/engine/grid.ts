@@ -37,6 +37,8 @@ import { attemptRetreat, reachLayer, startExpedition } from './expedition'
 import { homeById, overlayLots } from './homes'
 import { burnStep, inDarkness, layerLighting, lightingRules, sightIn, type Lighting } from './light'
 import { bestTool } from './tools'
+import { restrainPc } from './forcedGear'
+import { pcOf } from './party'
 import { addHours, advanceTime, commitReport, newReportId, player, withRng } from './state'
 import type { Character, GameState, GameTime, Quest, Report } from './types'
 import { gameRule, rewardMoney } from './gameRules'
@@ -45,7 +47,7 @@ import { attrParts, checkParts, rollBreakdown, sumParts } from './rollParts'
 export type CellKind =
   | 'floor' | 'wall' | 'water'
   | 'inn' | 'guild' | 'tavern' | 'shop' | 'temple' | 'gate' | 'link' | 'brothel'
-  | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'tattoo' | 'carver' | 'bondage'
+  | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'tattoo' | 'carver' | 'adult_shop'
   | 'encounter' | 'elite' | 'boss' | 'trap' | 'resource' | 'safe' | 'chest'
   | 'stairs_down' | 'stairs_up' | 'exit' | 'quest'
   | 'road' | 'waypoint' | 'arrive' | 'event' | 'merchant'
@@ -183,7 +185,7 @@ const maps = mapsJson as unknown as {
 export const CELL_NAME: Record<CellKind, string> = {
   floor: '道路', wall: '牆', water: '水道',
   inn: '旅店', guild: '冒險者公會', tavern: '酒館', shop: '雜貨店', temple: '神殿', gate: '城門', link: '通道', brothel: '娼館',
-  smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商', tattoo: '刺青店', carver: '刻印師', bondage: '拘束具店',
+  smithy: '鐵匠鋪', tailor: '裁縫店', jeweler: '珠寶店', magic: '魔法物品店', informant: '情報商', tattoo: '刺青店', carver: '刻印師', adult_shop: '成人用品店',
   encounter: '遭遇', elite: '強敵', boss: '層主', trap: '陷阱', resource: '資源', safe: '安全房', chest: '寶箱',
   stairs_down: '往下一層', stairs_up: '往上一層', exit: '出口', quest: '委託地點',
   road: '路', waypoint: '途經', arrive: '目的地', event: '事件', merchant: '流浪商人',
@@ -193,7 +195,7 @@ export const CELL_NAME: Record<CellKind, string> = {
 /** 地圖與場所標題用的圖示：每一種設施都要有 */
 export const CELL_ICON: Partial<Record<CellKind, string>> = {
   inn: '🛏️', guild: '🏛️', tavern: '🍺', shop: '🛒', temple: '⛪', gate: '🚪', link: '➡️', brothel: '🏮',
-  smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️', tattoo: '🖋️', carver: '🔏', bondage: '🔗',
+  smithy: '⚒️', tailor: '🧵', jeweler: '💍', magic: '🔮', informant: '🕵️', tattoo: '🖋️', carver: '🔏', adult_shop: '💋',
   encounter: '⚔️', elite: '💀', boss: '👑', resource: '🌿', safe: '🔥', chest: '🎁',
   stairs_down: '⬇️', stairs_up: '⬆️', exit: '🚪', quest: '❗', water: '〰️',
   waypoint: '🏘️', arrive: '🏁', event: '❔', merchant: '🧳',
@@ -577,7 +579,7 @@ export function placeAt(state: GameState, area: Area, x: number, y: number) {
 
 // ---- 走過的地方（交給 AI 的前後銜接，見 narrator/continuity.ts） ----
 
-const SPOT_KINDS = new Set<string>(['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'bondage', 'lot', 'manor', 'merchant'])
+const SPOT_KINDS = new Set<string>(['inn', 'guild', 'tavern', 'shop', 'temple', 'gate', 'brothel', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'tattoo', 'carver', 'adult_shop', 'lot', 'manor', 'merchant'])
 const TRAIL_MAX = 12
 
 /** 站的地方叫什麼：區域名稱，站在設施或地標上時加上它的名字 */
@@ -1558,12 +1560,24 @@ function openChest(state: GameState, area: Area, level: number, relic = false): 
   })
   if (foundBlueprint) grantBlueprint(state, foundBlueprint)
   report.changes.money_cc = rewardMoney(state, money)
+  // 寶箱裡的詛咒具（docs/LEWD_STATS.md 第 7.2 節）：一碰就自己扣到主角身上；內容篩選關掉「主角非自願」時照常放進行囊
+  const cursed: string[] = []
+  if (!relic) {
+    for (const i of [...items]) {
+      if (!itemDef(i.name)?.gear?.curse) continue
+      const note = restrainPc(state, report, i.name)
+      if (!note || !pcOf(state).gear || !Object.values(pcOf(state).gear!).some((g) => g?.name === i.name)) continue
+      cursed.push(note)
+      if (--i.qty <= 0) items.splice(items.indexOf(i), 1)
+    }
+  }
   if (items.length) report.changes.items_gained = items
   report.outcome = {
     result: 'success',
     summary: `${relic ? `在${area.name}找到冒險者的遺物，從他們留下的行囊裡翻出` : `在${area.name}打開一個寶箱：`}${[formatMoney(money), ...items.map((i) => (i.qty > 1 ? `${i.name}×${i.qty}` : i.name)), ...(foundBlueprint ? [blueprintName(foundBlueprint)] : [])].join('、')}。`,
-    tags: [relic ? '遺物' : '寶箱'],
+    tags: [relic ? '遺物' : '寶箱', ...(cursed.length ? ['詛咒'] : [])],
   }
+  if (cursed.length) report.outcome.summary += `寶箱底下的東西一碰就自己扣了上來：${cursed.join('；')}。`
   return commitReport(state, report)
 }
 

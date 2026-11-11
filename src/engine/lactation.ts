@@ -34,7 +34,9 @@ interface LactationRules {
   /** 泌乳時戰鬥中多的技能（abilities.json 的 id，「擠奶」） */
   ability?: string
   /** 擠奶（角色詳情，一天一次）：得到的物品、數量、花的時間 */
-  milk?: { item: string; qty: [number, number]; hours: number }
+  milk?: { item: string; qty: [number, number]; hours: number
+    /** 擠奶的道具（吸乳器）：行囊裡有時多擠 bonus 瓶 */
+    tool?: { item: string; bonus: number } }
 }
 
 export const lactationRules = (familyJson as unknown as { lactation: LactationRules }).lactation
@@ -226,10 +228,12 @@ export function milk(state: GameState, id: string): Report {
       return commitReport(state, report)
     }
   }
-  const qty = withRng(state, (rng) => rng.int(r.qty[0], Math.max(r.qty[0], r.qty[1])))
+  // 吸乳器（行囊裡有）：多擠幾瓶
+  const tool = r.tool && state.inventory.some((i) => i.name === r.tool!.item && i.qty > 0) ? r.tool : undefined
+  const qty = withRng(state, (rng) => rng.int(r.qty[0], Math.max(r.qty[0], r.qty[1]))) + (tool?.bonus ?? 0)
   ;(state.milked ??= {})[keyOf(state, c)] = state.time.day
   applyEffects(state, report, [{ type: 'item', name: r.item, qty }])
-  report.outcome = { result: 'success', summary: `${c.isPlayer ? '你解開衣襟擠了奶' : `你替${c.name}擠了奶`}，得到${r.item} ×${qty}。`, tags: ['泌乳'] }
-  report.narration = { ...report.narration, adult_scene: `${c.isPlayer ? '主角' : c.name}擠奶：解開衣襟，把脹滿的乳汁一點一點擠進瓶子裡${c.isPlayer ? '' : '（主角動手）'}` }
+  report.outcome = { result: 'success', summary: `${c.isPlayer ? '你解開衣襟擠了奶' : `你替${c.name}擠了奶`}${tool ? `（用了${tool.item}）` : ''}，得到${r.item} ×${qty}。`, tags: ['泌乳'] }
+  report.narration = { ...report.narration, adult_scene: `${c.isPlayer ? '主角' : c.name}擠奶：解開衣襟，${tool ? `把${tool.item}的罩杯扣在胸前，一下一下抽著，乳汁被吸進瓶子裡` : '把脹滿的乳汁一點一點擠進瓶子裡'}${c.isPlayer ? '' : '（主角動手）'}` }
   return commitReport(state, report)
 }

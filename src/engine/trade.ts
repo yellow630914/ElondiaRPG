@@ -34,7 +34,7 @@ import { gameRule } from './gameRules'
 import type { Deal, GameState, NpcRecord, Report, ShopState } from './types'
 
 const CELL_SHOP: Record<string, ShopType> = {
-  shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant', bondage: 'bondage',
+  shop: 'general', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant', adult_shop: 'adult_shop',
 }
 
 /**
@@ -42,7 +42,7 @@ const CELL_SHOP: Record<string, ShopType> = {
  * 有標籤的（例如口球）也在店裡賣
  */
 export function notForSale(i: Pick<ItemDef, 'gear' | 'master_force'> & { tags?: string[] }): boolean {
-  return !!i.gear?.unique || !!i.gear?.attrs || !!i.tags?.includes('unique')
+  return !!i.gear?.unique || !!i.gear?.attrs || !!i.gear?.curse || !!i.tags?.includes('unique')
 }
 
 /**

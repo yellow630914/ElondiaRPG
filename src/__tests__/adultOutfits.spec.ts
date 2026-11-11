@@ -4,7 +4,7 @@ import { enemies, itemDef, itemRules, lewdRules } from '@/engine/data'
 import { gearName, gearRules } from '@/engine/gear'
 import { enterLocation } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
-import { outfitChoices } from '@/engine/outfitTailor'
+import { craftShopFor } from '@/engine/craft'
 import { pcOf } from '@/engine/party'
 import { adultOutfitPieces } from '@/engine/schools'
 import { addItem, newGame } from '@/engine/state'
@@ -28,8 +28,8 @@ describe('S9-6 淫服補充', () => {
     for (const s of ['legs', 'feet', 'wrists', 'belt', 'accessory']) expect(slots.has(s as never), s).toBe(true)
   })
 
-  it('裁縫店訂做淫服可以選新的底材；穿上算進淫服的件數', () => {
-    expect(outfitChoices().map((c) => c.base)).toEqual(expect.arrayContaining(['open_gown', 'garter_belt']))
+  it('新的底材在成人用品店委託打造；穿上算進淫服的件數', () => {
+    for (const b of ['open_gown', 'garter_belt', 'latex_suit', 'coin_belt']) expect(craftShopFor(b), b).toBe('adult_shop')
     const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 2, birthplace: 'albena' })
     enterLocation(state)
     const pc = pcOf(state)

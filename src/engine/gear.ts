@@ -15,7 +15,7 @@ import { describeEffects } from './perks'
 import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
 
-type Scale = 'full' | 'half' | 'up' | 'third' | 'third_up' | 'res'
+type Scale = 'full' | 'half' | 'up' | 'third' | 'third_up' | 'quarter' | 'quarter_up' | 'res'
 export type MaterialKind = 'metal' | 'leather' | 'cloth' | 'wood' | 'jewel'
 
 export interface MaterialDef {
@@ -265,6 +265,8 @@ function scaled(s: Scale, bonus: number): number {
     case 'up': return Math.ceil(bonus / 2)
     case 'third': return Math.floor(bonus / 3)
     case 'third_up': return Math.ceil(bonus / 3)
+    case 'quarter': return Math.floor(bonus / 4)
+    case 'quarter_up': return Math.ceil(bonus / 4)
     // 和附魔一樣最多 -0.5（第 5 級以上的寶石不再更高）
     case 'res': return -Math.min(RES_CAP, Math.round(0.15 * bonus * 100) / 100)
   }

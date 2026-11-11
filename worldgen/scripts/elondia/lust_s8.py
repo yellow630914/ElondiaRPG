@@ -628,10 +628,22 @@ OUTFIT_TWO_FACE = {
     "penalty_per": 1, "penalty_max": 2, "endurance_per": 40, "max_pieces": 3,
     "schools": {"indulgence": {"lust_bonus": 1}, "exhibition": {"evade": 1}, "abstinence": {"save": -1}},
 }
-OUTFIT_TAILOR = {
-    "$comment": "淫服裁縫鋪（docs/LEWD_STATS.md 第 25 節）：魅氣濃度 charm_min 以上的城鎮，裁縫店可以訂做成人向服裝（底材的 outfit = adult），選一項慾望指標加成；加成依材料（bonus），收費 = 底材 × 材料的價格 × fee_mult + fee_base。",
-    "charm_min": 3, "fee_mult": 3, "fee_base": 150, "stats": ["lewdness", "sensitivity", "endurance", "submission"],
-    "bonus": {"linen": 4, "silk": 6, "moonsilk": 8, "spellweave": 10, "leather": 4, "hard_leather": 6, "beast_hide": 8, "dragonhide": 10, "copper": 4, "silver": 6, "gold": 8, "mithril_jewel": 10},
+# 淫服訂做改成成人用品店的委託打造（2026-11）：lewd.json 的 outfit_commission
+OUTFIT_COMMISSION = {
+    "$comment": "成人向服裝的委託打造（docs/LEWD_STATS.md 第 25 節）：成人向服裝（底材的 outfit = adult）只在 shop 這種店委託打造，DC、材料、價格都和一般的委託打造一樣；可以另外選一項慾望指標（stats），加成依材料等級（bonus_by_tier：第 1、2、3、4 級以上）。",
+    "shop": "adult_shop",
+    "stats": [
+        "lewdness",
+        "sensitivity",
+        "endurance",
+        "submission"
+    ],
+    "bonus_by_tier": [
+        4,
+        6,
+        8,
+        10
+    ]
 }
 LUST = lambda x: {"offense": {"lust": x}}
 AUCTION_ITEMS = [
@@ -740,9 +752,9 @@ def write_s8_14():
 
     p = 'data/rules/lewd.json'
     t = open(p).read()
-    for k in ['outfit_two_face', 'outfit_tailor', 'auction']:
+    for k in ['outfit_two_face', 'outfit_tailor', 'outfit_commission', 'auction']:
         t = drop_lines(t, r'\n  "' + k + r'": \{.*')
-    t = t.replace('\n  "park": {', ''.join(f'\n  "{k}": ' + json.dumps(v, ensure_ascii=False) + ',' for k, v in [('outfit_two_face', OUTFIT_TWO_FACE), ('outfit_tailor', OUTFIT_TAILOR), ('auction', AUCTION)]) + '\n  "park": {', 1)
+    t = t.replace('\n  "park": {', ''.join(f'\n  "{k}": ' + json.dumps(v, ensure_ascii=False) + ',' for k, v in [('outfit_two_face', OUTFIT_TWO_FACE), ('outfit_commission', OUTFIT_COMMISSION), ('auction', AUCTION)]) + '\n  "park": {', 1)
     d = json.loads(t)
     # 園區的寶箱：成人向的服裝（chest_items 的最後面）
     items = [x for x in d['park']['chest_items'] if x[0] not in {o['name'] for o in PARK_OUTFITS}] + [[o['name'], PARK_OUTFIT_CHANCE] for o in PARK_OUTFITS]

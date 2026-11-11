@@ -5,7 +5,8 @@ import { travelEvents } from '@/engine/road'
 import { enterLocation, getArea, standOn, type CellKind } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
 import { lewdOf } from '@/engine/lewd'
-import { orderOutfit, outfitOrder, outfitTailorHere } from '@/engine/outfitTailor'
+import { applyCraft, commissionHere, craftTarget, outfitLewdBonus, parseCraftTarget } from '@/engine/craft'
+import { baseReport } from '@/engine/town'
 import { pcOf } from '@/engine/party'
 import { adultOutfitPieces, outfitCombat, outfitModifiers } from '@/engine/schools'
 import { addItem, newGame } from '@/engine/state'
@@ -39,23 +40,23 @@ describe('淫服的雙面效應', () => {
   })
 })
 
-describe('淫服裁縫鋪', () => {
-  it('魅氣濃的城鎮，地下街的拘束具店可以訂做帶指標加成的淫服；裁縫店不再訂做', () => {
+describe('成人向服裝的委託打造', () => {
+  it('只在成人用品店委託（裁縫店不接）；可以加一項慾望指標，加成依材料等級', () => {
     const state = game()
     standOn(state, 'tailor')
-    expect(outfitTailorHere(state)).toBe(false)
-    expect(standOn(state, 'bondage')).toBe(true)
-    expect(outfitTailorHere(state)).toBe(true)
-    const o = outfitOrder('bunny_suit', 'moonsilk', 'lewdness')
-    expect(o.bonus).toBe(8)
-    const money = state.money_cc
-    orderOutfit(state, 'bunny_suit', 'moonsilk', 'lewdness')
-    expect(state.money_cc).toBe(money - o.price)
-    const name = Object.keys(state.customItems ?? {}).find((n) => n.startsWith('訂做的'))!
-    expect(state.customItems![name]!.gear?.lewd).toEqual({ lewdness: 8 })
-    const other = game('rhineburg')
-    standOn(other, 'bondage')
-    expect(outfitTailorHere(other)).toBe(false)
+    expect(commissionHere(state, 'bunny_suit')).toBe(false)
+    expect(commissionHere(state, 'robe')).toBe(true)
+    expect(standOn(state, 'adult_shop')).toBe(true)
+    expect(commissionHere(state, 'bunny_suit')).toBe(true)
+    expect(commissionHere(state, 'robe')).toBe(false)
+    expect(outfitLewdBonus('bunny_suit', 'linen')).toBe(4)
+    expect(outfitLewdBonus('bunny_suit', 'moonsilk')).toBe(8)
+    expect(outfitLewdBonus('robe', 'linen')).toBeUndefined()
+    const target = craftTarget('bunny_suit', 'linen', [], { lewd: 'lewdness' })
+    expect(parseCraftTarget(target).opts.lewd).toBe('lewdness')
+    applyCraft(state, baseReport(state, 'action', 0), target, 'success')
+    const made = Object.values(state.customItems ?? {}).find((x) => x.gear?.base === 'bunny_suit')!
+    expect(made.gear?.lewd).toEqual({ lewdness: 4 })
   })
 })
 

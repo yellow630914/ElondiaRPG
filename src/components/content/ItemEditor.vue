@@ -745,7 +745,7 @@ function setFuel(v: string) {
           也會出現在黑市：地下街裡的黑市每天刷新幾件珍品（件數在遊戲規則），價格是物品價的幾倍，可以殺價
         </label>
         <div v-if="draft.gear.unique" class="unique small">
-          <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="1" max="3" class="num" /></label>
+          <label>檢定加值 <input v-model.number="draft.gear.unique.bonus" type="number" min="-3" max="3" class="num" /></label>
           <span class="muted">勾選篩選條件：同一欄是「或」，不同欄是「且」，都不勾就是所有檢定。</span>
           <details open><summary>檢定分類（{{ draft.gear.unique.check.skills?.length ?? 0 }}）</summary>
             <label v-for="[k, n] in uniqueSkills" :key="k" class="check"><input type="checkbox" :checked="draft.gear.unique.check.skills?.includes(k as never)" @change="toggleUniqueFilter('skills', k, ($event.target as HTMLInputElement).checked)" /> {{ n }}</label>
@@ -788,7 +788,11 @@ function setFuel(v: string) {
               <option v-for="g in LOCK_GRADES" :key="g" :value="g">{{ lewdRules.locks.grades[g].name }}</option>
             </select>
           </label>
-          <Hint :text="`底材是拘束具（${lewdRules.two_face.kinds[gearBindBase.bind_kind!]?.name ?? gearBindBase.bind_kind}）時，這件物品可以有自己的程度，蓋過底材的設定；種類照底材。自帶的鎖：戴上就算鎖上（雙面效應用這個等級），不能打開、也不會變成行囊裡的鎖（docs/LEWD_STATS.md 第 7 節）。`" />
+          <label class="check">
+            <input type="checkbox" :checked="!!draft.gear.curse" @change="($event.target as HTMLInputElement).checked ? (draft.gear!.curse = true) : delete draft.gear!.curse" />
+            詛咒具
+          </label>
+          <Hint :text="`底材是拘束具（${lewdRules.two_face.kinds[gearBindBase.bind_kind!]?.name ?? gearBindBase.bind_kind}）時，這件物品可以有自己的程度，蓋過底材的設定；種類照底材。自帶的鎖：戴上就算鎖上（雙面效應用這個等級），不能打開、也不會變成行囊裡的鎖（docs/LEWD_STATS.md 第 7 節）。詛咒具：一戴上就被詛咒鎖住，掙不開、鑰匙打不開、鐵匠剪不掉，只能到神殿解咒（第 7.2 節）；不會在商店上架。`" />
         </div>
         <label class="check small">
           <input type="checkbox" :checked="!!draft.master_force" @change="setMasterForce(($event.target as HTMLInputElement).checked)" />

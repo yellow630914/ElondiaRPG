@@ -4,7 +4,7 @@
 // AI 關閉時依規則：成功以上隨機附魔。
 
 import { blueprintRules, hasBlueprint } from './blueprints'
-import { craftRules as craftSkillRules, isCustomShopId, itemDef, locationById, shopRules, type CraftId, type Degree, type ShopType } from './data'
+import { craftRules as craftSkillRules, isCustomShopId, itemDef, lewdRules, locationById, shopRules, type CraftId, type Degree, type ShopType } from './data'
 import {
   crafterRefusal, craftForKind, craftName, craftXpFor, gainCraftXp, keeperCraftLevel, skillOf, toolAccess, toolBlocker, toolTierFor, type ToolAccess,
 } from './crafting'
@@ -16,7 +16,7 @@ import { CELL_NAME, currentArea, currentCell, type CellKind } from './grid'
 import { memberOrResident } from './homes'
 import { formatMoney } from './money'
 import { withRng } from './state'
-import type { Character, GameState, GearSpec, Report } from './types'
+import type { Character, GameState, GearSpec, LewdStat, Report } from './types'
 
 export interface CraftPlan {
   /** 輔料、總價值、讓稀有度再高一級的機率、屬性方向 */
@@ -74,9 +74,35 @@ export function forgeOf(name: string): string[] {
 /** 哪種材料到哪裡打造 */
 export const CRAFT_SHOP: Record<MaterialKind, CellKind> = { metal: 'smithy', wood: 'smithy', leather: 'tailor', cloth: 'tailor', jewel: 'jeweler' }
 
+/** 成人向服裝的委託打造（docs/LEWD_STATS.md 第 25 節）：只在這種店（成人用品店），一般的店不接 */
+export const outfitCommission = () => lewdRules.outfit_commission
+const isAdultOutfit = (base: string) => gearRules.bases[base]?.outfit === 'adult'
+
+/** 這個底材要到哪種店委託（成人向服裝到成人用品店，其他照材料） */
+export function craftShopFor(base: string): CellKind {
+  return isAdultOutfit(base) ? outfitCommission().shop as CellKind : CRAFT_SHOP[gearRules.bases[base]!.kind]
+}
+
+/** 站的這間店接不接這個底材的委託 */
+export function commissionHere(state: GameState, base: string): boolean {
+  const cell = currentCell(state).kind
+  if (isCustomShopId(cell)) return craftKindsHere(state).includes(gearRules.bases[base]!.kind)
+  return craftShopFor(base) === cell
+}
+
+/** 委託成人向服裝時可以加的慾望指標與加成（依材料等級；不是成人向服裝時 undefined） */
+export function outfitLewdBonus(base: string, material: string): number | undefined {
+  if (!isAdultOutfit(base)) return undefined
+  const t = outfitCommission().bonus_by_tier
+  const tier = gearRules.materials[material]?.tier ?? 1
+  return t[Math.min(tier, t.length) - 1]
+}
+
 /** 這裡可以打造的材料類型 */
 export function craftKindsHere(state: GameState): MaterialKind[] {
   const cell = currentCell(state).kind
+  // 成人用品店：只接成人向服裝，材料照底材（布、皮、寶石）
+  if (cell === outfitCommission().shop) return ['cloth', 'leather', 'jewel']
   // 自建的商店：接哪些材料類型看商店的設定
   const custom = isCustomShopId(cell) ? shopRules.types[cell] : undefined
   if (custom) return (custom.craft ?? []) as MaterialKind[]
@@ -90,7 +116,9 @@ export function canCraftHere(state: GameState): boolean {
 export interface AuxItem { name: string; qty: number }
 
 /** 打造的選項：優先用哪一種打造材料、不夠時向這間店當場補買 */
-export interface CraftOptions { use?: string; buy?: boolean }
+export interface CraftOptions { use?: string; buy?: boolean
+  /** 委託成人向服裝時加的慾望指標（docs/LEWD_STATS.md 第 25 節） */
+  lewd?: LewdStat }
 
 /**
  * 打造的 target：「底材:材料」，有輔料時接上「|名稱*數量」，選項接上「|!use=名稱」「|!buy」，
@@ -102,6 +130,7 @@ export function parseCraftTarget(target?: string): { base: string; material: str
   for (const x of segs) {
     if (x === '!buy') opts.buy = true
     else if (x.startsWith('!use=') && x.length > 5) opts.use = x.slice(5)
+    else if (x.startsWith('!lewd=') && outfitCommission().stats.includes(x.slice(6) as LewdStat)) opts.lewd = x.slice(6) as LewdStat
   }
   const rest = segs.filter((x) => !x.startsWith('!'))
   const [base, material] = (head ?? '').split(':')
@@ -118,7 +147,7 @@ export function parseCraftTarget(target?: string): { base: string; material: str
 export function craftTarget(base: string, material: string, aux: AuxItem[] = [], opts: CraftOptions = {}): string {
   return [
     `${base}:${material}`, ...aux.filter((a) => a.qty > 0).map((a) => `${a.name}*${a.qty}`),
-    ...(opts.use ? [`!use=${opts.use}`] : []), ...(opts.buy ? ['!buy'] : []),
+    ...(opts.use ? [`!use=${opts.use}`] : []), ...(opts.buy ? ['!buy'] : []), ...(opts.lewd ? [`!lewd=${opts.lewd}`] : []),
   ].join('|')
 }
 
@@ -249,6 +278,7 @@ function selfCost(state: GameState, tier: number, craft: CraftId) {
 /** 委託打造找哪家店的店主：站在接這種材料的自建商店時是這家店，否則是內建的店 */
 function craftShop(state: GameState, kind: MaterialKind): string {
   const cell = currentCell(state).kind
+  if (cell === outfitCommission().shop) return cell
   return isCustomShopId(cell) && craftKindsHere(state).includes(kind) ? cell : CRAFT_SHOP[kind] === 'shop' ? 'general' : CRAFT_SHOP[kind]
 }
 
@@ -273,7 +303,8 @@ export function setupCraft(state: GameState, target?: string) {
   if (!canCraftHere(state)) throw new Error('要在鐵匠鋪、裁縫店或珠寶店委託打造')
   const { base, material, aux, opts } = parseCraftTarget(target)
   const kind = gearRules.bases[base]!.kind
-  if (!craftKindsHere(state).includes(kind)) throw new Error(`${gearRules.bases[base]!.name}要到${CELL_NAME[CRAFT_SHOP[kind]]}打造`)
+  if (!commissionHere(state, base)) throw new Error(`${gearRules.bases[base]!.name}要到${CELL_NAME[craftShopFor(base)]}打造`)
+  if (opts.lewd && !isAdultOutfit(base)) throw new Error('只有成人向服裝可以加慾望指標')
   const plan = craftPlan(state, base, material, aux, undefined, opts)
   if (plan.blocked) throw new Error(plan.blocked)
   const name = gearName({ base, material })
@@ -302,7 +333,9 @@ export function setupCraft(state: GameState, target?: string) {
  */
 export function applyCraft(state: GameState, report: Report, target: string, degree: Degree, gear?: Extract<RewardEffect, { type: 'gear' }>): string {
   const { base, material, aux, opts } = parseCraftTarget(target)
-  return finishCraft(state, report, craftPlan(state, base, material, aux, undefined, opts), degree, gear)
+  // 委託成人向服裝：選的慾望指標照材料等級加成
+  const bonus = opts.lewd ? outfitLewdBonus(base, material) : undefined
+  return finishCraft(state, report, craftPlan(state, base, material, aux, undefined, opts), degree, gear, bonus ? { [opts.lewd!]: bonus } : undefined)
 }
 
 /** 自己動手的花費名稱：材料費、工坊租金 */
@@ -328,7 +361,7 @@ export function buyHere(state: GameState, report: Report, buys: { name: string; 
   applyEffects(state, report, effects)
 }
 
-function finishCraft(state: GameState, report: Report, plan: CraftPlan, degree: Degree, gear?: Extract<RewardEffect, { type: 'gear' }>): string {
+function finishCraft(state: GameState, report: Report, plan: CraftPlan, degree: Degree, gear?: Extract<RewardEffect, { type: 'gear' }>, lewd?: GearSpec['lewd']): string {
   const { base, material, aux } = plan
   buyHere(state, report, plan.buys)
   const paid = plan.crafter ? `花了 ${formatMoney(plan.fee)}（${selfFeeName(plan)}）` : `付了 ${formatMoney(plan.fee)} 工錢`
@@ -359,6 +392,7 @@ function finishCraft(state: GameState, report: Report, plan: CraftPlan, degree: 
     const enchants = points ? withRng(state, (rng) => rollEnchants(base, points, rng, plan.elements)) : undefined
     if (enchants) spec.enchants = enchants
   }
+  if (lewd) spec.lewd = lewd
   const name = registerGear(state, spec, gear?.name, gear?.desc)
   applyEffects(state, report, [{ type: 'item', name, qty: 1 }])
   return `${plan.fee ? `${paid}，` : ''}打造出【${name}】。${boosted ? '輔料讓成品的品質更上一層。' : ''}`

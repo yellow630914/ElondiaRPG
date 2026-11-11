@@ -18,43 +18,43 @@ function game(birthplace = 'albena', seed = 8): GameState {
 const soldItems = (state: GameState, shop: Parameters<typeof shopState>[1]) =>
   shopState(state, shop).deals.flatMap((d) => d.gets.filter((g) => g.type === 'item').map((g) => (g as { name: string }).name))
 
-describe('拘束具店（地下街）', () => {
+describe('成人用品店（地下街）', () => {
   it('每條地下街都有一間，站得上去', () => {
     const uw = Object.entries(specialMaps).filter(([id]) => id.startsWith('sm_uw_'))
     expect(uw.length).toBeGreaterThan(10)
-    for (const [, m] of uw) expect(m.shops).toEqual([{ shop: 'bondage', x: 4, y: 4 }])
+    for (const [, m] of uw) expect(m.shops).toEqual([{ shop: 'adult_shop', x: 4, y: 4 }])
     const state = game()
-    expect(standOn(state, 'bondage')).toBe(true)
+    expect(standOn(state, 'adult_shop')).toBe(true)
     expect(currentArea(state).key).toBe('sm/sm_uw_albena')
-    expect(currentCell(state).kind).toBe('bondage')
+    expect(currentCell(state).kind).toBe('adult_shop')
   })
 
-  it('只賣標了 bondage 的貨：拘束具一次上架好幾件，鎖也有，鑰匙不賣', () => {
+  it('只賣標了 adult_shop 的貨：拘束具一次上架好幾件，鎖也有，鑰匙不賣', () => {
     const state = game()
-    const items = soldItems(state, 'bondage')
-    for (const n of items) if (itemDef(n)) expect(itemDef(n)!.tags, n).toContain('bondage')
+    const items = soldItems(state, 'adult_shop')
+    for (const n of items) if (itemDef(n)) expect(itemDef(n)!.tags, n).toContain('adult_shop')
     const restraints = items.filter((n) => itemDef(n)?.gear && gearRules.bases[itemDef(n)!.gear!.base]?.restraint)
-    expect(restraints.length).toBeGreaterThanOrEqual(shopRules.types.bondage!.restraints![0])
+    expect(restraints.length).toBeGreaterThanOrEqual(shopRules.types.adult_shop!.restraints![0])
     expect(items).toContain('白鐵鎖')
     expect(items.some((n) => n.endsWith('鑰匙'))).toBe(false)
-    for (const i of itemRules.items.filter((x) => x.key)) expect(i.tags, i.name).not.toContain('bondage')
+    for (const i of itemRules.items.filter((x) => x.key)) expect(i.tags, i.name).not.toContain('adult_shop')
   })
 
-  it('原本的店只留基礎款；進階的只在拘束具店', () => {
-    expect(itemDef('絲帶手銬')!.tags).toEqual(['tailor', 'bondage'])
-    expect(itemDef('單手套')!.tags).toEqual(['bondage'])
-    expect(itemDef('口球')!.tags).toEqual(['bondage'])
+  it('原本的店只留基礎款；進階的只在成人用品店', () => {
+    expect(itemDef('絲帶手銬')!.tags).toEqual(['tailor', 'adult_shop'])
+    expect(itemDef('單手套')!.tags).toEqual(['adult_shop'])
+    expect(itemDef('口球')!.tags).toEqual(['adult_shop'])
     expect(shopRules.types.magic!.restraints).toBeUndefined()
     for (const shop of ['tailor', 'smithy', 'jeweler', 'magic'] as const) {
       const tag = shopRules.types[shop]!.catalog_tag
       const sold = itemRules.items.filter((i) => i.tags.includes(tag) && i.gear && gearRules.bases[i.gear.base]?.restraint)
-      for (const i of sold) expect(i.tags, i.name).toContain('bondage')
+      for (const i of sold) expect(i.tags, i.name).toContain('adult_shop')
     }
   })
 
-  it('每種拘束在拘束具店都買得到程度 1～3', () => {
+  it('每種拘束在成人用品店都買得到程度 1～3', () => {
     const m: Record<string, Set<number>> = {}
-    for (const i of itemRules.items.filter((x) => x.tags.includes('bondage') && x.gear)) {
+    for (const i of itemRules.items.filter((x) => x.tags.includes('adult_shop') && x.gear)) {
       const base = gearRules.bases[i.gear!.base]!
       if (!base.bind_kind) continue
       ;(m[base.bind_kind] ??= new Set()).add(i.gear!.bind ?? base.bind!)

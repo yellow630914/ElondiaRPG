@@ -138,7 +138,7 @@
   "lactation": {
     "after_birth_days": 30,
     "ability": "lact_milking",
-    "milk": { "item": "母乳", "qty": [1, 2], "hours": 0.5 },
+    "milk": { "item": "母乳", "qty": [1, 2], "hours": 0.5, "tool": {"item": "吸乳器", "bonus": 1} },
     "sensitivity": 5,
     "exposure": 1,
     "combat": {

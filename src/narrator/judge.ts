@@ -18,7 +18,7 @@ import { inviteDc, validateInvite } from '@/engine/companions'
 import {
   geography, genderPrompt, itemDef, itemRules, tagDef, shopDef, shopRules, slaveryRules, type ShopType,
   actionRules, ATTR_IDS, SKILL_IDS, skillName, companionRules, attrName, className, conditionName, contractDef, locationById, raceName,
-  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, TRAP_LOCK, type PerkDef,
+  abilityDef, armorDef, weaponDef, craftRules, damageTypes, statuses, perkDef, perkRules, TRAP_LOCK, CURSE_LOCK, type PerkDef,
 } from '@/engine/data'
 import { wantsWorldFacts, worldFacts } from './worldFacts'
 import { capsSource, capsText, INVENT_CATEGORY_NAME, inventCaps, parseInventTarget, type InventCategory } from '@/engine/invention'
@@ -104,7 +104,7 @@ function stuckGear(m: Character): string[] {
     if (!g?.locked) return []
     if (g.locked.startsWith(PARASITE_LOCK)) return [`${g.name}（${slotName(slot)}・寄生，馴服或解咒之前拿不下來）`]
     const lock = g.lock ?? g.spec.lock
-    const who = g.locked.startsWith(TRAP_LOCK) ? '陷阱鎖住' : '主人強制戴上'
+    const who = g.locked.startsWith(CURSE_LOCK) ? '詛咒鎖住' : g.locked.startsWith(TRAP_LOCK) ? '陷阱鎖住' : '主人強制戴上'
     return [`${g.name}（${slotName(slot)}・${who}${lock ? `・${lockName(lock)}` : ''}）`]
   })
 }

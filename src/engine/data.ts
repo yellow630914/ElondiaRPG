@@ -2058,7 +2058,7 @@ export function saveItems(): ItemDef[] {
   return [...saveItemIndex.values()]
 }
 
-export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'bondage'
+export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'adult_shop'
 /** 自建的商店：id 是 shop_ 開頭（只有小寫英文與數字），地圖格子的種類就是這個 id */
 export type CustomShopId = `shop_${string}`
 export type ShopType = BuiltinShopType | CustomShopId
@@ -2067,7 +2067,7 @@ export function isCustomShopId(id: string): id is CustomShopId {
   return CUSTOM_SHOP_ID.test(id)
 }
 /** 可以指定固定 NPC 擔任店主的內建店種（流浪商人不是固定的店）；自建的商店也可以 */
-export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'bondage']
+export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop']
 /** 商店的設定（自建的商店被刪掉時丟出錯誤） */
 export function shopDef(type: ShopType): ShopTypeDef {
   const d = shopRules.types[type]
@@ -2438,6 +2438,10 @@ export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
 export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
 /** 陷阱鎖（事件的 restrain 鎖在主角身上的）：EquippedGear.locked 的前綴，不綁契約（docs/LEWD_STATS.md 第 27 節） */
 export const TRAP_LOCK = 'trap:'
+/** 詛咒具的鎖（EquippedGear.locked = curse:<物品>；docs/LEWD_STATS.md 第 7.2 節） */
+export const CURSE_LOCK = 'curse:'
+/** 不是主人鎖上、和契約無關的鎖：陷阱鎖、詛咒 */
+export const lockedByThing = (locked?: string) => !!locked && (locked.startsWith(TRAP_LOCK) || locked.startsWith(CURSE_LOCK))
 /** 慾望流派（lewd.json 的 schools） */
 export interface LewdSchool { name: string; group: string; role: string; entry: string; advanced: string; fit: BindKind[] }
 /**
@@ -2539,7 +2543,8 @@ export const lewdRules = lewdJson as unknown as {
     schools: Record<string, { lust_bonus?: number; evade?: number; save?: number }>
   }
   /** shop：在哪一種店的格子訂做（地下街的拘束具店；沒寫時是裁縫店） */
-  outfit_tailor: { shop?: string; charm_min: number; fee_mult: number; fee_base: number; stats: LewdStat[]; bonus: Record<string, number> }
+  /** 成人向服裝的委託打造：哪種店、可以加的慾望指標、依材料等級的加成（docs/LEWD_STATS.md 第 25 節） */
+  outfit_commission: { shop: string; stats: LewdStat[]; bonus_by_tier: number[] }
   auction: {
     lots: number; start_ratio: number; rival_ratio: [number, number]; step: number; consign_ratio: [number, number]; consign_fee: number
     watch_chance: number; watch_flag: string; pool: [string, number][]
@@ -2597,6 +2602,8 @@ export const lewdRules = lewdJson as unknown as {
     combat: { ap: number; base: number; per_level: number; hands: number }
     /** 鐵匠剪鎖：只剪陷阱鎖（docs/LEWD_STATS.md 第 27 節） */
     cut: { shops: string[]; fee_cc: Record<LockGrade, number> }
+    /** 神殿解咒：只解詛咒具，詛咒具碎掉（docs/LEWD_STATS.md 第 7.2 節） */
+    uncurse?: { shops: string[]; fee_cc: Record<LockGrade, number> }
   }
   charm: {
     names: string[]

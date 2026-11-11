@@ -64,5 +64,6 @@ export function restrainPc(state: GameState, report: Report, item: string, lock:
   const { target, back } = putOn(pc, item, spec, slot, `${TRAP_LOCK}${item}`)
   pc.gear![target]!.lock = grade
   if (back.length) (report.changes.items_gained ??= []).push(...back.map((n) => ({ name: n, qty: 1, owner: 'pc' })))
+  if (spec.curse) return `【${item}】被詛咒鎖在主角的${slotNameFor(target, pc.race)}上，掙不開、鑰匙也打不開（要到神殿解咒）${back.length ? `（${back.join('、')}收進行囊）` : ''}`
   return `【${item}】被${lockName(grade)}鎖在主角的${slotNameFor(target, pc.race)}上，自己打不開（要脫縛、用鑰匙或找鐵匠剪鎖）${back.length ? `（${back.join('、')}收進行囊）` : ''}`
 }

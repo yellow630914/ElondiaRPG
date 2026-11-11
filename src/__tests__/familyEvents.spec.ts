@@ -11,7 +11,7 @@ import { syncPregnancyMarks } from '@/engine/pregnancy'
 import {
   answerPregnancyEvent, broodCandidates, broodFocus, broodTemplates, lactationCandidates, lactationTemplates, maybePregnancyEvent, pendingPregnancyEvent, prunePregnancyEvent,
 } from '@/engine/pregnancyEvents'
-import { newGame, withRng } from '@/engine/state'
+import { addItem, newGame, withRng } from '@/engine/state'
 import { baseReport } from '@/engine/town'
 import { sanitizeTravelEvent, travelEventWarnings } from '@/engine/travelEventMods'
 import type { Character, GameState } from '@/engine/types'
@@ -152,5 +152,16 @@ describe('擠奶', () => {
     expect(state.inventory.find((i) => i.name === '母乳')?.qty).toBeGreaterThanOrEqual(1)
     expect(r.narration?.adult_scene).toBeTruthy()
     expect(milkBlock(state, pc)).toBe('今天已經擠過了')
+  })
+
+  it('行囊裡有吸乳器時多擠一瓶', () => {
+    const state = game()
+    const pc = pcOf(state)
+    lactate(state, 'pc')
+    addItem(state.inventory, '吸乳器', 1)
+    const r = milk(state, pc.id)
+    const qty = state.inventory.find((i) => i.name === '母乳')!.qty
+    expect(qty).toBeGreaterThanOrEqual(2)
+    expect(r.outcome.summary).toContain('吸乳器')
   })
 })

@@ -102,7 +102,7 @@ export function gearCheckModifiers(c: Pick<Character, 'gear'>, ctx: CheckCtx): {
   const out: { label: string; value: number }[] = []
   for (const g of Object.values(c.gear ?? {})) {
     const u = g?.spec.unique
-    if (u && matches(u.check, ctx)) out.push({ label: `獨特裝備【${g!.name}】`, value: u.bonus })
+    if (u && matches(u.check, ctx)) out.push({ label: `${g!.spec.curse ? '詛咒' : '獨特裝備'}【${g!.name}】`, value: u.bonus })
   }
   return out
 }

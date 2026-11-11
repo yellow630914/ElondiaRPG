@@ -22,7 +22,6 @@ import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import FusePanel from './FusePanel.vue'
-import OutfitTailorPanel from './OutfitTailorPanel.vue'
 import GuardStatus from './GuardStatus.vue'
 import { isWanted, palacePersuadeDc } from '@/engine/security'
 import MarketPanel from './MarketPanel.vue'
@@ -183,7 +182,7 @@ const ICON = computed<Partial<Record<string, string>>>(() => {
 // 魔法物品店：取出卵生、寄生的苗床（brood.ts）
 const broodExtracts = computed(() => extractOffers(s.value))
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商、拘束具店（地下街）：各自的交易清單
-const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'bondage'] as const
+const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop'] as const
 // 自建的商店（內容編輯器擺的）：格子的種類就是商店的 id
 const shopHere = computed<ShopType | null>(() => {
   void content.version
@@ -349,7 +348,6 @@ const shopDesc = computed(() => {
             </div>
           </div>
           <FusePanel />
-          <OutfitTailorPanel />
         </template>
 
         <template v-else-if="cell.kind === 'tavern'">

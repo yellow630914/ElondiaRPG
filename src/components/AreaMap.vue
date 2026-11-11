@@ -62,7 +62,7 @@ const DANGER = new Set(['encounter', 'elite', 'boss'])
 const ROOF: Record<string, TileKind> = {
   inn: 'roof_blue', guild: 'roof_gold', tavern: 'roof_red', shop: 'roof_brown', temple: 'roof_gold', brothel: 'roof_purple',
   smithy: 'roof_brown', tailor: 'roof_green', jeweler: 'roof_purple', magic: 'roof_purple', informant: 'roof_brown',
-  tattoo: 'roof_green', carver: 'roof_red', manor: 'roof_brown', waypoint: 'roof_red', arrive: 'roof_red',
+  tattoo: 'roof_green', carver: 'roof_red', manor: 'roof_brown', waypoint: 'roof_red', arrive: 'roof_red', adult_shop: 'roof_purple',
 }
 function isBuilding(cell: Cell): boolean {
   return !!ROOF[cell.kind] || isCustomShopId(cell.kind) || !!landmarkDef(cell.kind)

@@ -259,6 +259,11 @@ export interface GearSpec {
   bind?: number
   /** 自帶的鎖（拘束具）：戴上就算鎖上，雙面效應用這個等級；拿不下來的鎖，不能打開也不會變成行囊裡的鎖 */
   lock?: LockGrade
+  /**
+   * 詛咒具（拘束具才有；docs/LEWD_STATS.md 第 7.2 節）：一戴上就被詛咒鎖住（EquippedGear.locked = curse:<物品>），
+   * 掙不開、鑰匙打不開、鐵匠也剪不掉，只能到神殿解咒（詛咒具碎掉）
+   */
+  curse?: boolean
 }
 
 /** 穿在身上的裝備：物品名稱與組成（自帶組成，不必回頭查存檔） */

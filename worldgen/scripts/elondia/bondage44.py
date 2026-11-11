@@ -1,11 +1,11 @@
-# 拘束具擴充與地下街的拘束具店（docs/ITEMS.md 第 2、6 節、docs/TRADE.md 第 2 節、docs/LEWD_STATS.md 第 25 節）：
+# 拘束具擴充與地下街的成人用品店（docs/ITEMS.md 第 2、6 節、docs/TRADE.md 第 2 節、docs/LEWD_STATS.md 第 25 節）：
 #   1. gear.json   新的拘束具與調教道具底材 41 種（口與臉、頸、手臂、鎖鏈、軀幹、腿腳、調教道具）。鎖鏈自帶環，戴上就有拘束。
-#   2. items.json  每種底材的店貨（鎖鏈有長短不同的款式，越短拘束越強），標 bondage（只在拘束具店賣）；
-#                  原本的拘束具：基礎款留在原來的店、也在拘束具店賣，其他的只在拘束具店賣；只有主人會戴上的（沒有商店標籤）也上架；
-#                  鎖也在拘束具店賣（鑰匙照舊不在商店賣，見 LEWD_STATS 第 16 節）。
-#   3. shops.json  新的內建店種 bondage「拘束具店」（地下街裡才有）、店名的字詞；原本的店每天另外上架的拘束具件數調少。
-#   4. special_maps.json  每條地下街（sm_uw_*）擺一間拘束具店（第 4 列中央，入口上方兩格）。
-#   5. lewd.json   訂做淫服改在拘束具店（outfit_tailor.shop）。
+#   2. items.json  每種底材的店貨（鎖鏈有長短不同的款式，越短拘束越強），標 adult_shop（只在成人用品店賣）；
+#                  原本的拘束具：基礎款留在原來的店、也在成人用品店賣，其他的只在成人用品店賣；只有主人會戴上的（沒有商店標籤）也上架；
+#                  鎖也在成人用品店賣（鑰匙照舊不在商店賣，見 LEWD_STATS 第 16 節）。
+#   3. shops.json  新的內建店種 adult_shop「成人用品店」（地下街裡才有；原名成人用品店）、店名的字詞；原本的店每天另外上架的拘束具件數調少。
+#   4. special_maps.json  每條地下街（sm_uw_*）擺一間成人用品店（第 4 列中央，入口上方兩格）。
+#   （淫服訂做改成成人用品店的委託打造，見 outfits46.py。）
 # 詛咒具（鎖死、只從陷阱、地下城、事件拿到）是下一批，不在這裡。
 # 可以重跑：先拿掉上一次寫進去的再寫。要排在 lust_s9.py（拘束具、商店的 restraints）與 underworld39.py（地下街的地圖）之後。
 import json
@@ -84,7 +84,7 @@ ANCHOR_BASE = r'\n    "muzzle_gag": \{.*'
 
 
 def item(name, price, desc, gear, **extra):
-    return {"name": name, "category": "equipment", "price_cc": price, "tags": ["bondage"], "adult": True, **extra, "desc": desc, "gear": gear}
+    return {"name": name, "category": "equipment", "price_cc": price, "tags": ["adult_shop"], "adult": True, **extra, "desc": desc, "gear": gear}
 
 
 MAT = {"metal": "iron", "leather": "leather", "cloth": "linen", "wood": "oak"}
@@ -152,41 +152,41 @@ NEW_ITEMS = [
 ]
 ANCHOR_ITEM = r'\n    \{ ?"name": "鈴鐺頸環".*'
 
-# 原本的拘束具：基礎款留在原來的店、也在拘束具店賣；其他的只在拘束具店賣（名稱 → 新的 tags）
+# 原本的拘束具：基礎款留在原來的店、也在成人用品店賣；其他的只在成人用品店賣（名稱 → 新的 tags）
 RETAG = {
     # 基礎款
-    "絲帶手銬": ["tailor", "bondage"], "皮眼罩": ["tailor", "bondage"], "絲巾口塞": ["tailor", "bondage"],
-    "麻繩繩衣": ["tailor", "bondage"], "蕾絲眼紗": ["tailor", "bondage"], "鈴鐺頸環": ["tailor", "bondage"],
-    "皮手銬": ["smith", "bondage"], "鐵骨束腰": ["smith", "bondage"], "腳踝鈴鍊": ["jeweler", "bondage"],
-    # 只在拘束具店
-    "單手套": ["bondage"], "步鍊": ["bondage"], "芭蕾高跟靴": ["bondage"], "絲繩龜甲縛": ["bondage"],
-    "跳蛋內褲": ["bondage"], "鈴鐺乳夾": ["bondage"], "全罩皮頭套": ["bondage"], "魔導震動栓": ["bondage"],
-    "口球": ["bondage"], "皮革面罩口枷": ["bondage"],
+    "絲帶手銬": ["tailor", "adult_shop"], "皮眼罩": ["tailor", "adult_shop"], "絲巾口塞": ["tailor", "adult_shop"],
+    "麻繩繩衣": ["tailor", "adult_shop"], "蕾絲眼紗": ["tailor", "adult_shop"], "鈴鐺頸環": ["tailor", "adult_shop"],
+    "皮手銬": ["smith", "adult_shop"], "鐵骨束腰": ["smith", "adult_shop"], "腳踝鈴鍊": ["jeweler", "adult_shop"],
+    # 只在成人用品店
+    "單手套": ["adult_shop"], "步鍊": ["adult_shop"], "芭蕾高跟靴": ["adult_shop"], "絲繩龜甲縛": ["adult_shop"],
+    "跳蛋內褲": ["adult_shop"], "鈴鐺乳夾": ["adult_shop"], "全罩皮頭套": ["adult_shop"], "魔導震動栓": ["adult_shop"],
+    "口球": ["adult_shop"], "皮革面罩口枷": ["adult_shop"],
     # 原本只有主人會戴上的（沒有商店標籤）
-    "奴隸項圈": ["bondage"], "腕鐐": ["bondage"], "腳鐐": ["bondage"], "刺釘項圈": ["bondage"], "絲絨頸環": ["bondage"],
-    "貞操帶": ["bondage"], "皮革束帶": ["bondage"], "家紋束胸綢": ["bondage"],
+    "奴隸項圈": ["adult_shop"], "腕鐐": ["adult_shop"], "腳鐐": ["adult_shop"], "刺釘項圈": ["adult_shop"], "絲絨頸環": ["adult_shop"],
+    "貞操帶": ["adult_shop"], "皮革束帶": ["adult_shop"], "家紋束胸綢": ["adult_shop"],
 }
-# 鎖：原本的店照賣，拘束具店也賣（鑰匙照舊不在商店賣）
+# 鎖：原本的店照賣，成人用品店也賣（鑰匙照舊不在商店賣）
 LOCKS = ["白鐵鎖", "藍鋼鎖", "符文鎖"]
 
 # ---------------- 3. 商店 ----------------
 SHOP = {
-    "name": "拘束具店", "emoji": "🔗",
-    "desc": "地下街裡專賣拘束具與調教道具的店：口枷、手銬、鎖鏈、貞操具、玩具，還有鎖；魅氣濃的城鎮也照身材訂做淫服。",
-    "ai": True, "cell": "bondage",
+    "name": "成人用品店", "emoji": "💋",
+    "desc": "地下街裡的成人用品店：拘束具、調教道具、成人向服裝、調教家具與各種小道具，還有鎖；也接成人向服裝的委託打造。",
+    "ai": True, "cell": "adult_shop",
     "keeper": {"classes": ["rogue", "bard"], "title": "店主", "tags": ["merchant"]},
-    "catalog_tag": "bondage", "restraints": [8, 12],
+    "catalog_tag": "adult_shop", "restraints": [8, 12], "outfits": [4, 6],
     "buys": ["equipment"], "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
     "specials": [{"id": "fitting", "title": "請店主幫忙試戴", "desc": "店主替你挑一件、扣上、再解開，順便講解怎麼鎖最牢。",
                   "gives": [{"type": "money", "amount": 30}], "gets": [{"type": "affinity", "npc": "keeper", "delta": 1}], "stock": 1,
                   "flavor": "店主一邊示範扣環與鎖頭，一邊說起哪位貴客訂了什麼怪東西"}],
 }
-# 原本的店每天另外上架的拘束具件數（大部分搬去拘束具店了）
+# 原本的店每天另外上架的拘束具件數（大部分搬去成人用品店了）
 SHOP_RESTRAINTS = {"smithy": [0, 1], "tailor": [1, 2], "jeweler": [0, 1], "magic": None}
 NAMING = {
-    "suffix": ["拘束具店", "皮具坊", "秘具舖"],
-    "desc": ["{air}；牆上一排排掛著皮帶、鐵環與鎖鏈。", "{air}，玻璃櫃裡擺著形狀古怪的玩具。", "{air}；簾子後面是給客人試戴的小隔間。"],
-    "greeting": ["第一次來？先從手銬試起吧。", "要自己用，還是給別人戴？", "鎖另外算錢。鑰匙？那可不賣。"],
+    "suffix": ["成人用品店", "秘具舖", "夜之衣坊"],
+    "desc": ["{air}；牆上一排排掛著皮帶、鐵環與鎖鏈，另一邊是薄得透光的衣裳。", "{air}，玻璃櫃裡擺著形狀古怪的玩具。", "{air}；簾子後面是給客人試穿、試戴的小隔間。"],
+    "greeting": ["第一次來？先從手銬試起吧。", "要自己用，還是給別人穿？", "鎖另外算錢。鑰匙？那可不賣。"],
 }
 
 # ---------------- 4. 地下街 ----------------
@@ -236,7 +236,7 @@ def write_items():
         def addtag(m):
             line = m.group(0)
             d = json.loads(line.strip().rstrip(','))
-            d['tags'] = [x for x in d.get('tags', []) if x != 'bondage'] + ['bondage']
+            d['tags'] = [x for x in d.get('tags', []) if x != 'adult_shop'] + ['adult_shop']
             comma = ',' if line.rstrip().endswith(',') else ''
             return '\n    ' + json.dumps(d, ensure_ascii=False) + comma
         t, n = re.subn(r'\n    \{ ?"name": "' + re.escape(name) + r'".*', addtag, t, count=1)
@@ -254,22 +254,22 @@ def shop_block():
     lines = [f'      "{k}": ' + json.dumps(v, ensure_ascii=False) for k, v in SHOP.items() if k != 'specials']
     sp = ',\n'.join('        ' + json.dumps(x, ensure_ascii=False) for x in SHOP['specials'])
     lines.append('      "specials": [\n' + sp + '\n      ]')
-    return '\n    "bondage": {\n' + ',\n'.join(lines) + '\n    },'
+    return '\n    "adult_shop": {\n' + ',\n'.join(lines) + '\n    },'
 
 
 def write_shops():
     p = 'data/rules/shops.json'
     t = open(p).read()
     # 拿掉上一次寫的店種，再接在流浪商人前面
-    t = re.sub(r'\n    "bondage": \{\n.*?\n    \},', '', t, flags=re.S)
+    t = re.sub(r'\n    "adult_shop": \{\n.*?\n    \},', '', t, flags=re.S)
     i = t.index('\n    "wanderer": {')
     t = t[:i] + shop_block() + t[i:]
     # 店名的字詞：接在 naming 的 suffix、desc、greeting 最後
     for key in ('suffix', 'desc', 'greeting'):
         m = re.search(r'\n    "' + key + r'": \{\n(.*?)\n    \}', t, re.S)
-        lines = [ln for ln in m.group(1).split('\n') if not ln.strip().startswith('"bondage"')]
+        lines = [ln for ln in m.group(1).split('\n') if not ln.strip().startswith('"adult_shop"')]
         lines[-1] = lines[-1].rstrip(',') + ','
-        lines.append('      "bondage": ' + json.dumps(NAMING[key], ensure_ascii=False))
+        lines.append('      "adult_shop": ' + json.dumps(NAMING[key], ensure_ascii=False))
         t = t[:m.start(1)] + '\n'.join(lines) + t[m.end(1):]
     # 原本的店每天另外上架的拘束具件數：直接改那一行
     for shop, r in SHOP_RESTRAINTS.items():
@@ -280,19 +280,19 @@ def write_shops():
             body = re.sub(r'(\n      "catalog_tag": [^\n]*,)', lambda x: x.group(1) + f'\n      "restraints": {json.dumps(r)},', body, count=1)
         t = t[:m.start(1)] + body + t[m.end(1):]
     d = json.loads(t)
-    assert d['types']['bondage'] == SHOP
+    assert d['types']['adult_shop'] == SHOP
     for shop, r in SHOP_RESTRAINTS.items():
         assert d['types'][shop].get('restraints') == r, shop
     for key in ('suffix', 'desc', 'greeting'):
-        assert d['naming'][key]['bondage'] == NAMING[key]
+        assert d['naming'][key]['adult_shop'] == NAMING[key]
     open(p, 'w').write(t)
 
 
 def write_underworld():
     p = 'data/world/special_maps.json'
     t = open(p).read()
-    t = re.sub(r'\n      "shops": \[\{"shop": "bondage"[^\n]*\],', '', t)
-    shop_line = '\n      "shops": [' + json.dumps({"shop": "bondage", **UW_SHOP_AT}) + '],'
+    t = re.sub(r'\n      "shops": \[\{"shop": "adult_shop"[^\n]*\],', '', t)
+    shop_line = '\n      "shops": [' + json.dumps({"shop": "adult_shop", **UW_SHOP_AT}) + '],'
     t, n = re.subn(r'(\n    "sm_uw_[a-z_]+": \{\n(?:      "(?!grid)[^\n]*\n)*?)(      "grid": )', lambda m: m.group(1) + shop_line.lstrip('\n') + '\n' + m.group(2), t)
     d = json.loads(t)
     maps = d.get('maps', d)
@@ -301,20 +301,10 @@ def write_underworld():
     for k in uw:
         m = maps[k]
         assert m['grid'][UW_SHOP_AT['y']][UW_SHOP_AT['x']] == '.', k
-        assert m['shops'] == [{"shop": "bondage", **UW_SHOP_AT}], k
+        assert m['shops'] == [{"shop": "adult_shop", **UW_SHOP_AT}], k
     open(p, 'w').write(t)
     return len(uw)
 
-
-def write_lewd():
-    p = 'data/rules/lewd.json'
-    t = open(p).read()
-    t = t.replace('城鎮，裁縫店可以訂做成人向服裝', '城鎮，shop 那種店（地下街的拘束具店）可以訂做成人向服裝')
-    t, n = re.subn(r'("outfit_tailor": \{"\$comment": "[^"]*", )("shop": "[a-z_]+", )?', r'\1"shop": "bondage", ', t, count=1)
-    assert n == 1
-    d = json.loads(t)
-    assert d['outfit_tailor']['shop'] == 'bondage'
-    open(p, 'w').write(t)
 
 
 if __name__ == '__main__':
@@ -322,5 +312,4 @@ if __name__ == '__main__':
     write_items()
     write_shops()
     uw = write_underworld()
-    write_lewd()
     print('bases', len(BASES), 'items', len(NEW_ITEMS), 'retag', len(RETAG), 'underworld shops', uw)

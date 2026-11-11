@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { toSimplifiedText } from '@/engine/script'
 import { consign, placeBid } from '@/engine/auction'
-import { orderOutfit } from '@/engine/outfitTailor'
 import { fuseGear, splitGear } from '@/engine/fusion'
 import { startArena } from '@/engine/arena'
 import { leavePark } from '@/engine/park'
@@ -1452,6 +1451,7 @@ export const useGame = defineStore('game', () => {
     tryUnbind: (member: string, slot: GearSlot) => perform({ kind: 'unbind', target: `${member}:${slot}`, text: '' }),
     // 陷阱鎖：在鐵匠鋪花錢剪掉
     cutLock: (member: string, slot: GearSlot) => run((s) => restraints.cutLock(s, member, slot)),
+    uncurse: (member: string, slot: GearSlot) => run((s) => restraints.uncurse(s, member, slot)),
     // 主人是工具人：親密度夠高時直接解約、換主人
     masterRelease: () => run((s) => masterTool.masterRelease(s)),
     masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),
@@ -1500,7 +1500,6 @@ export const useGame = defineStore('game', () => {
     splitGear: (name: string) => run((s) => splitGear(s, name)),
     placeBid: (index: number, amount: number) => run((s) => placeBid(s, index, amount)),
     consign: (name: string) => run((s) => consign(s, name)),
-    orderOutfit: (base: string, material: string, stat: LewdStat) => run((s) => orderOutfit(s, base, material, stat)),
     rest: () => run(town.rest),
     shortRest: (spend?: Record<string, number>) => run((s) => rest.shortRest(s, spend)),
     /** 長休；有寫互動內容時，長休後接著進行「長休時的互動」（主動行動） */

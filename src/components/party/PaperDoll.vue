@@ -6,7 +6,7 @@ import { classWeaponBlock, gearBonuses, gearKnown, gearRules, gearSpecOf, gearSt
 import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
-import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc } from '@/engine/restraints'
+import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc, uncurseFee, uncurseHere } from '@/engine/restraints'
 import { formatMoney } from '@/engine/money'
 import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
@@ -189,7 +189,12 @@ const totals = computed(() => {
         <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>
         <span :class="fused.mult ? '' : 'muted'">{{ fused.mult ? `傷害 ×${fused.mult}` : '還展開不了' }}</span>
       </div>
-      <div v-if="stuck && unbind" class="lock-row small">
+      <div v-if="stuck?.curse" class="lock-row small">
+        <span>詛咒具：掙不開、鑰匙打不開、鐵匠也剪不斷</span>
+        <button v-if="uncurseHere(s)" class="small" :disabled="inCombat || s.money_cc < (uncurseFee(m, selected) ?? 0)" @click="game.uncurse(m.id, selected)">請神殿解咒（{{ formatMoney(uncurseFee(m, selected) ?? 0) }}）</button>
+        <span v-else class="muted">要到神殿花 {{ formatMoney(uncurseFee(m, selected) ?? 0) }} 解咒（詛咒具會碎掉）</span>
+      </div>
+      <div v-else-if="stuck && unbind" class="lock-row small">
         <button class="small" :disabled="inCombat" :title="`靈巧檢定，DC ${unbind.dc}（${unbind.parts.map((p) => `${p.label} ${signed(p.value)}`).join('、')}）；主人在身邊時失敗會被懲罰`" @click="game.tryUnbind(m.id, selected)">嘗試脫縛（DC {{ unbind.dc }}）</button>
         <template v-if="keys.length">
           <select v-model="keyPick" :disabled="inCombat">

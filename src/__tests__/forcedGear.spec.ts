@@ -122,7 +122,10 @@ describe('restraint bases', () => {
       'leash_collar', 'bind_cuffs', 'arm_cuffs', 'fist_mitts', 'box_binder', 'front_chain', 'back_chain', 'collar_chain', 'waist_chain',
       'thigh_chain', 'nipple_chain', 'waist_cuff', 'chastity_bra', 'massage_bra', 'thigh_cuffs', 'calf_cuffs', 'ankle_cuffs', 'leg_binder',
       'puppy_suit', 'tongue_stud', 'nipple_suckers', 'clit_ring', 'labia_rings', 'labia_clamps', 'anal_plug', 'tail_plug', 'dildo',
-      'vibe_dildo', 'thrust_dildo', 'double_dildo', 'wired_egg', 'shock_pads', 'urethral_lock'])
+      'vibe_dildo', 'thrust_dildo', 'double_dildo', 'wired_egg', 'shock_pads', 'urethral_lock',
+      // 詛咒具（worldgen/scripts/elondia/cursed45.py）
+      'suppress_collar', 'rule_collar', 'truth_collar', 'servile_gag', 'cupping_mitts', 'magnet_cuffs', 'magnet_anklets', 'shifting_rope',
+      'tiptoe_anklets', 'posture_corset', 'herald_corset', 'random_plug', 'egg_plug'])
     for (const i of itemRules.items.filter((x) => x.master_force)) {
       expect(restraints, i.name).toContain(i.gear!.base)
       const s = gearStats(i.gear!)

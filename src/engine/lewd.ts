@@ -5,7 +5,7 @@ import { familyRules, lactatingNow } from './pregMarks'
 import { pcTagMult } from './pcTags'
 import { recordFusedWear } from './fusion'
 import { residents, trainingRoomOf } from './homes'
-import { abilities, lewdRules, locationById, stories, TRAP_LOCK, type LewdKey, type LewdTitleDef, type NpcSexSeed } from './data'
+import { abilities, lewdRules, locationById, stories, lockedByThing, type LewdKey, type LewdTitleDef, type NpcSexSeed } from './data'
 import { experienceLewdness, npcSexSeed } from './sexRecord'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules, type VacuumSide } from './gear'
@@ -313,7 +313,7 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       const lactExp = (familyRules.lactation as { exposure?: number } | undefined)?.exposure ?? 0
       if (inTown && lactExp && lactatingNow(m) && (vacuumSides(m).includes('top') || exposureLevel(m) >= 2)) addLewd(state, m, 'exposure', lactExp, undefined, loc.region)
       // 被鎖住的拘束具：主人鎖上的（契約還在時）或陷阱鎖住的
-      if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || g.locked.startsWith(TRAP_LOCK)))) bonus(d.locked)
+      if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || lockedByThing(g.locked)))) bonus(d.locked)
       // 奴隸印記的順從累積（條款的 submission_every）
       const every = contractOf(m)?.terms.submission_every
       if (every && day % every === 0) addLewd(state, m, 'submission', 1)

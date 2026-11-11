@@ -5,7 +5,7 @@
 
 import { lactatingNow, pregnancyCondMet } from './pregMarks'
 import { charmLevel } from './charm'
-import { locationById, PARK_STAMP_PREFIX, storyCounters, TRAP_LOCK, type StoryCond } from './data'
+import { locationById, PARK_STAMP_PREFIX, storyCounters, lockedByThing, type StoryCond } from './data'
 import { gearRules } from './gear'
 import { currentRegion, exposureAt, lewdOf } from './lewd'
 import { PARASITE_LOCK } from './parasites'
@@ -97,7 +97,7 @@ function wearingMet(state: GameState, w: StoryCond['wearing']): boolean {
   const facts = {
     bind: binds.length > 0,
     // 別人鎖上的：主人鎖上的（契約還在時）、陷阱鎖住的；寄生裝備不算
-    locked: gear.some((g) => g?.locked && !g.locked.startsWith(PARASITE_LOCK) && (g.locked.startsWith(TRAP_LOCK) || !!contractOf(pc))),
+    locked: gear.some((g) => g?.locked && !g.locked.startsWith(PARASITE_LOCK) && (lockedByThing(g.locked) || !!contractOf(pc))),
     adult_outfit: gear.some((g) => g && gearRules.bases[g.spec.base]?.outfit === 'adult'),
     mark: pc.status.includes('slave_mark'),
   }

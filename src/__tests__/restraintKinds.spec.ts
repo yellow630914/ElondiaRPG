@@ -28,7 +28,7 @@ function shopMatrix(): Record<string, number[]> {
   const out: Record<string, number[]> = {}
   for (const i of [...new Set(['皮眼罩', '單手套', '步鍊', '芭蕾高跟靴', '麻繩繩衣', '絲繩龜甲縛', '跳蛋內褲', '鈴鐺乳夾', '蕾絲眼紗', '全罩皮頭套', '絲帶手銬', '皮手銬', '腳踝鈴鍊', '魔導震動栓', '鐵骨束腰', '絲巾口塞', '口球', '皮革面罩口枷'])]) {
     const def = itemDef(i)!
-    expect(def.tags.some((t) => ['tailor', 'smith', 'magic', 'jeweler', 'bondage'].includes(t))).toBe(true)
+    expect(def.tags.some((t) => ['tailor', 'smith', 'magic', 'jeweler', 'adult_shop'].includes(t))).toBe(true)
     const base = gearRules.bases[def.gear!.base]!
     ;(out[base.bind_kind!] ??= []).push(def.gear!.bind ?? base.bind!)
   }
@@ -87,13 +87,13 @@ describe('S9-2 拘束具', () => {
     expect(gearSummary(itemDef('囚徒的符文枷')!.gear!)).toContain('自帶符文鎖')
   })
 
-  it('魅氣濃的城市，拘束具店多了全罩皮頭套；普通城鎮沒有。主人會強制戴上、又有商店標籤的（口球）照樣在店裡賣', () => {
+  it('魅氣濃的城市，成人用品店多了全罩皮頭套；普通城鎮沒有。主人會強制戴上、又有商店標籤的（口球）照樣在店裡賣', () => {
     /** 換幾個種子（每天上架的貨是隨機的，口球大約 13%），有沒有哪一次賣這件 */
     const anySells = (birthplace: string, name: string) => {
       for (let seed = 1; seed <= 60; seed++) {
         const s = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed, birthplace })
         enterLocation(s)
-        if (sells(s, 'bondage', name)) return true
+        if (sells(s, 'adult_shop', name)) return true
       }
       return false
     }

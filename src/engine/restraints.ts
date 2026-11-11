@@ -3,7 +3,7 @@
 // 自己鎖的隨時可以打開（inventory.ts 的 unlockGear），不需要這些。
 // 戰鬥中的拘束（狀態有 struggle）用掙脫、撕開擺脫，見 combat.ts。
 
-import { classDef, itemDef, itemRules, lewdRules, LOCK_GRADES, TRAP_LOCK, type Degree, type LockGrade } from './data'
+import { classDef, CURSE_LOCK, itemDef, itemRules, lewdRules, LOCK_GRADES, lockedByThing, type Degree, type LockGrade } from './data'
 import { slotName, syncGear } from './gear'
 import { recalc } from './character'
 import { addLewdStat, lewdOf } from './lewd'
@@ -20,15 +20,16 @@ import type { Character, GameState, GearSlot, Report } from './types'
 
 export const unbindRules = () => lewdRules.unbind
 
-/** 這一格是別人鎖上、自己打不開的拘束具：主人強制戴上的（契約還在時）、陷阱鎖住的；寄生物不算 */
-export function stuckRestraint(m: Character, slot: GearSlot): { name: string; lock: LockGrade; bind: number; master: string; trap?: boolean } | undefined {
+/** 這一格是別人鎖上、自己打不開的拘束具：主人強制戴上的（契約還在時）、陷阱鎖住的、詛咒具；寄生物不算 */
+export function stuckRestraint(m: Character, slot: GearSlot): { name: string; lock: LockGrade; bind: number; master: string; trap?: boolean; curse?: boolean } | undefined {
   const g = m.gear?.[slot]
   if (!g?.locked || g.locked.startsWith(PARASITE_LOCK)) return undefined
-  const trap = g.locked.startsWith(TRAP_LOCK)
-  if (!trap && !contractOf(m)) return undefined
+  const curse = g.locked.startsWith(CURSE_LOCK)
+  const trap = !curse && lockedByThing(g.locked)
+  if (!trap && !curse && !contractOf(m)) return undefined
   const b = bindsOf(m).find((x) => x.slot === slot)
   if (!b) return undefined
-  return { name: g.name, lock: b.lock ?? lewdRules.locks.master_default, bind: b.bind, master: g.locked, ...(trap ? { trap } : {}) }
+  return { name: g.name, lock: b.lock ?? lewdRules.locks.master_default, bind: b.bind, master: g.locked, ...(trap ? { trap } : {}), ...(curse ? { curse } : {}) }
 }
 
 /** 身上所有掙不開的拘束具 */
@@ -60,7 +61,9 @@ export function parseUnbindTarget(state: GameState, target: string | undefined):
   const [id, slot] = (target ?? '').split(':')
   const m = state.party.find((x) => x.id === id)
   if (!m || !slot) throw new Error('要選一件掙不開的拘束具')
-  if (!stuckRestraint(m, slot as GearSlot)) throw new Error(`${m.name}的${slotName(slot as GearSlot)}沒有掙不開的拘束具`)
+  const s = stuckRestraint(m, slot as GearSlot)
+  if (!s) throw new Error(`${m.name}的${slotName(slot as GearSlot)}沒有掙不開的拘束具`)
+  if (s.curse) throw new Error(`${s.name}是詛咒具，掙不開（要到神殿解咒）`)
   return { m, slot: slot as GearSlot }
 }
 
@@ -127,7 +130,7 @@ export function keyFits(key: LockGrade, lock: LockGrade): boolean {
 /** 行囊裡打得開這一格的鑰匙（等級低的排前面） */
 export function keysFor(state: GameState, m: Character, slot: GearSlot): string[] {
   const s = stuckRestraint(m, slot)
-  if (!s) return []
+  if (!s || s.curse) return []
   return state.inventory
     .filter((i) => i.qty > 0 && itemDef(i.name)?.key && keyFits(itemDef(i.name)!.key!, s.lock))
     .sort((a, b) => LOCK_GRADES.indexOf(itemDef(a.name)!.key!) - LOCK_GRADES.indexOf(itemDef(b.name)!.key!))
@@ -138,6 +141,7 @@ export function keysFor(state: GameState, m: Character, slot: GearSlot): string[
 export function openWithKey(m: Character, slot: GearSlot, key: string): { text: string; lock?: string } {
   const s = stuckRestraint(m, slot)
   if (!s) throw new Error(`${slotName(slot)}沒有需要鑰匙的鎖`)
+  if (s.curse) throw new Error(`${s.name}是詛咒具，鑰匙打不開`)
   const grade = itemDef(key)?.key
   if (!grade) throw new Error(`${key}不是鑰匙`)
   if (!keyFits(grade, s.lock)) throw new Error(`${key}打不開${lockName(s.lock)}`)
@@ -167,6 +171,7 @@ export function cutLock(state: GameState, memberId: string, slot: GearSlot): Rep
   if (!m) throw new Error('沒有這個隊員')
   const s = stuckRestraint(m, slot)
   if (!s) throw new Error(`${slotName(slot)}沒有鎖住的拘束具`)
+  if (s.curse) throw new Error(`${s.name}是詛咒具，鐵匠剪不斷（要到神殿解咒）`)
   if (!s.trap) throw new Error(`${s.name}是主人鎖上的，鐵匠不敢剪`)
   const fee = cutLockFee(m, slot)!
   if (state.money_cc < fee) throw new Error(`錢不夠（要 ${formatMoney(fee)}）`)
@@ -175,5 +180,38 @@ export function cutLock(state: GameState, memberId: string, slot: GearSlot): Rep
   r.changes.money_cc = -fee
   r.outcome.summary = `鐵匠剪斷了${m.name}${s.name}上的${lockName(s.lock)}，收費 ${formatMoney(fee)}。${s.name}可以卸下了。`
   r.outcome.tags = ['剪鎖']
+  return commitReport(state, r)
+}
+
+// ---- 神殿解咒（詛咒具，docs/LEWD_STATS.md 第 7.2 節） ----
+
+/** 站在能解咒的地方（lewd.json 的 unbind.uncurse.shops） */
+export function uncurseHere(state: GameState): boolean {
+  return !!unbindRules().uncurse?.shops.includes(currentCell(state).kind)
+}
+
+/** 解開這一格詛咒具的價錢（不是詛咒具時 undefined） */
+export function uncurseFee(m: Character, slot: GearSlot): number | undefined {
+  const s = stuckRestraint(m, slot)
+  return s?.curse ? unbindRules().uncurse?.fee_cc[s.lock] : undefined
+}
+
+/** 請神殿解咒：收錢，詛咒散去、詛咒具碎掉（不回到行囊） */
+export function uncurse(state: GameState, memberId: string, slot: GearSlot): Report {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  if (!uncurseHere(state)) throw new Error('要在神殿才能解咒')
+  const m = state.party.find((x) => x.id === memberId)
+  if (!m) throw new Error('沒有這個隊員')
+  const s = stuckRestraint(m, slot)
+  if (!s?.curse) throw new Error(`${slotName(slot)}沒有詛咒具`)
+  const fee = uncurseFee(m, slot)!
+  if (state.money_cc < fee) throw new Error(`錢不夠（要 ${formatMoney(fee)}）`)
+  delete m.gear![slot]
+  syncGear(m, classDef(m.class).weapon)
+  recalc(m)
+  const r = baseReport(state, 'trade', 1)
+  r.changes.money_cc = -fee
+  r.outcome.summary = `神官替${m.name}解開了${s.name}上的詛咒，收費 ${formatMoney(fee)}。詛咒散去，${s.name}碎成了灰。`
+  r.outcome.tags = ['解咒']
   return commitReport(state, r)
 }

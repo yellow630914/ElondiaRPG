@@ -817,7 +817,7 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
 }
 
 const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info', 'furniture']
-export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info', 'bondage']
+export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info', 'adult_shop']
 const LOCATIONS = ['village', 'town', 'city', 'capital']
 
 function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
@@ -894,11 +894,12 @@ export function sanitizeGearSpecLoose(g: GearSpec | undefined): GearSpec | undef
   }
   // 自帶的鎖（拘束具才有）
   if (base.bind && base.bind_kind && typeof g.lock === 'string' && (LOCK_GRADES as string[]).includes(g.lock)) out.lock = g.lock
+  if (base.bind && base.bind_kind && g.curse === true) out.curse = true
   return out
 }
 
 /** 獨特物品的檢定加值範圍 */
-export const UNIQUE_LIMITS: PerkLimits = { effects: 1, check_bonus: [1, 3], combat: [1, 1], resist: [0, 0] }
+export const UNIQUE_LIMITS: PerkLimits = { effects: 1, check_bonus: [-3, 3], combat: [1, 1], resist: [0, 0] }
 
 /** 物品名稱：最多 20 字，拿掉打造指令用的分隔符號（| 與 *） */
 export function cleanItemName(v: unknown): string {
@@ -1041,7 +1042,7 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   return out
 }
 
-const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'res']
+const SCALES = ['full', 'half', 'up', 'third', 'third_up', 'quarter', 'quarter_up', 'res']
 
 export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string): BaseMod {
   const kind = (['metal', 'leather', 'cloth', 'wood', 'jewel'] as const).includes(raw.kind as 'metal') ? raw.kind! : 'metal'
