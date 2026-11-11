@@ -1556,9 +1556,11 @@ function dealDamage(
     // 戰利品的覺悟：生命低的時候，傷害改成慾望
     const low = (st: StatusInstance) => { const c = statusDef(st.id).convert_low; return c && target.hp < target.maxHp * c.below ? c.ratio : 0 }
     const base = guardConvert + target.statuses.reduce((x, st) => x + (statusDef(st.id).convert ?? 0) + low(st), 0)
-    let ratio = base > 0 ? Math.min(1, base + (target.lustMods?.convert ?? 0)) : 0
+    // 轉換的比例最多到 convert_cap（combat.json 的 lust；沒寫是 1）：狀態、流派、順從加起來不會把幾乎所有的傷害都變成慾望
+    const convCap = lustRules().convert_cap ?? 1
+    let ratio = base > 0 ? Math.min(convCap, base + (target.lustMods?.convert ?? 0)) : 0
     // 調教的身體（刑罰派）：受到幸運一擊時，一部分的傷害改成慾望
-    if (opts.crit && target.lustMods?.critConvert) ratio = Math.min(1, ratio + target.lustMods.critConvert)
+    if (opts.crit && target.lustMods?.critConvert) ratio = Math.min(Math.max(convCap, target.lustMods.critConvert), ratio + target.lustMods.critConvert)
     if (ratio > 0 && total > 0 && lustOn(combat) && target.lustMax !== undefined) {
       const room = target.statuses.some((st) => statusDef(st.id).no_climax) ? Math.max(0, effectiveLustMax(target) - (target.lust ?? 0)) : Infinity
       converted = Math.min(Math.floor(total * ratio), room)

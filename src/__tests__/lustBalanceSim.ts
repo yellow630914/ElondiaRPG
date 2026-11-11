@@ -3,8 +3,8 @@
 // - burst：先用自己增加慾望的技能（自我挑逗、寬衣、淫念冥想）把慾望堆到快滿，再引爆
 // - charm：寬衣加成之後，用魅惑攻擊把敵人的慾望堆到高潮（高潮扣最大生命的百分比）
 // 平常的測試只抽樣（lustBalance.spec.ts），完整的報告用 LUST_REPORT=路徑 跑。
-import { abilityDef, dungeonEncounters, enemies, type EncounterGroup } from '@/engine/data'
-import { act, chooseAction, currentActor, effectiveLustMax, isActive, startCombat, usableAbilities, type Combatant } from '@/engine/combat'
+import { abilityDef, combatRules, dungeonEncounters, enemies, type EncounterGroup } from '@/engine/data'
+import { act, chooseAction, currentActor, effectiveLustMax, isActive, lustMaxFor, startCombat, usableAbilities, type Combatant } from '@/engine/combat'
 import { Rng } from '@/engine/rng'
 import { newGame } from '@/engine/state'
 import type { Character, Difficulty, GameOptions } from '@/engine/types'
@@ -12,8 +12,8 @@ import type { CombatState } from '@/engine/combat'
 import { AREA_PARTIES, bossIds, minionArea, simParty } from './balanceSim'
 
 /** 慾望路線的配置 */
-export type LustProfile = 'none' | 'books' | 'school' | 'max'
-export type LustPolicy = 'ai' | 'burst' | 'charm'
+export type LustProfile = 'none' | 'books' | 'school' | 'max' | 'tank'
+export type LustPolicy = 'ai' | 'burst' | 'charm' | 'tank'
 
 /** 戰鬥用得到的色情技能（技能書與老師都買得到的；寄生物、泌乳這類有條件的不算） */
 const LUST_KIT = [
@@ -34,6 +34,12 @@ export function makeLustBuild(c: Character, profile: LustProfile) {
     c.lewd = profile === 'max' ? { lewdness: 80, sensitivity: 60, endurance: 100, submission: 20 } : { lewdness: 60, sensitivity: 60, endurance: 60, submission: 20 }
     if (profile === 'max' && c.level >= 5) c.abilities.push('lust_endure')
   }
+  // 前排的慾望路線：刑罰派＋肉體派，痛即是悅把挨的打轉成慾望，再引爆
+  if (profile === 'tank') {
+    c.perks = [...(c.perks ?? []), 'school_punishment', 'school_flesh', ...(c.level >= 5 ? ['trained_body', 'afterglow_memory'] : [])]
+    c.lewd = { lewdness: 40, sensitivity: 40, endurance: 60, submission: 60 }
+    if (c.level >= 5) c.abilities.push('lust_pain')
+  }
 }
 
 const has = (combat: CombatState, me: Combatant, id: string) => usableAbilities(combat, me.id).some((a) => a.id === id)
@@ -48,12 +54,23 @@ function safeGain(me: Combatant, flat: number) {
 /** 慾望路線的一步：回傳要做的事（null 交給一般 AI） */
 function lustStep(combat: CombatState, me: Combatant, policy: LustPolicy, foes: Combatant[]): { ability: string; target?: string } | null {
   if (policy === 'ai') return null
-  const ratio = (me.lust ?? 0) / Math.max(1, effectiveLustMax(me))
+  // 引爆封頂時，慾望到封頂的量就夠了（不必等上限的七成）
+  const capRule = combatRules.lust.burst_cap
+  const ready = Math.min(0.7 * effectiveLustMax(me), capRule ? capRule * lustMaxFor(me.level) : Infinity)
+  const ratio = (me.lust ?? 0) >= ready ? 1 : (me.lust ?? 0) / Math.max(1, effectiveLustMax(me))
   const weakest = [...foes].sort((a, b) => a.hp - b.hp)[0]!
   const toughest = [...foes].sort((a, b) => b.hp - a.hp)[0]!
+  if (policy === 'tank') {
+    if (has(combat, me, 'lust_pain') && !me.statuses.some((x) => x.id === 'pain_pleasure') && me.ap >= 1) return { ability: 'lust_pain' }
+    if (ratio >= 0.7) {
+      const b = ['burst_flame', 'burst_impact'].find((id) => has(combat, me, id) && me.ap >= apOf(id))
+      if (b) return { ability: b, target: toughest.id }
+    }
+    return null
+  }
   if (policy === 'burst') {
     if (has(combat, me, 'lust_hot_spring')) return { ability: 'lust_hot_spring' }
-    if (ratio < 0.3 && has(combat, me, 'lust_endure') && !me.statuses.some((s) => s.id === 'enduring') && me.ap >= 3) return { ability: 'lust_endure' }
+    if (!capRule && ratio < 0.3 && has(combat, me, 'lust_endure') && !me.statuses.some((s) => s.id === 'enduring') && me.ap >= 3) return { ability: 'lust_endure' }
     // 夠了就引爆：兩個以上敵人用全體的，不然單體
     if (ratio >= 0.7) {
       const aoe = foes.length >= 2 ? ['burst_tide', 'burst_bliss', 'burst_lightning'].find((id) => has(combat, me, id) && me.ap >= apOf(id)) : undefined
@@ -171,6 +188,7 @@ export const VARIANTS: { profile: LustProfile; policy: LustPolicy }[] = [
   { profile: 'school', policy: 'burst' },
   { profile: 'school', policy: 'charm' },
   { profile: 'max', policy: 'burst' },
+  { profile: 'tank', policy: 'tank' },
 ]
 
 /** 層主戰：4 人隊伍（戰士、遊蕩者、牧師、吟遊詩人），吟遊詩人走慾望路線 */
@@ -183,7 +201,7 @@ export function lustBossRows(trials: number, difficulty: Difficulty, filter?: (d
       const level = enemies[boss]!.level
       if (filter && !filter(dungeon, layer, level)) continue
       for (const v of VARIANTS) {
-        const rs = Array.from({ length: trials }, (_, t) => lustFight(group, level, 2000 + t, ['fighter', 'rogue', 'cleric', 'bard'], 3, v.profile, v.policy, difficulty, options))
+        const rs = Array.from({ length: trials }, (_, t) => lustFight(group, level, 2000 + t, ['fighter', 'rogue', 'cleric', 'bard'], v.profile === 'tank' ? 0 : 3, v.profile, v.policy, difficulty, options))
         rows.push({ scenario: 'boss', label: `${dungeon}/${layer} ${enemies[boss]!.name}`, level, ...v, difficulty, ...summarize(rs) })
       }
     }
@@ -200,9 +218,102 @@ export function lustMinionRows(trials: number, difficulty: Difficulty, filter?: 
     const area = minionArea(m.id)
     const parties = AREA_PARTIES[area].map((p) => [...p.slice(0, -1), 'bard'])
     for (const v of VARIANTS) {
+      // 前排的慾望路線換掉隊伍的第一位（只在有戰士的隊伍）
+      if (v.profile === 'tank') {
+        const tp = AREA_PARTIES[area].filter((p) => p[0] === 'fighter')
+        if (!tp.length) continue
+        const rs = tp.flatMap((classes) => Array.from({ length: trials }, (_, t) => lustFight([[m.id, 2]], m.level, 4000 + t, [...classes], 0, v.profile, v.policy, difficulty, options)))
+        rows.push({ scenario: `minion:${area}`, label: m.name, level: m.level, ...v, difficulty, ...summarize(rs) })
+        continue
+      }
       const rs = parties.flatMap((classes) => Array.from({ length: trials }, (_, t) => lustFight([[m.id, 2]], m.level, 4000 + t, classes, classes.length - 1, v.profile, v.policy, difficulty, options)))
       rows.push({ scenario: `minion:${area}`, label: m.name, level: m.level, ...v, difficulty, ...summarize(rs) })
     }
   }
   return rows
+}
+
+// ---- 單體、群體、扛傷的對比（和其他職業比）----
+
+/** 同等級的代表怪物：一般怪物（不是頭目、不是不死構裝元素精魂這類慾望抗性特別的），生命取中位數 */
+export function dummyFor(level: number): string {
+  const bosses = bossIds()
+  const pool = Object.values(enemies).filter((e) => !bosses.has(e.id) && !e.ability_hp_below && e.level === level && !['undead', 'construct', 'elemental', 'spirit', 'fey'].includes(e.kind ?? ''))
+  const near = pool.length ? pool : Object.values(enemies).filter((e) => !bosses.has(e.id) && Math.abs(e.level - level) <= 1)
+  return [...near].sort((a, b) => a.hp - b.hp)[Math.floor(near.length / 2)]!.id
+}
+
+export interface Contender { label: string; cls: string; profile: LustProfile; policy: LustPolicy }
+
+/** 一個人打木樁（count 隻同等級的代表怪物，不會還手、打不死，生命每一步補回原本的最大生命，所以高潮扣的百分比照真的算）：平均每回合的傷害 */
+export function dummyDamage(who: Contender, level: number, count: number, rounds: number, seed: number): number {
+  const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed, options: { defeatLoot: 'half', skillLoadout: 0 } })
+  state.party = simParty(level, seed, [who.cls])
+  makeLustBuild(state.party[0]!, who.profile)
+  const rng = new Rng(seed * 7 + 1)
+  const id = dummyFor(level)
+  const combat = startCombat(state, [[id, count]])
+  const foes = combat.combatants.filter((c) => c.side === 'enemy')
+  // 生命設得很高但最大生命不變：打不死，高潮扣的百分比照原本的最大生命算
+  for (const f of foes) { f.abilities = []; f.ap = f.apMax = 0; f.apRegen = 0; f.resist = {}; f.hp = 1e7 }
+  const me = combat.combatants.find((c) => c.side === 'party')!
+  let dmg = 0
+  for (let guard = 0; combat.status === 'ongoing' && combat.round <= rounds && guard < 2000; guard++) {
+    const actor = currentActor(combat)
+    if (!actor || actor.side !== 'party') break
+    me.hp = me.maxHp
+    const target = foes[0]!
+    const before = combat.timeline.length
+    const step = lustStep(combat, actor, who.policy, foes)
+    if (step) act(state, { type: 'ability', ...step })
+    else {
+      const plan = chooseAction(combat, rng, actor, target, false)
+      if (plan) act(state, { type: 'ability', ability: plan.ability.id, ...(plan.target ? { target: plan.target } : plan.ability.target === 'enemy' ? { target: target.id } : {}) })
+      else if (actor.ap >= 2) act(state, { type: 'attack', target: target.id })
+      else act(state, { type: 'end_turn' })
+    }
+    for (const t of combat.timeline.slice(before)) for (const e of t.effects ?? []) {
+      if (e.type === 'damage' && foes.some((f) => f.id === e.target)) dmg += (e as { amount?: number }).amount ?? 0
+    }
+    for (const f of foes) f.hp = 1e7
+  }
+  return dmg / rounds
+}
+
+/** 扛傷：一個人對上同等級的層主組（層主打不死），撐幾回合倒下（最多 cap 回合）、每回合挨多少、倒下前打出多少 */
+export function tankTest(who: Contender, group: EncounterGroup, level: number, seed: number, cap = 12) {
+  const state = newGame({ name: 'x', race: 'human', classId: 'fighter', seed, options: { defeatLoot: 'half', skillLoadout: 0 } })
+  state.party = simParty(level, seed, [who.cls])
+  makeLustBuild(state.party[0]!, who.profile)
+  const rng = new Rng(seed * 7 + 1)
+  const combat = startCombat(state, group)
+  const me = combat.combatants.find((c) => c.side === 'party')!
+  for (const f of combat.combatants) if (f.side === 'enemy') f.hp = 1e7
+  const foes = () => combat.combatants.filter((c) => c.side === 'enemy' && isActive(c))
+  let dealt = 0
+  for (let guard = 0; combat.status === 'ongoing' && combat.round <= cap && guard < 3000; guard++) {
+    const actor = currentActor(combat)
+    if (!actor || actor.side !== 'party') break
+    const fs = foes()
+    const target = fs[0]!
+    const before = combat.timeline.length
+    const step = lustStep(combat, actor, who.policy, fs)
+    if (step) act(state, { type: 'ability', ...step })
+    else {
+      const plan = chooseAction(combat, rng, actor, target, false)
+      if (plan) act(state, { type: 'ability', ability: plan.ability.id, ...(plan.target ? { target: plan.target } : plan.ability.target === 'enemy' ? { target: target.id } : {}) })
+      else if (actor.ap >= 2) act(state, { type: 'attack', target: target.id })
+      else act(state, { type: 'end_turn' })
+    }
+    for (const t of combat.timeline.slice(before)) for (const e of t.effects ?? []) {
+      if (e.type === 'damage' && combat.combatants.some((c) => c.side === 'enemy' && c.id === e.target)) dealt += (e as { amount?: number }).amount ?? 0
+    }
+    // 敵人打不死（只看扛不扛得住）
+    for (const f of combat.combatants) if (f.side === 'enemy') f.hp = 1e7
+  }
+  const survived = me.hp > 0 ? cap : Math.max(1, combat.round)
+  // 挨的傷害：所有打在自己身上的生命傷害（含高潮扣的）
+  let taken = 0
+  for (const t of combat.timeline) for (const e of t.effects ?? []) if (e.type === 'damage' && e.target === me.id) taken += (e as { amount?: number }).amount ?? 0
+  return { survived, takenPerRound: taken / survived / me.maxHp, dealtPerRound: dealt / survived, maxHp: me.maxHp }
 }
