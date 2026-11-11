@@ -6,7 +6,7 @@ import { fuseGear, splitGear } from '@/engine/fusion'
 import { startArena } from '@/engine/arena'
 import { leavePark } from '@/engine/park'
 import { charmGatePass } from '@/engine/charm'
-import { DIFFICULTY_DEFS, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { customFrom, DIFFICULTY_DEFS, difficultyOf, RULE_DEFS, sanitizeCustomDifficulty, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import { enterLandmark, playLandmarkScene, visitLandmark } from '@/engine/landmarks'
 import { enterUnderworld } from '@/engine/underworld'
 import * as perkActions from '@/engine/perkActions'
@@ -71,7 +71,7 @@ import * as partyEngine from '@/engine/party'
 import * as garden from '@/engine/garden'
 import * as invention from '@/engine/invention'
 import * as fieldCast from '@/engine/fieldCast'
-import type { DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, NpcNews, Report, TattooPlace } from '@/engine/types'
+import type { CustomDifficulty, DefeatLoot, Difficulty, GameState, GearSlot, LewdStat, NpcNews, Report, TattooPlace } from '@/engine/types'
 import {
   buildNegotiationPrompt, buildNewsPrompt, buildRosterPrompt, buildShopPrompt, extractJson, splitSuggestions,
 } from '@/narrator/judge'
@@ -1636,14 +1636,24 @@ export const useGame = defineStore('game', () => {
     /** 這個存檔的難度（combat.json 的 difficulty）：只影響之後開打的戰鬥 */
     setDifficulty: (difficulty: Difficulty) => {
       if (!state.value || !DIFFICULTY_DEFS[difficulty]) return
-      state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), difficulty }
+      const opts = state.value.options ?? { defeatLoot: 'half' }
+      // 第一次選自訂：從原本的難度複製一份係數再改
+      const custom = difficulty === 'custom' && !opts.customDifficulty ? { customDifficulty: customFrom(difficultyOf(state.value)) } : {}
+      state.value.options = { ...opts, difficulty, ...custom }
+      save()
+    },
+    /** 自訂難度的係數（每一格夾在範圍內） */
+    setCustomDifficulty: (c: CustomDifficulty) => {
+      if (!state.value) return
+      state.value.options = { ...(state.value.options ?? { defeatLoot: 'half' }), customDifficulty: sanitizeCustomDifficulty(c) }
       save()
     },
     /** 這個存檔的數值規則（gameRules.ts）：和預設一樣的不存 */
     setRules: (rules: Partial<Record<NumericRule, unknown>>) => {
       if (!state.value) return
-      const { defeatLoot = 'half', difficulty, tagChange } = state.value.options ?? {}
-      state.value.options = { defeatLoot, ...(difficulty ? { difficulty } : {}), ...(tagChange ? { tagChange } : {}), ...sanitizeRules(rules) }
+      // 數值規則整組換掉；其他的規則（難度、自訂難度、勾選的規則）照留
+      const rest = Object.fromEntries(Object.entries(state.value.options ?? {}).filter(([k]) => !(k in RULE_DEFS)))
+      state.value.options = { defeatLoot: 'half', ...rest, ...sanitizeRules(rules) }
       save()
     },
     /** 這個存檔允不允許在遊戲中更換主角的身分標籤 */

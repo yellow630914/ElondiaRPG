@@ -29,21 +29,21 @@
     "control_turns": 1, "immune_turns": 1
   },
   "difficulty": {
-    "$comment": "難度（存檔規則，開新遊戲時選，之後可以在設定裡改）：怪物的生命與輸出各乘一個係數，普通 = 1（和沒有這個設定時完全一樣）。hp 乘在怪物的最大生命上（特徵的倍率另外算），damage 乘在怪物造成的傷害上（戰報寫成「難度 ×x」）。hp、damage 是頭目的（地下城的層主、有低血大招的特殊任務頭目）；minions 是小怪的，依小怪最淺出現的區域分開（wild 城郊、outskirts 地下城周邊、shallow 淺層、deep 中層以下與只在特殊任務出現的），沒寫的區域用頭目的係數。只影響之後開打的戰鬥。經驗值與戰利品不隨難度變動（要調的話用存檔規則的經驗值倍率與報酬倍率）。曲線的來由見 worldgen/balance/monsters.md 第 3 節。",
+    "$comment": "難度（存檔規則，開新遊戲時選，之後可以在設定裡改）：怪物的生命與輸出各乘一個係數，普通 = 1（和沒有這個設定時完全一樣）。hp 乘在怪物的最大生命上（特徵的倍率另外算），damage 乘在怪物造成的傷害上（戰報寫成「難度 ×x」）。hp、damage 是頭目的（地下城的層主、有低血大招的特殊任務頭目）；minions 是小怪的，依小怪最淺出現的區域分開（wild 城郊、outskirts 地下城周邊、shallow 淺層、deep 中層以下與只在特殊任務出現的），沒寫的區域用頭目的係數。只影響之後開打的戰鬥。lust 乘在怪物的慾望上限上（慾望戰鬥，沒寫是 1）：小怪和生命係數一樣——魅惑把敵人堆到高潮扣的是最大生命的百分比，上限不跟著放大的話難度越高魅惑相對越強；頭目不寫（頭目的慾望上限本來就照含難度的生命放大）。自訂難度（custom）不在這裡，係數存在存檔的 options.customDifficulty。經驗值與戰利品不隨難度變動（要調的話用存檔規則的經驗值倍率與報酬倍率）。曲線的來由見 worldgen/balance/monsters.md 第 3 節。",
     "default": "normal",
     "levels": [
       { "id": "story", "name": "故事", "hp": 0.6, "damage": 0.6,
-        "minions": { "wild": { "hp": 0.6, "damage": 0.55 }, "outskirts": { "hp": 0.6, "damage": 0.55 }, "shallow": { "hp": 0.6, "damage": 0.55 }, "deep": { "hp": 0.6, "damage": 0.55 } },
+        "minions": { "wild": { "hp": 0.6, "damage": 0.55, "lust": 0.6 }, "outskirts": { "hp": 0.6, "damage": 0.55, "lust": 0.6 }, "shallow": { "hp": 0.6, "damage": 0.55, "lust": 0.6 }, "deep": { "hp": 0.6, "damage": 0.55, "lust": 0.6 } },
         "desc": "看故事用的：怪物又脆又不痛，同級的層主幾乎不會輸。" },
       { "id": "easy", "name": "簡單", "hp": 0.85, "damage": 0.91,
-        "minions": { "wild": { "hp": 0.85, "damage": 0.85 }, "outskirts": { "hp": 0.85, "damage": 0.85 }, "shallow": { "hp": 0.85, "damage": 0.85 }, "deep": { "hp": 0.85, "damage": 0.85 } },
+        "minions": { "wild": { "hp": 0.85, "damage": 0.85, "lust": 0.85 }, "outskirts": { "hp": 0.85, "damage": 0.85, "lust": 0.85 }, "shallow": { "hp": 0.85, "damage": 0.85, "lust": 0.85 }, "deep": { "hp": 0.85, "damage": 0.85, "lust": 0.85 } },
         "desc": "留點餘裕：同級的層主九成以上能過。" },
       { "id": "normal", "name": "普通", "hp": 1, "damage": 1, "desc": "設計的基準：同級的層主大約八成能過。" },
       { "id": "hard", "name": "困難", "hp": 1.15, "damage": 0.88,
-        "minions": { "wild": { "hp": 1.15, "damage": 1.01 }, "outskirts": { "hp": 1.15, "damage": 1.05 }, "shallow": { "hp": 1.15, "damage": 1.33 }, "deep": { "hp": 1.15, "damage": 1.87 } },
+        "minions": { "wild": { "hp": 1.15, "damage": 1.01, "lust": 1.15 }, "outskirts": { "hp": 1.15, "damage": 1.05, "lust": 1.15 }, "shallow": { "hp": 1.15, "damage": 1.33, "lust": 1.15 }, "deep": { "hp": 1.15, "damage": 1.87, "lust": 1.15 } },
         "desc": "怪物更耐打：同級的層主大約四場輸一場，小怪也開始有機會翻車。" },
       { "id": "epic", "name": "史詩", "hp": 1.3, "damage": 0.85,
-        "minions": { "wild": { "hp": 1.3, "damage": 1.02 }, "outskirts": { "hp": 1.3, "damage": 1.11 }, "shallow": { "hp": 1.3, "damage": 1.76 }, "deep": { "hp": 1.3, "damage": 3.51 } },
+        "minions": { "wild": { "hp": 1.3, "damage": 1.02, "lust": 1.3 }, "outskirts": { "hp": 1.3, "damage": 1.11, "lust": 1.3 }, "shallow": { "hp": 1.3, "damage": 1.76, "lust": 1.3 }, "deep": { "hp": 1.3, "damage": 3.51, "lust": 1.3 } },
         "desc": "每一場都可能翻車：任何一種小怪都可能讓隊伍全倒，同級的層主大約六成能過。" }
     ]
   },

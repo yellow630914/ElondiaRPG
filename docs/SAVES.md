@@ -124,7 +124,7 @@
 
 | 規則 | 欄位 | 預設 | 範圍 | 影響 |
 |---|---|---|---|---|
-| 難度 | `difficulty` | 普通 | 故事／簡單／普通／困難／史詩 | 怪物的最大生命與造成的傷害各乘一個係數（`combat.json` 的 `difficulty`，普通 = 1；頭目一組、小怪依區域各一組）；開戰時記進 `CombatState.difficulty`，改了只影響之後開打的戰鬥。經驗值與戰利品不變，敵對的 NPC 也不受影響。曲線見 [COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 6 節 |
+| 難度 | `difficulty`、`customDifficulty` | 普通 | 故事／簡單／普通／困難／史詩／自訂 | 怪物的最大生命、造成的傷害與慾望上限各乘一個係數（`combat.json` 的 `difficulty`，普通 = 1；頭目一組、小怪依區域各一組；自訂的係數存在 `customDifficulty`）；開戰時記進 `CombatState.difficulty`，改了只影響之後開打的戰鬥。經驗值與戰利品不變，敵對的 NPC 也不受影響。曲線見 [COMBAT_SYSTEM](COMBAT_SYSTEM.md) 第 6 節 |
 | 戰敗掉落 | `defeatLoot` | 失去一半 | 保留／失去一半／全部失去 | 在地下城戰敗時，這趟撿到、還沒帶出去的東西（`expedition.ts`） |
 | 更換身分標籤 | `tagChange` | 不允許 | 允許／不允許 | 允許時，可以在角色詳情的「角色設定」裡更換主角的身分標籤（最多 3 個，`engine/pcTags.ts`） |
 | 察覺陷阱時可以主動觸發 | `trapLure` | 不允許 | 允許／不允許 | 允許時，察覺到陷阱之後可以選擇主動踩上去，遇到一件陷阱的地下城事件（[ADULT_EVENTS](ADULT_EVENTS.md) 第 1 節） |

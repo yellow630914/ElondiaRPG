@@ -853,14 +853,28 @@ export interface GuildState {
 
 /** 戰敗時這趟探索撿到的東西：保留、失去一半、全部失去 */
 export type DefeatLoot = 'keep' | 'half' | 'all'
-/** 難度（存檔規則）：怪物的生命與輸出的係數，見 combat.json 的 difficulty */
-export type Difficulty = 'story' | 'easy' | 'normal' | 'hard' | 'epic'
+/** 難度（存檔規則）：怪物的生命與輸出的係數，見 combat.json 的 difficulty；custom 是玩家自己填的（GameOptions.customDifficulty） */
+export type Difficulty = 'story' | 'easy' | 'normal' | 'hard' | 'epic' | 'custom'
+
+/** 一組難度係數：怪物的最大生命、造成的傷害、慾望上限 */
+export interface DifficultyCoefs {
+  hp: number
+  damage: number
+  lust: number
+}
+
+/** 自訂難度：頭目一組，小怪依最淺出現的區域各一組（gameRules.ts 的 MINION_TIERS） */
+export interface CustomDifficulty extends DifficultyCoefs {
+  minions: Record<'wild' | 'outskirts' | 'shallow' | 'deep', DifficultyCoefs>
+}
 
 /** 這個存檔的規則（開新遊戲時選，之後可以在設定裡改） */
 export interface GameOptions {
   defeatLoot: DefeatLoot
   /** 難度：怪物的生命與輸出的係數（沒有時是普通，見 gameRules.ts 的 DIFFICULTY_DEFS） */
   difficulty?: Difficulty
+  /** 自訂難度的係數（difficulty 是 custom 時才用；沒有時和普通一樣） */
+  customDifficulty?: CustomDifficulty
   /** 以下見 gameRules.ts：沒有時用預設 */
   xpMult?: number
   moneyMult?: number

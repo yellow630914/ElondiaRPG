@@ -451,6 +451,8 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     f.lustMax = lustMaxFor(f.level)
     // 頭目（BOSS 格的主角、層主、有低血大招的任務頭目）：慾望上限照生命比例放大（和同等級一般怪物的生命中位數相比，難度係數也算在生命裡）
     if (isHeadFoe(f)) f.lustMax = Math.round(f.lustMax * Math.max(1, f.maxHp / typicalEnemyHp(f.level)))
+    // 難度的慾望上限係數（怪物）
+    if (f.side === 'enemy' && f.defId && !f.npcId) f.lustMax = Math.max(1, Math.round(f.lustMax * difficultyFor(difficultyRule(state), f.defId).lust))
     if (f.side === 'party') f.climaxes = 0
     if (f.defId) {
       const def = enemies[f.defId]
@@ -1975,7 +1977,10 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
 function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: AbilityDef, target: Combatant, effects: Effect[], spent: number) {
   if (a.burst && spent > 0) {
     // 慾焰（縱欲派）：引爆的傷害倍率加成
-    const amount = Math.floor((Math.floor(spent * a.burst.mult) + mod(actor.attrs[attrFor(actor, a)])) * (1 + (actor.lustMods?.burst ?? 0)))
+    // 引爆算進去的慾望最多到同等級基本慾望上限的 burst_cap 倍（忍耐、狀態把上限堆得很高時不會無限放大）
+    const cap = (lustRules() as { burst_cap?: number }).burst_cap
+    const used = cap ? Math.min(spent, Math.round(lustMaxFor(actor.level) * cap)) : spent
+    const amount = Math.floor((Math.floor(used * a.burst.mult) + mod(actor.attrs[attrFor(actor, a)])) * (1 + (actor.lustMods?.burst ?? 0)))
     if (a.burst.heal) heal(target, amount, effects)
     // 引爆的傷害是一般屬性，不經過擲骰
     else dealDamage(combat, rng, actor, target, [{ amount, type: a.burst.type ?? 'force', weapon: false }], effects)

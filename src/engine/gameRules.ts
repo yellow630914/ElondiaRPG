@@ -2,7 +2,7 @@
 // 每一項都有預設值（和沒有這項規則時一樣），讀的時候一律夾在範圍內；舊存檔沒有的欄位就是預設。
 // 戰敗掉落（defeatLoot）另外在 expedition.ts；難度（difficulty）的係數在下面。說明見 docs/SAVES.md 第 7 節。
 
-import type { Difficulty, GameOptions, GameState } from './types'
+import type { CustomDifficulty, Difficulty, DifficultyCoefs, GameOptions, GameState } from './types'
 import { className, companionRules, combatRules, enemies, isLayerBoss, itemRules, MINION_TIERS, minionTier, type MinionTier } from './data'
 // 直接讀 JSON：security.ts 會用到這裡，避免循環引用
 import securityJson from '@data/rules/security.json'
@@ -13,7 +13,7 @@ import familyJson from '@data/rules/family.json'
 import gearJson from '@data/rules/gear.json'
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'customDifficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
 
 /** 存檔規則的分類（設定與開新遊戲依這個分組顯示） */
 export type RuleGroup = 'combat' | 'growth' | 'time' | 'adventure' | 'town' | 'lust' | 'adult_events' | 'lewd'
@@ -87,36 +87,47 @@ function pct(n: number): string {
 
 // ---- 難度（combat.json 的 difficulty）：怪物的生命與輸出的係數，普通 = 1 ----
 
-export interface DifficultyCoef {
-  /** 怪物最大生命的係數 */
-  hp: number
-  /** 怪物造成的傷害的係數 */
-  damage: number
-}
+export type DifficultyCoef = DifficultyCoefs
 
 export interface DifficultyDef extends DifficultyCoef {
   id: Difficulty
   name: string
-  /** 小怪的係數，依小怪最淺出現的區域分開（1 人的城郊和 4 人的中層以下差很多）；hp、damage 是頭目的 */
+  /** 小怪的係數，依小怪最淺出現的區域分開（1 人的城郊和 4 人的中層以下差很多）；hp、damage、lust 是頭目的 */
   minions: Record<MinionTier, DifficultyCoef>
   desc: string
 }
 
-export const DIFFICULTY_IDS: Difficulty[] = ['story', 'easy', 'normal', 'hard', 'epic']
+/** 選單裡的難度（自訂放最後） */
+export const DIFFICULTY_IDS: Difficulty[] = ['story', 'easy', 'normal', 'hard', 'epic', 'custom']
+/** combat.json 寫好的難度 */
+const PRESET_IDS = DIFFICULTY_IDS.filter((id) => id !== 'custom')
 
-/** 各難度的係數（照 combat.json 的順序；資料裡沒寫的難度用普通的係數補） */
-export const DIFFICULTY_DEFS: Record<Difficulty, DifficultyDef> = Object.fromEntries(
-  DIFFICULTY_IDS.map((id) => {
-    const d = combatRules.difficulty.levels.find((l) => l.id === id)
-    const hp = d?.hp ?? 1
-    const damage = d?.damage ?? 1
-    const minions = Object.fromEntries(MINION_TIERS.map((t) => [t, { hp: d?.minions?.[t]?.hp ?? hp, damage: d?.minions?.[t]?.damage ?? damage }])) as Record<MinionTier, DifficultyCoef>
-    return [id, { id, name: d?.name ?? id, hp, damage, minions, desc: d?.desc ?? '' }]
-  }),
-) as Record<Difficulty, DifficultyDef>
+/** 自訂難度每一格的範圍 */
+export const CUSTOM_COEF = { min: 0.25, max: 5, step: 0.01 }
+export const COEF_KEYS = ['hp', 'damage', 'lust'] as const
+export const COEF_NAME: Record<(typeof COEF_KEYS)[number], string> = { hp: '生命', damage: '傷害', lust: '慾望上限' }
+export const TIER_NAME: Record<MinionTier, string> = { wild: '城郊', outskirts: '地下城周邊', shallow: '淺層', deep: '中層以下' }
+
+function presetDef(id: Difficulty): DifficultyDef {
+  const d = combatRules.difficulty.levels.find((l) => l.id === id)
+  const hp = d?.hp ?? 1
+  const damage = d?.damage ?? 1
+  const lust = d?.lust ?? 1
+  const minions = Object.fromEntries(MINION_TIERS.map((t) => {
+    const m = d?.minions?.[t]
+    return [t, { hp: m?.hp ?? hp, damage: m?.damage ?? damage, lust: m?.lust ?? lust }]
+  })) as Record<MinionTier, DifficultyCoef>
+  return { id, name: d?.name ?? id, hp, damage, lust, minions, desc: d?.desc ?? '' }
+}
+
+/** 各難度的係數（照 combat.json 的順序；資料裡沒寫的難度用普通的係數補）。自訂的這裡是普通的係數，存檔裡填的見 difficultyRule */
+export const DIFFICULTY_DEFS: Record<Difficulty, DifficultyDef> = {
+  ...Object.fromEntries(PRESET_IDS.map((id) => [id, presetDef(id)])),
+  custom: { ...presetDef('normal'), id: 'custom', name: '自訂', desc: '自己調頭目與各區域小怪的生命、傷害、慾望上限係數。' },
+} as Record<Difficulty, DifficultyDef>
 
 export const DEFAULT_DIFFICULTY: Difficulty =
-  (DIFFICULTY_IDS as string[]).includes(combatRules.difficulty.default) ? combatRules.difficulty.default as Difficulty : 'normal'
+  (PRESET_IDS as string[]).includes(combatRules.difficulty.default) ? combatRules.difficulty.default as Difficulty : 'normal'
 
 /** 這個存檔的難度（舊存檔沒有、寫壞了都算普通） */
 export function difficultyOf(state: Pick<GameState, 'options'> | null | undefined): Difficulty {
@@ -124,9 +135,39 @@ export function difficultyOf(state: Pick<GameState, 'options'> | null | undefine
   return d && DIFFICULTY_DEFS[d] ? d : DEFAULT_DIFFICULTY
 }
 
-/** 這個存檔的難度係數 */
+/** 一格係數：數字夾在範圍內、對齊步進；不是數字時用 fallback */
+function coef(v: unknown, fallback: number): number {
+  const n = Number(v)
+  if (v === undefined || v === null || v === '' || !Number.isFinite(n)) return fallback
+  const c = Math.max(CUSTOM_COEF.min, Math.min(CUSTOM_COEF.max, n))
+  return Math.round(Math.round(c / CUSTOM_COEF.step) * CUSTOM_COEF.step * 100) / 100
+}
+
+/** 一組難度係數：從某個難度複製（自訂難度的起點） */
+export function customFrom(id: Difficulty): CustomDifficulty {
+  const d = DIFFICULTY_DEFS[id] ?? DIFFICULTY_DEFS.normal
+  const pick = (c: DifficultyCoef): DifficultyCoefs => ({ hp: c.hp, damage: c.damage, lust: c.lust })
+  return { ...pick(d), minions: Object.fromEntries(MINION_TIERS.map((t) => [t, pick(d.minions[t])])) as CustomDifficulty['minions'] }
+}
+
+/** 整理存檔裡的自訂難度：每一格夾在範圍內，缺的用普通的係數補 */
+export function sanitizeCustomDifficulty(raw: unknown): CustomDifficulty {
+  const base = customFrom('normal')
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Partial<Record<string, unknown>> & { minions?: Record<string, Record<string, unknown>> }
+  const fix = (src: Record<string, unknown> | undefined, fb: DifficultyCoefs): DifficultyCoefs =>
+    Object.fromEntries(COEF_KEYS.map((k) => [k, coef(src?.[k], fb[k])])) as unknown as DifficultyCoefs
+  return {
+    ...fix(r as Record<string, unknown>, base),
+    minions: Object.fromEntries(MINION_TIERS.map((t) => [t, fix(r.minions?.[t], base.minions[t])])) as CustomDifficulty['minions'],
+  }
+}
+
+/** 這個存檔的難度係數（自訂的照存檔裡填的） */
 export function difficultyRule(state: Pick<GameState, 'options'> | null | undefined): DifficultyDef {
-  return DIFFICULTY_DEFS[difficultyOf(state)]
+  const id = difficultyOf(state)
+  if (id !== 'custom') return DIFFICULTY_DEFS[id]
+  const c = sanitizeCustomDifficulty(state?.options?.customDifficulty)
+  return { ...DIFFICULTY_DEFS.custom, hp: c.hp, damage: c.damage, lust: c.lust, minions: c.minions }
 }
 
 /** 一隻怪物在這個難度的係數：層主與有低血大招的特殊任務頭目用頭目的係數，其他小怪依最淺出現的區域 */
@@ -135,11 +176,11 @@ export function difficultyFor(def: DifficultyDef, enemyId: string): DifficultyCo
   return def.minions[minionTier(enemyId)]
 }
 
-/** 選單上的一行說明：頭目與各區域小怪的係數 */
+/** 選單上的一行說明：頭目與各區域小怪的係數（慾望上限是 1 的不寫） */
 export function difficultySummary(def: DifficultyDef): string {
-  const f = (c: DifficultyCoef) => `生命 ×${c.hp}、傷害 ×${c.damage}`
+  const f = (c: DifficultyCoef) => `生命 ×${c.hp}、傷害 ×${c.damage}${c.lust !== 1 ? `、慾望上限 ×${c.lust}` : ''}`
   const m = def.minions
-  const same = MINION_TIERS.every((t) => m[t].hp === def.hp && m[t].damage === def.damage)
+  const same = MINION_TIERS.every((t) => m[t].hp === def.hp && m[t].damage === def.damage && m[t].lust === def.lust)
   if (same) return `怪物${f(def)}`
   return `頭目${f(def)}；小怪 郊外${f(m.wild)}・周邊${f(m.outskirts)}・淺層${f(m.shallow)}・中層以下${f(m.deep)}`
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, reactive, ref, watch } from 'vue'
 import { DEFEAT_LOOT_NAME } from '@/engine/expedition'
-import type { DefeatLoot, Difficulty, GearSlot } from '@/engine/types'
+import type { CustomDifficulty, DefeatLoot, Difficulty, GearSlot } from '@/engine/types'
 import { apMaxFor, apRegenFor, baseAttrs, luckyThreshold, maxHpFor, mod, slotMaxFor } from '@/engine/character'
 import { abilities, ATTR_IDS, attributeRules, combatClasses as classes, geography, isSettlement, locationById, type AttrId, type NpcKind } from '@/engine/data'
 import { GENDER_IDS, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
@@ -32,7 +32,8 @@ import Hint from './ui/Hint.vue'
 import ClassWeaponsHint from './ui/ClassWeaponsHint.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import RuleFields from './RuleFields.vue'
-import { DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { customFrom, DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeCustomDifficulty, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import CustomDifficultyEditor from './CustomDifficultyEditor.vue'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
 const game = useGame()
@@ -238,12 +239,20 @@ function start() {
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
     // 難度和其他規則一樣：和預設一樣的不存
-    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...(naturalCrit.value ? { naturalCrit: true } : {}), ...(classWeapons.value ? { classWeapons: true } : {}), ...sanitizeRules(rules.value) },
+    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(difficulty.value === 'custom' ? { customDifficulty: sanitizeCustomDifficulty(customDifficulty.value) } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...(naturalCrit.value ? { naturalCrit: true } : {}), ...(classWeapons.value ? { classWeapons: true } : {}), ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
 /** 這個存檔的規則：難度（怪物的生命與輸出的係數） */
 const difficulty = ref<Difficulty>(DEFAULT_DIFFICULTY)
+/** 自訂難度的係數（選「自訂」時才用；第一次選時從原本選的難度複製） */
+const customDifficulty = ref<CustomDifficulty>(customFrom(DEFAULT_DIFFICULTY))
+const customTouched = ref(false)
+watch(difficulty, (now, before) => { if (now === 'custom' && before && before !== 'custom' && !customTouched.value) customDifficulty.value = customFrom(before) })
+function setCustom(c: CustomDifficulty) {
+  customTouched.value = true
+  customDifficulty.value = c
+}
 /** 這個存檔的規則：在地下城戰敗時，這趟撿到的東西 */
 const defeatLoot = ref<DefeatLoot>('half')
 // 其他存檔規則（gameRules.ts）：沒寫的是預設
@@ -498,10 +507,11 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
       <table class="tbl form">
         <tbody>
         <tr>
-          <th>難度 <Hint text="怪物的生命與造成的傷害各乘一個係數（頭目一組，小怪依出現的區域各一組），普通是設計的基準。經驗值與戰利品不變；之後可以在「設定」裡改（只影響之後開打的戰鬥）。" /></th>
+          <th>難度 <Hint text="怪物的生命、造成的傷害與慾望上限各乘一個係數（頭目一組，小怪依出現的區域各一組），普通是設計的基準；選「自訂」可以自己填每一組。經驗值與戰利品不變；之後可以在「設定」裡改（只影響之後開打的戰鬥）。" /></th>
           <td>
             <select v-model="difficulty"><option v-for="id in DIFFICULTY_IDS" :key="id" :value="id">{{ DIFFICULTY_DEFS[id].name }}</option></select>
-            <p class="small muted diff">{{ DIFFICULTY_DEFS[difficulty].desc }}（{{ difficultySummary(DIFFICULTY_DEFS[difficulty]) }}）</p>
+            <p class="small muted diff">{{ DIFFICULTY_DEFS[difficulty].desc }}<template v-if="difficulty !== 'custom'">（{{ difficultySummary(DIFFICULTY_DEFS[difficulty]) }}）</template></p>
+            <CustomDifficultyEditor v-if="difficulty === 'custom'" :model-value="customDifficulty" :lust="(rules.lustMult ?? 1) > 0" @update:model-value="setCustom" />
           </td>
         </tr>
         <tr>

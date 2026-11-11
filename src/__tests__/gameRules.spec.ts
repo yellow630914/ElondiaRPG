@@ -50,16 +50,19 @@ describe('per-save rules', () => {
     // 普通 = 1：和沒有這個規則時完全一樣
     expect(DIFFICULTY_DEFS.normal.hp).toBe(1)
     expect(DIFFICULTY_DEFS.normal.damage).toBe(1)
-    for (const t of MINION_TIERS) expect(DIFFICULTY_DEFS.normal.minions[t]).toEqual({ hp: 1, damage: 1 })
-    // 五個難度都在；怪物的生命隨難度上升，小怪的輸出也是
-    expect(DIFFICULTY_IDS).toEqual(['story', 'easy', 'normal', 'hard', 'epic'])
-    for (let i = 1; i < DIFFICULTY_IDS.length; i++) {
-      const prev = DIFFICULTY_DEFS[DIFFICULTY_IDS[i - 1]!]
-      const cur = DIFFICULTY_DEFS[DIFFICULTY_IDS[i]!]
+    for (const t of MINION_TIERS) expect(DIFFICULTY_DEFS.normal.minions[t]).toEqual({ hp: 1, damage: 1, lust: 1 })
+    // 五個難度都在（再加最後的自訂）；怪物的生命隨難度上升，小怪的輸出也是
+    expect(DIFFICULTY_IDS).toEqual(['story', 'easy', 'normal', 'hard', 'epic', 'custom'])
+    const presets = DIFFICULTY_IDS.filter((id) => id !== 'custom')
+    for (let i = 1; i < presets.length; i++) {
+      const prev = DIFFICULTY_DEFS[presets[i - 1]!]
+      const cur = DIFFICULTY_DEFS[presets[i]!]
       expect(cur.hp).toBeGreaterThan(prev.hp)
       for (const t of MINION_TIERS) {
         expect(cur.minions[t].hp).toBeGreaterThan(prev.minions[t].hp)
         expect(cur.minions[t].damage).toBeGreaterThanOrEqual(prev.minions[t].damage)
+        // 小怪的慾望上限跟著生命放大（高潮扣的是生命的百分比）
+        expect(cur.minions[t].lust).toBe(cur.minions[t].hp)
       }
     }
     // 頭目變難靠生命（戰鬥變長），輸出不超過普通：不要讓層主一拳打倒一個隊員

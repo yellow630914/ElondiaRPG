@@ -832,7 +832,7 @@ export const combatRules = combatJson as unknown as {
   /** 難度係數（存檔規則）：怪物的生命與輸出各乘一個係數，普通 = 1 */
   difficulty: {
     default: string
-    levels: { id: string; name: string; hp: number; damage: number; minions?: Partial<Record<MinionTier, { hp: number; damage: number }>>; desc: string }[]
+    levels: { id: string; name: string; hp: number; damage: number; lust?: number; minions?: Partial<Record<MinionTier, { hp: number; damage: number; lust?: number }>>; desc: string }[]
   }
   hit: { evade_floor_base: number }
   lucky: { base: number; attr_floor: number; floor: number }
