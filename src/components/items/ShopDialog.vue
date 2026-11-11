@@ -229,7 +229,7 @@ function buy(d: Deal) {
                   <div class="line special-line" @click="toggle(d.id)">
                     <span class="item-tile special"><GameIcon name="sparkles" :size="18" /></span>
                     <span class="what marquee"><span class="what-in">
-                      <strong>{{ d.title }}</strong><span v-if="d.stock < 20" class="qty small">×{{ d.stock }}</span>
+                      <strong>{{ d.title }}</strong><span class="qty small">×{{ d.stock }}</span>
                       <ContentTagChips v-if="dealStory(d)" :tags="dealStory(d)!.tags" />
                       <span class="small effect">{{ d.gets.map((g) => effectText(s, g, shop?.keeper)).join('、') }}</span>
                     </span></span>
@@ -255,7 +255,7 @@ function buy(d: Deal) {
                 <li v-for="d in itemDeals" :key="d.id" class="item-row" :class="{ open: expanded === d.id }">
                   <div class="line" @click="toggle(d.id)">
                     <span class="item-tile" :class="`r-${itemRarity(s, itemName(d))}`"><ItemIcon :name="itemName(d)" :size="22" /></span>
-                    <span class="what"><strong class="nm">{{ d.title }}</strong><span v-if="d.stock < 20" class="qty small" :title="`還剩 ${leftOf(d)} 個（購物車裡的不算）`">×{{ leftOf(d) }}</span><span class="sub small muted">{{ categoryName(s, itemName(d)) }}</span></span>
+                    <span class="what"><strong class="nm">{{ d.title }}</strong><span class="qty small" :title="`還剩 ${leftOf(d)} 個（購物車裡的不算）`">×{{ leftOf(d) }}</span><span class="sub small muted">{{ categoryName(s, itemName(d)) }}</span></span>
                     <span class="cat small muted">{{ categoryName(s, itemName(d)) }}</span>
                     <span class="price" :title="buyWhyText(d)">{{ num(price(d)) }}</span>
                     <span class="steps" @click.stop>
