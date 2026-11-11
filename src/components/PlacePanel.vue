@@ -31,6 +31,7 @@ import ShopPanel from './ShopPanel.vue'
 import LandmarkPanel from './LandmarkPanel.vue'
 import { closedHere, sceneSpots } from '@/engine/landmarks'
 import TattooPanel from './TattooPanel.vue'
+import TattooShop from './place/TattooShop.vue'
 import NurseryPanel from './NurseryPanel.vue'
 import { childrenAtTemple, templeDebt } from '@/engine/children'
 import { tagsAllowed } from '@/engine/content'
@@ -181,6 +182,10 @@ const ICON = computed<Partial<Record<string, string>>>(() => {
 
 // 魔法物品店：取出卵生、寄生的苗床（brood.ts）
 const broodExtracts = computed(() => extractOffers(s.value))
+// 魔法物品店選單的其他項目：取出苗床（身上有卵生、寄生的苗床時）
+const shopMenu = computed<MenuItem[]>(() => (broodExtracts.value.length
+  ? [{ id: 'brood', icon: 'potion', label: '取出苗床', detail: '請鍊金師取出卵生、寄生的苗床', badge: broodExtracts.value.length, tone: 'bad' }]
+  : []))
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商、拘束具店（地下街）：各自的交易清單
 const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop'] as const
 // 自建的商店（內容編輯器擺的）：格子的種類就是商店的 id
@@ -205,7 +210,7 @@ const banner = computed(() => {
   return null
 })
 // 神殿、雜貨店選單的其他項目（交易與折扣以外）
-const extraOpen = ref<'wash' | 'market' | 'nursery' | null>(null)
+const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | null>(null)
 const templeMenu = computed<MenuItem[]>(() => [
   {
     id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
@@ -227,7 +232,7 @@ const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'mar
 function onExtra(id: string) {
   if (id === 'heal') game.templeHeal()
   else if (id === 'checkup') game.templeCheckup()
-  else if (id === 'wash' || id === 'market' || id === 'nursery') extraOpen.value = id
+  else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood') extraOpen.value = id
 }
 // 公會的選單：委託板在對話框裡
 const showBoard = ref(false)
@@ -322,31 +327,33 @@ const shopDesc = computed(() => {
 
         <template v-else-if="cell.kind === 'tattoo'">
           <p class="muted small">刺普通刺青（只是外觀），也替人洗掉普通刺青。</p>
-          <TattooPanel shop="parlor" />
+          <TattooShop shop="parlor" />
         </template>
 
         <template v-else-if="cell.kind === 'carver'">
           <p class="muted small">刻誓約印記，也洗刺青 <Hint text="誓約印記讓屬性有加有減；這裡也洗普通刺青與誓約印記。身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。" /></p>
-          <TattooPanel shop="carver" />
+          <TattooShop shop="carver" />
         </template>
 
         <template v-else-if="cell.kind === 'shop'">
-          <p class="muted small">乾糧持有 {{ rations }} 份 <Hint text="乾糧可以吃來果腹（戰鬥開始時有一點暫時生命）；地下城的安全房長休每人要一份。" /></p>
-          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" :extra="generalMenu" @extra="onExtra" />
+          <ShopPanel :key="`general-${s.location}-${s.time.day}`" type="general" :note="`乾糧持有 ${rations} 份`" :extra="generalMenu" @extra="onExtra" />
           <AppDialog :open="extraOpen === 'market'" :title="marketName" icon="users" width="980px" @close="extraOpen = null">
             <MarketPanel kind="public" />
           </AppDialog>
         </template>
 
         <template v-else-if="shopHere">
-          <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" />
-          <div v-if="broodExtracts.length" class="small">
-            <b>取出苗床</b> <Hint text="鍊金師可以把卵生、寄生的苗床取出來（胎生的只能到神殿或刻印師解咒）。先付錢再擲智力，失敗錢不退、侵蝕度 +5。" />
-            <div v-for="o in broodExtracts" :key="o.id" class="row">
-              {{ o.name }}（智力・DC {{ o.dc }}）
-              <button class="small" :disabled="s.money_cc < o.price" @click="game.extractBrood(o.id)">取出（{{ formatMoney(o.price) }}）</button>
+          <ShopPanel :key="`${shopHere}-${s.location}-${s.time.day}`" :type="shopHere" :extra="shopMenu" @extra="onExtra" />
+          <AppDialog :open="extraOpen === 'brood'" title="取出苗床" icon="potion" width="560px" @close="extraOpen = null">
+            <div class="brood small">
+              <p class="muted">鍊金師可以把卵生、寄生的苗床取出來（胎生的只能到神殿或刻印師解咒）。先付錢再擲智力，失敗錢不退、侵蝕度 +5。</p>
+              <p v-if="!broodExtracts.length" class="muted">身上沒有這裡能取出的苗床。</p>
+              <div v-for="o in broodExtracts" :key="o.id" class="row">
+                {{ o.name }}（智力・DC {{ o.dc }}）
+                <button class="small" :disabled="s.money_cc < o.price" @click="game.extractBrood(o.id)">取出（{{ formatMoney(o.price) }}）</button>
+              </div>
             </div>
-          </div>
+          </AppDialog>
           <AdultShopMenu />
         </template>
 
@@ -573,6 +580,8 @@ const shopDesc = computed(() => {
 .qty { width: 56px; }
 .warn { color: var(--accent); margin: 2px 0; }
 .travel :deep(.menu) { margin: 0; }
+.brood { display: grid; gap: 6px; }
+.brood p { margin: 0; }
 .quest-here { margin-top: 10px; padding-top: 8px; border-top: 1px dashed var(--border); display: grid; gap: 4px; }
 .place-title { display: flex; align-items: center; gap: 6px; }
 .place-title :deep(.game-icon) { color: var(--accent); }

@@ -14,7 +14,10 @@ import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
 // 刺青店（普通刺青）、刻印師（誓約印記）與神殿（只洗）：刺青與洗刺青
-const props = defineProps<{ shop: TattooShopId }>()
+// section：只畫其中一段（刺青店、刻印師的選單各開一個對話框）；沒有時整個畫（神殿的洗刺青）
+export type TattooSection = 'ink' | 'wash' | 'cure' | 'reink'
+const props = defineProps<{ shop: TattooShopId; section?: TattooSection }>()
+const show = (x: TattooSection) => !props.section || props.section === x
 const game = useGame()
 const s = computed(() => game.state!)
 const pc = computed(() => s.value.party.find((m) => m.isPlayer)!)
@@ -62,6 +65,7 @@ function setAttr(a: string, v: number) {
   if (v) custom.attrs[a] = v
   else delete custom.attrs[a]
 }
+const inkHint = computed(() => `${kind.value === 'oath' ? `誓約印記讓一些屬性變強、另一些變弱（加總為 0，每項最多 ±${tattooRules.oath.max_change}、最多動 ${tattooRules.oath.max_attrs} 項，每人最多 ${tattooRules.oath.max_per_character} 個）。價格依加的總點數。` : '只是外觀，會寫進給 AI 的主角資料。'}自己描述的圖樣另外加 ${formatMoney(rules.value.custom_extra ?? 0)}。`)
 function ink() {
   if (order.value) game.inkTattoo(order.value)
 }
@@ -77,16 +81,20 @@ const washable = computed(() => tattoosOf(pc.value).filter((t) => t.kind !== 'sl
 // ---- 寄生物：解咒（神殿、刻印師）與紋回來（刻印師） ----
 const cures = computed(() => (props.shop === 'parlor' ? [] : cureOffers(s.value)))
 const reinks = computed(() => reinkOffers(s.value))
+const WASH_HINT = '奴隸印記要解除契約才能去掉（神殿、刻印師、法師；見「主動行動」的解除印記）。'
+const CURE_HINT = '拿掉身上的寄生物（寄生裝備、淫紋、寄生種子）：先付錢再擲骰，侵蝕度越高越難、越貴；失敗時錢不退、侵蝕度上升。成功時寄生物的任務線也跟著結束。'
+const REINK_HINT = '被奴隸印記頂掉、或馴服後洗掉的淫紋，以及刻上淫紋時被蓋掉的刺青，刻印師可以照原樣紋回去（部位要空著）。'
 </script>
 
 <template>
   <div class="tattoo-shop small">
     <p v-if="refusal" class="muted">{{ refusal }}</p>
-    <template v-if="kind">
-      <h4>
+    <template v-if="kind && show('ink')">
+      <h4 v-if="!section">
         <GameIcon name="feather" :size="14" />刺{{ tattooKindName(kind) }}
-        <Hint :text="`${kind === 'oath' ? `誓約印記讓一些屬性變強、另一些變弱（加總為 0，每項最多 ±${tattooRules.oath.max_change}、最多動 ${tattooRules.oath.max_attrs} 項，每人最多 ${tattooRules.oath.max_per_character} 個）。價格依加的總點數。` : '只是外觀，會寫進給 AI 的主角資料。'}自己描述的圖樣另外加 ${formatMoney(rules.custom_extra ?? 0)}。`" />
+        <Hint :text="inkHint" />
       </h4>
+      <p v-else class="muted">{{ inkHint }}</p>
       <div class="row">
         <select v-model="mode">
           <option v-for="[id, t] in templates" :key="id" :value="id">{{ t.name }}{{ t.attrs ? `（${oathText(t.attrs)}）` : '' }}</option>
@@ -112,7 +120,9 @@ const reinks = computed(() => reinkOffers(s.value))
       </div>
     </template>
 
-    <h4>洗刺青 <Hint text="奴隸印記要解除契約才能去掉（神殿、刻印師、法師；見「主動行動」的解除印記）。" /></h4>
+    <template v-if="show('wash')">
+    <h4 v-if="!section">洗刺青 <Hint :text="WASH_HINT" /></h4>
+    <p v-else class="muted">{{ WASH_HINT }}</p>
     <ul v-if="washable.length" class="plain">
       <li v-for="{ t, price: p } in washable" :key="t.place">
         {{ placeName(t.place) }}・{{ tattooKindName(t.kind) }}【{{ tattooName(t) }}】
@@ -122,19 +132,24 @@ const reinks = computed(() => reinkOffers(s.value))
       </li>
     </ul>
     <p v-else class="muted">身上沒有可以洗的刺青。</p>
+    </template>
 
-    <template v-if="cures.length">
-      <h4>解咒 <Hint text="拿掉身上的寄生物（寄生裝備、淫紋、寄生種子）：先付錢再擲骰，侵蝕度越高越難、越貴；失敗時錢不退、侵蝕度上升。成功時寄生物的任務線也跟著結束。" /></h4>
-      <ul class="plain">
+    <template v-if="show('cure') && (cures.length || section)">
+      <h4 v-if="!section">解咒 <Hint :text="CURE_HINT" /></h4>
+      <p v-else class="muted">{{ CURE_HINT }}</p>
+      <p v-if="!cures.length" class="muted">身上沒有這裡能解的寄生物。</p>
+      <ul v-else class="plain">
         <li v-for="c in cures" :key="c.id">
           {{ c.name }}（{{ attrName(c.attr as never) }}・DC {{ c.dc }}）
           <button class="small" :disabled="!!refusal || s.money_cc < c.price" @click="game.cureParasite(c.id)">解咒（{{ formatMoney(c.price) }}）</button>
         </li>
       </ul>
     </template>
-    <template v-if="reinks.length">
-      <h4>紋回來 <Hint text="被奴隸印記頂掉、或馴服後洗掉的淫紋，以及刻上淫紋時被蓋掉的刺青，刻印師可以照原樣紋回去（部位要空著）。" /></h4>
-      <ul class="plain">
+    <template v-if="show('reink') && (reinks.length || section)">
+      <h4 v-if="!section">紋回來 <Hint :text="REINK_HINT" /></h4>
+      <p v-else class="muted">{{ REINK_HINT }}</p>
+      <p v-if="!reinks.length" class="muted">沒有可以紋回來的印記。</p>
+      <ul v-else class="plain">
         <li v-for="r in reinks" :key="`${r.parasite}:${r.kind}`">
           {{ placeName(r.tattoo.place) }}・{{ tattooKindName(r.tattoo.kind) }}【{{ tattooName(r.tattoo) }}】
           <button class="small" :disabled="s.money_cc < r.price" @click="game.reinkParasite(r.parasite, r.kind)">紋回來（{{ formatMoney(r.price) }}）</button>

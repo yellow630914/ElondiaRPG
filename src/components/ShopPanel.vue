@@ -13,7 +13,8 @@ import NameTag from './NameTag.vue'
 import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 
 // 商店的選單：進入交易、談長期折扣，加上地點面板給的其他項目（神殿治療、洗刺青、市場……），那些點了交給上層
-const props = withDefaults(defineProps<{ type: ShopType; extra?: MenuItem[] }>(), { extra: () => [] })
+// note：接在「進入交易」說明後面的一句話（例如雜貨店的乾糧持有數）
+const props = withDefaults(defineProps<{ type: ShopType; extra?: MenuItem[]; note?: string }>(), { extra: () => [], note: '' })
 const emit = defineEmits<{ extra: [id: string] }>()
 const game = useGame()
 const settings = useSettings()
@@ -48,7 +49,7 @@ const discountBlocked = computed(() => canNegotiate(s.value, 'shop_discount', { 
 const items = computed<MenuItem[]>(() => [
   {
     id: 'trade', icon: 'store', label: '進入交易',
-    detail: `今天有 ${counts.value.items} 樣商品${counts.value.special ? `、${counts.value.special} 筆特別交易` : ''}${sellable.value ? `・行囊裡有 ${sellable.value} 種東西可以賣` : ''}`,
+    detail: `今天有 ${counts.value.items} 樣商品${counts.value.special ? `、${counts.value.special} 筆特別交易` : ''}${sellable.value ? `・行囊裡有 ${sellable.value} 種東西可以賣` : ''}${props.note ? `・${props.note}` : ''}`,
     badge: loading.value ? 'AI 準備中…' : shop.value?.source === 'ai' ? '特別商品' : '', tone: 'gold',
   },
   {
