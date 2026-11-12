@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { COSTUME_SHOPS, enemies, itemDef, itemRules, landmarks, shopRules, specialMaps } from '@/engine/data'
 import { gearRules, missingWear, wearName, wearUnfit } from '@/engine/gear'
-import { currentCell, enterLocation, standOn } from '@/engine/grid'
+import { currentCell, enterLocation, standOn, type CellKind } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
 import { exposureLevel } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
@@ -101,7 +101,7 @@ describe('換衣間', () => {
       expect(specialMaps[map]!.shops!.map((x) => x.shop), hall).toContain(sid)
       const state = game()
       enterSpecial(state, map)
-      expect(standOn(state, sid), sid).toBe(true)
+      expect(standOn(state, sid as CellKind), sid).toBe(true)
       const sold = new Set(shopState(state, sid as never).deals.map((d) => d.title))
       const own = new Set(piecesOf(hall))
       for (const b of own) for (const i of itemsOf(b)) if (tierOf(i.name) <= 2) expect(sold.has(i.name), i.name).toBe(true)
