@@ -449,8 +449,9 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     if (mult <= 0) continue
     f.lust = 0
     f.lustMax = lustMaxFor(f.level)
-    // 頭目（BOSS 格的主角、層主、有低血大招的任務頭目）：慾望上限照生命比例放大（和同等級一般怪物的生命中位數相比，難度係數也算在生命裡）
-    if (isHeadFoe(f)) f.lustMax = Math.round(f.lustMax * Math.max(1, f.maxHp / typicalEnemyHp(f.level)))
+    // 頭目（BOSS 格的主角、層主、有低血大招的任務頭目）：慾望上限照生命比例的平方根放大（和同等級一般怪物的生命中位數相比，難度係數也算在生命裡），
+    // 再乘存檔規則「頭目的慾望上限」。不開根號時是生命的 8～14 倍，要灌滿好幾次才倒，比打生命還慢
+    if (isHeadFoe(f)) f.lustMax = Math.max(1, Math.round(f.lustMax * Math.sqrt(Math.max(1, f.maxHp / typicalEnemyHp(f.level))) * gameRule(state, 'bossLustPct') / 100))
     // 難度的慾望上限係數（怪物）
     if (f.side === 'enemy' && f.defId && !f.npcId) f.lustMax = Math.max(1, Math.round(f.lustMax * difficultyFor(difficultyRule(state), f.defId).lust))
     if (f.side === 'party') f.climaxes = 0

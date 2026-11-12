@@ -283,14 +283,20 @@ describe('慾望戰鬥的修正', () => {
     }
   })
 
-  it('層主的慾望上限照生命比例放大，一般怪物不變', () => {
+  it('層主的慾望上限照生命比例的平方根放大，一般怪物不變；存檔規則可以再乘', () => {
     const { combat } = fight([], [['lp_boss_queen', 1], ['lp_succ_dancer', 1]])
     const boss = combat.combatants.find((c) => c.defId === 'lp_boss_queen')!
     const minion = combat.combatants.find((c) => c.defId === 'lp_succ_dancer')!
     expect(boss.boss).toBe(true)
-    // 1170 HP 對同等級一般怪物（約 87 HP）
-    expect(boss.lustMax!).toBeGreaterThan(lustMaxFor(enemies.lp_boss_queen!.level) * 10)
+    // 1170 HP 對同等級一般怪物（約 87 HP）：生命比例約 13 倍，開根號約 3.6 倍
+    const base = lustMaxFor(enemies.lp_boss_queen!.level)
+    expect(boss.lustMax!).toBeGreaterThan(base * 3)
+    expect(boss.lustMax!).toBeLessThan(base * 4.5)
     expect(minion.lustMax).toBe(lustMaxFor(minion.level))
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', seed: 11 })
+    state.options = { ...state.options!, bossLustPct: 50 }
+    const half = startCombat(state, [['lp_boss_queen', 1]]).combatants.find((c) => c.defId === 'lp_boss_queen')!
+    expect(Math.abs(half.lustMax! - boss.lustMax! / 2)).toBeLessThanOrEqual(1)
   })
 
   it('存檔規則分開設定高潮扣的生命：我方、小怪、頭目', () => {

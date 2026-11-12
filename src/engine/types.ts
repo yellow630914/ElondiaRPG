@@ -935,6 +935,8 @@ export interface GameOptions {
   climaxHpParty?: number
   climaxHpMinion?: number
   climaxHpBoss?: number
+  /** 頭目的慾望上限倍率（百分比，預設 100；放大量照生命比例開根號之後再乘這個） */
+  bossLustPct?: number
   /** 允許在遊戲中更換主角的身分標籤（見 engine/pcTags.ts） */
   tagChange?: boolean
   /** 大成功、大失敗只看骰面：只有骰出 20 才大成功、骰出 1 才大失敗（engine/checks.ts） */
