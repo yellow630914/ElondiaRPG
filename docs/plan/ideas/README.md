@@ -37,3 +37,4 @@
 | I27 | 真空的延伸：不准穿內衣褲的條款、盤查時被發現（成人向） | 玩法 | [player-feedback](player-feedback.md#i27) |
 | I28 | 工藝的延伸：NPC 隨機帶工匠身分、老師教工藝與圖紙 | 玩法 | [dev-discussion](dev-discussion.md#i28) |
 | I30 | 拘束具與淫具：欄位更齊、道具更多（成人向） | 玩法、物品 | [player-feedback](player-feedback.md#i30) |
+| I31 | 房子的延伸：戰利品展示、出租、自家開店、畜欄、訪客事件、辦宴會、在家修練、研究室 | 玩法 | [dev-discussion](dev-discussion.md#i31) |
