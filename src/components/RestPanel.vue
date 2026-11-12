@@ -9,7 +9,6 @@ import { bestTool } from '@/engine/tools'
 import { fieldAbilities, fieldCastBlock, fieldTargets, fieldUsesLeft } from '@/engine/fieldCast'
 import { slotsLeft } from '@/engine/character'
 import { useGame } from '@/stores/game'
-import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
@@ -124,7 +123,6 @@ async function doLongRest(where: RestPlace) {
             <option v-for="m in companions" :key="m.id" :value="m.id">{{ raceEmoji(m.race) }}{{ m.name }}{{ classEmoji(m.class) }}</option>
             <option v-if="place === 'inn'" value="guests">同旅館的旅客</option>
           </select>
-          <JudgeToggle />
           <Hint text="長休時想做的事（選填，算主動行動）。有寫互動時，長休和互動會合成一段經過。" />
         </div>
       </div>

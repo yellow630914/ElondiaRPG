@@ -9,7 +9,9 @@ import GameIcon from '../ui/GameIcon.vue'
 import Hint from '../ui/Hint.vue'
 
 // 購物車（docs/TRADE.md）：買入與賣出放在同一車，一次結帳；整車交涉每間店每天一次，可以出價
-const props = defineProps<{ type: ShopType; cart: { buy: Record<string, number>; sell: Record<string, number> } }>()
+// collapsible（桌機）：預設收合，只顯示預覽（買入、賣出各一列，每件寫名字的第一個字與數量），點開才看明細
+const props = defineProps<{ type: ShopType; cart: { buy: Record<string, number>; sell: Record<string, number> }; collapsible?: boolean }>()
+const open = defineModel<boolean>('open', { default: false })
 const emit = defineEmits<{ done: [summary: string] }>()
 const game = useGame()
 const s = computed(() => game.state!)
@@ -72,9 +74,20 @@ function checkout() {
 <template>
   <section class="cart">
     <h3 class="head"><GameIcon name="coins" :size="17" />這次的交易
+      <button v-if="collapsible && open && !empty" type="button" class="ghost small fold" @click="open = false">收起明細 <GameIcon name="up" :size="12" /></button>
       <Hint text="商品和行囊的「＋」加進來，一次結帳。可以整車交涉（每間店每天一次）：買的部分打折，賣的部分照原價；有出價時，成交價取你的出價和這個結果能談到的最好價中，對店家有利的那個。談好的價只算交涉時的那一車：之後改了購物車就照原價交易。同一間店收同一類的東西越多，收購價一件比一件低（收購遞減，每天慢慢回復；可以在設定的「遊戲規則」調整）。" />
     </h3>
     <p v-if="empty" class="small muted">從店裡的商品、你的行囊按「＋」加進來。</p>
+    <!-- 收合時的預覽：點一下展開明細 -->
+    <button v-else-if="collapsible && !open" type="button" class="peek" title="展開明細" @click="open = true">
+      <span v-if="quote.buy.length" class="peek-row"><span class="lab small">買入</span>
+        <span v-for="x in quote.buy" :key="x.dealId" class="chip buy" :title="`${x.name} ×${x.qty}`">{{ [...x.name][0] }}<small>{{ x.qty }}</small></span>
+      </span>
+      <span v-if="quote.sell.length" class="peek-row"><span class="lab small">賣出</span>
+        <span v-for="x in quote.sell" :key="x.name" class="chip sell" :title="`${x.name} ×${x.qty}`">{{ [...x.name][0] }}<small>{{ x.qty }}</small></span>
+      </span>
+      <span class="more small muted">明細 <GameIcon name="down" :size="12" /></span>
+    </button>
     <div v-else class="lists">
       <table v-if="quote.buy.length" class="small">
         <thead><tr><th>買入</th><th>數量</th><th>小計</th><th /></tr></thead>
@@ -152,6 +165,17 @@ function checkout() {
 .head { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--accent-2); }
 .head :deep(.game-icon) { color: var(--accent); }
 .lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+.head .fold { margin-left: auto; order: 2; display: inline-flex; align-items: center; gap: 3px; }
+/* 收合時的預覽：買入、賣出各一列，每件一個小方塊（名字的第一個字＋數量） */
+.peek { position: relative; display: grid; gap: 4px; width: 100%; padding-right: 56px !important; text-align: left; background: none; border: 1px dashed var(--border); border-radius: var(--radius); padding: 5px 8px; cursor: pointer; font: inherit; color: inherit; }
+.peek:hover { border-color: var(--accent); }
+.peek-row { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.peek .lab { width: 2.6em; color: var(--muted); }
+.chip { display: inline-flex; align-items: baseline; gap: 1px; min-width: 26px; padding: 1px 5px; border-radius: 3px; font-weight: 700; line-height: 1.4; }
+.chip small { font-size: 10.5px; font-weight: 400; }
+.chip.buy { background: color-mix(in srgb, var(--accent) 16%, transparent); border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent); }
+.chip.sell { background: color-mix(in srgb, var(--good) 16%, transparent); border: 1px solid color-mix(in srgb, var(--good) 45%, transparent); }
+.peek .more { position: absolute; right: 8px; bottom: 5px; display: inline-flex; align-items: center; gap: 3px; }
 /* 桌機：買入、賣出的明細自己捲（大約 5 行），結帳列不會蓋住它們；手機的購物車分頁有整個畫面，不限高 */
 @media (min-width: 761px) {
   .lists { max-height: 210px; overflow-y: auto; }

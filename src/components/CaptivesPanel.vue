@@ -6,7 +6,6 @@ import { npcTitle } from '@/engine/npcs'
 import { isEnslaved } from '@/engine/party'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
-import JudgeToggle from './JudgeToggle.vue'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
 
@@ -69,7 +68,6 @@ async function act(id: string) {
   <section class="panel captives">
     <div class="row head">
       <h3><GameIcon name="lock" :size="16" />戰後處置</h3>
-      <JudgeToggle />
     </div>
     <p class="small muted">對方倒在地上，任你處置（{{ firstHand }}{{ unseen ? '，沒有人看到' : '' }}）。每個人都處置完才能繼續移動或休息。</p>
     <article v-for="c in captives" :key="c.id" class="captive">

@@ -6,7 +6,6 @@ import { formatMoney } from '@/engine/money'
 import { npcTitle } from '@/engine/npcs'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
-import JudgeToggle from './JudgeToggle.vue'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
 
@@ -31,7 +30,6 @@ function talk(kind: 'bluff' | 'intimidate') {
   <section class="panel standoff">
     <div class="row head">
       <h3><GameIcon name="warning" :size="16" />對峙</h3>
-      <JudgeToggle />
     </div>
     <ul class="plain small">
       <li v-for="f in foes" :key="f.id" class="row">

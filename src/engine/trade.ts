@@ -431,6 +431,16 @@ export function buyBreakdown(state: GameState, key: string, deal: Deal): PriceBr
   return { steps, total: dealMoney(state, key, deal), category: tradeCategoryName(tradeCategory(state, name)) }
 }
 
+/**
+ * 商品的標準售價：基本價 × 店家加成（材料的目錄價是收購價，加成後才是平常的售價）；
+ * 實際售價高於它（物價、聲望、身分……）畫面寫紅字，低於它寫綠字。不是一般商品時沒有。
+ */
+export function listPrice(state: GameState, deal: Deal): number | undefined {
+  if (!isItemDeal(deal)) return undefined
+  const base = deal.basis?.base ?? itemValue(state, deal.id.slice('item:'.length))
+  return base === undefined ? undefined : Math.max(1, Math.round(base * (deal.basis?.markup ?? 1)))
+}
+
 /** 行囊裡的東西在這間店的收購價拆解；不收時沒有 */
 export function sellBreakdown(state: GameState, key: string, name: string): PriceBreakdown | undefined {
   const total = sellPrice(state, key, name)
