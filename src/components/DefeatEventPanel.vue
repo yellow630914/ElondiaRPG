@@ -6,7 +6,6 @@ import { defeatEventAllowed, defeatVictimOf } from '@/engine/defeat'
 import { parseUse, useGame } from '@/stores/game'
 import { useSettings } from '@/stores/settings'
 import AbilityPicker from './AbilityPicker.vue'
-import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
@@ -51,7 +50,6 @@ function respond() {
   <section class="panel defeat-event">
     <div class="row head">
       <h3 class="title"><GameIcon name="warning" :size="16" />倒下之後<Hint v-if="allowed" text="結束後和一般戰敗一樣：地下城回到入口、近郊回到城門。" /></h3>
-      <JudgeToggle v-if="allowed" />
     </div>
     <template v-if="allowed">
       <p v-if="mate">你們倒在{{ ev.scene }}。{{ foes }}沒有理會你，圍住了倒在一旁的{{ mate.name }}，眼神不懷好意……你使不上力，只能看著。<strong>{{ mate.name }}</strong>要怎麼做？</p>

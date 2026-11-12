@@ -4,7 +4,6 @@ import { attrName, slaveryRules } from '@/engine/data'
 import { eventChoices, eventRoles, eventText, pendingEventDef, pendingEventExists, stanceModifiers } from '@/engine/slavery'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
-import JudgeToggle from './JudgeToggle.vue'
 import GameIcon from './ui/GameIcon.vue'
 import { contractOf } from '@/engine/tattoos'
 
@@ -51,7 +50,6 @@ function respond() {
   <section class="panel master-event">
     <div class="row head">
       <h3 class="title"><GameIcon name="lock" :size="16" />{{ title }}</h3>
-      <JudgeToggle />
     </div>
     <p>{{ ev.text }}</p>
     <template v-if="!exists">
