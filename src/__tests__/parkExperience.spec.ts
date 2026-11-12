@@ -5,7 +5,7 @@ import { currentArea, currentCell } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
 import { isLactating } from '@/engine/lactation'
 import { sanitizeLandmarkMod, sanitizeRole } from '@/engine/landmarkMods'
-import { enterLandmark, interiorBlocked, landmarkHere, playLandmarkScene, roleMembers, sceneBlocked, sceneText, scenesHere } from '@/engine/landmarks'
+import { enterLandmark, interiorBlocked, landmarkHere, landmarkOfInterior, playLandmarkScene, roleMembers, sceneBlocked, sceneText, scenesHere } from '@/engine/landmarks'
 import { generateNpc, registerNpc } from '@/engine/npcs'
 import { parasiteOf } from '@/engine/parasites'
 import { pcOf } from '@/engine/party'
@@ -15,7 +15,7 @@ import type { Character, GameState } from '@/engine/types'
 
 // 緋夢樂園的主題體驗區（docs/LUST_PARK.md 第 9 節）與場景的身分（docs/LANDMARKS.md 第 6.1 節）
 
-const HALLS = ['lm_park_exp_ranch', 'lm_park_exp_greenhouse', 'lm_park_exp_aquarium', 'lm_park_exp_aquarium_care', 'lm_park_exp_garden', 'lm_park_exp_theater']
+const HALLS = ['lm_park_exp_ranch', 'lm_park_exp_greenhouse', 'lm_park_exp_aquarium', 'lm_park_exp_garden', 'lm_park_exp_theater']
 
 beforeEach(() => setContentFilters({ ...DEFAULT_FILTERS }))
 afterEach(() => {
@@ -57,9 +57,19 @@ function into(state: GameState, hall?: string) {
   return enterLandmark(state)
 }
 
+/** 第二層：站上館裡通往第二層的門，走進去 */
+const INNER: Record<string, string> = { lm_park_exp_ranch: 'lm_park_exp_ranch_breed', lm_park_exp_greenhouse: 'lm_park_exp_greenhouse_nest', lm_park_exp_aquarium: 'lm_park_exp_aquarium_care', lm_park_exp_theater: 'lm_park_exp_theater_back' }
+function deeper(state: GameState, id: string) {
+  const l = landmarks[id]!
+  state.position = { area: l.at.area, x: l.at.x, y: l.at.y }
+  enterLandmark(state)
+  expect(currentArea(state).special).toBe(l.interior)
+}
+
 /** 走到這個場景所在的格子，回傳它的 index */
 function at(state: GameState, title: string): number {
-  const sc = landmarkHere(state)!.scenes!.find((x) => x.title === title)!
+  // 用這張地圖本身的館（站在通往第二層的門上時，landmarkHere 是那道門）
+  const sc = landmarkOfInterior(currentArea(state).special)!.scenes!.find((x) => x.title === title)!
   state.position = { ...state.position!, x: sc.spot!.x, y: sc.spot!.y }
   const i = scenesHere(state).find((x) => x.scene.title === title)?.index
   expect(i, title).toBeDefined()
@@ -69,13 +79,17 @@ function at(state: GameState, title: string): number {
 const COW = ['亞麻乳牛比基尼', '亞麻牛角頭飾', '銅製牛鈴項圈', '亞麻牛尾腰飾']
 
 describe('主題體驗區的地圖與地標', () => {
-  it('入口廣場的閘門通往體驗區，體驗區的六座館各有內部；離開時一層一層回去', () => {
+  it('入口廣場的閘門通往體驗區，體驗區的五座館各有內部；離開時一層一層回去', () => {
     const state = game()
     into(state)
-    for (const id of HALLS) {
+    expect(Object.values(landmarks).filter((l) => l.at.area === 'sm/sm_park_experience').map((l) => l.id).sort()).toEqual([...HALLS].sort())
+    for (const id of [...HALLS, ...Object.values(INNER)]) {
       const l = landmarks[id]!
       expect(l.open?.adult, id).toBe(true)
-      expect(l.at.area).toBe('sm/sm_park_experience')
+      const outer = Object.entries(INNER).find(([, v]) => v === id)?.[0]
+      expect(l.at.area).toBe(outer ? `sm/${landmarks[outer]!.interior}` : 'sm/sm_park_experience')
+      // 館裡的場景沒有擺在通往第二層的門那一格
+      if (INNER[id]) expect(l.scenes!.some((sc) => sc.spot!.x === landmarks[INNER[id]!]!.at.x && sc.spot!.y === landmarks[INNER[id]!]!.at.y), id).toBe(false)
       expect(specialMaps[l.interior!]?.peaceful, id).toBe(true)
       expect(l.scenes!.length, id).toBeLessThanOrEqual(12)
       // 每個場景都在館裡的一格，走得到（不是牆或水）
@@ -98,6 +112,31 @@ describe('主題體驗區的地圖與地標', () => {
     leaveSpecial(state)
     expect(currentArea(state).special).toBe('sm_lust_park')
     expect(currentCell(state).kind).toBe('lm_park_experience')
+  })
+})
+
+describe('兩層深度的館', () => {
+  it('牧場、溫室、水族館、劇場各有第二層，花園沒有', () => {
+    expect(Object.keys(INNER).sort()).toEqual(HALLS.filter((id) => id !== 'lm_park_exp_garden').sort())
+  })
+
+  it('表演廳的後門再往裡走是飼育區；從飼育區出來回到後門，再出去回到體驗區', () => {
+    const state = game()
+    into(state, 'lm_park_exp_aquarium')
+    const care = landmarks.lm_park_exp_aquarium_care!
+    state.position = { area: care.at.area, x: care.at.x, y: care.at.y }
+    expect(landmarkHere(state)?.id).toBe('lm_park_exp_aquarium_care')
+    enterLandmark(state)
+    expect(currentArea(state).special).toBe('sm_park_exp_aquarium_care')
+    expect(landmarkHere(state)?.id).toBe('lm_park_exp_aquarium_care')
+    wear(state, pcOf(state), ['亞麻吊帶泳衣'])
+    expect(sceneBlocked(state, at(state, '和章魚培養感情'))).toBeUndefined()
+    leaveSpecial(state)
+    expect(currentArea(state).special).toBe('sm_park_exp_aquarium')
+    expect(currentCell(state).kind).toBe('lm_park_exp_aquarium_care')
+    leaveSpecial(state)
+    expect(currentArea(state).special).toBe('sm_park_experience')
+    expect(currentCell(state).kind).toBe('lm_park_exp_aquarium')
   })
 })
 
@@ -162,7 +201,7 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     wear(state, c, COW)
     const i = at(state, '在草地上招待遊客')
     expect(sceneBlocked(state, i)).toContain('陰柔或中性體型')
-    expect(sceneBlocked(state, at(state, '參觀淫犬配種'))).toBeUndefined()
+    expect(sceneBlocked(state, at(state, '參觀榨精榨乳'))).toBeUndefined()
     // 設定「陽剛體型也能遇到」打開時一樣能當
     setMascBodyContent(true)
     expect(sceneBlocked(state, at(state, '在草地上招待遊客'))).toBeUndefined()
@@ -188,20 +227,25 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     into(state, 'lm_park_exp_greenhouse')
     const c = mate(state)
     wear(state, c, ['亞麻透視薄紗睡衣'])
-    const slug = at(state, '讓蛞蝓著床')
-    expect(sceneBlocked(state, slug)).toContain('主角要')
+    // 夥伴可以當展示區的苗床，不能當教材
+    expect(sceneBlocked(state, at(state, '在展示區當苗床'))).toBeUndefined()
     expect(sceneBlocked(state, at(state, '當科普的教材'))).toContain('苗床')
+    deeper(state, 'lm_park_exp_greenhouse_nest')
+    expect(sceneBlocked(state, at(state, '讓蛞蝓著床'))).toContain('主角要')
     wear(state, pcOf(state), ['亞麻透視薄紗睡衣'])
     playLandmarkScene(state, at(state, '讓蛞蝓著床'))
     expect(parasiteOf(pcOf(state), 'brood_slug')).toBeTruthy()
     // 同一種最多一個
     state.time.day += 5
     expect(sceneBlocked(state, at(state, '讓蛞蝓著床'))).toContain('已經有了')
-    expect(sceneBlocked(state, at(state, '當科普的教材'))).toBeUndefined()
     // 篩選關掉時著床的場景不出現
     setContentFilters({ ...DEFAULT_FILTERS })
-    state.position = { ...state.position!, ...landmarks.lm_park_exp_greenhouse!.scenes!.find((x) => x.title === '讓巨蛛著床')!.spot! }
+    state.position = { ...state.position!, ...landmarks.lm_park_exp_greenhouse_nest!.scenes!.find((x) => x.title === '讓巨蛛著床')!.spot! }
     expect(scenesHere(state).map((x) => x.scene.title)).toEqual(['參觀巨蛛著床'])
+    // 回到前面那一館，身上有苗床就能當教材
+    setContentFilters({ ...DEFAULT_FILTERS, monster_brood: true })
+    leaveSpecial(state)
+    expect(sceneBlocked(state, at(state, '當科普的教材'))).toBeUndefined()
   })
 
   it('淫植花園：要有人穿得夠少才進得去，進去的人沾上花粉', () => {

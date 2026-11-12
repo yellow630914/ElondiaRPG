@@ -6736,7 +6736,7 @@
    "types": [
     "market"
    ],
-   "desc": "淫獸牧場的體驗館。遊客買票摸乳牛、看榨乳與配種；穿上乳牛比基尼、牛角頭飾、牛鈴項圈與牛尾腰飾的人（主角或夥伴）可以當牧場的「精牛乳牛」。",
+   "desc": "淫獸牧場的體驗館。遊客買票摸乳牛、看榨乳，北邊的柵門後面是配種舍；穿上乳牛比基尼、牛角頭飾、牛鈴項圈與牛尾腰飾的人（主角或夥伴）可以當牧場的「精牛乳牛」。",
    "scene": "乾草與奶香混在一起的牛舍，牛鈴叮噹響，看台上坐滿了指指點點的遊客。",
    "open": {
     "adult": true
@@ -6764,7 +6764,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 2,
-      "y": 5
+      "y": 3
      },
      "spot_name": "觸摸草地"
     },
@@ -6780,7 +6780,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 2,
-      "y": 5
+      "y": 3
      },
      "spot_name": "觸摸草地",
      "role": {
@@ -6827,7 +6827,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 6,
-      "y": 5
+      "y": 3
      },
      "spot_name": "乳牛舍",
      "role": {
@@ -6880,7 +6880,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 5
+      "y": 3
      },
      "spot_name": "榨乳台"
     },
@@ -6897,7 +6897,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 5
+      "y": 3
      },
      "spot_name": "榨乳台",
      "role": {
@@ -6949,7 +6949,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 5
+      "y": 3
      },
      "spot_name": "榨乳台",
      "role": {
@@ -6982,7 +6982,29 @@
        }
       ]
      }
-    },
+    }
+   ]
+  },
+  {
+   "id": "lm_park_exp_ranch_breed",
+   "name": "淫獸牧場・配種舍",
+   "emoji": "🐎",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_park_exp_ranch",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "乳牛體驗館北邊的柵門，往裡走是犬舍、豬圈與馬廄三間配種舍：遊客在看台上參觀配種，精牛乳牛進圍欄和淫犬、種豬、種馬配種。",
+   "scene": "野獸的氣味從柵門後面飄過來，偶爾傳出一陣嘶鳴和看台上的驚呼。",
+   "open": {
+    "adult": true
+   },
+   "interior": "sm_park_exp_ranch_breed",
+   "scenes": [
     {
      "title": "參觀淫犬配種",
      "desc": "遊客：在犬舍的看台看牧場的精牛乳牛和淫犬配種。",
@@ -7217,7 +7239,7 @@
    "types": [
     "market"
    ],
-   "desc": "蟲之溫室的體驗館。遊客買票看苗床、聽科普、參觀著床；穿上透視薄紗睡衣的人可以當溫室的「苗床」，主角還可以真的讓蟲子著床。",
+   "desc": "蟲之溫室的體驗館。遊客買票看苗床、聽科普，北邊的玻璃門後面是著床室；穿上透視薄紗睡衣的人可以當溫室的「苗床」。",
    "scene": "濕熱的玻璃屋，空氣甜腥，穿著透明薄紗的苗床們躺在軟墊上，肚子裡的東西隔著皮膚隱約可見。",
    "open": {
     "adult": true
@@ -7245,7 +7267,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 2,
-      "y": 5
+      "y": 3
      },
      "spot_name": "苗床展示區"
     },
@@ -7261,7 +7283,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 2,
-      "y": 5
+      "y": 3
      },
      "spot_name": "苗床展示區",
      "role": {
@@ -7318,7 +7340,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 5
+      "y": 3
      },
      "spot_name": "科普教室"
     },
@@ -7335,7 +7357,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 5
+      "y": 3
      },
      "spot_name": "科普教室",
      "role": {
@@ -7367,7 +7389,29 @@
        }
       ]
      }
-    },
+    }
+   ]
+  },
+  {
+   "id": "lm_park_exp_greenhouse_nest",
+   "name": "蟲之溫室・著床室",
+   "emoji": "🥚",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_park_exp_greenhouse",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "苗床體驗館北邊的玻璃門，往裡走是蛞蝓、史萊姆與巨蛛的著床室：遊客隔著玻璃參觀著床，主角可以穿著透視薄紗躺進去，真的讓蟲子著床。",
+   "scene": "玻璃門上蒙著一層水氣，門後傳來黏稠的水聲。",
+   "open": {
+    "adult": true
+   },
+   "interior": "sm_park_exp_greenhouse_nest",
+   "scenes": [
     {
      "title": "參觀蛞蝓著床",
      "desc": "遊客：在蛞蝓的溫床看溫室的苗床被蛞蝓著床。",
@@ -7590,7 +7634,7 @@
    "types": [
     "market"
    ],
-   "desc": "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，和巨蛙、水母、章魚、淫蛇、觸手上台表演（先到隔壁的飼育區練習）。",
+   "desc": "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，和巨蛙、水母、章魚、淫蛇、觸手上台表演；表演廳的後門再往裡走是飼育區，可以先去練習。",
    "scene": "五座水槽在幽藍的燈光裡發亮，舞台濕漉漉的，看台上的遊客等著下一場表演。",
    "open": {
     "adult": true
@@ -7970,14 +8014,14 @@
    "emoji": "🐸",
    "location": "bloodplume",
    "at": {
-    "area": "sm/sm_park_experience",
-    "x": 7,
-    "y": 2
+    "area": "sm/sm_park_exp_aquarium",
+    "x": 14,
+    "y": 6
    },
    "types": [
     "market"
    ],
-   "desc": "觸手水族館的後場。穿上吊帶泳衣的表演者在這裡陪巨蛙、水母、章魚、淫蛇、觸手培養感情、練習表演的動作；遊客進不來。",
+   "desc": "表演廳東南角掛著「員工專用」的後門，往裡走是水族館的飼育區。穿上吊帶泳衣的表演者在這裡陪巨蛙、水母、章魚、淫蛇、觸手培養感情、練習表演的動作。",
    "scene": "飼育池的水聲嘩啦啦地響，池邊堆著飼料桶，動物們一看到表演者就湊了過來。",
    "open": {
     "adult": true
@@ -8208,7 +8252,7 @@
    "location": "bloodplume",
    "at": {
     "area": "sm/sm_park_experience",
-    "x": 9,
+    "x": 7,
     "y": 2
    },
    "types": [
@@ -8422,13 +8466,13 @@
    "location": "bloodplume",
    "at": {
     "area": "sm/sm_park_experience",
-    "x": 11,
+    "x": 9,
     "y": 2
    },
    "types": [
     "market"
    ],
-   "desc": "夢魔劇場的互動式體驗劇場。遊客可以進包廂、看鋼管舞與偶像、做一場春夢、看劇團的大戲；穿上魅魔裝、戴上魅魔角頭飾的人可以當一晚「劇場工作人員」。",
+   "desc": "夢魔劇場的互動式體驗劇場。遊客可以進包廂、看鋼管舞、做一場春夢、看劇團的大戲，東北角的門通往偶像與導演所在的後台；穿上魅魔裝、戴上魅魔角頭飾的人可以當一晚「劇場工作人員」。",
    "scene": "紅絲絨的布幕、昏暗的燈光，觀眾席裡的喘息聲比台詞還大聲。",
    "open": {
     "adult": true
@@ -8579,81 +8623,6 @@
      }
     },
     {
-     "title": "偶像演唱與後台互動會",
-     "desc": "遊客：看魅魔偶像唱歌跳舞，散場後參加後台的「互動會」。",
-     "scene": "大舞台上的魅魔偶像唱了一整晚的情歌，歌聲甜得讓人腿軟。散場後，主角拿著互動會的票走進後台，偶像們還沒換下舞台裝，一個個笑著迎上來；說是握手會，握的可不只是手。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 3,
-     "money_cc": 80,
-     "effects": [
-      {
-       "type": "condition",
-       "target": "pc",
-       "condition": "relaxed",
-       "add": true
-      },
-      {
-       "type": "condition",
-       "target": "pc",
-       "condition": "afterglow",
-       "add": true
-      }
-     ],
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 13,
-      "y": 1
-     },
-     "spot_name": "後台"
-    },
-    {
-     "title": "當魅魔偶像",
-     "desc": "劇場工作人員：上台唱歌跳舞，散場後在後台陪粉絲「互動」。劇場付工錢。",
-     "scene": "{role}扮成魅魔偶像站上舞台，唱著甜膩的情歌、跳著挑逗的舞，台下的粉絲揮著螢光棒尖叫。散場後是後台互動會：粉絲們一個一個排隊進來，{role}還穿著舞台裝，從握手、擁抱一路「互動」到最後一位。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 4,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 13,
-      "y": 1
-     },
-     "spot_name": "後台",
-     "role": {
-      "name": "劇場工作人員",
-      "wear": [
-       "succubus_outfit",
-       "succubus_horns"
-      ],
-      "body": [
-       "fem",
-       "andro"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 180
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "drained",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "exposure",
-        "delta": 3
-       }
-      ]
-     }
-    },
-    {
      "title": "夢魔與夢魘的春夢",
      "desc": "遊客：躺進夢之寢室，讓夢魔與夢魘替你編一場春夢。",
      "scene": "夢之寢室裡只有一張大床和搖曳的燭光。主角躺下沒多久就睡著了，夢魔與夢魘溜進夢裡，照著主角心底最深的慾望編出一場春夢：夢裡的人、夢裡的事都太真實，醒來時床單是濕的，耳邊還留著夢魘的笑聲。",
@@ -8683,50 +8652,6 @@
       "y": 6
      },
      "spot_name": "夢之寢室"
-    },
-    {
-     "title": "夢魔導演的排練",
-     "desc": "劇場工作人員：被後台的夢魔導演拉進排練室，一遍又一遍地練。劇場付工錢。",
-     "scene": "後台的夢魔導演看中了{role}：「新戲缺一個角色，你來。」排練室裡，導演要{role}一遍又一遍地演同一場床戲，對手換了一個又一個，導演還親自下場示範：「不對，再來一次，這次要更投入。」",
-     "tags": [
-      "adult"
-     ],
-     "hours": 3,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 13,
-      "y": 6
-     },
-     "spot_name": "排練室",
-     "role": {
-      "name": "劇場工作人員",
-      "wear": [
-       "succubus_outfit",
-       "succubus_horns"
-      ],
-      "body": [
-       "fem",
-       "andro"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 100
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "drained",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "submission",
-        "delta": 1
-       }
-      ]
-     }
     },
     {
      "title": "看魅魔劇團的演出",
@@ -8793,6 +8718,147 @@
         "type": "lewd",
         "stat": "exposure",
         "delta": 4
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "lm_park_exp_theater_back",
+   "name": "夢魔劇場・後台",
+   "emoji": "🎤",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_park_exp_theater",
+    "x": 13,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "體驗劇場東北角通往後台的門：偶像們的休息室（散場後的互動會）與夢魔導演的排練室。拿著互動會門票的遊客與劇場工作人員才進得來。",
+   "scene": "門後是脂粉、花束與汗水的味道，走廊盡頭傳來導演喊「再來一次」的聲音。",
+   "open": {
+    "adult": true
+   },
+   "interior": "sm_park_exp_theater_back",
+   "scenes": [
+    {
+     "title": "偶像演唱與後台互動會",
+     "desc": "遊客：看魅魔偶像唱歌跳舞，散場後參加後台的「互動會」。",
+     "scene": "大舞台上的魅魔偶像唱了一整晚的情歌，歌聲甜得讓人腿軟。散場後，主角拿著互動會的票走進後台，偶像們還沒換下舞台裝，一個個笑著迎上來；說是握手會，握的可不只是手。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 3,
+     "money_cc": 80,
+     "effects": [
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "relaxed",
+       "add": true
+      },
+      {
+       "type": "condition",
+       "target": "pc",
+       "condition": "afterglow",
+       "add": true
+      }
+     ],
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 2,
+      "y": 1
+     },
+     "spot_name": "偶像的休息室"
+    },
+    {
+     "title": "當魅魔偶像",
+     "desc": "劇場工作人員：上台唱歌跳舞，散場後在後台陪粉絲「互動」。劇場付工錢。",
+     "scene": "{role}扮成魅魔偶像站上舞台，唱著甜膩的情歌、跳著挑逗的舞，台下的粉絲揮著螢光棒尖叫。散場後是後台互動會：粉絲們一個一個排隊進來，{role}還穿著舞台裝，從握手、擁抱一路「互動」到最後一位。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 4,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 2,
+      "y": 1
+     },
+     "spot_name": "偶像的休息室",
+     "role": {
+      "name": "劇場工作人員",
+      "wear": [
+       "succubus_outfit",
+       "succubus_horns"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 180
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "drained",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "exposure",
+        "delta": 3
+       }
+      ]
+     }
+    },
+    {
+     "title": "夢魔導演的排練",
+     "desc": "劇場工作人員：被後台的夢魔導演拉進排練室，一遍又一遍地練。劇場付工錢。",
+     "scene": "後台的夢魔導演看中了{role}：「新戲缺一個角色，你來。」排練室裡，導演要{role}一遍又一遍地演同一場床戲，對手換了一個又一個，導演還親自下場示範：「不對，再來一次，這次要更投入。」",
+     "tags": [
+      "adult"
+     ],
+     "hours": 3,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 7,
+      "y": 1
+     },
+     "spot_name": "排練室",
+     "role": {
+      "name": "劇場工作人員",
+      "wear": [
+       "succubus_outfit",
+       "succubus_horns"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 100
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "drained",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "submission",
+        "delta": 1
        }
       ]
      }
