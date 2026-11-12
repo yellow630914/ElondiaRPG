@@ -2,7 +2,7 @@
 // 內建的地標每一項都可以改（位置只能在同一個聚落裡移動），不能刪除；自建的地標可以擺在任何聚落，沒有被用到時可以刪除。
 
 import {
-  ATTR_IDS, geography, isLandmarkId, specialMapLegend, specialMaps, type LandmarkScene, type SpecialMapDef, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
+  ATTR_IDS, geography, isLandmarkId, specialMapLegend, specialMaps, type LandmarkScene, type SceneRole, type SpecialMapDef, landmarkJob, landmarks, landmarkTypes, npcs as namedNpcs, perkRules, stories, workRules, type AttrId, type LandmarkDef,
 } from './data'
 import { cleanFlag } from './storyFlags'
 import { sanitizeEffects } from './storyMods'
@@ -40,11 +40,11 @@ export function landmarkSpotProblem(id: string, at: { area: string; x: number; y
 
 export const LANDMARK_LIMITS = {
   name_chars: 12, desc_chars: 200, scene_chars: 200, types: 4, title_chars: 16, flags: 4,
-  scenes: 12, scene_text_chars: 400, cast: 6, extras_chars: 30, affinity: [0, 30],
+  scenes: 12, scene_text_chars: 400, role_name_chars: 8, enter_text_chars: 200, cast: 6, extras_chars: 30, affinity: [0, 30],
   money: [0, 100_000], hours: [0.5, 24], cooldown: [1, 60], dc: [5, 30], rate_cc: [0, 100], reputation: [0, 100], effects: 6,
 } as const
-/** 參訪與探索可以用的效果（不能讓主角淪為奴隸、開始特殊任務或讓人入隊） */
-export const LANDMARK_EFFECTS: RewardEffect['type'][] = ['money', 'item', 'gear', 'xp', 'reputation', 'affinity', 'memory', 'ability', 'hp', 'perk', 'condition', 'tattoo']
+/** 參訪、探索與場景可以用的效果（不能讓主角淪為奴隸、開始特殊任務或讓人入隊）；慾望指標、泌乳、寄生物（苗床）給成人向的場景 */
+export const LANDMARK_EFFECTS: RewardEffect['type'][] = ['money', 'item', 'gear', 'xp', 'reputation', 'affinity', 'memory', 'ability', 'hp', 'perk', 'condition', 'tattoo', 'lewd', 'lactation', 'parasite']
 
 const str = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
 const num = (v: unknown, [lo, hi]: readonly [number, number], fallback: number, step = 1) => {
@@ -183,6 +183,12 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>, pack?
   if (raw.auction) out.auction = true
   if (raw.black_market) out.black_market = true
   if (raw.arena) out.arena = true
+  // 走進內部的條件與效果（要有內部）
+  if (out.interior && raw.enter) {
+    const role = sanitizeRole(raw.enter.role)
+    const text = str(raw.enter.text, L.enter_text_chars)
+    if (role || text) out.enter = { ...(role ? { role } : {}), ...(text ? { text } : {}) }
+  }
   // 場景：要有名稱與經過；內部的格子要在地圖裡、走得進去
   const scenes = (Array.isArray(raw.scenes) ? raw.scenes : []).map((x) => sanitizeScene(x, out.interior, pack)).filter((x): x is LandmarkScene => !!x).slice(0, L.scenes)
   if (scenes.length) out.scenes = scenes
@@ -235,6 +241,28 @@ export function sanitizeScene(raw: Partial<LandmarkScene> | undefined, interior?
     out.spot = { x: sp!.x, y: sp!.y }
     if (str(raw.spot_name, L.title_chars)) out.spot_name = str(raw.spot_name, L.title_chars)
   }
+  const role = sanitizeRole(raw.role)
+  if (role) out.role = role
+  return out
+}
+
+/** 整理場景的身分（docs/LANDMARKS.md 第 6.1 節）：要有稱呼；沒有任何條件的身分等於隊伍裡每個人 */
+export function sanitizeRole(raw: Partial<SceneRole> | undefined): SceneRole | undefined {
+  const name = str(raw?.name, LANDMARK_LIMITS.role_name_chars)
+  if (!raw || !name) return undefined
+  const out: SceneRole = { name }
+  const wear = [...new Set((Array.isArray(raw.wear) ? raw.wear : []).map((w) => str(w, 60)).filter(Boolean))].slice(0, 6)
+  if (wear.length) out.wear = wear
+  const exposure = num(raw.exposure, [0, 3], 0)
+  if (exposure) out.exposure = exposure
+  if (raw.lactating) out.lactating = true
+  if (raw.can_lactate && !raw.lactating) out.can_lactate = true
+  if (raw.brood) out.brood = true
+  if (raw.pc_only) out.pc_only = true
+  const body = BODIES.filter((b) => Array.isArray(raw.body) && raw.body.includes(b))
+  if (body.length && body.length < BODIES.length) out.body = body
+  const fx = effects(raw.effects)
+  if (fx.length) out.effects = fx
   return out
 }
 

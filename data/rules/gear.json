@@ -371,6 +371,7 @@
     "cowbell_collar": {"slot": "accessory", "name": "牛鈴項圈", "kind": "jewel", "price": 80, "scale": {"save": "third_up"}, "exposure": 0, "outfit": "adult", "adult": true, "desc": "掛著一顆大牛鈴的項圈。"},
     "heart_lock_choker": {"slot": "accessory", "name": "心鎖頸鍊", "kind": "jewel", "price": 100, "scale": {"save": "third_up"}, "exposure": 0, "outfit": "adult", "adult": true, "desc": "墜著一個心形小鎖頭的頸鍊。"},
     "coin_belt": {"slot": "belt", "name": "舞孃錢幣腰帶", "kind": "jewel", "price": 100, "scale": {"save": "half"}, "exposure": 0, "outfit": "adult", "adult": true, "desc": "綴滿小金幣的腰帶，扭腰時嘩啦啦地響。"},
+    "cow_tail": {"slot": "belt", "name": "牛尾腰飾", "kind": "cloth", "price": 30, "scale": {"save": "half"}, "exposure": 0, "outfit": "adult", "adult": true, "desc": "繫在腰後的一條黑白花紋牛尾，尾端一撮毛，走路時跟著甩來甩去。"},
     "greatsword": { "slot": "main_hand", "type": "刀劍", "name": "雙手劍", "kind": "metal", "weapon": "greatsword", "two_handed": true, "price": 500, "scale": {"damage": "full", "hit": "half"}, "desc": "比人還長的雙手劍，揮起來要整個身體一起轉。" },
     "halberd": { "slot": "main_hand", "type": "長柄", "name": "長戟", "kind": "metal", "weapon": "halberd", "two_handed": true, "price": 220, "stats": {"hit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "斧刃、槍尖與鉤子裝在同一根長柄上，搆得比劍遠。" },
     "podao": { "slot": "main_hand", "type": "刀劍", "name": "朴刀", "kind": "metal", "weapon": "podao", "two_handed": true, "price": 360, "stats": {"crit": 1}, "scale": {"damage": "full", "hit": "half"}, "desc": "長柄短刃的雙手刀，大燁的步卒與刀客最常用；比雙手劍輕，砍得也快。" },

@@ -161,7 +161,7 @@ for (const b of blocks) {
 3. 同一個聚落要放好幾個地標時，每放一個就重跑一次（檔案裡的地標會被排除）。
 4. 想挑「感覺對」的位置：神殿旁、城門口、水道邊……看印出的格子與座標決定。
 
-### 2.2 參訪與探索可以用的效果
+### 2.2 參訪、探索與場景可以用的效果
 
 只收下面這些種類（其他種類，例如 `start_story`、`companion`、`enslave_player`，整理時拿掉）；格式和特殊任務的效果相同（[docs/EFFECTS.md](../../docs/EFFECTS.md)）。
 
@@ -179,6 +179,9 @@ for (const b of blocks) {
 | `perk` | `perk`、`options`、`direct` | 可以選的特質 id |
 | `condition` | `condition`、`add` | `data/rules/companions.json` 的非戰鬥狀態（`slave_mark`、`fugitive`、`away` 除外）：`blessed` `cheered` `honed` `relaxed` `well_rested` `tipsy` `shaken` `punished` `fed_light` `fed_fine` `fed_well` `fed_feast` `fed_legend`，成人向的 `aroused` `sensitive` `afterglow` `virile` `dazed` `drained` `disheveled` `parasite_glow`，或同一個包裡的 `mod_cond_…`（[statuses-perks-tattoos.md](statuses-perks-tattoos.md) 第四部分）；`add: false` 是拿掉 |
 | `tattoo` | `template`（圖樣 id）或自己描述 | 見 [statuses-perks-tattoos.md](statuses-perks-tattoos.md) |
+| `lewd` | `stat`、`delta`、`target` | 慾望指標（`lewdness` `sensitivity` `endurance` `submission` `exposure`），delta −100～100；成人向的場景用 |
+| `lactation` | `op`、`target`、`days` | 泌乳 1～60 天（`add`）或停止（`remove`）；場景要標 `lactation` |
+| `parasite` | `parasite`、`op` | 寄生物（`add`／`tame`／`remove`），只給主角；苗床（`brood_…`）的場景要標 `monster_brood` |
 
 ### 2.3 場景（`scenes`）
 
@@ -189,7 +192,7 @@ for (const b of blocks) {
 | `title` | 字串 | 1～16 字 | **必填**：按鈕的名稱；同一個地標裡不要重複 |
 | `scene` | 字串 | 1～400 字 | **必填**：交給 AI 的經過。`{cast}` 換成在場的人 |
 | `desc` | 字串 | ≤ 200 字 | 地點面板的說明（給玩家看） |
-| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling`、`male_partner` | 內容標籤：設定關掉的標籤不出現；`adult` 的場景交給 AI 時標成成人場景 |
+| `tags` | 字串陣列 | `adult`、`ntr`、`non_virgin`、`pc_unwilling`、`male_partner`、`pregnancy`、`lactation`、`monster_brood` | 內容標籤：設定關掉的標籤不出現；`adult` 的場景交給 AI 時標成成人場景 |
 | `requires.flags`、`requires.flags_none`、`requires.flags_any` | 字串陣列 | 各最多 4 個 | 劇情旗標：成立／不成立／任一個成立時才出現 |
 | `pc_body` | 字串陣列 | `masc`、`fem`、`andro` | 只給這些體型的主角；三個都寫或都不寫＝都可以 |
 | `wear` | 字串陣列 | 物品名稱或裝備底材 id | 限定穿著：主角都穿在身上才能選（底材時任何一件同種的服裝都算），例如打工的制服 |
@@ -203,6 +206,23 @@ for (const b of blocks) {
 | `own_cooldown` | `true` | | 自己算冷卻，不和其他場景共用（例如咖啡廳前廳的喝茶） |
 | `spot` | `{ "x": 整數, "y": 整數 }` | 內部地圖裡走得到的一格（不是牆或水） | 只在內部的那一格出現；沒寫時在外面的地標格上。地標沒有 `interior` 時拿掉 |
 | `spot_name` | 字串 | ≤ 16 字 | 那一格的名稱（地圖提示、地點面板的標題），例如「米米的小房間」 |
+| `role` | 物件 | 見下表 | 身分：隊伍裡符合條件的人（主角或夥伴）全部一起參加，例如穿著乳牛裝的人當牧場的乳牛（[LANDMARKS](../../docs/LANDMARKS.md) 6.1 節）。`scene` 裡的 `{role}` 換成他們 |
+
+身分（`role`，場景的 `role` 與地標的 `enter.role` 一樣）：
+
+| 欄位 | 型別 | 範圍 | 說明 |
+|---|---|---|---|
+| `name` | 字串 | 1～8 字 | **必填**：身分的稱呼（按鈕停用時的說明、地點面板的「當…」） |
+| `wear` | 字串陣列 | 物品名稱或底材 id，最多 6 個 | 都穿在身上才算 |
+| `exposure` | 整數 | 1～3 | 曝露度至少多少 |
+| `lactating` | `true` | | 正在泌乳 |
+| `can_lactate` | `true` | | 身體會泌乳（給泌乳的效果用；寫了 `lactating` 時不用寫） |
+| `brood` | `true` | | 身上有怪物的苗床（只有主角） |
+| `pc_only` | `true` | | 只有主角能當 |
+| `body` | 字串陣列 | `masc`、`fem`、`andro` | 只給這些體型的人（看那個人自己的體型；三個都寫或都不寫＝都可以；陽剛體型的設定同 `pc_body`） |
+| `effects` | 效果陣列 | 最多 6 個 | 每個參加的人各一份，對象換成那個人；錢、物品照人數給；寄生物只給主角（寫了苗床時只有主角能當） |
+
+地標的 `enter`（只有有 `interior` 的地標）：`{ "role": 身分, "text": "走進去時的日誌（≤ 200 字，{role} 換成符合的人）" }`。隊伍裡要有人符合 `role` 才走得進內部，符合的人走進去時各得到 `role.effects`。
 
 ## 3. 可以引用什麼
 

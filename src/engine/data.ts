@@ -507,6 +507,38 @@ export interface LandmarkDef {
   black_market?: boolean
   /** 淫鬥場（成人向，arena.ts；規則在 lewd.json 的 arena） */
   arena?: boolean
+  /**
+   * 走進內部的條件與效果（docs/LANDMARKS.md 第 6.1 節）：隊伍裡要有人符合 role 才進得去，
+   * 符合的人進去時各得到 role.effects（例如淫植花園：穿得夠少才讓進，一進去就沾上花粉）
+   */
+  enter?: { role?: SceneRole; text?: string }
+}
+/**
+ * 場景的身分（docs/LANDMARKS.md 第 6.1 節）：主角或隊上的夥伴符合條件才能當這個身分（例如穿著乳牛裝的人當牧場的乳牛）。
+ * 隊伍裡符合的人全部一起參加；一個都沒有時按鈕停用並說明。經過裡的 {role} 換成他們的名字，role.effects 每個人各得到一份
+ */
+export interface SceneRole {
+  /** 這個身分的稱呼（乳牛、苗床、表演者……） */
+  name: string
+  /** 限定穿著：物品名稱或底材 id，都穿在身上才算 */
+  wear?: string[]
+  /** 曝露度至少多少（0～3，lewd.ts 的 exposureLevel） */
+  exposure?: number
+  /** 現在在泌乳（內容篩選「泌乳」要開） */
+  lactating?: boolean
+  /** 身體會泌乳（女性、扶她、TS，或陰柔、中性的體型；給泌乳的效果用） */
+  can_lactate?: boolean
+  /** 身上有怪物的苗床（只有主角會是苗床） */
+  brood?: boolean
+  /** 只有主角能當（例如效果是成為苗床：苗床只給主角） */
+  pc_only?: boolean
+  /**
+   * 只給這些體型的人（看參加的那個人自己的體型；不寫＝都可以）。和場景的 pc_body 一樣，
+   * 設定打開「陽剛體型也能遇到『只給陰柔、中性』的成人內容」時，陽剛體型的人也能當
+   */
+  body?: ('masc' | 'fem' | 'andro')[]
+  /** 每個當這個身分的人各得到的效果（對象換成那個人；寄生物、苗床一律是主角） */
+  effects?: RewardEffect[]
 }
 /** 地標的場景（docs/LANDMARKS.md 第 6 節） */
 export interface LandmarkScene {
@@ -541,6 +573,8 @@ export interface LandmarkScene {
   spot?: { x: number; y: number }
   /** 那一格的名稱（地圖上的提示，例如「米米的小房間」） */
   spot_name?: string
+  /** 身分：隊伍裡符合條件的人才能參加（例如穿著乳牛裝的人當乳牛），見 SceneRole */
+  role?: SceneRole
 }
 export interface LandmarkOpen {
   /** 只在白天（6～18 時）或只在夜裡開放 */

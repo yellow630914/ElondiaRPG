@@ -51,10 +51,10 @@ describe('built-in landmarks', () => {
       cells.add(`${l.at.area}:${l.at.x},${l.at.y}`)
       expect(l.types.length).toBeGreaterThan(0)
       for (const t of l.types) expect(landmarkTypes[t], `${l.id} ${t}`).toBeDefined()
-      // 地下街裡的地標：同一個聚落的地下街，地圖上畫的空地
+      // 地下街（或緋夢樂園的入口廣場、主題體驗區與各館）裡的地標：同一個聚落的那張地圖上畫的空地
       const sm = specialMapOfKey(l.at.area)
       if (sm) {
-        expect(sm.underworld, l.id).toBe(true)
+        expect(sm.underworld || sm.id === 'sm_lust_park' || sm.id.startsWith('sm_park_exp'), l.id).toBe(true)
         expect(sm.location).toBe(l.location)
         expect(sm.grid![l.at.y]![l.at.x], l.id).toBe('.')
         expect(landmarkSpotProblem(l.id, l.at), l.id).toBeUndefined()

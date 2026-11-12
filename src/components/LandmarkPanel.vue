@@ -3,7 +3,7 @@ import AuctionPanel from './AuctionPanel.vue'
 import ArenaPanel from './ArenaPanel.vue'
 import MarketPanel from './MarketPanel.vue'
 import { computed, ref } from 'vue'
-import { blockedReason, insideLandmark, interiorBlocked, landmarkClosed, landmarkHere, sceneBlocked, sceneCastNames, scenesHere } from '@/engine/landmarks'
+import { blockedReason, insideLandmark, interiorBlocked, landmarkClosed, landmarkHere, roleMembers, sceneBlocked, sceneCastNames, scenesHere } from '@/engine/landmarks'
 import { attrName, specialMaps } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { effectText } from '@/engine/trade'
@@ -23,7 +23,9 @@ const exploreBlocked = computed(() => (l.value?.explore ? blockedReason(s.value,
 // 有內部的地標：站在外面時可以走進去（裡面從出口離開）
 const interior = computed(() => (l.value?.interior && !insideLandmark(s.value, l.value) ? specialMaps[l.value.interior] : undefined))
 const interiorWhy = computed(() => (interior.value ? interiorBlocked(s.value) : undefined))
-const scenes = computed(() => scenesHere(s.value).map((x) => ({ ...x, blocked: sceneBlocked(s.value, x.index), cast: sceneCastNames(s.value, x.scene).join('、') })))
+// 有身分的場景：現在符合條件、會一起參加的人（主角寫「你」）
+const roleNames = (role: NonNullable<ReturnType<typeof scenesHere>[number]['scene']['role']>) => roleMembers(s.value, role).map((c) => (c.isPlayer ? '你' : c.name)).join('、')
+const scenes = computed(() => scenesHere(s.value).map((x) => ({ ...x, blocked: sceneBlocked(s.value, x.index), cast: sceneCastNames(s.value, x.scene).join('、'), role: x.scene.role ? roleNames(x.scene.role) : '' })))
 const gains = (list: { type: string }[] = []) => list.map((e) => effectText(s.value, e as never)).join('、')
 const text = ref('')
 const use = ref('')
@@ -56,6 +58,7 @@ function explore() {
       </div>
       <p v-if="x.scene.desc" class="muted">{{ x.scene.desc }}</p>
       <p v-if="x.cast" class="muted">在場：{{ x.cast }}</p>
+      <p v-if="x.role" class="muted">當{{ x.scene.role!.name }}：{{ x.role }}</p>
       <button class="small" :disabled="!!x.blocked || game.judging || !!s.pendingAction" :title="x.blocked ?? ''" @click="game.playLandmarkScene(x.index)">{{ x.blocked ?? x.scene.title }}</button>
     </div>
     <AuctionPanel v-if="l.auction" />

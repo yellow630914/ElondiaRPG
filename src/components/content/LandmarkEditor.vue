@@ -5,6 +5,7 @@ import { settlementArea } from '@/engine/grid'
 import { builtinLandmark, LANDMARK_EFFECTS, LANDMARK_LIMITS, landmarkTraining, landmarkUsage, type LandmarkMod } from '@/engine/landmarkMods'
 import { builtinPerk } from '@/engine/mods'
 import EffectsEditor from './EffectsEditor.vue'
+import SceneRoleEditor from './SceneRoleEditor.vue'
 import type { CellRef } from '@/engine/shopMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -35,7 +36,8 @@ function current(): Draft {
   const l = clone(landmarks[props.id]!)
   return {
     scene: '', ...l, open: l.open ?? {}, ...(builtinLandmark(props.id) ? {} : { custom: true }),
-    scenes: (l.scenes ?? []).map((sc) => ({ ...sc, requires: sc.requires ?? {}, cast: sc.cast ?? [], effects: sc.effects ?? [] })),
+    scenes: (l.scenes ?? []).map((sc) => ({ ...sc, requires: sc.requires ?? {}, cast: sc.cast ?? [], effects: sc.effects ?? [], ...(sc.role ? { role: { ...sc.role, effects: sc.role.effects ?? [] } } : {}) })),
+    enter: { ...l.enter, ...(l.enter?.role ? { role: { ...l.enter.role, effects: l.enter.role.effects ?? [] } } : {}) },
     train: landmarkTraining(props.id), flagsText: (l.open?.flags ?? []).join('、'), flagsNoneText: (l.open?.flags_none ?? []).join('、'),
   }
 }
@@ -224,6 +226,10 @@ const wearOptions = computed(() => wearChoices())
           <option v-for="m in interiors" :key="m.id" :value="m.id">{{ m.name }}</option>
         </select>
       </label>
+      <template v-if="draft.interior && draft.enter">
+        <SceneRoleEditor v-model="draft.enter.role" label="走進內部的身分：隊伍裡要有人符合才進得去" hint="例如淫植花園只讓穿得夠少的人進去：符合的人走進去時各得到效果（例如沾上花粉而發情），寫一則日誌。" />
+        <label v-if="draft.enter.role" class="block"><span>走進去時的日誌（選填） <Hint text="{role} 換成符合的人；沒寫時是「某某走進了（內部的名稱）」。" /></span><input v-model="draft.enter.text" :maxlength="LANDMARK_LIMITS.enter_text_chars" /></label>
+      </template>
       <label class="check small"><input type="checkbox" :checked="!!draft.auction" @change="($event.target as HTMLInputElement).checked ? (draft.auction = true) : delete draft.auction" /> 拍賣會（成人向：每天的拍品、出價、寄賣，規則在 lewd.json 的 auction）</label>
       <label class="check small"><input type="checkbox" :checked="!!draft.black_market" @change="($event.target as HTMLInputElement).checked ? (draft.black_market = true) : delete draft.black_market" /> 黑市（這座聚落不公開的奴隸買賣與今天的珍品；聚落要有黑市，見 slavery.json 的 markets）</label>
       <label class="check small"><input type="checkbox" :checked="!!draft.arena" @change="($event.target as HTMLInputElement).checked ? (draft.arena = true) : delete draft.arena" /> 淫鬥場（成人向：三種擂臺，規則在 lewd.json 的 arena）</label>
@@ -248,6 +254,7 @@ const wearOptions = computed(() => wearChoices())
         <CheckList v-model="sc.tags" label="內容標籤" :options="CONTENT_TAG_OPTIONS" />
         <CheckList v-model="sc.pc_body" label="只給這些主角" hint="依主角的體型；都不勾＝都可以。勾了女性形象、中性而沒勾男性形象時，設定打開「陽剛體型也能遇到『只給陰柔、中性』的成人內容」的玩家一樣會遇到。" :options="BODY_OPTIONS" />
         <div class="row small">限定穿著 <Hint text="主角要穿著這些才能選（例如打工的制服）。寫底材時任何一件同種的服裝都算。" /> <NameListInput v-model="sc.wear" :options="wearOptions" placeholder="底材或物品名稱" /></div>
+        <SceneRoleEditor v-model="sc.role" label="身分：隊伍裡符合條件的人參加" hint="例如穿著乳牛裝的人當牧場的乳牛：主角或夥伴符合條件就能選，符合的人全部一起參加；經過裡的 {role} 換成他們的名字。一個都沒有時按鈕停用並說明。" />
         <RequiresEditor :model-value="sc.requires!" label="場景出現的條件" placeholder="全部成立才出現" :extras="false" any @update:model-value="(v) => (sc.requires = v)" />
         <div class="small">在場的固定 NPC（最多 {{ LANDMARK_LIMITS.cast }} 個） <Hint text="寫了旗標的人，旗標成立才在場；沒寫的人一定在場（死了或被抓走時這個場景不出現）。" /></div>
         <div v-for="(c, j) in sc.cast ?? []" :key="j" class="grid">
