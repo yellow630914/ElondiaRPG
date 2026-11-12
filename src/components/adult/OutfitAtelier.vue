@@ -28,7 +28,7 @@ onMounted(() => {
 })
 
 // ---- 淫服／拘束具 ----
-// 拘束具也在這裡委託（詛咒具這類專屬底材不能做）；拘束具穿在額外飾品欄時加成不生效（gear.ts 的 bonusesOff）。
+// 拘束具也在這裡委託（詛咒具這類專屬底材不能做）；拘束具穿在額外飾品欄時，慾望指標與減值以外的加成不生效（gear.ts 的 bonusesOff）。
 const MODES = [['outfit', '👗 淫服'], ['restraint', '⛓️ 拘束具']] as const
 const mode = ref<(typeof MODES)[number][0]>('outfit')
 const isOutfit = computed(() => mode.value === 'outfit')
@@ -116,7 +116,7 @@ function order() {
     <template #frame><AdultDeco kind="atelier" /></template>
     <div class="modes">
       <button v-for="[k, n] in MODES" :key="k" class="mode" :class="{ on: mode === k }" @click="pickMode(k)">{{ n }}</button>
-      <span v-if="!isOutfit" class="muted small">拘束具穿在額外飾品欄時只留下減值，加成不生效</span>
+      <span v-if="!isOutfit" class="muted small">拘束具穿在額外飾品欄時只留下減值與慾望指標，其他加成不生效</span>
     </div>
     <div class="atelier">
 

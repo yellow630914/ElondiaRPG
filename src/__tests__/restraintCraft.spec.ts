@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { attrOf } from '@/engine/character'
 import { itemDef, lewdRules } from '@/engine/data'
 import { commissionHere, craftPlan, isAdultCraft, makeTarget, outfitLewdBonus, selfLewdBonus, setupMake } from '@/engine/craft'
-import { bonusesOff, gearLewdOf, gearRules } from '@/engine/gear'
+import { bonusesOff, gearRules } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { gearLewd, lewdOf, lewdPower, lewdPowerOf } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
@@ -18,7 +18,7 @@ function game(): GameState {
 const spec = (name: string) => ({ ...itemDef(name)!.gear! }) as GearSpec
 
 describe('拘束具放在額外飾品欄', () => {
-  it('加成不生效，減值照算（屬性、慾望指標）', () => {
+  it('加成不生效，減值與慾望指標照算', () => {
     const state = game()
     const pc = pcOf(state)
     const str = attrOf(pc, 'str'), cha = attrOf(pc, 'cha')
@@ -32,9 +32,10 @@ describe('拘束具放在額外飾品欄', () => {
     expect(bonusesOff('extra_1', pc.gear!.extra_1.spec)).toBe(true)
     expect(attrOf(pc, 'str')).toBe(str)
     expect(attrOf(pc, 'cha')).toBe(cha - 2)
-    expect(gearLewd(pc).submission).toBe(0)
-    // 負的慾望指標照算
-    expect(gearLewdOf({ ...spec('刺釘項圈'), lewd: { endurance: -4, lewdness: 3 } }, true)).toEqual({ endurance: -4 })
+    // 慾望指標照算（底材本身的順從 +5、打造時加的）
+    expect(gearLewd(pc).submission).toBe(5)
+    pc.gear!.extra_1.spec = { ...pc.gear!.extra_1.spec, lewd: { submission: 7 } }
+    expect(gearLewd(pc).submission).toBe(12)
   })
 
   it('一般的飾品放在額外飾品欄照常有加成', () => {

@@ -196,7 +196,7 @@ const totals = computed(() => {
         <button v-else-if="current.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
       </div>
       <div v-if="current && bonusesOff(selected, current.spec)" class="lock-row small">
-        <GameIcon name="warning" :size="14" /><span>放在額外飾品欄：拘束具的加成（附魔、材料特性、正的檢定加值、慾望指標加值）不生效，減值照算</span>
+        <GameIcon name="warning" :size="14" /><span>放在額外飾品欄：拘束具的加成（附魔、材料特性、正的屬性與檢定加值）不生效；減值與慾望指標照算</span>
       </div>
       <div v-if="fused" class="lock-row small">
         <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>

@@ -8,7 +8,7 @@ import { residents, trainingRoomOf } from './homes'
 import { abilities, lewdRules, locationById, stories, lockedByThing, type LewdKey, type LewdTitleDef, type NpcSexSeed } from './data'
 import { experienceLewdness, npcSexSeed } from './sexRecord'
 import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
-import { bonusesOff, gearLewdOf, gearRules, type VacuumSide } from './gear'
+import { gearLewdOf, gearRules, type VacuumSide } from './gear'
 import { gameRule } from './gameRules'
 import { characterBody } from './look'
 import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
@@ -34,9 +34,9 @@ export function baseLewd(c: Pick<Character, 'lewd'>): LewdStats {
 /** 身上裝備的加值合計（每項全身 ±total_cap） */
 export function gearLewd(c: Pick<Character, 'gear'>): Record<LewdStat, number> {
   const out = { lewdness: 0, sensitivity: 0, endurance: 0, submission: 0 }
-  for (const [slot, g] of Object.entries(c.gear ?? {})) {
+  for (const g of Object.values(c.gear ?? {})) {
     if (!g) continue
-    const b = gearLewdOf(g.spec, bonusesOff(slot, g.spec))
+    const b = gearLewdOf(g.spec)
     for (const k of LEWD_STATS) out[k] += b[k] ?? 0
   }
   const cap = lewdRules.gear.total_cap

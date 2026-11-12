@@ -82,10 +82,9 @@ export const OUTFIT_KINDS: Record<OutfitKind, string> = { regular: '常規服裝
 
 const LEWD_STAT_IDS: LewdStat[] = ['lewdness', 'sensitivity', 'endurance', 'submission']
 
-/** 一件裝備的加值：底材的預設（成人向服裝、束縛用的底材）加上物品寫的，每項 ±item_cap */
 /**
- * 拘束具放在額外飾品欄：好處不算（附魔、材料特性、屬性與檢定的加值、物品自己的慾望指標加值），
- * 扣分與拘束、雙面效應照算（docs/ITEMS.md 第 2 節）
+ * 拘束具放在額外飾品欄：好處不算（附魔、材料特性、屬性與檢定的加值），
+ * 扣分、慾望指標（底材的預設與物品寫的）、拘束與雙面效應照算（docs/ITEMS.md 第 2 節）
  */
 export function bonusesOff(slot: string, spec: GearSpec): boolean {
   return isExtraSlot(slot as GearSlot) && !!gearRules.bases[spec.base]?.restraint
@@ -95,18 +94,16 @@ export function onlyNegative<T extends object>(m: T | undefined): T {
   return Object.fromEntries(Object.entries(m ?? {}).filter(([, v]) => typeof v === 'number' && v < 0)) as T
 }
 
-/** 一件裝備的慾望指標加值（底材的預設＋物品自己的；off：放在額外飾品欄的拘束具，物品自己的只算扣分） */
-export function gearLewdOf(spec: GearSpec, off = false): Partial<Record<LewdStat, number>> {
+/** 一件裝備的慾望指標加值：底材的預設（成人向服裝、束縛用的底材）加上物品寫的（含打造時加的），每項 ±item_cap；放在哪一格都照算 */
+export function gearLewdOf(spec: GearSpec): Partial<Record<LewdStat, number>> {
   const base = gearRules.bases[spec.base]
   const out: Partial<Record<LewdStat, number>> = {}
   const add = (b?: Partial<Record<LewdStat, number>>) => {
     for (const k of LEWD_STAT_IDS) if (b?.[k]) out[k] = (out[k] ?? 0) + b[k]!
   }
-  // off：拘束具放在額外飾品欄，只留下負的（底材預設的加值也不算）
-  const keep = (b?: Partial<Record<LewdStat, number>>) => (off ? onlyNegative(b) : b)
-  if (base?.outfit) add(keep(lewdRules.gear.outfit[base.outfit]?.lewd))
-  if (base?.restraint) add(keep(lewdRules.gear.restraint.lewd))
-  add(keep(spec.lewd))
+  if (base?.outfit) add(lewdRules.gear.outfit[base.outfit]?.lewd)
+  if (base?.restraint) add(lewdRules.gear.restraint.lewd)
+  add(spec.lewd)
   const cap = lewdRules.gear.item_cap
   for (const k of LEWD_STAT_IDS) if (out[k] !== undefined) out[k] = Math.max(-cap, Math.min(cap, out[k]!))
   return out
