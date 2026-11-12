@@ -6,7 +6,7 @@
 //
 // 旅店（inn）不是商店類型，但也照這裡命名。自建的商店與流浪商人用商店類型本身的名稱。
 
-import { isCustomShopId, locationById, shopDef, shopRules, type ShopType } from './data'
+import { COSTUME_SHOPS, isCustomShopId, locationById, shopDef, shopRules, type ShopType } from './data'
 import { hashString } from './npcs'
 
 /** 可以命名的店：商店類型與旅店 */
@@ -27,7 +27,7 @@ function pick<T>(list: readonly T[] | undefined, seed: number, salt: number): T 
 }
 
 /** 同一個地點的店依這個順序錯開字詞與氛圍，不會兩間店撞名 */
-const KIND_ORDER: string[] = ['tavern', 'inn', 'general', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'temple', 'adult_shop', 'costume']
+const KIND_ORDER: string[] = ['tavern', 'inn', 'general', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'temple', 'adult_shop', ...COSTUME_SHOPS]
 
 /** 第 n 間店用的位置：以地點的種子為起點，間隔和清單長度互質，前 len 間店不會重複 */
 function spread<T>(list: readonly T[] | undefined, seed: number, n: number): T | undefined {

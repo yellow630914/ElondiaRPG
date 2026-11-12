@@ -2092,7 +2092,16 @@ export function saveItems(): ItemDef[] {
   return [...saveItemIndex.values()]
 }
 
-export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'adult_shop' | 'costume'
+/** 緋夢樂園主題體驗區各館的換衣間（每館一種店，賣那一館的五件套；worldgen/scripts/elondia/park_outfits49.py） */
+export const COSTUME_SHOPS = ['costume_ranch', 'costume_greenhouse', 'costume_aquarium', 'costume_garden', 'costume_theater'] as const
+export type CostumeShop = (typeof COSTUME_SHOPS)[number]
+/** 換衣間在地圖上的名字 */
+export const COSTUME_SHOP_NAMES: Record<CostumeShop, string> = {
+  costume_ranch: '牧場換衣間', costume_greenhouse: '溫室換衣間', costume_aquarium: '水族館換衣間', costume_garden: '花園換衣間', costume_theater: '劇場換衣間',
+}
+/** 每一間換衣間都用同一個值（圖示、屋頂顏色……） */
+export const forCostumeShops = <T>(v: T) => Object.fromEntries(COSTUME_SHOPS.map((k) => [k, v])) as Record<CostumeShop, T>
+export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'adult_shop' | CostumeShop
 /** 自建的商店：id 是 shop_ 開頭（只有小寫英文與數字），地圖格子的種類就是這個 id */
 export type CustomShopId = `shop_${string}`
 export type ShopType = BuiltinShopType | CustomShopId
@@ -2101,7 +2110,7 @@ export function isCustomShopId(id: string): id is CustomShopId {
   return CUSTOM_SHOP_ID.test(id)
 }
 /** 可以指定固定 NPC 擔任店主的內建店種（流浪商人不是固定的店）；自建的商店也可以 */
-export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop', 'costume']
+export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop', ...COSTUME_SHOPS]
 /** 商店的設定（自建的商店被刪掉時丟出錯誤） */
 export function shopDef(type: ShopType): ShopTypeDef {
   const d = shopRules.types[type]

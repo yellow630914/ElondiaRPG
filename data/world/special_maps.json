@@ -802,11 +802,11 @@
     "sm_park_experience": {
       "name": "緋夢樂園・主題體驗區",
       "location": "bloodplume",
-      "desc": "入口廣場旁另闢的一區，招牌寫著「主題體驗區——不用打鬥，只要好好享受」。五座小館一字排開，各是一個園區的體驗館：淫獸牧場的牛舍、蟲之溫室的玻璃屋、觸手水族館的水槽廳、淫植花園的花粉溫室、夢魔劇場的小劇場。樂園服裝店（換衣間）的魅魔店員替想當「展示品」的客人換上各館規定的五件套服裝；只想參觀的買票就能進去。這裡的魔物都養得很乖——至少不會在你沒答應的時候撲上來。",
+      "desc": "入口廣場旁另闢的一區，招牌寫著「主題體驗區——不用打鬥，只要好好享受」。五座小館一字排開，各是一個園區的體驗館：淫獸牧場的牛舍、蟲之溫室的玻璃屋、觸手水族館的水槽廳、淫植花園的花粉溫室、夢魔劇場的小劇場。每一館都有自己的換衣間，魅魔店員替想當「展示品」的客人換上那一館規定的五件套服裝（花園的換衣間開在體驗區裡，花瓣裝要先換好才進得了花粉溫室）；只想參觀的買票就能進去。這裡的魔物都養得很乖——至少不會在你沒答應的時候撲上來。",
       "lighting": "lit",
       "refresh": false,
       "peaceful": true,
-      "shops": [{"shop": "adult_shop", "x": 1, "y": 5}, {"shop": "costume", "x": 9, "y": 5}],
+      "shops": [{"shop": "adult_shop", "x": 1, "y": 5}, {"shop": "costume_garden", "x": 9, "y": 5}],
       "grid": [
         "###########",
         "#.........#",
@@ -824,6 +824,7 @@
       "lighting": "lit",
       "refresh": false,
       "peaceful": true,
+      "shops": [{"shop": "costume_ranch", "x": 1, "y": 1}],
       "grid": [
         "#############",
         "#...........#",
@@ -856,6 +857,7 @@
       "lighting": "lit",
       "refresh": false,
       "peaceful": true,
+      "shops": [{"shop": "costume_greenhouse", "x": 1, "y": 1}],
       "grid": [
         "#############",
         "#...........#",
@@ -888,6 +890,7 @@
       "lighting": "lit",
       "refresh": false,
       "peaceful": true,
+      "shops": [{"shop": "costume_aquarium", "x": 1, "y": 6}],
       "grid": [
         "################",
         "#~~#~~#~~#~~#~~#",
@@ -954,6 +957,7 @@
       "lighting": "lit",
       "refresh": false,
       "peaceful": true,
+      "shops": [{"shop": "costume_theater", "x": 13, "y": 6}],
       "grid": [
         "###############",
         "#..#.......#..#",

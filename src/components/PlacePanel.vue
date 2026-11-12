@@ -4,7 +4,7 @@ import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { attrName, isCustomShopId, landmarkDef, locationById, parkPlaza, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
+import { COSTUME_SHOPS, attrName, isCustomShopId, landmarkDef, locationById, parkPlaza, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
@@ -189,7 +189,7 @@ const shopMenu = computed<MenuItem[]>(() => (broodExtracts.value.length
   ? [{ id: 'brood', icon: 'potion', label: '取出苗床', detail: '請鍊金師取出卵生、寄生的苗床', badge: broodExtracts.value.length, tone: 'bad' }]
   : []))
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商、拘束具店（地下街）：各自的交易清單
-const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop', 'costume'] as const
+const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop', ...COSTUME_SHOPS] as const
 // 自建的商店（內容編輯器擺的）：格子的種類就是商店的 id
 const shopHere = computed<ShopType | null>(() => {
   void content.version

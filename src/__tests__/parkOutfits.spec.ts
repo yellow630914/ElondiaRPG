@@ -1,10 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { enemies, itemDef, itemRules, landmarks, shopRules, specialMaps } from '@/engine/data'
-import { gearRules } from '@/engine/gear'
+import { COSTUME_SHOPS, enemies, itemDef, itemRules, landmarks, shopRules, specialMaps } from '@/engine/data'
+import { gearRules, missingWear, wearName, wearUnfit } from '@/engine/gear'
 import { currentCell, enterLocation, standOn } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
 import { exposureLevel } from '@/engine/lewd'
 import { pcOf } from '@/engine/party'
+import { enterLandmark, interiorBlocked, roleMembers } from '@/engine/landmarks'
+import { sanitizeShopMod } from '@/engine/shopMods'
 import { enterSpecial } from '@/engine/specialMaps'
 import { addItem, migrate, newGame } from '@/engine/state'
 import { shopState } from '@/engine/trade'
@@ -71,24 +73,83 @@ describe('五件套', () => {
     const pc = pcOf(state)
     state.inventory.push({ name: '絲綢乳牛比基尼', qty: 2 }, { name: '絲綢乳牛比基尼上衣', qty: 1 })
     pc.gear!.body = { name: '亞麻乳牛比基尼', spec: { base: 'cow_bikini', material: 'linen' } }
+    // 當天已經上架的商品與拍賣會的拍品（0.6.2 的存檔）
+    state.shops = { 'albena/adult_shop': { day: state.time.day, keeper: 'k', source: 'rules', deals: [{ id: 'item:絲綢乳牛比基尼', title: '絲綢乳牛比基尼', gives: [{ type: 'money', amount: 120 }], gets: [{ type: 'item', name: '絲綢乳牛比基尼', qty: 1 }], stock: 1 }] } }
+    state.auction = { day: state.time.day, location: state.location, lots: [{ name: '月影絲乳牛比基尼', start: 100, rival: 200, won: 150 }] }
     migrate(state)
+    const deal = state.shops['albena/adult_shop']!.deals[0]!
+    expect([deal.id, deal.title, (deal.gets[0] as { name: string }).name]).toEqual(['item:絲綢乳牛比基尼上衣', '絲綢乳牛比基尼上衣', '絲綢乳牛比基尼上衣'])
+    expect(state.auction.lots[0]).toMatchObject({ name: '月影絲乳牛比基尼上衣', won: 150 })
     expect(state.inventory.find((i) => i.name === '絲綢乳牛比基尼上衣')?.qty).toBe(3)
     expect(state.inventory.some((i) => i.name === '絲綢乳牛比基尼')).toBe(false)
     expect(pc.gear!.body!.name).toBe('亞麻乳牛比基尼上衣')
   })
 })
 
-describe('樂園服裝店', () => {
-  it('體驗區入口的換衣間：五套的第一、二級每天都有，第三級隨機幾件', () => {
-    expect(specialMaps.sm_park_experience!.shops).toContainEqual({ shop: 'costume', x: 9, y: 5 })
-    const state = game()
-    enterSpecial(state, 'sm_park_experience')
-    expect(standOn(state, 'costume')).toBe(true)
-    expect(currentCell(state).kind).toBe('costume')
-    const sold = new Set(shopState(state, 'costume').deals.map((d) => d.title))
-    for (const set of Object.values(SETS)) for (const b of set) for (const i of itemsOf(b)) if (tierOf(i.name) <= 2) expect(sold.has(i.name), i.name).toBe(true)
-    expect([...sold].filter((n) => itemDef(n) && tierOf(n) === 3).length).toBeGreaterThan(0)
-    expect(shopRules.types.costume!.name).toBe('樂園服裝店')
+// 每館一間換衣間（服裝分館販賣）：四館在館裡，花園的在體驗區（進花粉溫室前就要穿好）
+const SHOP_OF: Record<string, string> = {
+  lm_park_exp_ranch: 'costume_ranch', lm_park_exp_greenhouse: 'costume_greenhouse', lm_park_exp_aquarium: 'costume_aquarium', lm_park_exp_garden: 'costume_garden', lm_park_exp_theater: 'costume_theater',
+}
+/** 這一館的服裝（五件加上人馬族版） */
+const piecesOf = (hall: string) => [...SETS[hall]!, ...Object.entries(gearRules.bases).filter(([, b]) => b.wear_as && SETS[hall]!.includes(b.wear_as)).map(([id]) => id)]
+
+describe('換衣間', () => {
+  it('每館一間：只賣自己那一館的服裝，第一、二級每天都有，第三級隨機幾件；固定清單在編輯器存得下', () => {
+    expect(Object.keys(shopRules.types).filter((t) => t.startsWith('costume')).sort()).toEqual([...COSTUME_SHOPS].sort())
+    for (const [hall, sid] of Object.entries(SHOP_OF)) {
+      const map = hall === 'lm_park_exp_garden' ? 'sm_park_experience' : landmarks[hall]!.interior!
+      expect(specialMaps[map]!.shops!.map((x) => x.shop), hall).toContain(sid)
+      const state = game()
+      enterSpecial(state, map)
+      expect(standOn(state, sid), sid).toBe(true)
+      const sold = new Set(shopState(state, sid as never).deals.map((d) => d.title))
+      const own = new Set(piecesOf(hall))
+      for (const b of own) for (const i of itemsOf(b)) if (tierOf(i.name) <= 2) expect(sold.has(i.name), i.name).toBe(true)
+      for (const n of sold) expect(own.has(itemDef(n)!.gear!.base), `${sid} ${n}`).toBe(true)
+      expect([...sold].filter((n) => tierOf(n) === 3).length, sid).toBeGreaterThan(0)
+      const d = shopRules.types[sid as never]!
+      expect(sanitizeShopMod(sid, { fixed: JSON.parse(JSON.stringify(d.fixed)) }).fixed, sid).toEqual(d.fixed)
+    }
+    expect(specialMaps.sm_park_experience!.shops!.some((x) => x.shop === ('costume' as never))).toBe(false)
+  })
+})
+
+describe('人馬族版', () => {
+  it('人馬族穿不了的下身、鞋子、腿部飾品各有一件人馬族版，當作原本那件', () => {
+    const centaurState = newGame({ name: '艾菈', race: 'centaur', classId: 'bard', gender: '女', seed: 7, birthplace: 'bloodplume' })
+    for (const [hall, set] of Object.entries(SETS)) {
+      // 每一館都穿得齊
+      expect(wearUnfit('centaur', set), hall).toEqual([])
+      const pc = pcOf(centaurState)
+      pc.gear = {}
+      for (const b of set) {
+        const alt = Object.entries(gearRules.bases).find(([, x]) => x.wear_as === b)?.[0]
+        const item = itemsOf(alt ?? b).find((i) => tierOf(i.name) === 1)!
+        addItem(centaurState.inventory, item.name, 1)
+        equipItem(centaurState, item.name, pc.id)
+      }
+      expect(missingWear(pc, set), hall).toEqual([])
+    }
+    expect(wearName('cow_bikini_bottom')).toBe('乳牛比基尼下著（人馬族穿乳牛花紋馬衣）')
+    // 人類穿不了人馬族版
+    expect(wearUnfit('human', ['cow_horse_cloth'])).toEqual(['cow_horse_cloth'])
+  })
+
+  it('人馬族穿好花瓣裝（花瓣馬衣、葉片蹄套）就能進花粉溫室、當體驗者', () => {
+    const state = newGame({ name: '艾菈', race: 'centaur', classId: 'bard', gender: '女', seed: 7, birthplace: 'bloodplume' })
+    const pc = pcOf(state)
+    for (const n of ['亞麻花瓣胸衣', '亞麻花瓣馬衣', '亞麻花冠', '亞麻藤蔓手環', '亞麻葉片蹄套']) {
+      addItem(state.inventory, n, 1)
+      equipItem(state, n, pc.id)
+    }
+    enterSpecial(state, 'sm_lust_park')
+    for (const id of ['lm_park_experience', 'lm_park_exp_garden']) {
+      const l = landmarks[id]!
+      state.position = { area: l.at.area, x: l.at.x, y: l.at.y }
+      expect(interiorBlocked(state), id).toBeUndefined()
+      enterLandmark(state)
+    }
+    expect(roleMembers(state, landmarks.lm_park_exp_garden!.enter!.role!).map((c) => c.id)).toEqual([pc.id])
   })
 })
 
