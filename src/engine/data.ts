@@ -1559,6 +1559,14 @@ export const slaveryRules = slaveryJson as unknown as {
   unmark: { hours: number; fee_ratio: Record<Degree, number>; services: Record<'temple' | 'carver' | 'mage', UnmarkServiceDef> }
   safe_spots: string[]
   marking: { attr: AttrId; base: number; severity: string[] }
+  /** 主僕關係（docs/COMPANIONS.md 2.8 節；bondStyle.ts） */
+  bond_styles: {
+    unlock_affinity: number
+    keep_affinity: number
+    hours: number
+    personality_rule: string
+    styles: Record<BondStyle, { name: string; desc: string; prompt: string }>
+  }
   master_events: {
     step_chance: number; travel_chance: number; cooldown_hours: number
     free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
@@ -1634,7 +1642,15 @@ export interface MasterEventDef {
   progress?: number
   /** 主角可以主動找主人觸發這件事（slavery.ts 的 askableEvents；只在主人的突發事件） */
   ask?: MasterAskDef
+  /** 只在主僕關係是這幾種時發生（兩情相悅的專屬事件：不受「主角非自願」的篩選；bondStyle.ts） */
+  bonds?: BondStyle[]
+  /** 各種主僕關係下的權重倍率（沒寫的是 1，0 不發生；經過娼館的事件乘在機率上） */
+  bond_weights?: Partial<Record<BondStyle, number>>
 }
+
+/** 主僕關係：名實相符（預設）、名義主僕實為夥伴、情趣主奴、激烈主奴、戀人 */
+export type BondStyle = 'strict' | 'partner' | 'playful' | 'intense' | 'lovers'
+export const BOND_STYLES: BondStyle[] = ['strict', 'partner', 'playful', 'intense', 'lovers']
 
 /** 主動找主人：分類、名稱、一句說明、開頭（{master} 換成主人的名字，接在事件描述前面） */
 export interface MasterAskDef {

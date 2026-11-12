@@ -6,6 +6,7 @@
 // - 檢索：事件發生或生成文本時，依「參與人、地點、時間」找出相關的人際關係與記憶，一起交給 AI 參考。
 // 說明見 docs/RELATIONSHIP_MEMORY.md。
 
+import { bondPersonalityRule, bondPromptLine } from './bondStyle'
 import { newsOf, newsText } from './npcLife'
 import { affinityStage } from './character'
 import { genderName, locationById, npcs, progression, type NpcDef } from './data'
@@ -417,11 +418,15 @@ export function formatContext(state: GameState, ctx: ContextResult): string {
         appearanceOf(r.id, r.appearance) && `  外貌：${appearanceOf(r.id, r.appearance)}`,
         r.personality && `  性格：${r.personality}`,
         `  與主角：${r.toPlayer}`,
+        // 主僕關係（bondStyle.ts）：名義上的主僕實際上怎麼相處
+        bondPromptLine(state, r.id) && `  ${bondPromptLine(state, r.id)}`,
         others.length ? `  與他人：${others.join('；')}` : '',
         recentNews(state, r),
       ].filter(Boolean).join('\n')
     })
-    parts.push(`<relationships>\n${lines.join('\n')}\n</relationships>`)
+    // 有不是名實相符的主僕關係時，提醒關係不會改變性格
+    const bond = ctx.relationships.some((r) => bondPromptLine(state, r.id)) ? `\n${bondPersonalityRule()}` : ''
+    parts.push(`<relationships>\n${lines.join('\n')}${bond}\n</relationships>`)
   }
   if (ctx.memories.length) {
     const lines = ctx.memories.map((m) => {

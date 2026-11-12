@@ -33,6 +33,7 @@ import { craftPart, craftRarity, parseCraftTarget } from '@/engine/craft'
 import { gearName, gearRules, ordinaryBases, rarityName, rarityPoints, slotName } from '@/engine/gear'
 import { contractTerms, markSummary } from '@/engine/slavery'
 import { masterHomeSummary } from '@/engine/masterHome'
+import { bondName, bondOf } from '@/engine/bondStyle'
 import { parsePitchTarget, perkNames, perkPower, pitchCap } from '@/engine/perks'
 import { appearanceOf, npcIdentity, npcKind, npcRecord, npcTitle } from '@/engine/npcs'
 import { unflavored } from '@/engine/population'
@@ -75,7 +76,10 @@ export function partyLines(state: GameState): string {
     const c = contractOf(m)
     const mark = c && !m.isPlayer ? `｜印記：${contractTerms(c).name}（${contractTerms(c).mark}）` : ''
     const swap = m.isPlayer ? '' : genderSwapNote(state.npcs?.[m.id])
-    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${swap ? `；${swap}` : ''}${mark}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
+    // 主僕關係（bondStyle.ts）：細節在人際關係裡
+    const style = m.isPlayer ? 'strict' : bondOf(state, m.id)
+    const bondNote = style !== 'strict' ? `｜主僕關係：${bondName(style)}` : ''
+    return `- ${m.name}（${bond}${m.gender ? `・${genderPrompt(m.gender)}` : ''}${swap ? `；${swap}` : ''}${mark}${bondNote}）｜${raceName(m.race)}・${className(m.class)} Lv.${m.level}｜HP ${m.hp}/${m.maxHp}｜${weaponDef(m.weapon).name}、${armorDef(m.armor).name}${conds ? `｜狀態：${conds}` : ''}${s.attitude ? `｜對主角：${s.attitude}` : ''}`
   }).join('\n')
 }
 

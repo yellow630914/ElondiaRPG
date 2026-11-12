@@ -345,6 +345,8 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   delete c.homeAt
   delete c.permit
   delete c.strict
+  // 主僕關係是兩個人之間的事：換了主人重新開始
+  delete c.style
   Object.assign(c, { master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } })
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
   if (master) {
