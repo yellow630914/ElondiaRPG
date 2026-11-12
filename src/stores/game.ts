@@ -36,7 +36,8 @@ import * as masterTool from '@/engine/masterTool'
 import * as ownerTraining from '@/engine/ownerTraining'
 import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
-import { classes, shopRules, slaveryRules, type CraftId, type ShopType } from '@/engine/data'
+import { classes, shopRules, slaveryRules, type CraftId, type LewdKey, type ShopType } from '@/engine/data'
+import { templePurify } from '@/engine/purify'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
@@ -1535,6 +1536,8 @@ export const useGame = defineStore('game', () => {
     acceptQuest: (id: string) => run((s) => town.acceptQuest(s, id)),
     turnInQuest: (id: string, count?: number) => run((s) => town.turnInQuest(s, id, count)),
     templeHeal: () => run(town.templeHeal),
+    /** 神殿的淨身：降一位隊員的一項慾望指標（purify.ts） */
+    templePurify: (memberId: string, key: LewdKey, points: number) => run((s) => templePurify(s, memberId, key, points)),
     /** 參訪站著的地標 */
     visitLandmark: () => run(visitLandmark),
     /** 走進站著的地標的內部（特殊地圖） */

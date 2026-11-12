@@ -1955,6 +1955,8 @@ export interface ItemUse {
   lactation?: number
   /** 拿掉道具與事件造成的泌乳（懷孕的不行） */
   stop_lactation?: boolean
+  /** 冥想道具：慾望指標的增減（曝露名聲是目前這一帶的；docs/LEWD_STATS.md 第 4.1 節），花一個小時 */
+  lewd?: Partial<Record<LewdKey, number>>
 }
 
 export interface ItemDef {
@@ -2618,7 +2620,7 @@ export const lewdRules = lewdJson as unknown as {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus
     /** 在聚落裡真空（外衣底下沒穿內衣褲、會走光）的日子 */
     vacuum?: LewdBonus
-    free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
+    free_submission_every: number; idle_days: number; sensitivity_idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
   }
   park: ParkRules
   /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
@@ -2636,6 +2638,8 @@ export const lewdRules = lewdJson as unknown as {
   npc_schools: { tags: Record<string, { chance: number; schools: string[] }> }
   portrait: Partial<Record<'lewdness' | 'exposure', [number, string][]>>
   fusion: { shops: string[]; fee_cc: number; days: number; tiers: [number, number][]; penalty_mult: number }
+  /** 神殿的淨身（docs/LEWD_STATS.md 第 4.1 節） */
+  purify: { stats: LewdKey[]; per_point_cc: number; below_default_mult: number; max_points: number; hours: number }
   slave_room: {
     charm_min: number; cost_ratio: number; submission: number; learn_chance: number; abilities: string[]; condition: string; scene: string
   }
