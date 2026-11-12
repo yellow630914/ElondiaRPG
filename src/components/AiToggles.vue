@@ -4,7 +4,8 @@ import Hint from './ui/Hint.vue'
 
 // 所有 AI 開關（判定、AI 設計、自動寫出經過）：設定頁與冒險頁面的泡泡視窗共用，
 // 每一項的「?」寫出會影響哪些行為。kinds：也列出自動寫出經過的日誌種類（設定頁用）。
-defineProps<{ kinds?: boolean }>()
+// brief：只列判定與性經歷（主動行動旁邊的 AI 按鈕用）。
+defineProps<{ kinds?: boolean; brief?: boolean }>()
 const settings = useSettings()
 
 const JUDGE_HINT = `開啟：先擲骰，再把骰值與完整資料交給 AI，由 AI 決定成敗（可能出乎預料）與後果，數值由程式夾在上限內；經過交給「敘事正文」寫出。
@@ -34,6 +35,7 @@ const SEX_HINT = `開啟：親密場景的日誌寫完經過之後（沒有寫�
       <span v-if="settings.aiJudge && !settings.ready('judge')" class="small warn">模型來源未設定，目前依規則判定</span>
     </div>
 
+    <template v-if="!brief">
     <div class="group small muted">寫出經過</div>
     <div class="row-line sub">
       <label class="check"><input v-model="settings.aiNarration" type="checkbox" /> AI 細節描述：自動寫出經過</label>
@@ -54,6 +56,7 @@ const SEX_HINT = `開啟：親密場景的日誌寫完經過之後（沒有寫�
       <Hint :text="DESIGN_HINT[d.id]" :width="320" />
       <span v-if="settings.aiDesign[d.id] && !settings.ready(d.id)" class="small warn">模型來源未設定，目前不會呼叫</span>
     </div>
+    </template>
 
     <template v-if="settings.sexRecords">
       <div class="group small muted">性經歷（成人向）</div>

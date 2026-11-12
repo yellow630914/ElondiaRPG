@@ -22,7 +22,7 @@
 
 ## 1. 九種請求
 
-會呼叫 AI 的開關都在「設定 → AI 敘事」的「AI 判定與描述」（`src/components/AiToggles.vue`），冒險頁面的「AI 判定」「AI 細節描述」按鈕打開的泡泡視窗是同一組開關：
+會呼叫 AI 的開關都在「設定 → AI 敘事」的「AI 判定與描述」（`src/components/AiToggles.vue`），冒險頁面的「AI 判定」「AI 細節描述」按鈕打開的泡泡視窗是同一組開關（主動行動旁邊的只列「擲骰的行動交給 AI 判定」與性經歷，其他到完整設定改；「這裡的人」沒有這個按鈕）：
 
 - **擲骰的行動交給 AI 判定**（`aiJudge`）：請求 B。涵蓋的地方列在 `settings.ts` 的 `AI_JUDGED_PLACES`。
 - **AI 設計**（`aiDesign.roster` / `shop` / `negotiation`）：請求 C、D、E，各自開關。舊版設定沒有這三項時沿用當時的 `aiJudge`。

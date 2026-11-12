@@ -129,7 +129,7 @@ function unmark(target: string) {
         <GameIcon name="d20" :size="16" />主動行動
         <Hint :text="`用文字描述主角要做的事（交談、說服、威嚇、送禮、打聽消息……）。先擲骰，${aiOn ? '再把骰值與完整資料交給 AI，由 AI 決定成敗並寫出經過' : '依規則判定（骰值對參考 DC）'}。`" />
       </h3>
-      <JudgeToggle />
+      <JudgeToggle brief />
       <Hint v-if="!aiOn" warn :text="ruleNote" :width="300" />
       <button v-if="isMobile" type="button" class="ghost small fold" aria-label="收起主動行動" @click="expanded = false"><GameIcon name="down" :size="14" /></button>
       <select v-model="pick" class="target" title="對象" :disabled="targets.length >= maxTargets" @change="addTarget">

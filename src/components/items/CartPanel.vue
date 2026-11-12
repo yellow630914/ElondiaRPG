@@ -151,7 +151,12 @@ function checkout() {
 .cart { border: 1px solid var(--accent); border-radius: var(--radius); padding: 8px 10px; display: grid; gap: 8px; background: var(--panel); }
 .head { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--accent-2); }
 .head :deep(.game-icon) { color: var(--accent); }
-.lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.lists { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: start; }
+/* 桌機：買入、賣出的明細自己捲（大約 5 行），結帳列不會蓋住它們；手機的購物車分頁有整個畫面，不限高 */
+@media (min-width: 761px) {
+  .lists { max-height: 210px; overflow-y: auto; }
+  .lists th { position: sticky; top: 0; z-index: 1; background: var(--panel); }
+}
 table { width: 100%; border-collapse: collapse; }
 th { text-align: left; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--border); padding: 3px 4px; }
 td { padding: 3px 4px; border-bottom: 1px dashed color-mix(in srgb, currentColor 15%, transparent); }

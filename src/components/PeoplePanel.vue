@@ -24,7 +24,6 @@ import { useSettings } from '@/stores/settings'
 import { floatText } from '@/fx/fx'
 import { stateKey } from '@/fx/seen'
 import AbilityPicker from './AbilityPicker.vue'
-import JudgeToggle from './JudgeToggle.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
 import Avatar from './ui/Avatar.vue'
@@ -232,7 +231,6 @@ function squadAct(kind: 'invite' | 'squad_join', p: PresentNpc) {
           <GameIcon name="right" :size="13" class="chev" />
         </button>
       </h3>
-      <JudgeToggle />
     </div>
     <template v-if="expanded">
     <div v-if="everyone.length" class="filter" role="group" aria-label="篩選">

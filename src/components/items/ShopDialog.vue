@@ -24,6 +24,8 @@ const game = useGame()
 const s = computed(() => game.state!)
 // 購物車：買入（交易 id → 數量）、賣出（物品名稱 → 數量）
 const cart = reactive<{ buy: Record<string, number>; sell: Record<string, number> }>({ buy: {}, sell: {} })
+// 購物車有東西時（桌機）：商品、行囊的清單矮一點，讓購物車與結帳一起放得進一個畫面，不會被黏在底部的結帳列蓋住
+const hasCart = computed(() => Object.keys(cart.buy).length + Object.keys(cart.sell).length > 0)
 const cartCount = computed(() => Object.values(cart.buy).reduce((a, b) => a + b, 0) + Object.values(cart.sell).reduce((a, b) => a + b, 0))
 // 手機版的分頁：店裡的商品｜你的行囊｜購物車（電腦版購物車放在兩欄下面）
 const SIDES = computed(() => [
@@ -182,7 +184,7 @@ function buy(d: Deal) {
 </script>
 
 <template>
-  <div class="shop-dialog">
+  <div class="shop-dialog" :class="{ 'has-cart': hasCart }">
     <!-- 頂端一列：這座城的行情（彩色標籤）、折扣與 AI 的提示，右邊是錢（店主寫在建築的選單上，這裡不另外佔一列） -->
     <div class="shop-bar">
       <div class="bar-left small">
@@ -361,6 +363,7 @@ function buy(d: Deal) {
 /* 電腦版：下面還有購物車，清單矮一點；手機版購物車是另一個分頁 */
 .list { display: grid; gap: 6px; margin: 0; max-height: max(260px, calc(100vh - 430px)); overflow-y: auto; padding-right: 2px; align-content: start; }
 .cols.swipe .list { max-height: calc(100vh - 350px); }
+.shop-dialog.has-cart .cols:not(.swipe) .list { max-height: max(200px, calc(100vh - 690px)); }
 /* 手機：清單自己會捲，橫滑要留給分頁切換（不然瀏覽器把橫滑當成清單的捲動） */
 .cols.swipe .list { touch-action: pan-y; }
 .specials { margin-bottom: 6px; }

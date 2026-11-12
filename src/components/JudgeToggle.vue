@@ -7,7 +7,8 @@ import GameIcon from './ui/GameIcon.vue'
 // 冒險頁面的「AI」按鈕：按鈕上顯示這裡相關的狀態（行動旁邊是誰判定，日誌是否自動寫出經過），
 // 點開泡泡視窗列出所有 AI 開關（和設定頁同一組，見 AiToggles）。
 // 泡泡掛在 body 上（fixed 定位），用 popover 放進瀏覽器的最上層，不會被面板或對話框蓋住。
-const props = withDefaults(defineProps<{ show?: 'judge' | 'narration' }>(), { show: 'judge' })
+// brief：泡泡只列「擲骰的行動交給 AI 判定」與性經歷（主動行動用）
+const props = withDefaults(defineProps<{ show?: 'judge' | 'narration'; brief?: boolean }>(), { show: 'judge', brief: false })
 const settings = useSettings()
 const on = () => (props.show === 'judge' ? settings.judgesWithAi() : settings.aiNarration && settings.ready('narration'))
 const label = () => (props.show === 'judge' ? (on() ? 'AI 判定' : '規則判定') : on() ? 'AI 細節描述' : 'AI 細節描述：關')
@@ -65,7 +66,7 @@ function moreSettings() {
       <div v-if="open" ref="pop" popover="manual" class="ai-pop parchment" :style="{ left: `${pos.left}px`, top: `${pos.top}px`, width: `${WIDTH}px` }">
         <div class="pop-head"><b>AI 開關</b><button type="button" class="ghost small" aria-label="關閉" @click="open = false"><GameIcon name="close" :size="13" /></button></div>
         <p v-if="!settings.ready()" class="small muted">還沒有設定好的模型來源，所有 AI 功能都不會呼叫。</p>
-        <AiToggles />
+        <AiToggles :brief="brief" />
         <a href="#" class="small more" @click.prevent="moreSettings">完整設定（日誌種類、模型來源）…</a>
       </div>
     </Teleport>
