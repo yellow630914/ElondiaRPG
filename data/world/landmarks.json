@@ -8258,7 +8258,7 @@
    "types": [
     "market"
    ],
-   "desc": "淫植花園的花粉溫室。衣服會被花粉溶掉，只讓穿得夠少的人（曝露度 3）進去，一進去就沾上花粉而發情、敏感；裡面可以體驗蜜壺草、吞噬花、觸手藤、蓮花妖與淫樹精。",
+   "desc": "淫植花園的花粉溫室。衣服會被花粉溶掉，只讓穿得夠少的人（曝露度 3）進去，一進去就沾上花粉而發情、敏感；裡面可以體驗噴膠花、媚香蘭、蜜壺草、觸手藤與吞噬花，北邊的拱門後面是花園深處。",
    "scene": "粉紅色的花粉在玻璃溫室裡飄著，甜得發膩的花香讓人頭暈，花叢深處傳來一陣陣嬌喘。",
    "open": {
     "adult": true
@@ -8287,6 +8287,74 @@
    },
    "scenes": [
     {
+     "title": "噴膠花的噴膠體驗",
+     "desc": "體驗者：讓噴膠花噴一身黏膠，黏在花牆上動彈不得。",
+     "scene": "{role}站到噴膠花叢前，花朵一朵接一朵張開，噴出溫熱的黏膠，從胸口一路糊到腿間，把{role}整個黏在後面的花牆上動彈不得。黏膠慢慢收緊、變硬，魅魔園丁笑著說要等半個時辰才會軟化，在那之前誰經過都可以摸一把。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "money_cc": 40,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 2,
+      "y": 2
+     },
+     "spot_name": "噴膠花叢",
+     "role": {
+      "name": "體驗者",
+      "exposure": 3,
+      "effects": [
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "sensitive",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "submission",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "媚香蘭的花香浴",
+     "desc": "體驗者：躺進媚香蘭的花床，聞一整個下午的媚香。",
+     "scene": "{role}躺進一整片媚香蘭鋪成的花床，蘭花的香氣甜得發膩，聞幾口腦袋就輕飄飄的。花瓣貼著皮膚輕輕地蹭，{role}在香氣裡半睡半醒，身體卻越來越熱，等到魅魔園丁來扶時已經分不清自己躺了多久。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "money_cc": 40,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 10,
+      "y": 2
+     },
+     "spot_name": "媚香蘭的花床",
+     "role": {
+      "name": "體驗者",
+      "exposure": 3,
+      "effects": [
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "dazed",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "lewdness",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
      "title": "蜜壺草的泡蜜體驗",
      "desc": "體驗者：躺進一人高的蜜壺草裡泡花蜜。",
      "scene": "{role}被魅魔園丁扶進一株一人高的蜜壺草。壺口緩緩閉上，溫熱黏稠的花蜜一直漫到胸口，壺壁上的軟毛一下一下地揉著、吸著；過了好一陣子，{role}才渾身是蜜、腿軟地被吐了出來。",
@@ -8299,7 +8367,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 2,
-      "y": 1
+      "y": 4
      },
      "spot_name": "蜜壺草叢",
      "role": {
@@ -8321,40 +8389,6 @@
      }
     },
     {
-     "title": "吞噬花的丸吞體驗",
-     "desc": "體驗者：被巨大的吞噬花整個吞進花苞裡。",
-     "scene": "巨大的吞噬花張開花瓣，把{role}整個吞了進去：從頭到腳被花瓣裹住，在花苞裡被揉弄、被花蕊探索，外面的遊客只看得到花苞一鼓一鼓地動。半個時辰後花苞打開，把渾身黏液的{role}吐了出來。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 2,
-     "money_cc": 50,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 6,
-      "y": 1
-     },
-     "spot_name": "吞噬花",
-     "role": {
-      "name": "體驗者",
-      "exposure": 3,
-      "effects": [
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "dazed",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "submission",
-        "delta": 1
-       }
-      ]
-     }
-    },
-    {
      "title": "觸手藤的體驗",
      "desc": "體驗者：走進觸手藤棚，被藤蔓吊起來玩弄。",
      "scene": "{role}走進觸手藤棚，藤蔓從頭頂垂下來纏住手腕、腳踝，把{role}吊在半空擺成各種姿勢，細細的藤鬚鑽進每一個縫隙；魅魔園丁在一旁幫忙調整，說這是花園最受歡迎的一項。",
@@ -8367,7 +8401,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 1
+      "y": 4
      },
      "spot_name": "觸手藤棚",
      "role": {
@@ -8389,6 +8423,62 @@
      }
     },
     {
+     "title": "吞噬花的丸吞體驗",
+     "desc": "體驗者：被巨大的吞噬花整個吞進花苞裡。",
+     "scene": "巨大的吞噬花張開花瓣，把{role}整個吞了進去：從頭到腳被花瓣裹住，在花苞裡被揉弄、被花蕊探索，外面的遊客只看得到花苞一鼓一鼓地動。半個時辰後花苞打開，把渾身黏液的{role}吐了出來。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "money_cc": 50,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 6,
+      "y": 3
+     },
+     "spot_name": "吞噬花",
+     "role": {
+      "name": "體驗者",
+      "exposure": 3,
+      "effects": [
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "dazed",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "submission",
+        "delta": 1
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "lm_park_exp_garden_deep",
+   "name": "淫植花園・花園深處",
+   "emoji": "🌸",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_park_exp_garden",
+    "x": 6,
+    "y": 1
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "花粉溫室北邊爬滿藤蔓的拱門，往裡走是花園深處：蓮花妖的溫泉、淫樹精的大樹、花粉舞池，最裡面是花園的女王千花魅后的花座。",
+   "scene": "拱門後面的花粉濃得像霧，隱約傳來音樂和笑聲。",
+   "open": {
+    "adult": true
+   },
+   "interior": "sm_park_exp_garden_deep",
+   "scenes": [
+    {
      "title": "和蓮花妖泡溫泉",
      "desc": "體驗者：在溫泉池裡讓蓮花妖替你洗身子。",
      "scene": "花園的溫泉池裡開著巨大的蓮花，蓮花妖從花心裡探出半身，邀{role}下水。她用蓮瓣和柔軟的手替{role}洗身子，洗著洗著就纏了上來，溫泉水裡全是甜甜的花香。",
@@ -8401,7 +8491,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 5,
-      "y": 5
+      "y": 2
      },
      "spot_name": "蓮花溫泉",
      "role": {
@@ -8426,7 +8516,7 @@
     {
      "title": "和淫樹精共度午後",
      "desc": "體驗者：被淫樹精抱上枝頭，吃果子、被疼愛。",
-     "scene": "花園中央的大樹裡住著淫樹精。她從樹幹裡走出來，用藤蔓把{role}抱上枝頭，在樹蔭下一邊餵{role}吃甜美的果實，一邊慢慢地、徹底地疼愛{role}，直到太陽偏西。",
+     "scene": "花園深處的大樹裡住著淫樹精。她從樹幹裡走出來，用藤蔓把{role}抱上枝頭，在樹蔭下一邊餵{role}吃甜美的果實，一邊慢慢地、徹底地疼愛{role}，直到太陽偏西。",
      "tags": [
       "adult"
      ],
@@ -8436,7 +8526,7 @@
      "own_cooldown": true,
      "spot": {
       "x": 10,
-      "y": 5
+      "y": 2
      },
      "spot_name": "淫樹精的大樹",
      "role": {
@@ -8447,6 +8537,86 @@
         "type": "condition",
         "target": "pc",
         "condition": "afterglow",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "lewdness",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "溫室的花粉派對",
+     "desc": "體驗者：在花粉舞池和其他客人、花園的魅魔們開一場派對。",
+     "scene": "花粉舞池的天窗一打開，粉紅色的花粉像雪一樣灑下來。{role}和其他只穿著一點點的客人、花園的魅魔們在花粉裡跳舞，越跳越熱、越貼越近，舞池很快就分不清誰是誰；派對一直開到花粉落盡才散場。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 3,
+     "money_cc": 60,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 8,
+      "y": 4
+     },
+     "spot_name": "花粉舞池",
+     "role": {
+      "name": "體驗者",
+      "exposure": 3,
+      "effects": [
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "afterglow",
+        "add": true
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "drained",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "exposure",
+        "delta": 2
+       }
+      ]
+     }
+    },
+    {
+     "title": "謁見千花魅后",
+     "desc": "體驗者：被帶到花座前，讓花園的女王千花魅后親自招待。",
+     "scene": "花園的魅魔把{role}領到最深處的花座前。千花魅后——花瓣做的長髮、花蕊般的眼睛——從王座上俯身，用花瓣捧起{role}的臉：「好久沒有這麼可愛的客人了。」她把{role}拉上花座，在層層花瓣裡親自招待，花蜜、花粉和她的吻一起落下來。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 3,
+     "money_cc": 80,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 6,
+      "y": 1
+     },
+     "spot_name": "千花魅后的花座",
+     "role": {
+      "name": "體驗者",
+      "exposure": 3,
+      "effects": [
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "afterglow",
+        "add": true
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "dazed",
         "add": true
        },
        {

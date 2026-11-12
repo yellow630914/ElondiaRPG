@@ -40,7 +40,7 @@
 | `cursed45.py` | `data/rules/gear.json`、`items.json`、`lewd.json`、`travel_events.json` | 詛咒具（第 7.2 節）：13 種底材與物品（`gear.curse`）、地下城寶箱的機率、神殿解咒（`unbind.uncurse`）、4 件地下城陷阱事件與 2 件城鎮事件。要排在 `bondage44.py` 之後。可以重跑 |
 | `toys46.py` | `data/rules/items.json`、`family.json` | 成人用品店的調教家具、戰鬥消耗品與道具（第 7.3 節），吸乳器（`lactation.milk.tool`）。要排在 `cursed45.py` 之後。可以重跑 |
 | `outfits47.py` | `data/rules/gear.json`、`items.json` | 42 種成人向服裝底材、126 件店貨；成人向服裝改成只在成人用品店賣；布料服裝的防禦（[ITEMS](../../../docs/ITEMS.md) 第 2 節）。要排在建立服裝底材的腳本（`lust_s9.py`、`east_p5_items.py`、`east_p6_gear.py`）與 `toys46.py` 之後；重跑那些腳本之後也要再跑這個。可以重跑 |
-| `park_experience48.py` | `data/rules/gear.json`、`items.json`、`data/world/special_maps.json`、`landmarks.json` | 緋夢樂園的主題體驗區（[LUST_PARK](../../../docs/LUST_PARK.md) 第 9 節）：入口廣場的閘門、體驗區入口、五座體驗館與其中四館的第二層（配種舍、著床室、飼育區、後台）的特殊地圖、館的地標與 53 個場景（場景的身分 `role`、淫植花園的進場條件 `enter`），新底材牛尾腰飾與三件店貨。要排在 `outfits47.py`、`underworld39.py`、`club_lines42.py` 之後（它們會重寫服裝與地標）。可以重跑 |
+| `park_experience48.py` | `data/rules/gear.json`、`items.json`、`data/world/special_maps.json`、`landmarks.json` | 緋夢樂園的主題體驗區（[LUST_PARK](../../../docs/LUST_PARK.md) 第 9 節）：入口廣場的閘門、體驗區入口、五座體驗館與它們的第二層（配種舍、著床室、飼育區、花園深處、後台）的特殊地圖、館的地標與 57 個場景（場景的身分 `role`、淫植花園的進場條件 `enter`），新底材牛尾腰飾與三件店貨。要排在 `outfits47.py`、`underworld39.py`、`club_lines42.py` 之後（它們會重寫服裝與地標）。可以重跑 |
 | `club_lines43.py` | `data/rules/stories.json`、`data/world/landmarks.json` | 特殊區域的延伸線・第二批：卡蓮、朧（黑檀之夜），卡蜜拉、零號（榮譽洞），赤鬟、烏日娜、海蘭（野馬帳），沈知瀾、瑤汀（無面樓），各一個任務與她們的場景。要排在 `club_lines42.py` 之後（它建立無面樓）。可以重跑 |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |

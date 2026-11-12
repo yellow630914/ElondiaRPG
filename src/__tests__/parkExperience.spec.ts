@@ -58,7 +58,7 @@ function into(state: GameState, hall?: string) {
 }
 
 /** 第二層：站上館裡通往第二層的門，走進去 */
-const INNER: Record<string, string> = { lm_park_exp_ranch: 'lm_park_exp_ranch_breed', lm_park_exp_greenhouse: 'lm_park_exp_greenhouse_nest', lm_park_exp_aquarium: 'lm_park_exp_aquarium_care', lm_park_exp_theater: 'lm_park_exp_theater_back' }
+const INNER: Record<string, string> = { lm_park_exp_ranch: 'lm_park_exp_ranch_breed', lm_park_exp_greenhouse: 'lm_park_exp_greenhouse_nest', lm_park_exp_aquarium: 'lm_park_exp_aquarium_care', lm_park_exp_garden: 'lm_park_exp_garden_deep', lm_park_exp_theater: 'lm_park_exp_theater_back' }
 function deeper(state: GameState, id: string) {
   const l = landmarks[id]!
   state.position = { area: l.at.area, x: l.at.x, y: l.at.y }
@@ -116,8 +116,8 @@ describe('主題體驗區的地圖與地標', () => {
 })
 
 describe('兩層深度的館', () => {
-  it('牧場、溫室、水族館、劇場各有第二層，花園沒有', () => {
-    expect(Object.keys(INNER).sort()).toEqual(HALLS.filter((id) => id !== 'lm_park_exp_garden').sort())
+  it('五座館都有第二層', () => {
+    expect(Object.keys(INNER).sort()).toEqual([...HALLS].sort())
   })
 
   it('表演廳的後門再往裡走是飼育區；從飼育區出來回到後門，再出去回到體驗區', () => {
@@ -262,6 +262,8 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     expect(report.outcome.summary).toContain(c.name)
     expect(c.status).toEqual(expect.arrayContaining(['aroused', 'sensitive']))
     expect(pcOf(state).status).not.toContain('aroused')
+    expect(sceneBlocked(state, at(state, '媚香蘭的花香浴'))).toBeUndefined()
+    deeper(state, 'lm_park_exp_garden_deep')
     const i = at(state, '和蓮花妖泡溫泉')
     expect(sceneBlocked(state, i)).toBeUndefined()
     expect(sceneText(state, l.scenes![i]!)).toContain(c.name)
