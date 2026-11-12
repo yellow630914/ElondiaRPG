@@ -1165,6 +1165,21 @@ export const useGame = defineStore('game', () => {
   }
 
   /**
+   * 帶著玩家的行動與要求重寫經過：改這則日誌的「玩家意圖」（report.narration.player_intent，寫經過時當成這次的玩家行動），
+   * 存回日誌，再整段重寫。只是文字：不擲骰、不改結果。空字串時拿掉原本的玩家意圖
+   */
+  function narrateWith(report: Report, intent: string) {
+    const target = state.value?.reports.find((r) => r.report_id === report.report_id) ?? report
+    const text = intent.trim().slice(0, 600)
+    const n = { ...(target.narration ?? {}) }
+    if (text) n.player_intent = text
+    else delete n.player_intent
+    target.narration = n
+    save()
+    return narrate(target, { manual: !useSettings().aiNarration })
+  }
+
+  /**
    * 續寫：請 AI 從這則日誌已經寫好的正文最後一句接著往下寫，接在同一則日誌後面（只是文字：不擲骰、不改結果、不過時間）。
    * 只能續寫最新一則有正文的日誌（較舊的續寫會和之後已經寫好的經過對不起來）。hint 是玩家希望多寫的方向
    */
@@ -1421,7 +1436,7 @@ export const useGame = defineStore('game', () => {
     state, narrations, error, saveWarning, flushed, pc, here, area, cell, resumeMeta, hasProgress, continueGame, toHome, judging, intent, actionTargets, usage, totalUsage, usageBySource, slots, notice, flash, bump, bumpText, makeRoom, requireRoom,
     usageCollector, originOf,
     refreshSlots, saveToSlot, quickSave, quickLoad, loadSlot, deleteSlot, renameSlot, exportFile, previewImport, importFile, prunePortraits,
-    start, reset, promptFor, composeFor, composeJudgePreview, narrate, continueNarration, continueBlock, cancelNarration,
+    start, reset, promptFor, composeFor, composeJudgePreview, narrate, narrateWith, continueNarration, continueBlock, cancelNarration,
     perform, judge, cancelJudge, flavorRoster, hire, flavorShop, startNegotiation, negotiationFocus,
     // 商店、談判、行囊
     shopState: (type: ShopType) => run((s) => trade.shopState(s, type)),

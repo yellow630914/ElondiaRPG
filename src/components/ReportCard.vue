@@ -111,6 +111,20 @@ function startContinue() {
   void game.continueNarration(props.report, continueHint.value)
   continueHint.value = ''
 }
+// 玩家的行動與要求：改了之後整段重寫（帶入原本寫的玩家行動，可以改、可以補要求）
+const directing = ref(false)
+const directText = ref('')
+function openDirect() {
+  directing.value = !directing.value
+  if (directing.value) {
+    continuing.value = false
+    directText.value = props.report.narration?.player_intent ?? ''
+  }
+}
+function startDirect() {
+  directing.value = false
+  void game.narrateWith(props.report, directText.value)
+}
 const showBattleReport = computed(() => props.report.kind === 'combat' && !showStory.value && !!props.report.timeline?.length)
 const names = computed(() => actorNames(props.report))
 const changes = computed(() => describeChanges(props.report))
@@ -303,6 +317,11 @@ async function copyPrompt() {
         @click="game.narrate(report, { manual: !settings.aiNarration })"
       ><GameIcon name="edit" :size="15" /></button>
       <button
+        v-if="settings.ready('narration') && narration?.status !== 'streaming'" class="small ghost tool" :class="{ active: directing }"
+        aria-label="玩家的行動與要求" title="玩家的行動與要求：改寫這次的玩家行動、補上想要的寫法，再整段重寫（只是文字，不擲骰、不改結果）"
+        @click="openDirect"
+      ><GameIcon name="message" :size="15" /></button>
+      <button
         v-if="canRecordSex" class="small ghost tool" :class="{ recording: recordingSex }" :disabled="!recordingSex && narration?.status === 'streaming'"
         :aria-disabled="recordingSex" :aria-label="recordingSex ? '正在記下性經歷…' : '記下性經歷'" :title="sexTitle"
         @click="!recordingSex && game.recordSex(report, undefined, { manual: true })"
@@ -310,7 +329,7 @@ async function copyPrompt() {
       <button
         v-if="canContinue" class="small ghost tool" :class="{ active: continuing }" aria-label="續寫"
         title="續寫：接著這段經過往下寫，把這一幕寫得更完整（只是文字，不擲骰、不改結果、不過時間）"
-        @click="continuing = !continuing"
+        @click="continuing = !continuing; directing = false"
       ><GameIcon name="feather" :size="15" /></button>
       <button
         class="small ghost tool" :disabled="!image.ready() || sceneBusy || storyPending" :aria-label="hasScene ? '重新生成插圖' : '生成插圖'"
@@ -323,6 +342,16 @@ async function copyPrompt() {
         @click="splitOpen = true"
       ><GameIcon name="sliders" :size="15" /></button>
     </div>
+    <form v-if="directing" class="continue small" @submit.prevent="startDirect">
+      <label>玩家的行動與要求（這次寫經過時當成玩家的行動；可以不填）
+        <textarea v-model="directText" rows="3" maxlength="600" placeholder="例如：我壓低聲音問她昨晚去了哪裡；多寫她的表情，場景改在雨中" />
+      </label>
+      <div class="row">
+        <button type="submit" class="small primary"><GameIcon name="edit" :size="14" /> 照這個重寫</button>
+        <button type="button" class="small ghost" @click="directing = false">取消</button>
+        <span class="muted">改的內容存在這則日誌裡，之後重寫也會沿用。只是文字：結果、得到的東西、時間都不變。每次重寫是一次 AI 呼叫。</span>
+      </div>
+    </form>
     <form v-if="continuing && canContinue" class="continue small" @submit.prevent="startContinue">
       <label>續寫：想多寫什麼？（可以不填）
         <input v-model="continueHint" maxlength="200" placeholder="例如：多寫兩人的對話、把親密的過程寫細一點" />
@@ -446,5 +475,6 @@ details.steps summary, details.thinking summary { cursor: pointer; color: var(--
 .tokens .origin { opacity: .85; }
 .continue { display: grid; gap: 6px; margin: 4px 0 6px; padding: 8px; border: 1px dashed var(--border); border-radius: 6px; }
 .continue label { display: grid; gap: 4px; }
+.continue textarea { width: 100%; resize: vertical; font: inherit; }
 .continue .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 </style>
