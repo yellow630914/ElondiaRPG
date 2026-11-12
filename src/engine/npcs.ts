@@ -329,7 +329,7 @@ export function findNpcByName(state: GameState, name: string): string | undefine
 }
 
 const SHOP_SPOT: Record<string, string> = {
-  general: 'shop', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant', wanderer: 'merchant', adult_shop: 'adult_shop',
+  general: 'shop', temple: 'temple', tavern: 'tavern', smithy: 'smithy', tailor: 'tailor', jeweler: 'jeweler', magic: 'magic', informant: 'informant', wanderer: 'merchant', adult_shop: 'adult_shop', costume: 'costume',
 }
 
 /** NPC 平常待的設施：店主在自己的店、公會職員在公會，冒險者與知情人在酒館。 */

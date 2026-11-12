@@ -3,7 +3,7 @@ import type { IconName } from './iconPaths'
 // 地圖格子種類 → 介面圖示。沒有對應的（地標、自建商店）退回 CELL_ICON 的 emoji。
 export const CELL_GAME_ICON: Record<string, IconName> = {
   inn: 'inn', guild: 'guild', tavern: 'mug', shop: 'store', temple: 'sun', gate: 'door', link: 'arrowRight', brothel: 'heart',
-  smithy: 'tools', tailor: 'shirt', jeweler: 'gem', magic: 'wand', informant: 'eye', tattoo: 'feather', carver: 'lock', adult_shop: 'heart',
+  smithy: 'tools', tailor: 'shirt', jeweler: 'gem', magic: 'wand', informant: 'eye', tattoo: 'feather', carver: 'lock', adult_shop: 'heart', costume: 'shirt',
   encounter: 'sword', elite: 'skull', boss: 'crown', resource: 'tree', safe: 'fire', chest: 'gift',
   stairs_down: 'arrowDown', stairs_up: 'arrowUp', exit: 'door', quest: 'flag', water: 'waves',
   waypoint: 'home', arrive: 'target', event: 'question', merchant: 'backpack', lot: 'pin', manor: 'building', floor: 'compass',

@@ -189,7 +189,7 @@ const shopMenu = computed<MenuItem[]>(() => (broodExtracts.value.length
   ? [{ id: 'brood', icon: 'potion', label: '取出苗床', detail: '請鍊金師取出卵生、寄生的苗床', badge: broodExtracts.value.length, tone: 'bad' }]
   : []))
 // 鐵匠鋪、裁縫店、珠寶店、魔法物品店、情報商、拘束具店（地下街）：各自的交易清單
-const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop'] as const
+const SHOPS = ['smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop', 'costume'] as const
 // 自建的商店（內容編輯器擺的）：格子的種類就是商店的 id
 const shopHere = computed<ShopType | null>(() => {
   void content.version

@@ -76,7 +76,12 @@ function at(state: GameState, title: string): number {
   return i!
 }
 
-const COW = ['亞麻乳牛比基尼', '亞麻牛角頭飾', '銅製牛鈴項圈', '亞麻牛尾腰飾']
+// 各館的五件套（worldgen/scripts/elondia/park_outfits49.py）
+const COW = ['亞麻乳牛比基尼上衣', '亞麻乳牛比基尼下著', '亞麻牛角頭飾', '銅製牛鈴項圈', '亞麻牛尾腰飾']
+const BED = ['亞麻蛛絲薄紗胸衣', '亞麻蛛絲薄紗裙', '亞麻觸角髮箍', '亞麻繭絲長手套', '銅製蟲卵腰鏈']
+const SWIM = ['亞麻貝殼胸衣', '亞麻人魚鱗片泳裙', '銅製珍珠髮飾', '銅製珍珠頸鍊', '亞麻鰭紗腳環']
+const PETAL = ['亞麻花瓣胸衣', '亞麻花瓣短裙', '亞麻花冠', '亞麻藤蔓手環', '亞麻葉片涼鞋']
+const STAFF = ['皮革魅魔胸衣', '皮革魅魔短褲', '銅製魅魔角頭飾', '皮革魅魔尾巴', '皮革魅魔高筒靴']
 
 describe('主題體驗區的地圖與地標', () => {
   it('入口廣場的閘門通往體驗區，體驗區的五座館各有內部；離開時一層一層回去', () => {
@@ -129,7 +134,7 @@ describe('兩層深度的館', () => {
     enterLandmark(state)
     expect(currentArea(state).special).toBe('sm_park_exp_aquarium_care')
     expect(landmarkHere(state)?.id).toBe('lm_park_exp_aquarium_care')
-    wear(state, pcOf(state), ['亞麻吊帶泳衣'])
+    wear(state, pcOf(state), SWIM)
     expect(sceneBlocked(state, at(state, '和章魚培養感情'))).toBeUndefined()
     leaveSpecial(state)
     expect(currentArea(state).special).toBe('sm_park_exp_aquarium')
@@ -216,8 +221,11 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     playLandmarkScene(state, i)
     expect(state.money_cc).toBe(money - 60)
     const staff = at(state, '參與魅魔劇團的演出')
-    expect(sceneBlocked(state, staff)).toContain('魅魔裝')
-    wear(state, pcOf(state), ['皮革魅魔裝', '銅製魅魔角頭飾'])
+    expect(sceneBlocked(state, staff)).toContain('魅魔胸衣')
+    // 少一件都不行
+    wear(state, pcOf(state), STAFF.slice(0, 4))
+    expect(sceneBlocked(state, staff)).toContain('魅魔高筒靴')
+    wear(state, pcOf(state), STAFF.slice(4))
     expect(sceneBlocked(state, staff)).toBeUndefined()
   })
 
@@ -226,13 +234,13 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     const state = game()
     into(state, 'lm_park_exp_greenhouse')
     const c = mate(state)
-    wear(state, c, ['亞麻透視薄紗睡衣'])
+    wear(state, c, BED)
     // 夥伴可以當展示區的苗床，不能當教材
     expect(sceneBlocked(state, at(state, '在展示區當苗床'))).toBeUndefined()
     expect(sceneBlocked(state, at(state, '當科普的教材'))).toContain('苗床')
     deeper(state, 'lm_park_exp_greenhouse_nest')
     expect(sceneBlocked(state, at(state, '讓蛞蝓著床'))).toContain('主角要')
-    wear(state, pcOf(state), ['亞麻透視薄紗睡衣'])
+    wear(state, pcOf(state), BED)
     playLandmarkScene(state, at(state, '讓蛞蝓著床'))
     expect(parasiteOf(pcOf(state), 'brood_slug')).toBeTruthy()
     // 同一種最多一個
@@ -248,14 +256,14 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     expect(sceneBlocked(state, at(state, '當科普的教材'))).toBeUndefined()
   })
 
-  it('淫植花園：要有人穿得夠少才進得去，進去的人沾上花粉', () => {
+  it('淫植花園：要有人穿上花瓣套裝才進得去，進去的人沾上花粉', () => {
     const state = game()
     into(state)
     const l = landmarks.lm_park_exp_garden!
     state.position = { area: l.at.area, x: l.at.x, y: l.at.y }
-    expect(interiorBlocked(state)).toContain('曝露度 3')
+    expect(interiorBlocked(state)).toContain('花瓣胸衣')
     const c = mate(state)
-    c.gear = {}
+    wear(state, c, PETAL)
     expect(interiorBlocked(state)).toBeUndefined()
     const report = enterLandmark(state)!
     expect(currentArea(state).special).toBe('sm_park_exp_garden')

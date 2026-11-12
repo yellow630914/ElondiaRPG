@@ -27,7 +27,7 @@ function pick<T>(list: readonly T[] | undefined, seed: number, salt: number): T 
 }
 
 /** 同一個地點的店依這個順序錯開字詞與氛圍，不會兩間店撞名 */
-const KIND_ORDER: string[] = ['tavern', 'inn', 'general', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'temple', 'adult_shop']
+const KIND_ORDER: string[] = ['tavern', 'inn', 'general', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'temple', 'adult_shop', 'costume']
 
 /** 第 n 間店用的位置：以地點的種子為起點，間隔和清單長度互質，前 len 間店不會重複 */
 function spread<T>(list: readonly T[] | undefined, seed: number, n: number): T | undefined {

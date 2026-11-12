@@ -2092,7 +2092,7 @@ export function saveItems(): ItemDef[] {
   return [...saveItemIndex.values()]
 }
 
-export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'adult_shop'
+export type BuiltinShopType = 'general' | 'temple' | 'tavern' | 'smithy' | 'tailor' | 'jeweler' | 'magic' | 'informant' | 'wanderer' | 'adult_shop' | 'costume'
 /** 自建的商店：id 是 shop_ 開頭（只有小寫英文與數字），地圖格子的種類就是這個 id */
 export type CustomShopId = `shop_${string}`
 export type ShopType = BuiltinShopType | CustomShopId
@@ -2101,7 +2101,7 @@ export function isCustomShopId(id: string): id is CustomShopId {
   return CUSTOM_SHOP_ID.test(id)
 }
 /** 可以指定固定 NPC 擔任店主的內建店種（流浪商人不是固定的店）；自建的商店也可以 */
-export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop']
+export const KEEPER_SHOPS: ShopType[] = ['general', 'temple', 'tavern', 'smithy', 'tailor', 'jeweler', 'magic', 'informant', 'adult_shop', 'costume']
 /** 商店的設定（自建的商店被刪掉時丟出錯誤） */
 export function shopDef(type: ShopType): ShopTypeDef {
   const d = shopRules.types[type]

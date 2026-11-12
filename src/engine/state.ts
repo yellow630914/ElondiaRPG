@@ -310,6 +310,39 @@ function renameValues(node: unknown, names: Record<string, string>) {
 }
 
 /** 舊的契約（角色身上的 contract）改成刺青清單裡的奴隸印記 */
+/**
+ * 改過名字的物品（舊存檔裡的名字 → 現在的名字）：行囊、隊伍與 NPC 身上的裝備一起換。
+ * 乳牛比基尼拆成上衣與下著（worldgen/scripts/elondia/park_outfits49.py）：原本的那件就是上衣。
+ */
+const ITEM_RENAMES: Record<string, string> = {
+  亞麻乳牛比基尼: '亞麻乳牛比基尼上衣',
+  絲綢乳牛比基尼: '絲綢乳牛比基尼上衣',
+  月影絲乳牛比基尼: '月影絲乳牛比基尼上衣',
+}
+const RENAMED = new Set(Object.values(ITEM_RENAMES))
+function renameOldItems(state: GameState) {
+  const to = (n: string) => ITEM_RENAMES[n] ?? n
+  const merged = new Map<string, GameState['inventory'][number]>()
+  const pack: GameState['inventory'] = []
+  for (const i of state.inventory) {
+    const name = to(i.name)
+    // 改名之後和原本就有的同名（同品質）物品合在一起
+    const key = `${name}|${i.quality ?? ''}`
+    const same = merged.get(key)
+    if (same && RENAMED.has(name)) {
+      same.qty += i.qty
+      continue
+    }
+    const item = name === i.name ? i : { ...i, name }
+    merged.set(key, item)
+    pack.push(item)
+  }
+  state.inventory = pack
+  const gearOf = (c?: Character) => { for (const g of Object.values(c?.gear ?? {})) if (g) g.name = to(g.name) }
+  for (const m of state.party) gearOf(m)
+  for (const r of Object.values(state.npcs ?? {})) gearOf(r.character)
+}
+
 function migrateContract(c: Character | undefined) {
   const old = (c as (Character & { contract?: ContractRef & { terms?: MarkTerms } }) | undefined)?.contract
   if (!c || !old) return
@@ -355,6 +388,7 @@ export function migrate(state: GameState): GameState {
   // 「飾品」類別已經拿掉（併入裝備）：AI 自創的飾品改成雜物
   for (const c of Object.values(state.customItems ?? {})) if (c.category === 'valuable') c.category = 'gear'
   for (const m of state.party) migrateJewelry(m.gear as Record<string, EquippedGear | undefined>, state.inventory)
+  renameOldItems(state)
   for (const r of Object.values(state.npcs ?? {})) {
     migrateJewelry(r.character?.gear as Record<string, EquippedGear | undefined> | undefined)
     // 以前職業比性別先決定，可能出現男性的「女王的姪女」：依性別換成對應的稱呼

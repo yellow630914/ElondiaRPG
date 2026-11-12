@@ -6736,7 +6736,7 @@
    "types": [
     "market"
    ],
-   "desc": "淫獸牧場的體驗館。遊客買票摸乳牛、看榨乳，北邊的柵門後面是配種舍；穿上乳牛比基尼、牛角頭飾、牛鈴項圈與牛尾腰飾的人（主角或夥伴）可以當牧場的「精牛乳牛」。",
+   "desc": "淫獸牧場的體驗館。遊客買票摸乳牛、看榨乳，北邊的柵門後面是配種舍；穿上全套乳牛裝（乳牛比基尼上衣與下著、牛角頭飾、牛鈴項圈、牛尾腰飾）的人（主角或夥伴）可以當牧場的「精牛乳牛」。",
    "scene": "乾草與奶香混在一起的牛舍，牛鈴叮噹響，看台上坐滿了指指點點的遊客。",
    "open": {
     "adult": true
@@ -6771,7 +6771,7 @@
     {
      "title": "在草地上招待遊客",
      "desc": "精牛乳牛：在觸摸草地被來參觀的遊客摸、擠、騎。牧場付工錢。",
-     "scene": "{role}換上全套的乳牛裝、掛著牛鈴，被牧場的魅魔牽進觸摸草地，當一下午的精牛乳牛：遊客們排隊來摸、來擠、來騎，牛鈴叮噹響個不停。",
+     "scene": "{role}換上全套的乳牛裝（比基尼上衣與下著、牛角、牛鈴、牛尾），被牧場的魅魔牽進觸摸草地，當一下午的精牛乳牛：遊客們排隊來摸、來擠、來騎，牛鈴叮噹響個不停。",
      "tags": [
       "adult"
      ],
@@ -6787,6 +6787,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -6834,6 +6835,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -6904,6 +6906,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -6956,6 +6959,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -7049,6 +7053,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -7120,6 +7125,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -7191,6 +7197,7 @@
       "name": "精牛乳牛",
       "wear": [
        "cow_bikini",
+       "cow_bikini_bottom",
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
@@ -7239,8 +7246,8 @@
    "types": [
     "market"
    ],
-   "desc": "蟲之溫室的體驗館。遊客買票看苗床、聽科普，北邊的玻璃門後面是著床室；穿上透視薄紗睡衣的人可以當溫室的「苗床」。",
-   "scene": "濕熱的玻璃屋，空氣甜腥，穿著透明薄紗的苗床們躺在軟墊上，肚子裡的東西隔著皮膚隱約可見。",
+   "desc": "蟲之溫室的體驗館。遊客買票看苗床、聽科普，北邊的玻璃門後面是著床室；穿上全套苗床裝（蛛絲薄紗胸衣與薄紗裙、觸角髮箍、繭絲長手套、蟲卵腰鏈）的人可以當溫室的「苗床」。",
+   "scene": "濕熱的玻璃屋，空氣甜腥，穿著蛛絲薄紗的苗床們躺在軟墊上，肚子裡的東西隔著皮膚隱約可見。",
    "open": {
     "adult": true
    },
@@ -7249,7 +7256,7 @@
     {
      "title": "和苗床們互動",
      "desc": "遊客：在展示區和溫室的苗床們互動，摸摸鼓起來的肚子。",
-     "scene": "展示區裡，幾位穿著透明薄紗的苗床躺在溫熱的軟墊上，肚子裡的卵和幼蟲隔著皮膚隱約可見。主角在魅魔園丁的帶領下摸了摸她們鼓起的肚子、感受裡面的胎動，苗床們紅著臉主動纏上來，討主角的歡心。",
+     "scene": "展示區裡，幾位穿著蛛絲薄紗的苗床躺在溫熱的軟墊上，肚子裡的卵和幼蟲隔著皮膚隱約可見。主角在魅魔園丁的帶領下摸了摸她們鼓起的肚子、感受裡面的胎動，苗床們紅著臉主動纏上來，討主角的歡心。",
      "tags": [
       "adult"
      ],
@@ -7273,8 +7280,8 @@
     },
     {
      "title": "在展示區當苗床",
-     "desc": "苗床：穿著透視薄紗躺在展示區，讓遊客觀察、撫摸。溫室付工錢。",
-     "scene": "{role}換上透視薄紗，躺上展示區的軟墊，當一下午溫室的苗床：遊客們隔著薄紗觀察、撫摸{role}的身體，有人好奇地問東問西，有人的手伸得太裡面——魅魔園丁笑著說：「苗床本來就要多受點刺激。」",
+     "desc": "苗床：穿著苗床套裝躺在展示區，讓遊客觀察、撫摸。溫室付工錢。",
+     "scene": "{role}換上蛛絲薄紗、戴上觸角髮箍，躺上展示區的軟墊，當一下午溫室的苗床：遊客們隔著薄紗觀察、撫摸{role}的身體，有人好奇地問東問西，有人的手伸得太裡面——魅魔園丁笑著說：「苗床本來就要多受點刺激。」",
      "tags": [
       "adult"
      ],
@@ -7289,7 +7296,11 @@
      "role": {
       "name": "苗床",
       "wear": [
-       "sheer_negligee"
+       "silk_veil_top",
+       "silk_veil_skirt",
+       "antenna_band",
+       "cocoon_gloves",
+       "egg_chain"
       ],
       "body": [
        "fem",
@@ -7346,8 +7357,8 @@
     },
     {
      "title": "當科普的教材",
-     "desc": "苗床：主角身上要有怪物的苗床。穿著透視薄紗躺上講台，讓魅魔學者拿你當教材。",
-     "scene": "{role}身上懷著怪物的苗床，穿著透視薄紗躺上科普教室的講台。魅魔學者用教鞭指著{role}的肚子，向台下的遊客講解裡面是什麼、長到哪個階段、要怎麼照顧；講到一半還請學生上台摸摸看、貼著肚皮聽裡面的動靜。",
+     "desc": "苗床：主角身上要有怪物的苗床。穿著苗床套裝躺上講台，讓魅魔學者拿你當教材。",
+     "scene": "{role}身上懷著怪物的苗床，穿著蛛絲薄紗躺上科普教室的講台。魅魔學者用教鞭指著{role}的肚子，向台下的遊客講解裡面是什麼、長到哪個階段、要怎麼照顧；講到一半還請學生上台摸摸看、貼著肚皮聽裡面的動靜。",
      "tags": [
       "adult",
       "monster_brood"
@@ -7363,7 +7374,11 @@
      "role": {
       "name": "苗床",
       "wear": [
-       "sheer_negligee"
+       "silk_veil_top",
+       "silk_veil_skirt",
+       "antenna_band",
+       "cocoon_gloves",
+       "egg_chain"
       ],
       "body": [
        "fem",
@@ -7405,7 +7420,7 @@
    "types": [
     "market"
    ],
-   "desc": "苗床體驗館北邊的玻璃門，往裡走是蛞蝓、史萊姆與巨蛛的著床室：遊客隔著玻璃參觀著床，主角可以穿著透視薄紗躺進去，真的讓蟲子著床。",
+   "desc": "苗床體驗館北邊的玻璃門，往裡走是蛞蝓、史萊姆與巨蛛的著床室：遊客隔著玻璃參觀著床，主角可以穿著苗床裝躺進去，真的讓蟲子著床。",
    "scene": "玻璃門上蒙著一層水氣，門後傳來黏稠的水聲。",
    "open": {
     "adult": true
@@ -7440,7 +7455,7 @@
     {
      "title": "讓蛞蝓著床",
      "desc": "苗床：只有主角。在蛞蝓的溫床被蛞蝓著床，成為溫室的苗床（要打開內容篩選「怪物的苗床」；懷孕中、已經有了時不行）。",
-     "scene": "{role}穿著透視薄紗躺上溫熱的蛞蝓溫床。溫室的淫蛞蝓們慢慢爬滿{role}的身體，黏液讓全身發燙，最後把幼體產進{role}體內；{role}成了溫室新的苗床，接下來幾天肚子裡會一直有東西在動。",
+     "scene": "{role}穿著蛛絲薄紗躺上溫熱的蛞蝓溫床。溫室的淫蛞蝓們慢慢爬滿{role}的身體，黏液讓全身發燙，最後把幼體產進{role}體內；{role}成了溫室新的苗床，接下來幾天肚子裡會一直有東西在動。",
      "tags": [
       "adult",
       "monster_brood"
@@ -7455,7 +7470,11 @@
      "role": {
       "name": "苗床",
       "wear": [
-       "sheer_negligee"
+       "silk_veil_top",
+       "silk_veil_skirt",
+       "antenna_band",
+       "cocoon_gloves",
+       "egg_chain"
       ],
       "body": [
        "fem",
@@ -7524,7 +7543,11 @@
      "role": {
       "name": "苗床",
       "wear": [
-       "sheer_negligee"
+       "silk_veil_top",
+       "silk_veil_skirt",
+       "antenna_band",
+       "cocoon_gloves",
+       "egg_chain"
       ],
       "body": [
        "fem",
@@ -7593,7 +7616,11 @@
      "role": {
       "name": "苗床",
       "wear": [
-       "sheer_negligee"
+       "silk_veil_top",
+       "silk_veil_skirt",
+       "antenna_band",
+       "cocoon_gloves",
+       "egg_chain"
       ],
       "body": [
        "fem",
@@ -7634,7 +7661,7 @@
    "types": [
     "market"
    ],
-   "desc": "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，和巨蛙、水母、章魚、淫蛇、觸手上台表演；表演廳的後門再往裡走是飼育區，可以先去練習。",
+   "desc": "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上全套人魚裝（貝殼胸衣、人魚鱗片泳裙、珍珠髮飾、珍珠頸鍊、鰭紗腳環）的人可以當「表演者」，和巨蛙、水母、章魚、淫蛇、觸手上台表演；表演廳的後門再往裡走是飼育區，可以先去練習。",
    "scene": "五座水槽在幽藍的燈光裡發亮，舞台濕漉漉的，看台上的遊客等著下一場表演。",
    "open": {
     "adult": true
@@ -7684,7 +7711,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -7712,7 +7743,7 @@
     {
      "title": "看巨蛙秀",
      "desc": "遊客：坐在巨蛙池的看台看表演，前排會被水濺到。",
-     "scene": "主角坐在巨蛙池前排的看台。穿著濕透泳衣的表演者被淫巨蛙的長舌捲起、拋起、接住，一場比一場大膽；前排的遊客被濺得一身濕，還有人被表演者拉上台一起玩。",
+     "scene": "主角坐在巨蛙池前排的看台。穿著濕透的貝殼胸衣與鱗片泳裙的表演者被淫巨蛙的長舌捲起、拋起、接住，一場比一場大膽；前排的遊客被濺得一身濕，還有人被表演者拉上台一起玩。",
      "tags": [
       "adult"
      ],
@@ -7752,7 +7783,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -7820,7 +7855,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -7888,7 +7927,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -7941,7 +7984,7 @@
     {
      "title": "上台表演：觸手秀",
      "desc": "表演者：在滿場遊客面前和觸手表演。水族館付工錢。",
-     "scene": "壓軸是觸手池。{role}被深水觸手從水底捲上來，四肢被分開吊在水面上，觸手一條條鑽進泳衣底下，最後把{role}整個拉進水裡又托出來，全場起立鼓掌。",
+     "scene": "壓軸是觸手池。{role}被深水觸手從水底捲上來，四肢被分開吊在水面上，觸手一條條鑽進貝殼胸衣與泳裙底下，最後把{role}整個拉進水裡又托出來，全場起立鼓掌。",
      "tags": [
       "adult"
      ],
@@ -7956,7 +7999,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -7984,7 +8031,7 @@
     {
      "title": "看觸手秀",
      "desc": "遊客：坐在觸手池的看台看表演，前排會被水濺到。",
-     "scene": "壓軸的觸手秀。深水觸手把表演者從水底捲上來，四肢被分開吊在水面上，觸手一條條鑽進泳衣底下，又把她整個拉進水裡再托出來；散場時主角的腿有點軟。",
+     "scene": "壓軸的觸手秀。深水觸手把表演者從水底捲上來，四肢被分開吊在水面上，觸手一條條鑽進貝殼胸衣與泳裙底下，又把她整個拉進水裡再托出來；散場時主角的腿有點軟。",
      "tags": [
       "adult"
      ],
@@ -8021,7 +8068,7 @@
    "types": [
     "market"
    ],
-   "desc": "表演廳東南角掛著「員工專用」的後門，往裡走是水族館的飼育區。穿上吊帶泳衣的表演者在這裡陪巨蛙、水母、章魚、淫蛇、觸手培養感情、練習表演的動作。",
+   "desc": "表演廳東南角掛著「員工專用」的後門，往裡走是水族館的飼育區。穿上人魚裝的表演者在這裡陪巨蛙、水母、章魚、淫蛇、觸手培養感情、練習表演的動作。",
    "scene": "飼育池的水聲嘩啦啦地響，池邊堆著飼料桶，動物們一看到表演者就湊了過來。",
    "open": {
     "adult": true
@@ -8031,7 +8078,7 @@
     {
      "title": "和巨蛙培養感情",
      "desc": "表演者：下到飼育池陪巨蛙玩、餵牠，練習表演的動作。",
-     "scene": "{role}穿著吊帶泳衣下到巨蛙池，餵淫巨蛙吃東西、陪牠玩，練習表演要用的動作：被長舌捲起來、拋上半空、再接住。巨蛙的舌頭又黏又熱，練著練著就變了調。",
+     "scene": "{role}穿著人魚套裝下到巨蛙池，餵淫巨蛙吃東西、陪牠玩，練習表演要用的動作：被長舌捲起來、拋上半空、再接住。巨蛙的舌頭又黏又熱，練著練著就變了調。",
      "tags": [
       "adult"
      ],
@@ -8046,7 +8093,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -8089,7 +8140,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -8132,7 +8187,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -8175,7 +8234,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -8218,7 +8281,11 @@
      "role": {
       "name": "表演者",
       "wear": [
-       "sling_swimsuit"
+       "shell_top",
+       "mermaid_skirt",
+       "pearl_tiara",
+       "pearl_necklace",
+       "fin_anklets"
       ],
       "body": [
        "fem",
@@ -8258,7 +8325,7 @@
    "types": [
     "market"
    ],
-   "desc": "淫植花園的花粉溫室。衣服會被花粉溶掉，只讓穿得夠少的人（曝露度 3）進去，一進去就沾上花粉而發情、敏感；裡面可以體驗噴膠花、媚香蘭、蜜壺草、觸手藤與吞噬花，北邊的拱門後面是花園深處。",
+   "desc": "淫植花園的花粉溫室。一般的衣服會被花粉溶掉，只讓穿上全套花瓣裝（花瓣胸衣、花瓣短裙、花冠、藤蔓手環、葉片涼鞋）的人進去，一進去就沾上花粉而發情、敏感；裡面可以體驗噴膠花、媚香蘭、蜜壺草、觸手藤與吞噬花，北邊的拱門後面是花園深處。",
    "scene": "粉紅色的花粉在玻璃溫室裡飄著，甜得發膩的花香讓人頭暈，花叢深處傳來一陣陣嬌喘。",
    "open": {
     "adult": true
@@ -8267,7 +8334,13 @@
    "enter": {
     "role": {
      "name": "體驗者",
-     "exposure": 3,
+     "wear": [
+      "petal_bra",
+      "petal_skirt",
+      "flower_crown",
+      "vine_bracelets",
+      "leaf_sandals"
+     ],
      "effects": [
       {
        "type": "condition",
@@ -8283,7 +8356,7 @@
       }
      ]
     },
-    "text": "{role}換好衣服走進花粉溫室，粉紅色的花粉撲面而來，沾上皮膚就發燙——花園的魅魔笑著說：「衣服穿多了會被花粉溶掉喔，你們這樣剛剛好。」"
+    "text": "{role}換好衣服走進花粉溫室，粉紅色的花粉撲面而來，沾上皮膚就發燙——花園的魅魔笑著說：「一般的衣服會被花粉溶掉喔，花瓣做的就沒關係——你們這樣剛剛好。」"
    },
    "scenes": [
     {
@@ -8304,7 +8377,13 @@
      "spot_name": "噴膠花叢",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8338,7 +8417,13 @@
      "spot_name": "媚香蘭的花床",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8372,7 +8457,13 @@
      "spot_name": "蜜壺草叢",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8406,7 +8497,13 @@
      "spot_name": "觸手藤棚",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8440,7 +8537,13 @@
      "spot_name": "吞噬花",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8496,7 +8599,13 @@
      "spot_name": "蓮花溫泉",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8531,7 +8640,13 @@
      "spot_name": "淫樹精的大樹",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8565,7 +8680,13 @@
      "spot_name": "花粉舞池",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8605,7 +8726,13 @@
      "spot_name": "千花魅后的花座",
      "role": {
       "name": "體驗者",
-      "exposure": 3,
+      "wear": [
+       "petal_bra",
+       "petal_skirt",
+       "flower_crown",
+       "vine_bracelets",
+       "leaf_sandals"
+      ],
       "effects": [
        {
         "type": "condition",
@@ -8642,7 +8769,7 @@
    "types": [
     "market"
    ],
-   "desc": "夢魔劇場的互動式體驗劇場。遊客可以進包廂、看鋼管舞、做一場春夢、看劇團的大戲，東北角的門通往偶像與導演所在的後台；穿上魅魔裝、戴上魅魔角頭飾的人可以當一晚「劇場工作人員」。",
+   "desc": "夢魔劇場的互動式體驗劇場。遊客可以進包廂、看鋼管舞、做一場春夢、看劇團的大戲，東北角的門通往偶像與導演所在的後台；穿上全套魅魔裝（魅魔胸衣、魅魔短褲、魅魔角頭飾、魅魔尾巴、魅魔高筒靴）的人可以當一晚「劇場工作人員」。",
    "scene": "紅絲絨的布幕、昏暗的燈光，觀眾席裡的喘息聲比台詞還大聲。",
    "open": {
     "adult": true
@@ -8692,8 +8819,11 @@
      "role": {
       "name": "劇場工作人員",
       "wear": [
-       "succubus_outfit",
-       "succubus_horns"
+       "succubus_bustier",
+       "succubus_shorts",
+       "succubus_horns",
+       "succubus_tail",
+       "succubus_boots"
       ],
       "body": [
        "fem",
@@ -8766,8 +8896,11 @@
      "role": {
       "name": "劇場工作人員",
       "wear": [
-       "succubus_outfit",
-       "succubus_horns"
+       "succubus_bustier",
+       "succubus_shorts",
+       "succubus_horns",
+       "succubus_tail",
+       "succubus_boots"
       ],
       "body": [
        "fem",
@@ -8866,8 +8999,11 @@
      "role": {
       "name": "劇場工作人員",
       "wear": [
-       "succubus_outfit",
-       "succubus_horns"
+       "succubus_bustier",
+       "succubus_shorts",
+       "succubus_horns",
+       "succubus_tail",
+       "succubus_boots"
       ],
       "body": [
        "fem",
@@ -8963,8 +9099,11 @@
      "role": {
       "name": "劇場工作人員",
       "wear": [
-       "succubus_outfit",
-       "succubus_horns"
+       "succubus_bustier",
+       "succubus_shorts",
+       "succubus_horns",
+       "succubus_tail",
+       "succubus_boots"
       ],
       "body": [
        "fem",
@@ -9007,8 +9146,11 @@
      "role": {
       "name": "劇場工作人員",
       "wear": [
-       "succubus_outfit",
-       "succubus_horns"
+       "succubus_bustier",
+       "succubus_shorts",
+       "succubus_horns",
+       "succubus_tail",
+       "succubus_boots"
       ],
       "body": [
        "fem",
