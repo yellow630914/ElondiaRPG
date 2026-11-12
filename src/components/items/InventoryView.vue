@@ -5,7 +5,8 @@ import { canEquip, canUse, classWeaponBlockFor, isIntelItem } from '@/engine/inv
 import { formatMoney } from '@/engine/money'
 import { itemValue } from '@/engine/trade'
 import { useGame } from '@/stores/game'
-import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
+import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemEffectParts, itemRarity, itemText } from './itemInfo'
+import EffectLine from './EffectLine.vue'
 import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
@@ -111,7 +112,7 @@ const target = reactive<Record<string, string>>({})
             <span class="what">
               <strong>{{ i.name }}</strong>
               <span class="small muted">{{ categoryName(s, i.name) }}</span>
-              <span v-if="itemEffect(s, i.name)" class="small effect" :title="materialRecipesFull(i.name) || undefined">{{ itemEffect(s, i.name) }}</span>
+              <span v-if="itemEffect(s, i.name)" class="small effect" :title="materialRecipesFull(i.name) || undefined"><EffectLine :parts="itemEffectParts(s, i.name)" /></span>
             </span>
             <span class="small muted val">{{ value(i.name) !== undefined ? `約 ${formatMoney(value(i.name)!)}` : '' }}</span>
             <span class="qty">×{{ i.qty }}</span>
@@ -127,7 +128,7 @@ const target = reactive<Record<string, string>>({})
             </span>
           </div>
           <div v-if="expanded === i.name" class="more small">
-            <div v-if="itemEffect(s, i.name)" class="effect">{{ itemEffect(s, i.name) }}</div>
+            <div v-if="itemEffect(s, i.name)" class="effect"><EffectLine :parts="itemEffectParts(s, i.name)" /></div>
             <div v-if="materialRecipesFull(i.name)" class="effect full">{{ materialRecipesFull(i.name) }}</div>
             <div v-if="itemText(s, i.name)" class="muted">{{ itemText(s, i.name) }}</div>
           </div>

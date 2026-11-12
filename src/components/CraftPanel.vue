@@ -7,13 +7,14 @@ import { lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
 import { craftForKind, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import {
-  baseShown, baseSlotName, baseType, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, MATERIAL_KIND_NAME, rarityName, rarityPoints, sortBaseTypes, type BaseSlot,
+  baseShown, baseSlotName, baseType, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, gearSummaryParts, MATERIAL_KIND_NAME, rarityName, rarityPoints, sortBaseTypes, type BaseSlot,
 } from '@/engine/gear'
 import { formatMoney } from '@/engine/money'
 import { shopTypeForCell } from '@/engine/trade'
 import { currentCell } from '@/engine/grid'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import EffectLine from './items/EffectLine.vue'
 import AppDialog from './AppDialog.vue'
 import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
@@ -157,11 +158,12 @@ const use = ref('')
 const slotLabel = (x: string) => baseSlotName(x as BaseSlot)
 const name = computed(() => gearName({ base: base.value, material: mat.value }))
 // 數值：自己打造選了慾望指標時，一起算進去（和底材預設的加值合在一起，每項最多 item_cap）
-const line = computed(() => {
+const lineParts = computed(() => {
   const pick = opts.value.lewd
   const bonus = pick ? lewdStats.value.find((x) => x.st === pick)?.bonus ?? 0 : 0
-  return gearSummary({ base: base.value, material: mat.value, ...(pick && bonus ? { lewd: { [pick]: bonus } } : {}) }).split('・').slice(2).join('・')
+  return gearSummaryParts({ base: base.value, material: mat.value, ...(pick && bonus ? { lewd: { [pick]: bonus } } : {}) }).slice(2)
 })
+const line = computed(() => lineParts.value.map((p) => p.text).join('・'))
 /** 這個材料做不出加成時：換哪一種才有 */
 const better = computed(() => (line.value ? undefined : materials.value.find((m) => statsOf(base.value, m.id))))
 const DEGREES = [['critical', '大成功'], ['success', '成功'], ['partial', '部分成功']] as const
@@ -305,7 +307,7 @@ function craft() {
         <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：（委託的加成 + 1～2）× 做的人自己那一項的基本值 ÷ 100：指標 100 時第 1、2、3、4 級以上分別是 +5、+7、+10、+12，比成人用品店委託（+4、+6、+8、+10）多一點。" />
       </div>
       <div :class="line ? 'stat' : 'muted'">
-        數值：{{ line || '這個材料做出來沒有加成' }}<template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>
+        數值：<EffectLine v-if="line" :parts="lineParts" /><template v-else>這個材料做出來沒有加成</template><template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>
       </div>
       <table class="outcomes">
         <tbody>

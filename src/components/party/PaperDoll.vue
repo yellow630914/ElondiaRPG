@@ -2,14 +2,16 @@
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { bonusesOff, onlyNegative, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
+import { bonusesOff, onlyNegative, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummaryParts, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
-import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
+import { adultOutfitPieces, bindsOf, lockName, schoolsOf } from '@/engine/schools'
+import { combatRelease } from '@/engine/combatRelease'
 import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc, uncurseFee, uncurseHere } from '@/engine/restraints'
 import { formatMoney } from '@/engine/money'
 import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
+import type { SummaryPart } from '@/engine/gear'
 import type { Mods } from '@/engine/data'
 import { useGame } from '@/stores/game'
 import { gameRule } from '@/engine/gameRules'
@@ -22,6 +24,7 @@ import BodyFigure from './BodyFigure.vue'
 import SlotButton from './SlotButton.vue'
 import { signed, SLOT_ICON } from './memberInfo'
 import { specRarity } from '../items/itemInfo'
+import EffectLine from '../items/EffectLine.vue'
 
 // 裝備的紙娃娃：欄位排在人形兩側；點欄位列出行囊中能裝的物品，可以直接換上或卸下
 const props = defineProps<{ member: Character }>()
@@ -92,9 +95,9 @@ function lockIt() {
   void game.lockGear(m.value.id, selected.value, lockPick.value)
   lockPick.value = ''
 }
-/** 標籤：放在額外飾品欄的拘束具不列不生效的加成（off） */
-function chips(spec: GearSpec, off = false): string[] {
-  return gearSummary(spec, off).split('・').slice(1)
+/** 標籤：放在額外飾品欄的拘束具不列不生效的加成（off）；拘束的「限制行走 2」可以移上去看細節 */
+function chips(spec: GearSpec, off = false): SummaryPart[] {
+  return gearSummaryParts(spec, off).slice(1)
 }
 
 /** 行囊中可以裝備的東西（依欄位篩選） */
@@ -137,6 +140,15 @@ function equip(name: string, slots: GearSlot[]) {
   game.equipItem(name, m.value.id, onlySlot.value || slots.includes(selected.value) ? selected.value : undefined)
 }
 
+// 戰鬥中解放的加值（雙面效應的合計）：拘束具的部分全身有上限，寫成「套上限後的值（實際加總）」
+const release = computed(() => combatRelease(s.value, m.value))
+const showRelease = computed(() => {
+  const r = release.value
+  return r.rows.length > 0 || r.immune.length > 0 || r.lustBonus > 0 || (!!r.off && (bindsOf(m.value).length > 0 || adultOutfitPieces(m.value) > 0))
+})
+const RELEASE_HINT = '拘束具、淫服、寄生物、懷孕的雙面效應：平常是檢定的減值，戰鬥中（修了慾望流派、拘束具上了鎖）變成增益。拘束具的增益全身合計有上限（設定的遊戲規則：拘束具增益上限）；括號裡是還沒套上限的實際加總，超過上限的部分戰鬥中不算。'
+const releaseText = (r: { name: string; value: number; raw: number }) => `${r.name} ${signed(r.value)}${r.raw !== r.value ? `（${signed(r.raw)}）` : ''}`
+
 const totals = computed(() => {
   const w = weaponFor(m.value)
   const a = armorDef(m.value.armor)
@@ -170,6 +182,17 @@ const totals = computed(() => {
       </div>
       </template>
       <div class="totals"><span v-for="t in totals" :key="t" class="tag">{{ t }}</span></div>
+      <template v-if="showRelease">
+        <div class="sec-title">戰鬥中解放 <span v-if="release.sources.length" class="sec-note">{{ release.sources.join('・') }}</span> <Hint :text="RELEASE_HINT" /></div>
+        <div v-if="release.off" class="release muted">{{ release.off }}</div>
+        <div v-else class="release">
+          <span v-for="r in release.rows" :key="r.key" class="tag" :class="{ capped: r.raw !== r.value }" :title="r.raw !== r.value ? `實際加總 ${signed(r.raw)}，上限只算到 ${signed(r.value)}` : undefined">{{ releaseText(r) }}</span>
+          <span v-if="release.lustBonus" class="tag">造成的慾望 {{ signed(release.lustBonus) }}</span>
+          <span v-if="release.immune.length" class="tag">免疫{{ release.immune.join('、') }}</span>
+          <span v-if="release.allyDown.length" class="tag">有隊友倒下時 {{ release.allyDown.map((r) => `${r.name} ${signed(r.value)}`).join('、') }}</span>
+          <span v-if="!release.rows.length && !release.lustBonus && !release.immune.length" class="muted small">拘束具上了鎖才有增益</span>
+        </div>
+      </template>
     </div>
 
     <div class="picker">
@@ -178,7 +201,7 @@ const totals = computed(() => {
         <span class="gear-ic big" :class="`r-${rarityOf(current.spec)}`"><ItemIcon :name="current.name" :spec="current.spec" :size="36" /></span>
         <div>
           <div class="iname" :class="`r-${rarityOf(current.spec)}`">{{ current.name }} <span class="tag">{{ rarityName(rarityOf(current.spec)) }}</span></div>
-          <div class="chips"><span v-for="c in chips(current.spec, bonusesOff(selected, current.spec))" :key="c" class="tag">{{ c }}</span></div>
+          <div class="chips"><EffectLine :parts="chips(current.spec, bonusesOff(selected, current.spec))" chips /></div>
         </div>
         <button
           class="small" :disabled="inCombat || !!lockedGear(m, selected)"
@@ -239,7 +262,7 @@ const totals = computed(() => {
           <div class="body">
             <div class="iname" :class="`r-${rarityOf(c.spec)}`">{{ c.name }}<span v-if="c.qty > 1" class="muted small"> ×{{ c.qty }}</span> <span class="tag">{{ rarityName(rarityOf(c.spec)) }}</span></div>
             <div class="chips">
-              <span v-for="t in chips(c.spec, onlySlot && bonusesOff(selected, c.spec))" :key="t" class="tag">{{ t }}</span>
+              <EffectLine :parts="chips(c.spec, onlySlot && bonusesOff(selected, c.spec))" chips />
               <span v-for="d in (onlySlot ? diff(c.spec) : [])" :key="d.text" class="delta" :class="d.up === undefined ? '' : d.up ? 'up' : 'down'">{{ d.text }}</span>
             </div>
             <div v-if="warning(c.spec)" class="warn small">{{ warning(c.spec) }}</div>
@@ -289,6 +312,10 @@ const totals = computed(() => {
 .fig :deep(.body-figure) { max-width: 120px; }
 .totals { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
 .totals .tag { background: #0006; color: #c9b796; border-color: #ffffff24; }
+.release { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; font-size: var(--fs-xs); }
+.release .tag { background: #0006; color: #b8e0a0; border-color: #6a9a5044; }
+.release .tag.capped { color: #f0d083; border-color: #c99a4566; }
+.release.muted { color: #9a8768; }
 /* 稀有度 */
 .r-uncommon .box, .gear-ic.r-uncommon { color: var(--r-uncommon) !important; box-shadow: inset 0 0 0 1px var(--r-uncommon); }
 .r-rare .box, .gear-ic.r-rare { color: var(--r-rare) !important; box-shadow: inset 0 0 0 1px var(--r-rare); }

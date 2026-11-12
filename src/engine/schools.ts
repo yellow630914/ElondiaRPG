@@ -148,11 +148,14 @@ export interface TwoFace {
   immune: string[]
   /** 有效的拘束具（修了流派、鎖上的）：名稱與倍率 */
   active: { name: string; kind: BindKind; mult: number }[]
+  /** 還沒套上全身上限的加總（畫面上寫在括號裡） */
+  raw: Mods
+  rawInitiative: number
 }
 
 /** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算；全身加總照存檔規則封頂（沒給 state 時用預設的上限） */
 export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> | null): TwoFace {
-  const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [] }
+  const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [], raw: {}, rawInitiative: 0 }
   const schools = schoolsOf(c)
   if (!schools.length) return out
   for (const b of bindsOf(c)) {
@@ -172,6 +175,8 @@ export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> |
     out.active.push({ name: b.name, kind: b.kind, mult: Math.round(mult * 100) / 100 })
   }
   // 全身合計的上限（存檔規則 bindCapStat、bindCapAp、bindCapInit）：穿再多件也不會一直疊
+  out.raw = { ...out.mods }
+  out.rawInitiative = out.initiative
   const stat = gameRule(state, 'bindCapStat')
   for (const [k, v] of Object.entries(out.mods)) {
     const c = k === 'ap_regen' ? gameRule(state, 'bindCapAp') : stat
