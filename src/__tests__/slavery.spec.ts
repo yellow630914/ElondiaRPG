@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment } from '@/engine/actions'
+import { buildActionPrompt } from '@/narrator/judge'
 import { buySlave, marketStock, offerSelf, pickBuyer, rejoinAway } from '@/engine/companions'
 import { finishCombat, startCombat } from '@/engine/combat'
 import { locationById, slaveryRules } from '@/engine/data'
@@ -174,6 +175,19 @@ describe('the master holds the leash', () => {
     expect(r.outcome.summary).toBeTruthy()
     expect(state.pendingMasterEvent).toBeUndefined()
     expect(state.relationships![master]!.affinity).toBe(before + 3)
+  })
+
+  it('sends the master as the target of a free-form answer, with their identity', () => {
+    const state = bound()
+    startMasterEvent(state, slaveryRules.master_events.events.find((e) => e.id === 'bad_mood')!)
+    const master = leaderOf(state)!.id
+    npcRecord(state, master)!.tags = ['villain']
+    const p = prepareAction(state, { kind: 'master_event', text: '低頭不語' })
+    expect(p.target).toBe(master)
+    const q = buildActionPrompt(state, p, '')
+    expect(q.user).toContain('對象（主角的主人）')
+    expect(q.user).toContain('惡人')
+    expect(q.user).not.toContain('對象：無')
   })
 })
 
