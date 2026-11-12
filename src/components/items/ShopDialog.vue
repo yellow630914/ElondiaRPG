@@ -2,7 +2,7 @@
 import { computed, reactive, ref } from 'vue'
 import { itemRules, shopDef, type ItemCategory, type ShopType } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { breakdownText, buyBreakdown, listPrice, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
+import { breakdownText, buyBreakdown, listPrice, listSellPrice, CART_CHANGE_WARNING as CHANGE_WARNING, cartBargainHeld, cartFromRecords, costText, dealMoney, discount, effectText, isItemDeal, isUniqueItem, sellBreakdown, sellPrice, shopKey, shopPlace } from '@/engine/trade'
 import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
@@ -99,6 +99,11 @@ function removeBuy(d: Deal, all = false) {
   else delete cart.buy[d.id]
 }
 const price = (d: Deal) => dealMoney(s.value, key.value, d)
+/** 收購價比標準收購價（基本價 × 收購比例）高：對你有利寫綠字（down 的顏色）；低：紅字 */
+const sellTone = (name: string, p: number | null) => {
+  const list = listSellPrice(s.value, key.value, name)
+  return p === null || list === undefined || p === list ? '' : p > list ? 'down' : 'up'
+}
 /** 售價比標準售價（基本價 × 店家加成）高：up；低：down（字變紅、變綠） */
 const priceTone = (d: Deal) => {
   const list = listPrice(s.value, d)
@@ -318,7 +323,7 @@ function buy(d: Deal) {
                     <div class="line" @click="sellWhy = sellWhy === i.name ? null : i.name">
                       <span class="item-tile" :class="`r-${itemRarity(s, i.name)}`"><ItemIcon :name="i.name" :size="22" /></span>
                       <span class="what"><strong class="nm">{{ i.name }}</strong><span class="qty small" :title="cart.sell[i.name] ? `行囊裡有 ${i.qty} 個，購物車裡要賣 ${cart.sell[i.name]} 個` : undefined">×{{ sellLeft(i.name, i.qty) }}</span><span class="sub small muted">{{ categoryName(s, i.name) }}</span></span>
-                      <span class="price" :title="i.price !== null ? '收購價（一個；點一下看怎麼算）' : undefined">{{ i.price !== null ? num(i.price) : '' }}</span>
+                      <span class="price" :class="sellTone(i.name, i.price)" :title="i.price !== null ? '收購價（一個；點一下看怎麼算）' : undefined">{{ i.price !== null ? num(i.price) : '' }}</span>
                       <span v-if="i.price !== null" class="steps" @click.stop>
                         <button class="small" :disabled="!cart.sell[i.name]" title="全部拿出購物車" aria-label="全部拿出購物車" @click="removeSell(i.name, true)">«</button>
                         <button class="small" :disabled="!cart.sell[i.name]" title="從購物車拿出一個" aria-label="從購物車拿出一個" @click="removeSell(i.name)">‹</button>

@@ -441,6 +441,17 @@ export function listPrice(state: GameState, deal: Deal): number | undefined {
   return base === undefined ? undefined : Math.max(1, Math.round(base * (deal.basis?.markup ?? 1)))
 }
 
+/**
+ * 標準收購價：基本價 × 收購比例（存檔規則「賣給商店的價格」；材料全價收購）。比例算在基準裡，所以那個設定不影響顏色；
+ * 畫面拿實際收購價跟它比，高寫綠字、低寫紅字。這間店不收時沒有
+ */
+export function listSellPrice(state: GameState, key: string, name: string): number | undefined {
+  const cat = itemCategory(state, name)
+  const value = itemValue(state, name)
+  if (!cat || value === undefined || !shopDef(typeOf(key)).buys.includes(cat) || isUniqueItem(state, name)) return undefined
+  return Math.max(1, Math.floor(value * (cat === 'material' ? itemRules.material_sell_ratio : sellRatio(state))))
+}
+
 /** 行囊裡的東西在這間店的收購價拆解；不收時沒有 */
 export function sellBreakdown(state: GameState, key: string, name: string): PriceBreakdown | undefined {
   const total = sellPrice(state, key, name)
