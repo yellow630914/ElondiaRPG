@@ -24,7 +24,7 @@ import {
   addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, pcOf, punish, recapturePlayer, setHp,
 } from './party'
 import { areaOf, isHostile, nearbyPeople, presentHere } from './population'
-import { addStrict, atMasterHome, extendDeadline, overdueChance, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
+import { addStrict, allowedDays, atMasterHome, extendDeadline, extendRefusedToday, grantPermit, mayExtend, overdueChance, permitWindow, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
@@ -264,11 +264,15 @@ export function startAsSlave(state: GameState, s: SlaveStart): Report {
 
 // ---- 出城、旅行前請求主人同意 ----
 
-/** 主角被主人帶著時，現在能不能出城：今天已經同意就可以 */
+/**
+ * 主角被主人帶著時，現在能不能出城：主人准的出城許可期限還沒到就可以（哪座城都一樣，回城不會重新算）。
+ * masterPass 是舊存檔當天的同意
+ */
 export function masterAllows(state: GameState): boolean {
   if (!isBound(state)) return true
   if (currentArea(state).kind !== 'settlement') return true
-  return state.masterPass?.[state.location] === state.time.day
+  const w = permitWindow(state)
+  return (!!w?.exit && w.hoursLeft > 0) || state.masterPass?.[state.location] === state.time.day
 }
 
 export function masterRefusedToday(state: GameState): boolean {
@@ -292,13 +296,14 @@ export function permitDc(state: GameState): number {
 export function setupPermit(state: GameState) {
   if (!isBound(state)) throw new Error('你不是被主人帶著的奴隸')
   if (currentArea(state).kind !== 'settlement') throw new Error('只有要出城時才需要主人同意')
-  if (masterAllows(state)) throw new Error('主人今天已經同意你出城了')
+  if (masterAllows(state)) throw new Error('主人已經同意你出城了，期限還沒到')
   if (masterRefusedToday(state)) throw new Error('主人今天已經拒絕了，明天再問')
   const c = contractOf(pcOf(state))!
+  const days = allowedDays(state)
   return {
     dc: permitDc(state), targetName: c.masterName, situational: [], scene: `${locationById(state.location).name}・向主人請求出城`,
     outcomes: {
-      critical: '主人爽快答應（親密度 +2）', success: '主人同意今天出城', partial: '主人勉強同意，但要你早去早回',
+      critical: `主人爽快答應，${days} 天內可以自由出入城市（親密度 +2）`, success: `主人同意，${days} 天內可以自由出入城市`, partial: `主人勉強同意，只給 ${days / 2} 天`,
       fail: '主人不准，今天不能出城', fumble: '主人不准，還覺得你想逃（輕度懲罰）',
     } as Partial<Record<Degree, string>>,
   }
@@ -308,13 +313,50 @@ export function applyPermit(state: GameState, report: Report, degree: Degree): s
   const c = contractOf(pcOf(state))!
   const day = state.time.day
   if (degree === 'critical' || degree === 'success' || degree === 'partial') {
-    ;(state.masterPass ??= {})[state.location] = day
+    // 出城的許可順帶延長出門（離家）的許可：期限取比較晚的
+    const days = allowedDays(state) / (degree === 'partial' ? 2 : 1)
+    grantPermit(state, days * 24, true)
     if (degree === 'critical') addAffinity(state, report, c.master, 2, '主人心情不錯')
-    return degree === 'partial' ? `${c.masterName}勉強點了頭。` : `${c.masterName}同意了。`
+    return degree === 'partial' ? `${c.masterName}勉強點了頭，只給你 ${days} 天。` : `${c.masterName}同意了，${days} 天內可以自由出入城市。`
   }
   ;(state.masterRefuse ??= {})[state.location] = day
   if (degree === 'fumble') return `${c.masterName}起了疑心。${punish(state, 'light', report)}`
   return `${c.masterName}不准你出城。`
+}
+
+// ---- 申請延長許可（剩不到 1/4 時；檢定照出城） ----
+
+export function setupExtend(state: GameState) {
+  if (!isBound(state)) throw new Error('你不是被主人帶著的奴隸')
+  const w = permitWindow(state)
+  if (!w) throw new Error('主人還沒給你出門或出城的許可')
+  if (extendRefusedToday(state)) throw new Error('主人今天已經拒絕延長了，明天再問')
+  if (!mayExtend(state)) throw new Error(w.hoursLeft > w.hours / 4 ? '許可剩不到 1/4 時才能申請延長' : '期限已經過了，要重新請求主人同意')
+  const c = contractOf(pcOf(state))!
+  const days = allowedDays(state)
+  return {
+    dc: permitDc(state), targetName: c.masterName, situational: [], scene: `${locationById(state.location).name}・向主人申請延長許可`,
+    outcomes: {
+      critical: `主人爽快答應，期限延長 ${days} 天（親密度 +2）`, success: `主人同意，期限延長 ${days} 天`, partial: `主人勉強同意，只延長 ${days / 2} 天`,
+      fail: '主人不准，今天不會再聽你說', fumble: '主人不准，還覺得你想逃（輕度懲罰）',
+    } as Partial<Record<Degree, string>>,
+  }
+}
+
+export function applyExtend(state: GameState, report: Report, degree: Degree): string {
+  const c = contractOf(pcOf(state))!
+  if (degree === 'critical' || degree === 'success' || degree === 'partial') {
+    const days = allowedDays(state) / (degree === 'partial' ? 2 : 1)
+    extendDeadline(state, days * 24)
+    c.permit!.hours = days * 24
+    if (degree === 'critical') addAffinity(state, report, c.master, 2, '主人心情不錯')
+    return degree === 'partial' ? `${c.masterName}勉強點了頭，只多給你 ${days} 天。` : `${c.masterName}同意了，期限延長 ${days} 天。`
+  }
+  // 舊存檔（期限從上次在家時算）：把期限原樣記成許可，才記得住今天被拒
+  const w = permitWindow(state)
+  if (w) c.permit = { due: w.due, hours: w.hours, exit: w.exit, refused: state.time.day }
+  if (degree === 'fumble') return `${c.masterName}起了疑心。${punish(state, 'light', report)}`
+  return `${c.masterName}不准你延長。`
 }
 
 // ---- 成為奴隸時的刻印 ----

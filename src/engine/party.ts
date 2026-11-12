@@ -340,9 +340,10 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   }
   removeCondition(pc, 'fugitive', report)
   const old = c.masterName || '無主'
-  // 新主人有自己的家與規矩：離家期限、嚴加看管重新算
+  // 新主人有自己的家與規矩：許可（離家期限）、嚴加看管重新算
   delete c.home
   delete c.homeAt
+  delete c.permit
   delete c.strict
   Object.assign(c, { master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } })
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)

@@ -438,8 +438,13 @@ export interface ContractRef {
   terms: MarkTerms
   /** 主人的家在哪座城（第一次需要時決定） */
   home?: string
-  /** 上次待在主人的家裡的時間（離家期限從這裡算；沒有時從 since 算） */
+  /** 舊存檔：上次待在主人的家裡的時間（還沒拿到許可、人不在家裡時，期限從這裡算；沒有時從 since 算） */
   homeAt?: GameTime
+  /**
+   * 主人給的許可（出門、出城共用一個期限）：期限前可以自由出入主人的家與城市，回家、回城不會重新算。
+   * hours 是這次給的長度（剩下不到 1/4 時可以申請延長）；exit 表示也准出城；refused 是延長被拒的日子（當天不能再問）
+   */
+  permit?: { due: GameTime; hours: number; exit?: boolean; refused?: number }
   /** 嚴加看管：逃亡被找到、逾期被帶回家時加重，讓出門與出城更難；since 起每隔幾天減一點 */
   strict?: { points: number; since: GameTime }
 }

@@ -43,7 +43,7 @@
 | `change_master` | 替換主角的主人（印記沿用）；`master` 為 `null` 時變成無主 |
 | `master_home` | 主人把主角帶回主人的家（主人的事件用） |
 | `strict` | 嚴加看管的點數，正數加重、負數放寬（主人的事件用） |
-| `home_extend` | 離家期限延長幾小時（主人的事件用） |
+| `home_extend` | 主人給的許可（離家期限）延長幾小時，逾期時從現在算（主人的事件用） |
 | `ability_pool` | 從事件庫（`pool`：`master` 主人事件、`owner` 調教、`brothel_work` 娼館打工、`brothel_train` 娼館受訓）所有事件掛的技能（`teaches`）裡，抽一個 `target`（預設主角）還沒學、等級也夠的色情技能學會；都學過時套用 `fallback`（[CONTENT_EDITOR](CONTENT_EDITOR.md) 3.98 節） |
 | `lewd` | 慾望指標的加減：`stat`（`lewdness`／`sensitivity`／`endurance`／`submission`／`exposure`）、`delta`，`target` 預設主角；曝露名聲記在目前的地區（[LEWD_STATS](LEWD_STATS.md)） |
 | `parasite` | 主角的寄生物（`parasites.json`）：`op` 是 `add` 寄生、`tame` 馴服、`remove` 拿掉（見 [ADULT_EVENTS](ADULT_EVENTS.md) 第 6 節） |

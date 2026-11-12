@@ -30,7 +30,7 @@ import { generateNpc, npcRecord, slavePrice, weightedPick } from './npcs'
 import { hireable, isUnhireable, presentHere } from './population'
 import { setupStandoff } from './encounters'
 import {
-  atSafeSpot, contractTerms, masterNearby, remarkByMadam, setupMarking, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking, termsFromTemplate, contractKind,
+  atSafeSpot, contractTerms, masterNearby, remarkByMadam, setupMarking, setupExtend, setupMasterEvent, setupPermit, setupReturn, setupSeekMaster, setupUnmark, startMarking, termsFromTemplate, contractKind,
   type MarkChoice,
 } from './slavery'
 import { setupInteraction } from './interactions'
@@ -998,6 +998,8 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupPermit(state)
     case 'master_leave':
       return setupLeave(state)
+    case 'master_extend':
+      return setupExtend(state)
     case 'marking':
       return setupMarking(state)
     case 'master_event':

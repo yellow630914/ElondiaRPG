@@ -5,7 +5,7 @@ import { formatMoney } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import { alertLevel, factionName } from '@/engine/security'
 import { currentArea } from '@/engine/grid'
-import { atMasterHome, houseRefusedToday, mayLeaveHouse } from '@/engine/masterHome'
+import { atMasterHome, houseRefusedToday, mayExtend, mayLeaveHouse } from '@/engine/masterHome'
 import { isBound, isEnslaved } from '@/engine/party'
 import { masterAllows, masterRefusedToday } from '@/engine/slavery'
 import { useGame } from '@/stores/game'
@@ -178,10 +178,11 @@ function openSlaves(id = '') {
 const onOpenSlaves = (e: Event) => openSlaves(String((e as CustomEvent).detail ?? ''))
 window.addEventListener('elondia:open-slaves', onOpenSlaves)
 onBeforeUnmount(() => window.removeEventListener('elondia:open-slaves', onOpenSlaves))
-/** 現在可以請求主人讓你出門或出城（按鈕上提示一下） */
+/** 現在可以請求主人讓你出門、出城或延長許可（按鈕上提示一下） */
 const canAskMaster = computed(() => {
   const s = game.state
   if (!s || !isBound(s)) return false
+  if (mayExtend(s)) return true
   if (atMasterHome(s)) return !mayLeaveHouse(s) && !houseRefusedToday(s)
   return currentArea(s).kind === 'settlement' && !masterAllows(s) && !masterRefusedToday(s)
 })
@@ -374,7 +375,7 @@ onBeforeUnmount(() => {
         <button class="ghost" :title="suggestionCount ? `${suggestionCount} 則提議` : ''" @click="showRelations = true"><GameIcon name="heart" :size="20" />關係<span v-if="suggestionCount" class="badge">{{ suggestionCount }}</span></button>
         <button class="ghost" :title="readyQuests ? `${readyQuests} 件委託可以交付` : ''" @click="showNotebook = true"><GameIcon name="notebook" :size="20" />筆記<span v-if="readyQuests" class="badge gold">{{ readyQuests }}</span></button>
         <button class="ghost" @click="showCraft = true"><GameIcon name="tools" :size="20" />工藝</button>
-        <button v-if="enslaved" class="ghost" :title="canAskMaster ? '可以請求主人讓你出門或出城' : ''" @click="showContract = true"><GameIcon name="lock" :size="20" />契約<span v-if="canAskMaster" class="note">可請求</span></button>
+        <button v-if="enslaved" class="ghost" :title="canAskMaster ? '可以請求主人讓你出門、出城或延長許可' : ''" @click="showContract = true"><GameIcon name="lock" :size="20" />契約<span v-if="canAskMaster" class="note">可請求</span></button>
         <button v-if="ownsSlaves" class="ghost" @click="openSlaves()"><GameIcon name="link" :size="20" />奴隸</button>
       </nav>
       <CombatView v-if="inCombat" />

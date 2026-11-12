@@ -270,14 +270,83 @@ export function allowedDays(state: GameState): number {
   return Math.max(r.days.min, Math.min(r.days.max, Math.round(days * mult * 2) / 2))
 }
 
+// ---- 許可的期限（出門、出城共用） ----
+
+export interface PermitWindow {
+  /** 期限 */
+  due: GameTime
+  /** 這次給的長度（小時） */
+  hours: number
+  /** 也准出城 */
+  exit: boolean
+  /** 還剩幾小時（逾期為負） */
+  hoursLeft: number
+}
+
+/**
+ * 目前的許可：主人同意出門或出城時給一個期限，期限前可以自由出入，回家、回城不會重新算。
+ * 舊存檔、剛成為奴隸還沒回過家（沒有許可、人不在主人的家裡）：期限從上次在家（或成為奴隸）時算。
+ */
+export function permitWindow(state: GameState): PermitWindow | undefined {
+  if (!isBound(state)) return undefined
+  const c = pcContract(state)!
+  const now = hoursOf(state.time)
+  if (c.permit) return { due: c.permit.due, hours: c.permit.hours, exit: !!c.permit.exit, hoursLeft: hoursOf(c.permit.due) - now }
+  if (!currentMasterHome(state) || atMasterHome(state)) return undefined
+  const hours = allowedDays(state) * 24
+  const due = addHours(c.homeAt ?? c.since, hours)
+  return { due, hours, exit: false, hoursLeft: hoursOf(due) - now }
+}
+
+/** 許可還有效（期限還沒到） */
+export function permitActive(state: GameState): boolean {
+  return (permitWindow(state)?.hoursLeft ?? 0) > 0
+}
+
+/**
+ * 主人同意了：給 hours 小時的許可。已經有許可時取比較晚的期限（出城的許可順帶延長出門的許可），
+ * 出城的許可一直有效到期限。
+ */
+export function grantPermit(state: GameState, hours: number, exit: boolean) {
+  const c = pcContract(state)
+  if (!c?.master) return
+  const w = permitWindow(state)
+  const fresh = addHours(state.time, hours)
+  const keep = w && w.hoursLeft > 0 && hoursOf(w.due) > hoursOf(fresh)
+  c.permit = { due: keep ? w.due : fresh, hours, exit: exit || (!!w?.exit && w.hoursLeft > 0) }
+  delete c.homeAt
+}
+
+/** 延長許可：從原本的期限（逾期時從現在）再加 hours 小時，准不准出城照舊 */
+export function extendDeadline(state: GameState, hours: number) {
+  const c = pcContract(state)
+  if (!c?.master) return
+  const w = permitWindow(state)
+  const from = w && w.hoursLeft > 0 ? w.due : state.time
+  c.permit = { due: addHours(from, hours), hours: w?.hours ?? hours, exit: !!w?.exit }
+  delete c.homeAt
+}
+
+/** 被帶回主人的家、換了主人：許可作廢 */
+export function clearPermit(state: GameState) {
+  const c = pcContract(state)
+  if (!c) return
+  delete c.permit
+  delete c.homeAt
+}
+
 export interface HomeDeadline {
   home: Home
   /** 允許離家的天數 */
   days: number
-  /** 在主人的家裡（期限從出門時算起） */
+  /** 在主人的家裡 */
   atHome: boolean
-  /** 期限 */
+  /** 有沒有還有效的許可 */
+  permit: boolean
+  /** 期限（在家裡、沒有許可時是「現在出門的話」的期限） */
   due: GameTime
+  /** 這次許可的長度（小時） */
+  hours: number
   /** 還剩幾小時（逾期為負） */
   hoursLeft: number
 }
@@ -286,16 +355,16 @@ export interface HomeDeadline {
 export function homeDeadline(state: GameState): HomeDeadline | undefined {
   if (!isBound(state)) return undefined
   const home = currentMasterHome(state)
-  const c = pcContract(state)!
   if (!home) return undefined
   const days = allowedDays(state)
   const atHome = atMasterHome(state)
-  const from = atHome ? state.time : c.homeAt ?? c.since
-  const due = addHours(from, days * 24)
-  return { home, days, atHome, due, hoursLeft: hoursOf(due) - hoursOf(state.time) }
+  const w = permitWindow(state)
+  const due = w?.due ?? addHours(state.time, days * 24)
+  const hoursLeft = hoursOf(due) - hoursOf(state.time)
+  return { home, days, atHome, permit: !!w && w.hoursLeft > 0, due, hours: w?.hours ?? days * 24, hoursLeft }
 }
 
-/** 逾期的天數（沒有逾期時 0） */
+/** 逾期的天數（沒有逾期時 0；在家裡不算逾期） */
 export function overdueDays(state: GameState): number {
   const d = homeDeadline(state)
   return d && !d.atHome && d.hoursLeft < 0 ? -d.hoursLeft / 24 : 0
@@ -309,18 +378,19 @@ export function overdueChance(state: GameState): number {
   return Math.min(o.max, o.base + o.per_day * days)
 }
 
-/** 走進或走出主人的家：離家期限重新算 */
-export function touchMasterHome(state: GameState, from: Pick<Area, 'key' | 'kind'>, to: Pick<Area, 'key' | 'kind'>) {
-  const c = pcContract(state)
-  if (!c?.master || (!atMasterHome(state, from) && !atMasterHome(state, to))) return
-  c.homeAt = { ...state.time }
+/**
+ * 可以申請延長嗎：許可剩不到 1/4（逾期也可以，但在主人的家裡逾期時要重新請求出門；
+ * 主人沒有家時逾期就重新請求出城）。延長被拒的那天不能再問
+ */
+export function mayExtend(state: GameState): boolean {
+  const w = permitWindow(state)
+  if (!w || w.hoursLeft > w.hours / 4) return false
+  if (w.hoursLeft <= 0 && (!currentMasterHome(state) || atMasterHome(state))) return false
+  return !extendRefusedToday(state)
 }
 
-/** 延長期限（主人寬限幾天） */
-export function extendDeadline(state: GameState, hours: number) {
-  const c = pcContract(state)
-  if (!c?.master) return
-  c.homeAt = addHours(c.homeAt ?? c.since, hours)
+export function extendRefusedToday(state: GameState): boolean {
+  return pcContract(state)?.permit?.refused === state.time.day
 }
 
 // ---- 嚴加看管 ----
@@ -368,18 +438,18 @@ export function sendToMasterHome(state: GameState, report: Report): string {
   report.time.end = addHours(report.time.end, hours)
   const at = entrance(home)
   placeAt(state, at.area, at.x, at.y)
-  const c = pcContract(state)!
-  c.homeAt = { ...report.time.end }
+  // 帶回家：許可作廢，要再出門得重新請求
+  clearPermit(state)
   const days = Math.round((hours / 24) * 10) / 10
   return `被帶回${locationById(home.location).name}的「${home.name}」${hours ? `（路上約 ${days} 天）` : ''}。`
 }
 
 // ---- 出門 ----
 
-/** 在主人的家裡，今天主人同意出門了嗎（不在主人的家裡時不用問） */
+/** 在主人的家裡，主人的許可還有效嗎（不在主人的家裡時不用問；masterHousePass 是舊存檔當天的同意） */
 export function mayLeaveHouse(state: GameState): boolean {
   if (!isBound(state) || !atMasterHome(state)) return true
-  return state.masterHousePass === state.time.day
+  return permitActive(state) || state.masterHousePass === state.time.day
 }
 
 export function houseRefusedToday(state: GameState): boolean {
@@ -403,16 +473,17 @@ export function leaveDc(state: GameState): number {
 
 export function setupLeave(state: GameState) {
   if (!isBound(state) || !atMasterHome(state)) throw new Error('只有在主人的家裡才需要請求出門')
-  if (mayLeaveHouse(state)) throw new Error('主人今天已經同意你出門了')
+  if (mayLeaveHouse(state)) throw new Error('主人已經同意你出門了，期限還沒到')
   if (houseRefusedToday(state)) throw new Error('主人今天已經拒絕了，明天再問')
   const c = pcContract(state)!
   const strict = strictPoints(state)
+  const days = allowedDays(state)
   return {
     attr: rules().leave.attr, dc: leaveDc(state), hours: rules().leave.hours, targetName: c.masterName,
     situational: strict ? [{ label: '嚴加看管', value: 0 }] : [],
     scene: `${currentMasterHome(state)?.name ?? '主人的家'}・請求出門${strict ? `（嚴加看管 ${strict} 點，DC 已提高）` : ''}`,
     outcomes: {
-      critical: '主人爽快答應（親密度 +1）', success: '主人同意今天出門', partial: '主人勉強同意，要你早點回來',
+      critical: `主人爽快答應，${days} 天內可以自由出入（親密度 +1）`, success: `主人同意，${days} 天內可以自由出入`, partial: `主人勉強同意，只給 ${days / 2} 天`,
       fail: '主人不准，今天不能出門', fumble: '主人不准，還覺得你想逃（輕度懲罰）',
     } as Partial<Record<Degree, string>>,
   }
@@ -421,9 +492,10 @@ export function setupLeave(state: GameState) {
 export function applyLeave(state: GameState, report: Report, degree: Degree): string {
   const c = pcContract(state)!
   if (degree === 'critical' || degree === 'success' || degree === 'partial') {
-    state.masterHousePass = state.time.day
+    const days = allowedDays(state) / (degree === 'partial' ? 2 : 1)
+    grantPermit(state, days * 24, false)
     if (degree === 'critical') addAffinity(state, report, c.master, 1, '主人心情不錯')
-    return degree === 'partial' ? `${c.masterName}勉強點了頭，要你早點回來。` : `${c.masterName}同意你今天出門。`
+    return degree === 'partial' ? `${c.masterName}勉強點了頭，只准你出門 ${days} 天。` : `${c.masterName}同意你出門，${days} 天內回來就好。`
   }
   state.masterHouseRefuse = state.time.day
   if (degree === 'fumble') return `${c.masterName}起了疑心。${punish(state, 'light', report)}`
@@ -438,8 +510,10 @@ export function masterHomeSummary(state: GameState): string {
   const people = householdOf(state, home).map((r) => `${r.occupation ?? ''}${r.name}`)
   const where = `${pcContract(state)?.masterName ?? '主人'}的家在${locationById(home.location).name}${people.length ? `（家裡還有：${people.join('、')}）` : ''}`
   if (!d) return `${where}。`
-  if (d.atHome) return `${where}，現在在家裡；出門後允許離家約 ${d.days} 天。`
   const left = d.hoursLeft / 24
+  if (d.atHome) return d.permit
+    ? `${where}，現在在家裡；主人准的出門期限還剩約 ${Math.round(left * 10) / 10} 天。`
+    : `${where}，現在在家裡；出門要先請主人同意，同意後允許離家約 ${d.days} 天。`
   return left >= 0
     ? `${where}，允許離家約 ${d.days} 天，還剩約 ${Math.round(left * 10) / 10} 天。`
     : `${where}，已經離家超過期限約 ${Math.round(-left * 10) / 10} 天，主人隨時會要你回去。`

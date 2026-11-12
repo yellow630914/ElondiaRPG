@@ -8,7 +8,7 @@ import { applyEffects } from '@/engine/effects'
 import { crossLink, currentArea, enterLocation, getArea, move, position, standOn } from '@/engine/grid'
 import { buyHome, homeOnLot, lotsOf, manorOf } from '@/engine/homes'
 import {
-  allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayLeaveHouse, overdueChance, sendToMasterHome, strictPoints, syncMasterHome,
+  allowedDays, applyLeave, atMasterHome, currentMasterHome, homeDeadline, householdOf, leaveDc, mayExtend, mayLeaveHouse, overdueChance, permitWindow, sendToMasterHome, strictPoints, syncMasterHome,
 } from '@/engine/masterHome'
 import { peopleHere } from '@/engine/population'
 import { generateNpc, registerNpc } from '@/engine/npcs'
@@ -17,10 +17,10 @@ import { isHostile, pickTags } from '@/engine/population'
 import { changeMaster } from '@/engine/party'
 import { Rng } from '@/engine/rng'
 import { repairStrandedRoad, startJourney } from '@/engine/road'
-import { answerMasterEvent, eventFits, masterCandidates, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
+import { answerMasterEvent, applyPermit, eventFits, masterAllows, masterCandidates, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
 import { addHours, migrate, newGame, withRng } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
-import type { GameState, NpcRecord, Report } from '@/engine/types'
+import type { GameState, GameTime, NpcRecord, Report } from '@/engine/types'
 import { workers, workTarget } from '@/engine/work'
 import { contractOf } from '@/engine/tattoos'
 
@@ -464,5 +464,119 @@ describe('called home while travelling', () => {
     expect(repairStrandedRoad(state)).toBeNull()
     state.masterPass = { [state.location]: state.time.day }
     expect(() => startJourney(state, 'soriel')).not.toThrow()
+  })
+})
+
+describe('許可的期限（出門、出城共用，回家回城不重新算）', () => {
+  const hoursOf = (t: GameTime) => t.day * 24 + (t.hour ?? 0) + (t.minute ?? 0) / 60
+  /** 在主人的家裡，站在大門旁 */
+  function atHome() {
+    const s = slave()
+    sendToMasterHome(s.state, blank(s.state))
+    return s
+  }
+  function walkOut(state: GameState) {
+    const p = position(state)
+    const inside = [[0, -1], [1, 0], [-1, 0], [0, 1]].find(([dx, dy]) => {
+      const c = currentArea(state).cells[(p.y + dy!) * currentArea(state).width + p.x + dx!]
+      return c && c.kind !== 'wall' && c.kind !== 'link'
+    })!
+    move(state, inside[0]!, inside[1]!)
+    move(state, -inside[0]!, -inside[1]!)
+    crossLink(state)
+  }
+
+  it('出門的許可：期限內自由出入，回家不會重新算；被帶回家許可作廢', () => {
+    const { state } = atHome()
+    const days = allowedDays(state)
+    applyLeave(state, blank(state), 'success')
+    const due = homeDeadline(state)!.due
+    expect(hoursOf(due) - hoursOf(state.time)).toBe(days * 24)
+    walkOut(state)
+    expect(atMasterHome(state)).toBe(false)
+    state.time = addHours(state.time, 10)
+    // 走回家裡再出門：不用再問、期限不變
+    const link = currentArea(state).cells.findIndex((c) => c.kind === 'link' && atMasterHome(state, getArea(state, c.link!.area)))
+    expect(link).toBeGreaterThanOrEqual(0)
+    state.position = { area: currentArea(state).key, x: link % currentArea(state).width, y: Math.floor(link / currentArea(state).width) }
+    crossLink(state)
+    expect(atMasterHome(state)).toBe(true)
+    expect(mayLeaveHouse(state)).toBe(true)
+    expect(homeDeadline(state)!.due).toEqual(due)
+    // 部分成功只有一半
+    const other = atHome().state
+    applyLeave(other, blank(other), 'partial')
+    expect(homeDeadline(other)!.hoursLeft).toBe(allowedDays(other) * 12)
+    // 被帶回家：許可作廢，要重新請求
+    sendToMasterHome(state, blank(state))
+    expect(contractOf(pcOf(state))!.permit).toBeUndefined()
+    expect(mayLeaveHouse(state)).toBe(false)
+  })
+
+  it('出城的許可：期限內哪座城都能出入，順帶延長出門的期限', () => {
+    const { state } = atHome()
+    const days = allowedDays(state)
+    applyLeave(state, blank(state), 'partial')
+    walkOut(state)
+    expect(currentArea(state).kind).toBe('settlement')
+    expect(masterAllows(state)).toBe(false)
+    state.time = addHours(state.time, 6)
+    applyPermit(state, blank(state), 'success')
+    expect(masterAllows(state)).toBe(true)
+    // 出門的期限一起延長：從現在算滿天數
+    expect(homeDeadline(state)!.hoursLeft).toBe(days * 24)
+    // 隔天、換一座城還是有效
+    state.time = addHours(state.time, 30)
+    expect(days * 24).toBeGreaterThan(30)
+    state.location = 'soriel'
+    enterLocation(state)
+    expect(masterAllows(state)).toBe(true)
+    // 過了期限要重新請求
+    state.time = addHours(state.time, days * 24)
+    expect(masterAllows(state)).toBe(false)
+  })
+
+  it('剩不到 1/4 可以申請延長（檢定照出城）；被拒當天不能再問；逾期在外面也可以', () => {
+    const { state } = atHome()
+    applyLeave(state, blank(state), 'success')
+    walkOut(state)
+    const w = permitWindow(state)!
+    expect(mayExtend(state)).toBe(false)
+    expect(() => prepareAction(state, { kind: 'master_extend', text: '' })).toThrow('1/4')
+    state.time = addHours(w.due, -w.hours / 4)
+    expect(mayExtend(state)).toBe(true)
+    const r = act(state, { kind: 'master_extend', text: '' }, 20)
+    expect(['critical', 'success']).toContain(r.check?.degree)
+    // 從原本的期限再加滿天數
+    expect(hoursOf(permitWindow(state)!.due)).toBe(hoursOf(w.due) + allowedDays(state) * 24)
+    expect(mayExtend(state)).toBe(false)
+    // 拖到逾期：在外面還是可以申請；失敗當天不能再問
+    state.time = addHours(permitWindow(state)!.due, 24)
+    expect(overdueChance(state)).toBeGreaterThan(0)
+    expect(mayExtend(state)).toBe(true)
+    act(state, { kind: 'master_extend', text: '' }, 1)
+    expect(mayExtend(state)).toBe(false)
+    expect(overdueChance(state)).toBeGreaterThan(0)
+    state.time = addHours(state.time, 24)
+    expect(mayExtend(state)).toBe(true)
+    // 逾期時延長：從現在算
+    act(state, { kind: 'master_extend', text: '' }, 20)
+    expect(overdueChance(state)).toBe(0)
+    expect(permitWindow(state)!.hoursLeft).toBeGreaterThan(0)
+  })
+
+  it('在家裡期限過了要重新請求出門，不能申請延長；舊存檔的期限照上次在家的時間算', () => {
+    const { state } = atHome()
+    applyLeave(state, blank(state), 'success')
+    state.time = addHours(homeDeadline(state)!.due, 1)
+    expect(mayLeaveHouse(state)).toBe(false)
+    expect(mayExtend(state)).toBe(false)
+    // 舊存檔：沒有許可、人在外面，期限從 homeAt 算
+    const old = slave().state
+    const c = contractOf(pcOf(old))!
+    delete c.permit
+    c.homeAt = { ...old.time }
+    expect(atMasterHome(old)).toBe(false)
+    expect(homeDeadline(old)!.hoursLeft).toBe(allowedDays(old) * 24)
   })
 })

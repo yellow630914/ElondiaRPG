@@ -10,7 +10,9 @@ import { isBound, isEnslaved, isFugitive } from '@/engine/party'
 import {
   askableEvents, askMasterBlocked, atSafeSpot, contractTerms, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers,
 } from '@/engine/slavery'
-import { atMasterHome, currentMasterHome, homeDeadline, householdOf, houseRefusedToday, leaveDc, mayLeaveHouse, strictPoints } from '@/engine/masterHome'
+import {
+  allowedDays, atMasterHome, currentMasterHome, extendRefusedToday, homeDeadline, householdOf, houseRefusedToday, leaveDc, mayExtend, mayLeaveHouse, permitWindow, strictPoints,
+} from '@/engine/masterHome'
 import { contractOf, placeName } from '@/engine/tattoos'
 import { masterToolStatus, newMasterCandidates } from '@/engine/masterTool'
 import { submissionDc } from '@/engine/companions'
@@ -93,6 +95,7 @@ const strict = computed(() => strictPoints(s.value))
 const atHome = computed(() => atMasterHome(s.value))
 const mayLeave = computed(() => mayLeaveHouse(s.value))
 const houseRefused = computed(() => houseRefusedToday(s.value))
+const extendRefused = computed(() => extendRefusedToday(s.value))
 // 逃亡或無主：找到主人、投靠新主人、解除印記
 const whereabouts = computed(() => masterWhereabouts(s.value))
 const nearMaster = computed(() => masterNearby(s.value))
@@ -118,30 +121,34 @@ const seekTargets = computed(() => {
     .map((p) => ({ id: p.rec.id, name: `${label(p.rec.id, p.rec.name)}・${npcTitle(p.rec)}・DC ${seekMasterDc(s.value, p.rec)}${p.kind === 'commoner' ? '・不戰鬥' : ''}` }))
 })
 
-// 今天的許可：一格一項（出門、出城、離家期限、看管），狀態 ok／ask／no／na
-interface Permit { id: string; icon: IconName; label: string; hint: string; state: 'ok' | 'ask' | 'no' | 'na'; status: string; meter?: number; act?: 'master_leave' | 'master_permit' }
+// 主人的許可：一格一項（出門、出城、期限、看管），狀態 ok／ask／no／na。出門、出城共用一個期限，回家、回城不會重新算
+type PermitAct = 'master_leave' | 'master_permit' | 'master_extend'
+interface Permit { id: string; icon: IconName; label: string; hint: string; state: 'ok' | 'ask' | 'no' | 'na'; status: string; meter?: number; act?: PermitAct; btn?: string }
+const window_ = computed(() => (bound.value ? permitWindow(s.value) : undefined))
+const daysText = (hours: number) => `${Math.round((hours / 24) * 10) / 10} 天`
+const leftText = computed(() => (window_.value && window_.value.hoursLeft > 0 ? `還剩 ${daysText(window_.value.hoursLeft)}` : '同意了'))
+const extendable = computed(() => mayExtend(s.value))
 const permits = computed<Permit[]>(() => {
   const out: Permit[] = []
   const leaveAttr = attrName(slaveryRules.master_home.leave.attr)
+  const days = allowedDays(s.value)
   out.push(atHome.value
-    ? { id: 'leave', icon: 'door', label: '出門', hint: `在主人的家裡時，出門要先請主人同意（${leaveAttr}檢定，參考 DC ${leaveDc(s.value)}）。同意之後今天可以自由出入。`, state: mayLeave.value ? 'ok' : houseRefused.value ? 'no' : 'ask', status: mayLeave.value ? '同意了' : houseRefused.value ? '今天不准' : '要先請求', ...(mayLeave.value || houseRefused.value ? {} : { act: 'master_leave' as const }) }
+    ? { id: 'leave', icon: 'door', label: '出門', hint: `在主人的家裡時，出門要先請主人同意（${leaveAttr}檢定，參考 DC ${leaveDc(s.value)}）。同意之後 ${days} 天內可以自由出入（部分成功只有一半），回家不會重新算。`, state: mayLeave.value ? 'ok' : houseRefused.value ? 'no' : 'ask', status: mayLeave.value ? leftText.value : houseRefused.value ? '今天不准' : '要先請求', ...(mayLeave.value || houseRefused.value ? {} : { act: 'master_leave' as const }) }
     : { id: 'leave', icon: 'door', label: '出門', hint: '在主人的家裡時，出門要先請主人同意。', state: 'na', status: '不在家裡' })
   const exitDc = contract.value?.def.exit_dc
   out.push(inTown.value
-    ? { id: 'exit', icon: 'road', label: '出城', hint: `今天要離開這座城（近郊、旅行），要先請主人同意：${attrName(slaveryRules.master_permit.attr)}檢定${exitDc ? `，參考 DC ${exitDc}` : ''}，印記越重越難。同意之後今天可以自由進出這座城。`, state: permitted.value ? 'ok' : refused.value ? 'no' : 'ask', status: permitted.value ? '同意了' : refused.value ? '今天不准' : '要先請求', ...(permitted.value || refused.value ? {} : { act: 'master_permit' as const }) }
-    : { id: 'exit', icon: 'road', label: '出城', hint: '在城裡時，離開這座城要先請主人同意。現在跟著主人走：談判要在安全的地方，逃離隨時都可以。', state: 'na', status: '不在城裡' })
+    ? { id: 'exit', icon: 'road', label: '出城', hint: `要離開城市（近郊、旅行），要先請主人同意：${attrName(slaveryRules.master_permit.attr)}檢定${exitDc ? `，參考 DC ${exitDc}` : ''}，印記越重越難。同意之後 ${days} 天內可以自由出入任何城市（部分成功只有一半），回城不會重新算；也順帶延長出門的期限。`, state: permitted.value ? 'ok' : refused.value ? 'no' : 'ask', status: permitted.value ? leftText.value : refused.value ? '今天不准' : '要先請求', ...(permitted.value || refused.value ? {} : { act: 'master_permit' as const }) }
+    : { id: 'exit', icon: 'road', label: '出城', hint: '在城裡時，離開城市要先請主人同意。現在跟著主人走：談判要在安全的地方，逃離隨時都可以。', state: 'na', status: '不在城裡' })
   const h = home.value
-  if (h) {
-    const hint = `${contract.value?.masterName}的家在${h.where}；出門後允許離家約 ${h.days} 天，逾期主人隨時會要你回去。`
-    out.push(h.atHome
-      ? { id: 'home', icon: 'hourglass', label: '離家', hint, state: 'ok', status: '在家裡', meter: 1 }
-      : h.late
-        ? { id: 'home', icon: 'hourglass', label: '離家', hint, state: 'no', status: `逾期 ${-h.left} 天`, meter: 0 }
-        : { id: 'home', icon: 'hourglass', label: '離家', hint, state: 'ok', status: `還剩 ${h.left} 天`, meter: h.days ? h.left / h.days : 1 })
-  } else {
-    out.push({ id: 'home', icon: 'hourglass', label: '離家', hint: '主人沒有自己的家，你跟著他走。', state: 'na', status: '沒有家' })
-  }
-  out.push({ id: 'strict', icon: 'eye', label: '看管', hint: '嚴加看管的點數會讓出門與出城的 DC 提高；犯錯、逃跑被抓回來會增加。', state: strict.value ? 'no' : 'ok', status: strict.value ? `嚴加看管 +${strict.value}` : '寬鬆' })
+  const w = window_.value
+  const hint = `${h ? `${contract.value?.masterName}的家在${h.where}；` : ''}主人准的出門、出城共用這個期限（允許離家約 ${days} 天）。剩不到 1/4 時可以申請延長（檢定照出城）${h ? '；人在外面逾期，主人隨時會要你回去' : ''}。`
+  const ext = extendable.value ? { act: 'master_extend' as const, btn: '延長' } : {}
+  if (!w) out.push({ id: 'home', icon: 'hourglass', label: '期限', hint, state: 'na', status: h?.atHome ? '在家裡' : '還沒有許可' })
+  else if (w.hoursLeft <= 0) out.push(h && !h.atHome
+    ? { id: 'home', icon: 'hourglass', label: '期限', hint, state: 'no', status: `逾期 ${daysText(-w.hoursLeft)}`, meter: 0, ...ext }
+    : { id: 'home', icon: 'hourglass', label: '期限', hint, state: 'na', status: '已到期', meter: 0 })
+  else out.push({ id: 'home', icon: 'hourglass', label: '期限', hint, state: extendable.value || extendRefused.value ? 'no' : 'ok', status: `還剩 ${daysText(w.hoursLeft)}${extendRefused.value ? '・今天不准延長' : ''}`, meter: w.hours ? w.hoursLeft / w.hours : 1, ...ext })
+  out.push({ id: 'strict', icon: 'eye', label: '看管', hint: '嚴加看管的點數會讓出門、出城與延長的 DC 提高；犯錯、逃跑被抓回來會增加。', state: strict.value ? 'no' : 'ok', status: strict.value ? `嚴加看管 +${strict.value}` : '寬鬆' })
   return out
 })
 
@@ -156,7 +163,7 @@ function ask(id: string) {
   emit('close')
 }
 
-function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | 'master_return' | 'seek_master' | 'unmark', target?: string) {
+function act(kind: 'negotiate' | 'escape' | PermitAct | 'master_return' | 'seek_master' | 'unmark', target?: string) {
   const u = parseUse(use.value)
   void game.perform({ kind, text: text.value, ...(target ? { target } : {}), ...(u ? { use: u } : {}) })
   text.value = ''
@@ -223,7 +230,7 @@ function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | '
             <span class="lbl">{{ p.label }} <Hint :text="p.hint" /></span>
             <span class="st">{{ p.status }}</span>
             <span v-if="p.meter !== undefined" class="meter"><i :style="{ width: `${Math.max(0, Math.min(1, p.meter)) * 100}%` }" /></span>
-            <button v-if="p.act" class="small primary" :disabled="game.judging" @click="act(p.act)">請求</button>
+            <button v-if="p.act" class="small primary" :disabled="game.judging" @click="act(p.act)">{{ p.btn ?? '請求' }}</button>
           </div>
         </div>
         <div v-if="home" class="home-line small muted">
@@ -231,7 +238,7 @@ function act(kind: 'negotiate' | 'escape' | 'master_permit' | 'master_leave' | '
         </div>
         <details v-if="permits.some((p) => p.act)" class="how small">
           <summary>附上說服主人的做法（選填）</summary>
-          <textarea v-model="text" rows="2" placeholder="描述你打算用什麼理由請求出門或出城" />
+          <textarea v-model="text" rows="2" placeholder="描述你打算用什麼理由請求出門、出城或延長" />
           <AbilityPicker v-model="use" />
         </details>
         <div v-if="tool?.ready" class="row actions">

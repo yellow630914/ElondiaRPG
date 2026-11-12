@@ -28,7 +28,7 @@ import { formatMoney } from './money'
 import { spawnVisitors } from './population'
 import { gateCheck, persuadePalaceGuard as persuadeGuard, zoneEntryBlock } from './security'
 import { assertMasterAllows } from './slavery'
-import { assertMayLeaveHouse, atMasterHome, touchMasterHome } from './masterHome'
+import { assertMayLeaveHouse, atMasterHome } from './masterHome'
 import { roll, withBonus, type Rng } from './rng'
 import { maybeDungeonEvent, offerTrapLure, pendingDungeonEvent } from './dungeonEvents'
 import { startLeadEvent } from './leadEvents'
@@ -1225,8 +1225,6 @@ export function crossLink(state: GameState): StepResult {
   // 進出特殊地圖：記下回程與地點
   if (area.kind === 'special' || target.kind === 'special') onAreaChange(state, area, target, { x: p.x, y: p.y })
   placeAt(state, target, cell.link.x, cell.link.y)
-  // 走進或走出主人的家：離家期限重新算
-  touchMasterHome(state, area, target)
   return {}
 }
 
