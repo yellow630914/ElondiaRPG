@@ -130,6 +130,8 @@ export const GROUPS = [
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
     { page: '懷孕計畫', src: 'docs/plan/roadmap/PREGNANCY_PLAN.md', desc: '懷孕、嬰兒、泌乳與怪物的苗床（R28）' },
     { page: 'AI 的上下文與工具調用計畫', src: 'docs/plan/roadmap/AGENT_MODE_PLAN.md', desc: '不編接不上的鉤子、地圖轉文字、伏筆、Agent 模式（R29）' },
+    { page: '儲物箱計畫', src: 'docs/plan/roadmap/STORAGE_PLAN.md', desc: '房子的儲物箱與保險箱（R30）' },
+    { page: '家僕計畫', src: 'docs/plan/roadmap/HOUSEHOLD_STAFF_PLAN.md', desc: '雇用女僕、管家、廚師、園丁（R31）' },
     { page: '東大陸計畫', src: 'docs/plan/roadmap/EAST_CONTINENT_PLAN.md', desc: '東大陸南部與化龍族（R15）' },
     { page: '炎華之地的內容規劃', src: 'docs/plan/roadmap/EAST_CONTENT_PLAN.md', desc: '炎華之地的世界書、怪物、物品、NPC、地標、任務清單（R15）' },
     { page: '開發回顧：問題盤點', src: 'docs/plan/RETROSPECTIVE.md', desc: '開發以來遇到的問題、原因與防範' },
