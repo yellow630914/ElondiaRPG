@@ -3,7 +3,7 @@
 > 上層：[GAME_DESIGN](GAME_DESIGN.md)。依賴：[LEWD_STATS](LEWD_STATS.md) 第 29 節（性經歷：受孕在這裡判定）、[HOMES](HOMES.md)（房子、搖籃）、[COMPANIONS](COMPANIONS.md)（夥伴、NPC 登錄）、[EVENTS](EVENTS.md)（生產、通知）。被依賴：[PROMPTS](PROMPTS.md)（給 AI 的資料）、[SAVES](SAVES.md)（`state.pregnancies`、`children`）。
 > 程式：`src/engine/pregnancy.ts`（受孕、階段、察覺、生產、診察、給 AI 的資料）、`src/engine/pregnancyEvents.ts`（察覺事件）、`src/engine/children.ts`（嬰兒、育幼院、房子、自動安排）、`src/engine/pregMarks.ts`（檢定減值、誰能泌乳）、`src/engine/pregCombat.ts`（懷孕的雙面效應、產後的生命上限）、`src/engine/lactation.ts`（泌乳）、`src/engine/brood.ts`（怪物的苗床）；資料：`data/rules/family.json`。
 > 畫面：事件視窗的察覺事件（`events/RoadEventPanel.vue` 的 `pregnancy`）、「🍼 要生了」（`events/BirthPanel.vue`）與「🍼 家人的消息」；神殿的「診察」「育幼院」（`NurseryPanel.vue`）；房屋區塊的「孩子」；隊伍視窗的「家人」；角色詳情慾望指標底下的懷孕與泌乳各一行。
-> 設計紀錄與還沒做的部分：[計畫 R28](plan/roadmap/PREGNANCY_PLAN.md)。
+> 設計紀錄：[計畫 R28](plan/roadmap/PREGNANCY_PLAN.md)（已完成）；還沒決定要不要做的延伸在點子庫 [I32](plan/ideas/dev-discussion.md#i32)。
 
 ## 1. 開關
 

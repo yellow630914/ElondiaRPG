@@ -128,7 +128,7 @@ export const GROUPS = [
     { page: '點子：玩家回饋', src: 'docs/plan/ideas/player-feedback.md', desc: '玩家回饋引出的構想', sub: '點子的來源' },
     { page: '點子：開發討論', src: 'docs/plan/ideas/dev-discussion.md', desc: '開發討論中提出的構想', sub: '點子的來源' },
     { page: '世界編輯器計畫', src: 'docs/plan/roadmap/WORLD_EDITOR_PLAN.md', desc: '局部匯入、介面整理、任務流程圖、特殊任務生成器（R11）' },
-    { page: '懷孕計畫', src: 'docs/plan/roadmap/PREGNANCY_PLAN.md', desc: '懷孕、嬰兒、泌乳與怪物的苗床（R28）' },
+    { page: '懷孕計畫', src: 'docs/plan/roadmap/PREGNANCY_PLAN.md', desc: '懷孕、嬰兒、泌乳與怪物的苗床（R28，已完成，設計紀錄）' },
     { page: 'AI 的上下文與工具調用計畫', src: 'docs/plan/roadmap/AGENT_MODE_PLAN.md', desc: '不編接不上的鉤子、地圖轉文字、伏筆、Agent 模式（R29）' },
     { page: '儲物箱計畫', src: 'docs/plan/roadmap/STORAGE_PLAN.md', desc: '房子的儲物箱與保險箱（R30）' },
     { page: '家僕計畫', src: 'docs/plan/roadmap/HOUSEHOLD_STAFF_PLAN.md', desc: '雇用女僕、管家、廚師、園丁（R31）' },
