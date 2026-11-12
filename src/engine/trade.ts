@@ -443,7 +443,7 @@ export function listPrice(state: GameState, deal: Deal): number | undefined {
 
 /**
  * 標準收購價：基本價 × 收購比例（存檔規則「賣給商店的價格」；材料全價收購）。比例算在基準裡，所以那個設定不影響顏色；
- * 畫面拿實際收購價跟它比，高寫綠字、低寫紅字。這間店不收時沒有
+ * 畫面拿實際收購價跟它比，高寫紅字、低寫綠字（紅漲綠跌）。這間店不收時沒有
  */
 export function listSellPrice(state: GameState, key: string, name: string): number | undefined {
   const cat = itemCategory(state, name)

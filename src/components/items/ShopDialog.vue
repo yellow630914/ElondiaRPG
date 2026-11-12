@@ -99,10 +99,10 @@ function removeBuy(d: Deal, all = false) {
   else delete cart.buy[d.id]
 }
 const price = (d: Deal) => dealMoney(s.value, key.value, d)
-/** 收購價比標準收購價（基本價 × 收購比例）高：對你有利寫綠字（down 的顏色）；低：紅字 */
+/** 收購價比標準收購價（基本價 × 收購比例）高：up（紅字）；低：down（綠字）——紅漲綠跌，和售價一樣 */
 const sellTone = (name: string, p: number | null) => {
   const list = listSellPrice(s.value, key.value, name)
-  return p === null || list === undefined || p === list ? '' : p > list ? 'down' : 'up'
+  return p === null || list === undefined || p === list ? '' : p > list ? 'up' : 'down'
 }
 /** 售價比標準售價（基本價 × 店家加成）高：up；低：down（字變紅、變綠） */
 const priceTone = (d: Deal) => {
