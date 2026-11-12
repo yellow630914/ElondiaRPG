@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
 import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
-import { bonusesOff, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
+import { bonusesOff, onlyNegative, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummary, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
 import { lockable, lockedGear, lockItems } from '@/engine/inventory'
 import { bindsOf, lockName, schoolsOf } from '@/engine/schools'
@@ -10,11 +10,13 @@ import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc, uncurseFee,
 import { formatMoney } from '@/engine/money'
 import { fusionMult, fusionRules, wornDaysOf } from '@/engine/fusion'
 import type { Character, GearSlot, GearSpec } from '@/engine/types'
+import type { Mods } from '@/engine/data'
 import { useGame } from '@/stores/game'
 import { gameRule } from '@/engine/gameRules'
 import { characterBody } from '@/engine/look'
 import { VACUUM_TEXT, vacuumSides } from '@/engine/lewd'
 import GameIcon from '../ui/GameIcon.vue'
+import Hint from '../ui/Hint.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
 import SlotButton from './SlotButton.vue'
@@ -38,6 +40,7 @@ const LEFT: GearSlot[] = ['head', 'body', 'underwear_top', 'wrists', 'main_hand'
 const RIGHT: GearSlot[] = ['belt', 'legs', 'underwear_bottom', 'feet', 'off_hand']
 const JEWELS: GearSlot[] = ['accessory', 'leg_accessory', 'ring_1', 'ring_2', 'piercing_1', 'piercing_2']
 // 額外飾品欄：存檔規則開放的格數；關掉的格子裡還有上了鎖的東西時也列出來（解開之後收進行囊）
+const EXTRA_HINT = '格數在設定的遊戲規則調整（存檔規則）。首飾、戒指、穿孔、腿部飾品與任何部位的拘束具都能放。拘束具放在這裡：附魔、材料特性、正的屬性與檢定加值不生效（標籤上不列）；減值、慾望指標與拘束照算，修了流派又上了鎖時雙面效應也照算。'
 const extraOpen = computed(() => Math.min(EXTRA_SLOTS.length, gameRule(s.value, 'extraSlots')))
 const EXTRAS = computed(() => {
   const used = EXTRA_SLOTS.reduce((n, slot, i) => (m.value.gear?.[slot] ? i + 1 : n), 0)
@@ -89,8 +92,9 @@ function lockIt() {
   void game.lockGear(m.value.id, selected.value, lockPick.value)
   lockPick.value = ''
 }
-function chips(spec: GearSpec): string[] {
-  return gearSummary(spec).split('・').slice(1)
+/** 標籤：放在額外飾品欄的拘束具不列不生效的加成（off） */
+function chips(spec: GearSpec, off = false): string[] {
+  return gearSummary(spec, off).split('・').slice(1)
 }
 
 /** 行囊中可以裝備的東西（依欄位篩選） */
@@ -111,9 +115,11 @@ function weaponBlock(spec: GearSpec): string | null {
 /** 和目前這一格的裝備比較：武器骰的變化（中性），數值變化（正的綠色、負的紅色） */
 function diff(spec: GearSpec): { text: string; up?: boolean }[] {
   const cur = current.value && gearKnown(current.value.spec) ? gearStats(current.value.spec) : undefined
-  const now = cur?.mods ?? {}
+  // 額外飾品欄的拘束具只算減值
+  const eff = (sp: GearSpec, mods: Mods) => (bonusesOff(selected.value, sp) ? onlyNegative(mods) : mods)
+  const now = cur ? eff(current.value!.spec, cur.mods) : {}
   const st = gearStats(spec)
-  const next = st.mods
+  const next = eff(spec, st.mods)
   const dice: { text: string; up?: boolean }[] = []
   if (cur?.weapon && st.weapon && weaponDef(cur.weapon).dice !== weaponDef(st.weapon).dice) dice.push({ text: `${weaponDef(cur.weapon).dice} → ${weaponDef(st.weapon).dice}` })
   const keys = new Set([...Object.keys(now), ...Object.keys(next)])
@@ -158,7 +164,7 @@ const totals = computed(() => {
         <SlotButton v-for="slot in JEWELS" :key="slot" :slot-id="slot" :member="m" :selected="selected === slot" @pick="selected = slot" />
       </div>
       <template v-if="EXTRAS.length">
-      <div class="sec-title">額外飾品 <span class="sec-note">開放 {{ extraOpen }} 格・存檔規則可調・拘束具放這裡只算減值</span></div>
+      <div class="sec-title">額外飾品 <span class="sec-note">開放 {{ extraOpen }} 格</span> <Hint :text="EXTRA_HINT" /></div>
       <div class="grid3">
         <SlotButton v-for="slot in EXTRAS" :key="slot" :slot-id="slot" :member="m" :selected="selected === slot" @pick="selected = slot" />
       </div>
@@ -172,7 +178,7 @@ const totals = computed(() => {
         <span class="gear-ic big" :class="`r-${rarityOf(current.spec)}`"><ItemIcon :name="current.name" :spec="current.spec" :size="36" /></span>
         <div>
           <div class="iname" :class="`r-${rarityOf(current.spec)}`">{{ current.name }} <span class="tag">{{ rarityName(rarityOf(current.spec)) }}</span></div>
-          <div class="chips"><span v-for="c in chips(current.spec)" :key="c" class="tag">{{ c }}</span></div>
+          <div class="chips"><span v-for="c in chips(current.spec, bonusesOff(selected, current.spec))" :key="c" class="tag">{{ c }}</span></div>
         </div>
         <button
           class="small" :disabled="inCombat || !!lockedGear(m, selected)"
@@ -196,7 +202,7 @@ const totals = computed(() => {
         <button v-else-if="current.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
       </div>
       <div v-if="current && bonusesOff(selected, current.spec)" class="lock-row small">
-        <GameIcon name="warning" :size="14" /><span>放在額外飾品欄：拘束具的加成（附魔、材料特性、正的屬性與檢定加值）不生效；減值與慾望指標照算</span>
+        <span class="warn-line"><GameIcon name="warning" :size="14" />放在額外飾品欄：只算減值、慾望指標與拘束 <Hint :text="EXTRA_HINT" /></span>
       </div>
       <div v-if="fused" class="lock-row small">
         <span>淫器：戰鬥時展開成{{ fused.weapon }}・最近 {{ fused.of }} 天穿了 {{ fused.days }} 天</span>
@@ -233,7 +239,7 @@ const totals = computed(() => {
           <div class="body">
             <div class="iname" :class="`r-${rarityOf(c.spec)}`">{{ c.name }}<span v-if="c.qty > 1" class="muted small"> ×{{ c.qty }}</span> <span class="tag">{{ rarityName(rarityOf(c.spec)) }}</span></div>
             <div class="chips">
-              <span v-for="t in chips(c.spec)" :key="t" class="tag">{{ t }}</span>
+              <span v-for="t in chips(c.spec, onlySlot && bonusesOff(selected, c.spec))" :key="t" class="tag">{{ t }}</span>
               <span v-for="d in (onlySlot ? diff(c.spec) : [])" :key="d.text" class="delta" :class="d.up === undefined ? '' : d.up ? 'up' : 'down'">{{ d.text }}</span>
             </div>
             <div v-if="warning(c.spec)" class="warn small">{{ warning(c.spec) }}</div>
@@ -257,6 +263,7 @@ const totals = computed(() => {
 .wear { display: grid; grid-template-columns: 150px 1fr 150px; gap: 6px; }
 .wear .col.right { grid-column: 3; grid-row: 1; }
 .wear .fig { grid-column: 2; grid-row: 1; }
+.warn-line { display: inline-flex; align-items: center; gap: 4px; }
 .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .sec-title { font-size: var(--fs-xs); color: #f0d083; letter-spacing: .1em; border-bottom: 1px solid #c99a4555; padding: 6px 2px 3px; display: flex; gap: 8px; align-items: baseline; }
 .sec-title:first-child { padding-top: 0; }

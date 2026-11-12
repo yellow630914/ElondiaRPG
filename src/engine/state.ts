@@ -90,8 +90,8 @@ export function newGame(opts: NewGameOptions): GameState {
   const appearance = clip(lookAppearance(look, clip(opts.appearance, 400)), 600)
   const background = clip(opts.background, 800)
   // 建角時挑的裝備：不合法時（例如預算不夠）丟錯，畫面上會先擋下來
-  // 存檔規則「額外飾品欄的格數」：建角的欄位照這一局的規則
-  setExtraSlotCount(gameRule({ options: opts.options as GameOptions }, 'extraSlots'))
+  // 存檔規則「額外飾品欄的格數」：開新遊戲一律用預設的格數（建角畫面也是），進遊戲後再到設定調整
+  setExtraSlotCount(gameRule(null, 'extraSlots'))
   if (opts.gear) {
     pc.gear = creationGear(opts.classId, opts.gear, Math.max(0, opts.gearBudget ?? gearRules.creation.default_budget), opts.race, !!opts.options?.classWeapons)
     syncGear(pc, classDef(opts.classId).weapon)
@@ -141,7 +141,8 @@ export function newGame(opts: NewGameOptions): GameState {
     schema: SAVE_SCHEMA,
     guild: { rank: 'F', merit: 0 },
     homes: {},
-    options: { ...defaultOptions(), ...opts.options },
+    // 額外飾品欄的格數不在開新遊戲時決定（一律預設）
+    options: (({ extraSlots: _x, ...rest }) => ({ ...defaultOptions(), ...rest }))(opts.options ?? {}) as GameOptions,
     // 新遊戲的 NPC 一開始就照新的職業生成：不用問「炎華之地要不要改一批職業」（classRebalance.ts）
     classRebalance: { done: 'skipped' },
     // 主角的性經歷：建角時選的（sexRecord.ts）
