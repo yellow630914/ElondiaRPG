@@ -34,7 +34,7 @@
         { "label": "承諾以後常來光顧", "attr": "cha", "dc": 0 },
         { "label": "用專業知識挑出商品的毛病", "attr": "int", "dc": 1 },
         { "label": "搬出冒險者公會的名號", "attr": "cha", "dc": 2 },
-        { "label": "先大手筆買一批貨（50 銅）", "attr": "cha", "dc": -3, "cost_cc": 50 }
+        { "label": "先大手筆買一批貨（50 白鸛）", "attr": "cha", "dc": -3, "cost_cc": 50 }
       ],
       "outcomes": {
         "critical": { "text": "以後這間店 85 折", "effects": [{ "type": "flag", "key": "discount:{shop}", "value": 0.15 }, { "type": "affinity", "npc": "keeper", "delta": 3 }] },

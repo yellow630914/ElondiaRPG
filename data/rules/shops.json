@@ -240,7 +240,7 @@
       "catalog_tag": "magic",
       "buys": ["scroll", "consumable", "material"],
       "ai_effects": ["item", "affinity", "flag", "memory"],
-      "random": { "consumables": 4, "materials": 5, "material_markup": 2, "max_material_price": [150, 300, 600, 1500],
+      "random": { "consumables": 4, "materials": 5, "max_material_price": [150, 300, 600, 1500],
         "$comment": "卷軸照目錄上架；另外每天隨機上架消耗品與材料（材料依聚落規模限制收購價上限：村莊、城鎮、城市、王都）" },
       "specials": []
     },

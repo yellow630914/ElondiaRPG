@@ -232,7 +232,9 @@ describe('價格拆解（R19 T5）', () => {
     if (ore) {
       const b = buyBreakdown(s, key, ore)!
       // 動態狀態的標籤後面寫還有幾天（「礦坑塌方（還有 N 天）」）
-      expect(b.steps.map((x) => x.label.replace(/（還有 \d+ 天）$/, ''))).toEqual(expect.arrayContaining(['材料加成（目錄價是收購價）', '礦產豐富', '礦坑塌方']))
+      expect(b.steps.map((x) => x.label.replace(/（還有 \d+ 天）$/, ''))).toEqual(expect.arrayContaining(['礦產豐富', '礦坑塌方']))
+      // 材料不再有「材料加成」這一步
+      expect(b.steps.some((x) => x.label.startsWith('材料加成'))).toBe(false)
       expect(b.category).toBe('礦石與金屬')
       expect(breakdownText(b)).toContain('礦坑塌方（還有 3 天） +60%')
     }

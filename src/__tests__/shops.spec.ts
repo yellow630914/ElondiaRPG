@@ -51,9 +51,9 @@ describe('shop types', () => {
     expect(kinds('smithy').size).toBeGreaterThan(0)
     expect(kinds('tailor').size).toBeGreaterThan(0)
     expect(kinds('jeweler').size).toBeGreaterThan(0)
-    // 材料以收購價的兩倍賣出，不能買進賣出套利
+    // 材料照目錄價賣，不再加成（2026-11-13 起；只看物價、標籤這些）
     const ingot = shopState(state, 'smithy').deals.find((d) => d.title === '精鋼錠')!
-    expect(ingot.gives[0]!.amount).toBeGreaterThanOrEqual(itemDef('精鋼錠')!.price_cc * 2)
+    expect(ingot.basis?.markup ?? 1).toBe(1)
   })
 
   it('stocks scrolls plus random potions and materials at the magic shop', () => {

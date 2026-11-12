@@ -99,7 +99,8 @@ export function notorietyMult(state: GameState): number {
 }
 
 /** 商店賣材料時的加成（材料的目錄價是收購價） */
-const MATERIAL_MARKUP = 2
+/** 材料在一般商店照目錄價賣（2026-11-13 起不再加成；流浪商人另外寫 random.material_markup） */
+const MATERIAL_MARKUP = 1
 
 export function locationRank(type: string): number {
   return shopRules.location_rank[type] ?? 1
