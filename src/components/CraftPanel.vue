@@ -156,7 +156,12 @@ const text = ref('')
 const use = ref('')
 const slotLabel = (x: string) => baseSlotName(x as BaseSlot)
 const name = computed(() => gearName({ base: base.value, material: mat.value }))
-const line = computed(() => statsOf(base.value, mat.value))
+// 數值：自己打造選了慾望指標時，一起算進去（和底材預設的加值合在一起，每項最多 item_cap）
+const line = computed(() => {
+  const pick = opts.value.lewd
+  const bonus = pick ? lewdStats.value.find((x) => x.st === pick)?.bonus ?? 0 : 0
+  return gearSummary({ base: base.value, material: mat.value, ...(pick && bonus ? { lewd: { [pick]: bonus } } : {}) }).split('・').slice(2).join('・')
+})
 /** 這個材料做不出加成時：換哪一種才有 */
 const better = computed(() => (line.value ? undefined : materials.value.find((m) => statsOf(base.value, m.id))))
 const DEGREES = [['critical', '大成功'], ['success', '成功'], ['partial', '部分成功']] as const

@@ -127,10 +127,10 @@ export const CRAFT_SLOT_ORDER: BaseSlot[] = ['main_hand', 'off_hand', 'head', 'b
 /** 類型的順序（沒列到的排在最後） */
 export const BASE_TYPE_ORDER = [
   '刀劍', '鎚斧', '長柄', '弓弩', '法杖', '鞭', '其他武器', '盾', '副手武器', '法器', '其他副手',
-  '金屬護甲', '皮革護甲', '布護甲', '木護甲', '布衣物', '皮革衣物', '金屬衣物', '木衣物', '飾品', '寶石衣物', '成人向服裝',
+  '金屬護甲', '皮革護甲', '布護甲', '木護甲', '布衣物', '皮革衣物', '金屬衣物', '木衣物', '飾品', '寶石衣物', '成人向服裝', '拘束具',
 ]
 
-/** 底材的類型：寫了 type 就用它；否則主手、副手是「其他」，成人向服裝一類，有護甲數值的是護甲，寶石是飾品，其他照材料是衣物 */
+/** 底材的類型：寫了 type 就用它；否則主手、副手是「其他」，拘束具一類，成人向服裝一類，有護甲數值的是護甲，寶石是飾品，其他照材料是衣物 */
 export function baseType(id: string): string {
   const b = gearRules.bases[id]
   if (!b) return '其他'
@@ -138,9 +138,10 @@ export function baseType(id: string): string {
 }
 
 /** 沒寫 type 時的類型（世界編輯器的提示也用） */
-export function defaultBaseType(b: Pick<BaseDef, 'slot' | 'adult' | 'outfit' | 'armor' | 'stats' | 'kind'> & { armorDef?: unknown }): string {
+export function defaultBaseType(b: Pick<BaseDef, 'slot' | 'adult' | 'outfit' | 'armor' | 'stats' | 'kind'> & Partial<Pick<BaseDef, 'restraint'>> & { armorDef?: unknown }): string {
   if (b.slot === 'main_hand') return '其他武器'
   if (b.slot === 'off_hand') return '其他副手'
+  if (b.restraint) return '拘束具'
   if (b.adult || b.outfit === 'adult') return '成人向服裝'
   if (b.armor || b.armorDef || b.stats?.dr) return `${MATERIAL_KIND_NAME[b.kind]}護甲`
   if (b.kind === 'jewel') return '飾品'
