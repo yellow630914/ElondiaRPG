@@ -26,7 +26,11 @@
       "informant": ["情報屋", "消息鋪"],
       "temple": ["神殿", "聖堂", "祈禱所"],
       "adult_shop": ["成人用品店", "秘具舖", "夜之衣坊"],
-      "costume": ["服裝店", "換衣間", "衣裳坊"]
+      "costume_ranch": ["換衣間", "衣裳間", "更衣室"],
+      "costume_greenhouse": ["換衣間", "衣裳間", "更衣室"],
+      "costume_aquarium": ["換衣間", "衣裳間", "更衣室"],
+      "costume_garden": ["換衣間", "衣裳間", "更衣室"],
+      "costume_theater": ["換衣間", "衣裳間", "更衣室"]
     },
     "regions": {
       "central": {
@@ -85,7 +89,11 @@
       "informant": ["{air}；昏暗的角落裡，有人壓低聲音交談。", "{air}，桌上攤著幾張畫滿記號的地圖。", "{air}；這裡的消息不便宜，但很少出錯。"],
       "temple": ["{air}；神像前的燭火終日不滅。", "{air}，神官們低聲誦唸著禱詞。", "{air}；受傷的人在這裡接受治療與祝福。"],
       "adult_shop": ["{air}；牆上一排排掛著皮帶、鐵環與鎖鏈，另一邊是薄得透光的衣裳。", "{air}，玻璃櫃裡擺著形狀古怪的玩具。", "{air}；簾子後面是給客人試穿、試戴的小隔間。"],
-      "costume": ["{air}；一排排衣架上掛著乳牛裝、人魚裝、花瓣裝，換衣簾後面傳來嬉笑聲。", "{air}，鏡子前的魅魔店員拿著皮尺朝你招手。", "{air}；牆上貼著五座體驗館的海報，每張底下都寫著要穿哪五件。"]
+      "costume_ranch": ["{air}；一排排衣架上掛著同一館的五件套，換衣簾後面傳來嬉笑聲。", "{air}，鏡子前的魅魔店員拿著皮尺朝你招手。", "{air}；牆上貼著這一館的海報，底下寫著要穿哪五件。"],
+      "costume_greenhouse": ["{air}；一排排衣架上掛著同一館的五件套，換衣簾後面傳來嬉笑聲。", "{air}，鏡子前的魅魔店員拿著皮尺朝你招手。", "{air}；牆上貼著這一館的海報，底下寫著要穿哪五件。"],
+      "costume_aquarium": ["{air}；一排排衣架上掛著同一館的五件套，換衣簾後面傳來嬉笑聲。", "{air}，鏡子前的魅魔店員拿著皮尺朝你招手。", "{air}；牆上貼著這一館的海報，底下寫著要穿哪五件。"],
+      "costume_garden": ["{air}；一排排衣架上掛著同一館的五件套，換衣簾後面傳來嬉笑聲。", "{air}，鏡子前的魅魔店員拿著皮尺朝你招手。", "{air}；牆上貼著這一館的海報，底下寫著要穿哪五件。"],
+      "costume_theater": ["{air}；一排排衣架上掛著同一館的五件套，換衣簾後面傳來嬉笑聲。", "{air}，鏡子前的魅魔店員拿著皮尺朝你招手。", "{air}；牆上貼著這一館的海報，底下寫著要穿哪五件。"]
     },
     "greeting": {
       "tavern": ["坐吧，旅人。要來杯什麼？", "歡迎！今天的燉肉剛起鍋。", "找人還是找酒？兩樣這裡都有。"],
@@ -98,7 +106,11 @@
       "informant": ["想知道什麼？先談價錢。", "消息有新的，也有舊的。", "坐近一點，說話小聲點。"],
       "temple": ["願神祝福你，旅人。", "受傷了嗎？過來讓我看看。", "在這裡，你可以安心休息。"],
       "adult_shop": ["第一次來？先從手銬試起吧。", "要自己用，還是給別人穿？", "鎖另外算錢。鑰匙？那可不賣。"],
-      "costume": ["要去哪一館？我幫你挑一整套。", "五件都穿上才能當展示品喔，少一件都不行。", "先量尺寸——別害羞，這裡每個人都看過了。"]
+      "costume_ranch": ["要當展示品？我幫你挑一整套。", "五件都穿上才算喔，少一件都不行。", "先量尺寸——別害羞，這裡每個人都看過了。"],
+      "costume_greenhouse": ["要當展示品？我幫你挑一整套。", "五件都穿上才算喔，少一件都不行。", "先量尺寸——別害羞，這裡每個人都看過了。"],
+      "costume_aquarium": ["要當展示品？我幫你挑一整套。", "五件都穿上才算喔，少一件都不行。", "先量尺寸——別害羞，這裡每個人都看過了。"],
+      "costume_garden": ["要當展示品？我幫你挑一整套。", "五件都穿上才算喔，少一件都不行。", "先量尺寸——別害羞，這裡每個人都看過了。"],
+      "costume_theater": ["要當展示品？我幫你挑一整套。", "五件都穿上才算喔，少一件都不行。", "先量尺寸——別害羞，這裡每個人都看過了。"]
     },
     "overrides": {
       "$comment": "手寫的店名：地點 id → 店型 → { name, desc, greeting }（都可以只寫一部分，沒寫的用規則生成）",
@@ -261,19 +273,75 @@
         {"id": "fitting", "title": "請店主幫忙試戴", "desc": "店主替你挑一件、扣上、再解開，順便講解怎麼鎖最牢。", "gives": [{"type": "money", "amount": 30}], "gets": [{"type": "affinity", "npc": "keeper", "delta": 1}], "stock": 1, "flavor": "店主一邊示範扣環與鎖頭，一邊說起哪位貴客訂了什麼怪東西"}
       ]
     },
-    "costume": {
-      "name": "樂園服裝店",
+    "costume_ranch": {
+      "name": "牧場換衣間",
       "emoji": "👗",
-      "desc": "緋夢樂園主題體驗區的換衣間：五座體驗館規定的五件套服裝都在這裡買得到（第一、二級每天都有，第三級偶爾上架），魅魔店員還會幫忙換上。",
+      "desc": "緋夢樂園主題體驗區的換衣間：淫獸牧場規定的五件套服裝（當精牛乳牛要五件都穿上；人馬族另有馬衣、蹄具的版本）。第一、二級每天都有，第三級偶爾上架，魅魔店員還會幫忙換上。",
       "ai": false,
-      "cell": "costume",
+      "cell": "costume_ranch",
       "keeper": {"classes": ["bard", "rogue"], "title": "店員", "tags": ["merchant"]},
-      "catalog_tag": "costume",
-      "outfits": [2, 4],
+      "catalog_tag": "costume_ranch",
+      "outfits": [1, 2],
       "buys": ["equipment"],
       "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
       "specials": [],
-      "fixed": [{"item": "亞麻乳牛比基尼上衣", "stock": 2}, {"item": "絲綢乳牛比基尼上衣", "stock": 2}, {"item": "亞麻乳牛比基尼下著", "stock": 2}, {"item": "絲綢乳牛比基尼下著", "stock": 2}, {"item": "亞麻牛角頭飾", "stock": 2}, {"item": "絲綢牛角頭飾", "stock": 2}, {"item": "銅製牛鈴項圈", "stock": 2}, {"item": "銀製牛鈴項圈", "stock": 2}, {"item": "亞麻牛尾腰飾", "stock": 2}, {"item": "絲綢牛尾腰飾", "stock": 2}, {"item": "亞麻蛛絲薄紗胸衣", "stock": 2}, {"item": "絲綢蛛絲薄紗胸衣", "stock": 2}, {"item": "亞麻蛛絲薄紗裙", "stock": 2}, {"item": "絲綢蛛絲薄紗裙", "stock": 2}, {"item": "亞麻觸角髮箍", "stock": 2}, {"item": "絲綢觸角髮箍", "stock": 2}, {"item": "亞麻繭絲長手套", "stock": 2}, {"item": "絲綢繭絲長手套", "stock": 2}, {"item": "銅製蟲卵腰鏈", "stock": 2}, {"item": "銀製蟲卵腰鏈", "stock": 2}, {"item": "亞麻貝殼胸衣", "stock": 2}, {"item": "絲綢貝殼胸衣", "stock": 2}, {"item": "亞麻人魚鱗片泳裙", "stock": 2}, {"item": "絲綢人魚鱗片泳裙", "stock": 2}, {"item": "銅製珍珠髮飾", "stock": 2}, {"item": "銀製珍珠髮飾", "stock": 2}, {"item": "銅製珍珠頸鍊", "stock": 2}, {"item": "銀製珍珠頸鍊", "stock": 2}, {"item": "亞麻鰭紗腳環", "stock": 2}, {"item": "絲綢鰭紗腳環", "stock": 2}, {"item": "亞麻花瓣胸衣", "stock": 2}, {"item": "絲綢花瓣胸衣", "stock": 2}, {"item": "亞麻花瓣短裙", "stock": 2}, {"item": "絲綢花瓣短裙", "stock": 2}, {"item": "亞麻花冠", "stock": 2}, {"item": "絲綢花冠", "stock": 2}, {"item": "亞麻藤蔓手環", "stock": 2}, {"item": "絲綢藤蔓手環", "stock": 2}, {"item": "亞麻葉片涼鞋", "stock": 2}, {"item": "絲綢葉片涼鞋", "stock": 2}, {"item": "皮革魅魔胸衣", "stock": 2}, {"item": "硬皮魅魔胸衣", "stock": 2}, {"item": "皮革魅魔短褲", "stock": 2}, {"item": "硬皮魅魔短褲", "stock": 2}, {"item": "銅製魅魔角頭飾", "stock": 2}, {"item": "銀製魅魔角頭飾", "stock": 2}, {"item": "皮革魅魔尾巴", "stock": 2}, {"item": "硬皮魅魔尾巴", "stock": 2}, {"item": "皮革魅魔高筒靴", "stock": 2}, {"item": "硬皮魅魔高筒靴", "stock": 2}]
+      "fixed": [{"item": "亞麻乳牛比基尼上衣", "stock": 2}, {"item": "絲綢乳牛比基尼上衣", "stock": 2}, {"item": "亞麻乳牛比基尼下著", "stock": 2}, {"item": "絲綢乳牛比基尼下著", "stock": 2}, {"item": "亞麻牛角頭飾", "stock": 2}, {"item": "絲綢牛角頭飾", "stock": 2}, {"item": "銅製牛鈴項圈", "stock": 2}, {"item": "銀製牛鈴項圈", "stock": 2}, {"item": "亞麻牛尾腰飾", "stock": 2}, {"item": "絲綢牛尾腰飾", "stock": 2}, {"item": "亞麻乳牛花紋馬衣", "stock": 2}, {"item": "絲綢乳牛花紋馬衣", "stock": 2}]
+    },
+    "costume_greenhouse": {
+      "name": "溫室換衣間",
+      "emoji": "👗",
+      "desc": "緋夢樂園主題體驗區的換衣間：蟲之溫室規定的五件套服裝（當苗床要五件都穿上；人馬族另有馬衣、蹄具的版本）。第一、二級每天都有，第三級偶爾上架，魅魔店員還會幫忙換上。",
+      "ai": false,
+      "cell": "costume_greenhouse",
+      "keeper": {"classes": ["bard", "rogue"], "title": "店員", "tags": ["merchant"]},
+      "catalog_tag": "costume_greenhouse",
+      "outfits": [1, 2],
+      "buys": ["equipment"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [],
+      "fixed": [{"item": "亞麻蛛絲薄紗胸衣", "stock": 2}, {"item": "絲綢蛛絲薄紗胸衣", "stock": 2}, {"item": "亞麻蛛絲薄紗裙", "stock": 2}, {"item": "絲綢蛛絲薄紗裙", "stock": 2}, {"item": "亞麻觸角髮箍", "stock": 2}, {"item": "絲綢觸角髮箍", "stock": 2}, {"item": "亞麻繭絲長手套", "stock": 2}, {"item": "絲綢繭絲長手套", "stock": 2}, {"item": "銅製蟲卵腰鏈", "stock": 2}, {"item": "銀製蟲卵腰鏈", "stock": 2}, {"item": "亞麻蛛絲薄紗馬衣", "stock": 2}, {"item": "絲綢蛛絲薄紗馬衣", "stock": 2}]
+    },
+    "costume_aquarium": {
+      "name": "水族館換衣間",
+      "emoji": "👗",
+      "desc": "緋夢樂園主題體驗區的換衣間：觸手水族館規定的五件套服裝（當表演者要五件都穿上；人馬族另有馬衣、蹄具的版本）。第一、二級每天都有，第三級偶爾上架，魅魔店員還會幫忙換上。",
+      "ai": false,
+      "cell": "costume_aquarium",
+      "keeper": {"classes": ["bard", "rogue"], "title": "店員", "tags": ["merchant"]},
+      "catalog_tag": "costume_aquarium",
+      "outfits": [1, 2],
+      "buys": ["equipment"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [],
+      "fixed": [{"item": "亞麻貝殼胸衣", "stock": 2}, {"item": "絲綢貝殼胸衣", "stock": 2}, {"item": "亞麻人魚鱗片泳裙", "stock": 2}, {"item": "絲綢人魚鱗片泳裙", "stock": 2}, {"item": "銅製珍珠髮飾", "stock": 2}, {"item": "銀製珍珠髮飾", "stock": 2}, {"item": "銅製珍珠頸鍊", "stock": 2}, {"item": "銀製珍珠頸鍊", "stock": 2}, {"item": "亞麻鰭紗腳環", "stock": 2}, {"item": "絲綢鰭紗腳環", "stock": 2}, {"item": "亞麻人魚鱗片馬衣", "stock": 2}, {"item": "絲綢人魚鱗片馬衣", "stock": 2}, {"item": "亞麻鰭紗蹄帶", "stock": 2}, {"item": "絲綢鰭紗蹄帶", "stock": 2}]
+    },
+    "costume_garden": {
+      "name": "花園換衣間",
+      "emoji": "👗",
+      "desc": "緋夢樂園主題體驗區的換衣間：淫植花園規定的五件套服裝（當體驗者要五件都穿上；人馬族另有馬衣、蹄具的版本）。第一、二級每天都有，第三級偶爾上架，魅魔店員還會幫忙換上。",
+      "ai": false,
+      "cell": "costume_garden",
+      "keeper": {"classes": ["bard", "rogue"], "title": "店員", "tags": ["merchant"]},
+      "catalog_tag": "costume_garden",
+      "outfits": [1, 2],
+      "buys": ["equipment"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [],
+      "fixed": [{"item": "亞麻花瓣胸衣", "stock": 2}, {"item": "絲綢花瓣胸衣", "stock": 2}, {"item": "亞麻花瓣短裙", "stock": 2}, {"item": "絲綢花瓣短裙", "stock": 2}, {"item": "亞麻花冠", "stock": 2}, {"item": "絲綢花冠", "stock": 2}, {"item": "亞麻藤蔓手環", "stock": 2}, {"item": "絲綢藤蔓手環", "stock": 2}, {"item": "亞麻葉片涼鞋", "stock": 2}, {"item": "絲綢葉片涼鞋", "stock": 2}, {"item": "亞麻花瓣馬衣", "stock": 2}, {"item": "絲綢花瓣馬衣", "stock": 2}, {"item": "亞麻葉片蹄套", "stock": 2}, {"item": "絲綢葉片蹄套", "stock": 2}]
+    },
+    "costume_theater": {
+      "name": "劇場換衣間",
+      "emoji": "👗",
+      "desc": "緋夢樂園主題體驗區的換衣間：夢魔劇場規定的五件套服裝（當劇場工作人員要五件都穿上；人馬族另有馬衣、蹄具的版本）。第一、二級每天都有，第三級偶爾上架，魅魔店員還會幫忙換上。",
+      "ai": false,
+      "cell": "costume_theater",
+      "keeper": {"classes": ["bard", "rogue"], "title": "店員", "tags": ["merchant"]},
+      "catalog_tag": "costume_theater",
+      "outfits": [1, 2],
+      "buys": ["equipment"],
+      "ai_effects": ["item", "affinity", "flag", "memory", "gear"],
+      "specials": [],
+      "fixed": [{"item": "皮革魅魔胸衣", "stock": 2}, {"item": "硬皮魅魔胸衣", "stock": 2}, {"item": "皮革魅魔短褲", "stock": 2}, {"item": "硬皮魅魔短褲", "stock": 2}, {"item": "銅製魅魔角頭飾", "stock": 2}, {"item": "銀製魅魔角頭飾", "stock": 2}, {"item": "皮革魅魔尾巴", "stock": 2}, {"item": "硬皮魅魔尾巴", "stock": 2}, {"item": "皮革魅魔高筒靴", "stock": 2}, {"item": "硬皮魅魔高筒靴", "stock": 2}, {"item": "皮革魅魔馬衣", "stock": 2}, {"item": "硬皮魅魔馬衣", "stock": 2}, {"item": "皮革魅魔蹄靴", "stock": 2}, {"item": "硬皮魅魔蹄靴", "stock": 2}]
     },
     "wanderer": {
       "name": "流浪商人",

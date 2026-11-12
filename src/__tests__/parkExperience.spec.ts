@@ -287,3 +287,10 @@ describe('身分的整理（內容編輯器）', () => {
     expect(sanitizeRole({ name: '乳牛', body: ['masc', 'fem', 'andro'] })).toEqual({ name: '乳牛' })
   })
 })
+
+describe('內容標籤', () => {
+  it('對象寫明是男客人的劇場場景標「男性對象」', () => {
+    const scenes = landmarks.lm_park_exp_theater!.scenes!
+    for (const t of ['當引座員尋找獵物', '當魅魔舞者']) expect(scenes.find((s) => s.title === t)!.tags, t).toContain('male_partner')
+  })
+})

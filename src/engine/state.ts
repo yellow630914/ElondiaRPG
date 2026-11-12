@@ -309,9 +309,8 @@ function renameValues(node: unknown, names: Record<string, string>) {
   }
 }
 
-/** 舊的契約（角色身上的 contract）改成刺青清單裡的奴隸印記 */
 /**
- * 改過名字的物品（舊存檔裡的名字 → 現在的名字）：行囊、隊伍與 NPC 身上的裝備一起換。
+ * 改過名字的物品（舊存檔裡的名字 → 現在的名字）：行囊、隊伍與 NPC 身上的裝備、當天的商店與拍賣會一起換。
  * 乳牛比基尼拆成上衣與下著（worldgen/scripts/elondia/park_outfits49.py）：原本的那件就是上衣。
  */
 const ITEM_RENAMES: Record<string, string> = {
@@ -341,8 +340,12 @@ function renameOldItems(state: GameState) {
   const gearOf = (c?: Character) => { for (const g of Object.values(c?.gear ?? {})) if (g) g.name = to(g.name) }
   for (const m of state.party) gearOf(m)
   for (const r of Object.values(state.npcs ?? {})) gearOf(r.character)
+  // 當天已經上架的商品（item:名稱）與拍賣會的拍品：0.6.2 的存檔可能還是舊名字
+  rewriteStrings(state.shops, (v) => (v.startsWith('item:') ? `item:${to(v.slice(5))}` : to(v)))
+  rewriteStrings(state.auction, to)
 }
 
+/** 舊的契約（角色身上的 contract）改成刺青清單裡的奴隸印記 */
 function migrateContract(c: Character | undefined) {
   const old = (c as (Character & { contract?: ContractRef & { terms?: MarkTerms } }) | undefined)?.contract
   if (!c || !old) return

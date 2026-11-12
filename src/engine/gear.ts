@@ -66,6 +66,11 @@ export interface BaseDef {
   adult?: boolean
   /** 種族限定的底材（例如人馬族的蹄鐵、馬衣）：只有這些種族能穿 */
   races?: string[]
+  /**
+   * 種族版本：限定穿著（任務點、地標場景與身分的 wear）寫的是這個底材（或它的物品）時，穿這件也算。
+   * 例如人馬族的「乳牛花紋馬衣」當作「乳牛比基尼下著」（worldgen/scripts/elondia/park_outfits49.py）
+   */
+  wear_as?: string
   /** 曝露度 0～3（慾望指標的曝露名聲用）；沒寫時依服裝種類（lewd.json 的 gear.outfit） */
   exposure?: number
   /** 真空會走光的一側（曝露度 0 也算，例如裙子、薄襯衫）：底下沒穿內衣（top）或內褲（bottom）時那一側曝露度 +1。曝露度 1 以上的不用寫 */
@@ -531,13 +536,26 @@ export function gearBonuses(c: Pick<Character, 'gear'>): { mods: Mods; resist: A
 
 /** 限定穿著的一項怎麼稱呼（底材 id 換成底材的名稱） */
 export function wearName(w: string): string {
-  return gearRules.bases[w]?.name ?? w
+  const base = gearRules.bases[w] ? w : itemDef(w)?.gear?.base
+  const alts = base ? wearVariants(base) : []
+  const name = gearRules.bases[w]?.name ?? w
+  return alts.length ? `${name}（${alts.map(([, b]) => `${raceNames(b.races)}穿${b.name}`).join('、')}）` : name
 }
+
+/** 當作這個底材的種族版本（wear_as） */
+export function wearVariants(base: string): [string, BaseDef][] {
+  return Object.entries(gearRules.bases).filter(([, b]) => b.wear_as === base)
+}
+const raceNames = (races: string[] | undefined) => (races ?? []).map(raceName).join('、')
 
 /** 限定穿著（特殊任務的任務點、地標的場景）裡這個角色還沒穿上的：穿著同名的物品、或同一種底材的裝備都算 */
 export function missingWear(c: Pick<Character, 'gear'>, wear: string[] | undefined): string[] {
   const worn = Object.values(c.gear ?? {}).filter(Boolean)
-  return (wear ?? []).filter((w) => !worn.some((g) => g!.name === w || g!.spec.base === w))
+  return (wear ?? []).filter((w) => {
+    // 寫的是物品名稱時，種族版本看那件物品的底材
+    const base = gearRules.bases[w] ? w : itemDef(w)?.gear?.base
+    return !worn.some((g) => g!.name === w || g!.spec.base === w || (!!base && gearRules.bases[g!.spec.base]?.wear_as === base))
+  })
 }
 
 /** 內容編輯器的限定穿著選項：服裝類的底材（任何一件都算），以及有名字的服裝物品 */
@@ -552,7 +570,8 @@ export function wearChoices(): [string, string][] {
 export function wearUnfit(race: string | undefined, wear: string[] | undefined): string[] {
   return (wear ?? []).filter((w) => {
     const base = gearRules.bases[w] ? w : itemDef(w)?.gear?.base
-    return !!base && !baseSlotsFor(base, race).length
+    // 有這個種族穿得上的版本（wear_as）就不算
+    return !!base && !baseSlotsFor(base, race).length && !wearVariants(base).some(([id]) => baseSlotsFor(id, race).length)
   })
 }
 

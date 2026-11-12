@@ -189,7 +189,11 @@ exports[`world editor round trip > pregnancyEvents: opening and saving without c
 exports[`world editor round trip > shops: opening and saving without changes keeps the data 1`] = `
 {
   "adult_shop": "06c801a1bd82",
-  "costume": "bd650b7cf069",
+  "costume_aquarium": "dcc74cccb1c4",
+  "costume_garden": "548816ec4e82",
+  "costume_greenhouse": "54a21986c80f",
+  "costume_ranch": "a07d69da8251",
+  "costume_theater": "742caebffda0",
   "general": "06c801a1bd82",
   "informant": "06c801a1bd82",
   "jeweler": "06c801a1bd82",

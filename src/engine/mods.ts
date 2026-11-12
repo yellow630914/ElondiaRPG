@@ -15,7 +15,7 @@ import { FILTER_TAGS, type FilterTag } from './content'
 import { parasiteDef, parasiteRules } from './parasites'
 import { travelEvents } from './road'
 import mapsJson from '@data/world/maps.json'
-import {
+import { COSTUME_SHOPS,
   abilities, attributeRules, ATTR_IDS, bumpContentRevision, MASTER_EVENT_POOLS, masterEventPool, type MasterEventPool, classes, NONCOMBAT_CLASS, companionRules, CRAFT_IDS, craftRules, damageTypes, dungeonEncounters, enemies, equipment, GENDER_IDS, geography, itemDef, itemRules, monsterTraits,
   npcs as namedNpcs, npcTags, isChoosablePerk, perkDef, perkRules, reindexItems, statuses, storyCounters, wildEncounterTables, type ArmorDef, type AttrId, type NpcTagDef, type DungeonEncounters, type EncounterGroup,
   type EnemyDef, type FurniturePlace, type FurnitureSpec, type ItemCategory, type ItemDef, type ItemUse, type Mods, type NpcDef, type WeaponDef, wildEncounters,
@@ -817,7 +817,7 @@ export function sanitizeEnemy(id: string, raw: Partial<EnemyMod>, custom: boolea
 }
 
 const CATEGORIES: ItemCategory[] = ['food', 'consumable', 'gear', 'material', 'scroll', 'equipment', 'info', 'furniture']
-export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info', 'adult_shop', 'costume']
+export const SHOP_TAGS = ['general', 'temple', 'tavern', 'smith', 'tailor', 'jeweler', 'magic', 'info', 'adult_shop', ...COSTUME_SHOPS]
 const LOCATIONS = ['village', 'town', 'city', 'capital']
 
 function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
@@ -1118,6 +1118,9 @@ export function sanitizeBase(raw: Partial<BaseMod>, custom: boolean, id?: string
   // 種族限定的底材（人馬族的蹄鐵、馬衣）：內建的照原本（人馬族的欄位規則靠它），自建的可以選
   const races = (builtin ? builtin.races ?? [] : Array.isArray(raw.races) ? raw.races : []).filter((r) => typeof r === 'string' && !!attributeRules.races[r])
   if (races.length) out.races = [...new Set(races)]
+  // 種族版本（當作哪一件，限定穿著用）：內建的照原本，自建的種族限定底材可以選一件同欄位的底材
+  const wearAs = builtin ? builtin.wear_as : typeof raw.wear_as === 'string' && out.races?.length ? raw.wear_as : undefined
+  if (wearAs && gearRules.bases[wearAs] && wearAs !== id && gearRules.bases[wearAs]!.slot === out.slot) out.wear_as = wearAs
   // 束縛用（主人強制裝備的項圈、鐐銬）：沒有加成，不能是武器或上身防具
   const restraint = builtin ? !!builtin.restraint : !!raw.restraint && out.slot !== 'main_hand' && out.slot !== 'body'
   if (restraint) {
