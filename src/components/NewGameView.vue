@@ -25,14 +25,14 @@ import { sanitizePcTags } from '@/engine/pcTags'
 import { genderId } from '@/engine/look'
 import type { Body } from '@/engine/traits'
 import NameTag from './NameTag.vue'
-import { creationCatalog, creationCost, creationSlots, gearRules, gearSummary, slotNameFor, type CreationGear } from '@/engine/gear'
+import { creationCatalog, creationCost, creationSlots, gearRules, gearSummary, setExtraSlotCount, slotNameFor, type CreationGear } from '@/engine/gear'
 import { useSettings } from '@/stores/settings'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import ClassWeaponsHint from './ui/ClassWeaponsHint.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import RuleFields from './RuleFields.vue'
-import { customFrom, DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeCustomDifficulty, sanitizeRules, type NumericRule } from '@/engine/gameRules'
+import { RULE_DEFS, customFrom, DEFAULT_DIFFICULTY, DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultySummary, sanitizeCustomDifficulty, sanitizeRules, type NumericRule } from '@/engine/gameRules'
 import CustomDifficultyEditor from './CustomDifficultyEditor.vue'
 
 const emit = defineEmits<{ settings: []; home: [] }>()
@@ -133,6 +133,8 @@ const derived = computed(() => {
 })
 
 // ---- 起始裝備：在對話框裡挑（StartGearDialog），這裡只顯示目前的配備與預算 ----
+// 額外飾品欄一律用預設的格數（不沿用上一個存檔的；進遊戲後再到設定調整）
+setExtraSlotCount(RULE_DEFS.extraSlots.default)
 // 職業武器限制打開時，主手不列職業不能拿的武器（和引擎的 newGame 一致）
 const gearSlots = computed(() => creationSlots(classId.value, race.value, classWeapons.value))
 /** 換職業、種族時整套換回基本配備（只看職業與種族；切換武器限制時只換主手，見 fixMainHand） */
@@ -537,7 +539,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
         </tbody>
       </table>
       <FoldMenu id="newgame.rules" icon="d20" label="更多存檔規則" :detail="Object.keys(rules).length ? `改了 ${Object.keys(rules).length} 項` : '經驗、報酬、休息、旅途、委託期限……（之後可以在設定裡改）'">
-        <RuleFields v-model="rules" headings />
+        <RuleFields v-model="rules" headings :omit="['extraSlots']" />
       </FoldMenu>
     </div>
 

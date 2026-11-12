@@ -119,3 +119,25 @@ describe('額外飾品欄', () => {
     expect(slotsFor(spec('ring_swift', 'copper'))).toEqual(['ring_1', 'ring_2', 'extra_1', 'extra_2'])
   })
 })
+
+describe('開新遊戲一律用預設的格數', () => {
+  afterEach(() => setExtraSlotCount(2))
+  it('不沿用上一個存檔的格數，也不收開新遊戲時給的格數', () => {
+    setExtraSlotCount(8)
+    expect(() => newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 3, gear: { extra_2: { base: 'ring_guard', tier: 1 } }, gearBudget: 3, options: { extraSlots: 0 } })).not.toThrow()
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 3, options: { extraSlots: 6 } })
+    expect(state.options?.extraSlots).toBeUndefined()
+    expect(creationSlots('fighter', 'human').filter((s) => EXTRA_SLOTS.includes(s.slot)).length).toBe(2)
+    setExtraSlotCount(8)
+    expect(() => newGame({ name: '莉雅', race: 'human', classId: 'fighter', seed: 3, gear: { extra_5: { base: 'ring_guard', tier: 1 } }, gearBudget: 3 })).toThrow('額外飾品不能選')
+  })
+
+  it('額外飾品欄的拘束具摘要不列不生效的加成', async () => {
+    const { gearSummary } = await import('@/engine/gear')
+    const box = { base: 'box_binder', material: 'beast_hide', enchants: { mods: { save: 1, dr: 1 } }, lewd: { endurance: 8 } }
+    expect(gearSummary(box)).toContain('豁免 +1')
+    const off = gearSummary(box, true)
+    expect(off).not.toContain('豁免 +1')
+    expect(off).toContain('忍耐 +11')
+  })
+})

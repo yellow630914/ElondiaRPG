@@ -78,6 +78,11 @@ const firstMaterial = (k: string) => Object.entries(gearRules.materials).filter(
 // ---- 布料（文字卡；店主的手藝不夠的上鎖） ----
 const levelHere = computed(() => craftPlan(s.value, base.value, firstMaterial(kind.value)).level)
 const canDo = (tier: number) => levelHere.value >= tier
+/** 上鎖的原因：店主（工匠）這一門工藝的等級不夠 */
+const lockReason = computed(() => {
+  const name = craftRules.skills[craftPlan(s.value, base.value, firstMaterial(kind.value)).craft]?.name ?? '手藝'
+  return `店主的${name}是 Lv.${levelHere.value}，做不了第 ${levelHere.value + 1} 級以上的材料`
+})
 const matPick = ref('')
 const mat = computed(() => {
   if (materials.value.some((m) => m.id === matPick.value && canDo(m.tier))) return matPick.value
@@ -116,7 +121,7 @@ function order() {
     <template #frame><AdultDeco kind="atelier" /></template>
     <div class="modes">
       <button v-for="[k, n] in MODES" :key="k" class="mode" :class="{ on: mode === k }" @click="pickMode(k)">{{ n }}</button>
-      <span v-if="!isOutfit" class="muted small">拘束具穿在額外飾品欄時只留下減值與慾望指標，其他加成不生效</span>
+      <span v-if="!isOutfit" class="muted small">放在額外飾品欄只算減值與慾望指標 <Hint text="拘束具穿在原本的部位時全部照算；放在額外飾品欄時，附魔、材料特性、正的屬性與檢定加值不生效，減值、慾望指標與拘束照算。" /></span>
     </div>
     <div class="atelier">
 
@@ -140,12 +145,13 @@ function order() {
         </div>
         <h3 class="mt-h"><span class="step">3</span>{{ isOutfit ? '布料' : '材料' }}</h3>
         <div class="mats">
-          <button v-for="m in materials" :key="m.id" class="mat" :class="{ on: m.id === mat, lock: !canDo(m.tier) }" :disabled="!canDo(m.tier)" @click="matPick = m.id">
+          <button v-for="m in materials" :key="m.id" class="mat" :class="{ on: m.id === mat, lock: !canDo(m.tier) }" :disabled="!canDo(m.tier)" :title="canDo(m.tier) ? '' : lockReason" @click="matPick = m.id">
             <b>{{ m.name }}<template v-if="!canDo(m.tier)"> 🔒</template></b>
             <small>第 {{ m.tier }} 級</small>
             <em>慾望 +{{ outfitLewdBonus(base, m.id) }}</em>
           </button>
         </div>
+        <p v-if="materials.some((m) => !canDo(m.tier))" class="muted small lock-why">🔒 {{ lockReason }}。</p>
       </section>
 
       <div class="right">
@@ -230,6 +236,7 @@ button { font: inherit; }
 .hearts .off { color: #33231a26; }
 /* 布料：文字卡 */
 .mats { display: flex; gap: 8px; flex-wrap: wrap; }
+.lock-why { margin: 6px 0 0; }
 .mat { min-width: 92px; padding: 6px 12px; border: 1px solid #6d512855; border-radius: 4px; background: #fff5; display: grid; gap: 1px; text-align: center; }
 .mat small { font-size: 11.5px; color: var(--muted); }
 .mat em { font-style: normal; font-size: 12px; color: var(--tone); font-weight: 700; }

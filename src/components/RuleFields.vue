@@ -1,18 +1,18 @@
 <script setup lang="ts">
 // 這個存檔的規則（數值類，見 engine/gameRules.ts）：設定的「遊戲規則」「成人內容」頁與開新遊戲共用。
 // 欄位清空或填回預設值就是預設；改了的項目旁邊可以一鍵恢復。
-// groups：只列這幾類（沒給是全部）；headings：每一類前面加小標題（開新遊戲用）；noAdultMark：小標題不加（成人向）（成人內容頁本身就是成人向）；badge：每一項名稱後面的小標籤（設定頁標「存檔」）。
+// groups：只列這幾類（沒給是全部）；headings：每一類前面加小標題（開新遊戲用）；noAdultMark：小標題不加（成人向）（成人內容頁本身就是成人向）；omit：不列的項目（開新遊戲不列額外飾品欄的格數）；badge：每一項名稱後面的小標籤（設定頁標「存檔」）。
 import { computed } from 'vue'
 import { RULE_DEFS, RULE_GROUPS, type NumericRule, type RuleGroup } from '@/engine/gameRules'
 import Hint from './ui/Hint.vue'
 
-const props = defineProps<{ modelValue: Partial<Record<NumericRule, number>>; groups?: RuleGroup[]; headings?: boolean; badge?: string; noAdultMark?: boolean }>()
+const props = defineProps<{ modelValue: Partial<Record<NumericRule, number>>; groups?: RuleGroup[]; headings?: boolean; badge?: string; noAdultMark?: boolean; omit?: NumericRule[] }>()
 const emit = defineEmits<{ 'update:modelValue': [value: Partial<Record<NumericRule, number>>] }>()
 
 const ALL = Object.keys(RULE_DEFS) as NumericRule[]
 const sections = computed(() => RULE_GROUPS
   .filter((g) => !props.groups || props.groups.includes(g.id))
-  .map((g) => ({ ...g, keys: ALL.filter((k) => RULE_DEFS[k].group === g.id) }))
+  .map((g) => ({ ...g, keys: ALL.filter((k) => RULE_DEFS[k].group === g.id && !props.omit?.includes(k)) }))
   .filter((g) => g.keys.length))
 
 function set(key: NumericRule, raw: string) {

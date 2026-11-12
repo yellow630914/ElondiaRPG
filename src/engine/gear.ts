@@ -854,9 +854,16 @@ export const MOD_NAME: Record<string, string> = {
 const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
 
 /** 一行說明：稀有度・欄位・武器或防具類型・加成 */
-export function gearSummary(spec: GearSpec): string {
+/**
+ * 一件裝備的摘要。inExtra：拘束具放在額外飾品欄（bonusesOff）時只列生效的部分：
+ * 附魔、材料特性、正的屬性與檢定加值、獨特效果不列，減值、慾望指標、拘束照列
+ */
+export function gearSummary(spec: GearSpec, inExtra = false): string {
   if (!gearKnown(spec)) return '（已失效：底材或材料不存在，沒有效果）'
-  const s = gearStats(spec)
+  const raw = gearStats(spec)
+  const s = inExtra
+    ? { ...raw, mods: onlyNegative(raw.mods), resist: Object.fromEntries(Object.entries(raw.resist).filter(([, v]) => (v ?? 0) > 0)), offense: onlyNegative(raw.offense), threat: 0 }
+    : raw
   const parts = [rarityName(s.rarity), baseSlotName(s.slot)]
   if (s.weapon) {
     const w = weaponDef(s.weapon)
@@ -871,8 +878,9 @@ export function gearSummary(spec: GearSpec): string {
   const off = Object.entries(s.offense).filter(([, v]) => v).map(([k, v]) => `${damageTypeName(k)}攻擊 ×${Math.round((1 + v!) * 100) / 100}`)
   const all = [...bonus, ...res, ...off, ...(s.threat ? [`仇恨 ${signed(Math.round(s.threat * 100))}%`] : [])]
   if (all.length) parts.push(all.join('、'))
-  if (spec.unique) parts.push(`獨特：${describeEffects([spec.unique]).replace(/。$/, '')}`)
-  if (spec.attrs) parts.push(Object.entries(spec.attrs).filter(([, v]) => v).map(([k, v]) => `${attrName(k as AttrId)} ${signed(v!)}`).join('、'))
+  if (spec.unique && !inExtra) parts.push(`獨特：${describeEffects([spec.unique]).replace(/。$/, '')}`)
+  const attrs = spec.attrs && (inExtra ? onlyNegative(spec.attrs) : spec.attrs)
+  if (attrs && Object.values(attrs).some((v) => v)) parts.push(Object.entries(attrs).filter(([, v]) => v).map(([k, v]) => `${attrName(k as AttrId)} ${signed(v!)}`).join('、'))
   // 慾望指標的加減（底材的預設與物品寫的）與曝露度
   const lewd = gearLewdOf(spec)
   const lewdText = LEWD_STAT_IDS.filter((k) => lewd[k]).map((k) => `${lewdRules.stats[k].name} ${signed(lewd[k]!)}`)
