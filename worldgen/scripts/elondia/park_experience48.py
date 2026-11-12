@@ -1,10 +1,12 @@
 # 緋夢樂園的主題體驗區（成人向，docs/LUST_PARK.md 第 9 節）：沒有戰鬥的體驗館。
 #   1. gear.json / items.json   新底材「牛尾腰飾」（腰帶欄）與三件店貨（成人用品店）：精牛乳牛的全套服裝缺的那一件
-#   2. special_maps.json        體驗區入口 sm_park_experience，與五座體驗館的內部 sm_park_exp_<館>（安全的室內、一直有光）
-#   3. landmarks.json           入口廣場上的「主題體驗區的閘門」（內部是體驗區入口），體驗區入口裡五座體驗館的地標
+#   2. special_maps.json        體驗區入口 sm_park_experience，與六座體驗館的內部 sm_park_exp_<館>（安全的室內、一直有光；
+#                               觸手水族館分成表演廳與飼育區兩館）
+#   3. landmarks.json           入口廣場上的「主題體驗區的閘門」（內部是體驗區入口），體驗區入口裡六座體驗館的地標
 #                               （內部是各館的地圖，場景擺在館裡的格子上）
 # 場景的「身分」（role）：隊伍裡穿著那一館的服裝的人（主角或夥伴）才能當精牛乳牛、苗床、表演者、劇場工作人員；
 # 淫植花園整館都要穿得夠少（曝露度 3）才進得去，一進去就沾上花粉（地標的 enter）。見 docs/LANDMARKS.md 第 6.1 節。
+# 參觀以外、穿上服裝當展示品的場景只給陰柔、中性體型的人（身分的 body，看參加的人自己的體型）。
 # 要排在 outfits47.py（乳牛比基尼、牛角頭飾、牛鈴項圈）、lust_park_s7.py、high_dungeons31.py（入口廣場）、
 # underworld39.py、club_lines42.py（它們整筆重寫地標）之後。可以重跑。
 import json
@@ -52,17 +54,17 @@ MAPS = {
     HUB: {
         "name": "緋夢樂園・主題體驗區",
         "location": LOC,
-        "desc": "入口廣場旁另闢的一區，招牌寫著「主題體驗區——不用打鬥，只要好好享受」。五座小館一字排開，各是一個園區的體驗館：淫獸牧場的牛舍、蟲之溫室的玻璃屋、觸手水族館的水槽廳、淫植花園的花粉溫室、夢魔劇場的小劇場。換衣間的魅魔店員替想當「展示品」的客人換上各館規定的服裝；只想參觀的買票就能進去。這裡的魔物都養得很乖——至少不會在你沒答應的時候撲上來。",
+        "desc": "入口廣場旁另闢的一區，招牌寫著「主題體驗區——不用打鬥，只要好好享受」。六座小館一字排開，是五個園區的體驗館：淫獸牧場的牛舍、蟲之溫室的玻璃屋、觸手水族館的表演廳與飼育區、淫植花園的花粉溫室、夢魔劇場的小劇場。換衣間的魅魔店員替想當「展示品」的客人換上各館規定的服裝；只想參觀的買票就能進去。這裡的魔物都養得很乖——至少不會在你沒答應的時候撲上來。",
         "lighting": "lit", "refresh": False, "peaceful": True,
-        "shops": [{"shop": "adult_shop", "x": 1, "y": 5}, {"shop": "tailor", "x": 9, "y": 5}],
+        "shops": [{"shop": "adult_shop", "x": 1, "y": 5}, {"shop": "tailor", "x": 11, "y": 5}],
         "grid": [
-            "###########",
-            "#.........#",
-            "#.........#",
-            "#.........#",
-            "#.~~...~~.#",
-            "#.........#",
-            "#####E#####",
+            "#############",
+            "#...........#",
+            "#...........#",
+            "#...........#",
+            "#.~~.....~~.#",
+            "#...........#",
+            "######E######",
         ],
     },
     'sm_park_exp_ranch': {
@@ -100,7 +102,7 @@ MAPS = {
     'sm_park_exp_aquarium': {
         "name": "觸手水族館・表演廳",
         "location": LOC,
-        "desc": "觸手水族館的表演廳：北邊一排五座水槽，養著淫巨蛙、媚液水母、章魚淫妖、淫蛇與深水觸手，每座水槽前有一小塊濕漉漉的舞台和看台；南邊是讓遊客把手伸進水裡的觸摸池。表演者都穿著吊帶泳衣，每天陪自己的動物練習，再在滿場遊客面前上台演出。",
+        "desc": "觸手水族館的表演廳：北邊一排五座展示水槽，淫巨蛙、媚液水母、章魚淫妖、淫蛇與深水觸手各有一座，每座水槽前有一小塊濕漉漉的舞台和看台；南邊是讓遊客把手伸進水裡的觸摸池。穿著吊帶泳衣的表演者在滿場遊客面前和動物們上台演出。",
         "lighting": "lit", "refresh": False, "peaceful": True,
         "grid": [
             "################",
@@ -109,6 +111,20 @@ MAPS = {
             "#..............#",
             "#..............#",
             "#.~~~......~~~.#",
+            "#..............#",
+            "#######E########",
+        ],
+    },
+    'sm_park_exp_aquarium_care': {
+        "name": "觸手水族館・飼育區",
+        "location": LOC,
+        "desc": "觸手水族館的飼育區，遊客看不到的後場：五座飼育池養著表演用的淫巨蛙、媚液水母、章魚淫妖、淫蛇與深水觸手，池邊堆著飼料桶與毛巾。穿著吊帶泳衣的表演者每天下池陪自己的動物玩、餵牠們，練習上台的動作。",
+        "lighting": "lit", "refresh": False, "peaceful": True,
+        "grid": [
+            "################",
+            "#~~#~~#~~#~~#~~#",
+            "#..#..#..#..#..#",
+            "#..............#",
             "#..............#",
             "#######E########",
         ],
@@ -195,6 +211,9 @@ def sc(title, desc, scene, spot, spot_name, hours=2, money=None, effects=None, r
     return out
 
 
+FEM = ["fem", "andro"]
+
+
 def role(name, base, **extra):
     r = {"name": name, **base}
     r.update({k: v for k, v in extra.items() if k != 'effects'})
@@ -204,7 +223,7 @@ def role(name, base, **extra):
 
 
 # ---- 淫獸牧場：精牛乳牛 ----
-COW = {"wear": ["cow_bikini", "cow_horns", "cowbell_collar", "cow_tail"]}
+COW = {"wear": ["cow_bikini", "cow_horns", "cowbell_collar", "cow_tail"], "body": FEM}
 DOG, PIG, HORSE, LAWN, BARN, MILK = (2, 1), (6, 1), (10, 1), (2, 5), (6, 5), (10, 5)
 BEASTS = [
     # 配種舍、格子、淫獸、遊客看的經過、精牛乳牛的經過、工錢、多出來的效果
@@ -238,6 +257,8 @@ def ranch_scenes():
         sc("上榨乳台", "精牛乳牛：要正在泌乳。扣上榨乳台，被魔導榨乳器榨精榨乳給看台上的遊客看；榨出來的分你一些。", "{role}正在泌乳，被牧場的魅魔扣上榨乳台，胸前接上魔導榨乳器，身上有那個的話下面也一起接上。吸力一段一段調高，乳汁（和精液）一瓶一瓶裝滿，看台上的遊客看著數字往上跳、拍手叫好。",
            MILK, "榨乳台", tags=('adult', 'lactation'),
            role=cow(lactating=True, effects=[pay(150), {"type": "item", "name": "母乳", "qty": 1}, cond("drained"), lewd("submission", 1)])),
+        sc("上榨精台", "精牛乳牛：不用泌乳。扣上榨精台，被魔導榨精器榨給看台上的遊客看。", "{role}被牧場的魅魔扣上榨精台，腰下接上嗡嗡作響的魔導榨精器，吸力一段一段調高，一次又一次被榨到腿軟；榨出來的是精液還是愛液，就看{role}的身體。看台上的遊客看著瓶子一點一點裝滿，魅魔解說員笑著宣布今天的產量。",
+           MILK, "榨乳台", role=cow(effects=[pay(150), cond("drained"), lewd("submission", 1)])),
     ]
     for shed, spot, beast, watch, breed, wage, extra in BEASTS:
         out.append(sc(f"參觀{beast}配種", f"遊客：在{shed}的看台看牧場的精牛乳牛和{beast}配種。", watch, spot, shed, hours=1, money=40, effects=[cond("aroused")]))
@@ -247,7 +268,7 @@ def ranch_scenes():
 
 
 # ---- 蟲之溫室：苗床 ----
-BED = {"wear": ["sheer_negligee"]}
+BED = {"wear": ["sheer_negligee"], "body": FEM}
 SLUG, SLIME, SPIDER, SHOW, CLASS = (2, 1), (6, 1), (10, 1), (2, 5), (10, 5)
 IMPLANTS = [
     ("蛞蝓", "蛞蝓的溫床", SLUG, "brood_slug",
@@ -284,7 +305,7 @@ def greenhouse_scenes():
 
 
 # ---- 觸手水族館：表演者 ----
-SWIM = {"wear": ["sling_swimsuit"]}
+SWIM = {"wear": ["sling_swimsuit"], "body": FEM}
 TOUCH = (3, 4)
 ANIMALS = [
     # 動物、水槽（格子名稱）、格子、練習、表演、遊客看、練習多出來的效果
@@ -321,12 +342,18 @@ def aquarium_scenes():
     out = [sc("和章魚淫妖握手", "遊客：在觸摸池把手伸進水裡，和水族館的章魚淫妖互動。", "觸摸池邊，水族館的章魚淫妖——上半身是嫵媚的女人、下半身是八條粗大的觸腕——趴在池緣對主角招手。主角把手伸進水裡，觸腕一條條纏上來，從手腕一路往上；章魚淫妖笑著說：「握手只是開始喔。」",
               TOUCH, "觸摸池", hours=1, money=40, effects=[cond("aroused")])]
     for animal, tank, spot, train, show, watch, extra in ANIMALS:
-        out.append(sc(f"和{animal}培養感情", f"表演者：陪{animal}玩、餵牠，練習表演的動作。", train, spot, tank,
-                      role=swim(effects=[pay(40), cond("aroused"), extra])))
         out.append(sc(f"上台表演：{animal}秀", f"表演者：在滿場遊客面前和{animal}表演。水族館付工錢。", show, spot, tank,
                       role=swim(effects=[pay(150), cond("aroused"), lewd("exposure", 3)])))
         out.append(sc(f"看{animal}秀", f"遊客：坐在{tank}的看台看表演，前排會被水濺到。", watch, spot, tank, hours=1, money=30, effects=[cond("aroused")]))
     return out
+
+
+def aquarium_care_scenes():
+    """飼育區：表演者陪動物培養感情、練習（遊客進不來）"""
+    swim = lambda **x: role("表演者", SWIM, **x)
+    return [sc(f"和{animal}培養感情", f"表演者：下到飼育池陪{animal}玩、餵牠，練習表演的動作。", train, spot, f"{animal}的飼育池",
+               role=swim(effects=[pay(40), cond("aroused"), extra]))
+            for animal, tank, spot, train, show, watch, extra in ANIMALS]
 
 
 # ---- 淫植花園：花粉派對（整館要穿得夠少） ----
@@ -354,7 +381,7 @@ def garden_scenes():
 
 
 # ---- 夢魔劇場：劇場工作人員 ----
-STAFF = {"wear": ["succubus_outfit", "succubus_horns"]}
+STAFF = {"wear": ["succubus_outfit", "succubus_horns"], "body": FEM}
 BOX, STAGE, BACK, POLE, DREAM, REHEARSE = (1, 1), (7, 1), (13, 1), (7, 5), (1, 6), (13, 6)
 
 
@@ -390,7 +417,7 @@ def lm(id_, name, emoji, at, desc, scene, interior, scenes=None, enter=None, typ
     if enter:
         out["enter"] = enter
     if scenes:
-        assert len(scenes) <= 16, id_
+        assert len(scenes) <= 12, id_
         out["scenes"] = scenes
     return out
 
@@ -408,12 +435,15 @@ def landmarks():
            "蟲之溫室的體驗館。遊客買票看苗床、聽科普、參觀著床；穿上透視薄紗睡衣的人可以當溫室的「苗床」，主角還可以真的讓蟲子著床。",
            "濕熱的玻璃屋，空氣甜腥，穿著透明薄紗的苗床們躺在軟墊上，肚子裡的東西隔著皮膚隱約可見。", 'sm_park_exp_greenhouse', greenhouse_scenes()),
         lm("lm_park_exp_aquarium", "觸手水族館・親密表演廳", "🐙", hub(5),
-           "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，陪巨蛙、水母、章魚、淫蛇、觸手練習，再上台表演。",
+           "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，和巨蛙、水母、章魚、淫蛇、觸手上台表演（先到隔壁的飼育區練習）。",
            "五座水槽在幽藍的燈光裡發亮，舞台濕漉漉的，看台上的遊客等著下一場表演。", 'sm_park_exp_aquarium', aquarium_scenes()),
-        lm("lm_park_exp_garden", "淫植花園・溫室花粉派對", "🌺", hub(7),
+        lm("lm_park_exp_aquarium_care", "觸手水族館・飼育區", "🐸", hub(7),
+           "觸手水族館的後場。穿上吊帶泳衣的表演者在這裡陪巨蛙、水母、章魚、淫蛇、觸手培養感情、練習表演的動作；遊客進不來。",
+           "飼育池的水聲嘩啦啦地響，池邊堆著飼料桶，動物們一看到表演者就湊了過來。", 'sm_park_exp_aquarium_care', aquarium_care_scenes()),
+        lm("lm_park_exp_garden", "淫植花園・溫室花粉派對", "🌺", hub(9),
            "淫植花園的花粉溫室。衣服會被花粉溶掉，只讓穿得夠少的人（曝露度 3）進去，一進去就沾上花粉而發情、敏感；裡面可以體驗蜜壺草、吞噬花、觸手藤、蓮花妖與淫樹精。",
            "粉紅色的花粉在玻璃溫室裡飄著，甜得發膩的花香讓人頭暈，花叢深處傳來一陣陣嬌喘。", 'sm_park_exp_garden', garden_scenes(), enter=GARDEN_ENTER),
-        lm("lm_park_exp_theater", "夢魔劇場・互動體驗劇場", "🎭", hub(9),
+        lm("lm_park_exp_theater", "夢魔劇場・互動體驗劇場", "🎭", hub(11),
            "夢魔劇場的互動式體驗劇場。遊客可以進包廂、看鋼管舞與偶像、做一場春夢、看劇團的大戲；穿上魅魔裝、戴上魅魔角頭飾的人可以當一晚「劇場工作人員」。",
            "紅絲絨的布幕、昏暗的燈光，觀眾席裡的喘息聲比台詞還大聲。", 'sm_park_exp_theater', theater_scenes()),
     ]

@@ -302,13 +302,13 @@ describe('landmark scenes in the content editor', () => {
     expect(sanitizeScene({ title: '沒有經過', scene: '' })).toBeUndefined()
   })
 
-  it('keeps up to sixteen scenes on one landmark', () => {
+  it('keeps up to twelve scenes on one landmark', () => {
     const l = JSON.parse(JSON.stringify(landmarks.lm_ebony_night)) as { scenes: { title: string }[] }
-    const more = Array.from({ length: 10 }, (_, i) => ({ ...l.scenes[0]!, title: `多出來的場景${i + 1}` }))
+    const more = Array.from({ length: 6 }, (_, i) => ({ ...l.scenes[0]!, title: `多出來的場景${i + 1}` }))
     const m = sanitizeLandmarkMod('lm_ebony_night', { ...l, scenes: [...l.scenes, ...more] } as never)
-    // 原本 8 個，加 10 個：留前 16 個
-    expect(m.scenes).toHaveLength(16)
-    expect(m.scenes!.at(-1)!.title).toBe('多出來的場景8')
+    // 原本 8 個，加 6 個：留前 12 個
+    expect(m.scenes).toHaveLength(12)
+    expect(m.scenes!.at(-1)!.title).toBe('多出來的場景4')
   })
 
   it('saves a landmark with its scenes and the adult switch', () => {

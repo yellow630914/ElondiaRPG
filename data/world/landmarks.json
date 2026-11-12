@@ -6791,6 +6791,10 @@
        "cowbell_collar",
        "cow_tail"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "effects": [
        {
         "type": "money",
@@ -6833,6 +6837,10 @@
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "can_lactate": true,
       "effects": [
@@ -6900,6 +6908,10 @@
        "cowbell_collar",
        "cow_tail"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "lactating": true,
       "effects": [
        {
@@ -6910,6 +6922,52 @@
         "type": "item",
         "name": "母乳",
         "qty": 1
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "drained",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "submission",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "上榨精台",
+     "desc": "精牛乳牛：不用泌乳。扣上榨精台，被魔導榨精器榨給看台上的遊客看。",
+     "scene": "{role}被牧場的魅魔扣上榨精台，腰下接上嗡嗡作響的魔導榨精器，吸力一段一段調高，一次又一次被榨到腿軟；榨出來的是精液還是愛液，就看{role}的身體。看台上的遊客看著瓶子一點一點裝滿，魅魔解說員笑著宣布今天的產量。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 10,
+      "y": 5
+     },
+     "spot_name": "榨乳台",
+     "role": {
+      "name": "精牛乳牛",
+      "wear": [
+       "cow_bikini",
+       "cow_horns",
+       "cowbell_collar",
+       "cow_tail"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 150
        },
        {
         "type": "condition",
@@ -6972,6 +7030,10 @@
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -7040,6 +7102,10 @@
        "cowbell_collar",
        "cow_tail"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "effects": [
        {
         "type": "money",
@@ -7106,6 +7172,10 @@
        "cow_horns",
        "cowbell_collar",
        "cow_tail"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -7199,6 +7269,10 @@
       "wear": [
        "sheer_negligee"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "effects": [
        {
         "type": "money",
@@ -7269,6 +7343,10 @@
       "wear": [
        "sheer_negligee"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "brood": true,
       "pc_only": true,
       "effects": [
@@ -7335,6 +7413,10 @@
       "wear": [
        "sheer_negligee"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "pc_only": true,
       "effects": [
        {
@@ -7399,6 +7481,10 @@
       "name": "苗床",
       "wear": [
        "sheer_negligee"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "pc_only": true,
       "effects": [
@@ -7465,6 +7551,10 @@
       "wear": [
        "sheer_negligee"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "pc_only": true,
       "effects": [
        {
@@ -7500,7 +7590,7 @@
    "types": [
     "market"
    ],
-   "desc": "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，陪巨蛙、水母、章魚、淫蛇、觸手練習，再上台表演。",
+   "desc": "觸手水族館的表演廳。遊客買票和章魚淫妖握手、看動物秀；穿上吊帶泳衣的人可以當「表演者」，和巨蛙、水母、章魚、淫蛇、觸手上台表演（先到隔壁的飼育區練習）。",
    "scene": "五座水槽在幽藍的燈光裡發亮，舞台濕漉漉的，看台上的遊客等著下一場表演。",
    "open": {
     "adult": true
@@ -7533,45 +7623,6 @@
      "spot_name": "觸摸池"
     },
     {
-     "title": "和巨蛙培養感情",
-     "desc": "表演者：陪巨蛙玩、餵牠，練習表演的動作。",
-     "scene": "{role}穿著吊帶泳衣下到巨蛙池，餵淫巨蛙吃東西、陪牠玩，練習表演要用的動作：被長舌捲起來、拋上半空、再接住。巨蛙的舌頭又黏又熱，練著練著就變了調。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 2,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 1,
-      "y": 2
-     },
-     "spot_name": "巨蛙池",
-     "role": {
-      "name": "表演者",
-      "wear": [
-       "sling_swimsuit"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 40
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "aroused",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "endurance",
-        "delta": 1
-       }
-      ]
-     }
-    },
-    {
      "title": "上台表演：巨蛙秀",
      "desc": "表演者：在滿場遊客面前和巨蛙表演。水族館付工錢。",
      "scene": "表演時間到了。{role}站上巨蛙池的舞台，和淫巨蛙一起表演練好的節目：長舌捲起、拋起、接住，一次比一次纏得更緊，最後在全場的掌聲裡被巨蛙的長舌裹著舉在半空。",
@@ -7590,6 +7641,10 @@
       "name": "表演者",
       "wear": [
        "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -7636,45 +7691,6 @@
      "spot_name": "巨蛙池"
     },
     {
-     "title": "和水母培養感情",
-     "desc": "表演者：陪水母玩、餵牠，練習表演的動作。",
-     "scene": "{role}泡進媚液水母的水缸，讓發光的水母一隻一隻貼上皮膚，習慣牠們觸鬚的媚毒：剛開始麻得發抖，慢慢地學會在水裡隨著水母漂、擺出好看的姿勢。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 2,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 4,
-      "y": 2
-     },
-     "spot_name": "水母缸",
-     "role": {
-      "name": "表演者",
-      "wear": [
-       "sling_swimsuit"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 40
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "aroused",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "sensitivity",
-        "delta": 1
-       }
-      ]
-     }
-    },
-    {
      "title": "上台表演：水母秀",
      "desc": "表演者：在滿場遊客面前和水母表演。水族館付工錢。",
      "scene": "燈光暗下來，只剩水缸裡的水母在發光。{role}在缸裡和媚液水母跳一支慢舞，透明的觸鬚纏滿全身，每貼上一次{role}就輕顫一下，觀眾隔著玻璃看得入迷。",
@@ -7693,6 +7709,10 @@
       "name": "表演者",
       "wear": [
        "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -7739,45 +7759,6 @@
      "spot_name": "水母缸"
     },
     {
-     "title": "和章魚培養感情",
-     "desc": "表演者：陪章魚玩、餵牠，練習表演的動作。",
-     "scene": "{role}下到章魚水槽，和水族館的章魚淫妖培養默契：八條觸腕各有各的脾氣，哪一條喜歡纏腰、哪一條喜歡往裡探，練習時一條一條認識過去。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 2,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 7,
-      "y": 2
-     },
-     "spot_name": "章魚水槽",
-     "role": {
-      "name": "表演者",
-      "wear": [
-       "sling_swimsuit"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 40
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "aroused",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "lewdness",
-        "delta": 1
-       }
-      ]
-     }
-    },
-    {
      "title": "上台表演：章魚秀",
      "desc": "表演者：在滿場遊客面前和章魚表演。水族館付工錢。",
      "scene": "{role}和章魚淫妖站上章魚水槽的舞台。八條觸腕把{role}纏起、舉高、擺出一個又一個姿勢，章魚淫妖在{role}耳邊輕笑，表演的最後兩人一起沉進水裡，只留下一圈墨色。",
@@ -7796,6 +7777,10 @@
       "name": "表演者",
       "wear": [
        "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -7842,45 +7827,6 @@
      "spot_name": "章魚水槽"
     },
     {
-     "title": "和淫蛇培養感情",
-     "desc": "表演者：陪淫蛇玩、餵牠，練習表演的動作。",
-     "scene": "{role}走進海蛇窟，讓淫蛇從腳踝一圈圈纏上來，練習在被纏緊的時候保持呼吸、保持笑容；淫蛇的信子不時舔過{role}的耳朵和脖子。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 2,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 10,
-      "y": 2
-     },
-     "spot_name": "海蛇窟",
-     "role": {
-      "name": "表演者",
-      "wear": [
-       "sling_swimsuit"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 40
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "aroused",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "submission",
-        "delta": 1
-       }
-      ]
-     }
-    },
-    {
      "title": "上台表演：淫蛇秀",
      "desc": "表演者：在滿場遊客面前和淫蛇表演。水族館付工錢。",
      "scene": "{role}站上海蛇窟的舞台。淫蛇從腳踝一路纏到胸口，越纏越緊，{role}在牠的懷裡扭動、喘息，蛇頭繞過肩膀和{role}對看——觀眾分不清誰才是被馴服的那一個。",
@@ -7899,6 +7845,10 @@
       "name": "表演者",
       "wear": [
        "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -7945,45 +7895,6 @@
      "spot_name": "海蛇窟"
     },
     {
-     "title": "和觸手培養感情",
-     "desc": "表演者：陪觸手玩、餵牠，練習表演的動作。",
-     "scene": "{role}下到最深的觸手池，讓深水觸手一點一點熟悉{role}的身體：哪裡可以纏、哪裡要輕一點、什麼時候該放開，練到觸手一碰就知道{role}要什麼。",
-     "tags": [
-      "adult"
-     ],
-     "hours": 2,
-     "cooldown_days": 1,
-     "own_cooldown": true,
-     "spot": {
-      "x": 13,
-      "y": 2
-     },
-     "spot_name": "觸手池",
-     "role": {
-      "name": "表演者",
-      "wear": [
-       "sling_swimsuit"
-      ],
-      "effects": [
-       {
-        "type": "money",
-        "amount": 40
-       },
-       {
-        "type": "condition",
-        "target": "pc",
-        "condition": "aroused",
-        "add": true
-       },
-       {
-        "type": "lewd",
-        "stat": "endurance",
-        "delta": 1
-       }
-      ]
-     }
-    },
-    {
      "title": "上台表演：觸手秀",
      "desc": "表演者：在滿場遊客面前和觸手表演。水族館付工錢。",
      "scene": "壓軸是觸手池。{role}被深水觸手從水底捲上來，四肢被分開吊在水面上，觸手一條條鑽進泳衣底下，最後把{role}整個拉進水裡又托出來，全場起立鼓掌。",
@@ -8002,6 +7913,10 @@
       "name": "表演者",
       "wear": [
        "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -8050,13 +7965,250 @@
    ]
   },
   {
+   "id": "lm_park_exp_aquarium_care",
+   "name": "觸手水族館・飼育區",
+   "emoji": "🐸",
+   "location": "bloodplume",
+   "at": {
+    "area": "sm/sm_park_experience",
+    "x": 7,
+    "y": 2
+   },
+   "types": [
+    "market"
+   ],
+   "desc": "觸手水族館的後場。穿上吊帶泳衣的表演者在這裡陪巨蛙、水母、章魚、淫蛇、觸手培養感情、練習表演的動作；遊客進不來。",
+   "scene": "飼育池的水聲嘩啦啦地響，池邊堆著飼料桶，動物們一看到表演者就湊了過來。",
+   "open": {
+    "adult": true
+   },
+   "interior": "sm_park_exp_aquarium_care",
+   "scenes": [
+    {
+     "title": "和巨蛙培養感情",
+     "desc": "表演者：下到飼育池陪巨蛙玩、餵牠，練習表演的動作。",
+     "scene": "{role}穿著吊帶泳衣下到巨蛙池，餵淫巨蛙吃東西、陪牠玩，練習表演要用的動作：被長舌捲起來、拋上半空、再接住。巨蛙的舌頭又黏又熱，練著練著就變了調。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 1,
+      "y": 2
+     },
+     "spot_name": "巨蛙的飼育池",
+     "role": {
+      "name": "表演者",
+      "wear": [
+       "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 40
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "aroused",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "endurance",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "和水母培養感情",
+     "desc": "表演者：下到飼育池陪水母玩、餵牠，練習表演的動作。",
+     "scene": "{role}泡進媚液水母的水缸，讓發光的水母一隻一隻貼上皮膚，習慣牠們觸鬚的媚毒：剛開始麻得發抖，慢慢地學會在水裡隨著水母漂、擺出好看的姿勢。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 4,
+      "y": 2
+     },
+     "spot_name": "水母的飼育池",
+     "role": {
+      "name": "表演者",
+      "wear": [
+       "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 40
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "aroused",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "sensitivity",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "和章魚培養感情",
+     "desc": "表演者：下到飼育池陪章魚玩、餵牠，練習表演的動作。",
+     "scene": "{role}下到章魚水槽，和水族館的章魚淫妖培養默契：八條觸腕各有各的脾氣，哪一條喜歡纏腰、哪一條喜歡往裡探，練習時一條一條認識過去。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 7,
+      "y": 2
+     },
+     "spot_name": "章魚的飼育池",
+     "role": {
+      "name": "表演者",
+      "wear": [
+       "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 40
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "aroused",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "lewdness",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "和淫蛇培養感情",
+     "desc": "表演者：下到飼育池陪淫蛇玩、餵牠，練習表演的動作。",
+     "scene": "{role}走進海蛇窟，讓淫蛇從腳踝一圈圈纏上來，練習在被纏緊的時候保持呼吸、保持笑容；淫蛇的信子不時舔過{role}的耳朵和脖子。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 10,
+      "y": 2
+     },
+     "spot_name": "淫蛇的飼育池",
+     "role": {
+      "name": "表演者",
+      "wear": [
+       "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 40
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "aroused",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "submission",
+        "delta": 1
+       }
+      ]
+     }
+    },
+    {
+     "title": "和觸手培養感情",
+     "desc": "表演者：下到飼育池陪觸手玩、餵牠，練習表演的動作。",
+     "scene": "{role}下到最深的觸手池，讓深水觸手一點一點熟悉{role}的身體：哪裡可以纏、哪裡要輕一點、什麼時候該放開，練到觸手一碰就知道{role}要什麼。",
+     "tags": [
+      "adult"
+     ],
+     "hours": 2,
+     "cooldown_days": 1,
+     "own_cooldown": true,
+     "spot": {
+      "x": 13,
+      "y": 2
+     },
+     "spot_name": "觸手的飼育池",
+     "role": {
+      "name": "表演者",
+      "wear": [
+       "sling_swimsuit"
+      ],
+      "body": [
+       "fem",
+       "andro"
+      ],
+      "effects": [
+       {
+        "type": "money",
+        "amount": 40
+       },
+       {
+        "type": "condition",
+        "target": "pc",
+        "condition": "aroused",
+        "add": true
+       },
+       {
+        "type": "lewd",
+        "stat": "endurance",
+        "delta": 1
+       }
+      ]
+     }
+    }
+   ]
+  },
+  {
    "id": "lm_park_exp_garden",
    "name": "淫植花園・溫室花粉派對",
    "emoji": "🌺",
    "location": "bloodplume",
    "at": {
     "area": "sm/sm_park_experience",
-    "x": 7,
+    "x": 9,
     "y": 2
    },
    "types": [
@@ -8270,7 +8422,7 @@
    "location": "bloodplume",
    "at": {
     "area": "sm/sm_park_experience",
-    "x": 9,
+    "x": 11,
     "y": 2
    },
    "types": [
@@ -8328,6 +8480,10 @@
       "wear": [
        "succubus_outfit",
        "succubus_horns"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -8398,6 +8554,10 @@
       "wear": [
        "succubus_outfit",
        "succubus_horns"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {
@@ -8470,6 +8630,10 @@
        "succubus_outfit",
        "succubus_horns"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "effects": [
        {
         "type": "money",
@@ -8541,6 +8705,10 @@
        "succubus_outfit",
        "succubus_horns"
       ],
+      "body": [
+       "fem",
+       "andro"
+      ],
       "effects": [
        {
         "type": "money",
@@ -8605,6 +8773,10 @@
       "wear": [
        "succubus_outfit",
        "succubus_horns"
+      ],
+      "body": [
+       "fem",
+       "andro"
       ],
       "effects": [
        {

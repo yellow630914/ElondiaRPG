@@ -37,31 +37,31 @@ exports[`world editor round trip > events: opening and saving without changes ke
 
 exports[`world editor round trip > landmarks: opening and saving without changes keeps the data 1`] = `
 {
-  "lm_auction_house": "06c801a1bd82",
   "lm_blood_oath_valley": "06c801a1bd82",
-  "lm_ebony_night": "06c801a1bd82",
   "lm_ember_tower": "06c801a1bd82",
   "lm_evernight_tower": "06c801a1bd82",
   "lm_four_seasons_gallery": "06c801a1bd82",
   "lm_knight_academy": "06c801a1bd82",
   "lm_krause_manor": "06c801a1bd82",
   "lm_lower_massage": "06c801a1bd82",
+  "lm_moonlight_mother": "06c801a1bd82",
   "lm_old_stone_bridge": "06c801a1bd82",
-  "lm_park_exp_ranch": "06c801a1bd82",
+  "lm_park_exp_greenhouse": "06c801a1bd82",
   "lm_sea_spirit_shrine": "06c801a1bd82",
-  "lm_stillspring_altar": "06c801a1bd82",
+  "lm_succubus_banquet": "06c801a1bd82",
+  "lm_td_golden_tent": "06c801a1bd82",
   "lm_td_tea_horse": "06c801a1bd82",
-  "lm_uw_arena_quanzhou": "06c801a1bd82",
-  "lm_uw_arena_shadow_vale": "06c801a1bd82",
-  "lm_uw_black_albena": "06c801a1bd82",
-  "lm_uw_black_ashport": "06c801a1bd82",
+  "lm_uw_arena_albena": "06c801a1bd82",
+  "lm_uw_arena_ashport": "06c801a1bd82",
+  "lm_uw_arena_bone_hills": "06c801a1bd82",
+  "lm_uw_black_yinghe": "06c801a1bd82",
   "lm_whispering_ring": "06c801a1bd82",
   "lm_windoath_tower": "06c801a1bd82",
-  "lm_yh_huji": "06c801a1bd82",
-  "lm_yh_old_elm": "06c801a1bd82",
-  "lm_yh_scholar_inn": "06c801a1bd82",
+  "lm_yh_jinyu": "06c801a1bd82",
+  "lm_yh_night_market": "06c801a1bd82",
+  "lm_yh_pleasure_boat": "06c801a1bd82",
+  "lm_yh_shangqin": "06c801a1bd82",
   "lm_yh_weaving_bureau": "06c801a1bd82",
-  "lm_yh_xuande": "06c801a1bd82",
 }
 `;
 
@@ -204,14 +204,14 @@ exports[`world editor round trip > shops: opening and saving without changes kee
 exports[`world editor round trip > specialMaps: opening and saving without changes keeps the data 1`] = `
 {
   "sm_ebony_night": "06c801a1bd82",
-  "sm_lust_park": "06c801a1bd82",
-  "sm_park_exp_ranch": "06c801a1bd82",
+  "sm_park_exp_greenhouse": "06c801a1bd82",
   "sm_rhineburg_sewer": "06c801a1bd82",
   "sm_sinor_grotto": "06c801a1bd82",
   "sm_soriel_belltower": "06c801a1bd82",
+  "sm_td_inner_tent": "06c801a1bd82",
   "sm_uw_albena": "06c801a1bd82",
-  "sm_uw_shadow_vale": "06c801a1bd82",
-  "sm_uw_tidehaven": "06c801a1bd82",
-  "sm_yh_xiantang_inner": "06c801a1bd82",
+  "sm_uw_bone_hills": "06c801a1bd82",
+  "sm_uw_quanzhou": "06c801a1bd82",
+  "sm_yh_longan_canal": "06c801a1bd82",
 }
 `;

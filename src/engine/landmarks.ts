@@ -201,6 +201,7 @@ function roleFits(state: GameState, role: SceneRole, c: Character): boolean {
   if (c.status.includes('away')) return false
   if ((role.pc_only || broodEffects(role).length) && !c.isPlayer) return false
   if (missingWear(c, role.wear).length) return false
+  if (!pcBodyAllowed(role.body, characterBody(c))) return false
   if (role.exposure && exposureLevel(c) < role.exposure) return false
   if (role.can_lactate && !canLactate(c)) return false
   if (role.lactating && !isLactating(state, c)) return false
@@ -227,6 +228,7 @@ export function roleNote(state: GameState, role: SceneRole): string | undefined 
   const block = roleBroodBlock(state, role)
   if (block && roleFits(state, role, pcOf(state))) return `主角現在不能當${role.name}（${block}）`
   const parts: string[] = []
+  if (role.body?.length) parts.push(`是${role.body.map((b) => BODY_NAME[b]).join('或')}體型`)
   if (role.wear?.length) parts.push(`穿著${role.wear.map((w) => `【${wearName(w)}】`).join('')}`)
   if (role.exposure) parts.push(`穿得夠少（曝露度 ${role.exposure}）`)
   if (role.can_lactate) parts.push('身體會泌乳')
@@ -234,6 +236,8 @@ export function roleNote(state: GameState, role: SceneRole): string | undefined 
   if (role.brood) parts.push('身上有怪物的苗床')
   return `${pcOnly ? '主角要' : '隊伍裡要有人'}${parts.join('、') || '符合條件'}才能當${role.name}${role.wear?.length ? '（到隊伍的裝備換上）' : ''}`
 }
+
+const BODY_NAME = { masc: '陽剛', fem: '陰柔', andro: '中性' } as const
 
 /** {role} 換成當這個身分的人（主角寫「主角」） */
 function fillRole(text: string, who: Character[]): string {
@@ -358,6 +362,7 @@ export function playLandmarkScene(state: GameState, index: number): Report {
   else r.scene = state.time.day
   report.outcome = { result: 'success', summary: `在${l.name}${sc.title}：${text}` }
   if (sc.tags?.includes('adult')) report.narration = { ...report.narration, length: 'long', adult_scene: text }
-  if (sc.pc_body?.length) report.narration = { ...report.narration, body_limited: true }
+  // 限定體型的內容：主角也參加時（陽剛體型打開了設定），一樣提醒 AI 照主角的身體寫
+  if (sc.pc_body?.length || (sc.role?.body?.length && who.some((c) => c.isPlayer))) report.narration = { ...report.narration, body_limited: true }
   return commitReport(state, report)
 }

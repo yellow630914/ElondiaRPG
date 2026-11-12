@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { DEFAULT_FILTERS, setContentFilters } from '@/engine/content'
+import { DEFAULT_FILTERS, setContentFilters, setMascBodyContent } from '@/engine/content'
 import { landmarks, specialMaps } from '@/engine/data'
 import { currentArea, currentCell } from '@/engine/grid'
 import { equipItem } from '@/engine/inventory'
@@ -15,10 +15,13 @@ import type { Character, GameState } from '@/engine/types'
 
 // 緋夢樂園的主題體驗區（docs/LUST_PARK.md 第 9 節）與場景的身分（docs/LANDMARKS.md 第 6.1 節）
 
-const HALLS = ['lm_park_exp_ranch', 'lm_park_exp_greenhouse', 'lm_park_exp_aquarium', 'lm_park_exp_garden', 'lm_park_exp_theater']
+const HALLS = ['lm_park_exp_ranch', 'lm_park_exp_greenhouse', 'lm_park_exp_aquarium', 'lm_park_exp_aquarium_care', 'lm_park_exp_garden', 'lm_park_exp_theater']
 
 beforeEach(() => setContentFilters({ ...DEFAULT_FILTERS }))
-afterEach(() => setContentFilters({ ...DEFAULT_FILTERS }))
+afterEach(() => {
+  setContentFilters({ ...DEFAULT_FILTERS })
+  setMascBodyContent(false)
+})
 
 function game(): GameState {
   const state = newGame({ name: '莉雅', race: 'human', classId: 'bard', gender: '女', seed: 7, birthplace: 'bloodplume' })
@@ -66,7 +69,7 @@ function at(state: GameState, title: string): number {
 const COW = ['亞麻乳牛比基尼', '亞麻牛角頭飾', '銅製牛鈴項圈', '亞麻牛尾腰飾']
 
 describe('主題體驗區的地圖與地標', () => {
-  it('入口廣場的閘門通往體驗區，體驗區的五座館各有內部；離開時一層一層回去', () => {
+  it('入口廣場的閘門通往體驗區，體驗區的六座館各有內部；離開時一層一層回去', () => {
     const state = game()
     into(state)
     for (const id of HALLS) {
@@ -74,7 +77,7 @@ describe('主題體驗區的地圖與地標', () => {
       expect(l.open?.adult, id).toBe(true)
       expect(l.at.area).toBe('sm/sm_park_experience')
       expect(specialMaps[l.interior!]?.peaceful, id).toBe(true)
-      expect(l.scenes!.length, id).toBeLessThanOrEqual(16)
+      expect(l.scenes!.length, id).toBeLessThanOrEqual(12)
       // 每個場景都在館裡的一格，走得到（不是牆或水）
       const grid = specialMaps[l.interior!]!.grid!
       for (const sc of l.scenes!) {
@@ -141,6 +144,30 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
     expect(report.changes.items_gained?.some((x) => x.name === '母乳')).toBe(true)
   })
 
+  it('上榨精台不用泌乳', () => {
+    const state = game()
+    into(state, 'lm_park_exp_ranch')
+    wear(state, pcOf(state), COW)
+    // 篩選「泌乳」關著：同一格只剩榨精台與參觀
+    expect(sceneBlocked(state, at(state, '上榨精台'))).toBeUndefined()
+    expect(scenesHere(state).map((x) => x.scene.title)).toEqual(['參觀榨精榨乳', '上榨精台'])
+  })
+
+  it('展示品的場景只給陰柔、中性體型的人（看參加的人自己），參觀的場景不限', () => {
+    const state = game()
+    into(state, 'lm_park_exp_ranch')
+    const c = mate(state)
+    c.gender = '男'
+    c.body = 'masc'
+    wear(state, c, COW)
+    const i = at(state, '在草地上招待遊客')
+    expect(sceneBlocked(state, i)).toContain('陰柔或中性體型')
+    expect(sceneBlocked(state, at(state, '參觀淫犬配種'))).toBeUndefined()
+    // 設定「陽剛體型也能遇到」打開時一樣能當
+    setMascBodyContent(true)
+    expect(sceneBlocked(state, at(state, '在草地上招待遊客'))).toBeUndefined()
+  })
+
   it('遊客的場景不用換衣服，付門票', () => {
     const state = game()
     into(state, 'lm_park_exp_theater')
@@ -200,7 +227,9 @@ describe('身分：穿著那一館的服裝的人才能當', () => {
 describe('身分的整理（內容編輯器）', () => {
   it('留下有意義的欄位', () => {
     expect(sanitizeRole({ name: '' })).toBeUndefined()
-    expect(sanitizeRole({ name: '乳牛乳牛乳牛乳牛乳牛', wear: ['cow_bikini', 'cow_bikini', ''], exposure: 9, lactating: true, can_lactate: true, effects: [{ type: 'money', amount: 50 }, { type: 'enslave_player' } as never] }))
-      .toEqual({ name: '乳牛乳牛乳牛乳牛', wear: ['cow_bikini'], exposure: 3, lactating: true, effects: [{ type: 'money', amount: 50 }] })
+    expect(sanitizeRole({ name: '乳牛乳牛乳牛乳牛乳牛', wear: ['cow_bikini', 'cow_bikini', ''], exposure: 9, lactating: true, can_lactate: true, body: ['fem', 'andro', 'bogus' as never], effects: [{ type: 'money', amount: 50 }, { type: 'enslave_player' } as never] }))
+      .toEqual({ name: '乳牛乳牛乳牛乳牛', wear: ['cow_bikini'], exposure: 3, lactating: true, body: ['fem', 'andro'], effects: [{ type: 'money', amount: 50 }] })
+    // 三種體型都勾＝不限
+    expect(sanitizeRole({ name: '乳牛', body: ['masc', 'fem', 'andro'] })).toEqual({ name: '乳牛' })
   })
 })

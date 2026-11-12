@@ -532,6 +532,11 @@ export interface SceneRole {
   brood?: boolean
   /** 只有主角能當（例如效果是成為苗床：苗床只給主角） */
   pc_only?: boolean
+  /**
+   * 只給這些體型的人（看參加的那個人自己的體型；不寫＝都可以）。和場景的 pc_body 一樣，
+   * 設定打開「陽剛體型也能遇到『只給陰柔、中性』的成人內容」時，陽剛體型的人也能當
+   */
+  body?: ('masc' | 'fem' | 'andro')[]
   /** 每個當這個身分的人各得到的效果（對象換成那個人；寄生物、苗床一律是主角） */
   effects?: RewardEffect[]
 }
