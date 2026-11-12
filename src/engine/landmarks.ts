@@ -1,16 +1,20 @@
 // 城鎮的特色地標：遊戲中的功能（docs/LANDMARKS.md）。資料在 data/world/landmarks.json，內容編輯器見 landmarkMods.ts。
 // 開放條件、參訪（付錢或花時間換效果）、探索（主動行動的檢定）、場景（條件成立時的固定場景）；打工與受訓走 work.ts、perkActions.ts（格子的種類就是地標 id）。
 
-import { landmarkDef, landmarks, locationById, npcs as namedNpcs, specialMaps, type Degree, type LandmarkDef, type LandmarkScene } from './data'
+import { landmarkDef, landmarks, locationById, npcs as namedNpcs, specialMaps, type Degree, type LandmarkDef, type LandmarkScene, type SceneRole } from './data'
 import { pcBodyAllowed, tagsAllowed } from './content'
 import { characterBody } from './look'
 import { npcFree } from './story'
 import { npcRecord } from './npcs'
-import { applyEffects } from './effects'
+import { applyEffects, type RewardEffect } from './effects'
 import { currentArea, currentCell, position } from './grid'
 import { enterSpecial } from './specialMaps'
 import { isNight } from './light'
-import { wearNote } from './gear'
+import { missingWear, wearName, wearNote } from './gear'
+import { exposureLevel } from './lewd'
+import { isLactating } from './lactation'
+import { canLactate } from './pregMarks'
+import { broodBlock, broodOf, broodsOf } from './brood'
 import { formatMoney } from './money'
 import { isFugitive, pcOf } from './party'
 import { meetsReputation } from './security'
@@ -18,7 +22,7 @@ import { condMet } from './storyFlags'
 import { baseReport } from './town'
 import { effectText } from './trade'
 import { commitReport } from './state'
-import type { GameState, Report } from './types'
+import type { Character, GameState, Report } from './types'
 
 /** 主角現在站的地標（聚落裡的地標格，或在地標的內部） */
 export function landmarkHere(state: GameState): LandmarkDef | undefined {
@@ -44,18 +48,33 @@ export function interiorBlocked(state: GameState): string | undefined {
   const l = landmarkHere(state)
   if (!l?.interior || !specialMaps[l.interior]) return '這裡沒有可以進去的地方'
   if (insideLandmark(state, l)) return '已經在裡面了'
-  return landmarkClosed(state, l)
+  return landmarkClosed(state, l) ?? (l.enter?.role ? roleNote(state, l.enter.role) : undefined)
 }
 
-/** 走進地標的內部（站在入口；從出口離開時回到地標格） */
-export function enterLandmark(state: GameState) {
+/**
+ * 走進地標的內部（站在入口；從出口離開時回到地標格）。
+ * 地標寫了進場的身分（enter.role）時，符合的人進去時各得到效果，寫一則日誌（回傳報告）
+ */
+export function enterLandmark(state: GameState): Report | undefined {
   const why = interiorBlocked(state)
   if (why) throw new Error(why)
+  const l = landmarkHere(state)!
+  const role = l.enter?.role
+  const who = role ? roleMembers(state, role) : []
   // 地標本身在特殊地圖裡（例如地下街的俱樂部）：記下地標格，從內部出來時回到這裡
   const p = position(state)
   const from = state.special && p.area.startsWith('sm/') ? { area: p.area, x: p.x, y: p.y } : undefined
-  enterSpecial(state, landmarkHere(state)!.interior!)
+  enterSpecial(state, l.interior!)
   if (from) (state.special!.inner ??= []).push(from)
+  if (!role?.effects?.length && !l.enter?.text) return undefined
+  const inner = specialMaps[l.interior!]!
+  const report = baseReport(state, 'event', 0.25)
+  report.location.scene = `${locationById(state.location).name}・${inner.name}`
+  report.lore_keys!.push(l.name)
+  applyRoleEffects(state, report, role, who)
+  const text = fillRole(l.enter?.text ?? `{role}走進了${inner.name}。`, who)
+  report.outcome = { result: 'success', summary: text }
+  return commitReport(state, report)
 }
 
 /** 站在地標上行動時，場景帶上地標與它的氛圍（交給 AI） */
@@ -170,6 +189,75 @@ export function sceneCast(state: GameState, sc: LandmarkScene): { ids: string[];
   return { ids, missing }
 }
 
+// ---- 身分（docs/LANDMARKS.md 第 6.1 節） ----
+
+/** 效果裡會讓主角成為苗床的那幾個（寄生物的 add，寄生物是苗床） */
+function broodEffects(role: SceneRole): string[] {
+  return (role.effects ?? []).flatMap((e) => (e.type === 'parasite' && e.op === 'add' && broodOf(e.parasite) ? [e.parasite] : []))
+}
+
+/** 這個人的穿著與身體符不符合這個身分（不看能不能成為苗床） */
+function roleFits(state: GameState, role: SceneRole, c: Character): boolean {
+  if (c.status.includes('away')) return false
+  if ((role.pc_only || broodEffects(role).length) && !c.isPlayer) return false
+  if (missingWear(c, role.wear).length) return false
+  if (role.exposure && exposureLevel(c) < role.exposure) return false
+  if (role.can_lactate && !canLactate(c)) return false
+  if (role.lactating && !isLactating(state, c)) return false
+  if (role.brood && !broodsOf(c).length) return false
+  return true
+}
+
+/** 主角現在不能成為這個身分的苗床的原因（懷孕中、已經有了……；沒有苗床的效果時是 undefined） */
+function roleBroodBlock(state: GameState, role: SceneRole): string | undefined {
+  return broodEffects(role).map((id) => broodBlock(state, id)).find(Boolean)
+}
+
+/** 隊伍裡現在能當這個身分的人（主角在前） */
+export function roleMembers(state: GameState, role: SceneRole): Character[] {
+  if (roleBroodBlock(state, role)) return []
+  return [...state.party].sort((a, b) => Number(b.isPlayer) - Number(a.isPlayer)).filter((c) => roleFits(state, role, c))
+}
+
+/** 沒有人能當這個身分時的說明（有人能當時是 undefined） */
+export function roleNote(state: GameState, role: SceneRole): string | undefined {
+  if (roleMembers(state, role).length) return undefined
+  const pcOnly = !!role.pc_only || broodEffects(role).length > 0
+  // 主角的穿著與身體都符合，只是現在不能成為苗床
+  const block = roleBroodBlock(state, role)
+  if (block && roleFits(state, role, pcOf(state))) return `主角現在不能當${role.name}（${block}）`
+  const parts: string[] = []
+  if (role.wear?.length) parts.push(`穿著${role.wear.map((w) => `【${wearName(w)}】`).join('')}`)
+  if (role.exposure) parts.push(`穿得夠少（曝露度 ${role.exposure}）`)
+  if (role.can_lactate) parts.push('身體會泌乳')
+  if (role.lactating) parts.push('正在泌乳')
+  if (role.brood) parts.push('身上有怪物的苗床')
+  return `${pcOnly ? '主角要' : '隊伍裡要有人'}${parts.join('、') || '符合條件'}才能當${role.name}${role.wear?.length ? '（到隊伍的裝備換上）' : ''}`
+}
+
+/** {role} 換成當這個身分的人（主角寫「主角」） */
+function fillRole(text: string, who: Character[]): string {
+  return text.replace(/\{role\}/g, who.map((c) => (c.isPlayer ? '主角' : c.name)).join('、') || '主角')
+}
+
+/** 身分的效果：每個人各一份（對象換成那個人；寄生物、苗床、腐化本來就是主角的，只給主角；錢、物品照人數給） */
+function applyRoleEffects(state: GameState, report: Report, role: SceneRole | undefined, who: Character[]) {
+  if (!role?.effects?.length) return
+  const list: RewardEffect[] = []
+  for (const c of who) {
+    const id = c.isPlayer ? 'pc' : c.id
+    for (const e of role.effects) {
+      if (e.type === 'parasite' || e.type === 'corruption') {
+        if (c.isPlayer) list.push(e)
+      } else if ('target' in e || PERSONAL.has(e.type)) list.push({ ...e, target: id } as RewardEffect)
+      else list.push(e)
+    }
+  }
+  applyEffects(state, report, list)
+}
+/** 對象可以省略（預設主角）的個人效果 */
+const PERSONAL = new Set<RewardEffect['type']>(['lewd', 'xp', 'perk', 'lose_perk', 'ability', 'ability_pool'])
+
 /** 場景現在出不出現：內容標籤、主角的體型、劇情旗標；一定要在場的人（沒寫旗標的）死了或被抓走時也不出現 */
 export function sceneShown(state: GameState, sc: LandmarkScene): boolean {
   if (!tagsAllowed(sc.tags)) return false
@@ -223,7 +311,7 @@ export function sceneBlocked(state: GameState, index: number): string | undefine
   const wait = sceneWait(state, l, sc)
   if (wait) return `${wait} 天後才能再來`
   if ((sc.money_cc ?? 0) > state.money_cc) return `錢不夠（要 ${formatMoney(sc.money_cc!)}）`
-  return wearNote(pcOf(state), sc.wear)
+  return wearNote(pcOf(state), sc.wear) ?? (sc.role ? roleNote(state, sc.role) : undefined)
 }
 
 /** 場景裡在場的人的名字（有人不在場時接上代替的人） */
@@ -234,9 +322,10 @@ export function sceneCastNames(state: GameState, sc: LandmarkScene): string[] {
   return names
 }
 
-/** 場景交給 AI 的文字：{cast} 換成在場的人 */
+/** 場景交給 AI 的文字：{cast} 換成在場的人，{role} 換成當這個身分的人 */
 export function sceneText(state: GameState, sc: LandmarkScene): string {
-  return sc.scene.replace(/\{cast\}/g, sceneCastNames(state, sc).join('、') || sc.extras || '在場的人')
+  const text = sc.scene.replace(/\{cast\}/g, sceneCastNames(state, sc).join('、') || sc.extras || '在場的人')
+  return sc.role ? fillRole(text, roleMembers(state, sc.role)) : text
 }
 
 /** 選一個地標的場景：付錢、花時間，在場的人加好感，得到設定的效果；成人向的場景交給 AI 詳細描寫 */
@@ -247,6 +336,7 @@ export function playLandmarkScene(state: GameState, index: number): Report {
   const sc = l.scenes![index]!
   const { ids } = sceneCast(state, sc)
   const text = sceneText(state, sc)
+  const who = sc.role ? roleMembers(state, sc.role) : []
   const report = baseReport(state, 'event', sc.hours ?? 2)
   report.location.scene = `${locationById(state.location).name}・${l.name}${sc.spot_name ? `・${sc.spot_name}` : ''}・${sc.title}${l.scene ? `（${l.scene.slice(0, 80)}）` : ''}`
   report.lore_keys!.push(l.name, ...ids.map(npcName))
@@ -262,6 +352,7 @@ export function playLandmarkScene(state: GameState, index: number): Report {
     ...(sc.affinity ? ids.map((npc) => ({ type: 'affinity' as const, npc, delta: sc.affinity!, reason: `${l.name}・${sc.title}` })) : []),
     ...(sc.effects ?? []),
   ])
+  applyRoleEffects(state, report, sc.role, who)
   const r = record(state, l.id)
   if (sc.own_cooldown) (r.scenes ??= {})[sc.title] = state.time.day
   else r.scene = state.time.day
