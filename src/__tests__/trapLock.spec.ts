@@ -78,7 +78,7 @@ describe('陷阱鎖', () => {
     expect(state.inventory.find((i) => i.name === '皮眼罩')?.qty).toBe(1)
   })
 
-  it('鑰匙打得開陷阱鎖，鎖歸自己', () => {
+  it('鑰匙打得開陷阱鎖，鎖跟著壞掉（不會變出一把鎖）', () => {
     const state = game()
     const pc = pcOf(state)
     restrainPc(state, baseReport(state, 'event', 0), '單手套', 'blue')
@@ -86,7 +86,8 @@ describe('陷阱鎖', () => {
     addItem(state.inventory, '藍鋼鑰匙', 1)
     useKey(state, pc.id, slot, '藍鋼鑰匙')
     expect(stuckRestraint(pc, slot)).toBeUndefined()
-    expect(state.inventory.find((i) => i.name === '藍鋼鎖')?.qty).toBe(1)
+    expect(state.inventory.some((i) => i.name === '藍鋼鎖')).toBe(false)
+    expect(pcOf(state).gear![slot]!.keyHolder).toBeUndefined()
   })
 
   it('物品自帶比較好的鎖時用自帶的（符文枷不會變成白鐵鎖）', () => {

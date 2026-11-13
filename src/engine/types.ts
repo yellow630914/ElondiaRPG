@@ -274,8 +274,13 @@ export interface EquippedGear {
   spec: GearSpec
   /** 主人強制裝上的（主人的 id）：契約還在時不能卸下，也不能在這個欄位換別的 */
   locked?: string
-  /** 裝上的鎖（docs/LEWD_STATS.md 第 7 節）：拘束具鎖上，雙面效應的戰鬥增益才生效；自己鎖的可以隨時打開 */
+  /** 裝上的鎖（docs/LEWD_STATS.md 第 7 節）：拘束具鎖上，雙面效應的戰鬥增益才生效；自己鎖的要鑰匙在自己身上才打得開（keyHolder） */
   lock?: LockGrade
+  /**
+   * 自己上鎖時的鑰匙在誰那裡（只有玩家自己鎖上的才有；事件、陷阱、詛咒、主人鎖上的沒有）：
+   * self 在自己身上（隨時可以打開鎖）、隊員或主人的 id（要那個人還回來）、discarded 丟掉了（只剩脫縛、一次性的鑰匙與鐵匠剪鎖）
+   */
+  keyHolder?: string
 }
 
 /** 慾望指標（docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從，0～100；曝露名聲依地區記在存檔 */

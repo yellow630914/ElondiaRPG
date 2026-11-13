@@ -84,7 +84,7 @@
     }
   },
   "locks": {
-    "$comment": "鎖（物品的 lock）：拘束具要鎖上，雙面效應的戰鬥增益才生效；鎖越好倍率越高。自己鎖的隨時可以打開（鎖放回行囊）；主人強制戴上的依主人的身分（master_tags，沒有符合時 master_default）。",
+    "$comment": "鎖（物品的 lock）：拘束具要鎖上，雙面效應的戰鬥增益才生效；鎖越好倍率越高。自己鎖的會拿到這把鎖專屬的鑰匙，鑰匙在行囊裡才打得開（打開時鑰匙用掉、鎖放回行囊）；主人強制戴上的依主人的身分（master_tags，沒有符合時 master_default）。",
     "grades": {
       "white": { "name": "白鐵鎖", "mult": 1 },
       "blue": { "name": "藍鋼鎖", "mult": 1.1 },
@@ -92,7 +92,15 @@
       "gold": { "name": "黃金鎖", "mult": 1.3 }
     },
     "master_default": "white",
-    "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" }
+    "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" },
+    "key_custody": {
+      "$comment": "自己鎖的拘束具，鑰匙交給別人保管或丟掉時，這個人雙面效應全身上限（存檔規則 bindCapStat、bindCapInit、bindCapAp）提高的點數：stat 是命中、迴避、豁免、傷害、減傷每一項，init 先攻，ap 行動點回復。每個人只算最好的一件，不會每件疊加。companion 交給同伴、master 交給主人、discarded 丟掉；servitude_master 是修了隸從派、鑰匙在自己的主人手上時再加的。master_affinity：鑰匙在主人手上時，主人親密度要到這個數才肯還。",
+      "companion": { "stat": 1, "init": 1, "ap": 0 },
+      "master": { "stat": 1, "init": 1, "ap": 0 },
+      "servitude_master": { "stat": 1, "init": 0, "ap": 0 },
+      "discarded": { "stat": 2, "init": 2, "ap": 0 },
+      "master_affinity": 20
+    }
   },
   "master_tool": {
     "$comment": "主角當奴隸時主人是工具人（計畫 7.2 節）：和主人的親密度 release_affinity 以上可以直接解約、換主人；新主人要認識、親密度 new_master_affinity 以上、在同一座聚落、不是奴隸也沒有敵意。submission_dc_per：順從每這麼多點，逃離與談判解約的 DC +1（親密度夠高直接解約時不看）。stance_per：主人事件的回應有 stance 時，順從每這麼多點，屈服（submit）的檢定 +1、抵抗（resist）-1。",

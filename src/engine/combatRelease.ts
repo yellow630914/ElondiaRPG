@@ -7,7 +7,7 @@ import { gameRule } from './gameRules'
 import { MOD_NAME } from './gear'
 import { parasiteTwoFace } from './parasites'
 import { pregnancyTwoFace } from './pregCombat'
-import { adultOutfitPieces, outfitCombat, schoolsOf, twoFaceCombat } from './schools'
+import { adultOutfitPieces, KEY_CUSTODY_NAME, outfitCombat, schoolsOf, twoFaceCombat } from './schools'
 import { statusDef } from './data'
 import type { Character, GameState } from './types'
 
@@ -32,6 +32,8 @@ export interface CombatRelease {
   allyDown: ReleaseRow[]
   /** 來源：「拘束具 2 件」「淫服 3 件」「寄生」「懷孕」 */
   sources: string[]
+  /** 鑰匙保管提高了拘束具的全身上限：「鑰匙交給同伴保管：上限 命中等每項 +1、先攻 +1」（沒有時沒有） */
+  capNote?: string
 }
 
 const ORDER = ['initiative', 'hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit']
@@ -57,6 +59,11 @@ export function combatRelease(state: GameState | null | undefined, c: Character)
   add(value, { ...tf.mods, ...(tf.initiative ? { initiative: tf.initiative } : {}) } as Mods)
   add(raw, { ...tf.raw, ...(tf.rawInitiative ? { initiative: tf.rawInitiative } : {}) } as Mods)
   if (tf.active.length) out.sources.push(`拘束具 ${tf.active.length} 件`)
+  const cu = tf.custody
+  if (cu?.from) {
+    const parts = [...(cu.stat ? [`命中、迴避、豁免、傷害、減傷每項 +${cu.stat}`] : []), ...(cu.init ? [`先攻 +${cu.init}`] : []), ...(cu.ap ? [`行動點回復 +${cu.ap}`] : [])]
+    if (parts.length) out.capNote = `${cu.from.name}的鑰匙${KEY_CUSTODY_NAME[cu.from.custody]}${cu.from.servitude ? '（隸從派）' : ''}：上限 ${parts.join('、')}`
+  }
   out.immune = tf.immune.map((id) => statusDef(id).name)
   const of = outfitCombat(c)
   const pt = parasiteTwoFace(c)

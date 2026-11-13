@@ -65,17 +65,16 @@ describe('嘗試脫縛', () => {
     expect(stuckRestraint(pc, slot)).toBeDefined()
   })
 
-  it('鑰匙打開同等級以下的鎖，用掉鑰匙、鎖歸自己', () => {
+  it('鑰匙打開同等級以下的鎖，用掉鑰匙，鎖也壞掉', () => {
     expect(keyFits('blue', 'white')).toBe(true)
     expect(keyFits('white', 'rune')).toBe(false)
     const { state, slot } = enslaved()
     const pc = pcOf(state)
-    const lock = stuckRestraint(pc, slot)!.lock
     addItem(state.inventory, '黃金鑰匙', 1)
     expect(keysFor(state, pc, slot)).toEqual(['黃金鑰匙'])
     const r = useKey(state, pc.id, slot, '黃金鑰匙')
     expect(state.inventory.find((i) => i.name === '黃金鑰匙')).toBeUndefined()
-    expect(r.changes.items_gained?.[0]?.name).toBe({ white: '白鐵鎖', blue: '藍鋼鎖', rune: '符文鎖', gold: '黃金鎖' }[lock])
+    expect(r.changes.items_gained ?? []).toEqual([])
     expect(stuckRestraint(pc, slot)).toBeUndefined()
   })
 

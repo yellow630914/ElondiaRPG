@@ -101,10 +101,11 @@ export function inventoryLines(state: GameState, max = 40): string {
   return lines.length ? lines.join('\n') + more : '（空的）'
 }
 
-/** 拿不下來的裝備：主人強制戴上的（契約還在時）、陷阱鎖住的、寄生的，註明是哪一種與鎖的等級 */
+/** 拿不下來的裝備：主人強制戴上的（契約還在時）、陷阱鎖住的、寄生的、自己鎖上但鑰匙不在身上的，註明是哪一種與鎖的等級 */
 function stuckGear(m: Character): string[] {
   return (Object.keys(m.gear ?? {}) as GearSlot[]).flatMap((slot) => {
     const g = lockedGear(m, slot)
+    if (g && !g.locked && g.lock) return [`${g.name}（${slotName(slot)}・自己鎖上、鑰匙${g.keyHolder === 'discarded' ? '丟掉了' : '不在身上'}・${lockName(g.lock)}）`]
     if (!g?.locked) return []
     if (g.locked.startsWith(PARASITE_LOCK)) return [`${g.name}（${slotName(slot)}・寄生，馴服或解咒之前拿不下來）`]
     const lock = g.lock ?? g.spec.lock

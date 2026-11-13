@@ -1470,6 +1470,10 @@ export const useGame = defineStore('game', () => {
     // 拘束具的鎖（雙面效應）
     lockGear: (member: string, slot: GearSlot, lock: string) => run((s) => inventory.lockGear(s, member, slot, lock)),
     unlockGear: (member: string, slot: GearSlot) => run((s) => inventory.unlockGear(s, member, slot)),
+    // 自己鎖上的拘束具的鑰匙：交給同伴或主人保管、請對方還回來、丟掉
+    giveKey: (member: string, slot: GearSlot, holder: string) => run((s) => inventory.giveKey(s, member, slot, holder)),
+    takeKeyBack: (member: string, slot: GearSlot) => run((s) => inventory.takeKeyBack(s, member, slot)),
+    discardKey: (member: string, slot: GearSlot) => run((s) => inventory.discardKey(s, member, slot)),
     // 鑰匙與脫縛（別人鎖上的拘束具）
     useKey: (member: string, slot: GearSlot, key: string) => run((s) => inventory.useKey(s, member, slot, key)),
     tryUnbind: (member: string, slot: GearSlot) => perform({ kind: 'unbind', target: `${member}:${slot}`, text: '' }),

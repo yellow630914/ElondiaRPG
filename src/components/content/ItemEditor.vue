@@ -590,7 +590,7 @@ function setFuel(v: string) {
             <option v-for="g in LOCK_GRADES" :key="g" :value="g">打得開{{ lewdRules.locks.grades[g].name }}以下</option>
           </select>
         </label>
-        <Hint text="成人向（docs/LEWD_STATS.md 第 16 節）：打開別人鎖在身上的拘束具（主人強制戴上的），用一次就沒了，鎖歸自己。" />
+        <Hint text="成人向（docs/LEWD_STATS.md 第 16 節）：打開自己打不開的拘束具（主人、陷阱鎖上的，或自己鎖上但鑰匙不在身上的），用一次就沒了，鎖也跟著壞掉。" />
       </div>
       <HelpText text="行囊裡同一種工具只算加值最高的一件。沒有套模板的雜物，AI 判定主動行動時會看到它在行囊裡，依玩家描述的用法決定有沒有幫助。" />
     </FoldSet>

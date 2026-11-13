@@ -2507,6 +2507,8 @@ export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body' | 'mouth'
 export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'mouth', 'stim', 'body']
 /** 鎖的等級（物品的 lock、裝備上的鎖） */
 export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
+/** 鑰匙保管讓雙面效應的全身上限提高的點數：stat 命中、迴避、豁免、傷害、減傷，init 先攻，ap 行動點回復 */
+export interface KeyCustodyCaps { stat: number; init: number; ap: number }
 export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
 /** 陷阱鎖（事件的 restrain 鎖在主角身上的）：EquippedGear.locked 的前綴，不綁契約（docs/LEWD_STATS.md 第 27 節） */
 export const TRAP_LOCK = 'trap:'
@@ -2625,7 +2627,11 @@ export const lewdRules = lewdJson as unknown as {
     endurance_per: number; fit: number; servitude_master: number
     kinds: Record<BindKind, { name: string; checks: CheckFilter[]; penalty: number[]; combat: (Mods & { initiative?: number })[]; immune?: string[] }>
   }
-  locks: { grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade> }
+  locks: {
+    grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade>
+    /** 自己鎖的拘束具，鑰匙交給別人或丟掉時這個人雙面效應的全身上限提高幾點（docs/LEWD_STATS.md 第 7 節） */
+    key_custody: Record<'companion' | 'master' | 'servitude_master' | 'discarded', KeyCustodyCaps> & { master_affinity: number }
+  }
   master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number; stance_per: number }
   training: {
     sub_div: number; low_affinity: number; low_dc: number; progress: number; backlash_affinity: number; backlash_delta: number

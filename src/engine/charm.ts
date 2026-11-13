@@ -87,7 +87,7 @@ export function charmGateOpen(state: Pick<GameState, 'location'>): boolean {
 
 /**
  * 照規矩戴上拘束具：衛兵替主角戴上一件拘束具、用城裡的鎖鎖上，當天出入城門不用盤查（警戒時也一樣）。
- * 戲內是被要求的，戲外是玩家自己選的；鎖算主角自己的（之後可以自己打開，拘束具和鎖都歸主角）。
+ * 戲內是被要求的，戲外是玩家自己選的；鎖算主角自己的，鑰匙也交給主角（之後可以自己打開，拘束具和鎖都歸主角）。
  */
 export function charmGatePass(state: GameState): Report {
   if (!charmGateOpen(state)) throw new Error('這裡的城門沒有這個規矩')
@@ -97,6 +97,8 @@ export function charmGatePass(state: GameState): Report {
   const spec = itemDef(r.item)!.gear!
   const { target, back } = putOn(pc, r.item, spec)
   pc.gear![target]!.lock = r.lock as LockGrade
+  // 鑰匙交給主角（照規矩戴上是自己選的，之後可以自己打開）
+  pc.gear![target]!.keyHolder = 'self'
   ;(state.gatePass ??= {})[loc.id] = state.time.day
   delete state.gateBlock?.[loc.id]
   const lockName = itemRules.items.find((i) => i.lock === r.lock)?.name ?? lewdRules.locks.grades[r.lock as LockGrade]?.name ?? '鎖'

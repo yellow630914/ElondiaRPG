@@ -1,9 +1,9 @@
 // 鑰匙與脫縛（docs/LEWD_STATS.md 第 16 節）：別人鎖在身上的拘束具（主人強制戴上的、陷阱鎖住的）可以試著掙開，或用鑰匙打開；
-// 陷阱鎖住的也可以在鐵匠鋪花錢剪掉（第 27 節）。
-// 自己鎖的隨時可以打開（inventory.ts 的 unlockGear），不需要這些。
+// 陷阱鎖住的也可以在鐵匠鋪花錢剪掉（第 27 節）。這幾種方法打開的鎖都會壞掉，不會回到行囊。
+// 自己鎖的、鑰匙在自己身上時直接打開（inventory.ts 的 unlockGear）；鑰匙交給別人或丟掉了，就和別人鎖上的一樣只剩這幾種方法（不算主人的鎖，沒有懲罰）。
 // 戰鬥中的拘束（狀態有 struggle）用掙脫、撕開擺脫，見 combat.ts。
 
-import { classDef, CURSE_LOCK, itemDef, itemRules, lewdRules, LOCK_GRADES, lockedByThing, type Degree, type LockGrade } from './data'
+import { classDef, CURSE_LOCK, itemDef, lewdRules, LOCK_GRADES, lockedByThing, type Degree, type LockGrade } from './data'
 import { slotName, syncGear } from './gear'
 import { recalc } from './character'
 import { addLewdStat, lewdPowerOf } from './lewd'
@@ -21,9 +21,16 @@ import type { Character, GameState, GearSlot, Report } from './types'
 
 export const unbindRules = () => lewdRules.unbind
 
-/** 這一格是別人鎖上、自己打不開的拘束具：主人強制戴上的（契約還在時）、陷阱鎖住的、詛咒具；寄生物不算 */
-export function stuckRestraint(m: Character, slot: GearSlot): { name: string; lock: LockGrade; bind: number; master: string; trap?: boolean; curse?: boolean } | undefined {
+/**
+ * 這一格是自己打不開的拘束具：主人強制戴上的（契約還在時）、陷阱鎖住的、詛咒具，
+ * 以及自己鎖上、鑰匙不在自己身上的（self：交給別人保管或丟掉了）；寄生物不算
+ */
+export function stuckRestraint(m: Character, slot: GearSlot): { name: string; lock: LockGrade; bind: number; master: string; trap?: boolean; curse?: boolean; self?: boolean } | undefined {
   const g = m.gear?.[slot]
+  if (g?.lock && !g.locked && g.keyHolder !== 'self') {
+    const b = bindsOf(m).find((x) => x.slot === slot)
+    return b ? { name: g.name, lock: g.lock, bind: b.bind, master: '', self: true } : undefined
+  }
   if (!g?.locked || g.locked.startsWith(PARASITE_LOCK)) return undefined
   const curse = g.locked.startsWith(CURSE_LOCK)
   const trap = !curse && lockedByThing(g.locked)
@@ -93,11 +100,12 @@ export function setupUnbind(state: GameState, target?: string) {
   }
 }
 
-/** 解開：鎖拿掉、不再是主人鎖上的（拘束具留在身上，之後可以自己卸下） */
+/** 解開：鎖拿掉（壞掉了，不回到行囊）、不再是別人鎖上的、鑰匙的保管也一起清掉（拘束具留在身上，之後可以自己卸下） */
 function release(m: Character, slot: GearSlot) {
   const g = m.gear![slot]!
   delete g.lock
   delete g.locked
+  delete g.keyHolder
   syncGear(m, classDef(m.class).weapon)
   recalc(m)
 }
@@ -128,7 +136,7 @@ export function keyFits(key: LockGrade, lock: LockGrade): boolean {
   return LOCK_GRADES.indexOf(key) >= LOCK_GRADES.indexOf(lock)
 }
 
-/** 行囊裡打得開這一格的鑰匙（等級低的排前面） */
+/** 行囊裡打得開這一格的一次性鑰匙（等級低的排前面） */
 export function keysFor(state: GameState, m: Character, slot: GearSlot): string[] {
   const s = stuckRestraint(m, slot)
   if (!s || s.curse) return []
@@ -138,8 +146,8 @@ export function keysFor(state: GameState, m: Character, slot: GearSlot): string[
     .map((i) => i.name)
 }
 
-/** 用鑰匙打開別人鎖上的拘束具：鑰匙用掉，鎖歸自己（放進行囊）。回傳日誌的說明與拿到的鎖 */
-export function openWithKey(m: Character, slot: GearSlot, key: string): { text: string; lock?: string } {
+/** 用一次性的鑰匙打開自己打不開的拘束具：鑰匙用掉，鎖也壞掉（不回到行囊）。回傳日誌的說明 */
+export function openWithKey(m: Character, slot: GearSlot, key: string): { text: string } {
   const s = stuckRestraint(m, slot)
   if (!s) throw new Error(`${slotName(slot)}沒有需要鑰匙的鎖`)
   if (s.curse) throw new Error(`${s.name}是詛咒具，鑰匙打不開`)
@@ -147,8 +155,7 @@ export function openWithKey(m: Character, slot: GearSlot, key: string): { text: 
   if (!grade) throw new Error(`${key}不是鑰匙`)
   if (!keyFits(grade, s.lock)) throw new Error(`${key}打不開${lockName(s.lock)}`)
   release(m, slot)
-  const lock = itemRules.items.find((i) => i.lock === s.lock)?.name
-  return { text: `${m.name}用${key}打開了${s.name}上的${lockName(s.lock)}，可以把它卸下來了。`, ...(lock ? { lock } : {}) }
+  return { text: `${m.name}用${key}打開了${s.name}上的${lockName(s.lock)}，可以把它卸下來了；鑰匙卡在鎖孔裡，鎖也跟著壞了。` }
 }
 
 // ---- 鐵匠剪鎖（陷阱鎖住的，docs/LEWD_STATS.md 第 27 節） ----
@@ -158,13 +165,13 @@ export function cutLockHere(state: GameState): boolean {
   return unbindRules().cut.shops.includes(currentCell(state).kind)
 }
 
-/** 剪掉這一格陷阱鎖的價錢（不是陷阱鎖時 undefined；主人的鎖不能剪） */
+/** 剪掉這一格的鎖的價錢：陷阱鎖、自己鎖上但鑰匙不在身上的（其他時候 undefined；主人的鎖不能剪） */
 export function cutLockFee(m: Character, slot: GearSlot): number | undefined {
   const s = stuckRestraint(m, slot)
-  return s?.trap ? unbindRules().cut.fee_cc[s.lock] : undefined
+  return s?.trap || s?.self ? unbindRules().cut.fee_cc[s.lock] : undefined
 }
 
-/** 請鐵匠剪掉陷阱鎖：收錢，鎖被剪壞（不歸自己），拘束具留在身上、之後可以自己卸下 */
+/** 請鐵匠剪掉陷阱鎖（或自己鎖上、鑰匙不在身上的鎖）：收錢，鎖被剪壞（不歸自己），拘束具留在身上、之後可以自己卸下 */
 export function cutLock(state: GameState, memberId: string, slot: GearSlot): Report {
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   if (!cutLockHere(state)) throw new Error('要在鐵匠鋪才能剪鎖')
@@ -173,7 +180,7 @@ export function cutLock(state: GameState, memberId: string, slot: GearSlot): Rep
   const s = stuckRestraint(m, slot)
   if (!s) throw new Error(`${slotName(slot)}沒有鎖住的拘束具`)
   if (s.curse) throw new Error(`${s.name}是詛咒具，鐵匠剪不斷（要到神殿解咒）`)
-  if (!s.trap) throw new Error(`${s.name}是主人鎖上的，鐵匠不敢剪`)
+  if (!s.trap && !s.self) throw new Error(`${s.name}是主人鎖上的，鐵匠不敢剪`)
   const fee = cutLockFee(m, slot)!
   if (state.money_cc < fee) throw new Error(`錢不夠（要 ${formatMoney(fee)}）`)
   release(m, slot)

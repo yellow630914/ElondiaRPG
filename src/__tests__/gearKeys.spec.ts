@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { registerGear } from '@/engine/gear'
 import { hasItemKey, itemLabel, sameShape, specHash, stripItemKeys } from '@/engine/itemKey'
 import { canonicalName } from '@/engine/script'
-import { addItem, migrate, newGame } from '@/engine/state'
+import { addItem, migrate, newGame, SAVE_SCHEMA } from '@/engine/state'
 import type { GameState, GearSpec } from '@/engine/types'
 import { withoutItemKeys } from '@/narrator/providers'
 
@@ -78,7 +78,7 @@ describe('存檔格式 12：舊的自訂裝備換成新的鍵', () => {
     state.inventory.push({ name: '優良亞麻女僕頭飾', qty: 1 }, { name: '優良亞麻女僕頭飾（2）', qty: 1 }, { name: '優良亞麻女僕頭飾（3）', qty: 1 })
     state.party[0]!.gear = { ...state.party[0]!.gear, head: { name: '優良亞麻女僕頭飾（2）', spec: save } }
     const fixed = migrate(state)
-    expect(fixed.schema).toBe(12)
+    expect(fixed.schema).toBe(SAVE_SCHEMA)
     const keys = Object.keys(fixed.customItems!)
     expect(keys).toHaveLength(2)
     expect(keys.map(itemLabel)).toEqual(['優良亞麻女僕頭飾', '優良亞麻女僕頭飾'])
