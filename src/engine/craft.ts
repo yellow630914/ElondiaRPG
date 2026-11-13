@@ -61,6 +61,8 @@ export interface CraftPlan {
   blocked?: string
   /** 不能打造的原因，一條一條 */
   blockers: string[]
+  /** 一次做幾件（打造材料、費用、時間、經驗已經乘上去） */
+  count: number
 }
 
 function craftRules() {
@@ -123,7 +125,14 @@ export interface AuxItem { name: string; qty: number }
 /** 打造的選項：優先用哪一種打造材料、不夠時向這間店當場補買 */
 export interface CraftOptions { use?: string; buy?: boolean
   /** 委託成人向服裝時加的慾望指標（docs/LEWD_STATS.md 第 25 節） */
-  lewd?: LewdStat }
+  lewd?: LewdStat
+  /** 一次做幾件（1～gear.json 的 craft.max_count） */
+  count?: number }
+
+/** 一次打造的件數上限 */
+export const craftMaxCount = () => Math.max(1, gearRules.craft.max_count ?? 1)
+/** 件數夾在 1～上限 */
+export const craftCount = (n?: number) => Math.max(1, Math.min(craftMaxCount(), Math.round(Number(n) || 1)))
 
 /**
  * 打造的 target：「底材:材料」，有輔料時接上「|名稱*數量」，選項接上「|!use=名稱」「|!buy」，
@@ -136,6 +145,7 @@ export function parseCraftTarget(target?: string): { base: string; material: str
     if (x === '!buy') opts.buy = true
     else if (x.startsWith('!use=') && x.length > 5) opts.use = x.slice(5)
     else if (x.startsWith('!lewd=') && outfitCommission().stats.includes(x.slice(6) as LewdStat)) opts.lewd = x.slice(6) as LewdStat
+    else if (x.startsWith('!n=') && craftCount(Number(x.slice(3))) > 1) opts.count = craftCount(Number(x.slice(3)))
   }
   const rest = segs.filter((x) => !x.startsWith('!'))
   const [base, material] = (head ?? '').split(':')
@@ -154,6 +164,7 @@ export function craftTarget(base: string, material: string, aux: AuxItem[] = [],
   return [
     `${base}:${material}`, ...aux.filter((a) => a.qty > 0).map((a) => `${a.name}*${a.qty}`),
     ...(opts.use ? [`!use=${opts.use}`] : []), ...(opts.buy ? ['!buy'] : []), ...(opts.lewd ? [`!lewd=${opts.lewd}`] : []),
+    ...(craftCount(opts.count) > 1 ? [`!n=${craftCount(opts.count)}`] : []),
   ].join('|')
 }
 
@@ -189,8 +200,10 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   const m = gearRules.materials[material]!
   const tier = m.tier
   const craft = craftForKind(m.kind)
+  // 一次做幾件：打造材料、費用、時間、經驗都乘件數
+  const count = craftCount(opts.count)
   // 委託的第一級材料由工匠提供（含在工錢裡）；自己動手一律用打造材料
-  const units = tier === 1 && !crafter ? 0 : unitsFor(base)
+  const units = (tier === 1 && !crafter ? 0 : unitsFor(base)) * count
   // 選定的那種優先，其餘從便宜的開始
   const price = (n: string) => itemDef(n)?.price_cc ?? 0
   const first = (a: string, b: string) => (a === opts.use ? -1 : b === opts.use ? 1 : 0) || price(a) - price(b)
@@ -230,8 +243,8 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   const self = crafter ? selfCost(state, tier, craft) : undefined
   // 自己動手的第一級材料：打造材料很便宜，材料費仍照底材價格算（不然貴的底材幾乎不花錢），用掉的打造材料抵掉它們的價值
   const usedValue = uses.reduce((s, u) => s + (itemDef(u.name)?.price_cc ?? 0) * u.qty, 0)
-  const materialCost = self && tier === 1 ? Math.max(0, Math.round(gearRules.bases[base]!.price * craftSkillRules.self.tier1_cost_ratio * mult) - usedValue) : 0
-  const fee = self ? self.rent + materialCost : Math.round(gearRules.bases[base]!.price * r.fee[tier - 1]! * mult)
+  const materialCost = self && tier === 1 ? Math.max(0, Math.round(gearRules.bases[base]!.price * craftSkillRules.self.tier1_cost_ratio * mult) * count - usedValue) : 0
+  const fee = self ? self.rent * count + materialCost : Math.round(gearRules.bases[base]!.price * r.fee[tier - 1]! * mult) * count
   const shop = craftShop(state, m.kind)
   const level = crafter ? skillOf(crafter, craft).level : keeperCraftLevel(npcRecord(state, keeperId(state, shop)) ?? { id: keeperId(state, shop) }, craft, loc.type)
   // 輔料：只能是材料，數量要扣掉當作打造材料用掉的
@@ -245,7 +258,8 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
     else if (owned < x.qty) auxBlocked.push(`${x.name}不夠（還有 ${Math.max(0, owned)} 個）`)
   }
   const auxValue = aux.reduce((sum, x) => sum + (itemDef(x.name)?.price_cc ?? 0) * x.qty, 0)
-  const plain = gearRules.bases[base]!.price * m.price
+  // 輔料照總價值算：做好幾件時要多放一些才有同樣的機率
+  const plain = gearRules.bases[base]!.price * m.price * count
   const auxChance = Math.round(Math.min(a.max_chance, (auxValue / Math.max(1, plain)) * a.chance_per_value) * 100) / 100
   // 不能打造的原因全部列出來，不用改一項才發現下一項
   const blockers: string[] = []
@@ -269,8 +283,8 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
     fee, dc: r.dc[tier - 1]! + (crafter && !hasBlueprint(state, base) ? blueprintRules().dc_without : 0), aux, auxValue, auxChance, elements: auxElements(aux),
     ...(crafter ? { blueprint: hasBlueprint(state, base) } : {}),
     craft, level,
-    ...(crafter && self ? { crafter: crafter.id, tool: self.tool, rent: self.rent, ...(materialCost ? { materialCost } : {}) } : {}),
-    blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}),
+    ...(crafter && self ? { crafter: crafter.id, tool: self.tool, rent: self.rent * count, ...(materialCost ? { materialCost } : {}) } : {}),
+    blockers, ...(blockers.length ? { blocked: blockers.join('；') } : {}), count,
   }
 }
 
@@ -319,14 +333,14 @@ export function setupCraft(state: GameState, target?: string) {
   const auxText = aux.map((x) => `${x.name}×${x.qty}`).join('、')
   // 委託打造由店主擲：d20 + 店主的工藝等級 × 2（docs/CRAFTING.md 1.1 節）
   return {
-    attr: craftSkillRules.skills[plan.craft].attr, dc: plan.dc, hours: craftRules().hours, craftCheck: 'keeper' as const,
+    attr: craftSkillRules.skills[plan.craft].attr, dc: plan.dc, hours: craftRules().hours * plan.count, craftCheck: 'keeper' as const,
     situational: [{ label: `工匠的手藝（${craftName(plan.craft)} Lv.${plan.level}）`, value: plan.level * craftSkillRules.level_bonus }],
-    scene: `${locationById(state.location).name}・委託打造${name}（工錢 ${formatMoney(plan.fee)}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
+    scene: `${locationById(state.location).name}・委託打造${name}${countText(plan)}（工錢 ${formatMoney(plan.fee)}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
     targetName: name,
     outcomes: {
-      critical: `做出${at('critical')}品質的${name}，附魔 ${rarityPoints(craftRarity(material, 'critical')!)} 點`,
-      success: `做出${at('success')}品質的${name}，附魔 ${rarityPoints(craftRarity(material, 'success')!)} 點`,
-      partial: `做出普通的${name}（沒有附魔）`,
+      critical: `做出${countText(plan, '件')}${at('critical')}品質的${name}，${plan.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(material, 'critical')!)} 點`,
+      success: `做出${countText(plan, '件')}${at('success')}品質的${name}，${plan.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(material, 'success')!)} 點`,
+      partial: `做出${countText(plan, '件')}普通的${name}（沒有附魔）`,
       fail: `沒做成，材料損失一半，工錢照付`,
       fumble: '搞砸了，材料全部損失，工錢照付',
     } as Partial<Record<Degree, string>>,
@@ -352,6 +366,12 @@ export function selfFeeName(plan: Pick<CraftPlan, 'materialCost' | 'rent'>): str
 /** 「（其中當場買了 精鋼錠×2，80 白鸛）」 */
 function boughtText(plan: CraftPlan): string {
   return plan.buys.length ? `，當場買了 ${plan.buys.map((b) => `${b.name}×${b.qty}`).join('、')}（${formatMoney(plan.buyCost)}）` : ''
+}
+
+/** 件數的說明：「×3」；unit 給了時是「3 件」（一件時是空字串） */
+function countText(plan: Pick<CraftPlan, 'count'>, unit?: string): string {
+  if (plan.count <= 1) return ''
+  return unit ? `${plan.count} ${unit}` : ` ×${plan.count}`
 }
 
 /** 當場補買（打造與配方共用）：付錢、放進行囊（接著照一般的材料用掉）、扣掉站的這間店的存貨 */
@@ -387,21 +407,27 @@ function finishCraft(state: GameState, report: Report, plan: CraftPlan, degree: 
   for (const x of aux) effects.push({ type: 'item', name: x.name, qty: -x.qty })
   applyEffects(state, report, effects)
   if (!rarity) return `${plan.fee ? `${paid}，但` : ''}${degree === 'fail' ? '沒做成' : '搞砸了'}${lost ? `，損失了 ${lost} 份材料` : ''}。`
-  let spec: GearSpec
   const plainPiece = degree === 'partial' && !boosted
-  if (gear) {
-    spec = sanitizeGearSpec({ ...gear.spec, rarity }, { maxLevel: 99, maxRarity: rarity, base, material, restraint: true })!
-    if (plainPiece) delete spec.enchants
-  } else {
-    spec = { base, material, ...(rarity !== gearRules.materials[material]!.rarity ? { rarity } : {}) }
-    const points = plainPiece ? 0 : rarityPoints(rarity)
-    const enchants = points ? withRng(state, (rng) => rollEnchants(base, points, rng, plan.elements)) : undefined
-    if (enchants) spec.enchants = enchants
+  // 一次做好幾件：品質一樣，附魔每件各自擲（AI 提出的成品照它做，每件都一樣）
+  const made = new Map<string, number>()
+  for (let i = 0; i < plan.count; i++) {
+    let spec: GearSpec
+    if (gear) {
+      spec = sanitizeGearSpec({ ...gear.spec, rarity }, { maxLevel: 99, maxRarity: rarity, base, material, restraint: true })!
+      if (plainPiece) delete spec.enchants
+    } else {
+      spec = { base, material, ...(rarity !== gearRules.materials[material]!.rarity ? { rarity } : {}) }
+      const points = plainPiece ? 0 : rarityPoints(rarity)
+      const enchants = points ? withRng(state, (rng) => rollEnchants(base, points, rng, plan.elements)) : undefined
+      if (enchants) spec.enchants = enchants
+    }
+    if (lewd) spec.lewd = lewd
+    const name = registerGear(state, spec, gear?.name, gear?.desc)
+    made.set(name, (made.get(name) ?? 0) + 1)
   }
-  if (lewd) spec.lewd = lewd
-  const name = registerGear(state, spec, gear?.name, gear?.desc)
-  applyEffects(state, report, [{ type: 'item', name, qty: 1 }])
-  return `${plan.fee ? `${paid}，` : ''}打造出【${name}】。${boosted ? '輔料讓成品的品質更上一層。' : ''}`
+  applyEffects(state, report, [...made].map(([name, qty]) => ({ type: 'item' as const, name, qty })))
+  const list = [...made].map(([name, qty]) => `【${name}】${qty > 1 ? `×${qty}` : ''}`).join('、')
+  return `${plan.fee ? `${paid}，` : ''}打造出${list}。${boosted ? '輔料讓成品的品質更上一層。' : ''}`
 }
 
 // ---- 自己動手（行動 make，見 crafting.ts） ----
@@ -453,14 +479,14 @@ export function setupMake(state: GameState, target?: string) {
   const auxText = aux.map((x) => `${x.name}×${x.qty}`).join('、')
   return {
     actor: crafter.id,
-    attr: skill.attr, dc: plan.dc, hours: craftSkillRules.self.hours, craftCheck: 'self' as const,
+    attr: skill.attr, dc: plan.dc, hours: craftSkillRules.self.hours * plan.count, craftCheck: 'self' as const,
     situational: [{ label: `${crafter.name}的${skill.name}（Lv.${plan.level}）`, value: plan.level * craftSkillRules.level_bonus }],
-    scene: `${locationById(state.location).name}・${crafter.isPlayer ? '親手' : `由${crafter.name}`}打造${name}（${plan.tool!.source}${plan.fee ? `，${selfFeeName(plan)} ${formatMoney(plan.fee)}` : ''}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
+    scene: `${locationById(state.location).name}・${crafter.isPlayer ? '親手' : `由${crafter.name}`}打造${name}${countText(plan)}（${plan.tool!.source}${plan.fee ? `，${selfFeeName(plan)} ${formatMoney(plan.fee)}` : ''}${used ? `，材料 ${used}` : ''}${boughtText(plan)}${auxText ? `，輔料 ${auxText}（${Math.round(plan.auxChance * 100)}% 機率品質再高一級）` : ''}）`,
     targetName: name,
     outcomes: {
-      critical: `做出${at('critical')}品質的${name}，附魔 ${rarityPoints(craftRarity(material, 'critical')!)} 點`,
-      success: `做出${at('success')}品質的${name}，附魔 ${rarityPoints(craftRarity(material, 'success')!)} 點`,
-      partial: `做出普通的${name}（沒有附魔）`,
+      critical: `做出${countText(plan, '件')}${at('critical')}品質的${name}，${plan.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(material, 'critical')!)} 點`,
+      success: `做出${countText(plan, '件')}${at('success')}品質的${name}，${plan.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(material, 'success')!)} 點`,
+      partial: `做出${countText(plan, '件')}普通的${name}（沒有附魔）`,
       fail: `沒做成，材料損失一半${plan.fee ? `，${selfFeeName(plan)}照付` : ''}`,
       fumble: `搞砸了，材料全部損失${plan.fee ? `，${selfFeeName(plan)}照付` : ''}`,
     } as Partial<Record<Degree, string>>,

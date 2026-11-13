@@ -216,6 +216,8 @@ export const gearRules = gearJson as unknown as {
   craft: {
     hours: number; attr: AttrId; fee: number[]; dc: number[]
     units: Record<string, number>; lost_on_fail: number
+    /** 一次打造幾件（打造材料、費用、時間、經驗乘件數，只擲一次） */
+    max_count?: number
     aux: { max_kinds: number; max_qty: number; chance_per_value: number; max_chance: number; elements: Record<string, string[]> }
   }
   creation: { default_budget: number; max_budget: number; max_tier: number }

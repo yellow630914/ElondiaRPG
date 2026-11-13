@@ -2,7 +2,7 @@
 import { blueprintName, blueprintRules } from '@/engine/blueprints'
 import { computed, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
-import { canCraftHere, commissionHere, craftPlan, craftRarity, craftTarget, forgeOf, isAdultCraft, makeTarget, outfitCommission, selfFeeName, selfLewdBonus, type AuxItem } from '@/engine/craft'
+import { canCraftHere, commissionHere, craftMaxCount, craftPlan, craftRarity, craftTarget, forgeOf, isAdultCraft, makeTarget, outfitCommission, selfFeeName, selfLewdBonus, type AuxItem } from '@/engine/craft'
 import { lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
 import { craftForKind, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
@@ -144,8 +144,11 @@ const lewdPick = ref<LewdStat | ''>('')
 const lewdStats = computed(() => (make.value && isAdultCraft(base.value)
   ? outfitCommission().stats.map((st) => ({ st, bonus: selfLewdBonus(crafter.value, st, base.value, mat.value) }))
   : []))
+// 一次做幾件（打造材料、費用、時間與經驗乘件數，只擲一次）
+const count = ref(1)
+const COUNT_HINT = '一次做好幾件：打造材料、工錢（自己動手的材料費與工坊租金）、時間與工藝經驗乘件數，只擲一次，每件品質一樣、附魔各自擲。輔料照填的數量用一次，提高品質的機率照總價值算。'
 const opts = computed(() => ({
-  ...(usePick.value ? { use: usePick.value } : {}), ...(buy.value ? { buy: true } : {}),
+  ...(usePick.value ? { use: usePick.value } : {}), ...(buy.value ? { buy: true } : {}), ...(count.value > 1 ? { count: count.value } : {}),
   ...(lewdPick.value && lewdStats.value.some((x) => x.st === lewdPick.value && x.bonus > 0) ? { lewd: lewdPick.value } : {}),
 }))
 const plan = computed(() => craftPlan(s.value, base.value, mat.value, aux.value, make.value ? crafter.value : undefined, opts.value))
@@ -306,6 +309,11 @@ function craft() {
         </label>
         <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：（委託的加成 + 1～2）× 做的人自己那一項的基本值 ÷ 100：指標 100 時第 1、2、3、4 級以上分別是 +5、+7、+10、+12，比成人用品店委託（+4、+6、+8、+10）多一點。" />
       </div>
+      <div class="count-row">
+        件數
+        <button v-for="n in craftMaxCount()" :key="n" class="small" :class="{ primary: plan.count === n }" @click="count = n">{{ n }}</button>
+        <Hint :text="COUNT_HINT" />
+      </div>
       <div :class="line ? 'stat' : 'muted'">
         數值：<EffectLine v-if="line" :parts="lineParts" /><template v-else>這個材料做出來沒有加成</template><template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>
       </div>
@@ -325,7 +333,7 @@ function craft() {
         <span>{{ skill.name }} <b>{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}</b><span class="muted">（這個材料要 Lv.{{ plan.tier }}）</span></span>
         <span>檢定 <b><template v-if="make">工藝 +{{ plan.level * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}</template><template v-else>店主擲：手藝 +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
         <span v-if="make">圖紙 <b :class="plan.blueprint ? '' : 'warn-text'">{{ plan.blueprint ? `有${blueprintName(plan.base)}` : `沒有（DC +${blueprintRules().dc_without}）` }}</b> <Hint text="每個底材一張圖紙，不會用掉、任何材料都適用。鐵匠鋪、裁縫店、珠寶店有賣，寶箱與人形的敵人身上也可能找到。委託店家打造不需要。" /></span>
-        <span>時間 <b>約 {{ make ? craftRules.self.hours : gearRules.craft.hours }} 小時</b></span>
+        <span>時間 <b>約 {{ (make ? craftRules.self.hours : gearRules.craft.hours) * plan.count }} 小時</b></span>
         <span v-if="make">工具 <b>要{{ toolTierName(toolTierFor(plan.tier)) }}</b> <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></span>
         <span>{{ make ? selfFeeName(plan) : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><Hint v-if="plan.materialCost" text="第 1 級材料：材料費照底材的價格算（底材價格的一半，乘這裡的物價），用掉的打造材料抵掉它們的價值。" /><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
       </div>
@@ -361,6 +369,7 @@ function craft() {
 </template>
 
 <style scoped>
+.count-row { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
 .warn-text { color: var(--danger); }
 .craft { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .craft p { margin: 0; }

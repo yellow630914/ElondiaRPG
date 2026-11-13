@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
 import { craftRules, lewdRules } from '@/engine/data'
-import { craftPlan, craftRarity, craftTarget, forgeOf, outfitCommission, outfitLewdBonus } from '@/engine/craft'
+import { craftMaxCount, craftPlan, craftRarity, craftTarget, forgeOf, outfitCommission, outfitLewdBonus } from '@/engine/craft'
 import { baseShown, baseSlotName, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, gearSummaryParts, rarityName, type BaseSlot } from '@/engine/gear'
 import { baseExposure, lewdName } from '@/engine/lewd'
 import { formatMoney } from '@/engine/money'
@@ -102,7 +102,8 @@ const bonus = computed(() => outfitLewdBonus(base.value, mat.value) ?? 0)
 
 // ---- 訂單 ----
 const buy = ref(true)
-const opts = computed(() => ({ ...(buy.value ? { buy: true } : {}), ...(stat.value ? { lewd: stat.value } : {}) }))
+const count = ref(1)
+const opts = computed(() => ({ ...(buy.value ? { buy: true } : {}), ...(stat.value ? { lewd: stat.value } : {}), ...(count.value > 1 ? { count: count.value } : {}) }))
 const plan = computed(() => craftPlan(s.value, base.value, mat.value, [], undefined, opts.value))
 const soldHere = computed(() => plan.value.sources.filter((x) => x.price !== undefined))
 const DEGREES = [['critical', '大成功'], ['success', '成功'], ['partial', '部分成功']] as const
@@ -175,7 +176,9 @@ function order() {
             <dt>數值</dt><dd><EffectLine v-if="statsOf(base, mat)" :parts="partsOf(base, mat)" /><template v-else>沒有加成</template></dd>
             <dt>慾望</dt><dd :class="{ bonus: stat }">{{ stat ? `${lewdName(stat)} +${bonus}` : '不加' }}</dd>
             <dt>檢定</dt><dd>店主擲：手藝 +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}</dd>
-            <dt>時間</dt><dd>約 {{ gearRules.craft.hours }} 小時</dd>
+            <dt>件數</dt>
+            <dd class="count-row"><button v-for="n in craftMaxCount()" :key="n" class="count-btn" :class="{ on: plan.count === n }" @click="count = n">{{ n }}</button></dd>
+            <dt>時間</dt><dd>約 {{ gearRules.craft.hours * plan.count }} 小時</dd>
             <dt>材料</dt>
             <dd>
               <template v-if="!plan.units">工匠提供</template>
@@ -252,6 +255,9 @@ button { font: inherit; }
 .stat b { color: var(--tone); }
 .stat.on { background: var(--tone-soft); border-color: var(--tone); }
 .stat.none { grid-column: 1 / -1; grid-template-columns: 1fr; text-align: center; color: var(--muted); }
+.count-row { display: flex; gap: 4px; }
+.count-btn { min-width: 28px; padding: 1px 6px; border: 1px solid #6d512844; border-radius: 4px; background: #fff5; }
+.count-btn.on { background: var(--tone-soft); border-color: var(--tone); color: var(--tone); font-weight: bold; }
 /* 訂單 */
 .order { background: #fffaf0cc; border-radius: 4px; padding: 12px 14px; border: 1px solid #b03a6266; position: relative; }
 .order::before { content: ''; position: absolute; inset: 4px; border: 1px dashed #b03a6255; border-radius: 3px; pointer-events: none; }

@@ -456,6 +456,8 @@
     "dc": [7, 9, 11, 13, 15, 17, 19],
     "units": { "main_hand": 2, "two_handed": 3, "off_hand": 2, "head": 1, "body": 3, "legs": 2, "wrists": 1, "feet": 1, "belt": 1, "accessory": 1, "ring": 1, "piercing": 1, "leg_accessory": 1, "underwear_top": 1, "underwear_bottom": 1 },
     "lost_on_fail": 0.5,
+    "$comment_max_count": "一次打造幾件（委託與自己動手都是）：打造材料、工錢（自己動手的材料費與工坊租金）、時間與工藝經驗乘件數，只擲一次，每件的附魔各自擲；輔料照填的數量用一次，讓稀有度再高一級的機率照總價值算。",
+    "max_count": 5,
     "aux": {
       "$comment": "輔料：任何材料都可以加進去（最多 max_kinds 種、每種 max_qty 個），不論結果都會用掉。輔料的總價值 ÷（底價 × 材料倍率）× chance_per_value 是成品稀有度再高一級的機率（上限 max_chance；部分成功時改成照成功做）。名稱或描述裡的字決定附魔的屬性方向（elements）。",
       "max_kinds": 3, "max_qty": 5, "chance_per_value": 1, "max_chance": 0.6,
