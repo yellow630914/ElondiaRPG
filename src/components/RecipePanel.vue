@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, itemDef, type CraftId } from '@/engine/data'
 import { CRAFT_IDS, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import { currentCell } from '@/engine/grid'
@@ -8,6 +8,7 @@ import { producedQty, produceTarget, recipeItems, recipePlan } from '@/engine/re
 import { shopTypeForCell } from '@/engine/trade'
 import { parseUse, useGame } from '@/stores/game'
 import { inventCategories } from '@/engine/invention'
+import { isMobile } from './mobile/mobile'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import ItemIcon from './items/ItemIcon.vue'
@@ -85,6 +86,12 @@ function status(r: (typeof all.value)[number]): { ok: boolean; text: string } {
 const INVENT = '\u0000invent'
 const canInvent = computed(() => !query.value.trim() && inventCategories(craft.value).length > 0)
 const picked = ref('')
+// 手機版：成品卡在整串配方下面，點了卡片就捲過去
+const detail = ref<HTMLElement>()
+function pick(n: string) {
+  picked.value = n
+  if (isMobile.value) void nextTick(() => detail.value?.scrollIntoView({ block: 'start', behavior: 'smooth' }))
+}
 const inventing = computed(() => canInvent.value && (picked.value === INVENT || !rows.value.length))
 const name = computed(() => (inventing.value ? '' : rows.value.some((r) => r.name === picked.value) ? picked.value : (rows.value.find((r) => !r.plan.blocked) ?? rows.value[0])?.name ?? ''))
 const plan = computed(() => (name.value ? recipePlan(s.value, name.value, batches.value, crafter.value, { buy: buy.value }) : undefined))
@@ -172,12 +179,12 @@ function produce() {
     <div class="step">
       <span class="lab">配方</span>
       <div v-if="rows.length || canInvent" class="cards">
-        <button v-for="r in rows" :key="r.name" class="card" :class="{ on: name === r.name, no: !!r.plan.blocked }" @click="picked = r.name">
+        <button v-for="r in rows" :key="r.name" class="card" :class="{ on: name === r.name, no: !!r.plan.blocked }" @click="pick(r.name)">
           <b>{{ r.invented ? '★ ' : '' }}{{ r.name }}{{ (r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : '' }}</b>
           <span class="muted">{{ query.trim() ? `${craftRules.skills[r.recipe.craft].name}・` : '' }}Lv.{{ r.recipe.level }}・<span :class="status(r).ok ? 'ok' : 'bad'">{{ status(r).text }}</span></span>
           <span class="muted">{{ r.plan.inputs.map((x) => `${x.name} ${Math.min(x.have, x.need)}/${x.need}`).join('、') || '不需要材料' }}</span>
         </button>
-        <button v-if="canInvent" class="card new" :class="{ on: inventing }" @click="picked = INVENT">
+        <button v-if="canInvent" class="card new" :class="{ on: inventing }" @click="pick(INVENT)">
           <b><GameIcon name="lightbulb" :size="13" /> 自創{{ craftRules.skills[craft].name }}配方</b>
           <span class="muted">寫下做法，放進材料試做</span>
           <span class="muted">做出來就記成新配方</span>
@@ -186,6 +193,7 @@ function produce() {
       <p v-else class="muted">{{ onlyReady ? '沒有現在做得出來的配方。' : '沒有符合的配方。' }}</p>
     </div>
 
+    <div ref="detail" class="detail">
     <InventPanel v-if="inventing" :craft="craft" :category-hint="cat" :crafter-id="crafter.id" @started="emit('started')" />
     <CraftCard
       v-else-if="plan && skill"
@@ -228,12 +236,14 @@ function produce() {
         <p class="muted small-note">工具要{{ toolTierName(toolTierFor(plan.recipe.level)) }} <Hint :text="toolWhere(plan.recipe.craft, toolTierFor(plan.recipe.level))" /></p>
       </template>
     </CraftCard>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .recipes { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .recipes p { margin: 0; }
+.detail { scroll-margin-top: 8px; min-width: 0; }
 .step { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: start; }
 .step > .lab { color: var(--muted); font-weight: 600; padding-top: 4px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }

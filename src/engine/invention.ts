@@ -13,6 +13,7 @@ import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess
 import { applyEffects, type RewardEffect } from './effects'
 import { currentArea } from './grid'
 import { memberOrResident } from './homes'
+import { gearSpecOf } from './gear'
 import { formatMoney } from './money'
 import { lostQty, producedQty } from './recipes'
 import { renameItemInState } from './usage'
@@ -389,6 +390,12 @@ export function supplyGap(state: Pick<GameState, 'options'>, caps: InventCaps, i
   return Math.max(0, Math.ceil(caps.price * sellRatio(state) * qty) - inputValue)
 }
 
+/** 能不能放進自創配方當材料：裝備（目錄的、打造或事件做出來的）與工具不行 */
+export function inventInputOk(state: Pick<GameState, 'customItems'>, name: string): boolean {
+  const def = itemDef(name)
+  return !gearSpecOf(state, name) && def?.category !== 'equipment' && state.customItems?.[name]?.category !== 'equipment' && !def?.tool
+}
+
 export function inventPlan(state: GameState, req: InventRequest, crafter: Character): InventPlan {
   const caps = inventCaps(req.craft, req.level, req.category)
   const inputs = req.inputs.map((x) => ({ name: x.name, need: x.qty, have: state.inventory.find((i) => i.name === x.name)?.qty ?? 0 }))
@@ -408,7 +415,7 @@ export function inventPlan(state: GameState, req: InventRequest, crafter: Charac
     if (tool.tier < needTier) blockers.push(toolBlocker(req.craft, needTier, tool))
     if (!inputs.length) blockers.push('至少要放一種材料')
     if (inputs.length > craftRules.invention.max_inputs) blockers.push(`材料最多 ${craftRules.invention.max_inputs} 種`)
-    if (inputs.some((x) => itemDef(x.name)?.category === 'equipment')) blockers.push('裝備不能當材料')
+    if (inputs.some((x) => !inventInputOk(state, x.name))) blockers.push('裝備與工具不能當材料')
     for (const x of inputs) if (x.have < x.need) blockers.push(`${x.name}不夠（需要 ${x.need}，持有 ${x.have}）`)
     if (state.money_cc < cost + rent) blockers.push(`費用不夠（需要 ${formatMoney(cost + rent)}）`)
   }
@@ -436,7 +443,7 @@ export function setupInvent(state: GameState, target?: string) {
       critical: '成品稍強（上限到高一級的現成配方），多做一半，記成新的配方',
       success: '成品和同級的現成配方相當，記成新的配方',
       partial: '成品稍弱（同級的七成五），只做出一半的份數，配方還是記下來了',
-      fail: '沒做成，材料損失一半，費用照付',
+      fail: '沒做成，材料損失一半（工坊租金照付）',
       fumble: '搞砸了，材料全部損失，費用照付',
     } as Partial<Record<Degree, string>>,
   }
@@ -474,7 +481,8 @@ export function applyInvent(state: GameState, report: Report, target: string, de
   const made = producedQty(design.qty, degree)
   // 份數多時花費跟著補足（材料價值要撐得起所有的份數）
   const gap = supplyGap(state, caps, plan.inputValue, design.qty)
-  const fee = Math.min(state.money_cc, (made ? Math.round(gap * locationMult(state)) : plan.cost) + plan.rent)
+  // 失敗只損失材料（工坊租金照付）；大失敗連材料價值不夠的花費也照付
+  const fee = Math.min(state.money_cc, (made ? Math.round(gap * locationMult(state)) : degree === 'fumble' ? plan.cost : 0) + plan.rent)
   const effects: RewardEffect[] = fee ? [{ type: 'money', amount: -fee }] : []
   for (const x of plan.inputs) {
     const q = Math.min(x.have, lostQty(x.need, degree))

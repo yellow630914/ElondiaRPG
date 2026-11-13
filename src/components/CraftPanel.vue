@@ -171,11 +171,15 @@ const better = computed(() => (line.value ? undefined : materials.value.find((m)
 const feeName = computed(() => (make.value ? selfFeeName(plan.value) : '工錢'))
 
 // ---- 成品卡 ----
-const tags = computed<CardTag[]>(() => [
-  { text: slotLabel(gearRules.bases[base.value]!.slot) }, { text: type.value },
-  { text: `${skill.value.name}・第 ${plan.value.tier} 級材料` },
-  ...(gearRules.bases[base.value]!.restraint ? [{ text: '拘束具', hot: true }] : isAdultCraft(base.value) ? [{ text: '成人向', hot: true }] : []),
-])
+const tags = computed<CardTag[]>(() => {
+  const hot = gearRules.bases[base.value]!.restraint ? '拘束具' : isAdultCraft(base.value) ? '成人向' : ''
+  // 類型本身就叫「拘束具」時只標一次（紅的）
+  return [
+    { text: slotLabel(gearRules.bases[base.value]!.slot) }, { text: type.value, ...(type.value === hot ? { hot: true } : {}) },
+    { text: `${skill.value.name}・第 ${plan.value.tier} 級材料` },
+    ...(hot && type.value !== hot ? [{ text: hot, hot: true }] : []),
+  ]
+})
 const outcomes = computed<CardOutcome[]>(() => {
   const p = plan.value
   const paid = p.fee ? `，${feeName.value}照付` : ''

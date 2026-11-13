@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { attrName, craftRules, itemDef, type CraftId } from '@/engine/data'
+import { attrName, craftRules, type CraftId } from '@/engine/data'
 import { crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
 import {
-  capsSource, capsText, INVENT_CATEGORY_NAME, INVENT_GRADE_NAME, inventCaps, inventCategories, inventPlan, inventTarget,
+  capsSource, capsText, INVENT_CATEGORY_NAME, INVENT_GRADE_NAME, inventCaps, inventCategories, inventInputOk, inventPlan, inventTarget,
   type InventCategory, type InventGrade, type InventRequest,
 } from '@/engine/invention'
 import { formatMoney } from '@/engine/money'
@@ -37,7 +37,7 @@ const level = computed(() => Math.max(1, Math.min(maxLevel.value, pickedLevel.va
 // 材料：行囊裡裝備以外的東西
 const inputs = ref<{ name: string; qty: number }[]>([])
 const inputPick = ref('')
-const inputOptions = computed(() => s.value.inventory.filter((i) => i.qty > 0 && itemDef(i.name)?.category !== 'equipment' && !inputs.value.some((x) => x.name === i.name)))
+const inputOptions = computed(() => s.value.inventory.filter((i) => i.qty > 0 && inventInputOk(s.value, i.name) && !inputs.value.some((x) => x.name === i.name)))
 function addInput() {
   if (!inputPick.value || inputs.value.length >= craftRules.invention.max_inputs) return
   inputs.value.push({ name: inputPick.value, qty: 1 })
@@ -55,13 +55,15 @@ const aiOn = computed(() => settings.judgesWithAi())
 const text = ref('')
 const use = ref('')
 
-const outcomes: CardOutcome[] = [
+const outcomes = computed<CardOutcome[]>(() => [
   { degree: 'critical', text: '稍強（最多到高一級的現成配方），份數多一半' },
   { degree: 'success', text: '和同級的現成配方相當' },
   { degree: 'partial', text: '稍弱，份數一半' },
-  { degree: 'fail', text: '沒做成，材料損失一半' },
+  { degree: 'fail', text: `沒做成，材料損失一半${plan.value.rent ? '，工坊租金照付' : ''}` },
   { degree: 'fumble', text: '搞砸了，材料全部損失，花費照付' },
-]
+])
+// 做不了的原因：引擎的之外，還沒寫做法也列出來
+const blockers = computed(() => [...plan.value.blockers, ...(text.value.trim() ? [] : ['寫下做法才能試做'])])
 const reqs = computed<CardReq[]>(() => {
   const need = toolTierFor(level.value)
   const p = plan.value
@@ -150,10 +152,10 @@ function invent() {
         <span class="muted note">做法（不用取名，名字由 AI 依做法與材料決定）</span>
         <textarea v-model="text" rows="2" maxlength="400" placeholder="例如「把硫磺磨成粉，和藥草汁一起封進陶瓶，瓶口塞一條浸了油的布」「肉抹上蜂蜜和鹽，掛在爐邊慢慢烘乾」" />
       </label>
-      <ul v-if="plan.blockers.length" class="blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
+      <ul v-if="blockers.length" class="blockers"><li v-for="b in blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
       <div class="row go-row">
         <details class="more"><summary>使用技能（選填）</summary><AbilityPicker v-model="use" /></details>
-        <button class="primary" :disabled="!!plan.blocked || game.judging || !!s.pendingAction || !text.trim()" @click="invent">
+        <button class="primary" :disabled="!!blockers.length || game.judging || !!s.pendingAction" @click="invent">
           <GameIcon name="lightbulb" :size="14" /> {{ crafter.isPlayer ? '試做看看' : `請${crafter.name}試做` }}
         </button>
       </div>

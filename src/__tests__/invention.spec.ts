@@ -4,7 +4,7 @@ import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, type Judgment } from '@/engine/actions'
 import { craftRules, itemDef, itemRules } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
-import { capsText, diceAvg, diceForAvg, forgetInvention, inventedIn, renameInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
+import { capsText, diceAvg, diceForAvg, forgetInvention, inventedIn, inventInputOk, renameInvention, inventCaps, inventPlan, inventTarget, sanitizeDesign, type InventRequest } from '@/engine/invention'
 import { recipeItems, recipePlan } from '@/engine/recipes'
 import { buildActionPrompt } from '@/narrator/judge'
 import { addItem, migrate, newGame } from '@/engine/state'
@@ -195,6 +195,36 @@ describe('inventing', () => {
     expect(['fail', 'fumble']).toContain(r.check?.degree)
     expect(state.inventions ?? {}).toEqual({})
     expect(qty(state, '藥草')).toBeLessThan(4)
+  })
+
+  it('charges only the workshop rent on a failure, and the missing value too on a fumble', () => {
+    for (const [natural, paid] of [[2, false], [1, true]] as const) {
+      const state = game()
+      addItem(state.inventory, '煉金工具組', 1)
+      addItem(state.inventory, '藥草', 2)
+      pc(state).attrs.int = 6
+      const plan = inventPlan(state, potion, pc(state))
+      expect(plan.cost).toBeGreaterThan(0)
+      prepareAction(state, { kind: 'invent', target: inventTarget('pc', potion), text: '' })
+      const money = state.money_cc
+      state.pendingAction!.natural = natural
+      const r = resolveAction(state, null)
+      expect(r.check?.degree).toBe(natural === 1 ? 'fumble' : 'fail')
+      expect(state.money_cc).toBe(money - (paid ? plan.cost : 0) - plan.rent)
+    }
+  })
+
+  it('refuses gear and tools as materials, including crafted gear that has no catalog entry', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    const crafted = '優良鐵匕首\u2063x'
+    state.customItems = { [crafted]: { category: 'equipment', price_cc: 50, gear: { base: 'dagger', material: 'iron' } } }
+    addItem(state.inventory, crafted, 1)
+    expect(inventInputOk(state, crafted)).toBe(false)
+    expect(inventInputOk(state, '煉金工具組')).toBe(false)
+    expect(inventInputOk(state, '藥草')).toBe(true)
+    expect(inventPlan(state, { ...potion, inputs: [{ name: crafted, qty: 1 }] }, pc(state)).blocked).toContain('裝備與工具不能當材料')
+    expect(inventPlan(state, { ...potion, inputs: [{ name: '煉金工具組', qty: 1 }] }, pc(state)).blocked).toContain('裝備與工具不能當材料')
   })
 
   it('tells the AI the design format and the caps', () => {
