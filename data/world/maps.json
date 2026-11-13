@@ -1419,8 +1419,9 @@
     "town": "town", "village": "town", "outpost": "town", "fortress": "town"
   },
   "lighting": {
-    "$comment": "光線（見 docs/DUNGEON_DESIGN.md 第 4 節）：lit＝一直有光；daylight＝白天（day_hours）有光、晚上黑暗；dark＝一直黑暗。聚落一直有光；近郊照 wild；地下城每層照 dungeon_layers，個別地下城可以在 locations 覆蓋（周邊、淺層、中層、深層）；臨時地圖照 travel_events.json 的 side_maps.lighting（沒寫時固定地圖有光、其他黑暗）。黑暗又沒有光源時：視野只剩腳下（sight 格）、戰鬥中隊伍命中 hit、察覺陷阱的 DC 加 trap_dc。",
+    "$comment": "光線（見 docs/DUNGEON_DESIGN.md 第 4 節）：lit＝一直有光；daylight＝白天（day_hours）有光、晚上黑暗；dark＝一直黑暗。聚落一直有光；近郊照 wild；地下城每層照 dungeon_layers，個別地下城可以在 locations 覆蓋（周邊、淺層、中層、深層）；臨時地圖照 travel_events.json 的 side_maps.lighting（沒寫時固定地圖有光、其他黑暗）。有光的地方視野固定 lit_sight 格；黑暗的地方要有光源，視野 1 + 光源的加成（最多 +2，所以不會比有光的地方遠）。黑暗又沒有光源時：視野只剩腳下（sight 格）、戰鬥中隊伍命中 hit、察覺陷阱的 DC 加 trap_dc。",
     "day_hours": [6, 18],
+    "lit_sight": 3,
     "dark": { "sight": 0, "hit": -2, "trap_dc": 3 },
     "wild": "daylight",
     "dungeon_layers": ["daylight", "dark", "dark", "dark", "dark"],

@@ -202,10 +202,11 @@ export function startJourney(state: GameState, destination: string, intent?: str
       throw new Error(g.reason)
     }
   }
+  // 主角的身分（水手）可能讓船資便宜一點；船資在出發時就要付得起（抵達時才一起結算，錢不會變成負的）
+  const seaFare = Math.round(path.legs.reduce((sum, l) => sum + legFare(l), 0) * state.party.length * pcTagMult(pcOf(state), 'fare_mult'))
+  if (seaFare > state.money_cc) throw new Error(`船資全隊要 ${seaFare} 白鸛，錢不夠`)
   const from = state.location
   const area = withRng(state, (rng) => buildRoad(state, from, destination, path.legs, rng))
-  // 主角的身分（水手）可能讓船資便宜一點
-  const seaFare = Math.round(path.legs.reduce((sum, l) => sum + legFare(l), 0) * state.party.length * pcTagMult(pcOf(state), 'fare_mult'))
   state.road = {
     from, to: destination, start: { ...state.time }, modes: path.legs.map((l) => l.mode), hours: 0,
     money: -seaFare,
@@ -345,14 +346,20 @@ export function roadMove(state: GameState, dx: number, dy: number): StepResult {
   return {}
 }
 
-/** 走一天：時間與官道的食宿（每一格只算一次；野外與海路不用吃乾糧） */
+/**
+ * 走一天：時間與官道的食宿（每一格只算一次；野外與海路不用吃乾糧）。
+ * 食宿到抵達時才一起結算，身上的錢（扣掉到目前為止的花費）不夠付這一天時不付，在路邊露宿——錢不會變成負的
+ */
 function spendDay(state: GameState, road: RoadState, cell: Cell) {
   const meta = cell.road
   if (!meta || meta.hours <= 0 || meta.paid) return
   meta.paid = true
   advanceTime(state, meta.hours)
   road.hours += meta.hours
-  if (road.modes[meta.leg] === 'road') road.money -= ROAD_DAILY_CC * state.party.length
+  if (road.modes[meta.leg] !== 'road') return
+  const cost = ROAD_DAILY_CC * state.party.length
+  if (state.money_cc + road.money >= cost) road.money -= cost
+  else road.rough = (road.rough ?? 0) + 1
 }
 
 /** 隊伍裡最擅長這個屬性的人的檢定修正 */
@@ -571,6 +578,12 @@ export function finishJourney(state: GameState, to?: string): Report {
   const road = state.road
   if (!road) throw new Error('不在旅途中')
   const dest = to ?? road.to
+  // 結算時錢不夠付（路上的事件當下就花了錢）：付不起的食宿改算在路邊露宿，錢不會變成負的
+  const debt = -(state.money_cc + road.money)
+  if (debt > 0) {
+    road.rough = (road.rough ?? 0) + Math.ceil(debt / (ROAD_DAILY_CC * Math.max(1, state.party.length)))
+    road.money = -state.money_cc
+  }
   const pc = pcOf(state)
   const party = state.party.map((m) => snapshot(m, { ...m, hp: road.hpBefore[m.id] ?? m.hp }, pc))
   const timeline = [...road.timeline, {
@@ -588,7 +601,8 @@ export function finishJourney(state: GameState, to?: string): Report {
     timeline,
     outcome: {
       result: 'arrived',
-      summary: `從${locationById(road.from).name}${dest === road.to ? '' : `出發前往${locationById(road.to).name}，途中改道，`}抵達${destLoc.name}，耗時約 ${Math.round((road.hours / 24) * 10) / 10} 天。`,
+      summary: `從${locationById(road.from).name}${dest === road.to ? '' : `出發前往${locationById(road.to).name}，途中改道，`}抵達${destLoc.name}，耗時約 ${Math.round((road.hours / 24) * 10) / 10} 天。`
+        + (road.rough ? `盤纏不夠，有 ${road.rough} 天在官道旁露宿。` : ''),
       tags: [...new Set(road.modes.map((m) => MODE_NAME[m as RouteMode]))],
     },
     changes: { ...(road.money ? { money_cc: road.money } : {}) },

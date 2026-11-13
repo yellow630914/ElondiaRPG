@@ -114,14 +114,16 @@ describe('tool templates', () => {
     const state = game()
     state.location = 'whisper_crypt'
     enterLocation(state)
-    // 周邊白天有光：1 格；淺層一片漆黑：沒有光源只看得到腳下
-    expect(sight(state, currentArea(state))).toBe(1)
+    // 周邊白天有光：固定 3 格；淺層一片漆黑：沒有光源只看得到腳下
+    expect(sight(state, currentArea(state))).toBe(3)
     const dark = { ...currentArea(state), layer: 1, lighting: undefined }
     expect(sight(state, dark)).toBe(0)
     addItem(state.inventory, '火把（10 根）', 1)
     expect(sight(state, dark)).toBe(2)
     addItem(state.inventory, '魔法照明石', 1)
     expect(sight(state, dark)).toBe(3)
+    // 最好的光源也不會比有光的地方看得遠
+    expect(sight(state, dark)).toBeLessThanOrEqual(sight(state, currentArea(state)))
   })
 
   it('adds proficiency to spotting traps and picking locks', () => {

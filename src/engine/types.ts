@@ -643,6 +643,8 @@ export interface RoadState {
   hours: number
   /** 累計的花費（抵達時寫進旅行報告） */
   money: number
+  /** 官道上盤纏不夠、在路邊露宿的天數（不付食宿） */
+  rough?: number
   timeline: TimelineEntry[]
   /** 出發時的生命值（旅行報告的前後對照） */
   hpBefore: Record<string, number>

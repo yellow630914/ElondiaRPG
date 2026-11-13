@@ -4,7 +4,7 @@ import { computed, ref } from 'vue'
 import { geography, locationById } from '@/engine/data'
 import { layerName, layerRanks } from '@/engine/materialQuests'
 import { formatMoney } from '@/engine/money'
-import { legFare, MODE_NAME } from '@/engine/travel'
+import { legFare, MODE_NAME, ROAD_DAILY_CC } from '@/engine/travel'
 import { reachable, type Path } from '@/engine/world'
 import { openFor } from '@/engine/storyFlags'
 import { useGame } from '@/stores/game'
@@ -12,8 +12,10 @@ import { pcTagMult } from '@/engine/pcTags'
 import { pcOf } from '@/engine/party'
 import { homeDeadline } from '@/engine/masterHome'
 import { RANK_COLOR } from './ui/cellIcons'
+import Hint from './ui/Hint.vue'
 
 const emit = defineEmits<{ close: [] }>()
+const FARE_HINT = `海路的船資出發時要付得起。官道沿途住旅店：每人每天 ${ROAD_DAILY_CC} 白鸛食宿，抵達時一起結算；錢不夠的那幾天在路邊露宿，不會欠錢。其他路段不花錢。`
 const game = useGame()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))
@@ -81,7 +83,7 @@ function go(id: string) {
     </p>
     <table v-if="current" class="dest">
       <thead>
-        <tr><th>目的地</th><th>路線</th><th class="num">天數</th><th class="num">船資（每人）</th><th /></tr>
+        <tr><th>目的地</th><th>路線</th><th class="num">天數</th><th class="num">船資（每人） <Hint :text="FARE_HINT" /></th><th /></tr>
       </thead>
       <tbody>
         <tr v-for="d in current.items" :key="d.id">

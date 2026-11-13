@@ -14,6 +14,8 @@ export type Lighting = 'lit' | 'daylight' | 'dark'
 
 interface LightingRules {
   day_hours: [number, number]
+  /** 有光的地方的視野（格） */
+  lit_sight?: number
   dark: { sight: number; hit: number; trap_dc: number }
   wild: Lighting
   dungeon_layers: Lighting[]
@@ -133,9 +135,9 @@ export function inDarkness(state: GameState, area: Pick<Area, 'kind' | 'location
   return isDark(state, area) && !currentLight(state)
 }
 
-/** 視野：暗的地方要有光才看得到（光源越好看得越遠）；亮的地方 1 格 */
+/** 視野：亮的地方固定 lit_sight 格（3）；暗的地方要有光才看得到，1 + 光源的加成（最多 +2，不會比亮的地方遠） */
 export function sightIn(state: GameState, area: Pick<Area, 'kind' | 'location' | 'layer' | 'lighting'>): number {
-  if (!isDark(state, area)) return 1
+  if (!isDark(state, area)) return lightingRules.lit_sight ?? 3
   ensureLight(state)
   const light = currentLight(state)
   return light ? 1 + light.bonus : lightingRules.dark.sight

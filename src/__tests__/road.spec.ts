@@ -169,3 +169,21 @@ describe('the road', () => {
     expect(cave.cells.some((c) => c.storyNode === 'overturned_wagon:hideout')).toBe(true)
   })
 })
+
+describe('旅費不會讓錢變成負的', () => {
+  it('官道的食宿付不起的那幾天在路邊露宿（路上的事件花掉的錢也算進去）', () => {
+    // 索里耶爾 → 蛇溪洞窟（官道，好幾天）：只帶一天的食宿
+    const state = game()
+    state.money_cc = 15
+    expect(startJourney(state, 'snake_creek')).toBeUndefined()
+    const r = walk(state)
+    expect(state.money_cc).toBeGreaterThanOrEqual(0)
+    expect(r.outcome.summary).toContain('露宿')
+    // 錢夠的時候照付，不露宿
+    const rich = game()
+    expect(startJourney(rich, 'snake_creek')).toBeUndefined()
+    const r2 = walk(rich)
+    expect(r2.outcome.summary).not.toContain('露宿')
+    expect(r2.changes.money_cc).toBeLessThan(0)
+  })
+})
