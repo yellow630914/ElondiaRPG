@@ -13,7 +13,7 @@ import { defaultLoyalAffinity, LOYAL_MAX, LOYAL_MIN } from '@/engine/npcLife'
 import AiToggles from './AiToggles.vue'
 import ImageSettings from './ImageSettings.vue'
 import RuleFields from './RuleFields.vue'
-import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultyRule, difficultySummary, gameRule, RULE_DEFS, sanitizeCustomDifficulty, type NumericRule } from '@/engine/gameRules'
+import { DIFFICULTY_DEFS, DIFFICULTY_IDS, difficultyOf, difficultyRule, difficultySummary, gameRule, parasiteLuresOn, RULE_DEFS, sanitizeCustomDifficulty, type NumericRule } from '@/engine/gameRules'
 import CustomDifficultyEditor from './CustomDifficultyEditor.vue'
 import ModelSourceEditor from './ModelSourceEditor.vue'
 import SettingsFilePanel from './SettingsFilePanel.vue'
@@ -357,7 +357,7 @@ function doReset() {
         </label>
         <label class="check">
           <input v-model="settings.mascBodyContent" type="checkbox" /> 陽剛體型也能遇到「只給陰柔、中性」的成人內容
-          <Hint text="有一部分成人向內容限定陰柔、中性體型的主角：17 條打工、儀式的特殊任務線，地下城事件（全部），部分城鎮、旅途事件與地標的場景；連帶兩種主要的寄生物也只能從那裡得到。勾選後陽剛體型的主角也會遇到。看的是體型（陽剛、陰柔、中性），不是性別；體型在建立角色或角色設定裡可以改。" />
+          <Hint text="有一部分成人向內容限定陰柔、中性體型的主角：17 條打工、儀式的特殊任務線，地下城事件（帶來寄生物的四件另有陽剛體型的版本，其他全部），部分城鎮、旅途事件與地標的場景。勾選後陽剛體型的主角也會遇到。看的是體型（陽剛、陰柔、中性），不是性別；體型在建立角色或角色設定裡可以改。" />
         </label>
         <p v-if="settings.mascBodyContent" class="small body-warn"><GameIcon name="caution" :size="16" class="warn-icon" />這些內容是照陰柔、中性的主角寫的：角色的身分不會變（陽剛體型的主角一樣會當兔女郎、女僕、新娘），固定的事件文字也可能寫到不符合主角身體的部位。AI 寫經過時會照主角的身體改寫，但不保證每次都自然。</p>
         <label>
@@ -385,6 +385,8 @@ function doReset() {
       </h2>
       <div class="form">
         <RuleFields :model-value="saveRules" :groups="['lust', 'adult_events', 'lewd']" headings no-adult-mark @update:model-value="game.setRules" />
+        <label class="check"><input type="checkbox" :checked="parasiteLuresOn(game.state)" @change="game.setParasiteLures(($event.target as HTMLInputElement).checked)" />
+          黑市賣寄生物的引子 <span class="badge">存檔</span><Hint text="勾選時（預設），地下街的黑市每天各賣一份「受詛咒的黑色內衣」「魅魔的封印箱」「寄生植物的花苞」：在地下城裡使用，立刻遇到會帶來那種寄生物的地下城事件（不看機率與冷卻；有別的事情等著回應時不能用）。內容篩選關掉「主角非自願」時，非自願的兩種不賣。" /></label>
       </div>
     </section>
   </template>

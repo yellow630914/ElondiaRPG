@@ -144,13 +144,14 @@ function build(): Index {
     if (i.recipe) add('item', i.name, `製作：${craftRules.skills[i.recipe.craft]?.name ?? i.recipe.craft} ${i.recipe.level} 級`, 'craft')
     for (const y of i.seed?.yields ?? []) add('item', y, `種「${i.name}」收成`, 'craft')
     if (i.black_market && i.gear?.unique) add('item', i.name, '黑市每天的珍品', 'shop')
+    if (i.black_market && i.use?.lure?.length) add('item', i.name, '黑市每天的寄生物引子（存檔規則「黑市賣寄生物的引子」）', 'shop')
     if (i.master_force) add('item', i.name, `主人強制裝上${i.master_force.tags?.length ? `（${i.master_force.tags.map((t) => npcTags.tags[t]?.name ?? t).join('、')}的主人）` : ''}`, 'forced')
     if (i.event) add('item', i.name, '主動行動的報酬（AI 判定時可能給）', 'event')
     // 制式裝備：寶箱、人形怪物的掉落、流浪商人依等級隨機生成，也可以打造
     if (i.gear && !i.gear.attrs && !i.gear.unique && !i.gear.enchants && !i.gear.rarity && gearName(i.gear) === i.name) {
       add('item', i.name, '依等級隨機生成的裝備（寶箱、人形怪物的掉落、流浪商人）與打造', 'gear')
     }
-    if (i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length) {
+    if (i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !i.use?.lure?.length) {
       const randomShops = shopTypes.filter((t) => t.random?.consumables).map((t) => t.name)
       if (randomShops.length) add('item', i.name, `${randomShops.join('、')}每天隨機上架`, 'shop')
     }

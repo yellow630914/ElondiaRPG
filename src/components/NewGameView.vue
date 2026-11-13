@@ -72,6 +72,7 @@ const tagChange = ref(false)
 /** 察覺陷阱時可以主動觸發 */
 const trapLure = ref(false)
 const naturalCrit = ref(false)
+const parasiteLures = ref(true)
 // 職業武器限制：新遊戲預設打開（舊存檔沒有這一項＝關閉）
 const classWeapons = ref(true)
 // 特質：清單裡的任選，也可以自訂
@@ -241,7 +242,7 @@ function start() {
     gear: { ...gearChoice.value },
     gearBudget: gearBudget.value,
     // 難度和其他規則一樣：和預設一樣的不存
-    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(difficulty.value === 'custom' ? { customDifficulty: sanitizeCustomDifficulty(customDifficulty.value) } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...(naturalCrit.value ? { naturalCrit: true } : {}), ...(classWeapons.value ? { classWeapons: true } : {}), ...sanitizeRules(rules.value) },
+    options: { defeatLoot: defeatLoot.value, ...(difficulty.value !== DEFAULT_DIFFICULTY ? { difficulty: difficulty.value } : {}), ...(difficulty.value === 'custom' ? { customDifficulty: sanitizeCustomDifficulty(customDifficulty.value) } : {}), ...(tagChange.value ? { tagChange: true } : {}), ...(trapLure.value ? { trapLure: true } : {}), ...(naturalCrit.value ? { naturalCrit: true } : {}), ...(classWeapons.value ? { classWeapons: true } : {}), ...(parasiteLures.value ? {} : { parasiteLures: false }), ...sanitizeRules(rules.value) },
   }, content.active)
 }
 
@@ -540,6 +541,7 @@ const dateText = (t: number) => new Date(t).toLocaleString('zh-TW', { month: 'nu
       </table>
       <FoldMenu id="newgame.rules" icon="d20" label="更多存檔規則" :detail="Object.keys(rules).length ? `改了 ${Object.keys(rules).length} 項` : '經驗、報酬、休息、旅途、委託期限……（之後可以在設定裡改）'">
         <RuleFields v-model="rules" headings :omit="['extraSlots']" />
+        <label class="check small"><input v-model="parasiteLures" type="checkbox" /> 黑市賣寄生物的引子（成人向） <Hint text="勾選時（預設），地下街的黑市每天各賣一份寄生物的引子：在地下城裡使用，立刻遇到會帶來那種寄生物的地下城事件。之後可以在「設定」的成人內容裡改。" /></label>
       </FoldMenu>
     </div>
 

@@ -1720,6 +1720,13 @@ export const useGame = defineStore('game', () => {
       if (!on) delete state.value.trapLure
       save()
     },
+    /** 這個存檔的黑市賣不賣寄生物的引子（預設賣；關掉時記成 false） */
+    setParasiteLures: (on: boolean) => {
+      if (!state.value) return
+      const { parasiteLures: _, ...rest } = state.value.options ?? { defeatLoot: 'half' }
+      state.value.options = { ...rest, ...(on ? {} : { parasiteLures: false }) }
+      save()
+    },
     /** 這個存檔的職業武器限制（打開時，主手拿著職業不能用的武器的人卸下武器，見 inventory.ts 的 enforceClassWeapons） */
     setClassWeapons: (on: boolean) => run((s) => inventory.setClassWeapons(s, on), { narrate: false }),
     /** 這個存檔的大成功、大失敗只看骰面（20 與 1，見 engine/checks.ts） */

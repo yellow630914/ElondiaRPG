@@ -9,6 +9,7 @@ import { actionRules, DUNGEON_LAYER_NAME, lewdRules, LOCK_GRADES, npcTags, perkR
 import { LEWD_STATS, lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
 import { intelSummary, useSummary } from '@/engine/inventory'
+import { dungeonTemplates, parasitesFrom } from '@/engine/dungeonEvents'
 import { CHEST_LAYERS, itemSources, sanitizeGearSpecLoose, type ChestLayer, type GatherPlace, type ItemMod, SYSTEM_CONDITIONS } from '@/engine/mods'
 import { formatMoney } from '@/engine/money'
 import { inferTradeCategory, marketRules, tradeCategoryName } from '@/engine/market'
@@ -116,6 +117,25 @@ function setUseLewd(k: (typeof LEWD_USE_KEYS)[number], v: number) {
   if (v) l[k] = Math.max(-20, Math.min(20, Math.round(v)))
   else delete l[k]
   use.value.lewd = Object.keys(l).length ? l : undefined
+}
+// 寄生物的引子（docs/ADULT_EVENTS.md 第 6 節）：在地下城裡用了立刻遇到的地下城事件（照順序挑第一件體型相符的）
+const BODY_SHORT: Record<string, string> = { masc: '陽剛', fem: '陰柔', andro: '中性' }
+const lureChoices = computed(() => {
+  void content.version
+  const all = dungeonTemplates().map((t) => ({ id: t.id, label: `${t.title}${t.pc_body?.length ? `（${t.pc_body.map((b) => BODY_SHORT[b] ?? b).join('、')}）` : ''}`, parasite: parasitesFrom(t).length > 0 }))
+  return { parasite: all.filter((t) => t.parasite), other: all.filter((t) => !t.parasite) }
+})
+function lureLabel(id: string): string {
+  return [...lureChoices.value.parasite, ...lureChoices.value.other].find((t) => t.id === id)?.label ?? `${id}（不存在）`
+}
+function addLure(id: string) {
+  if (!id || use.value.lure?.includes(id) || (use.value.lure?.length ?? 0) >= 4) return
+  use.value.lure = [...(use.value.lure ?? []), id]
+}
+function removeLure(id: string) {
+  const l = (use.value.lure ?? []).filter((x) => x !== id)
+  use.value.lure = l.length ? l : undefined
+  if (!l.length && !draft.value.gear?.unique) delete draft.value.black_market
 }
 // 內容標籤（商店照內容篩選上架）
 function toggleContentTag(t: string, on: boolean) {
@@ -536,6 +556,27 @@ function setFuel(v: string) {
         <span>冥想 <Hint text="用了花一個小時，慾望指標增減幾點（負數是降低；曝露名聲是用的地方那一帶的）。神殿的清心香、淨念香、自持經、隱名符就是這種。每項 −20～+20。" /></span>
         <label v-for="k in LEWD_USE_KEYS" :key="k">{{ lewdName(k) }} <input type="number" min="-20" max="20" class="num" :value="use.lewd?.[k] ?? 0" @change="setUseLewd(k, Number(($event.target as HTMLInputElement).value))" /></label>
       </div>
+      <details v-if="draft.category === 'consumable'" class="small" :open="!!use.lure?.length">
+        <summary>🐛 寄生物的引子：在地下城裡用了立刻遇到的事件（{{ use.lure?.length ?? 0 }}，最多 4 件）</summary>
+        <p class="muted">在地下城裡使用時，立刻遇到這件地下城事件（不看機率、冷卻、地點與層數；有別的事情等著回應、不在地下城時不能用，也不會用掉）。有好幾件時照順序挑第一件主角體型相符的，所以陽剛體型的版本放在後面；內容篩選擋掉的不算。</p>
+        <div v-for="id in use.lure ?? []" :key="id" class="row">
+          <span class="grow">{{ lureLabel(id) }}</span>
+          <button class="small" title="移除" @click="removeLure(id)">✕</button>
+        </div>
+        <select v-if="(use.lure?.length ?? 0) < 4" :value="''" @change="addLure(($event.target as HTMLSelectElement).value); ($event.target as HTMLSelectElement).value = ''">
+          <option value="">＋ 加一件地下城事件…</option>
+          <optgroup label="會帶來寄生物的事件">
+            <option v-for="t in lureChoices.parasite" :key="t.id" :value="t.id" :disabled="use.lure?.includes(t.id)">{{ t.label }}</option>
+          </optgroup>
+          <optgroup label="其他地下城事件">
+            <option v-for="t in lureChoices.other" :key="t.id" :value="t.id" :disabled="use.lure?.includes(t.id)">{{ t.label }}</option>
+          </optgroup>
+        </select>
+        <label v-if="use.lure?.length" class="check">
+          <input type="checkbox" :checked="!!draft.black_market" @change="draft.black_market = ($event.target as HTMLInputElement).checked || undefined" />
+          在黑市賣：地下街裡的黑市每天各上架一份（照物品的價錢；存檔規則「黑市賣寄生物的引子」關掉時不賣，物品的內容標籤或引來的事件被內容篩選擋掉時也不賣）
+        </label>
+      </details>
       <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用 <Hint text="回復生命、法術環以外的效果一律只能在戰鬥中用。" /></label>
     </FoldSet>
 

@@ -2,7 +2,7 @@
 import { useSettings } from '@/stores/settings'
 import FoldMenu from './ui/FoldMenu.vue'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { marketsHere, proposeDc, selfSaleChance, type MarketKind } from '@/engine/companions'
+import { curioListed, marketsHere, proposeDc, selfSaleChance, type MarketKind } from '@/engine/companions'
 import { className, contractDef, genderName, raceName, slaveryRules, tagDef } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
 import { npcRecord } from '@/engine/npcs'
@@ -12,6 +12,7 @@ import type { MarkChoice } from '@/engine/slavery'
 import type { CurioListing, SlaveListing } from '@/engine/types'
 import { itemDef } from '@/engine/data'
 import { gearSummaryParts } from '@/engine/gear'
+import { useSummary } from '@/engine/inventory'
 import EffectLine from './items/EffectLine.vue'
 import { useGame } from '@/stores/game'
 import MarkPicker from './MarkPicker.vue'
@@ -31,8 +32,8 @@ onMounted(() => {
   if (props.kind === 'black') loadedCurios.value = game.curioStock()
 })
 
-// ---- 黑市的珍品（獨特裝備，每天刷新） ----
-const curios = computed(() => (props.kind === 'black' ? s.value.curios?.[s.value.location]?.stock ?? loadedCurios.value : []))
+// ---- 黑市的珍品（獨特裝備與寄生物的引子，每天刷新；引子照存檔規則與內容篩選擋掉） ----
+const curios = computed(() => (props.kind === 'black' ? (s.value.curios?.[s.value.location]?.stock ?? loadedCurios.value).filter((c) => curioListed(s.value, c.item)) : []))
 const curioOpen = ref<string | null>(null)
 const curioText = reactive<Record<string, string>>({})
 function haggleCurio(c: CurioListing) {
@@ -160,7 +161,7 @@ function sellSelf() {
     <p v-if="stock.length === 0" class="small muted">今天沒有貨了。</p>
     </FoldMenu>
 
-    <FoldMenu v-if="kind === 'black'" id="market.curios" icon="gem" label="今天的珍品" detail="黑市流出的獨特裝備，每天換一批；買走就沒了" :badge="curios.length">
+    <FoldMenu v-if="kind === 'black'" id="market.curios" icon="gem" label="今天的珍品" detail="黑市流出的獨特裝備與寄生物的引子，每天換一批；買走就沒了" :badge="curios.length">
       <ul class="plain">
         <li v-for="c in curios" :key="c.item" class="item small">
           <div class="row" style="justify-content: space-between">
@@ -168,6 +169,7 @@ function sellSelf() {
             <span>{{ formatMoney(c.price_cc) }}</span>
           </div>
           <div v-if="itemDef(c.item)?.gear" class="muted"><EffectLine :parts="gearSummaryParts(itemDef(c.item)!.gear!)" /></div>
+          <div v-else-if="itemDef(c.item)?.use" class="muted">{{ useSummary(itemDef(c.item)!.use) }}</div>
           <div v-if="itemDef(c.item)?.desc" class="muted">{{ itemDef(c.item)!.desc }}</div>
           <div class="row">
             <button class="small primary" :disabled="s.money_cc < c.price_cc || game.judging" @click="game.buyCurio(c.item)">買下</button>

@@ -18,7 +18,9 @@ function atBlackMarket() {
 describe('black market curios', () => {
   it('stocks a few black-market unique items each day, three by default', () => {
     const state = atBlackMarket()
-    const stock = curioStock(state)
+    // 寄生物的引子另外算（parasiteLures.spec.ts）
+    const gear = () => curioStock(state).filter((c) => itemRules.items.find((x) => x.name === c.item)?.gear)
+    const stock = gear()
     expect(stock).toHaveLength(3)
     for (const c of stock) {
       const i = itemRules.items.find((x) => x.name === c.item)!
@@ -26,15 +28,15 @@ describe('black market curios', () => {
       expect(c.price_cc).toBeGreaterThan(i.price_cc)
     }
     // 同一天看第二次不變
-    expect(curioStock(state)).toEqual(stock)
+    expect(gear()).toEqual(stock)
     state.options = { defeatLoot: 'half', blackMarketGear: 0 }
     state.time.day += 1
-    expect(curioStock(state)).toEqual([])
+    expect(gear()).toEqual([])
   })
 
   it('sells and haggles', () => {
     const state = atBlackMarket()
-    const [a, b] = curioStock(state)
+    const [a, b] = curioStock(state).filter((c) => itemRules.items.find((x) => x.name === c.item)?.gear)
     const money = state.money_cc
     buyCurio(state, a!.item)
     expect(state.money_cc).toBe(money - a!.price_cc)

@@ -52,7 +52,9 @@ import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report,
 import { contractOf, placeName } from './tattoos'
 import { lewdPowerOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { sexValueOf } from './sexRecord'
-import { gameRule } from './gameRules'
+import { gameRule, parasiteLuresOn } from './gameRules'
+import { tagsAllowed } from './content'
+import { lureTemplate } from './dungeonEvents'
 import { blackMarketHere, underworldAskBlocked, underworldEscorted, underworldEscortFlag, underworldFlag, underworldLandmarks, underworldOf } from './underworld'
 import { inActiveSquad, squadActive, squadIds, squadJoinDc, squadMissing, squads, squadWithLeader, type Squad } from './squads'
 
@@ -485,20 +487,32 @@ export function buySlave(state: GameState, kind: MarketKind, npcId: string, mark
 
 // ---- 黑市的珍品（獨特裝備） ----
 
-/** 今天黑市的珍品（第一次查看時刷新）：勾了「也會出現在黑市」的獨特裝備，件數是存檔規則 */
+/**
+ * 寄生物的引子在黑市上架（docs/ADULT_EVENTS.md 第 6 節）：勾了「也會出現在黑市」、使用效果是引子的物品；
+ * 存檔規則「黑市賣寄生物的引子」關掉、內容篩選擋掉物品或它引來的事件時不上架
+ */
+export function curioListed(state: GameState, name: string): boolean {
+  const i = itemDef(name)
+  if (!i?.use?.lure?.length) return true
+  return parasiteLuresOn(state) && tagsAllowed(i.content_tags) && !!lureTemplate(state, i.use.lure)
+}
+
+/** 今天黑市的珍品（第一次查看時刷新）：勾了「也會出現在黑市」的獨特裝備，件數是存檔規則；另外每天各一份寄生物的引子（照物品的價錢，不加成；買走就沒了，隔天補） */
 export function curioStock(state: GameState): CurioListing[] {
   marketDef(state, 'black')
   const curios = (state.curios ??= {})
   const cur = curios[state.location]
-  if (cur && cur.day === state.time.day) return cur.stock
+  if (cur && cur.day === state.time.day) return cur.stock.filter((c) => curioListed(state, c.item))
   const n = gameRule(state, 'blackMarketGear')
   const pool = itemRules.items.filter((i) => i.black_market && i.gear?.unique).map((i) => i.name)
   const stock = n && pool.length ? withRng(state, (rng) => {
     const picked = [...pool].sort(() => rng.next() - 0.5).slice(0, n)
     return picked.map((name): CurioListing => ({ item: name, price_cc: Math.max(10, Math.round((itemDef(name)!.price_cc * slaveryRules.curios.price_mult) / 10) * 10) }))
   }) : []
+  // 引子一律記進今天的貨，看的時候才照規則與內容篩選擋掉（當天改了規則、篩選也馬上生效）
+  for (const i of itemRules.items) if (i.black_market && i.use?.lure?.length) stock.push({ item: i.name, price_cc: i.price_cc })
   curios[state.location] = { day: state.time.day, stock }
-  return stock
+  return stock.filter((c) => curioListed(state, c.item))
 }
 
 function curio(state: GameState, item: string): CurioListing {
