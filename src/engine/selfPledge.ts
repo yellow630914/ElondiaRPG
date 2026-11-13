@@ -8,8 +8,9 @@ import { bondName } from './bondStyle'
 import { formatMoney } from './money'
 import { npcRecord } from './npcs'
 import { ownedSlaves } from './ownedSlaves'
-import { addCondition, changeMaster, isEnslaved, leaderOf, pcOf } from './party'
-import { isHostile, nearbyPeople } from './population'
+import { addCondition, changeMaster, isEnslaved, leaderOf, masterBumped, pcOf } from './party'
+import { isHostile, isUnhireable, nearbyPeople } from './population'
+import { inActiveSquad, squadMissing, squadWithLeader } from './squads'
 import { contractTerms, makeContract, type MarkChoice } from './slavery'
 import { commitReport } from './state'
 import { contractOf, setContract } from './tattoos'
@@ -29,15 +30,15 @@ export interface PledgeCandidate {
 
 const affinityOf = (state: GameState, id: string) => state.relationships?.[id]?.affinity ?? 0
 
-/** 可以問的人：同伴（self_bonds）與身邊認識、不敵對、不是奴隸的人 */
+/** 可以問的人：同伴（self_bonds）與身邊認識、不敵對、不是奴隸的人；不收人的固定 NPC（unhireable，和轉讓一樣）不算 */
 export function pledgeCandidates(state: GameState): PledgeCandidate[] {
   const out: PledgeCandidate[] = state.party
-    .filter((m) => !m.isPlayer && rules().self_bonds.includes(m.bond ?? 'hired') && !m.status.includes('away'))
+    .filter((m) => !m.isPlayer && rules().self_bonds.includes(m.bond ?? 'hired') && !m.status.includes('away') && !isUnhireable(m.id))
     .map((m) => ({ id: m.id, name: m.name, bond: m.bond, affinity: affinityOf(state, m.id) }))
   for (const p of nearbyPeople(state)) {
     const rec = p.rec
     if (out.some((x) => x.id === rec.id) || !state.relationships?.[rec.id]) continue
-    if (rec.dead || rec.tags?.includes('slave') || isHostile(state, rec) || state.captives?.npcs.includes(rec.id)) continue
+    if (rec.dead || isUnhireable(rec.id) || rec.tags?.includes('slave') || isHostile(state, rec) || state.captives?.npcs.includes(rec.id)) continue
     out.push({ id: rec.id, name: rec.name, affinity: affinityOf(state, rec.id) })
   }
   return out
@@ -63,9 +64,27 @@ export function pledgeBlocked(state: GameState, id: string): string | undefined 
   // 跟著別人的隊伍時，只能請隊長收下自己（換成別人當主人，原本的隊伍怎麼辦說不通）
   const leader = leaderOf(state)
   if (leader && leader.id !== id) return `你正跟著${leader.name}的隊伍，只能請${leader.name}收下你，或先離開這支隊伍`
+  // 固定 NPC 的小隊不能拆開：隊員要找隊長；隊長收下主角時整隊一起帶著主角，隊員要到齊
+  const sq = inActiveSquad(state, id)
+  if (sq && sq.leader !== id && !state.party.some((m) => m.id === id)) return `${who.name}是${sq.name}的隊員，小隊不能拆開：請隊長收下你`
+  if (sq && sq.leader === id) {
+    const missing = squadMissing(state, sq)
+    if (missing.length) return `${missing.join('、')}今天不在，等${sq.name}到齊再說`
+  }
   const need = rules().min_affinity
   if (who.affinity < need) return `${who.name}還不夠信任你（親密度 ${need} 以上才會答應，現在 ${who.affinity}）`
   return undefined
+}
+
+/** 對方收下主角時一起帶著主角的小隊隊員（對方是小隊隊長時；已經在隊上的不算） */
+export function pledgeFollowers(state: GameState, id: string): NpcRecord[] {
+  const sq = inActiveSquad(state, id)
+  return sq && sq.leader === id ? squadWithLeader(state, sq) : []
+}
+
+/** 對方（與他的隊員）加入後隊伍放不下、得離開的同伴名字（確認視窗先寫出來） */
+export function pledgeBumped(state: GameState, id: string): string[] {
+  return masterBumped(state, { id }, pledgeFollowers(state, id).length).map((m) => m.name)
 }
 
 /** 對方答應了：刻上主角選的印記，對方成為主人（隊長），並說好主僕關係 */
@@ -82,7 +101,8 @@ export function pledgeSelf(state: GameState, id: string, mark: MarkChoice, style
   const contract = makeContract(mark, '', '', state.time)
   setContract(pc, contract, state.time)
   addCondition(pc, 'slave_mark', report)
-  changeMaster(state, rec, report, '自願為奴')
+  const followers = pledgeFollowers(state, id)
+  changeMaster(state, rec, report, '自願為奴', followers)
   const made = contractOf(pc)!
   if (style !== 'strict') made.style = style
   // 換主人記成「無主 → 對方」：這裡是從自由身成為奴隸，改記一筆成為奴隸
@@ -91,14 +111,15 @@ export function pledgeSelf(state: GameState, id: string, mark: MarkChoice, style
     ...(report.changes.companions ?? []).filter((x) => !(x.npc === 'pc' && x.change === 'transferred')),
     { npc: 'pc', name: pc.name, change: 'enslaved', reason: `${terms.name}，主人：${rec.name}（自願為奴）` },
   ]
-  // 原本對主角的看法留著，接上這件事
+  // 原本對主角的看法留著，接上這件事（中性寫法，不寫他、她）
   const rel = state.relationships?.[rec.id]
-  if (rel) rel.toPlayer = `主角的主人：主角自願成為他的奴隸，身上刻著「${terms.name}」（${bondName(style)}）。`
+  if (rel) rel.toPlayer = [rel.toPlayer?.trim(), `主角主動請求被收下，現在是自己的奴隸，身上刻著「${terms.name}」（${bondName(style)}）。`].filter(Boolean).join('')
   report.changes.money_cc = (report.changes.money_cc ?? 0) - rules().fee_cc
+  const squadNote = followers.length ? `，${followers.map((f) => f.name).join('、')}也跟著一起同行` : ''
   const was = before === 'leader' ? '原本就帶著你的隊長' : before === 'hired' ? '原本是雇傭的同伴' : before ? '原本是自願同行的夥伴' : '身邊認識的人'
   report.outcome = {
     result: 'success',
-    summary: `你請${rec.name}收下自己，${rec.name}答應了。刻印師在你身上刻下「${terms.name}」（${was}；刻印費 ${formatMoney(rules().fee_cc)}）。從現在起${rec.name}是你的主人，兩人說好的關係：${bondName(style)}。`,
+    summary: `你請${rec.name}收下自己，${rec.name}答應了。刻印師在你身上刻下「${terms.name}」（${was}；刻印費 ${formatMoney(rules().fee_cc)}）。從現在起${rec.name}是你的主人${squadNote}，兩人說好的關係：${bondName(style)}。`,
     tags: ['主動認主', '成為奴隸'],
   }
   const def = slaveryRules.bond_styles.styles[style]
@@ -107,6 +128,7 @@ export function pledgeSelf(state: GameState, id: string, mark: MarkChoice, style
     focus: [
       `主角在刻印師那裡請${rec.name}收下自己、成為自己的主人；${rec.name}信任主角，答應了`,
       `刻印師把「${terms.name}」刻在主角身上：${terms.mark}`,
+      ...(followers.length ? [`${rec.name}的隊員${followers.map((f) => f.name).join('、')}也在場，之後跟著一起同行`] : []),
       style === 'strict' ? '兩人說好就是名實相符的主人與奴隸' : `兩人事先說好，名義上是主奴，實際的關係是「${def.name}」：${def.prompt}`,
       slaveryRules.bond_styles.personality_rule,
     ],

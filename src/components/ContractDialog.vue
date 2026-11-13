@@ -6,7 +6,7 @@ import { attrName, classEmoji, MASTER_ASK_GROUPS, raceEmoji, slaveryRules, tagDe
 import { formatMoney } from '@/engine/money'
 import { npcRecord, npcTitle } from '@/engine/npcs'
 import { isHostile } from '@/engine/population'
-import { isBound, isEnslaved, isFugitive } from '@/engine/party'
+import { isBound, isEnslaved, isFugitive, masterBumped } from '@/engine/party'
 import {
   askableEvents, askMasterBlocked, atSafeSpot, contractTerms, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers,
 } from '@/engine/slavery'
@@ -112,6 +112,9 @@ function release() {
 }
 function transfer() {
   if (!transferTo.value) return
+  // 新主人加入後隊伍放不下：先寫出誰會離開
+  const bumped = masterBumped(s.value, { id: transferTo.value }).map((m) => m.name)
+  if (bumped.length && !confirm(`隊伍放不下，${bumped.join('、')}會離開隊伍。還是要換主人？`)) return
   void game.masterTransfer(transferTo.value)
   emit('close')
 }

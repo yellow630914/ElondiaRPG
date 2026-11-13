@@ -382,6 +382,8 @@ export interface Character {
   abilityRerollsUsed?: number
   /** 用經驗換過幾次（鑽研特質、苦練屬性、鑽研技能，各算各的；xpSinks.ts） */
   xpSinks?: Partial<Record<'perk' | 'attr' | 'ability', number>>
+  /** 還沒處理的技能三選一、屬性點裡，有幾個是用經驗換來的（不是升級給的；提醒的文字分開寫，xpSinks.ts 的 sinkPending） */
+  xpSinkPending?: { ability?: number; attr?: number }
   /** 只有 NPC 隊友有；-100 ~ 100。來源是人際關係條目，這裡是同步副本 */
   affinity?: number
   isPlayer?: boolean

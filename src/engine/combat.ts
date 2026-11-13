@@ -213,7 +213,8 @@ export interface CombatState {
   timeline: TimelineEntry[]
   status: 'ongoing' | 'victory' | 'defeat' | 'fled'
   startHp: Record<string, number>
-  affinity: Record<string, { delta: number; reasons: string[] }>
+  /** 這場戰鬥的親密度：delta 是加總，loss 是其中扣的部分（上限只套在加的部分） */
+  affinity: Record<string, { delta: number; loss?: number; reasons: string[] }>
   /** 戰鬥中用掉的道具：戰鬥結束時從行囊扣除（報告的 items_lost） */
   itemsUsed?: Record<string, number>
   intent?: string
@@ -1425,6 +1426,7 @@ function noteAffinity(combat: CombatState, id: string, delta: number, reason: st
   if (id === 'pc') return
   const a = (combat.affinity[id] ??= { delta: 0, reasons: [] })
   a.delta += delta
+  if (delta < 0) a.loss = (a.loss ?? 0) + delta
   if (!a.reasons.includes(reason)) a.reasons.push(reason)
 }
 
@@ -2459,9 +2461,12 @@ export function finishCombat(state: GameState): Report {
   const affinity = Object.entries(combat.affinity)
     .map(([npc, a]) => {
       const m = state.party.find((p) => p.id === npc)
-      if (!m || m.affinity === undefined || a.delta === 0) return null
-      // 戰鬥給的親密度最多推到「友好」的上緣，再往上要靠經營關係（companions.json 的 combat_affinity_cap）；扣的照扣
-      const raised = a.delta > 0 ? Math.min(m.affinity + a.delta, Math.max(m.affinity, companionRules.combat_affinity_cap)) : m.affinity + a.delta
+      if (!m || m.affinity === undefined || (a.delta === 0 && !a.loss)) return null
+      // 戰鬥給的親密度最多推到「友好」的上緣，再往上要靠經營關係（companions.json 的 combat_affinity_cap）；
+      // 加的與扣的分開算：上限只套在加的部分，扣的照扣（打贏 +2、倒下 −1 時，在上限以上還是 −1）
+      const loss = Math.min(0, a.loss ?? Math.min(0, a.delta))
+      const gain = Math.max(0, a.delta - loss)
+      const raised = Math.min(m.affinity + gain, Math.max(m.affinity, companionRules.combat_affinity_cap)) + loss
       const after = Math.max(-100, Math.min(100, raised))
       return after === m.affinity ? null : { npc, delta: after - m.affinity, after, reason: a.reasons.join('、') }
     })

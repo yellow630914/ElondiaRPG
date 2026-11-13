@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue'
 import { BOND_STYLES, slaveryRules, type BondStyle } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { pledgeBlocked, pledgeBlockedAll, pledgeCandidates } from '@/engine/selfPledge'
+import { pledgeBlocked, pledgeBlockedAll, pledgeBumped, pledgeCandidates, pledgeFollowers } from '@/engine/selfPledge'
 import type { MarkChoice } from '@/engine/slavery'
 import { useGame } from '@/stores/game'
 import MarkPicker from './MarkPicker.vue'
@@ -25,10 +25,17 @@ const mark = ref<MarkChoice>(slaveryRules.roles.default)
 const style = ref<BondStyle>('strict')
 watch(pick, () => { style.value = 'strict' })
 const BOND_HINT = `名義上是主人與奴隸，實際上兩人怎麼相處。之後親密度掉到 ${bonds.keep_affinity} 以下時暫時退回名實相符，回到 ${bonds.keep_affinity} 以上恢復；也可以在「🔒 契約」重新談。不管哪一種關係，人物的言行都照各自的性格。`
-const HINT = `可以問自願同行、雇傭的同伴，帶著你的隊長，或身邊認識的人；親密度 ${r.min_affinity} 以上才會答應。答應之後刻上你選的印記（模板或自訂），對方成為你的主人、以隊長身分帶著你，你原本的同伴照舊同行；之後就照奴隸的規矩（出門、出城要主人同意、收益歸屬……）。刻印費 ${formatMoney(r.fee_cc)}，花 ${r.hours} 小時。身上已經有印記、自己擁有奴隸時不能。`
+const HINT = `可以問自願同行、雇傭的同伴，帶著你的隊長，或身邊認識的人；親密度 ${r.min_affinity} 以上才會答應。答應之後刻上你選的印記（模板或自訂），對方成為你的主人、以隊長身分帶著你（對方有自己的小隊時整隊一起），你原本的同伴照舊同行（隊伍上限變成跟著別人時的人數，真的放不下時最後面的同伴會離開）；之後就照奴隸的規矩（出門、出城要主人同意、收益歸屬……）。刻印費 ${formatMoney(r.fee_cc)}，花 ${r.hours} 小時。身上已經有印記、自己擁有奴隸時不能。`
+/** 一起同行的小隊隊員、放不下而得離開的同伴 */
+const followers = computed(() => (chosen.value && !chosen.value.blocked ? pledgeFollowers(s.value, chosen.value.id).map((f) => f.name) : []))
+const bumped = computed(() => (chosen.value && !chosen.value.blocked ? pledgeBumped(s.value, chosen.value.id) : []))
 function go() {
   if (!chosen.value || chosen.value.blocked) return
-  if (!confirm(`請${chosen.value.name}收下你，成為${chosen.value.name}的奴隸？之後要談判或逃離才能解除契約。`)) return
+  const extra = [
+    followers.value.length ? `${chosen.value.name}的隊員${followers.value.join('、')}會一起同行。` : '',
+    bumped.value.length ? `隊伍放不下，${bumped.value.join('、')}會離開隊伍。` : '',
+  ].join('')
+  if (!confirm(`請${chosen.value.name}收下你，成為${chosen.value.name}的奴隸？${extra}之後要談判或逃離才能解除契約。`)) return
   void game.pledgeSelf(chosen.value.id, mark.value, style.value)
   emit('done')
 }
@@ -59,6 +66,8 @@ function go() {
             <span class="d muted">{{ bonds.styles[id].desc }}</span>
           </button>
         </div>
+        <p v-if="followers.length" class="muted">{{ chosen.name }}的隊員{{ followers.join('、') }}會一起同行。</p>
+        <p v-if="bumped.length" class="warn">隊伍放不下：{{ bumped.join('、') }}會離開隊伍。</p>
         <div class="row">
           <span>刻印費 <b>{{ formatMoney(r.fee_cc) }}</b></span>
           <button class="primary" :disabled="game.judging" @click="go">請{{ chosen.name }}收下你</button>

@@ -328,11 +328,30 @@ export function recapturePlayer(state: GameState, report?: Report, strict = 0): 
  * 原本帶著主角的主人與他的隊員離隊，新主人以隊長身分入隊（隊伍滿了就讓最後入隊的同伴離開），逃亡狀態解除。
  * 事件、AI（change_master 效果）與「投靠新主人」都走這裡。
  */
-export function changeMaster(state: GameState, master: NpcRecord | null, report?: Report, reason?: string) {
+/** 跟著別人的隊伍時的人數上限（主人帶著主角時也是這個） */
+function followingMax(): number {
+  return Math.max(combatRules.party_max, combatRules.party_max_following ?? combatRules.party_max)
+}
+
+/**
+ * 換主人時，為了讓新主人（與他帶著的 followers 位隊員）加入、超過跟隨時的上限而得離開的同伴（從隊伍最後面算起）。
+ * 新主人原本就在隊上、原主人的隊伍會先離開，都不佔位子。確認視窗用來先寫出誰會離開
+ */
+export function masterBumped(state: GameState, master: Pick<NpcRecord, 'id'> | null, followers = 0): Character[] {
+  if (!master) return []
+  const gone = new Set<string>([master.id, ...(isBound(state) ? leaderGroup(state).map((m) => m.id) : [])])
+  const stay = state.party.filter((m) => !gone.has(m.id) && m.bond !== 'guest')
+  const over = stay.length + 1 + followers - followingMax()
+  return over > 0 ? stay.filter((m) => !m.isPlayer).slice(-over) : []
+}
+
+export function changeMaster(state: GameState, master: NpcRecord | null, report?: Report, reason?: string, followers: NpcRecord[] = []) {
   const pc = pcOf(state)
   const c = contractOf(pc)
   if (!c) throw new Error('主角不是奴隸')
   if (master?.id === c.master && isBound(state)) return
+  // 主人帶著主角時，隊伍上限是跟隨時的上限：只有真的放不下（新主人與他的隊員加入後超過）才請最後面的同伴離開
+  const bumped = masterBumped(state, master, followers.length)
   // 新主人原本就在隊伍裡（同伴、原主人的隊員）：先離隊，再以隊長身分回來
   if (master && state.party.some((m) => m.id === master.id)) leaveParty(state, master.id, report, '成為主角的主人')
   if (isBound(state)) {
@@ -355,17 +374,17 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   Object.assign(c, { master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } })
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
   if (master) {
-    while (partyRoom(state) < 1) {
-      const last = [...state.party].reverse().find((m) => !m.isPlayer)
-      if (!last) break
-      leaveParty(state, last.id, report, '主角換了主人，被迫分開')
-    }
+    for (const m of bumped) if (state.party.includes(m)) leaveParty(state, m.id, report, '主角換了主人，隊伍放不下，被迫分開')
     // 剛離隊的人用登錄裡的資料（保留等級、經驗與能力）
     joinParty(state, npcRecord(state, master.id) ?? master, 'leader', report, { group: master.id })
+    // 新主人帶著自己的小隊：隊員跟著入隊（和請小隊帶主角同行一樣）
+    for (const f of followers) if (!state.party.some((m) => m.id === f.id)) joinParty(state, npcRecord(state, f.id) ?? f, 'ally', report, { group: master.id })
   }
   if (master) {
+    // 原本對主角的看法留著，接上「主角的主人」
     const rel = ensureRelationship(state, master)
-    rel.toPlayer = '主角的主人。'
+    const was = rel.toPlayer?.trim()
+    rel.toPlayer = !was || was === '初次見面。' ? '主角的主人。' : was.includes('主角的主人') ? was : `${was}現在是主角的主人。`
   }
   recordChange(report, { npc: 'pc', name: pc.name, change: 'transferred', reason: `${old} → ${master?.name ?? '無主'}${reason ? `（${reason}）` : ''}` })
   syncMasterHome(state)

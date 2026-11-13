@@ -71,7 +71,7 @@ describe('主動認主', () => {
     expect(pcOf(state).status).toContain('slave_mark')
     expect(report.changes.companions?.filter((x) => x.npc === 'pc').map((x) => x.change)).toEqual(['enslaved'])
     expect(state.relationships![master.id]!.affinity).toBe(r.min_affinity)
-    expect(state.relationships![master.id]!.toPlayer).toContain('自願成為他的奴隸')
+    expect(state.relationships![master.id]!.toPlayer).toContain('主角主動請求被收下，現在是自己的奴隸')
     // 已經有印記：不能再認一次
     expect(pledgeBlocked(state, friend.id)).toContain('已經有奴隸印記')
   })
@@ -146,19 +146,19 @@ describe('刻印師的選單', () => {
     setActivePinia(createPinia())
   })
 
-  it('自由身時有「請人收下自己」一列（寫出現在會答應的人數），刻了印記之後就沒有', async () => {
+  it('自由身時有「請夥伴收自己為奴」一列（寫出現在會答應的人數），刻了印記之後就沒有', async () => {
     const state = game()
     const master = companion(state, 'voluntary')
     companion(state, 'hired', 5)
     const store = useGame()
     store.state = state
     const w = mount(TattooShop, { props: { shop: 'carver' } })
-    const row = () => w.findAll('button').find((b) => b.text().includes('請人收下自己'))
+    const row = () => w.findAll('button').find((b) => b.text().includes('請夥伴收自己為奴'))
     expect(row()?.text()).toContain('1')
     pledgeSelf(state, master.id, slaveryRules.roles.default)
     store.state = { ...state }
     await nextTick()
     expect(row()).toBeUndefined()
-    expect(w.findAll('button').some((b) => b.text().includes('自願為奴'))).toBe(true)
+    expect(w.findAll('button').some((b) => b.text().includes('收夥伴為奴'))).toBe(true)
   })
 })
