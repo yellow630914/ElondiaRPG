@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
-import { armorDef, damageTypeName, weaponDef } from '@/engine/data'
+import { armorDef, damageTypeName, lewdRules, weaponDef } from '@/engine/data'
 import { bonusesOff, onlyNegative, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummaryParts, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
-import { lockable, lockedGear, lockItems } from '@/engine/inventory'
-import { adultOutfitPieces, bindsOf, lockName, schoolsOf } from '@/engine/schools'
+import { keyAway, keyHolderName, keyKeepers, lockable, lockedGear, lockItems } from '@/engine/inventory'
+import { adultOutfitPieces, bindsOf, keyCustody, lockName, schoolsOf } from '@/engine/schools'
 import { combatRelease } from '@/engine/combatRelease'
 import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc, uncurseFee, uncurseHere } from '@/engine/restraints'
 import { formatMoney } from '@/engine/money'
@@ -95,6 +95,29 @@ function lockIt() {
   void game.lockGear(m.value.id, selected.value, lockPick.value)
   lockPick.value = ''
 }
+// 自己鎖上的拘束具的鑰匙（docs/LEWD_STATS.md 第 7 節）：自己留著、交給同伴或主人保管、丟掉
+const custody = computed(() => keyCustody(current.value, m.value))
+const keyWhere = computed(() => {
+  const h = current.value?.keyHolder
+  if (!h || !current.value?.lock || current.value.locked) return ''
+  return h === 'self' ? '在自己身上' : h === 'discarded' ? '已經丟掉' : `在${custody.value === 'master' ? '主人' : ''}${keyHolderName(s.value, h)}那裡`
+})
+const keyBlock = computed(() => (current.value ? keyAway(s.value, current.value) : undefined))
+const keepers = computed(() => keyKeepers(s.value, m.value))
+const keeperPick = ref('')
+const KEY_HINT = (() => {
+  const r = lewdRules.locks.key_custody
+  return `上鎖時鑰匙在自己身上，隨時可以打開鎖（鎖放回行囊）。鑰匙交給同伴或主人保管：打開前要請對方還回來（對方要在隊伍裡；主人的親密度要 ${r.master_affinity} 以上才肯還），戰鬥中這個人拘束具增益的全身上限：命中、迴避、豁免、傷害、減傷每項 +${r.companion.stat}、先攻 +${r.companion.init}，每天順從也會成長；修了隸從派、鑰匙在自己的主人手上時每項再 +${r.servitude_master.stat}。丟掉鑰匙：每項 +${r.discarded.stat}、先攻 +${r.discarded.init}，之後只能脫縛、用一次性的鑰匙或找鐵匠剪鎖（鎖會壞掉）。每個人只算最好的一件，不會每件疊加。`
+})()
+function giveKeyTo() {
+  if (!keeperPick.value) return
+  void game.giveKey(m.value.id, selected.value, keeperPick.value)
+  keeperPick.value = ''
+}
+function throwKey() {
+  if (!confirm(`把${current.value?.name ?? ''}的鑰匙丟掉？之後只能脫縛、用一次性的鑰匙或找鐵匠剪鎖才拿得下來，鎖也會壞掉。`)) return
+  void game.discardKey(m.value.id, selected.value)
+}
 /** 標籤：放在額外飾品欄的拘束具不列不生效的加成（off）；拘束的「限制行走 2」可以移上去看細節 */
 function chips(spec: GearSpec, off = false): SummaryPart[] {
   return gearSummaryParts(spec, off).slice(1)
@@ -146,7 +169,7 @@ const showRelease = computed(() => {
   const r = release.value
   return r.rows.length > 0 || r.immune.length > 0 || r.lustBonus > 0 || (!!r.off && (bindsOf(m.value).length > 0 || adultOutfitPieces(m.value) > 0))
 })
-const RELEASE_HINT = '拘束具、淫服、寄生物、懷孕的雙面效應：平常是檢定的減值，戰鬥中（修了慾望流派、拘束具上了鎖）變成增益。拘束具的增益全身合計有上限（設定的遊戲規則：拘束具增益上限）；括號裡是還沒套上限的實際加總，超過上限的部分戰鬥中不算。'
+const RELEASE_HINT = '拘束具、淫服、寄生物、懷孕的雙面效應：平常是檢定的減值，戰鬥中（修了慾望流派、拘束具上了鎖）變成增益。拘束具的增益全身合計有上限（設定的遊戲規則：拘束具增益上限；自己鎖上的拘束具鑰匙交給別人保管或丟掉時，這個人的上限提高）；括號裡是還沒套上限的實際加總，超過上限的部分戰鬥中不算。'
 const releaseText = (r: { name: string; value: number; raw: number }) => `${r.name} ${signed(r.value)}${r.raw !== r.value ? `（${signed(r.raw)}）` : ''}`
 
 const totals = computed(() => {
@@ -189,6 +212,7 @@ const totals = computed(() => {
           <span v-for="r in release.rows" :key="r.key" class="tag" :class="{ capped: r.raw !== r.value }" :title="r.raw !== r.value ? `實際加總 ${signed(r.raw)}，上限只算到 ${signed(r.value)}` : undefined">{{ releaseText(r) }}</span>
           <span v-if="release.lustBonus" class="tag">造成的慾望 {{ signed(release.lustBonus) }}</span>
           <span v-if="release.immune.length" class="tag">免疫{{ release.immune.join('、') }}</span>
+          <span v-if="release.capNote" class="tag capped">{{ release.capNote }}</span>
           <span v-if="release.allyDown.length" class="tag">有隊友倒下時 {{ release.allyDown.map((r) => `${r.name} ${signed(r.value)}`).join('、') }}</span>
           <span v-if="!release.rows.length && !release.lustBonus && !release.immune.length" class="muted small">拘束具上了鎖才有增益</span>
         </div>
@@ -205,7 +229,7 @@ const totals = computed(() => {
         </div>
         <button
           class="small" :disabled="inCombat || !!lockedGear(m, selected)"
-          :title="lockedGear(m, selected) ? (stuck?.trap ? '被陷阱鎖住了：要脫縛、用鑰匙或找鐵匠剪鎖' : '主人強制戴上的，契約還在時不能拿下') : inCombat ? '戰鬥中不能換裝備' : ''"
+          :title="lockedGear(m, selected) ? (stuck?.self ? `上了鎖，鑰匙${keyWhere}：要拿回鑰匙、脫縛、用一次性的鑰匙或找鐵匠剪鎖` : stuck?.trap ? '被陷阱鎖住了：要脫縛、用鑰匙或找鐵匠剪鎖' : '主人強制戴上的，契約還在時不能拿下') : inCombat ? '戰鬥中不能換裝備' : ''"
           @click="game.unequipItem(m.id, selected)"
         >卸下</button>
       </div>
@@ -222,7 +246,21 @@ const totals = computed(() => {
           </select>
           <button class="small" :disabled="inCombat || !lockPick" @click="lockIt">上鎖</button>
         </template>
-        <button v-else-if="current.lock && !current.locked" class="small" :disabled="inCombat" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+        <button v-else-if="current.lock && !current.locked" class="small" :disabled="inCombat || !!keyBlock" :title="keyBlock ?? ''" @click="game.unlockGear(m.id, selected)">打開鎖</button>
+      </div>
+      <div v-if="current && bind && keyWhere" class="lock-row small">
+        <GameIcon name="key" :size="14" />
+        <span>鑰匙：{{ keyWhere }}</span>
+        <Hint :text="KEY_HINT" />
+        <template v-if="current.keyHolder === 'self'">
+          <select v-model="keeperPick" :disabled="inCombat || !keepers.length">
+            <option value="">{{ keepers.length ? '交給誰保管…' : '隊伍裡沒有別人' }}</option>
+            <option v-for="k in keepers" :key="k.id" :value="k.id">{{ k.master ? `主人${k.name}` : k.name }}</option>
+          </select>
+          <button class="small" :disabled="inCombat || !keeperPick" @click="giveKeyTo">交給{{ keepers.find((k) => k.id === keeperPick)?.master ? '主人' : '同伴' }}保管</button>
+          <button class="small" :disabled="inCombat" @click="throwKey">丟掉鑰匙</button>
+        </template>
+        <button v-else-if="current.keyHolder !== 'discarded'" class="small" :disabled="inCombat" @click="game.takeKeyBack(m.id, selected)">請{{ keyHolderName(s, current.keyHolder!) }}還鑰匙</button>
       </div>
       <div v-if="current && bonusesOff(selected, current.spec)" class="lock-row small">
         <span class="warn-line"><GameIcon name="warning" :size="14" />放在額外飾品欄：只算減值、慾望指標與拘束 <Hint :text="EXTRA_HINT" /></span>
@@ -246,10 +284,11 @@ const totals = computed(() => {
           <button class="small" :disabled="inCombat || !keyPick" @click="openKey">用鑰匙打開</button>
         </template>
         <span v-else class="muted">沒有打得開{{ lockName(stuck.lock) }}的鑰匙</span>
-        <template v-if="stuck.trap">
+        <template v-if="stuck.trap || stuck.self">
           <button v-if="cutLockHere(s)" class="small" :disabled="inCombat || s.money_cc < (cutLockFee(m, selected) ?? 0)" @click="game.cutLock(m.id, selected)">請鐵匠剪鎖（{{ formatMoney(cutLockFee(m, selected) ?? 0) }}）</button>
-          <span v-else class="muted">陷阱的鎖：也可以到鐵匠鋪花 {{ formatMoney(cutLockFee(m, selected) ?? 0) }} 剪掉</span>
+          <span v-else class="muted">{{ stuck.self ? '鑰匙不在身上' : '陷阱的鎖' }}：也可以到鐵匠鋪花 {{ formatMoney(cutLockFee(m, selected) ?? 0) }} 剪掉</span>
         </template>
+        <span class="muted">（這幾種方法打開的鎖會壞掉）</span>
       </div>
 
       <div class="filter">

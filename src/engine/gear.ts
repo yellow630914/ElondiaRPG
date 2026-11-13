@@ -66,6 +66,8 @@ export interface BaseDef {
   outfit?: OutfitKind
   /** 成人向的底材：內容編輯器的篩選用 */
   adult?: boolean
+  /** 蟲寵（苗床生下、留下來的幼體）：只有修了獸蟲派的人能帶著，也能放在額外飾品欄（docs/FAMILY.md 第 13 節） */
+  pet?: boolean
   /** 種族限定的底材（例如人馬族的蹄鐵、馬衣）：只有這些種族能穿 */
   races?: string[]
   /**
@@ -261,8 +263,8 @@ export const isExtraSlot = (slot: GearSlot) => EXTRA_SLOTS.includes(slot)
 const EXTRA_BASE_SLOTS: BaseSlot[] = ['accessory', 'ring', 'piercing', 'leg_accessory']
 
 /** 這種底材能不能放進額外飾品欄 */
-export function fitsExtra(base: Pick<BaseDef, 'slot' | 'restraint' | 'bind'> | undefined): boolean {
-  return !!base && (EXTRA_BASE_SLOTS.includes(base.slot) || !!base.restraint || !!base.bind)
+export function fitsExtra(base: Pick<BaseDef, 'slot' | 'restraint' | 'bind' | 'pet'> | undefined): boolean {
+  return !!base && (EXTRA_BASE_SLOTS.includes(base.slot) || !!base.restraint || !!base.bind || !!base.pet)
 }
 
 /** 這種底材能不能放進這個欄位（額外飾品欄要傳底材，才看得出是不是拘束具） */

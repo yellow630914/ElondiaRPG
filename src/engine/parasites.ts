@@ -70,7 +70,9 @@ export interface BroodDef {
   /** 產下（卵生）、排出（寄生）的物品與數量範圍 */
   yields?: { item: string; qty: [number, number] }[]
   /** 胎生的魔物幼體：名字、幾隻、交給魔物學者每隻多少錢 */
-  offspring?: { name: string; count: [number, number]; value_cc: number }
+  offspring?: { name: string; count: [number, number]; value_cc: number; pet?: string }
+  /** 卵生：修了獸蟲派的人可以留一顆孵化認主，學會這個技能（流派技能，不佔攜帶上限） */
+  hatch?: string
   /** 寄生：修了獸蟲派的人破繭時可以共生，得到這個特質 */
   symbiosis?: string
 }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useGame } from '@/stores/game'
-import { BROOD_KIND_NAME, broodBirthOptions, broodOf, OFFSPRING_FATES, type OffspringFate } from '@/engine/brood'
+import { BROOD_KIND_NAME, broodBirthOptions, broodOf, offspringFates, type OffspringFate } from '@/engine/brood'
 import { parasiteDef } from '@/engine/parasites'
 
 // 苗床長到支配：產下（docs/FAMILY.md 第 13 節）。卵生排出魔物卵、胎生像生產一樣（幼體當場處理）、寄生排出或共生。一定會產下，不會死
@@ -11,6 +11,7 @@ const def = computed(() => (ev.value ? parasiteDef(ev.value.parasite) : undefine
 const brood = computed(() => (ev.value ? broodOf(ev.value.parasite) : undefined))
 const options = computed(() => (game.state ? broodBirthOptions(game.state) : []))
 const fate = ref<OffspringFate>('nest')
+const fates = computed(() => (game.state ? offspringFates(game.state) : []))
 const INTRO: Record<string, string> = {
   egg: '肚子裡的卵已經成熟，一顆一顆往下擠，非排出來不可了。',
   live: '腹中的東西開始一陣一陣地翻動，牠們要出來了。',
@@ -24,7 +25,7 @@ const INTRO: Record<string, string> = {
     <p class="small">{{ INTRO[brood.kind] }}不管怎麼做都會平安產下；不順利只會更累。</p>
     <label v-if="brood.kind === 'live'" class="small field">生下的{{ brood.offspring?.name ?? '幼體' }}
       <select v-model="fate">
-        <option v-for="(label, id) in OFFSPRING_FATES" :key="id" :value="id">{{ label }}</option>
+        <option v-for="f in fates" :key="f.id" :value="f.id" :disabled="!!f.disabled">{{ f.label }}{{ f.disabled ? `（${f.disabled}）` : '' }}</option>
       </select>
     </label>
     <div class="row">

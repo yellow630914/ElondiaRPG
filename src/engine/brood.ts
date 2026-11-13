@@ -25,7 +25,7 @@ import { attrParts, rollBreakdown, sumParts } from './rollParts'
 import { roll as diceRoll, withBonus } from './rng'
 import { hasSchool } from './schools'
 import { addHours, commitReport, withRng } from './state'
-import { enemies, type AttrId, type Degree } from './data'
+import { abilities, enemies, type AttrId, type Degree } from './data'
 import { hasTemple } from './children'
 import type { Character, GameState, Report } from './types'
 
@@ -164,8 +164,8 @@ export function syncBroodLactation(state: GameState) {
 
 // ---- 產下 ----
 
-export type BroodHow = 'push' | 'help' | 'submit' | 'temple' | 'self' | 'expel' | 'symbiosis'
-export type OffspringFate = 'nest' | 'scholar' | 'temple'
+export type BroodHow = 'push' | 'help' | 'submit' | 'hatch' | 'temple' | 'self' | 'expel' | 'symbiosis'
+export type OffspringFate = 'nest' | 'scholar' | 'temple' | 'keep'
 export interface BroodOption { id: BroodHow; label: string; disabled?: string }
 
 function inSettlement(state: GameState): boolean {
@@ -188,6 +188,7 @@ export function broodBirthOptions(state: GameState): BroodOption[] {
       { id: 'push', label: `自己用力（${attrLabel(r.egg_check.attr)} DC ${r.egg_check.dc}）` },
       { id: 'help', label: mate ? `請${mate.name}幫忙` : '請隊友幫忙', ...(mate ? {} : { disabled: '隊伍裡沒有別人' }) },
       { id: 'submit', label: '放鬆身體，任它們出來' },
+      ...hatchOption(state, b),
     ]
   }
   if (b.kind === 'live') {
@@ -209,7 +210,26 @@ function attrLabel(a: AttrId): string {
   return ATTR_LABEL[a] ?? a
 }
 
-export const OFFSPRING_FATES: Record<OffspringFate, string> = { nest: '放回巢穴', scholar: '交給魔物學者', temple: '交給神殿淨化' }
+export const OFFSPRING_FATES: Record<OffspringFate, string> = { nest: '放回巢穴', scholar: '交給魔物學者', temple: '交給神殿淨化', keep: '留一隻當蟲寵，其餘放回巢穴（獸蟲派）' }
+
+/** 卵生：獸蟲派可以留一顆孵化認主，學會牠的技能（每種只能一次） */
+function hatchOption(state: GameState, b: BroodDef): BroodOption[] {
+  if (!b.hatch) return []
+  const pc = pcOf(state)
+  const name = abilities[b.hatch]?.name ?? b.hatch
+  const why = !hasSchool(pc, 'beast') ? '要修了獸蟲派入門' : pc.hatched?.includes(b.hatch) ? `已經學會「${name}」了` : undefined
+  return [{ id: 'hatch', label: `留一顆孵化認主（獸蟲派，學會「${name}」）`, ...(why ? { disabled: why } : {}) }]
+}
+
+/** 胎生的幼體可以怎麼處理：留下當蟲寵要修了獸蟲派、而且這種幼體有蟲寵 */
+export function offspringFates(state: GameState): { id: OffspringFate; label: string; disabled?: string }[] {
+  const ev = state.pendingBroodBirth
+  const b = ev ? broodOf(ev.parasite) : undefined
+  return (Object.keys(OFFSPRING_FATES) as OffspringFate[]).filter((f) => f !== 'keep' || !!b?.offspring?.pet).map((f) => ({
+    id: f, label: OFFSPRING_FATES[f],
+    ...(f === 'keep' && !hasSchool(pcOf(state), 'beast') ? { disabled: '要修了獸蟲派入門' } : {}),
+  }))
+}
 
 function check(state: GameState, report: Report, attr: AttrId, dc: number, label: string): boolean {
   const pc = pcOf(state)
@@ -249,11 +269,16 @@ export function answerBroodBirth(state: GameState, how: BroodHow, fate: Offsprin
     } else if (how === 'help' && mate) {
       lines.push(`${mate.name}握著你的手、替你揉著肚子，你一顆一顆把${def.name}排了出來。`)
       effects.push({ type: 'affinity', npc: mate.id, delta: 1, reason: '陪著產卵' })
+    } else if (how === 'hatch' && b.hatch) {
+      const pc = pcOf(state)
+      pc.hatched = [...new Set([...(pc.hatched ?? []), b.hatch])]
+      lines.push(`你把最後一顆${def.name}捧在手心暖著，牠破殼而出，認你為主。學會了「${abilities[b.hatch]?.name ?? b.hatch}」（獸蟲派的技能，不佔攜帶上限）。`)
     } else {
       lines.push(`你放鬆身體，任${def.name}一顆接一顆滑出來，每一顆都讓你渾身發顫。`)
       report.narration = { ...report.narration, length: 'medium', adult_scene: `主角在高潮裡把體內的${def.name}一顆一顆產了下來` }
     }
-    effects.push(...yields())
+    // 孵化認主的那一顆不算產出
+    effects.push(...yields().map((y) => (how === 'hatch' ? { ...y, qty: Math.max(0, y.qty - 1) } : y)))
   } else if (b.kind === 'live') {
     const birth = familyRules.birth as { temple_cc: number; dc: number; wild_dc: number }
     const post = familyRules.postpartum as { days: number; fail_days: number }
@@ -268,7 +293,12 @@ export function answerBroodBirth(state: GameState, how: BroodHow, fate: Offsprin
     const o = b.offspring ?? { name: '魔物的幼體', count: [1, 2] as [number, number], value_cc: 50 }
     const n = rollRange(state, o.count)
     lines.push(`生下了 ${n} 隻${o.name}。`)
-    if (fate === 'scholar') {
+    const fateOpt = offspringFates(state).find((f) => f.id === fate)
+    if (!fateOpt || fateOpt.disabled) throw new Error(fateOpt?.disabled ?? '不能這樣處理')
+    if (fate === 'keep' && o.pet) {
+      effects.push({ type: 'item', name: o.pet, qty: 1 })
+      lines.push(`留下其中一隻，牠認你為主，成了你的蟲寵（${o.pet}）${n > 1 ? '；其餘的放回了巢穴附近' : ''}。`)
+    } else if (fate === 'scholar') {
       effects.push({ type: 'money', amount: n * o.value_cc })
       lines.push(`交給魔物學者研究，換到 ${formatMoney(n * o.value_cc)}。`)
     } else if (fate === 'temple') {
@@ -285,6 +315,8 @@ export function answerBroodBirth(state: GameState, how: BroodHow, fate: Offsprin
   } else if (how === 'symbiosis' && b.symbiosis) {
     lines.push(`你沒有把${def.name}排出來，而是讓它在體內安頓下來，和你一起呼吸。`)
     effects.push({ type: 'perk', perk: b.symbiosis, direct: true })
+    // 共生也會留下一半的蛻殼、孢子囊
+    effects.push(...yields().map((y) => ({ ...y, qty: Math.floor(y.qty / 2) })))
   } else {
     const r = broodRules().parasite_check
     const ok = check(state, report, r.attr, r.dc, `把${def.name}排出來`)

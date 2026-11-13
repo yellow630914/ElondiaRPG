@@ -190,8 +190,10 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 11：緋夢樂園的「魅魔女王」改叫「緋夢夫人」（免得和魔王莉莎爾搞混）：用她命名的物品跟著改
  * 12：自訂裝備的鍵改成「名字＋看不見的屬性雜湊」（itemKey.ts）：撞名時加的編號（優良亞麻女僕頭飾（2））拿掉，
  *     行囊、裝備、商店……裡的舊名字跟著改；屬性一樣的合成一疊
+ * 13：自己鎖上的拘束具有了鑰匙（EquippedGear.keyHolder，docs/LEWD_STATS.md 第 7 節）：已經自己鎖上的（有鎖、不是別人鎖上的）
+ *     鑰匙算在自己身上（self）；正在淫鬥場打的那件（打完就拿掉）不算
  */
-export const SAVE_SCHEMA = 12
+export const SAVE_SCHEMA = 13
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -249,6 +251,17 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
     rewriteStrings(s, (v) => renames[v] ?? v)
     s.inventory = mergeStacks(s.inventory)
     if (s.expedition) s.expedition.loot = mergeStacks(s.expedition.loot)
+  }],
+  [13, (s) => {
+    const arena = s.combat?.arena?.restraint
+    const chars = [...s.party, ...Object.values(s.npcs ?? {}).map((r) => r.character)]
+    for (const c of chars) {
+      for (const [slot, g] of Object.entries(c?.gear ?? {})) {
+        if (!g?.lock || g.locked || g.keyHolder) continue
+        if (arena && c?.isPlayer && arena.slot === slot && arena.name === g.name) continue
+        g.keyHolder = 'self'
+      }
+    }
   }],
 ]
 

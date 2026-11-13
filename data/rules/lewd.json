@@ -53,13 +53,13 @@
     "naked": 3
   },
   "schools": {
-    "$comment": "流派（docs/LEWD_STATS.md 第 6 節）：entry 入門特質、advanced 進階特質（perks.json，category lewd）。流派只是特質，不限制能學的色情技能。fit：雙面效應契合的拘束種類（×two_face.fit）。pitch：給玩家看的一句話玩法（角色視窗的流派）。abilities：流派給的戰鬥技能（不佔攜帶上限；advanced 要有進階特質，level 要到那個等級）。",
+    "$comment": "流派（docs/LEWD_STATS.md 第 6 節）：entry 入門特質、advanced 進階特質（perks.json，category lewd）。流派只是特質，不限制能學的色情技能。fit：雙面效應契合的拘束種類（×two_face.fit）。pitch：給玩家看的一句話玩法（角色視窗的流派）。host：獸蟲派的宿主加成（身上每有一隻活著、沒有沉睡的寄生物或苗床，戰鬥中 mods 再一份，每項最多 max，有進階特質時最多 advanced_max）。abilities：流派給的戰鬥技能（不佔攜帶上限；advanced 要有進階特質，level 要到那個等級）。",
     "servitude": { "name": "隸從派", "group": "奴隸系", "pitch": "跟著主人戰鬥：被打時一部分傷害變成慾望，主人在身邊時更耐打、更能打。", "role": "承傷、護主", "entry": "school_servitude", "advanced": "servitude_vow", "fit": [] },
     "punishment": { "name": "刑罰派", "group": "奴隸系", "pitch": "越痛越強：鎖著拘束具、受了傷反而更能打。", "role": "承傷、反擊", "entry": "school_punishment", "advanced": "trained_body", "fit": ["legs", "hands", "eyes", "body", "mouth"] },
     "bondage": { "name": "束縛派", "group": "奴隸系", "pitch": "鎖得越多越硬：上鎖的拘束具給更多防禦，比較晚才高潮。", "role": "防禦、穩定", "entry": "school_bondage", "advanced": "rope_strength", "fit": ["legs", "hands", "eyes", "body", "mouth"] },
     "indulgence": { "name": "縱欲派", "group": "淫亂系", "pitch": "主動挑逗自己，攢滿慾望再一口氣引爆打敵人。", "role": "增益、爆發", "entry": "school_indulgence", "advanced": "wanton_blaze", "fit": [] },
     "flesh": { "name": "肉體派", "group": "淫亂系", "pitch": "靠身體撐長期戰：興奮時回血，高潮也能回血。", "role": "續戰", "entry": "school_flesh", "advanced": "afterglow_memory", "fit": ["stim"] },
-    "beast": { "name": "獸蟲派", "group": "淫亂系", "pitch": "和毒、寄生物共存：抗毒，身上的寄生物給更多增益，馴服後變成技能。", "role": "毒與寄生", "entry": "school_beast", "advanced": "hive_bond", "fit": [] },
+    "beast": { "name": "獸蟲派", "group": "淫亂系", "pitch": "和毒、寄生物共存：抗毒，身上的寄生物給更多增益，馴服後變成技能。", "host": { "mods": { "save": 1, "dr": 1 }, "max": 2, "advanced_max": 3 }, "role": "毒與寄生", "entry": "school_beast", "advanced": "hive_bond", "fit": [] },
     "abstinence": { "name": "禁慾派", "group": "反制", "pitch": "強力輔助：結界與淨化保護隊友、壓制敵人的魅惑，自己也不太吃魅惑。", "abilities": [{"id": "school_abst_ward"}, {"id": "school_abst_purify", "level": 5}, {"id": "school_abst_break", "advanced": true}, {"id": "school_abst_hymn", "advanced": true, "level": 11}], "role": "輔助、淨化", "entry": "school_abstinence", "advanced": "pure_heart", "fit": [] },
     "exhibition": { "name": "露出派", "group": "淫亂系", "pitch": "被看得越多越強：曝露名聲與身上的曝露度提高你的魅惑傷害。", "role": "曝露、魅惑", "entry": "school_exhibition", "advanced": "center_stage", "fit": [] }
   },
@@ -84,7 +84,7 @@
     }
   },
   "locks": {
-    "$comment": "鎖（物品的 lock）：拘束具要鎖上，雙面效應的戰鬥增益才生效；鎖越好倍率越高。自己鎖的隨時可以打開（鎖放回行囊）；主人強制戴上的依主人的身分（master_tags，沒有符合時 master_default）。",
+    "$comment": "鎖（物品的 lock）：拘束具要鎖上，雙面效應的戰鬥增益才生效；鎖越好倍率越高。自己鎖的會拿到這把鎖專屬的鑰匙，鑰匙在行囊裡才打得開（打開時鑰匙用掉、鎖放回行囊）；主人強制戴上的依主人的身分（master_tags，沒有符合時 master_default）。",
     "grades": {
       "white": { "name": "白鐵鎖", "mult": 1 },
       "blue": { "name": "藍鋼鎖", "mult": 1.1 },
@@ -92,7 +92,15 @@
       "gold": { "name": "黃金鎖", "mult": 1.3 }
     },
     "master_default": "white",
-    "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" }
+    "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" },
+    "key_custody": {
+      "$comment": "自己鎖的拘束具，鑰匙交給別人保管或丟掉時，這個人雙面效應全身上限（存檔規則 bindCapStat、bindCapInit、bindCapAp）提高的點數：stat 是命中、迴避、豁免、傷害、減傷每一項，init 先攻，ap 行動點回復。每個人只算最好的一件，不會每件疊加。companion 交給同伴、master 交給主人、discarded 丟掉；servitude_master 是修了隸從派、鑰匙在自己的主人手上時再加的。master_affinity：鑰匙在主人手上時，主人親密度要到這個數才肯還。",
+      "companion": { "stat": 1, "init": 1, "ap": 0 },
+      "master": { "stat": 1, "init": 1, "ap": 0 },
+      "servitude_master": { "stat": 1, "init": 0, "ap": 0 },
+      "discarded": { "stat": 2, "init": 2, "ap": 0 },
+      "master_affinity": 20
+    }
   },
   "master_tool": {
     "$comment": "主角當奴隸時主人是工具人（計畫 7.2 節）：和主人的親密度 release_affinity 以上可以直接解約、換主人；新主人要認識、親密度 new_master_affinity 以上、在同一座聚落、不是奴隸也沒有敵意。submission_dc_per：順從每這麼多點，逃離與談判解約的 DC +1（親密度夠高直接解約時不看）。stance_per：主人事件的回應有 stance 時，順從每這麼多點，屈服（submit）的檢定 +1、抵抗（resist）-1。",

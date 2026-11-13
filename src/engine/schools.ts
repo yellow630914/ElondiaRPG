@@ -5,13 +5,13 @@
 // - 鎖：拘束具要鎖上（自己用鎖、或主人強制戴上的），戰鬥增益才生效；鎖越好倍率越高。
 // 規則與數值在 data/rules/lewd.json 的 schools、servitude、two_face、locks。
 
-import { BIND_KINDS, lewdRules, type BindKind, type LewdSchool, type LockGrade, type LustPerk, type Mods } from './data'
+import { BIND_KINDS, lewdRules, type BindKind, type KeyCustodyCaps, type LewdSchool, type LockGrade, type LustPerk, type Mods } from './data'
 import { gearRules } from './gear'
 import { lewdPowerOf } from './lewd'
 import { PARASITE_LOCK } from './parasites'
 import { matches, perksOf, type CheckCtx } from './perks'
 import { contractOf } from './tattoos'
-import type { Character, GameState, GearSlot } from './types'
+import type { Character, EquippedGear, GameState, GearSlot } from './types'
 import { gameRule } from './gameRules'
 
 /** 所有流派（lewd.json 的順序） */
@@ -41,6 +41,8 @@ export function hasSchool(c: Pick<Character, 'perks' | 'customPerks' | 'race'>, 
 export function schoolAbilities(c: Character): string[] {
   const own = new Set(perksOf(c).map((p) => p.id))
   const out: string[] = []
+  // 獸蟲派：苗床的卵孵化認主學會的技能
+  if (schoolsOf(c).includes('beast')) out.push(...(c.hatched ?? []))
   for (const id of schoolsOf(c)) {
     const d = schoolDef(id)!
     for (const a of d.abilities ?? []) {
@@ -50,6 +52,24 @@ export function schoolAbilities(c: Character): string[] {
     }
   }
   return [...new Set(out)].filter((x) => !c.abilities.includes(x))
+}
+
+/** 獸蟲派的宿主加成：身上每有一隻活著、沒有沉睡的寄生物或苗床，host.mods 再一份，每項最多 max（有進階特質時 advanced_max） */
+export function hostMods(c: Character): Mods {
+  const out: Mods = {}
+  for (const id of schoolsOf(c)) {
+    const d = schoolDef(id)!
+    if (!d.host) continue
+    const n = (c.parasites ?? []).filter((p) => !p.dormant).length
+    if (!n) continue
+    const advanced = perksOf(c).some((p) => p.id === d.advanced)
+    const max = advanced ? d.host.advanced_max ?? d.host.max : d.host.max
+    for (const [k, v] of Object.entries(d.host.mods)) {
+      const total = Math.min(max, (v ?? 0) * n)
+      if (total) out[k as keyof Mods] = Math.max(out[k as keyof Mods] ?? 0, total)
+    }
+  }
+  return out
 }
 
 /** 有主人（奴隸契約上有主人；認主） */
@@ -157,6 +177,47 @@ function bindMult(c: Character, b: BindInfo, schools: string[]): number {
   return lock * fit
 }
 
+// ---- 鑰匙保管（docs/LEWD_STATS.md 第 7 節；lewd.json 的 locks.key_custody） ----
+
+/** 自己鎖上的拘束具的鑰匙在哪：自己留著、交給同伴、交給主人、丟掉了 */
+export type KeyCustody = 'self' | 'companion' | 'master' | 'discarded'
+
+export const KEY_CUSTODY_NAME: Record<KeyCustody, string> = { self: '自己留著', companion: '交給同伴保管', master: '交給主人保管', discarded: '丟掉了' }
+
+/** 自己鎖上的拘束具的鑰匙在哪（wearer 是戴著的人：鑰匙在他的主人手上算「主人」）；不是自己鎖上的是 undefined */
+export function keyCustody(g: EquippedGear | undefined, wearer?: Pick<Character, 'tattoos'>): KeyCustody | undefined {
+  if (!g?.lock || g.locked || !g.keyHolder) return undefined
+  if (g.keyHolder === 'self' || g.keyHolder === 'discarded') return g.keyHolder
+  return wearer && contractOf(wearer)?.master === g.keyHolder ? 'master' : 'companion'
+}
+
+export interface CustodyCaps extends KeyCustodyCaps {
+  /** 算的是哪一件、鑰匙在哪（沒有提高時沒有） */
+  from?: { name: string; custody: KeyCustody; servitude?: boolean }
+}
+
+/**
+ * 鑰匙保管讓這個人雙面效應全身上限提高的點數：身上自己鎖上的拘束具裡最好的一件（不會每件疊加）。
+ * 修了隸從派、鑰匙在自己的主人手上時再加 servitude_master
+ */
+export function custodyCaps(c: Character): CustodyCaps {
+  const r = lewdRules.locks.key_custody
+  let best: CustodyCaps = { stat: 0, init: 0, ap: 0 }
+  const servitude = schoolsOf(c).includes('servitude')
+  for (const g of Object.values(c.gear ?? {})) {
+    const kind = keyCustody(g, c)
+    const base = kind && kind !== 'self' ? r?.[kind] : undefined
+    if (!g || !kind || !base || !gearRules.bases[g.spec.base]?.bind) continue
+    const extra = kind === 'master' && servitude ? r.servitude_master : undefined
+    const caps: CustodyCaps = {
+      stat: (base.stat ?? 0) + (extra?.stat ?? 0), init: (base.init ?? 0) + (extra?.init ?? 0), ap: (base.ap ?? 0) + (extra?.ap ?? 0),
+      from: { name: g.name, custody: kind, ...(extra ? { servitude: true } : {}) },
+    }
+    if (caps.stat + caps.init + caps.ap > best.stat + best.init + best.ap) best = caps
+  }
+  return best
+}
+
 export interface TwoFace {
   mods: Mods
   initiative: number
@@ -166,11 +227,19 @@ export interface TwoFace {
   /** 還沒套上全身上限的加總（畫面上寫在括號裡） */
   raw: Mods
   rawInitiative: number
+  /** 這個人的全身上限（存檔規則加上鑰匙保管提高的） */
+  caps: { stat: number; ap: number; init: number }
+  /** 鑰匙保管提高的上限（沒有時沒有） */
+  custody?: CustodyCaps
 }
 
-/** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算；全身加總照存檔規則封頂（沒給 state 時用預設的上限） */
+/** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算；全身加總照存檔規則封頂（沒給 state 時用預設的上限），鑰匙交給別人或丟掉時上限提高 */
 export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> | null): TwoFace {
-  const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [], raw: {}, rawInitiative: 0 }
+  // 全身上限：存檔規則（0 表示那幾項沒有增益，鑰匙保管也不會打開）＋鑰匙保管提高的
+  const custody = custodyCaps(c)
+  const raise = (base: number, n: number) => (base > 0 ? base + n : base)
+  const caps = { stat: raise(gameRule(state, 'bindCapStat'), custody.stat), ap: raise(gameRule(state, 'bindCapAp'), custody.ap), init: raise(gameRule(state, 'bindCapInit'), custody.init) }
+  const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [], raw: {}, rawInitiative: 0, caps, ...(custody.from ? { custody } : {}) }
   const schools = schoolsOf(c)
   if (!schools.length) return out
   for (const b of bindsOf(c)) {
@@ -189,15 +258,14 @@ export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> |
     if (b.bind >= 3) for (const s of k.immune ?? []) if (!out.immune.includes(s)) out.immune.push(s)
     out.active.push({ name: b.name, kind: b.kind, mult: Math.round(mult * 100) / 100 })
   }
-  // 全身合計的上限（存檔規則 bindCapStat、bindCapAp、bindCapInit）：穿再多件也不會一直疊
+  // 全身合計的上限（存檔規則 bindCapStat、bindCapAp、bindCapInit，鑰匙保管再提高）：穿再多件也不會一直疊
   out.raw = { ...out.mods }
   out.rawInitiative = out.initiative
-  const stat = gameRule(state, 'bindCapStat')
   for (const [k, v] of Object.entries(out.mods)) {
-    const c = k === 'ap_regen' ? gameRule(state, 'bindCapAp') : stat
+    const c = k === 'ap_regen' ? caps.ap : caps.stat
     if ((v ?? 0) > c) out.mods[k as keyof Mods] = c
   }
-  out.initiative = Math.min(gameRule(state, 'bindCapInit'), out.initiative)
+  out.initiative = Math.min(caps.init, out.initiative)
   return out
 }
 

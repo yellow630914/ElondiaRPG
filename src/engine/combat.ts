@@ -53,7 +53,7 @@ import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
 import { flagKey, hasFlag } from './storyFlags'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdPowerOf } from './lewd'
-import { bindsOf, lockedBound, lustTotals, outfitCombat, schoolAbilities, twoFaceCombat } from './schools'
+import { bindsOf, hostMods, lockedBound, lustTotals, outfitCombat, schoolAbilities, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, RULE_DEFS, type DifficultyDef } from './gameRules'
 import { rollBreakdown, sumParts } from './rollParts'
 
@@ -511,6 +511,8 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     const master = contractOf(ch)?.master
     if (master && fighters.some((o) => o.side === f.side && (o.id === master || o.npcId === master) && o !== f)) addMods(t.master)
     if (bound) addMods(t.bound)
+    // 獸蟲派的宿主加成（身上的寄生物、苗床）
+    addMods(hostMods(ch))
     const tf = twoFaceCombat(ch, state)
     addMods(tf.mods)
     // 淫服的雙面效應：縱欲、露出派每件淫服有加成，禁慾派反過來

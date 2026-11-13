@@ -158,7 +158,11 @@ export function sanitizeParasiteMod(id: string, raw: Partial<ParasiteMod>, refs:
     if (bk === 'live') {
       const o = b?.offspring
       brood.offspring = { name: str(o?.name, 20) || '魔物的幼體', count: range(o?.count, 1, 6), value_cc: int(o?.value_cc, [0, 5000], 50) }
+      // 獸蟲派留下當蟲寵的裝備（物品要存在）
+      if (typeof o?.pet === 'string' && known.item(o.pet.trim())) brood.offspring.pet = o.pet.trim()
     }
+    // 獸蟲派孵化認主學會的技能（技能要存在）
+    if (bk === 'egg' && typeof b?.hatch === 'string' && abilities[b.hatch]) brood.hatch = b.hatch
     if (bk === 'parasite' && typeof b?.symbiosis === 'string' && perkDef(b.symbiosis)) brood.symbiosis = b.symbiosis
     out.brood = brood
   }

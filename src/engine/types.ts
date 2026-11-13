@@ -274,8 +274,13 @@ export interface EquippedGear {
   spec: GearSpec
   /** 主人強制裝上的（主人的 id）：契約還在時不能卸下，也不能在這個欄位換別的 */
   locked?: string
-  /** 裝上的鎖（docs/LEWD_STATS.md 第 7 節）：拘束具鎖上，雙面效應的戰鬥增益才生效；自己鎖的可以隨時打開 */
+  /** 裝上的鎖（docs/LEWD_STATS.md 第 7 節）：拘束具鎖上，雙面效應的戰鬥增益才生效；自己鎖的要鑰匙在自己身上才打得開（keyHolder） */
   lock?: LockGrade
+  /**
+   * 自己上鎖時的鑰匙在誰那裡（只有玩家自己鎖上的才有；事件、陷阱、詛咒、主人鎖上的沒有）：
+   * self 在自己身上（隨時可以打開鎖）、隊員或主人的 id（要那個人還回來）、discarded 丟掉了（只剩脫縛、一次性的鑰匙與鐵匠剪鎖）
+   */
+  keyHolder?: string
 }
 
 /** 慾望指標（docs/LEWD_STATS.md）：淫亂、敏感、忍耐、順從，0～100；曝露名聲依地區記在存檔 */
@@ -397,6 +402,8 @@ export interface Character {
   tattoos?: Tattoo[]
   /** 身上的寄生物（寄生裝備、淫紋、寄生種子；只有主角會有，見 engine/parasites.ts） */
   parasites?: ParasiteState[]
+  /** 獸蟲派：苗床的卵孵化認主學會的技能（docs/FAMILY.md 第 13 節；修了獸蟲派才會用） */
+  hatched?: string[]
   /** 懷孕與產後虛弱的標記（檢定減值用；真正的記錄在 state.pregnancies，每次結算時同步，見 engine/pregnancy.ts 的 syncPregnancyMarks） */
   pregMark?: PregnancyMark
   /** 淫紋拿掉（解咒、撕毀）時，原本被它蓋掉的刺青：刻印師可以紋回來（parasite 是當時蓋掉它的寄生物） */

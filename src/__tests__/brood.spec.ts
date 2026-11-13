@@ -16,9 +16,13 @@ import { conceptionChance, effectConceive } from '@/engine/pregnancy'
 import { newGame } from '@/engine/state'
 import { baseReport } from '@/engine/town'
 import {
-  answerBroodBirth, broodBirthOptions, broodBlock, broodOf, broodTick, extractBrood, extractOffers, giveBrood, hasLiveBrood,
+  answerBroodBirth, broodBirthOptions, offspringFates, broodBlock, broodOf, broodTick, extractBrood, extractOffers, giveBrood, hasLiveBrood,
 } from '@/engine/brood'
 import type { GameState } from '@/engine/types'
+import { hostMods, schoolAbilities } from '@/engine/schools'
+import { fitsExtra, gearRules } from '@/engine/gear'
+import { equipItem } from '@/engine/inventory'
+import { addItem } from '@/engine/state'
 
 function game(gender = '女'): GameState {
   const state = newGame({ name: '艾琳', race: 'human', classId: 'rogue', seed: 3, gender, body: gender === '男' ? 'masc' : 'fem', birthplace: 'rhineburg' })
@@ -140,7 +144,8 @@ describe('成長與產下', () => {
     giveBrood(state, report(state), 'brood_spider_egg')
     parasiteOf(pcOf(state), 'brood_spider_egg')!.corruption = 95
     expect(broodTick(state)).toBe(true)
-    expect(broodBirthOptions(state).map((o) => o.id)).toEqual(['push', 'help', 'submit'])
+    expect(broodBirthOptions(state).map((o) => o.id)).toEqual(['push', 'help', 'submit', 'hatch'])
+    expect(broodBirthOptions(state).find((o) => o.id === 'hatch')?.disabled).toContain('獸蟲派')
     expect(broodBirthOptions(state).find((o) => o.id === 'help')?.disabled).toBeTruthy()
     answerBroodBirth(state, 'submit')
     expect(state.inventory.find((i) => i.name === '蛛卵')?.qty).toBeGreaterThanOrEqual(2)
@@ -176,8 +181,44 @@ describe('成長與產下', () => {
     pcOf(state).perks = [...(pcOf(state).perks ?? []), 'school_beast']
     expect(broodBirthOptions(state).find((o) => o.id === 'symbiosis')?.disabled).toBeUndefined()
     answerBroodBirth(state, 'symbiosis')
-    expect(pcOf(state).perks).toContain('brood_symbiote')
+    expect(pcOf(state).perks).toContain('symbiote_worm')
     expect(parasiteOf(pcOf(state), 'brood_worm')).toBeUndefined()
+  })
+
+  it('獸蟲派：卵孵化認主學會技能（每種一次）、胎生留一隻當蟲寵、寄生共生各有特質', () => {
+    const state = game()
+    const pc = pcOf(state)
+    pc.perks = [...(pc.perks ?? []), 'school_beast']
+    giveBrood(state, report(state), 'brood_wasp_egg')
+    parasiteOf(pc, 'brood_wasp_egg')!.corruption = 95
+    broodTick(state)
+    answerBroodBirth(state, 'hatch')
+    expect(pc.hatched).toEqual(['beast_wasp_swarm'])
+    expect(schoolAbilities(pc)).toContain('beast_wasp_swarm')
+    // 胎生：留下一隻當蟲寵（裝備），只有獸蟲派能戴，可以放額外飾品欄
+    giveBrood(state, report(state), 'brood_slime')
+    parasiteOf(pc, 'brood_slime')!.corruption = 95
+    broodTick(state)
+    expect(offspringFates(state).find((f) => f.id === 'keep')?.disabled).toBeUndefined()
+    answerBroodBirth(state, 'self', 'keep')
+    expect(state.inventory.find((i) => i.name === '史萊姆寵')?.qty).toBe(1)
+    expect(fitsExtra(gearRules.bases.pet_slime)).toBe(true)
+    expect(() => equipItem(state, '史萊姆寵', 'pc')).not.toThrow()
+    pc.perks = pc.perks!.filter((x) => x !== 'school_beast')
+    expect(schoolAbilities(pc)).not.toContain('beast_wasp_swarm')
+    addItem(state.inventory, '幼獸寵', 1)
+    expect(() => equipItem(state, '幼獸寵', 'pc')).toThrow('獸蟲派')
+  })
+
+  it('獸蟲派的宿主加成：身上每一隻活著的寄生物或苗床 +1 豁免、減傷，入門最多 2、進階最多 3', () => {
+    const state = game()
+    const pc = pcOf(state)
+    pc.perks = [...(pc.perks ?? []), 'school_beast']
+    expect(hostMods(pc)).toEqual({})
+    for (const id of ['brood_worm', 'brood_slug', 'brood_spore']) giveBrood(state, report(state), id)
+    expect(hostMods(pc)).toEqual({ save: 2, dr: 2 })
+    pc.perks.push('hive_bond')
+    expect(hostMods(pc)).toEqual({ save: 3, dr: 3 })
   })
 
   it('稱號「魔物的苗床」：產下胎生三次', () => {

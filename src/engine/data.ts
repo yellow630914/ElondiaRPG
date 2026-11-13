@@ -2509,6 +2509,8 @@ export type BindKind = 'legs' | 'hands' | 'eyes' | 'stim' | 'body' | 'mouth'
 export const BIND_KINDS: BindKind[] = ['legs', 'hands', 'eyes', 'mouth', 'stim', 'body']
 /** 鎖的等級（物品的 lock、裝備上的鎖） */
 export type LockGrade = 'white' | 'blue' | 'rune' | 'gold'
+/** 鑰匙保管讓雙面效應的全身上限提高的點數：stat 命中、迴避、豁免、傷害、減傷，init 先攻，ap 行動點回復 */
+export interface KeyCustodyCaps { stat: number; init: number; ap: number }
 export const LOCK_GRADES: LockGrade[] = ['white', 'blue', 'rune', 'gold']
 /** 陷阱鎖（事件的 restrain 鎖在主角身上的）：EquippedGear.locked 的前綴，不綁契約（docs/LEWD_STATS.md 第 27 節） */
 export const TRAP_LOCK = 'trap:'
@@ -2519,7 +2521,9 @@ export const lockedByThing = (locked?: string) => !!locked && (locked.startsWith
 /** 慾望流派（lewd.json 的 schools） */
 /** 流派給的戰鬥技能（不佔攜帶上限）：advanced 要有進階特質、level 到這個等級 */
 export interface SchoolAbility { id: string; advanced?: boolean; level?: number }
-export interface LewdSchool { abilities?: SchoolAbility[]; name: string; group: string; role: string; pitch?: string; entry: string; advanced: string; fit: BindKind[] }
+/** 獸蟲派的宿主加成：身上每有一隻活著的寄生物或苗床，戰鬥中 mods 再一份，每項最多 max（進階 advanced_max） */
+export interface SchoolHost { mods: Mods; max: number; advanced_max?: number }
+export interface LewdSchool { abilities?: SchoolAbility[]; host?: SchoolHost; name: string; group: string; role: string; pitch?: string; entry: string; advanced: string; fit: BindKind[] }
 /**
  * 流派特質的慾望效果（PerkDef.lust；慾望戰鬥關閉時不生效）。數值都是加在基本值上的：
  * max 慾望上限、taken 受到的慾望倍率、self 自己增加的慾望倍率、convert 傷害轉成慾望的比例（有轉換的狀態時）、
@@ -2629,7 +2633,11 @@ export const lewdRules = lewdJson as unknown as {
     endurance_per: number; fit: number; servitude_master: number
     kinds: Record<BindKind, { name: string; checks: CheckFilter[]; penalty: number[]; combat: (Mods & { initiative?: number })[]; immune?: string[] }>
   }
-  locks: { grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade> }
+  locks: {
+    grades: Record<LockGrade, { name: string; mult: number }>; master_default: LockGrade; master_tags: Record<string, LockGrade>
+    /** 自己鎖的拘束具，鑰匙交給別人或丟掉時這個人雙面效應的全身上限提高幾點（docs/LEWD_STATS.md 第 7 節） */
+    key_custody: Record<'companion' | 'master' | 'servitude_master' | 'discarded', KeyCustodyCaps> & { master_affinity: number }
+  }
   master_tool: { release_affinity: number; new_master_affinity: number; hours: number; submission_dc_per: number; stance_per: number }
   training: {
     sub_div: number; low_affinity: number; low_dc: number; progress: number; backlash_affinity: number; backlash_delta: number

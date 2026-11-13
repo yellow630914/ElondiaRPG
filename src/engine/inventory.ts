@@ -1,5 +1,6 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
+import { hasSchool } from './schools'
 import { useLactationItem } from './lactation'
 import { addLewd, lewdName } from './lewd'
 import { pcWords } from './pcWords'
@@ -8,7 +9,7 @@ import { hasPerk, learnablePerks, offerPerks } from './perks'
 import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, snapshot } from './character'
 import { gameRule } from './gameRules'
 import {
-  abilities, attrName, classDef, raceName, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK, CURSE_LOCK, lockedByThing,
+  abilities, attrName, classDef, raceName, companionRules, lewdRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK, CURSE_LOCK, lockedByThing,
   type ItemIntel, type ItemUse, type LewdKey, type LockGrade,
 } from './data'
 import { EXTRA_SLOTS, classWeaponBlock, gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, registerGear, setExtraSlotCount, slotNameFor, slotOpen, slotsFor, syncGear, wearName } from './gear'
@@ -23,6 +24,7 @@ import { addHours, addItem, commitReport, newReportId, withRng } from './state'
 import { startStory } from './story'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
 import { contractOf } from './tattoos'
+import { npcRecord } from './npcs'
 import { openWithKey } from './restraints'
 
 function itemReport(state: GameState, hours: number): Report {
@@ -235,9 +237,13 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
  * 穿上裝備：放進指定的欄位（沒指定時挑第一個空的、可以放的欄位）。
  * 雙手武器會空出副手；換下來的裝備放回行囊。
  */
-/** 不能拿下的裝備：主人強制裝上的（契約還在時）、陷阱鎖住的、詛咒具（解咒之前）、寄生裝備（馴服或解咒之前） */
+/**
+ * 不能拿下的裝備：主人強制裝上的（契約還在時）、陷阱鎖住的、詛咒具（解咒之前）、寄生裝備（馴服或解咒之前），
+ * 以及自己鎖上、鑰匙不在自己身上的拘束具（交給別人保管或丟掉了）
+ */
 export function lockedGear(m: Character, slot: GearSlot): EquippedGear | undefined {
   const g = m.gear?.[slot]
+  if (g?.lock && !g.locked) return g.keyHolder === 'self' ? undefined : g
   if (!g?.locked) return undefined
   return g.locked.startsWith(PARASITE_LOCK) || lockedByThing(g.locked) || contractOf(m) ? g : undefined
 }
@@ -261,6 +267,7 @@ export function wearLocks(m: Character, wear: string[] | undefined): string[] {
 
 function assertUnlocked(m: Character, slot: GearSlot) {
   const g = lockedGear(m, slot)
+  if (g && !g.locked) throw new Error(`${g.name}上了鎖，${g.keyHolder === 'discarded' ? '鑰匙已經丟掉了' : '鑰匙不在自己身上'}（要拿回鑰匙、脫縛、用一次性的鑰匙或找鐵匠剪鎖）`)
   if (g?.locked?.startsWith(PARASITE_LOCK)) throw new Error(`${g.name}緊緊貼在身上，脫不下來（寄生裝備：馴服或解咒之後才能拿下）`)
   if (g?.locked?.startsWith(CURSE_LOCK)) throw new Error(`${g.name}被詛咒鎖在身上，掙不開也打不開（要到神殿解咒）`)
   if (g?.locked?.startsWith(TRAP_LOCK)) throw new Error(`${g.name}被鎖住了，自己打不開（要脫縛、用鑰匙或找鐵匠剪鎖）`)
@@ -278,6 +285,7 @@ export function freeSlotsFor(m: Character, spec: GearSpec): GearSlot[] {
  */
 export function putOn(m: Character, name: string, spec: GearSpec, slot?: GearSlot, locked?: string): { target: GearSlot; back: string[] } {
   const all = slotsFor(spec, m.race)
+  if (gearRules.bases[spec.base]?.pet && !hasSchool(m, 'beast')) throw new Error(`${name}只聽修了獸蟲派的人的話`)
   if (!all.length) throw new Error(gearRules.bases[spec.base]?.races?.length ? `只有${gearRules.bases[spec.base]!.races!.map(raceName).join('、')}能穿${name}` : raceUnfitReason(spec.base, m.race) ?? `${m.name}無法使用這個欄位`)
   if (slot && !all.includes(slot)) throw new Error(`${name}不能放在${slotNameFor(slot, m.race)}`)
   if (slot) assertUnlocked(m, slot)
@@ -292,6 +300,9 @@ export function putOn(m: Character, name: string, spec: GearSpec, slot?: GearSlo
   const back: string[] = []
   const removed = gear[target]
   if (removed) back.push(removed.name)
+  // 換下自己鎖上的拘束具（鑰匙在自己身上）：打開鎖，鎖一起收進行囊
+  const removedLock = removed?.lock && !removed.locked && removed.keyHolder === 'self' ? lockItemName(removed.lock) : undefined
+  if (removedLock) back.push(removedLock)
   if (target === 'main_hand' && stats.two_handed && gear.off_hand) {
     back.push(gear.off_hand.name)
     delete gear.off_hand
@@ -333,7 +344,7 @@ export function unequipItem(state: GameState, memberId: string, slot: GearSlot):
   syncGear(m, classDef(m.class).weapon)
   recalc(m)
   const report = itemReport(state, 0.1)
-  // 自己裝的鎖：打開，鎖放回行囊
+  // 自己裝的鎖（鑰匙在自己身上才走得到這裡）：打開，鎖放回行囊
   const lock = g.lock && !g.locked ? lockItemName(g.lock) : undefined
   report.changes.items_gained = [{ name: g.name, qty: 1, owner: 'pc' }, ...(lock ? [{ name: lock, qty: 1, owner: 'pc' }] : [])]
   report.outcome.summary = `${m.name}${lock ? `打開${lock}，` : ''}卸下了${g.name}。`
@@ -362,7 +373,7 @@ export function lockable(g: EquippedGear | undefined): boolean {
   return !!g && !!gearRules.bases[g.spec.base]?.bind && !g.lock && !g.spec.lock && !g.locked
 }
 
-/** 用行囊裡的鎖替身上的拘束具上鎖（自己有鑰匙，隨時可以打開） */
+/** 用行囊裡的鎖替身上的拘束具上鎖：鑰匙在自己身上（keyHolder self），之後可以交給別人保管或丟掉（docs/LEWD_STATS.md 第 7 節） */
 export function lockGear(state: GameState, memberId: string, slot: GearSlot, lockName: string): Report {
   take(state, lockName)
   const grade = itemDef(lockName)?.lock
@@ -373,36 +384,113 @@ export function lockGear(state: GameState, memberId: string, slot: GearSlot, loc
   if (g.locked) throw new Error(`${g.name}是${lockerOf(g)}鎖上的`)
   if (g.lock || g.spec.lock) throw new Error(`${g.name}已經上鎖了`)
   g.lock = grade
+  g.keyHolder = 'self'
   const report = itemReport(state, 0.1)
   report.changes.items_lost = [{ name: lockName, qty: 1 }]
   report.outcome.summary = `${m.name}用${lockName}鎖上了${g.name}，鑰匙收在身上。`
   return commitReport(state, report)
 }
 
-/** 用鑰匙打開別人鎖上的拘束具（docs/LEWD_STATS.md 第 16 節）：鑰匙用掉，鎖歸自己 */
+/** 用一次性的鑰匙打開自己打不開的拘束具（docs/LEWD_STATS.md 第 16 節）：鑰匙用掉，鎖也壞掉 */
 export function useKey(state: GameState, memberId: string, slot: GearSlot, key: string): Report {
   take(state, key)
   const m = member(state, memberId)
-  const { text, lock } = openWithKey(m, slot, key)
+  const { text } = openWithKey(m, slot, key)
   const report = itemReport(state, 0.1)
   report.changes.items_lost = [{ name: key, qty: 1 }]
-  if (lock) report.changes.items_gained = [{ name: lock, qty: 1, owner: 'pc' }]
   report.outcome.summary = text
   return commitReport(state, report)
 }
 
-/** 打開自己裝的鎖，鎖放回行囊 */
+/** 打開自己裝的鎖（鑰匙要在自己身上），鎖放回行囊 */
 export function unlockGear(state: GameState, memberId: string, slot: GearSlot): Report {
   if (state.combat) throw new Error('戰鬥中不能這麼做')
   const m = member(state, memberId)
   const g = m.gear?.[slot]
   if (!g?.lock) throw new Error('這一格沒有上鎖')
   if (g.locked) throw new Error(`${g.name}是${lockerOf(g)}鎖上的，鑰匙不在你身上`)
+  const why = keyAway(state, g)
+  if (why) throw new Error(`${g.name}的${why}`)
   const name = lockItemName(g.lock)
   delete g.lock
+  delete g.keyHolder
   const report = itemReport(state, 0.1)
   if (name) report.changes.items_gained = [{ name, qty: 1, owner: 'pc' }]
   report.outcome.summary = `${m.name}打開了${g.name}上的${name ?? '鎖'}。`
+  return commitReport(state, report)
+}
+
+// ---- 自己鎖上的拘束具的鑰匙（docs/LEWD_STATS.md 第 7 節；lewd.json 的 locks.key_custody） ----
+
+/** 鑰匙在誰那裡的名字（自己、隊員、主人；不在隊伍裡的人照人物紀錄） */
+export function keyHolderName(state: GameState, id: string): string {
+  return state.party.find((x) => x.id === id)?.name ?? npcRecord(state, id)?.name ?? '別人'
+}
+
+/** 打不開自己鎖上的鎖的原因：鑰匙交給別人保管或丟掉了（鑰匙在自己身上、或不是自己鎖的時 undefined） */
+export function keyAway(state: GameState, g: EquippedGear): string | undefined {
+  if (!g.lock || g.locked || g.keyHolder === 'self') return undefined
+  if (!g.keyHolder) return '鎖沒有鑰匙'
+  if (g.keyHolder === 'discarded') return '鑰匙已經丟掉了'
+  return `鑰匙在${keyHolderName(state, g.keyHolder)}那裡`
+}
+
+/** 可以替這個人保管鑰匙的人：隊伍裡的其他人（暫時離隊的不算）；是這個人的主人時 master */
+export function keyKeepers(state: GameState, m: Character): { id: string; name: string; master: boolean }[] {
+  const master = contractOf(m)?.master
+  return state.party
+    .filter((x) => x.id !== m.id && !x.status.includes('away'))
+    .map((x) => ({ id: x.id, name: x.name, master: x.id === master }))
+}
+
+function selfKeyed(state: GameState, memberId: string, slot: GearSlot): { m: Character; g: EquippedGear } {
+  if (state.combat) throw new Error('戰鬥中不能這麼做')
+  const m = member(state, memberId)
+  const g = m.gear?.[slot]
+  if (!g?.lock || g.locked || !g.keyHolder) throw new Error('這一格沒有自己鎖上的拘束具')
+  return { m, g }
+}
+
+/** 把鑰匙交給同伴或主人保管：戰鬥中這個人的雙面效應上限提高，每天順從也會成長；要打開鎖得請那個人還回來 */
+export function giveKey(state: GameState, memberId: string, slot: GearSlot, holderId: string): Report {
+  const { m, g } = selfKeyed(state, memberId, slot)
+  if (g.keyHolder !== 'self') throw new Error(`${g.name}的${keyAway(state, g)}`)
+  const to = keyKeepers(state, m).find((x) => x.id === holderId)
+  if (!to) throw new Error('這個人現在不能替你保管鑰匙')
+  g.keyHolder = to.id
+  const report = itemReport(state, 0.1)
+  report.outcome.summary = `${m.name}把${g.name}的鑰匙交給${to.master ? '主人' : ''}${to.name}保管。`
+  return commitReport(state, report)
+}
+
+/**
+ * 請保管的人把鑰匙還回來：那個人要在隊伍裡（離隊的人把鑰匙一起帶走，回來之後才拿得回）。
+ * 鑰匙在主人手上時，主人的親密度要到 key_custody.master_affinity 才肯還
+ */
+export function takeKeyBack(state: GameState, memberId: string, slot: GearSlot): Report {
+  const { m, g } = selfKeyed(state, memberId, slot)
+  const id = g.keyHolder!
+  if (id === 'self') throw new Error('鑰匙就在自己身上')
+  if (id === 'discarded') throw new Error('鑰匙已經丟掉了')
+  const name = keyHolderName(state, id)
+  const holder = state.party.find((x) => x.id === id)
+  if (!holder || holder.status.includes('away')) throw new Error(`鑰匙在${name}那裡，${name}現在不在隊伍裡`)
+  const need = lewdRules.locks.key_custody.master_affinity
+  const aff = state.relationships?.[id]?.affinity ?? 0
+  if (contractOf(m)?.master === id && aff < need) throw new Error(`${name}不肯把鑰匙還給你（主人的親密度要 ${need} 以上，現在 ${aff}）`)
+  g.keyHolder = 'self'
+  const report = itemReport(state, 0.1)
+  report.outcome.summary = `${name}把${g.name}的鑰匙還給了${m.name}。`
+  return commitReport(state, report)
+}
+
+/** 丟掉鑰匙：戰鬥中這個人的雙面效應上限提高更多；之後只剩脫縛、一次性的鑰匙與鐵匠剪鎖（鎖會壞掉） */
+export function discardKey(state: GameState, memberId: string, slot: GearSlot): Report {
+  const { m, g } = selfKeyed(state, memberId, slot)
+  if (g.keyHolder !== 'self') throw new Error(`${g.name}的${keyAway(state, g)}`)
+  g.keyHolder = 'discarded'
+  const report = itemReport(state, 0.1)
+  report.outcome.summary = `${m.name}把${g.name}的鑰匙丟掉了。`
   return commitReport(state, report)
 }
 

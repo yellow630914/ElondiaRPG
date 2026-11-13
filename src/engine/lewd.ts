@@ -11,7 +11,7 @@ import { charmExposureMult, chasingRegions, spreadExposure } from './charm'
 import { gearLewdOf, gearRules, type VacuumSide } from './gear'
 import { gameRule } from './gameRules'
 import { characterBody } from './look'
-import { bindsOf, lustTotals, schoolName, schoolsOf } from './schools'
+import { bindsOf, keyCustody, lustTotals, schoolName, schoolsOf } from './schools'
 import { contractOf } from './tattoos'
 import type { Character, GameState, LewdStat, LewdStats, Report } from './types'
 
@@ -305,7 +305,7 @@ const wears = (c: Character, test: (base: NonNullable<(typeof gearRules.bases)[s
 
 /**
  * 跨過幾天（from 天到 to 天之間的每一天）：曝露名聲每天淡掉；在聚落裡穿著曝露的服裝會累積；
- * 穿成人向服裝淫亂成長、在聚落裡真空淫亂成長、穿束縛用的底材忍耐成長、被主人鎖上的裝備順從成長；沒有契約的日子順從慢慢降；
+ * 穿成人向服裝淫亂成長、在聚落裡真空淫亂成長、穿束縛用的底材忍耐成長、被主人鎖上的裝備（與鑰匙交給別人保管的）順從成長；沒有契約的日子順從慢慢降；
  * 太久沒有親密場景，淫亂慢慢降回預設；也沒在戰鬥中高潮時，敏感也慢慢降回預設。四種下跌（曝露名聲、順從、淫亂、敏感）每次幾點照存檔規則，頻率不變。
  * 只看隊伍裡的人；不寫進報告。
  */
@@ -339,8 +339,9 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       // 泌乳：胸前真空或曝露時，乳汁滲出來被人看見（docs/FAMILY.md 第 10 節）
       const lactExp = (familyRules.lactation as { exposure?: number } | undefined)?.exposure ?? 0
       if (inTown && lactExp && lactatingNow(m) && (vacuumSides(m).includes('top') || exposureLevel(m) >= 2)) addLewd(state, m, 'exposure', lactExp, undefined, loc.region)
-      // 被鎖住的拘束具：主人鎖上的（契約還在時）或陷阱鎖住的
-      if (Object.values(m.gear ?? {}).some((g) => g?.locked && (contractOf(m) || lockedByThing(g.locked)))) bonus(d.locked)
+      // 被鎖住的拘束具：主人鎖上的（契約還在時）、陷阱鎖住的，或自己鎖上、鑰匙交給同伴或主人保管的
+      const held = (k: string | undefined) => k === 'companion' || k === 'master'
+      if (Object.values(m.gear ?? {}).some((g) => (g?.locked && (contractOf(m) || lockedByThing(g.locked))) || held(keyCustody(g, m)))) bonus(d.locked)
       // 奴隸印記的順從累積（條款的 submission_every）
       const every = contractOf(m)?.terms.submission_every
       if (every && day % every === 0) addLewd(state, m, 'submission', 1)

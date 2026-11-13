@@ -108,6 +108,9 @@
   "bases": {
     "slave_collar": { "slot": "accessory", "name": "項圈", "kind": "metal", "price": 30, "restraint": true, "desc": "扣在脖子上的金屬環。" },
     "manacles": { "slot": "wrists", "name": "腕鐐", "kind": "metal", "price": 40, "restraint": true, "bind": 1, "bind_kind": "hands", "desc": "一對用短鍊連著的腕環。" },
+    "pet_tentacle": {"slot": "belt", "name": "觸手寵", "kind": "leather", "price": 300, "exclusive": true, "adult": true, "pet": true, "stats": {"evade": 1, "hit": 1}, "desc": "從苗床生下、認你為主的小觸手，纏在腰上不肯走；只聽獸蟲派的話。"},
+    "pet_slime": {"slot": "accessory", "name": "史萊姆寵", "kind": "leather", "price": 200, "exclusive": true, "adult": true, "pet": true, "stats": {"dr": 1, "save": 1}, "desc": "從苗床生下、認你為主的小史萊姆，趴在肩上軟軟涼涼的；只聽獸蟲派的話。"},
+    "pet_beast": {"slot": "leg_accessory", "name": "幼獸寵", "kind": "leather", "price": 200, "exclusive": true, "adult": true, "pet": true, "stats": {"hit": 1, "damage": 1}, "desc": "從苗床生下、認你為主的幼獸，總是蹭在腳邊；只聽獸蟲派的話。"},
     "shackles": { "slot": "leg_accessory", "name": "腳鐐", "kind": "metal", "price": 30, "restraint": true, "bind": 1, "bind_kind": "legs", "desc": "鎖在腳踝上的金屬環。" },
     "spiked_collar": { "slot": "accessory", "name": "刺釘項圈", "kind": "leather", "price": 20, "restraint": true, "desc": "釘著短刺的粗皮項圈。" },
     "choker": { "slot": "accessory", "name": "頸環", "kind": "cloth", "price": 20, "restraint": true, "desc": "貼著脖子的布製頸環。" },
