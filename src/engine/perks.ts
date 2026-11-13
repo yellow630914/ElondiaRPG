@@ -186,7 +186,7 @@ function lustPower(l: LustPerk | undefined): number {
   if (!l) return 0
   const mods = [l.wounded, l.master, l.bound].reduce((s, m) => s + Object.values(m ?? {}).reduce((x: number, v) => x + Math.abs(v ?? 0), 0) / 2, 0)
   return (l.max ?? 0) / 5 + (l.bound_max ?? 0) / 10 + Math.abs(l.taken ?? 0) * 4 + (l.self ?? 0) * 4 + (l.convert ?? 0) * 10 + (l.burst ?? 0) * 5
-    + (l.relief ?? 0) * 2 + (l.crit_convert ?? 0) * 2 + (l.regen ?? 0) / 2 + (l.climax_heal ?? 0) * 5 + (l.exposure ?? 0) + (l.exposure_level ?? 0)
+    + (l.relief ?? 0) * 2 + (l.crit_convert ?? 0) * 2 + (l.regen ?? 0) / 2 + (l.calm ?? 0) * 20 + (l.climax_heal ?? 0) * 5 + (l.exposure ?? 0) + (l.exposure_level ?? 0)
     + (l.endurance_max ?? 0) / 2 + (l.sensitivity_bonus ?? 0) + Object.values(l.growth ?? {}).reduce((x: number, v) => x + Math.abs(v ?? 0), 0) + mods
 }
 

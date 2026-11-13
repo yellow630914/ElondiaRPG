@@ -80,13 +80,13 @@ export function hasMaster(c: Character): boolean {
 // ---- 流派特質的慾望效果 ----
 
 export interface LustTotals {
-  max: number; taken: number; self: number; convert: number; burst: number; relief: number; crit_convert: number; regen: number
+  max: number; taken: number; self: number; convert: number; burst: number; relief: number; crit_convert: number; regen: number; calm: number
   climax_heal: number; exposure: number; exposure_level: number; endurance_max: number; sensitivity_bonus: number
   growth: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
   wounded: Mods; master: Mods; bound: Mods; bound_max: number
 }
 
-const NUM_KEYS = ['max', 'taken', 'self', 'convert', 'burst', 'relief', 'crit_convert', 'regen', 'climax_heal', 'exposure', 'exposure_level', 'endurance_max', 'sensitivity_bonus', 'bound_max'] as const
+const NUM_KEYS = ['max', 'taken', 'self', 'convert', 'burst', 'relief', 'crit_convert', 'regen', 'calm', 'climax_heal', 'exposure', 'exposure_level', 'endurance_max', 'sensitivity_bonus', 'bound_max'] as const
 const MOD_KEYS = ['wounded', 'master', 'bound'] as const
 
 function addMods(into: Mods, m: Mods | undefined, scale: number) {
@@ -99,7 +99,7 @@ function addMods(into: Mods, m: Mods | undefined, scale: number) {
 /** 流派特質的慾望效果合計；隸從派的特質在沒有主人時乘上 servitude.no_master（戰鬥修正向下取整） */
 export function lustTotals(c: Character): LustTotals {
   const t: LustTotals = {
-    max: 0, taken: 0, self: 0, convert: 0, burst: 0, relief: 0, crit_convert: 0, regen: 0, climax_heal: 0, exposure: 0, exposure_level: 0,
+    max: 0, taken: 0, self: 0, convert: 0, burst: 0, relief: 0, crit_convert: 0, regen: 0, calm: 0, climax_heal: 0, exposure: 0, exposure_level: 0,
     endurance_max: 0, sensitivity_bonus: 0, growth: {}, wounded: {}, master: {}, bound: {}, bound_max: 0,
   }
   const master = hasMaster(c)
@@ -314,7 +314,7 @@ export function bindLabel(kind: BindKind, bind: number): string {
 // ---- 內容編輯器、匯入：整理流派特質的慾望效果 ----
 
 const LUST_RANGES: Record<(typeof NUM_KEYS)[number], [number, number]> = {
-  max: [-30, 30], taken: [-0.5, 0.5], self: [-0.5, 1], convert: [0, 0.5], burst: [0, 0.5], relief: [-0.5, 1], crit_convert: [0, 1], regen: [0, 10],
+  max: [-30, 30], taken: [-0.5, 0.5], self: [-0.5, 1], convert: [0, 0.5], burst: [0, 0.5], relief: [-0.5, 1], crit_convert: [0, 1], regen: [0, 10], calm: [0, 0.2],
   climax_heal: [0, 0.5], exposure: [0, 2], exposure_level: [0, 3], endurance_max: [0, 5], sensitivity_bonus: [0, 3], bound_max: [0, 30],
 }
 const MOD_IDS: (keyof Mods)[] = ['hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit']

@@ -1695,6 +1695,12 @@ export function sanitizeAbility(id: string, raw: Partial<AbilityMod>, custom: bo
   if (raw.lust_relief) out.lust_relief = int(raw.lust_relief, 1, 200, 10)
   if (raw.lust_cost) out.lust_cost = int(raw.lust_cost, 1, 200, 10)
   if (raw.requires_lust) out.requires_lust = Math.round(num(raw.requires_lust, 0.05, 1, 0.3) * 100) / 100
+  if (raw.purity && typeof raw.purity === 'object' && raw.purity.max) {
+    const r2 = (x: number) => Math.round(x * 100) / 100
+    out.purity = { max: r2(num(raw.purity.max, 0.05, 1, 0.3)), backlash: r2(num(raw.purity.backlash, 0, 1, 0.3)) }
+    if (raw.purity.bonus !== undefined && raw.purity.bonus !== 1) out.purity.bonus = r2(num(raw.purity.bonus, 0, 3, 1))
+  }
+  if (raw.revive) out.revive = Math.round(num(raw.revive, 0.05, 1, 0.3) * 100) / 100
   if (raw.ap_give) out.ap_give = int(raw.ap_give, 1, 5, 1)
   if (raw.exposure) out.exposure = int(raw.exposure, 1, 10, 1)
   if (raw.brood && typeof raw.brood === 'object') {

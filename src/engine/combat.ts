@@ -151,6 +151,8 @@ export interface Combatant {
     /** 流派特質（docs/LEWD_STATS.md 第 6 節）：引爆的傷害倍率加成、消退慾望的倍率加成、受到幸運一擊時改成慾望的比例、
      * 慾望一半以上時每回合回復的生命、高潮時回復最大生命的比例、生命低於一半時的戰鬥修正 */
     burst?: number; relief?: number; critConvert?: number; regen?: number; climaxHeal?: number; wounded?: Mods
+    /** 靜心（禁慾派）：每回合開始時多消退慾望上限的這個比例 */
+    calm?: number
     /** 懷孕後期的雙面效應：有隊友倒下時的戰鬥修正（docs/FAMILY.md 第 4.3 節；allyDown 每回合開始時更新） */
     allyDown?: Mods
     /** 分擔慾望的效率：主角記 pc，隊友記對主角的親密度（lewd.json 的 combat.bond_step） */
@@ -168,6 +170,8 @@ export interface Combatant {
   weaponBlock?: string
   /** 身上有奴隸印記：驅奴術這類能力比較有效 */
   slave?: boolean
+  /** 正在施放的清淨技能的效力倍率（禁慾派；只在結算這個動作時有） */
+  potency?: number
   /** 淫器展開的武器傷害倍率（fusion.ts；穿著的天數決定） */
   weaponMult?: number
   /** 被植入的苗床（能力的 brood）：苗床 → 每一層的機率與植入的怪物；戰鬥結束時擲（brood.ts 的 settleImplants） */
@@ -437,7 +441,7 @@ function typicalEnemyHp(level: number): number {
 
 /** 和慾望有關的能力：色情技能，或會造成、增減慾望的能力（慾望戰鬥關閉時不能用；「主角非自願」關掉時敵人不用） */
 export function isLustAbility(a: AbilityDef): boolean {
-  return a.classes.includes('lewd') || !!a.burst || !!a.lust_gain || !!a.lust_relief || !!a.lust_cost || !!a.lust_transfer || !!a.requires_lust
+  return a.classes.includes('lewd') || !!a.burst || !!a.lust_gain || !!a.lust_relief || !!a.lust_cost || !!a.lust_transfer || !!a.requires_lust || !!a.purity
     || !!a.damage?.some((p) => p.type === 'lust')
     || !!a.apply?.some((x) => { const s = statusDef(x.status); return s.dot?.type === 'lust' || (s.lust_mult ?? 0) > 0 })
 }
@@ -504,6 +508,7 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     if (t.relief) f.lustMods.relief = t.relief
     if (t.crit_convert) f.lustMods.critConvert = t.crit_convert
     if (t.regen) f.lustMods.regen = t.regen
+    if (t.calm) f.lustMods.calm = t.calm
     if (t.climax_heal) f.lustMods.climaxHeal = t.climax_heal
     if (Object.keys(t.wounded).length) f.lustMods.wounded = t.wounded
     const addMods = (m: Mods) => { for (const [k, x] of Object.entries(m)) f.baseMods[k as keyof Mods] = (f.baseMods[k as keyof Mods] ?? 0) + (x ?? 0) }
@@ -891,6 +896,7 @@ export function unusableReason(combat: CombatState, actor: Combatant, abilityId:
     const max = effectiveLustMax(actor)
     if (a.lust_cost && lust < a.lust_cost) return '慾望不足'
     if (a.requires_lust && lust < max * a.requires_lust) return '慾望不足'
+    if (a.purity && lust > max * a.purity.max) return `慾望太高（要在 ${Math.round(a.purity.max * 100)}% 以下）`
     if (a.burst && (lust <= 0 || lust < max * (a.burst.min_ratio ?? 0))) return '慾望不足'
     if (a.lust_transfer?.mode === 'spread' && lust <= 0) return '沒有慾望可以分'
   }
@@ -1753,7 +1759,8 @@ function pickTargets(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   switch (a.target) {
     case 'self': return [actor]
     case 'all_enemies': return foesOf(combat, actor)
-    case 'all_allies': return alliesOf(combat, actor)
+    // 復活：倒下的友軍也算
+    case 'all_allies': return a.revive ? combat.combatants.filter((x) => x.side === actor.side && !x.fled) : alliesOf(combat, actor)
     case 'random_enemies': {
       const foes = foesOf(combat, actor)
       return Array.from({ length: a.count ?? 1 }, () => rng.pick(foes))
@@ -1821,6 +1828,14 @@ function applyStatuses(
   }
 }
 
+/** 清淨技能的效力倍率：慾望在門檻以下，越接近零越強（沒有 purity 時 1） */
+export function purityPotency(actor: Combatant, a: AbilityDef): number {
+  if (!a.purity || actor.lustMax === undefined) return 1
+  const gate = effectiveLustMax(actor) * a.purity.max
+  const left = gate > 0 ? Math.max(0, 1 - (actor.lust ?? 0) / gate) : 0
+  return Math.round((1 + (a.purity.bonus ?? 1) * left) * 100) / 100
+}
+
 /** 驅奴術這類能力對身上有奴隸印記的人的傷害倍率 */
 function slaveMult(a: AbilityDef, target: Combatant): number {
   return a.vs_slave && target.slave ? a.vs_slave : 1
@@ -1854,6 +1869,9 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
   if (a.uses?.per_combat !== undefined) actor.usedCombat[a.id] = (actor.usedCombat[a.id] ?? 0) + 1
   if (a.uses?.per_rest !== undefined) actor.usedRest[a.id] = (actor.usedRest[a.id] ?? 0) + 1
   if (a.concentration) dropConcentration(combat, actor)
+  // 清淨（禁慾派）：慾望離零越近越強，這個動作結算完才反噬
+  const pot = purityPotency(actor, a)
+  if (pot !== 1) actor.potency = pot
   // 慾望戰鬥：消耗慾望；引爆把全部的慾望拿出來（結算完附加脫力）
   if (a.lust_cost) {
     const effects: Effect[] = []
@@ -1874,7 +1892,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
 
   for (const target of targets) {
     for (let h = 0; h < (a.hits ?? 1); h++) {
-      if (!isActive(target) && a.target !== 'ally_or_downed') break
+      if (!isActive(target) && a.target !== 'ally_or_downed' && !a.revive) break
       const effects: Effect[] = []
       let rollInfo: TimelineEntry['roll']
       let result: RollResult = 'success'
@@ -1888,7 +1906,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
           if (a.damage?.length) {
             const rolls = rollParts(rng, actor, a, a.damage, r.lucky)
             if (a.damage.some((p) => p.weapon)) rolls.push(...onHitExtras(actor, target, rng, effects))
-            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target), crit: r.lucky })
+            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target) * pot, crit: r.lucky })
           }
           applyStatuses(combat, rng, actor, a, target, 'hit', effects, statusDice)
           implantBrood(actor, a, target, effects)
@@ -1899,7 +1917,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
         result = s.success ? 'fail' : 'success'
         if (a.damage?.length && !(s.success && a.on_save === 'none')) {
           const rolls = rollParts(rng, actor, a, a.damage, false)
-          dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target), half: s.success })
+          dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target) * pot, half: s.success })
         }
         if (!s.success) applyStatuses(combat, rng, actor, a, target, 'fail', effects, statusDice)
       } else {
@@ -1931,6 +1949,14 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
     addStatus(actor, { id: 'spent', turns: 1, source: actor.id })
     push(combat, { actor: actor.id, action: `${a.name}・脫力`, result: 'none', effects: [{ type: 'status_add', target: actor.id, status: statusDef('spent').name }] })
   }
+  // 清淨的反噬：用完自己的慾望暴漲
+  delete actor.potency
+  if (a.purity && isActive(actor)) {
+    const effects: Effect[] = []
+    if (pot !== 1) effects.push({ type: 'note', target: actor.id, text: `清淨 ×${Math.round(pot * 100) / 100}` })
+    gainLust(combat, actor, effectiveLustMax(actor) * a.purity.backlash, effects, { raw: true, text: '反噬' })
+    push(combat, { actor: actor.id, action: `${a.name}・反噬`, result: 'none', effects })
+  }
   // 寬衣這類能力：戰後曝露名聲增加
   if (a.exposure) actor.exposureGain = (actor.exposureGain ?? 0) + a.exposure
   // 能力本身的仇恨（堅守 +、隱匿 -）
@@ -1956,21 +1982,25 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
     else effects.push({ type: 'note', target: target.id, text: '生命值過高，無效' })
     return
   }
+  const pot = actor.potency ?? 1
+  // 復活（歸魂之禱）：倒下的友軍站起來，不另外治療
+  const revived = !!a.revive && target.hp <= 0 && target.side === actor.side
+  if (revived) heal(target, Math.max(1, Math.round(target.maxHp * a.revive! * pot)), effects)
   if (a.damage?.length) {
-    dealDamage(combat, rng, actor, target, rollParts(rng, actor, a, a.damage, false), effects, { mult: a.mult ?? 1 })
+    dealDamage(combat, rng, actor, target, rollParts(rng, actor, a, a.damage, false), effects, { mult: (a.mult ?? 1) * pot })
   }
   resolveLust(combat, rng, actor, a, target, effects, spent)
-  if (a.heal) {
+  if (a.heal && !revived) {
     const h = a.heal
     const amount = h.full
       ? target.maxHp
-      : (h.flat ?? 0) + (h.dice ? rollDice(rng, h.dice, 1) : 0) + (h.mod ? mod(actor.attrs[attrFor(actor, a)]) : 0) + (h.level ? actor.level : 0)
+      : Math.round(((h.flat ?? 0) + (h.dice ? rollDice(rng, h.dice, 1) : 0) + (h.mod ? mod(actor.attrs[attrFor(actor, a)]) : 0) + (h.level ? actor.level : 0)) * pot)
     heal(target, amount, effects)
     // 治療每場只算一次（不然補師每回合治療就一路加上去）
     if (actor.id === 'pc' && target.id !== 'pc' && !combat.affinity[target.id]?.reasons.includes(HEALED)) noteAffinity(combat, target.id, 1, HEALED)
   }
   if (a.shield) {
-    const amount = (a.shield.flat ?? 0) + (a.shield.level ?? 0) * actor.level
+    const amount = Math.round(((a.shield.flat ?? 0) + (a.shield.level ?? 0) * actor.level) * pot)
     target.tempHp = Math.max(target.tempHp, amount)
     effects.push({ type: 'note', target: target.id, text: `臨時生命值 ${amount}` })
   }
@@ -2013,7 +2043,7 @@ function resolveLust(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   }
   if (a.lust_gain) gainLust(combat, target, a.lust_gain.flat, effects, { selfGain: true })
   // 清心寡慾（禁慾派）：消退慾望的效果加成
-  if (a.lust_relief) relieveLust(target, a.lust_relief * (1 + (actor.lustMods?.relief ?? 0)), effects)
+  if (a.lust_relief) relieveLust(target, a.lust_relief * (1 + (actor.lustMods?.relief ?? 0)) * (actor.potency ?? 1), effects)
   const t = a.lust_transfer
   if (t) {
     // 親密度高的人之間分擔得比較好：傳過去的慾望少一些
@@ -2142,7 +2172,7 @@ function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
   }
   // 慾望戰鬥：每回合消退一點（有不會消退的狀態時不消退）
   if (lustOn(combat) && (actor.lust ?? 0) > 0 && !actor.statuses.some((s) => statusDef(s.id).lust_hold)) {
-    actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * lustRules().decay * (actor.lustMods?.decay ?? 1))))
+    actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * (lustRules().decay * (actor.lustMods?.decay ?? 1) + (actor.lustMods?.calm ?? 0)))))
   }
   // 這回合開始時才中的暈眩類狀態（媚毒、每回合增加的慾望讓人高潮）：這回合就不能行動，並且算用掉了
   const before = new Set(actor.statuses)
@@ -2276,6 +2306,17 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
     const lustScore = (who: Combatant[]) => {
       const m = Math.max(0, ...who.map((w) => defenseMult(w, 'lust')))
       return m <= 0 ? 0 : Math.min(1.5, m) * (who.some((w) => lustRatio(w) >= 0.7) ? 1.4 : 1) * (actor.ai?.lust ?? 1)
+    }
+    // 復活：有友軍倒下時優先
+    if (a.revive) {
+      const down = combat.combatants.filter((x) => x.side === actor.side && !x.fled && x.hp <= 0)
+      if (down.length) options.push({ ability: a, score: 5 + down.length })
+      continue
+    }
+    // 靜心這類只消退自己慾望的：慾望高了才用
+    if (a.target === 'self' && a.lust_relief && !a.heal && !a.apply?.length) {
+      if (lustRatio(actor) >= 0.3) options.push({ ability: a, score: 1.5 + lustRatio(actor) * 2 })
+      continue
     }
     // 治療：只在有人受傷時，給最需要的人
     if (a.heal) {

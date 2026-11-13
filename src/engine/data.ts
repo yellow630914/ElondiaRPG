@@ -1111,6 +1111,13 @@ export interface AbilityDef {
   gamble?: { status: string; turns: number; lust: number }
   /** 自己的慾望至少要上限的這個比例才能用 */
   requires_lust?: number
+  /**
+   * 清淨（禁慾派，docs/LEWD_STATS.md 第 6 節）：自己的慾望要在上限的 max 以下才能用；越接近零越強，
+   * 效力倍率 = 1 + bonus ×（1 − 慾望 ÷ 門檻），乘在治療、臨時生命、傷害、消退慾望、復活上；用完自己的慾望增加上限的 backlash（反噬）
+   */
+  purity?: { max: number; bonus?: number; backlash: number }
+  /** 復活：倒下的友軍回復最大生命的這個比例站起來（target all_allies 時也選倒下的友軍） */
+  revive?: number
   /** 引爆：消耗全部的慾望，造成慾望 × mult + 屬性調整值的 type 傷害（heal 時改成治療目標）；用了立刻結束回合，下一回合脫力 */
   burst?: { type?: string; mult: number; min_ratio?: number; heal?: boolean }
   /** 給目標行動點 */
@@ -2539,6 +2546,8 @@ export interface LewdSchool { abilities?: SchoolAbility[]; host?: SchoolHost; na
  */
 export interface LustPerk {
   max?: number; taken?: number; self?: number; convert?: number; burst?: number; relief?: number; crit_convert?: number; regen?: number
+  /** 靜心：每回合開始時多消退慾望上限的這個比例（禁慾派） */
+  calm?: number
   climax_heal?: number; exposure?: number; exposure_level?: number; endurance_max?: number; sensitivity_bonus?: number
   growth?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
   wounded?: Mods; master?: Mods; bound?: Mods; bound_max?: number

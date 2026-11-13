@@ -100,6 +100,24 @@ const requiresPct = computed({
   get: () => (draft.value.requires_lust ? Math.round(draft.value.requires_lust * 100) : undefined),
   set: (v: number | undefined) => { if (v) draft.value.requires_lust = v / 100; else delete draft.value.requires_lust },
 })
+// 清淨（禁慾派）：三個欄位都用百分比；門檻空白就整個拿掉
+function purityField(k: 'max' | 'bonus' | 'backlash') {
+  return computed({
+    get: () => (draft.value.purity?.[k] !== undefined ? Math.round(draft.value.purity[k]! * 100) : undefined),
+    set: (v: number | undefined) => {
+      if (k === 'max' && !v) { delete draft.value.purity; return }
+      const p = (draft.value.purity ??= { max: 0.3, backlash: 0.3 })
+      if (v === undefined || v === null || Number.isNaN(v)) { if (k === 'bonus') delete p.bonus; else p[k] = 0 } else p[k] = v / 100
+    },
+  })
+}
+const purityMax = purityField('max')
+const purityBonus = purityField('bonus')
+const purityBacklash = purityField('backlash')
+const revivePct = computed({
+  get: () => (draft.value.revive ? Math.round(draft.value.revive * 100) : undefined),
+  set: (v: number | undefined) => { if (v) draft.value.revive = v / 100; else delete draft.value.revive },
+})
 function ifLustPct(a: ApplyDef): number | undefined {
   return a.if_lust ? Math.round(a.if_lust * 100) : undefined
 }
@@ -339,6 +357,14 @@ function remove() {
         <label>目標的慾望 − <input v-model.number="draft.lust_relief" type="number" min="0" max="200" placeholder="—" /></label>
         <label>消耗自己的慾望 <input v-model.number="draft.lust_cost" type="number" min="0" max="200" placeholder="—" /></label>
         <label>自己的慾望至少（%） <input v-model.number="requiresPct" type="number" min="0" max="100" placeholder="—" /></label>
+        <label>清淨：慾望在（%）以下才能用 <Hint text="禁慾派的清淨技能：自己的慾望要在上限的這個比例以下才能用。越接近零越強：效力 = 1 + 加強 ×（1 − 慾望 ÷ 門檻），乘在治療、臨時生命、傷害、消退慾望、復活上。用完自己的慾望增加上限的「反噬」%。" />
+          <input v-model.number="purityMax" type="number" min="0" max="100" placeholder="—" /></label>
+        <template v-if="draft.purity">
+          <label>清淨：慾望為零時加強（%） <input v-model.number="purityBonus" type="number" min="0" max="300" placeholder="100" /></label>
+          <label>清淨：反噬（上限的 %） <input v-model.number="purityBacklash" type="number" min="0" max="100" /></label>
+        </template>
+        <label>復活倒下的友軍（最大生命 %） <Hint text="目標是全體友軍時，倒下的友軍也算進去，回復最大生命的這個比例站起來。" />
+          <input v-model.number="revivePct" type="number" min="0" max="100" placeholder="—" /></label>
         <label>給目標行動點 <input v-model.number="draft.ap_give" type="number" min="0" max="5" placeholder="—" /></label>
         <label>戰後曝露名聲 + <input v-model.number="draft.exposure" type="number" min="0" max="10" placeholder="—" /></label>
         <label>植入苗床的機率（%） <Hint text="怪物命中主角時多一層「植入」，戰鬥結束時每一層擲這個機率（× 存檔規則「苗床的機率」），中了就變成苗床（docs/FAMILY.md 第 13 節）。要內容篩選「怪物的苗床」與「主角非自願」都打開。" />
