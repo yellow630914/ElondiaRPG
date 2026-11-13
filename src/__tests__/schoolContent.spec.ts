@@ -32,7 +32,7 @@ describe('流派的條件與技能', () => {
     pcOf(state).perks = [...(pcOf(state).perks ?? []), 'school_beast']
     expect(optionBlocked(state, o)).toBeUndefined()
     // 內容編輯器存的選項條件會留著
-    const t = sanitizeTravelEvent('x', { scope: 'road', kind: 'choice', title: 't', text: 't', options: [{ label: 'a', requires: { schools: ['beast', 'nope'] } }] })
+    const t = sanitizeTravelEvent('x', { scope: 'road', kind: 'choice', title: 't', text: 't', options: [{ label: 'a', requires: { schools: ['beast', 'nope'] } }] }, true)
     expect(t.options?.[0]?.requires).toEqual({ schools: ['beast'] })
   })
 
