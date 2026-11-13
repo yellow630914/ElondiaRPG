@@ -2,7 +2,7 @@
 // lewd.json 的 two_face（各種拘束的檢定減值、受影響的檢定、戰鬥增益、免疫的狀態，忍耐與流派的倍率）與 locks.grades（鎖的倍率）。
 // 存在世界的自訂內容（bindRules.rules 一筆），跟著世界匯出匯入；恢復預設時還原成內建的。
 
-import { ATTR_IDS, BIND_KINDS, lewdRules, LOCK_GRADES, statuses, type AttrId, type BindKind, type CheckContext, type CheckFilter, type LockGrade, type Mods } from './data'
+import { ATTR_IDS, attrName, BIND_KINDS, lewdRules, LOCK_GRADES, skillName, statuses, type AttrId, type BindKind, type CheckContext, type CheckFilter, type LockGrade, type Mods } from './data'
 
 /** 戰鬥增益可以寫的項目（initiative 是先攻，其他是戰鬥修正） */
 export const BIND_COMBAT_KEYS = ['initiative', 'hit', 'evade', 'save', 'damage', 'dr', 'ap_regen'] as const
@@ -105,4 +105,71 @@ export function applyBindRules(r: BindRulesMod) {
 
 export function restoreBindRules() {
   applyBindRules(builtinBindRules())
+}
+
+// ---- 物品說明：拘束的細節（物品說明的「限制行走 2」移上去、聚焦時顯示；docs/LEWD_STATS.md 第 7 節） ----
+
+/** 受影響的檢定：「靈巧檢定、旅途的危險、潛行」；沒有條件時是所有檢定 */
+export function bindChecksText(checks: CheckFilter[]): string {
+  const parts = checks.flatMap((f) => {
+    const p = [...(f.attrs ?? []).map((a) => `${attrName(a)}檢定`), ...(f.skills ?? []).map((x) => `${skillName(x)}檢定`), ...(f.contexts ?? []).map((c) => BIND_CONTEXT_NAME[c] ?? c)]
+    return p.length ? p : ['所有檢定']
+  })
+  return parts.includes('所有檢定') ? '所有檢定' : [...new Set(parts)].join('、')
+}
+
+/** 程度 bind 的戰鬥增益：「先攻 +4、行動點回復 +1」（沒有倍率、上限） */
+export function bindCombatText(kind: BindKind, bind: number): string {
+  const row = lewdRules.two_face.kinds[kind]?.combat[bind - 1] ?? {}
+  return BIND_COMBAT_KEYS.filter((k) => (row as Record<string, number | undefined>)[k]).map((k) => `${BIND_COMBAT_NAME[k]} +${(row as Record<string, number>)[k]}`).join('、')
+}
+
+export interface BindDetail {
+  /** 「限制行走 2」 */
+  title: string
+  /** 平常受影響的檢定 */
+  checks: string
+  /** 平常的減值（正數） */
+  penalty: number
+  /** 每幾點忍耐減輕 1 */
+  endurancePer: number
+  /** 戰鬥中的增益（沒有倍率、上限）；空字串表示沒有 */
+  combat: string
+  /** 程度 3 的免疫 */
+  immune: string[]
+  /** 物品自帶的鎖與倍率 */
+  lock?: { name: string; mult: number }
+}
+
+/** 一件拘束具的細節：平常的檢定減值、戰鬥中的增益（修了流派、上了鎖才有）、程度 3 的免疫；lock 是物品自帶的鎖 */
+export function bindDetail(kind: BindKind, bind: number, lock?: LockGrade): BindDetail | undefined {
+  const r = lewdRules.two_face
+  const k = r.kinds[kind]
+  if (!k) return undefined
+  const lv = Math.max(1, Math.min(3, Math.round(bind)))
+  const g = lock ? lewdRules.locks.grades[lock] : undefined
+  return {
+    title: `${k.name} ${lv}`,
+    checks: bindChecksText(k.checks),
+    penalty: k.penalty[lv - 1] ?? 0,
+    endurancePer: r.endurance_per,
+    combat: bindCombatText(kind, lv),
+    immune: lv >= 3 ? (k.immune ?? []).map((id) => statuses[id]?.name ?? id) : [],
+    ...(lock ? { lock: { name: g?.name ?? lock, mult: g?.mult ?? 1 } } : {}),
+  }
+}
+
+/** 戰鬥中的增益什麼時候生效（說明的最後一行） */
+export const BIND_COMBAT_NOTE = '戰鬥中的增益要修了任何慾望流派、這件又上了鎖才有；乘上鎖的倍率與流派契合（每件無條件捨去），全身合計有上限（存檔規則）。慾望戰鬥關閉時沒有增益，減值照算。'
+
+/** 一件拘束具的說明（純文字、多行；給沒辦法放說明框的地方，例如按鈕的 title） */
+export function bindTip(kind: BindKind, bind: number, lock?: LockGrade): string {
+  const d = bindDetail(kind, bind, lock)
+  if (!d) return ''
+  return [
+    d.title,
+    `平常：${d.checks} ${d.penalty ? `−${d.penalty}` : '不扣'}（每 ${d.endurancePer} 點忍耐減輕 1）`,
+    `戰鬥中：${d.combat || '沒有增益'}${d.immune.length ? `；免疫${d.immune.join('、')}` : ''}`,
+    d.lock ? `自帶${d.lock.name}：戴上就算鎖上（倍率 ×${d.lock.mult}）` : '',
+  ].filter(Boolean).join('\n')
 }

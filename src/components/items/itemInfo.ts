@@ -3,7 +3,7 @@
 import { craftRules, itemDef, itemRules, type ItemCategory } from '@/engine/data'
 import { seedSummary } from '@/engine/garden'
 import { furnitureSummary } from '@/engine/homes'
-import { gearKnown, gearSpecOf, gearStats, gearSummary } from '@/engine/gear'
+import { gearKnown, gearSpecOf, gearStats, gearSummaryParts, type SummaryPart } from '@/engine/gear'
 import { intelSummary, isIntelItem, useSummary } from '@/engine/inventory'
 import { toolSummary } from '@/engine/tools'
 import { itemCategory } from '@/engine/trade'
@@ -35,13 +35,18 @@ export function categoryName(state: GameState, name: string): string {
 
 /** 一行效果說明：裝備的數值、使用效果、工具模板；材料寫能做什麼（可打造、可以做的配方、輔料） */
 export function itemEffect(state: GameState, name: string): string {
+  return itemEffectParts(state, name).map((p) => p.text).join('・')
+}
+
+/** itemEffect 拆成一段一段：有細節的段落（拘束具的「限制行走 2」）帶 tip，畫面用 EffectLine.vue 顯示 */
+export function itemEffectParts(state: GameState, name: string): SummaryPart[] {
   const def = itemDef(name)
   const spec = gearSpecOf(state, name)
   const forge = materialUses(state, name)
   const recipe = def?.recipe ? `配方：${craftRules.skills[def.recipe.craft].name} Lv.${def.recipe.level}` : ''
-  return [spec ? gearSummary(spec) : '', useSummary(def?.use), toolSummary(def?.tool), isIntelItem(state, name) ? intelSummary(def?.intel) : '', forge,
-    furnitureSummary(def?.furniture), seedSummary(def?.seed), recipe]
-    .filter(Boolean).join('・')
+  const rest = [useSummary(def?.use), toolSummary(def?.tool), isIntelItem(state, name) ? intelSummary(def?.intel) : '', forge,
+    furnitureSummary(def?.furniture), seedSummary(def?.seed), recipe].filter(Boolean).map((text) => ({ text }))
+  return [...(spec ? gearSummaryParts(spec) : []), ...rest]
 }
 
 /** 物品的描述文字（目錄或 AI 自創的） */

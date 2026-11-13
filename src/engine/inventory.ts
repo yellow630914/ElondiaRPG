@@ -1,6 +1,7 @@
 // 行囊：使用消耗品、更換裝備（戰鬥以外）。
 
 import { useLactationItem } from './lactation'
+import { addLewd, lewdName } from './lewd'
 import { pcWords } from './pcWords'
 import { PARASITE_LOCK } from './parasites'
 import { hasPerk, learnablePerks, offerPerks } from './perks'
@@ -8,7 +9,7 @@ import { abilityQuality, carryLearned, learnAbility, nextBookAbility, recalc, sn
 import { gameRule } from './gameRules'
 import {
   abilities, attrName, classDef, raceName, companionRules, conditionName, damageTypeName, itemDef, itemRules, locationById, perkDef, regionById, shopRules, statusDef, stories, townQuestTemplates, TRAP_LOCK, CURSE_LOCK, lockedByThing,
-  type ItemIntel, type ItemUse, type LockGrade,
+  type ItemIntel, type ItemUse, type LewdKey, type LockGrade,
 } from './data'
 import { EXTRA_SLOTS, classWeaponBlock, gearKnown, gearRules, gearSpecOf, gearStats, missingWear, raceUnfitReason, registerGear, setExtraSlotCount, slotNameFor, slotOpen, slotsFor, syncGear, wearName } from './gear'
 import { addIntel, intelPlace, makePoint, nearbyPlaces, placesAt } from './intel'
@@ -117,7 +118,15 @@ export function readIntelItem(state: GameState, name: string): Report {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length || !!use.lactation || !!use.stop_lactation)) || !!toolDef(itemDef(name)?.tool)?.condition
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length || !!use.lactation || !!use.stop_lactation || hasLewdUse(use))) || !!toolDef(itemDef(name)?.tool)?.condition
+}
+
+/** 冥想道具：有慾望指標的增減 */
+function hasLewdUse(use: ItemUse): boolean {
+  return Object.values(use.lewd ?? {}).some((v) => v)
+}
+function lewdUseText(lewd: Partial<Record<LewdKey, number>>): string {
+  return Object.entries(lewd).filter(([, v]) => v).map(([k, v]) => `${k === 'exposure' ? '這一帶的' : ''}${lewdName(k as LewdKey)} ${v! > 0 ? '+' : '−'}${Math.abs(v!)}`).join('、')
 }
 
 /** 消耗品效果的一行說明 */
@@ -130,6 +139,7 @@ export function useSummary(use?: ItemUse): string {
   if (use.revive) parts.push(`救起倒下的隊友（${Math.round(use.revive * 100)}% 生命）`)
   if (use.lactation) parts.push(`${use.lactation} 天內泌乳`)
   if (use.stop_lactation) parts.push('停止道具與事件造成的泌乳')
+  if (hasLewdUse(use)) parts.push(`冥想一小時：${lewdUseText(use.lewd!)}`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
   if (use.cleanse) parts.push(`解除${use.cleanse.map((id) => statusDef(id).name).join('、')}`)
@@ -194,6 +204,12 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
       return commitReport(state, report)
     }
     text = r.text
+  } else if (hasLewdUse(def.use)) {
+    // 冥想道具（docs/LEWD_STATS.md 第 4.1 節）：花一個小時，降一項慾望指標（曝露名聲是這一帶的）
+    const changed = Object.entries(def.use.lewd!).filter(([, v]) => v).map(([k, v]) => [k as LewdKey, addLewd(state, m, k as LewdKey, v!, report)] as const).filter(([, d]) => d)
+    if (!changed.length) throw new Error(`${m.name}的${Object.keys(def.use.lewd!).map((k) => lewdName(k as LewdKey)).join('、')}已經降不下去了`)
+    report.time.end = addHours(report.time.start, 1)
+    text = `靜下心來冥想了一個小時：${changed.map(([k, d]) => `${lewdName(k)} ${d > 0 ? '+' : ''}${d}`).join('、')}`
   } else if (def.use.condition) {
     const got = gainCondition(m, def.use.condition, report)
     if (!got) throw new Error(`${m.name}${companionRules.conditions[def.use.condition]?.group === 'meal' ? '已經吃得比這更好了' : '已經喝不下了'}`)

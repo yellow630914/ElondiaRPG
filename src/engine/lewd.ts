@@ -282,6 +282,8 @@ export function addLewdStat(c: Character, key: Exclude<LewdKey, 'exposure'>, del
 /** 套用 lewd.json 的一種成長（growth 的鍵），count 次 */
 export function growLewd(state: GameState, c: Character, kind: keyof typeof lewdRules.growth, report?: Report, count = 1) {
   for (const [k, v] of Object.entries(lewdRules.growth[kind] ?? {})) if (v) addLewd(state, c, k as LewdKey, v * count, report)
+  // 戰鬥中高潮：記下日子（敏感太久沒有親密場景、也沒高潮會慢慢降）
+  if (kind === 'climax' && count > 0) (c.lewd ??= { ...lewdRules.defaults }).lastClimax = state.time.day
 }
 
 /** 親密場景：報告帶成人場景時，場景的主角（通常是主角本人）淫亂成長，並記下日子（太久沒有親密場景會慢慢降） */
@@ -304,7 +306,8 @@ const wears = (c: Character, test: (base: NonNullable<(typeof gearRules.bases)[s
 /**
  * 跨過幾天（from 天到 to 天之間的每一天）：曝露名聲每天淡掉；在聚落裡穿著曝露的服裝會累積；
  * 穿成人向服裝淫亂成長、在聚落裡真空淫亂成長、穿束縛用的底材忍耐成長、被主人鎖上的裝備順從成長；沒有契約的日子順從慢慢降；
- * 太久沒有親密場景，淫亂慢慢降回預設。三種下跌（曝露名聲、順從、淫亂）每次幾點照存檔規則，頻率不變。只看隊伍裡的人；不寫進報告。
+ * 太久沒有親密場景，淫亂慢慢降回預設；也沒在戰鬥中高潮時，敏感也慢慢降回預設。四種下跌（曝露名聲、順從、淫亂、敏感）每次幾點照存檔規則，頻率不變。
+ * 只看隊伍裡的人；不寫進報告。
  */
 export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   const days = Math.min(30, toDay - fromDay)
@@ -316,6 +319,7 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
   const exposureDecay = Math.round(gameRule(state, 'exposureDecay'))
   const submissionDecay = Math.round(gameRule(state, 'submissionDecay'))
   const lewdnessDecay = Math.round(gameRule(state, 'lewdnessDecay'))
+  const sensitivityDecay = Math.round(gameRule(state, 'sensitivityDecay'))
   for (let i = 1; i <= days; i++) {
     const day = fromDay + i
     for (const m of state.party) {
@@ -347,6 +351,12 @@ export function lewdDaily(state: GameState, fromDay: number, toDay: number) {
       if (day - (stats.lastScene ?? 0) > d.idle_days && stats.lewdness > lewdRules.defaults.lewdness) {
         const drop = Math.min(lewdnessDecay, stats.lewdness - lewdRules.defaults.lewdness)
         if (drop) addLewd(state, m, 'lewdness', -drop)
+      }
+      // 太久沒有親密場景、也沒在戰鬥中高潮，敏感慢慢降回預設（不會降到預設以下）
+      const lastTouch = Math.max(stats.lastScene ?? 0, stats.lastClimax ?? 0)
+      if (sensitivityDecay && day - lastTouch > d.sensitivity_idle_days && stats.sensitivity > lewdRules.defaults.sensitivity) {
+        const drop = Math.min(sensitivityDecay, stats.sensitivity - lewdRules.defaults.sensitivity)
+        if (drop) addLewd(state, m, 'sensitivity', -drop)
       }
     }
     // 淫器：記下穿著的日子（fusion.ts）

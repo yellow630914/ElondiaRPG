@@ -281,6 +281,10 @@ export type LewdStat = 'lewdness' | 'sensitivity' | 'endurance' | 'submission'
 export interface LewdStats extends Record<LewdStat, number> {
   /** 最近一次親密場景是第幾天（淫亂太久沒有親密場景會慢慢降） */
   lastScene?: number
+  /** 最近一次在戰鬥中高潮是第幾天（敏感太久沒有親密場景、也沒高潮會慢慢降） */
+  lastClimax?: number
+  /** 最近一次在神殿淨身是第幾天（每人每天一次） */
+  purified?: number
   /** 成長減慢時（流派特質）還沒滿一點的零頭 */
   carry?: Partial<Record<LewdStat, number>>
 }
@@ -933,6 +937,7 @@ export interface GameOptions {
   exposureDecay?: number
   submissionDecay?: number
   lewdnessDecay?: number
+  sensitivityDecay?: number
   lustMult?: number
   /** 拘束具雙面效應的全身上限（docs/LEWD_STATS.md 第 7 節）：命中、迴避、豁免、傷害、減傷各一項；行動點回復；先攻 */
   bindCapStat?: number

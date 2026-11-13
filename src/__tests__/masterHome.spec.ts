@@ -17,7 +17,7 @@ import { isHostile, pickTags } from '@/engine/population'
 import { changeMaster } from '@/engine/party'
 import { Rng } from '@/engine/rng'
 import { repairStrandedRoad, startJourney } from '@/engine/road'
-import { answerMasterEvent, applyPermit, eventFits, masterAllows, masterCandidates, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
+import { answerMasterEvent, applyPermit, eventFits, masterAllows, masterCandidates, masterRefusedToday, permitDc, startAsSlave, startMasterEvent } from '@/engine/slavery'
 import { addHours, migrate, newGame, withRng } from '@/engine/state'
 import { sanitizeEffects } from '@/engine/storyMods'
 import type { GameState, GameTime, NpcRecord, Report } from '@/engine/types'
@@ -578,5 +578,48 @@ describe('許可的期限（出門、出城共用，回家回城不重新算）'
     c.homeAt = { ...old.time }
     expect(atMasterHome(old)).toBe(false)
     expect(homeDeadline(old)!.hoursLeft).toBe(allowedDays(old) * 24)
+  })
+
+  it('延長與出城共用一個「今天不准」：任一個被拒，當天另一個也不能問', () => {
+    const { state } = atHome()
+    applyLeave(state, blank(state), 'success')
+    walkOut(state)
+    state.time = addHours(permitWindow(state)!.due, 5)
+    expect(mayExtend(state)).toBe(true)
+    act(state, { kind: 'master_extend', text: '' }, 1)
+    expect(masterRefusedToday(state)).toBe(true)
+    expect(() => prepareAction(state, { kind: 'master_permit', text: '' })).toThrow('拒絕')
+    // 反過來：出城被拒，當天不能申請延長
+    const other = atHome().state
+    applyLeave(other, blank(other), 'success')
+    walkOut(other)
+    other.time = addHours(permitWindow(other)!.due, 5)
+    act(other, { kind: 'master_permit', text: '' }, 1)
+    expect(mayExtend(other)).toBe(false)
+    expect(() => prepareAction(other, { kind: 'master_extend', text: '' })).toThrow('拒絕')
+    // 隔天都可以再問
+    other.time = addHours(other.time, 24)
+    expect(mayExtend(other)).toBe(true)
+    expect(masterRefusedToday(other)).toBe(false)
+  })
+
+  it('出城的結果照實際的期限寫；換主人時前一位主人的拒絕一起清掉', () => {
+    const { state } = atHome()
+    const days = allowedDays(state)
+    applyLeave(state, blank(state), 'success')
+    walkOut(state)
+    const msg = applyPermit(state, blank(state), 'partial')
+    expect(msg).toContain(`還有 ${days} 天`)
+    expect(msg).not.toContain(`只給你 ${days / 2} 天`)
+    // 長度留著比較長的那張（剩不到 1/4 的門檻照那一張算）
+    expect(permitWindow(state)!.hours).toBe(days * 24)
+    // 換主人
+    const s2 = slave().state
+    applyPermit(s2, blank(s2), 'fail')
+    s2.masterHouseRefuse = s2.time.day
+    expect(masterRefusedToday(s2)).toBe(true)
+    changeMaster(s2, masterCandidates('rhineburg', 3)[1]!, blank(s2), '轉讓')
+    expect(masterRefusedToday(s2)).toBe(false)
+    expect(s2.masterHouseRefuse).toBeUndefined()
   })
 })

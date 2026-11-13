@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { gearRules, gearSummary, slotNameFor } from '@/engine/gear'
+import { gearRules, gearSummary, gearSummaryParts, slotNameFor } from '@/engine/gear'
 import { lockedGear } from '@/engine/inventory'
-import type { Character, GearSlot } from '@/engine/types'
+import type { Character, GearSlot, GearSpec } from '@/engine/types'
 import GameIcon from '../ui/GameIcon.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import { SLOT_ICON } from './memberInfo'
@@ -17,6 +17,8 @@ const name = computed(() => slotNameFor(props.slotId, m.value.race) ?? '額外�
 const icon = computed(() => SLOT_ICON[(gearRules.races[m.value.race]?.relabel?.[props.slotId]?.as as GearSlot | undefined) ?? props.slotId] ?? SLOT_ICON[props.slotId] ?? 'sparkles')
 const blocked = computed(() => (gearRules.races[m.value.race]?.blocked ?? []).includes(props.slotId))
 const locked = computed(() => lockedGear(m.value, props.slotId))
+/** 拘束具：滑鼠移上去時一起列出平常的檢定減值與戰鬥中的增益 */
+const bindTipOf = (spec: GearSpec) => gearSummaryParts(spec).filter((p) => p.tip).map((p) => `\n\n${p.tip}`).join('')
 const rarity = computed(() => (g.value ? specRarity(g.value.spec) || 'common' : ''))
 </script>
 
@@ -24,7 +26,7 @@ const rarity = computed(() => (g.value ? specRarity(g.value.spec) || 'common' : 
   <button
     class="slot ghost"
     :class="[{ sel: selected, filled: g, blocked, locked, right }, rarity ? `r-${rarity}` : '']"
-    :title="blocked ? `${name}：這個種族無法使用` : g ? `${g.name}\n${gearSummary(g.spec)}` : vacuum ? `${name}：真空（${vacuum}，外面那件會走光，曝露度 +1）` : name"
+    :title="blocked ? `${name}：這個種族無法使用` : g ? `${g.name}\n${gearSummary(g.spec)}${bindTipOf(g.spec)}` : vacuum ? `${name}：真空（${vacuum}，外面那件會走光，曝露度 +1）` : name"
     @click="$emit('pick')"
   >
     <span class="box">

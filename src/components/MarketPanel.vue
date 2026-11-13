@@ -11,7 +11,8 @@ import { isBound, isEnslaved, leaderOf, partyRoom } from '@/engine/party'
 import type { MarkChoice } from '@/engine/slavery'
 import type { CurioListing, SlaveListing } from '@/engine/types'
 import { itemDef } from '@/engine/data'
-import { gearSummary } from '@/engine/gear'
+import { gearSummaryParts } from '@/engine/gear'
+import EffectLine from './items/EffectLine.vue'
 import { useGame } from '@/stores/game'
 import MarkPicker from './MarkPicker.vue'
 import NameTag from './NameTag.vue'
@@ -166,7 +167,7 @@ function sellSelf() {
             <b>{{ c.item }}</b>
             <span>{{ formatMoney(c.price_cc) }}</span>
           </div>
-          <div v-if="itemDef(c.item)?.gear" class="muted">{{ gearSummary(itemDef(c.item)!.gear!) }}</div>
+          <div v-if="itemDef(c.item)?.gear" class="muted"><EffectLine :parts="gearSummaryParts(itemDef(c.item)!.gear!)" /></div>
           <div v-if="itemDef(c.item)?.desc" class="muted">{{ itemDef(c.item)!.desc }}</div>
           <div class="row">
             <button class="small primary" :disabled="s.money_cc < c.price_cc || game.judging" @click="game.buyCurio(c.item)">買下</button>

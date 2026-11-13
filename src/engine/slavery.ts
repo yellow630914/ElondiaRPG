@@ -24,7 +24,7 @@ import {
   addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, pcOf, punish, recapturePlayer, setHp,
 } from './party'
 import { areaOf, isHostile, nearbyPeople, presentHere } from './population'
-import { addStrict, allowedDays, atMasterHome, extendDeadline, extendRefusedToday, grantPermit, mayExtend, overdueChance, permitWindow, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
+import { addStrict, allowedDays, atMasterHome, extendDeadline, extendRefusedToday, grantPermit, mayExtend, overdueChance, permitRefusedToday, permitWindow, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
@@ -276,8 +276,9 @@ export function masterAllows(state: GameState): boolean {
   return (!!w?.exit && w.hoursLeft > 0) || state.masterPass?.[state.location] === state.time.day
 }
 
+/** 主人今天不准出城：出城或延長被拒都算（同一天任一個被拒，另一個也不能問） */
 export function masterRefusedToday(state: GameState): boolean {
-  return state.masterRefuse?.[state.location] === state.time.day
+  return permitRefusedToday(state)
 }
 
 /** 出城前檢查：需要主人同意時丟出說明 */
@@ -287,6 +288,12 @@ export function assertMasterAllows(state: GameState) {
   if (masterRefusedToday(state)) throw new Error(`${name}今天不准你離開這座城。`)
   throw new Error(`身為奴隸，出城前要先請求${name}同意（工具列的「契約」→「請求主人同意出城」）。`)
 }
+
+/** 目前許可還剩幾天（沒有或已到期是 0） */
+function currentLeft(state: GameState): number {
+  return Math.max(0, (permitWindow(state)?.hoursLeft ?? 0) / 24)
+}
+const round1 = (n: number) => Math.round(n * 10) / 10
 
 export function permitDc(state: GameState): number {
   const c = contractOf(pcOf(state))!
@@ -301,10 +308,13 @@ export function setupPermit(state: GameState) {
   if (masterRefusedToday(state)) throw new Error('主人今天已經拒絕了，明天再問')
   const c = contractOf(pcOf(state))!
   const days = allowedDays(state)
+  // 手上的出門許可比較長時，出城跟著到同一天
+  const left = currentLeft(state)
+  const span = (d: number) => (left > d ? `跟出門的許可一樣，還有 ${round1(left)} 天` : `${d} 天內`)
   return {
     dc: permitDc(state), targetName: c.masterName, situational: [], scene: `${locationById(state.location).name}・向主人請求出城`,
     outcomes: {
-      critical: `主人爽快答應，${days} 天內可以自由出入城市（親密度 +2）`, success: `主人同意，${days} 天內可以自由出入城市`, partial: `主人勉強同意，只給 ${days / 2} 天`,
+      critical: `主人爽快答應，${span(days)}可以自由出入城市（親密度 +2）`, success: `主人同意，${span(days)}可以自由出入城市`, partial: left > days / 2 ? `主人勉強同意，${span(days / 2)}可以出入城市` : `主人勉強同意，只給 ${days / 2} 天`,
       fail: '主人不准，今天不能出城', fumble: '主人不准，還覺得你想逃（輕度懲罰）',
     } as Partial<Record<Degree, string>>,
   }
@@ -318,6 +328,9 @@ export function applyPermit(state: GameState, report: Report, degree: Degree): s
     const days = allowedDays(state) / (degree === 'partial' ? 2 : 1)
     grantPermit(state, days * 24, true)
     if (degree === 'critical') addAffinity(state, report, c.master, 2, '主人心情不錯')
+    // 結果照實際的期限寫：手上的出門許可比較長時，出城跟著到那一天
+    const left = currentLeft(state)
+    if (left > days + 0.05) return `${c.masterName}${degree === 'partial' ? '勉強點了頭' : '同意了'}，出城的許可跟出門一樣，還有 ${round1(left)} 天可以自由出入城市。`
     return degree === 'partial' ? `${c.masterName}勉強點了頭，只給你 ${days} 天。` : `${c.masterName}同意了，${days} 天內可以自由出入城市。`
   }
   ;(state.masterRefuse ??= {})[state.location] = day

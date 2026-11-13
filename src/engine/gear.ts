@@ -9,8 +9,9 @@
 import gearJson from '@data/rules/gear.json'
 import {
   armorDef, attrName, className, raceName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
-  type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type Mods,
+  type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type LockGrade, type Mods,
 } from './data'
+import { bindTip } from './bindRulesMods'
 import { describeEffects } from './perks'
 import { Rng } from './rng'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, LewdStat } from './types'
@@ -878,7 +879,18 @@ const signed = (n: number) => (n >= 0 ? `+${n}` : `${n}`)
  * 附魔、材料特性、正的屬性與檢定加值、獨特效果不列，減值、慾望指標、拘束照列
  */
 export function gearSummary(spec: GearSpec, inExtra = false): string {
-  if (!gearKnown(spec)) return '（已失效：底材或材料不存在，沒有效果）'
+  return gearSummaryParts(spec, inExtra).map((p) => p.text).join('・')
+}
+
+/**
+ * 摘要的一段。拘束具的「限制行走 2」帶著 bind（畫面上移上去、聚焦時顯示平常的檢定減值與戰鬥中的增益）
+ * 與純文字的 tip（給按鈕的 title 這類只能放文字的地方）
+ */
+export interface SummaryPart { text: string; tip?: string; bind?: { kind: BindKind; bind: number; lock?: LockGrade } }
+
+/** gearSummary 拆成一段一段（畫面上用 EffectLine.vue 顯示，有細節的段落可以移上去看） */
+export function gearSummaryParts(spec: GearSpec, inExtra = false): SummaryPart[] {
+  if (!gearKnown(spec)) return [{ text: '（已失效：底材或材料不存在，沒有效果）' }]
   const raw = gearStats(spec)
   const s = inExtra
     ? { ...raw, mods: onlyNegative(raw.mods), resist: Object.fromEntries(Object.entries(raw.resist).filter(([, v]) => (v ?? 0) > 0)), offense: onlyNegative(raw.offense), threat: 0 }
@@ -907,9 +919,17 @@ export function gearSummary(spec: GearSpec, inExtra = false): string {
   const base = gearRules.bases[spec.base]
   const exposure = base?.exposure ?? (base?.outfit ? lewdRules.gear.outfit[base.outfit]?.exposure ?? 0 : 0)
   if (exposure && base && lewdRules.gear.exposure_slots.includes(base.slot)) parts.push(`曝露度 ${exposure}`)
-  // 雙面效應：拘束的種類與程度
-  if (base?.bind && base.bind_kind) parts.push(`${lewdRules.two_face.kinds[base.bind_kind]?.name ?? base.bind_kind} ${spec.bind ?? base.bind}${spec.lock ? `（自帶${lewdRules.locks.grades[spec.lock]?.name ?? spec.lock}）` : ''}`)
-  return parts.join('・')
+  const out: SummaryPart[] = parts.map((text) => ({ text }))
+  // 雙面效應：拘束的種類與程度（細節：平常的檢定減值、戰鬥中的增益）
+  if (base?.bind && base.bind_kind) {
+    const bind = spec.bind ?? base.bind
+    out.push({
+      text: `${lewdRules.two_face.kinds[base.bind_kind]?.name ?? base.bind_kind} ${bind}${spec.lock ? `（自帶${lewdRules.locks.grades[spec.lock]?.name ?? spec.lock}）` : ''}`,
+      tip: bindTip(base.bind_kind, bind, spec.lock),
+      bind: { kind: base.bind_kind, bind, ...(spec.lock ? { lock: spec.lock } : {}) },
+    })
+  }
+  return out
 }
 
 // ---- AI 打造與事件生成的裝備 ----

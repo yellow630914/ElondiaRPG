@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from 'vue'
 import { craftRules, lewdRules } from '@/engine/data'
 import { craftPlan, craftRarity, craftTarget, forgeOf, outfitCommission, outfitLewdBonus } from '@/engine/craft'
-import { baseShown, baseSlotName, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, rarityName, type BaseSlot } from '@/engine/gear'
+import { baseShown, baseSlotName, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, gearSummaryParts, rarityName, type BaseSlot } from '@/engine/gear'
 import { baseExposure, lewdName } from '@/engine/lewd'
 import { formatMoney } from '@/engine/money'
 import { shopTypeForCell } from '@/engine/trade'
@@ -10,6 +10,7 @@ import { currentCell } from '@/engine/grid'
 import type { LewdStat } from '@/engine/types'
 import { useGame } from '@/stores/game'
 import AppDialog from '../AppDialog.vue'
+import EffectLine from '../items/EffectLine.vue'
 import AdultDeco from './AdultDeco.vue'
 import GameIcon from '../ui/GameIcon.vue'
 import Hint from '../ui/Hint.vue'
@@ -71,6 +72,7 @@ function pickSlot(x: BaseSlot) {
 
 /** 一件裝備的數值（拿掉開頭的稀有度與部位） */
 const statsOf = (b: string, m: string) => gearSummary({ base: b, material: m }).split('・').slice(2).join('・')
+const partsOf = (b: string, m: string) => gearSummaryParts({ base: b, material: m }).slice(2)
 const kind = computed(() => gearRules.bases[base.value]!.kind)
 const materials = computed(() => Object.entries(gearRules.materials).filter(([, m]) => m.kind === kind.value).sort(([, a], [, b]) => a.tier - b.tier).map(([id, m]) => ({ id, ...m })))
 const firstMaterial = (k: string) => Object.entries(gearRules.materials).filter(([, m]) => m.kind === k).sort(([, a], [, b]) => a.tier - b.tier)[0]?.[0] ?? 'linen'
@@ -170,7 +172,7 @@ function order() {
           <div v-if="isOutfit" class="slotline">{{ baseSlotName(gearRules.bases[base]!.slot as BaseSlot) }}・成人向・曝露 <span class="hearts">{{ hearts(baseExposure(base)) }}<span class="off">{{ empty(baseExposure(base)) }}</span></span></div>
           <div v-else class="slotline">{{ baseSlotName(gearRules.bases[base]!.slot as BaseSlot) }}・⛓️ {{ bindOf(base) }}</div>
           <dl>
-            <dt>數值</dt><dd>{{ statsOf(base, mat) || '沒有加成' }}</dd>
+            <dt>數值</dt><dd><EffectLine v-if="statsOf(base, mat)" :parts="partsOf(base, mat)" /><template v-else>沒有加成</template></dd>
             <dt>慾望</dt><dd :class="{ bonus: stat }">{{ stat ? `${lewdName(stat)} +${bonus}` : '不加' }}</dd>
             <dt>檢定</dt><dd>店主擲：手藝 +{{ plan.level * craftRules.level_bonus }}・DC {{ plan.dc }}</dd>
             <dt>時間</dt><dd>約 {{ gearRules.craft.hours }} 小時</dd>

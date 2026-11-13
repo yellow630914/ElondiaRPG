@@ -6,7 +6,8 @@ import { breakdownText, buyBreakdown, listPrice, listSellPrice, CART_CHANGE_WARN
 import { materialGroup, materialGroupName, materialGroupOrder, materialRecipesFull, materialTier } from '@/engine/materialInfo'
 import type { Deal, Report } from '@/engine/types'
 import { useGame } from '@/stores/game'
-import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemRarity, itemText } from './itemInfo'
+import { CATEGORY_ORDER, categoryName, categoryOf, itemEffect, itemEffectParts, itemRarity, itemText } from './itemInfo'
+import EffectLine from './EffectLine.vue'
 import ItemIcon from './ItemIcon.vue'
 import GameIcon from '../ui/GameIcon.vue'
 import SwipeTabs from '../mobile/SwipeTabs.vue'
@@ -283,7 +284,7 @@ function buy(d: Deal) {
                   </div>
                   <div v-if="expanded === d.id" class="more small">
                     <div class="muted">類別：{{ categoryName(s, itemName(d)) }}</div>
-                    <div v-if="itemEffect(s, itemName(d))" class="effect">{{ itemEffect(s, itemName(d)) }}</div>
+                    <div v-if="itemEffect(s, itemName(d))" class="effect"><EffectLine :parts="itemEffectParts(s, itemName(d))" /></div>
                     <div v-if="d.desc || itemText(s, itemName(d))" class="muted">{{ d.desc ?? itemText(s, itemName(d)) }}</div>
                     <PriceSteps v-if="buyWhy(d)" :b="buyWhy(d)!" />
                   </div>
@@ -335,7 +336,7 @@ function buy(d: Deal) {
                     </div>
                     <div v-if="sellWhy === i.name" class="more small">
                       <div class="muted">類別：{{ categoryName(s, i.name) }}</div>
-                      <div v-if="itemEffect(s, i.name)" class="effect" :title="materialRecipesFull(i.name) || undefined">{{ itemEffect(s, i.name) }}</div>
+                      <div v-if="itemEffect(s, i.name)" class="effect" :title="materialRecipesFull(i.name) || undefined"><EffectLine :parts="itemEffectParts(s, i.name)" /></div>
                       <div v-if="itemText(s, i.name)" class="muted">{{ itemText(s, i.name) }}</div>
                       <PriceSteps v-if="i.price !== null && sellBreakdown(s, key, i.name)" :b="sellBreakdown(s, key, i.name)!" sell />
                     </div>
