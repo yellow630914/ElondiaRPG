@@ -15,7 +15,7 @@ import { RANK_COLOR } from './ui/cellIcons'
 import Hint from './ui/Hint.vue'
 
 const emit = defineEmits<{ close: [] }>()
-const FARE_HINT = `海路的船資出發時要付得起。官道沿途住旅店：每人每天 ${ROAD_DAILY_CC} 白鸛食宿，抵達時一起結算；錢不夠的那幾天在路邊露宿，不會欠錢。其他路段不花錢。`
+const FARE_HINT = `海路、潛水的船資在出發時付清，錢不夠不能出發。官道沿途住旅店：每人每天 ${ROAD_DAILY_CC} 白鸛食宿，抵達時一起結算；錢不夠的那幾天在路邊露宿，不會欠錢。其他路段不花錢。`
 const game = useGame()
 const s = computed(() => game.state!)
 const here = computed(() => locationById(s.value.location))

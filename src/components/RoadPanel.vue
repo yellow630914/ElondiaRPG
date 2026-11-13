@@ -37,7 +37,9 @@ const ROAD_HINT = '旅途是單行道，一格一天。地圖上的圖示：問�
       <template v-if="cell.town">・{{ cell.kind === 'waypoint' ? '途經' : '從' }}{{ locationById(cell.town).name }}{{ cell.kind === 'waypoint' ? '' : '出發' }}</template>
     </p>
     <p class="small muted">
-      到目前為止：{{ progress.money < 0 ? `食宿與船資 ${formatMoney(-progress.money)}` : '沒有花費' }}。抵達時一起結算。
+      <template v-if="progress.fare">船資 {{ formatMoney(progress.fare) }}出發時已付清。</template>
+      <template v-if="progress.money < 0">到目前為止的食宿 {{ formatMoney(-progress.money) }}，抵達時一起結算。</template>
+      <template v-else-if="!progress.fare">到目前為止沒有花費。</template>
     </p>
     <ul v-if="progress.recent.length > 1" class="plain small muted recent">
       <li v-for="(t, i) in progress.recent.slice(1)" :key="i">・{{ t }}</li>

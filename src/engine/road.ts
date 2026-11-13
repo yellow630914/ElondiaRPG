@@ -36,6 +36,7 @@ import { enterWaystation } from './trade'
 import { closeOut, enterSpecial } from './specialMaps'
 import travelEventsJson from '@data/rules/travel_events.json'
 import { gameRule } from './gameRules'
+import { formatMoney } from './money'
 
 // ---- 資料 ----
 
@@ -202,14 +203,16 @@ export function startJourney(state: GameState, destination: string, intent?: str
       throw new Error(g.reason)
     }
   }
-  // 主角的身分（水手）可能讓船資便宜一點；船資在出發時就要付得起（抵達時才一起結算，錢不會變成負的）
+  // 主角的身分（水手）可能讓船資便宜一點；船資在出發時就付清（路上、船上的事件只能花剩下的錢）
   const seaFare = Math.round(path.legs.reduce((sum, l) => sum + legFare(l), 0) * state.party.length * pcTagMult(pcOf(state), 'fare_mult'))
   if (seaFare > state.money_cc) throw new Error(`船資全隊要 ${seaFare} 白鸛，錢不夠`)
   const from = state.location
   const area = withRng(state, (rng) => buildRoad(state, from, destination, path.legs, rng))
+  state.money_cc -= seaFare
   state.road = {
     from, to: destination, start: { ...state.time }, modes: path.legs.map((l) => l.mode), hours: 0,
-    money: -seaFare,
+    money: 0,
+    ...(seaFare ? { fare: seaFare } : {}),
     timeline: [{ seq: 1, time: { ...state.time }, actor: 'pc', action: `出發・前往${locationById(destination).name}`, result: 'none' }],
     hpBefore: Object.fromEntries(state.party.map((m) => [m.id, m.hp])),
     ...(intent ? { intent } : {}),
@@ -602,6 +605,7 @@ export function finishJourney(state: GameState, to?: string): Report {
     outcome: {
       result: 'arrived',
       summary: `從${locationById(road.from).name}${dest === road.to ? '' : `出發前往${locationById(road.to).name}，途中改道，`}抵達${destLoc.name}，耗時約 ${Math.round((road.hours / 24) * 10) / 10} 天。`
+        + (road.fare ? `船資 ${formatMoney(road.fare)}在出發時付清。` : '')
         + (road.rough ? `盤纏不夠，有 ${road.rough} 天在官道旁露宿。` : ''),
       tags: [...new Set(road.modes.map((m) => MODE_NAME[m as RouteMode]))],
     },
@@ -690,6 +694,8 @@ export interface RoadProgress {
   from: string
   to: string
   money: number
+  /** 出發時已經付清的船資 */
+  fare: number
   /** 最近的見聞 */
   recent: string[]
 }
@@ -702,6 +708,7 @@ export function roadProgress(state: GameState): RoadProgress | undefined {
   return {
     day: Math.floor(road.hours / 24) + 1, days: Math.max(1, Math.round((total / 24) * 10) / 10), from: road.from, to: road.to,
     money: road.money,
+    fare: road.fare ?? 0,
     recent: road.timeline.slice(-3).map((t) => t.effects?.find((e) => e.type === 'note')?.text ? `${t.action}：${t.effects.find((e) => e.type === 'note')!.text}` : t.action),
   }
 }
