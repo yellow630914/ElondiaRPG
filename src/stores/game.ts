@@ -42,6 +42,7 @@ import { classes, shopRules, slaveryRules, type CraftId, type LewdKey, type Shop
 import { templePurify } from '@/engine/purify'
 import { spendXp, type XpSink } from '@/engine/xpSinks'
 import { takeVoluntarySlave } from '@/engine/voluntarySlave'
+import { pledgeSelf } from '@/engine/selfPledge'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player, withRng } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
@@ -1482,6 +1483,8 @@ export const useGame = defineStore('game', () => {
     setBond: (npc: string, style: BondStyle) => run((s) => bondStyle.setBond(s, npc, style)),
     /** 自願為奴：在刻印師那裡，同伴答應成為主角的奴隸（voluntarySlave.ts） */
     takeVoluntarySlave: (npc: string, mark: slavery.MarkChoice, style: BondStyle) => run((s) => takeVoluntarySlave(s, npc, mark, style)),
+    /** 主動認主：請信任自己的人收下自己（selfPledge.ts） */
+    pledgeSelf: (npc: string, mark: slavery.MarkChoice, style: BondStyle) => run((s) => pledgeSelf(s, npc, mark, style)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
     travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent), { onMap: true }),
