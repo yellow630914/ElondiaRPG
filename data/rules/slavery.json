@@ -159,6 +159,7 @@
   },
 
   "release_affinity": 15,
+  "voluntary": {"$comment": "自願為奴（docs/COMPANIONS.md 2.3.1 節）：在刻印師那裡，自願同行或雇傭的同伴親密度 min_affinity 以上時，可以問他願不願意成為主角的奴隸；答應就刻上主角選的印記（模板或自訂），入隊方式改成奴隸，並預先說好兩人的主僕關係（bond_styles）。刻印費 fee_cc，花 hours 小時。親密度照舊。", "min_affinity": 60, "fee_cc": 200, "hours": 1, "cells": ["carver"], "bonds": ["voluntary", "hired"]},
 
   "fugitive_master": {
     "$comment": "逃亡奴隸與原本的主人：主人在身邊（同一格或相鄰）時，可以主動回到主人身邊，或當面談判解除契約（不必在安全的地方，但 DC 較高）。回去一定會被收回，成功程度決定懲罰；談判大失敗會被當場抓回去。",

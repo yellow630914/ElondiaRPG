@@ -1522,6 +1522,8 @@ export const slaveryRules = slaveryJson as unknown as {
     fugitive: { inn_mult: number; inn_recapture_mult: number }
   }
   release_affinity: number
+  /** 自願為奴（voluntarySlave.ts） */
+  voluntary: { min_affinity: number; fee_cc: number; hours: number; cells: string[]; bonds: Bond[] }
   custom_mark: Record<'income_share' | 'negotiate_dc' | 'escape_dc' | 'exit_dc' | 'recapture_chance' | 'escape_hp_ratio' | 'obedience_penalty', [number, number]> & {
     name_chars: number; mark_chars: number; side_effect_chars: number; side_effects: number
   }

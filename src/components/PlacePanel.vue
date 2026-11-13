@@ -23,6 +23,7 @@ import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import UncursePanel from './UncursePanel.vue'
 import PurifyPanel from './PurifyPanel.vue'
+import VolunteerSlavePanel from './VolunteerSlavePanel.vue'
 import { cursedGearOf } from '@/engine/restraints'
 import AdultShopMenu from './adult/AdultShopMenu.vue'
 import GuardStatus from './GuardStatus.vue'
@@ -213,6 +214,7 @@ const banner = computed(() => {
   return null
 })
 // 神殿、雜貨店選單的其他項目（交易與折扣以外）
+const showVolunteer = ref(false)
 const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | 'uncurse' | 'purify' | null>(null)
 const templeMenu = computed<MenuItem[]>(() => [
   {
@@ -349,6 +351,13 @@ const shopDesc = computed(() => {
         <template v-else-if="cell.kind === 'carver'">
           <p class="muted small">刻誓約印記，也洗刺青 <Hint text="誓約印記讓屬性有加有減；這裡也洗普通刺青與誓約印記。身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。" /></p>
           <TattooShop shop="carver" />
+          <div class="row volunteer-row">
+            <button class="small" :disabled="game.judging" @click="showVolunteer = true">問同伴願不願意自願為奴</button>
+            <Hint text="自願同行或雇傭的同伴，親密度 60 以上才會答應；可以選要刻的印記與兩人說好的主僕關係。" />
+          </div>
+          <AppDialog :open="showVolunteer" title="自願為奴" icon="link" width="720px" @close="showVolunteer = false">
+            <VolunteerSlavePanel @done="showVolunteer = false" />
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'shop'">
