@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { stripItemKeys } from '@/engine/itemKey'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { flash, floatText, sparks } from '@/fx/fx'
 import { isFreshReport } from '@/fx/seen'
@@ -216,7 +217,7 @@ onMounted(() => {
 
 async function copyPrompt() {
   const p = await game.promptFor(props.report)
-  await navigator.clipboard.writeText(`${p.system}\n\n---\n\n${p.user}`)
+  await navigator.clipboard.writeText(stripItemKeys(`${p.system}\n\n---\n\n${p.user}`))
   copied.value = true
   setTimeout(() => (copied.value = false), 1500)
 }

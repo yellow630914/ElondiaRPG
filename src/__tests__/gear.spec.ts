@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { itemLabel } from '@/engine/itemKey'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { prepareAction, resolveAction, sanitizeJudgment, type Judgment } from '@/engine/actions'
@@ -136,8 +137,9 @@ describe('crafting', () => {
       degree: 'success', effects: [{ type: 'gear', name: '破曉', desc: '劍身有火焰紋路', enchants: { mods: { hit: 2, damage: 3 }, offense: { fire: 0.5 } } }],
     })
     const r = resolveAction(state, j)
-    expect(r.changes.items_gained!.map((i) => i.name)).toContain('破曉')
-    const spec = gearSpecOf(state, '破曉')!
+    const dawn = r.changes.items_gained!.map((i) => i.name).find((n) => itemLabel(n) === '破曉')!
+    expect(dawn).toBeTruthy()
+    const spec = gearSpecOf(state, dawn)!
     expect(spec.material).toBe('mithril')
     expect(spec.rarity).toBeUndefined()
     expect(enchantPoints(spec.enchants)).toBeLessThanOrEqual(2)
@@ -210,7 +212,7 @@ describe('special gear at shops', () => {
       deals: [{ title: '老兵的佩劍', gives: [{ type: 'money', amount: 1 }], gets: [{ type: 'gear', base: 'longsword', material: 'star_iron', name: '老兵的佩劍', rarity: 'uncommon', enchants: { mods: { hit: 1 } } }], stock: 1 }],
     })
     expect(n).toBe(1)
-    const spec = gearSpecOf(state, '老兵的佩劍')!
+    const spec = gearSpecOf(state, Object.keys(state.customItems!).find((n) => itemLabel(n) === '老兵的佩劍')!)!
     expect(gearRules.materials[spec.material]!.level).toBeLessThanOrEqual(3)
     const deal = shopState(state, 'smithy').deals.find((d) => d.title === '老兵的佩劍')!
     expect(deal.gives[0]!.amount).toBeGreaterThanOrEqual(gearPrice(spec) * 0.5)

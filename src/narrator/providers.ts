@@ -2,6 +2,7 @@
 // API key 由玩家自行輸入，只存在瀏覽器的 localStorage，請求直接從瀏覽器送到各服務。
 
 // 各家 SDK 在用到時才載入，只會下載玩家選用的那一家
+import { hasItemKey, stripItemKeys } from '@/engine/itemKey'
 import { explainConnection } from './connectionHint'
 import type { Prompt } from './prompt'
 import { listVertexModels, parseServiceAccount, streamVertexService, vertexBody } from './vertexAuth'
@@ -32,6 +33,8 @@ export async function* streamNarration(
   onThinking?: ThinkingCallback,
 ): AsyncGenerator<string> {
   if (!config.model) throw new Error('請先在設定中選擇模型')
+  // 自訂裝備的名字帶著看不見的雜湊（engine/itemKey.ts）：送出去之前拿掉，AI 只看到顯示的名字
+  prompt = withoutItemKeys(prompt)
   try {
     switch (provider) {
       case 'anthropic':
@@ -49,6 +52,18 @@ export async function* streamNarration(
   } catch (e) {
     // 連不上服務：補上可能的原因（服務沒開、網址錯、跨域被擋……）；取消的不改
     throw signal?.aborted ? e : explainConnection(e, provider, config)
+  }
+}
+
+/** 提示詞裡物品名字的雜湊都拿掉（沒有時原樣傳回） */
+export function withoutItemKeys(prompt: Prompt): Prompt {
+  const text = [prompt.system, prompt.user, ...(prompt.sections ?? []).map((x) => x.text)]
+  if (!text.some(hasItemKey)) return prompt
+  return {
+    ...prompt,
+    system: stripItemKeys(prompt.system),
+    user: stripItemKeys(prompt.user),
+    ...(prompt.sections ? { sections: prompt.sections.map((x) => ({ ...x, text: stripItemKeys(x.text) })) } : {}),
   }
 }
 

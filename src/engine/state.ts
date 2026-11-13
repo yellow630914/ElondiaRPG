@@ -16,6 +16,7 @@ import type { Character, ContractRef, EquippedGear, GameOptions, GameState, Game
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
 import { moneyPartsShown } from './money'
+import { hasItemKey, itemKey, sameShape } from './itemKey'
 import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
 import { familyTick } from './pregnancy'
 import { pcTagStartItems, sanitizePcTags } from './pcTags'
@@ -186,8 +187,10 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  * 9：7、8 只換掉剛好等於制式名稱的字串；這一步連帶稀有度前綴、編號的自訂裝備（優良鐵鐵靴、精製秘銀鐵腰帶（2）……）一起改，自訂物品的鍵也跟著改
  * 10：特殊任務的獨特裝備改名（不再用「某某人的材質類型」）：行囊、裝備、商店裡的舊名稱跟著改
  * 11：緋夢樂園的「魅魔女王」改叫「緋夢夫人」（免得和魔王莉莎爾搞混）：用她命名的物品跟著改
+ * 12：自訂裝備的鍵改成「名字＋看不見的屬性雜湊」（itemKey.ts）：撞名時加的編號（優良亞麻女僕頭飾（2））拿掉，
+ *     行囊、裝備、商店……裡的舊名字跟著改；屬性一樣的合成一疊
  */
-export const SAVE_SCHEMA = 11
+export const SAVE_SCHEMA = 12
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -239,7 +242,43 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [11, (s) => {
     renameValues(s, PARK_HOSTESS_RENAMES)
   }],
+  [12, (s) => {
+    const renames = gearKeyRenames(s.customItems)
+    if (!Object.keys(renames).length) return
+    rewriteStrings(s, (v) => renames[v] ?? v)
+    s.inventory = mergeStacks(s.inventory)
+    if (s.expedition) s.expedition.loot = mergeStacks(s.expedition.loot)
+  }],
 ]
+
+/**
+ * 存檔格式 12：自訂裝備的舊名字 → 新的鍵（名字＋屬性雜湊）。撞名時加的編號（「（2）」）拿掉；
+ * 屬性一樣的舊名字對到同一個鍵
+ */
+function gearKeyRenames(items: GameState['customItems']): Record<string, string> {
+  const out: Record<string, string> = {}
+  const specs = new Map<string, unknown>()
+  for (const [name, item] of Object.entries(items ?? {})) {
+    if (!item.gear || hasItemKey(name)) continue
+    const label = name.replace(/（\d+）$/, '')
+    let key = itemKey(label, item.gear)
+    for (let salt = 1; specs.has(key) && !sameShape(specs.get(key), item.gear); salt++) key = itemKey(label, item.gear, salt)
+    specs.set(key, item.gear)
+    out[name] = key
+  }
+  return out
+}
+
+/** 同名（同品質）的物品合成一疊 */
+function mergeStacks(list: InventoryItem[]): InventoryItem[] {
+  const out: InventoryItem[] = []
+  for (const i of list) {
+    const same = out.find((x) => x.name === i.name && (x.quality ?? '') === (i.quality ?? ''))
+    if (same) same.qty += i.qty
+    else out.push(i)
+  }
+  return out
+}
 
 /** 存檔格式 11：用緋夢樂園的主人命名的物品（舊名「魅魔女王」） */
 const PARK_HOSTESS_RENAMES: Record<string, string> = Object.fromEntries(

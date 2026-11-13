@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { itemLabel } from '@/engine/itemKey'
 import { startCombat } from '@/engine/combat'
 import { weaponFor } from '@/engine/character'
 import { itemDef } from '@/engine/data'
@@ -22,6 +23,9 @@ function game(): GameState {
   return state
 }
 
+/** 行囊裡顯示這個名字的物品的鍵（自訂裝備的鍵帶著看不見的雜湊） */
+const keyOf = (state: GameState, label: string) => state.inventory.find((i) => itemLabel(i.name) === label)!.name
+
 describe('淫器合煉', () => {
   it('武器和拘束具合成淫器，可以拆回原本的兩件', () => {
     const state = game()
@@ -29,8 +33,8 @@ describe('淫器合煉', () => {
     fuseGear(state, '鐵長劍', '皮眼罩')
     expect(state.money_cc).toBe(10000 - 400)
     expect(state.inventory.some((i) => i.name === '鐵長劍' || i.name === '皮眼罩')).toBe(false)
-    expect(fusionCandidates(state).fused).toEqual(['淫器・皮眼罩'])
-    splitGear(state, '淫器・皮眼罩')
+    expect(fusionCandidates(state).fused.map(itemLabel)).toEqual(['淫器・皮眼罩'])
+    splitGear(state, keyOf(state, '淫器・皮眼罩'))
     expect(state.inventory.find((i) => i.name === '鐵長劍')?.qty).toBe(1)
     expect(state.inventory.find((i) => i.name === '皮眼罩')?.qty).toBe(1)
     expect(fusionCandidates(state).fused).toEqual([])
@@ -43,14 +47,14 @@ describe('淫器合煉', () => {
     const plain = bindModifiers(pc, { context: 'action', attr: 'int' })[0]!.value
     unequipItem(state, pc.id, Object.entries(pc.gear!).find(([, g]) => g?.name === '皮眼罩')![0] as never)
     fuseGear(state, '鐵長劍', '皮眼罩')
-    equipItem(state, '淫器・皮眼罩', pc.id)
+    equipItem(state, keyOf(state, '淫器・皮眼罩'), pc.id)
     expect(bindModifiers(pc, { context: 'action', attr: 'int' })[0]!.value).toBe(Math.round(plain * 1.5))
     expect(fusionMult(3)).toBe(0)
     const plainWeapon = startCombat(state, [['goblin', 1]]).combatants.find((c) => c.id === pc.id)!
     expect(plainWeapon.weaponMult).toBeUndefined()
     delete state.combat
     lewdDaily(state, state.time.day - 9, state.time.day)
-    expect(wornDaysOf(state, pc, '淫器・皮眼罩')).toBe(9)
+    expect(wornDaysOf(state, pc, Object.values(pc.gear!).find((g) => g && itemLabel(g.name) === '淫器・皮眼罩')!.name)).toBe(9)
     const me = startCombat(state, [['goblin', 1]]).combatants.find((c) => c.id === pc.id)!
     expect(me.weaponMult).toBe(1.5)
     expect(me.weapon.dice).toBe(weaponFor({ weapon: gearStats(itemDef('鐵長劍')!.gear!).weapon!, level: pc.level }).dice)

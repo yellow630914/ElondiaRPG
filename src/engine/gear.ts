@@ -11,6 +11,7 @@ import {
   armorDef, attrName, className, raceName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
   type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type LockGrade, type Mods,
 } from './data'
+import { itemKey, itemLabel, sameShape } from './itemKey'
 import { bindTip } from './bindRulesMods'
 import { describeEffects } from './perks'
 import { Rng } from './rng'
@@ -1049,49 +1050,28 @@ function sameSpec(a?: GearSpec, b?: GearSpec): boolean {
 }
 
 /**
- * 登錄一件打造或事件生成的裝備，回傳物品名稱。制式品直接用目錄的名稱；
- * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」或「精製＋制式名稱」），和現有的物品撞名時加上編號。
+ * 登錄一件打造或事件生成的裝備，回傳物品的鍵。制式品直接用目錄的名稱；
+ * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」或「精製＋制式名稱」）接上看不見的屬性雜湊（itemKey.ts）：
+ * 屬性一樣的是同一個鍵、在行囊裡疊在一起，屬性不同的名字看起來一樣、鍵不同
  */
 export function registerGear(state: Pick<GameState, 'customItems'>, spec: GearSpec, name?: string, desc?: string): string {
   if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料不存在')
   const standard = gearName(spec)
+  const label = itemLabel(name ?? '').trim().slice(0, 20)
   // 制式品：目錄裡真的有同名、同組成的物品才直接用（底材或材料改過名、目錄物品被改掉時另外登錄）
-  if (isStandard(spec) && !name && sameSpec(itemDef(standard)?.gear, spec)) return standard
+  if (isStandard(spec) && sameSpec(itemDef(label || standard)?.gear, spec)) return label || standard
   // 預設名稱：稀有度比材料高時加上稀有度（優良鐵長劍），只是有附魔時是「精製」（精製秘銀長劍）
-  const custom = name?.trim().slice(0, 20)
-  const want = custom || (isStandard(spec) ? standard : `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`)
-  const taken = (n: string) => {
-    if (itemDef(n)) return !sameSpec(itemDef(n)!.gear, spec) || !isStandard(spec)
-    const c = state.customItems?.[n]
-    return !!c && !sameSpec(c.gear, spec)
+  const want = label || (isStandard(spec) ? standard : `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`)
+  // 雜湊撞到屬性不同的另一件（幾乎不會）：換一個
+  let key = itemKey(want, spec)
+  for (let salt = 1; state.customItems?.[key] && !sameShape(state.customItems[key]!.gear, spec); salt++) key = itemKey(want, spec, salt)
+  if (!state.customItems?.[key]) {
+    ;(state.customItems ??= {})[key] = {
+      category: 'equipment', price_cc: gearPrice(spec), gear: spec,
+      ...(desc?.trim() ? { desc: desc.trim().slice(0, 80) } : {}),
+    }
   }
-  // 有附魔、慾望指標的裝備：名字接上效果（優良亞麻女僕頭飾・迴避+1），效果一樣的就是同一件、疊在一起。
-  // 有自己名字的（AI 取的、事件給的）只在撞名時才接；效果也一樣、還是撞名（拘束、鎖這類不同）才加編號
-  const tag = specTag(spec)
-  let final = tag && (!custom || taken(want)) ? `${want}・${tag}` : want
-  const head = final
-  for (let i = 2; taken(final); i++) final = `${head}（${i}）`
-  if (itemDef(final)) return final
-  ;(state.customItems ??= {})[final] = {
-    category: 'equipment', price_cc: gearPrice(spec), gear: spec,
-    ...(desc?.trim() ? { desc: desc.trim().slice(0, 80) } : {}),
-  }
-  return final
-}
-
-/** 名字後面接的效果：附魔（迴避+1、抗火焰25%、火焰攻擊+25%）與慾望指標（淫亂+4）；都沒有時是空字串 */
-export function specTag(spec: GearSpec): string {
-  const e = spec.enchants
-  const pct = (v: number) => Math.round(Math.abs(v) * 100)
-  const mods = Object.keys(MOD_NAME).flatMap((k) => {
-    const v = e?.mods?.[k as keyof Mods]
-    if (!v) return []
-    return [k === 'threat' ? `${MOD_NAME[k]}${v > 0 ? '+' : '-'}${pct(v)}%` : `${MOD_NAME[k]}${signed(v)}`]
-  })
-  const resist = Object.entries(e?.resist ?? {}).filter(([, v]) => v).map(([k, v]) => (v! < 0 ? `抗${damageTypeName(k)}${pct(v!)}%` : `${damageTypeName(k)}弱點${pct(v!)}%`))
-  const offense = Object.entries(e?.offense ?? {}).filter(([, v]) => v).map(([k, v]) => `${damageTypeName(k)}攻擊${v! > 0 ? '+' : '-'}${pct(v!)}%`)
-  const lewd = LEWD_STAT_IDS.filter((k) => spec.lewd?.[k]).map((k) => `${lewdRules.stats[k].name}${signed(spec.lewd![k]!)}`)
-  return [...mods, ...resist, ...offense, ...lewd].join('、')
+  return key
 }
 
 const ENCHANT_POOL: Record<string, { mods?: (keyof Mods)[]; resist?: boolean; offense?: boolean }> = {
