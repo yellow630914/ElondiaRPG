@@ -98,7 +98,7 @@ const filterText = (f: CheckFilter) => {
       </div>
     </FoldSet>
     <FoldSet>
-      <template #legend>鑰匙保管 <Hint text="自己鎖上的拘束具，鑰匙交給別人或丟掉時的獎勵：提高的是這個人全身加總的上限（存檔規則的 bindCapStat、bindCapInit、bindCapAp），不是倍率；每個人只算最好的一件。存檔規則把某一項的上限設成 0 時，那一項照樣沒有增益。行動點很強，最好維持 0 或 1。" /></template>
+      <template #legend>鑰匙保管 <Hint text="自己鎖上的拘束具，鑰匙交給別人或丟掉時的獎勵：提高的是這個人全身加總的上限（存檔規則的 bindCapStat、bindCapInit、bindCapAp），不是倍率；只提高那件拘束具的拘束類型相關的項目（上面戰鬥增益有寫的），同一項只算最好的一件。存檔規則把某一項的上限設成 0 時，那一項照樣沒有增益。行動點很強，最好維持 0 或 1。" /></template>
       <table class="small bind-table">
         <thead><tr><th>鑰匙在哪</th><th v-for="x in KEY_CUSTODY_CAPS" :key="x">{{ KEY_CUSTODY_CAP_NAME[x] }}</th></tr></thead>
         <tbody>

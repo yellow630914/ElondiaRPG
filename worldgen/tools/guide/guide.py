@@ -312,6 +312,16 @@ def item_sources():
     # 泌乳的時候擠奶（family.json 的 lactation.milk）
     milk = ld('data/rules/family.json').get('lactation', {}).get('milk')
     if milk: add(milk['item'], '泌乳的時候在角色詳情擠奶（一天一次）')
+    # 偷竊（security.json 的 steal.items）：池子直接寫名字、而且商店不賣的物品（首飾、寶石；商店有賣的就不多寫）
+    by_name = {it['name']: it for it in ITEMS}
+    steal = ld('data/rules/security.json')['steal']['items']
+    TAGS = ld('data/rules/npc_tags.json')['tags']
+    for pool, d in steal['pools'].items():
+        if not isinstance(d, dict): continue
+        who = [TAGS.get(t, {}).get('name', t) for t, ps in steal['tags'].items() if pool in ps]
+        for name in d.get('names', []):
+            if name in by_name and (shop_source(by_name[name]) or by_name[name].get('recipe')): continue
+            add(name, '偷竊' + (f"（{'、'.join(who[:4])}{' 等' if len(who) > 4 else ''}身上）" if who else ''))
     # 地標
     for l in LMS:
         for part in ('explore', 'visit'):

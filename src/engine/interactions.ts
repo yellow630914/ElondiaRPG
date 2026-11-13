@@ -179,7 +179,7 @@ function lootRange(rec: NpcRecord): [number, number] {
 function stealHint(rec: NpcRecord): string {
   const NAMES: Record<string, string> = {
     pocket: '隨身的小東西', potions: '藥劑', luxury: '值錢的珍品', holy: '神殿的用品', arcane: '卷軸或魔法材料', trade_goods: '商品', smith: '鍛造材料或工具',
-    tailor: '布料、皮革或工具', jewels: '貴金屬或寶石', kitchen: '吃的喝的', farm: '種子或農產', travel: '旅行用品', rogue: '撬鎖工具之類的', fighter: '戰鬥用的藥劑', music: '樂器或酒', brothel: '娼館的小玩意',
+    tailor: '布料、皮革或工具', jewels: '首飾或寶石', jeweler: '珠寶匠的工具或材料', kitchen: '吃的喝的', farm: '種子或農產', travel: '旅行用品', rogue: '撬鎖工具之類的', fighter: '戰鬥用的藥劑', music: '樂器或酒', brothel: '娼館的小玩意',
   }
   return `${[...new Set(stealPools(rec).map((p) => NAMES[p] ?? '物品'))].join('或')}`
 }

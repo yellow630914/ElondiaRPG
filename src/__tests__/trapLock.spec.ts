@@ -214,7 +214,8 @@ describe('拘束程度與雙面效應設定', () => {
     const spec = { base: 'blindfold', material: 'leather' }
     pc.gear = { ...pc.gear, head: { name: gearName(spec), spec, lock: 'white', keyHolder: 'discarded' } }
     const before = { ...lewdRules.locks.key_custody.discarded }
-    expect(custodyCaps(pc)).toMatchObject(before)
+    // 眼罩是遮住視線：只提高迴避的上限
+    expect(custodyCaps(pc).raise).toEqual({ evade: before.stat })
     const draft = currentBindRules()
     draft.key_custody.discarded = { stat: 4, init: 99, ap: 7 }
     draft.key_custody.master_affinity = -500
@@ -226,14 +227,14 @@ describe('拘束程度與雙面效應設定', () => {
     expect(r.key_custody.companion).toEqual(builtinBindRules().key_custody.companion)
     applyBindRules(r)
     expect(lewdRules.locks.key_custody.master_affinity).toBe(-100)
-    expect(custodyCaps(pc)).toMatchObject({ stat: 4, init: 10, ap: 3, from: { custody: 'discarded' } })
+    expect(custodyCaps(pc)).toMatchObject({ raise: { evade: 4 }, from: [{ custody: 'discarded', keys: ['evade'] }] })
     // 舊世界的自訂內容沒有這一段：用內建的
     const old = currentBindRules() as Partial<ReturnType<typeof currentBindRules>>
     delete old.key_custody
     expect(sanitizeBindRules(old).key_custody).toEqual(builtinBindRules().key_custody)
     restoreBindRules()
     expect(currentBindRules()).toEqual(builtinBindRules())
-    expect(custodyCaps(pc)).toMatchObject(before)
+    expect(custodyCaps(pc).raise).toEqual({ evade: before.stat })
   })
 
   it('整理：數字夾在範圍內，不存在的狀態與情境拿掉', () => {

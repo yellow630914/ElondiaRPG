@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { weaponFor } from '@/engine/character'
-import { armorDef, damageTypeName, lewdRules, weaponDef } from '@/engine/data'
+import { armorDef, BIND_KINDS, damageTypeName, lewdRules, weaponDef } from '@/engine/data'
 import { bonusesOff, onlyNegative, classWeaponBlock, EXTRA_SLOTS, gearBonuses, gearKnown, gearRules, gearSpecOf, gearStats, gearSummaryParts, MOD_NAME, rarityName, slotNameFor, slotsFor } from '@/engine/gear'
 import { perkCombat } from '@/engine/perks'
 import { keyAway, keyHolderName, keyKeepers, lockable, lockedGear, lockItems } from '@/engine/inventory'
-import { adultOutfitPieces, bindsOf, keyCustody, lockName, schoolsOf } from '@/engine/schools'
+import { adultOutfitPieces, bindKindKeys, bindsOf, keyCustody, lockName, schoolsOf } from '@/engine/schools'
 import { combatRelease } from '@/engine/combatRelease'
 import { cutLockFee, cutLockHere, keysFor, stuckRestraint, unbindDc, uncurseFee, uncurseHere } from '@/engine/restraints'
 import { formatMoney } from '@/engine/money'
@@ -108,11 +108,12 @@ const keeperPick = ref('')
 const KEY_HINT = (() => {
   // 數字可以在內容編輯器的「⚙️ 雙面效應設定」改：同伴、主人分開寫，行動點不是 0 時才寫
   const r = lewdRules.locks.key_custody
-  const caps = (x: { stat: number; init: number; ap: number }) => `命中、迴避、豁免、傷害、減傷每項 +${x.stat}、先攻 +${x.init}${x.ap ? `、行動點回復 +${x.ap}` : ''}`
+  const caps = (x: { stat: number; init: number; ap: number }) => [x.stat ? `+${x.stat}` : '', x.init ? `先攻 +${x.init}` : '', x.ap ? `行動點回復 +${x.ap}` : ''].filter(Boolean).join('、')
   const same = r.companion.stat === r.master.stat && r.companion.init === r.master.init && r.companion.ap === r.master.ap
-  const held = same ? caps(r.companion) : `交給同伴：${caps(r.companion)}；交給主人：${caps(r.master)}`
-  const extra = [r.servitude_master.stat ? `每項再 +${r.servitude_master.stat}` : '', r.servitude_master.init ? `先攻再 +${r.servitude_master.init}` : '', r.servitude_master.ap ? `行動點回復再 +${r.servitude_master.ap}` : ''].filter(Boolean).join('、')
-  return `上鎖時鑰匙在自己身上，隨時可以打開鎖（鎖放回行囊）。鑰匙交給同伴或主人保管：打開前要請對方還回來（對方要在隊伍裡；主人的親密度要 ${r.master_affinity} 以上才肯還），戰鬥中這個人拘束具增益的全身上限：${held}，每天順從也會成長${extra ? `；修了隸從派、鑰匙在自己的主人手上時${extra}` : ''}。丟掉鑰匙：${caps(r.discarded)}，之後只能脫縛、用一次性的鑰匙或找鐵匠剪鎖（鎖會壞掉）。每個人只算最好的一件，不會每件疊加。`
+  const held = same ? caps(r.companion) : `交給同伴 ${caps(r.companion)}；交給主人 ${caps(r.master)}`
+  const extra = caps(r.servitude_master)
+  const kinds = BIND_KINDS.map((k) => `${lewdRules.two_face.kinds[k]?.name ?? k}：${bindKindKeys(k).map((x) => (x === 'initiative' ? '先攻' : MOD_NAME[x] ?? x)).join('、')}`).join('；')
+  return `上鎖時鑰匙在自己身上，隨時可以打開鎖（鎖放回行囊）。鑰匙交給同伴或主人保管：打開前要請對方還回來（對方要在隊伍裡；主人的親密度要 ${r.master_affinity} 以上才肯還，主人是主角自己時直接還），每天順從也會成長。戰鬥中這件拘束具相關項目的上限提高：${held}${extra ? `；修了隸從派、鑰匙在自己的主人手上時再 ${extra}` : ''}。丟掉鑰匙：${caps(r.discarded)}，之後只能脫縛、用一次性的鑰匙或找鐵匠剪鎖（鎖會壞掉）。同一項只算最好的一件，不會疊加。各類拘束相關的項目——${kinds}。`
 })()
 function giveKeyTo() {
   if (!keeperPick.value) return
@@ -174,7 +175,9 @@ const showRelease = computed(() => {
   const r = release.value
   return r.rows.length > 0 || r.immune.length > 0 || r.lustBonus > 0 || (!!r.off && (bindsOf(m.value).length > 0 || adultOutfitPieces(m.value) > 0))
 })
-const RELEASE_HINT = '拘束具、淫服、寄生物、懷孕的雙面效應：平常是檢定的減值，戰鬥中（修了慾望流派、拘束具上了鎖）變成增益。拘束具的增益全身合計有上限（設定的遊戲規則：拘束具增益上限；自己鎖上的拘束具鑰匙交給別人保管或丟掉時，這個人的上限提高）；括號裡是還沒套上限的實際加總，超過上限的部分戰鬥中不算。'
+const RELEASE_HINT = '拘束具、淫服、寄生物、懷孕的雙面效應：平常是檢定的減值，戰鬥中（修了慾望流派、拘束具上了鎖）變成增益。拘束具的增益全身合計有上限（設定的遊戲規則：拘束具增益上限；自己鎖上的拘束具鑰匙交給別人保管或丟掉時，那件拘束具相關的項目上限提高，前面標 🔑）；括號裡是還沒套上限的實際加總，超過上限的部分戰鬥中不算。'
+const releaseTitle = (r: { value: number; raw: number; keyNote?: string }) =>
+  [r.raw !== r.value ? `實際加總 ${signed(r.raw)}，上限只算到 ${signed(r.value)}` : '', r.keyNote ?? ''].filter(Boolean).join('\n') || undefined
 const releaseText = (r: { name: string; value: number; raw: number }) => `${r.name} ${signed(r.value)}${r.raw !== r.value ? `（${signed(r.raw)}）` : ''}`
 
 const totals = computed(() => {
@@ -214,10 +217,9 @@ const totals = computed(() => {
         <div class="sec-title">戰鬥中解放 <span v-if="release.sources.length" class="sec-note">{{ release.sources.join('・') }}</span> <Hint :text="RELEASE_HINT" /></div>
         <div v-if="release.off" class="release muted">{{ release.off }}</div>
         <div v-else class="release">
-          <span v-for="r in release.rows" :key="r.key" class="tag" :class="{ capped: r.raw !== r.value }" :title="r.raw !== r.value ? `實際加總 ${signed(r.raw)}，上限只算到 ${signed(r.value)}` : undefined">{{ releaseText(r) }}</span>
+          <span v-for="r in release.rows" :key="r.key" class="tag" :class="{ capped: r.raw !== r.value }" :title="releaseTitle(r)">{{ r.keyNote ? '🔑' : '' }}{{ releaseText(r) }}</span>
           <span v-if="release.lustBonus" class="tag">造成的慾望 {{ signed(release.lustBonus) }}</span>
           <span v-if="release.immune.length" class="tag">免疫{{ release.immune.join('、') }}</span>
-          <span v-if="release.capNote" class="tag capped">{{ release.capNote }}</span>
           <span v-if="release.allyDown.length" class="tag">有隊友倒下時 {{ release.allyDown.map((r) => `${r.name} ${signed(r.value)}`).join('、') }}</span>
           <span v-if="!release.rows.length && !release.lustBonus && !release.immune.length" class="muted small">拘束具上了鎖才有增益</span>
         </div>
@@ -357,7 +359,7 @@ const totals = computed(() => {
 .totals { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
 .totals .tag { background: #0006; color: #c9b796; border-color: #ffffff24; }
 .release { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; font-size: var(--fs-xs); }
-.release .tag { background: #0006; color: #b8e0a0; border-color: #6a9a5044; }
+.release .tag { background: #0006; color: #b8e0a0; border-color: #6a9a5044; white-space: normal; max-width: 100%; }
 .release .tag.capped { color: #f0d083; border-color: #c99a4566; }
 .release.muted { color: #9a8768; }
 /* 稀有度 */

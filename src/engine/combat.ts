@@ -1231,13 +1231,15 @@ export function keyForLevel(level: number): string | undefined {
 
 // ---- 道具 ----
 
+/** 戰鬥中有效果的用途（useItem 處理的）：吃喝、讀書學技能或特質、冥想用的香與經、乳汁、引子這些不算 */
+const COMBAT_USES = ['heal', 'slot', 'cleanse', 'status', 'temp_hp', 'ap', 'revive', 'damage', 'apply', 'save', 'escape', 'lust'] as const
+
 /** 戰鬥中可以用的道具（行囊數量扣掉這場已用掉的） */
 export function combatItems(state: GameState): { name: string; qty: number; def: ItemDef }[] {
   const used = state.combat?.itemsUsed ?? {}
   return state.inventory
     .map((i) => ({ name: i.name, qty: i.qty - (used[i.name] ?? 0), def: itemDef(i.name)! }))
-    // 吃喝（只有非戰鬥狀態）不是戰鬥中用的
-    .filter((i) => i.qty > 0 && i.def?.use && Object.keys(i.def.use).some((k) => k !== 'condition'))
+    .filter((i) => i.qty > 0 && !!i.def?.use && COMBAT_USES.some((k) => i.def.use![k] !== undefined))
 }
 
 /** 道具是對敵人用的（投擲傷害或施加負面狀態） */

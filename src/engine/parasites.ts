@@ -247,6 +247,8 @@ export function attachParasite(c: Character, id: string, time: GameTime, by?: st
   if (parasiteOf(c, id)) return { note: `已經有${def.name}了` }
   const state: ParasiteState = { id, corruption: 0, since: { ...time }, grown: time.day }
   let removed: string | undefined
+  // 說明寫穿上的那件的名字（陽剛體型是魔導套，不是魔導衣）
+  let shown = def.name
   if (def.kind === 'gear') {
     // 陽剛體型：附著陽剛的版本（例如裹住肉棒的魔導套）
     const v = c.body === 'masc' && def.masc && itemDef(def.masc.item)?.gear ? def.masc : { item: def.item, slot: def.slot }
@@ -257,6 +259,7 @@ export function attachParasite(c: Character, id: string, time: GameTime, by?: st
     if (old?.locked) return { note: `${def.name}沒有地方附著（那個欄位被鎖住了）` }
     removed = old?.name
     gear[v.slot] = { name: v.item!, spec, locked: `${PARASITE_LOCK}${id}` }
+    if (v.item !== def.item) shown = v.item!
   } else if (def.kind === 'mark') {
     const place = def.place ?? 'belly'
     const there = tattooAt(c, place)
@@ -270,7 +273,7 @@ export function attachParasite(c: Character, id: string, time: GameTime, by?: st
   }
   ;(c.parasites ??= []).push(state)
   const cover = state.covered ? `（蓋掉了原本的「${state.covered.name ?? ''}」）` : ''
-  return { note: `身上多了${def.name}${cover}`, ...(removed ? { removed } : {}) }
+  return { note: `身上多了${shown}${cover}`, ...(removed ? { removed } : {}) }
 }
 
 /** 這個寄生物鎖住的裝備欄位（照鎖找，不照現在的定義：寄生之後改了欄位或種類也找得到） */

@@ -115,6 +115,8 @@ export interface RoadTemplate {
   tags?: ContentTag[]
   /** 只給這些體型的主角 */
   pc_body?: Body[]
+  /** 地下城：用黑市的引子（物品的 use.lure）引來時改用的名稱與開頭，replace 是選項結果文字裡要換掉的字（例：「寶箱邊」→「原地」） */
+  lure?: { title?: string; text?: string; replace?: [string, string][] }
   /** 成人向的親密場景是什麼：選項帶 adult_scene 時，敘事要詳細描寫 */
   scene?: string
   /** 城鎮、地下城、寄生物：只在白天或夜裡出現（沒有時不限；旅途、線索不看） */

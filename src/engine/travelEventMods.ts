@@ -208,6 +208,18 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
   if (bodies.length && bodies.length < BODIES.length) out.pc_body = bodies
   const scene = str(raw.scene, L.scene_chars)
   if (scene) out.scene = scene
+  // 地下城：用引子引來時的文字（編輯器沒有欄位，改內建事件時照樣留著）
+  if (scope === 'dungeon' && raw.lure && typeof raw.lure === 'object') {
+    const l = raw.lure as Record<string, unknown>
+    const lure: NonNullable<RoadTemplate['lure']> = {}
+    const title = str(l.title, L.title_chars)
+    if (title) lure.title = title
+    const text = str(l.text, L.text_chars)
+    if (text) lure.text = text
+    const rep = (Array.isArray(l.replace) ? l.replace : []).filter((x): x is [string, string] => Array.isArray(x) && typeof x[0] === 'string' && !!x[0] && typeof x[1] === 'string').slice(0, 10)
+    if (rep.length) lure.replace = rep.map(([a, b]) => [a.slice(0, L.text_chars), b.slice(0, L.text_chars)])
+    if (Object.keys(lure).length) out.lure = lure
+  }
   // 時段：城鎮、地下城、寄生物才有（旅途照天數走；線索在生成地圖時就放好了）
   if (scope !== 'road' && scope !== 'lead' && (raw.hours === 'day' || raw.hours === 'night')) out.hours = raw.hours
   if (kind === 'check') {

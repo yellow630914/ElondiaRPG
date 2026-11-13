@@ -143,7 +143,7 @@ export function useSummary(use?: ItemUse): string {
   if (use.lactation) parts.push(`${use.lactation} 天內泌乳`)
   if (use.stop_lactation) parts.push('停止道具與事件造成的泌乳')
   if (hasLewdUse(use)) parts.push(`冥想一小時：${lewdUseText(use.lewd!)}`)
-  if (use.lure?.length) parts.push(`在地下城裡使用：立刻遇到「${lureTitle(use.lure) ?? '（事件已經不在了）'}」`)
+  if (use.lure?.length) parts.push(`在地下城裡使用：立刻引來「${lureTitle(use.lure) ?? '（事件已經不在了）'}」`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
   if (use.cleanse) parts.push(`解除${use.cleanse.map((id) => statusDef(id).name).join('、')}`)
@@ -184,7 +184,7 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
     // 寄生物的引子（docs/ADULT_EVENTS.md 第 6 節）：在地下城裡立刻遇到那件事，發生在主角身上；不在地下城、正忙著時不會用掉
     const t = checkLure(state, def.use.lure)
     report.changes.items_lost = [{ name, qty: 1 }]
-    report.outcome.summary = `拿出了${name}——「${t.title}」。`
+    report.outcome.summary = `拿出了${name}。`
     const committed = commitReport(state, report)
     startLure(state, t)
     return committed
@@ -488,7 +488,8 @@ export function takeKeyBack(state: GameState, memberId: string, slot: GearSlot):
   if (!holder || holder.status.includes('away')) throw new Error(`鑰匙在${name}那裡，${name}現在不在隊伍裡`)
   const need = lewdRules.locks.key_custody.master_affinity
   const aff = state.relationships?.[id]?.affinity ?? 0
-  if (contractOf(m)?.master === id && aff < need) throw new Error(`${name}不肯把鑰匙還給你（主人的親密度要 ${need} 以上，現在 ${aff}）`)
+  // 主角自己就是主人時，鑰匙在主角手上就直接還（主角不會跟自己談親密度）
+  if (contractOf(m)?.master === id && id !== pcOf(state).id && aff < need) throw new Error(`${name}不肯把鑰匙還給你（主人的親密度要 ${need} 以上，現在 ${aff}）`)
   g.keyHolder = 'self'
   const report = itemReport(state, 0.1)
   report.outcome.summary = `${name}把${g.name}的鑰匙還給了${m.name}。`

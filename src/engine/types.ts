@@ -1134,7 +1134,7 @@ export interface GameState {
   /** 城鎮事件的紀錄：上一次的時間（絕對小時）、每個事件上次出現的日子、最近的種類 */
   townEvents?: { last?: number; seen: Record<string, number>; recent: string[] }
   /** 地下城與近郊等待回應的事件（dungeonEvents.ts）：模板與觸發點 */
-  dungeonEvent?: { template: string; trigger: string }
+  dungeonEvent?: { template: string; trigger: string; /** 用引子引來的：文字照模板的 lure */ lure?: boolean }
   /** 走到線索事件的格子、等主角回應（leadEvents.ts）：哪一則線索、在哪一格 */
   leadEvent?: { lead: string; area: string; x: number; y: number }
   /** 各地區的線索池（leads.ts）：哪一天擲的、有哪些線索 */

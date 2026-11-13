@@ -121,11 +121,17 @@ def opt(label, success, fail=None, check=None, scene=None):
     return o
 
 
+# 文字寫到胸口的魔導衣發作事件：只給陰柔、中性體型（陽剛主角的魔導套只會遇到其他 4 件；2026-11-14）
+CHEST = {'lin_tighten', 'lin_night', 'lin_public', 'lin_hungry', 'lin_more', 'lin_tendril', 'lin_symbiosis'}
+
+
 def pe(pid, i, title, stages, moments, text, scene, options, unwilling=True):
     t = {"id": f"pe_{i}", "scope": "parasite", "tier": "normal", "kind": "choice", "parasite": pid}
     if stages: t["stages"] = stages
     if moments and len(moments) < 3: t["moments"] = moments
-    t.update({"tags": ["adult", "pc_unwilling"] if unwilling else ["adult"], "title": title, "text": text, "scene": scene, "options": options})
+    t["tags"] = ["adult", "pc_unwilling"] if unwilling else ["adult"]
+    if i in CHEST: t["pc_body"] = ["fem", "andro"]
+    t.update({"title": title, "text": text, "scene": scene, "options": options})
     return t
 
 

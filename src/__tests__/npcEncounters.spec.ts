@@ -282,6 +282,11 @@ describe('crime and the guards', () => {
     expect(stealItemCap(noble, false)).toBeGreaterThan(stealItemCap(beggar, false) * 10)
     expect(stealCandidates(beggar, 1e9).some((i) => i.tags.includes('adult_shop') && i.category === 'consumable')).toBe(false)
     expect(stealCandidates(noble, 1e9).every((i) => i.category !== 'equipment')).toBe(true)
+    // 貴族身上值錢的是首飾與寶石，不是珠寶匠的工具箱或鎖
+    const nobleGood = stealCandidates(noble, stealItemCap(noble, false)).filter((i) => i.price_cc >= stealItemCap(noble, false) * 0.15).map((i) => i.name)
+    expect(nobleGood).toEqual(expect.arrayContaining(['珍珠耳墜', '金手鐲']))
+    expect(stealCandidates(noble, 1e9).map((i) => i.name)).not.toEqual(expect.arrayContaining(['珠寶匠工作箱']))
+    expect(stealCandidates(noble, 1e9).map((i) => i.name)).not.toEqual(expect.arrayContaining(['黃金鎖']))
     // 大成功：錢加一件物品，價值不超過上限
     const r = act(state, { kind: 'steal', target: priest.id, text: '' }, 20)
     const got = r.changes.items_gained?.[0]

@@ -191,31 +191,53 @@ export function keyCustody(g: EquippedGear | undefined, wearer?: Pick<Character,
   return wearer && contractOf(wearer)?.master === g.keyHolder ? 'master' : 'companion'
 }
 
-export interface CustodyCaps extends KeyCustodyCaps {
-  /** 算的是哪一件、鑰匙在哪（沒有提高時沒有） */
-  from?: { name: string; custody: KeyCustody; servitude?: boolean }
+/** 這個拘束類型的戰鬥增益會加的項目（三個程度的戰鬥表合起來；先攻寫 initiative） */
+export function bindKindKeys(kind: BindKind): string[] {
+  const keys: string[] = []
+  for (const row of lewdRules.two_face.kinds[kind]?.combat ?? []) for (const k of Object.keys(row ?? {})) if (!keys.includes(k)) keys.push(k)
+  return keys
+}
+
+/** 鑰匙保管提高的點數裡，這一項用哪個數字：先攻 init、行動點回復 ap、其他 stat */
+const custodyAmount = (key: string, x: KeyCustodyCaps) => (key === 'initiative' ? x.init : key === 'ap_regen' ? x.ap : x.stat) ?? 0
+
+export interface CustodyCaps {
+  /** 每一項上限提高的點數（Mods 的 key；先攻寫 initiative） */
+  raise: Record<string, number>
+  /** 提高上限的拘束具：名稱、鑰匙在哪、提高了哪幾項（每一項只記最好的那件） */
+  from: { name: string; custody: KeyCustody; servitude?: boolean; keys: string[] }[]
 }
 
 /**
- * 鑰匙保管讓這個人雙面效應全身上限提高的點數：身上自己鎖上的拘束具裡最好的一件（不會每件疊加）。
+ * 鑰匙保管讓這個人雙面效應上限提高的點數：每件自己鎖上、鑰匙交給別人或丟掉的拘束具，
+ * 只提高自己拘束類型相關的那幾項（例：眼罩只提高迴避），同一項只算最好的一件（不會疊加）。
  * 修了隸從派、鑰匙在自己的主人手上時再加 servitude_master
  */
 export function custodyCaps(c: Character): CustodyCaps {
   const r = lewdRules.locks.key_custody
-  let best: CustodyCaps = { stat: 0, init: 0, ap: 0 }
+  const raise: Record<string, number> = {}
+  const winner: Record<string, number> = {}
+  const items: { name: string; custody: KeyCustody; servitude?: boolean }[] = []
   const servitude = schoolsOf(c).includes('servitude')
   for (const g of Object.values(c.gear ?? {})) {
     const kind = keyCustody(g, c)
     const base = kind && kind !== 'self' ? r?.[kind] : undefined
-    if (!g || !kind || !base || !gearRules.bases[g.spec.base]?.bind) continue
+    const bindKind = g ? gearRules.bases[g.spec.base]?.bind_kind : undefined
+    if (!g || !kind || !base || !gearRules.bases[g.spec.base]?.bind || !bindKind || !BIND_KINDS.includes(bindKind)) continue
     const extra = kind === 'master' && servitude ? r.servitude_master : undefined
-    const caps: CustodyCaps = {
-      stat: (base.stat ?? 0) + (extra?.stat ?? 0), init: (base.init ?? 0) + (extra?.init ?? 0), ap: (base.ap ?? 0) + (extra?.ap ?? 0),
-      from: { name: g.name, custody: kind, ...(extra ? { servitude: true } : {}) },
+    const idx = items.push({ name: g.name, custody: kind, ...(extra ? { servitude: true } : {}) }) - 1
+    for (const key of bindKindKeys(bindKind)) {
+      const n = custodyAmount(key, base) + (extra ? custodyAmount(key, extra) : 0)
+      if (n > (raise[key] ?? 0)) {
+        raise[key] = n
+        winner[key] = idx
+      }
     }
-    if (caps.stat + caps.init + caps.ap > best.stat + best.init + best.ap) best = caps
   }
-  return best
+  const from = items
+    .map((x, i) => ({ ...x, keys: Object.keys(winner).filter((k) => winner[k] === i) }))
+    .filter((x) => x.keys.length)
+  return { raise, from }
 }
 
 export interface TwoFace {
@@ -227,19 +249,24 @@ export interface TwoFace {
   /** 還沒套上全身上限的加總（畫面上寫在括號裡） */
   raw: Mods
   rawInitiative: number
-  /** 這個人的全身上限（存檔規則加上鑰匙保管提高的） */
+  /** 這個人的全身上限（存檔規則） */
   caps: { stat: number; ap: number; init: number }
+  /** 鑰匙保管提高之後的那幾項上限（沒提高的項目照 caps） */
+  keyCaps: Record<string, number>
   /** 鑰匙保管提高的上限（沒有時沒有） */
   custody?: CustodyCaps
 }
 
-/** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算；全身加總照存檔規則封頂（沒給 state 時用預設的上限），鑰匙交給別人或丟掉時上限提高 */
+/** 雙面效應的戰鬥增益：修了任何流派、而且鎖上的拘束具才算；全身加總照存檔規則封頂（沒給 state 時用預設的上限），鑰匙交給別人或丟掉時那件拘束具相關的項目上限提高 */
 export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> | null): TwoFace {
   // 全身上限：存檔規則（0 表示那幾項沒有增益，鑰匙保管也不會打開）＋鑰匙保管提高的
   const custody = custodyCaps(c)
-  const raise = (base: number, n: number) => (base > 0 ? base + n : base)
-  const caps = { stat: raise(gameRule(state, 'bindCapStat'), custody.stat), ap: raise(gameRule(state, 'bindCapAp'), custody.ap), init: raise(gameRule(state, 'bindCapInit'), custody.init) }
-  const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [], raw: {}, rawInitiative: 0, caps, ...(custody.from ? { custody } : {}) }
+  const caps = { stat: gameRule(state, 'bindCapStat'), ap: gameRule(state, 'bindCapAp'), init: gameRule(state, 'bindCapInit') }
+  const baseCap = (key: string) => (key === 'initiative' ? caps.init : key === 'ap_regen' ? caps.ap : caps.stat)
+  const keyCaps: Record<string, number> = {}
+  for (const [key, n] of Object.entries(custody.raise)) if (baseCap(key) > 0) keyCaps[key] = baseCap(key) + n
+  const capOf = (key: string) => keyCaps[key] ?? baseCap(key)
+  const out: TwoFace = { mods: {}, initiative: 0, immune: [], active: [], raw: {}, rawInitiative: 0, caps, keyCaps, ...(custody.from.length ? { custody } : {}) }
   const schools = schoolsOf(c)
   if (!schools.length) return out
   for (const b of bindsOf(c)) {
@@ -262,10 +289,10 @@ export function twoFaceCombat(c: Character, state?: Pick<GameState, 'options'> |
   out.raw = { ...out.mods }
   out.rawInitiative = out.initiative
   for (const [k, v] of Object.entries(out.mods)) {
-    const c = k === 'ap_regen' ? caps.ap : caps.stat
+    const c = capOf(k)
     if ((v ?? 0) > c) out.mods[k as keyof Mods] = c
   }
-  out.initiative = Math.min(caps.init, out.initiative)
+  out.initiative = Math.min(capOf('initiative'), out.initiative)
   return out
 }
 

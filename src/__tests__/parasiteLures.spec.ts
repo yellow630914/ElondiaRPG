@@ -12,6 +12,7 @@ import { canUse, useItem } from '@/engine/inventory'
 import { applyContent, emptyMods, sanitizeItem } from '@/engine/mods'
 import { pcOf } from '@/engine/party'
 import { attachParasite, parasiteOf, tameParasite } from '@/engine/parasites'
+import { flaresOn, parasiteCandidates } from '@/engine/parasiteEvents'
 import { builtinEventRules } from '@/engine/travelEventMods'
 import { addItem, newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
@@ -177,6 +178,29 @@ describe('parasite lures (black market)', () => {
     }
   })
 
+  it('tell the lure story instead of the chest or the gathering, also in the results (both body types)', () => {
+    for (const body of ['fem', 'masc'] as const) {
+      for (const [name, id] of LURES) {
+        const state = inDungeon(body, 3)
+        addItem(state.inventory, name, 1)
+        useItem(state, name, pcOf(state).id)
+        const t = pendingDungeonEvent(state)!
+        expect(t.text, `${body} ${name}`).toContain('黑市買來的')
+        expect(t.text).not.toContain('寶箱')
+        expect(t.text).not.toContain('採藥')
+        expect(JSON.stringify(t.options)).not.toContain('寶箱')
+        expect(t.title).not.toContain('寶箱')
+        const r = answerDungeonEvent(state, yieldIndex(t.id))
+        expect(r.outcome.summary).toContain('黑市買來的')
+        expect(r.outcome.summary).not.toContain('寶箱')
+        // 寶箱裡遇到的照舊
+        state.dungeonEvent = { template: t.id, trigger: 'chest' }
+        expect(pendingDungeonEvent(state)!.text).toBe(template(t.id).text)
+        void id
+      }
+    }
+  })
+
   it('refuse outside a dungeon or while something else is pending, and are not used up', () => {
     const town = hero()
     enterLocation(town)
@@ -248,6 +272,26 @@ describe('parasites for masculine heroes', () => {
     const pe = (id: string) => travelEvents.templates.find((t) => t.id === id)!
     expect(pe('pe_mark_other_half').pc_body).toEqual(['fem', 'andro'])
     expect(pe('pe_mark_other_half_m').scene).toContain('肉棒')
+  })
+
+  it('the lace sheath is named in the attach note, and only flares with events that fit a masculine body', () => {
+    const state = inDungeon('masc', 3)
+    const pc = pcOf(state)
+    expect(attachParasite(pc, LIN, state.time).note).toBe('身上多了渴求的魔導套')
+    const lin = parasiteOf(pc, LIN)!
+    const chest = ['tighten', 'night', 'public', 'hungry', 'more', 'tendril', 'symbiosis'].map((x) => `pe_lin_${x}`)
+    const seen = new Set<string>()
+    for (const stage of [0, 30, 60, 90]) {
+      lin.corruption = stage
+      for (const m of ['step', 'travel', 'rest'] as const) for (const t of parasiteCandidates(state, lin, m)) seen.add(t.id)
+    }
+    expect([...seen].sort()).toEqual(['pe_lin_campfire', 'pe_lin_dominate', 'pe_lin_flirt', 'pe_lin_saddle'])
+    for (const id of chest) expect(travelEvents.templates.find((t) => t.id === id)!.pc_body, id).toEqual(['fem', 'andro'])
+    // 陰柔、中性照舊 11 件
+    const fem = inDungeon('andro', 3)
+    expect(attachParasite(pcOf(fem), LIN, fem.time).note).toBe('身上多了渴求的魔導衣')
+    expect(flaresOn(fem, parasiteOf(pcOf(fem), LIN)!)).toBe(true)
+    expect(flaresOn(state, lin)).toBe(true)
   })
 
   it('feminine heroes still get the original events', () => {

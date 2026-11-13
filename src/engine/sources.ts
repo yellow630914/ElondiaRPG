@@ -5,6 +5,7 @@
 
 import { familyRules } from './pregMarks'
 import mapsJson from '@data/world/maps.json'
+import securityJson from '@data/rules/security.json'
 import {
   abilities, attributeRules, DUNGEON_LAYER_NAME, geography, craftRules, dungeonEncounters, enemies, itemRules, landmarks, lewdRules, MASTER_EVENT_POOLS, masterEventPool,
   npcs, npcTags, perkRules, shopRules, specialMaps, statuses, stories, townQuestTemplates, wildEncounterTables, type EncounterGroup, type MasterEventPool,
@@ -24,7 +25,7 @@ export type SourceKind = 'item' | 'perk' | 'status' | 'enemy'
 /** 物品的取得方式（內容清單的篩選）；lose 是「交出」：列在「跟誰有關」，但不算拿得到 */
 export const ITEM_SOURCE_NAME = {
   shop: '商店', craft: '製作與種植', gear: '隨機生成的制式裝備', chest: '寶箱', gather: '資源格', drop: '怪物掉落',
-  quest: '特殊任務與委託', event: '事件與地標', venue: '拍賣會與淫鬥場', forced: '強制裝上、寄生物', none: '沒有取得方式',
+  quest: '特殊任務與委託', event: '事件與地標', venue: '拍賣會與淫鬥場', steal: '偷竊', forced: '強制裝上、寄生物', none: '沒有取得方式',
 } as const
 export type ItemSourceKind = keyof typeof ITEM_SOURCE_NAME | 'lose'
 
@@ -183,6 +184,12 @@ function build(): Index {
     }
   }
   for (const [n] of lewdRules.park.chest_items) add('item', n, '緋夢樂園的寶箱', 'chest')
+  // 偷竊（security.json 的 steal.items）：池子直接寫名字的物品；照分類、商店挑的本來就買得到
+  const steal = (securityJson as unknown as { steal: { items: { pools: Record<string, { names?: string[] }>; tags: Record<string, string[]> } } }).steal.items
+  for (const [pool, def] of Object.entries(steal.pools)) {
+    const who = Object.entries(steal.tags).filter(([, ps]) => ps.includes(pool)).map(([t]) => npcTags.tags[t]?.name ?? t)
+    for (const n of def.names ?? []) add('item', n, `偷竊${who.length ? `（${who.slice(0, LIST_MAX).join('、')}${who.length > LIST_MAX ? ' 等' : ''}身上）` : ''}`, 'steal')
+  }
   for (const [n] of lewdRules.auction.pool) add('item', n, '拍賣會', 'venue')
   const arena = lewdRules.arena
   for (const n of arena.items) add('item', n, '淫鬥場的獎品', 'venue')

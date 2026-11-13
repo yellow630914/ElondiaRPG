@@ -162,11 +162,28 @@ function weightedPick<T>(r: number, list: T[], weights: number[]): T {
   return list[list.length - 1]!
 }
 
-function startDungeonEvent(state: GameState, t: RoadTemplate, trigger: DungeonTrigger) {
+function startDungeonEvent(state: GameState, t: RoadTemplate, trigger: DungeonTrigger, lure = false) {
   const log = (state.dungeonEvents ??= { seen: {} })
   log.last = hoursOf(state.time)
   log.seen[t.id] = state.time.day
-  state.dungeonEvent = { template: t.id, trigger }
+  state.dungeonEvent = { template: t.id, trigger, ...(lure ? { lure: true } : {}) }
+}
+
+/** 用引子引來的事件：名稱、開頭與結果文字照模板的 lure 改寫（沒寫的照原本的） */
+export function lureVersion(t: RoadTemplate): RoadTemplate {
+  const l = t.lure
+  if (!l) return t
+  const fix = (x: string | undefined) => (x === undefined ? x : (l.replace ?? []).reduce((acc, [a, b]) => acc.split(a).join(b), x))
+  return {
+    ...t,
+    title: l.title ?? t.title,
+    text: l.text ?? fix(t.text)!,
+    options: t.options?.map((o) => ({
+      ...o,
+      ...(o.success ? { success: { ...o.success, text: fix(o.success.text) } } : {}),
+      ...(o.fail ? { fail: { ...o.fail, text: fix(o.fail.text) } } : {}),
+    })),
+  } as RoadTemplate
 }
 
 // ---- 寄生物的引子（物品的 use.lure；存檔規則 parasiteLures，docs/ADULT_EVENTS.md 第 6 節） ----
@@ -178,11 +195,11 @@ export function lureTemplate(state: GameState, ids: readonly string[]): RoadTemp
   return list.find((t) => !t.pc_body?.length || t.pc_body.includes(body)) ?? list.find((t) => pcBodyAllowed(t.pc_body, body))
 }
 
-/** 引子的說明用：清單裡第一件存在的事件的名稱 */
+/** 引子的說明用：清單裡第一件存在的事件會帶來的寄生物（「渴求的魔導衣」）；沒有寄生物時是事件的名稱 */
 export function lureTitle(ids: readonly string[] | undefined): string | undefined {
   for (const id of ids ?? []) {
     const t = dungeonTemplates().find((x) => x.id === id)
-    if (t) return t.title
+    if (t) return parasitesFrom(t).map((p) => parasiteDef(p)?.name ?? p).join('、') || lureVersion(t).title
   }
   return undefined
 }
@@ -200,7 +217,7 @@ export function checkLure(state: GameState, ids: readonly string[]): RoadTemplat
 }
 
 export function startLure(state: GameState, t: RoadTemplate) {
-  startDungeonEvent(state, t, t.triggers?.[0] ?? 'chest')
+  startDungeonEvent(state, t, t.triggers?.[0] ?? 'chest', true)
 }
 
 // ---- 主動觸發察覺到的陷阱（存檔規則 trapLure） ----
@@ -233,7 +250,8 @@ export function declineTrapLure(state: GameState) {
 /** 等待回應的地下城事件 */
 export function pendingDungeonEvent(state: GameState): RoadTemplate | undefined {
   const id = state.dungeonEvent?.template
-  return id ? dungeonTemplates().find((t) => t.id === id) : undefined
+  const t = id ? dungeonTemplates().find((x) => x.id === id) : undefined
+  return t && state.dungeonEvent?.lure ? lureVersion(t) : t
 }
 
 /** 自訂內容拿掉的事件：等待中的地下城事件作廢（讀檔時，以及自訂內容改變之後） */

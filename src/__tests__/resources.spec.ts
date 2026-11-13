@@ -56,6 +56,14 @@ describe('items in combat', () => {
     expect(state.inventory.find((i) => i.name === '微弱治療藥劑')?.qty).toBe(1)
   })
 
+  it('lists only items that do something in combat (not food, books, meditation incense or lures)', () => {
+    const state = game(3)
+    for (const name of ['微弱治療藥劑', '火焰瓶', '清心茶', '乾糧', '清心香', '自持經', '《清規》', '《極樂秘典》', '魔乳果', '受詛咒的黑色內衣']) state.inventory.push({ name, qty: 1 })
+    state.location = 'snake_creek'
+    startCombat(state, [['giant_rat', 1]])
+    expect(combatItems(state).map((i) => i.name).sort()).toEqual(['微弱治療藥劑', '清心茶', '火焰瓶'].sort())
+  })
+
   it('refuses items you do not have', () => {
     const state = game(2)
     state.location = 'snake_creek'

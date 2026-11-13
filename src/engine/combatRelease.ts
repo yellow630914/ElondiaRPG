@@ -18,6 +18,8 @@ export interface ReleaseRow {
   value: number
   /** 還沒套上限的加總 */
   raw: number
+  /** 鑰匙保管提高了這一項的上限：「眼罩的鑰匙交給同伴保管：迴避上限 +1」（滑鼠移上去看；沒有時沒有） */
+  keyNote?: string
 }
 
 export interface CombatRelease {
@@ -32,8 +34,6 @@ export interface CombatRelease {
   allyDown: ReleaseRow[]
   /** 來源：「拘束具 2 件」「淫服 3 件」「寄生」「懷孕」 */
   sources: string[]
-  /** 鑰匙保管提高了拘束具的全身上限：「鑰匙交給同伴保管：上限 命中等每項 +1、先攻 +1」（沒有時沒有） */
-  capNote?: string
 }
 
 const ORDER = ['initiative', 'hit', 'evade', 'save', 'damage', 'dr', 'ap_regen', 'crit']
@@ -59,10 +59,10 @@ export function combatRelease(state: GameState | null | undefined, c: Character)
   add(value, { ...tf.mods, ...(tf.initiative ? { initiative: tf.initiative } : {}) } as Mods)
   add(raw, { ...tf.raw, ...(tf.rawInitiative ? { initiative: tf.rawInitiative } : {}) } as Mods)
   if (tf.active.length) out.sources.push(`拘束具 ${tf.active.length} 件`)
-  const cu = tf.custody
-  if (cu?.from) {
-    const parts = [...(cu.stat ? [`命中、迴避、豁免、傷害、減傷每項 +${cu.stat}`] : []), ...(cu.init ? [`先攻 +${cu.init}`] : []), ...(cu.ap ? [`行動點回復 +${cu.ap}`] : [])]
-    if (parts.length) out.capNote = `${cu.from.name}的鑰匙${KEY_CUSTODY_NAME[cu.from.custody]}${cu.from.servitude ? '（隸從派）' : ''}：上限 ${parts.join('、')}`
+  // 鑰匙保管提高的上限：只標在那幾項上（畫面上那一項前面一把鑰匙，滑鼠移上去看是哪一件）
+  const keyNotes: Record<string, string> = {}
+  for (const f of tf.custody?.from ?? []) {
+    for (const k of f.keys) keyNotes[k] = `${f.name}的鑰匙${KEY_CUSTODY_NAME[f.custody]}${f.servitude ? '（隸從派）' : ''}：${nameOf(k)}上限 +${tf.custody!.raise[k]}`
   }
   out.immune = tf.immune.map((id) => statusDef(id).name)
   const of = outfitCombat(c)
@@ -76,7 +76,7 @@ export function combatRelease(state: GameState | null | undefined, c: Character)
   if (pt.active.length) out.sources.push('寄生')
   if (Object.values(pf.mods).some((v) => v)) out.sources.push('懷孕')
   out.lustBonus = of.lustBonus + pt.lustBonus
-  out.rows = rows(value, raw)
+  out.rows = rows(value, raw).map((r) => (keyNotes[r.key] ? { ...r, keyNote: keyNotes[r.key] } : r))
   const down: Record<string, number> = {}
   add(down, pf.allyDown)
   out.allyDown = rows(down, down)

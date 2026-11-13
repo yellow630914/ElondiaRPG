@@ -94,7 +94,7 @@
     "master_default": "white",
     "master_tags": { "villain": "blue", "noble": "rune", "royal": "gold" },
     "key_custody": {
-      "$comment": "自己鎖的拘束具，鑰匙交給別人保管或丟掉時，這個人雙面效應全身上限（存檔規則 bindCapStat、bindCapInit、bindCapAp）提高的點數：stat 是命中、迴避、豁免、傷害、減傷每一項，init 先攻，ap 行動點回復。每個人只算最好的一件，不會每件疊加。companion 交給同伴、master 交給主人、discarded 丟掉；servitude_master 是修了隸從派、鑰匙在自己的主人手上時再加的。master_affinity：鑰匙在主人手上時，主人親密度要到這個數才肯還。",
+      "$comment": "自己鎖的拘束具，鑰匙交給別人保管或丟掉時，這個人雙面效應全身上限（存檔規則 bindCapStat、bindCapInit、bindCapAp）提高的點數：只提高那件拘束具的拘束類型相關的項目（two_face.kinds 戰鬥表裡出現的），stat 是命中、迴避、豁免、傷害、減傷這幾項，init 先攻，ap 行動點回復。同一項只算最好的一件，不會疊加。companion 交給同伴、master 交給主人、discarded 丟掉；servitude_master 是修了隸從派、鑰匙在自己的主人手上時再加的。master_affinity：鑰匙在主人手上時，主人親密度要到這個數才肯還。",
       "companion": { "stat": 1, "init": 1, "ap": 0 },
       "master": { "stat": 1, "init": 1, "ap": 0 },
       "servitude_master": { "stat": 1, "init": 0, "ap": 0 },

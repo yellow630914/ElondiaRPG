@@ -163,6 +163,7 @@ describe('鑰匙保管提高雙面效應的上限', () => {
     const pc = heavy(state)
     const tf = twoFaceCombat(pc, state)
     expect(tf.caps).toEqual({ stat: 3, ap: 1, init: 5 })
+    expect(tf.keyCaps).toEqual({})
     // 加總超過丟掉鑰匙時的上限，上限的差別看得出來
     expect(tf.raw.dr).toBeGreaterThanOrEqual(3 + r.discarded.stat)
     expect(tf.rawInitiative).toBeGreaterThanOrEqual(5 + r.discarded.init)
@@ -171,32 +172,44 @@ describe('鑰匙保管提高雙面效應的上限', () => {
     expect(tf.custody).toBeUndefined()
   })
 
-  it('交給同伴：上限提高；兩件都交出去也只算一次', () => {
+  it('交給同伴：只提高那件拘束類型相關的上限；兩件同一類也只算一次', () => {
     const state = game()
     const pc = heavy(state)
     withMate(state)
+    // 單手套是束縛雙手：只提高減傷
     pc.gear!.wrists!.keyHolder = 'mate'
     const one = twoFaceCombat(pc, state)
-    expect(one.caps).toEqual({ stat: 3 + r.companion.stat, ap: 1 + r.companion.ap, init: 5 + r.companion.init })
+    expect(one.caps).toEqual({ stat: 3, ap: 1, init: 5 })
+    expect(one.keyCaps).toEqual({ dr: 3 + r.companion.stat })
     expect(one.mods.dr).toBe(Math.min(one.raw.dr!, 3 + r.companion.stat))
-    expect(one.initiative).toBe(Math.min(one.rawInitiative, 5 + r.companion.init))
-    pc.gear!.legs!.keyHolder = 'mate'
-    expect(twoFaceCombat(pc, state).caps).toEqual(one.caps)
-    // 戰鬥中解放的總表用提高後的上限
+    expect(one.initiative).toBe(5)
+    for (const [k, v] of Object.entries(one.mods)) if (k !== 'dr') expect(v).toBeLessThanOrEqual(k === 'ap_regen' ? 1 : 3)
+    // 戰鬥中解放的總表：減傷前面標鑰匙，其他沒有
     const rel = combatRelease(state, pc)
-    expect(rel.rows.find((x) => x.key === 'dr')?.value).toBe(one.mods.dr)
-    expect(rel.capNote).toContain('交給同伴保管')
+    const dr = rel.rows.find((x) => x.key === 'dr')
+    expect(dr?.value).toBe(one.mods.dr)
+    expect(dr?.keyNote).toContain('交給同伴保管')
+    expect(rel.rows.filter((x) => x.keyNote).map((x) => x.key)).toEqual(['dr'])
+    // 束腿是限制行走：再提高先攻；行動點回復的上限照舊（ap 是 0）
+    pc.gear!.legs!.keyHolder = 'mate'
+    const two = twoFaceCombat(pc, state)
+    expect(two.keyCaps).toEqual({ dr: 3 + r.companion.stat, initiative: 5 + r.companion.init })
+    expect(two.initiative).toBe(Math.min(two.rawInitiative, 5 + r.companion.init))
   })
 
-  it('丟掉鑰匙：上限提高更多；取最好的一件', () => {
+  it('丟掉鑰匙：上限提高更多；同一項取最好的一件', () => {
     const state = game()
     const pc = heavy(state)
     withMate(state)
     pc.gear!.wrists!.keyHolder = 'mate'
     pc.gear!.legs!.keyHolder = 'discarded'
-    const tf = twoFaceCombat(pc, state)
-    expect(tf.caps).toEqual({ stat: 3 + r.discarded.stat, ap: 1 + r.discarded.ap, init: 5 + r.discarded.init })
-    expect(tf.custody?.from?.custody).toBe('discarded')
+    let tf = twoFaceCombat(pc, state)
+    expect(tf.keyCaps).toEqual({ dr: 3 + r.companion.stat, initiative: 5 + r.discarded.init })
+    expect(tf.custody?.from.map((f) => [f.custody, f.keys])).toEqual([['companion', ['dr']], ['discarded', ['initiative']]])
+    // 單手套也丟掉：減傷改照丟掉的
+    pc.gear!.wrists!.keyHolder = 'discarded'
+    tf = twoFaceCombat(pc, state)
+    expect(tf.keyCaps.dr).toBe(3 + r.discarded.stat)
     expect(tf.mods.dr).toBe(Math.min(tf.raw.dr!, 3 + r.discarded.stat))
   })
 
@@ -204,9 +217,11 @@ describe('鑰匙保管提高雙面效應的上限', () => {
     const state = game()
     const pc = heavy(state)
     pc.gear!.legs!.keyHolder = 'discarded'
+    pc.gear!.wrists!.keyHolder = 'discarded'
     const tf = twoFaceCombat(pc, { options: { bindCapStat: 0, bindCapAp: 0, bindCapInit: 0 } } as never)
-    expect(tf.caps).toEqual({ stat: 0, ap: 0, init: 0 })
+    expect(tf.keyCaps).toEqual({})
     expect(tf.mods.dr ?? 0).toBe(0)
+    expect(tf.initiative).toBe(0)
   })
 
   it('交給主人：主人親密度不夠時不肯還；修了隸從派時上限再提高', () => {
@@ -221,15 +236,32 @@ describe('鑰匙保管提高雙面效應的上限', () => {
     expect(k?.master).toBe(true)
     giveKey(state, pc.id, slot, master)
     expect(keyCustody(pc.gear![slot], pc)).toBe('master')
-    expect(custodyCaps(pc)).toMatchObject({ stat: r.master.stat, init: r.master.init })
+    // 眼罩是遮住視線：只提高迴避
+    expect(custodyCaps(pc).raise).toEqual({ evade: r.master.stat })
     pc.perks = [...(pc.perks ?? []), 'school_servitude']
-    expect(custodyCaps(pc)).toMatchObject({ stat: r.master.stat + r.servitude_master.stat, from: { custody: 'master', servitude: true } })
+    expect(custodyCaps(pc)).toMatchObject({ raise: { evade: r.master.stat + r.servitude_master.stat }, from: [{ custody: 'master', servitude: true, keys: ['evade'] }] })
     state.relationships![master]!.affinity = r.master_affinity - 1
     expect(() => takeKeyBack(state, pc.id, slot)).toThrow('不肯')
     expect(pc.gear![slot]!.keyHolder).toBe(master)
     state.relationships![master]!.affinity = r.master_affinity
     takeKeyBack(state, pc.id, slot)
     expect(pc.gear![slot]!.keyHolder).toBe('self')
+  })
+
+  it('主角是主人：奴隸同伴把鑰匙交給主角，要回來時直接還（不看親密度）', () => {
+    const state = game()
+    const pc = pcOf(state)
+    const mate = withMate(state)
+    mate.tattoos = [{ kind: 'slave', place: 'neck', contract: { kind: 'combat', master: pc.id, masterName: pc.name, obedience: 0, since: state.time, terms: {} } } as never]
+    expect(contractOf(mate)?.master).toBe(pc.id)
+    wear(mate, 'head', 'blindfold')
+    addItem(state.inventory, '白鐵鎖', 1)
+    lockGear(state, mate.id, 'head', '白鐵鎖')
+    expect(keyKeepers(state, mate).find((x) => x.id === pc.id)?.master).toBe(true)
+    giveKey(state, mate.id, 'head', pc.id)
+    expect(state.relationships?.[pc.id]?.affinity ?? 0).toBeLessThan(r.master_affinity)
+    takeKeyBack(state, mate.id, 'head')
+    expect(mate.gear!.head!.keyHolder).toBe('self')
   })
 
   it('鑰匙交給別人保管時，每天順從照「被鎖上的拘束具」成長', () => {

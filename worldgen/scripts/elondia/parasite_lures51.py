@@ -1,6 +1,6 @@
 # 寄生物的取得（docs/ADULT_EVENTS.md 第 6 節）：
 #   1. travel_events.json  三種寄生物的地下城事件，各加一件陽剛體型的版本（dg_<原本的 id>_m，pc_body: masc）：
-#      寶箱裡的黑色內衣 → 寶箱裡的黑色束衣、魅魔之箱、寄生植物的種子、夢魔的夜訪（男性主角遇到的是魅魔）。
+#      寶箱裡的黑色內衣 → 寶箱裡的黑色蕾絲套、魅魔之箱、寄生植物的種子、夢魔的夜訪（男性主角遇到的是魅魔）。
 #      結構、檢定、效果、旗標照抄原本的事件（從 travel_events.json 讀，原本的改了重跑就跟著改），只換文字。
 #   2. items.json          黑市賣的「寄生物的引子」三件（use.lure；存檔規則「黑市賣寄生物的引子」）：
 #      在地下城裡用了立刻遇到那件事（陽剛體型的主角遇到 _m 的版本）。
@@ -92,11 +92,20 @@ def write_parasites():
     open(p, 'w').write(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
 
 
+# 用引子引來時的文字（lure）：原本的事件直接寫在 travel_events.json（2026-11-14），陽剛版本寫在這裡
+LURE_M = {
+    'dg_cursed_lingerie': {"title": "受詛咒的黑色蕾絲套", "text": "你把黑市買來的那條黑色蕾絲丁字褲拿出來，前面縫著一只細緻的蕾絲套。才剛展開，它就自己動了——像蛇一樣纏上你的手臂，往你的褲子裡鑽。", "replace": [["在寶箱邊坐了很久", "在原地坐了很久"], ["下次打開寶箱的時候，最好小心一點", "下次在黑市買東西的時候，最好想清楚一點"]]},
+    'dg_succubus_box': {"title": "魅魔的封印箱", "text": "你撬開黑市買來的封印箱，裡面飄出一陣粉紫色的煙，煙裡坐著一個只穿著薄紗的魅魔。她伸了個懶腰，上上下下打量了你一遍，對你眨眨眼：「被關了三百年，第一個打開箱子的人……還是個好看的男人呢。要不要做個交易？一個吻，換箱子裡的東西。」"},
+    'dg_seed_plant': {"title": "寄生植物的花苞", "text": "你把黑市買來的花苞埋進地下城的泥土裡，它一碰到土就抽出花莖、綻成一株長得像百合的花。花莖纏住你的腰，花心貼上你的小腹，把一顆溫熱的種子推進了你的身體裡。"},
+}
+
+
 def male(t, spec):
+    spec = {**spec, **({'lure': LURE_M[t['id']]} if t['id'] in LURE_M else {})}
     m = copy.deepcopy(t)
     m['id'] = t['id'] + '_m'
     m['pc_body'] = BODY_M
-    for k in ('title', 'text', 'scene'):
+    for k in ('title', 'text', 'scene', 'lure'):
         if k in spec:
             m[k] = spec[k]
     for (i, k), text in spec.get('options', {}).items():
