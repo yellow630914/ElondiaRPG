@@ -1419,6 +1419,8 @@ export function threatShares(combat: CombatState): Record<string, number> {
   return out
 }
 
+const HEALED = '主角在戰鬥中為其治療'
+
 function noteAffinity(combat: CombatState, id: string, delta: number, reason: string) {
   if (id === 'pc') return
   const a = (combat.affinity[id] ??= { delta: 0, reasons: [] })
@@ -1960,7 +1962,8 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
       ? target.maxHp
       : (h.flat ?? 0) + (h.dice ? rollDice(rng, h.dice, 1) : 0) + (h.mod ? mod(actor.attrs[attrFor(actor, a)]) : 0) + (h.level ? actor.level : 0)
     heal(target, amount, effects)
-    if (actor.id === 'pc' && target.id !== 'pc') noteAffinity(combat, target.id, 1, '主角在戰鬥中為其治療')
+    // 治療每場只算一次（不然補師每回合治療就一路加上去）
+    if (actor.id === 'pc' && target.id !== 'pc' && !combat.affinity[target.id]?.reasons.includes(HEALED)) noteAffinity(combat, target.id, 1, HEALED)
   }
   if (a.shield) {
     const amount = (a.shield.flat ?? 0) + (a.shield.level ?? 0) * actor.level
@@ -2457,8 +2460,10 @@ export function finishCombat(state: GameState): Report {
     .map(([npc, a]) => {
       const m = state.party.find((p) => p.id === npc)
       if (!m || m.affinity === undefined || a.delta === 0) return null
-      const after = Math.max(-100, Math.min(100, m.affinity + a.delta))
-      return { npc, delta: after - m.affinity, after, reason: a.reasons.join('、') }
+      // 戰鬥給的親密度最多推到「友好」的上緣，再往上要靠經營關係（companions.json 的 combat_affinity_cap）；扣的照扣
+      const raised = a.delta > 0 ? Math.min(m.affinity + a.delta, Math.max(m.affinity, companionRules.combat_affinity_cap)) : m.affinity + a.delta
+      const after = Math.max(-100, Math.min(100, raised))
+      return after === m.affinity ? null : { npc, delta: after - m.affinity, after, reason: a.reasons.join('、') }
     })
     .filter((x): x is NonNullable<typeof x> => x !== null)
 

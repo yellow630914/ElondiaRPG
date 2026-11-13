@@ -1430,6 +1430,8 @@ export const companionRules = companionsJson as unknown as {
   /** 離隊的人留在那座城鎮的酒館幾天（之後照自己的活動範圍走動） */
   leave_stay_days: number
   leave_threshold: number
+  /** 戰鬥給的親密度最多推到這裡（再往上要靠經營關係的行動） */
+  combat_affinity_cap: number
   initial_affinity: Record<Bond, number>
   tavern: {
     asking: { a: number; b: number; c: number }; asking_variance: number
