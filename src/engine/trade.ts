@@ -6,6 +6,7 @@
 // - 主角想殺價、交涉時才是主動行動（bargain）：成功程度決定這筆交易的價格倍率。
 // - 價格 = 目錄價 × 地點倍率；購買時再扣親密度折扣（每點 0.2%，最多 10%）與談判得到的長期折扣。
 
+import { canonicalName } from './script'
 import { pcTagMult } from './pcTags'
 import { charmLevel } from './charm'
 import { tagsAllowed } from './content'
@@ -864,6 +865,12 @@ export function applyBargain(state: GameState, report: Report, target: string, d
 const clip = (v: unknown, n: number) => (typeof v === 'string' ? v.trim().slice(0, n) : '')
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : Number.NaN)
 
+/** AI 寫的物品名字：AI 只看得到顯示的名字（或簡體），對回行囊裡、這個存檔自創的物品的鍵（自訂裝備帶著看不見的雜湊） */
+function ownedName(state: GameState, name: string): string {
+  if (!name || itemDef(name)) return name
+  return canonicalName(name, [...state.inventory.map((i) => i.name), ...Object.keys(state.customItems ?? {})])
+}
+
 /**
  * 驗證 AI 生成的交易清單：效果只能是這種店允許的種類，數值夾在上限內，
  * 價格不低於內容價值的 price_floor_ratio（目錄物品、自創物品、夥伴依各自的價格表）。
@@ -890,7 +897,7 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
       const t = String(x.type) as RewardEffect['type']
       if (!def.ai_effects.includes(t)) continue
       if (t === 'item') {
-        const name = clip(x.name, 20)
+        const name = ownedName(state, clip(x.name, 20))
         const qty = Math.max(1, Math.min(20, Math.round(num(x.qty) || 1)))
         // 獨特物品、有屬性加減的裝備、主人強制裝備的東西不能買
         const known = name ? itemDef(name) : undefined
@@ -948,8 +955,9 @@ export function applyAiDeals(state: GameState, type: ShopType, raw: unknown): nu
     let itemsGiven = 0
     for (const g of Array.isArray(d.gives) ? d.gives : []) {
       const x = (g ?? {}) as Record<string, unknown>
-      if (x.type === 'item' && clip(x.name, 20) && !isUniqueItem(state, clip(x.name, 20))) {
-        const name = clip(x.name, 20)
+      const asked = ownedName(state, clip(x.name, 20))
+      if (x.type === 'item' && asked && !isUniqueItem(state, asked)) {
+        const name = asked
         const qty = Math.max(1, Math.min(10, Math.round(num(x.qty) || 1)))
         gives.push({ type: 'item', name, qty })
         itemsGiven += capSale(state, name, (itemValue(state, name) ?? 0) * sellRatio(state)) * qty

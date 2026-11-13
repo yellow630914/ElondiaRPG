@@ -743,6 +743,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   const crafted = p.kind === 'craft' || p.kind === 'make' ? judgment?.effects.find((e) => e.type === 'gear') : undefined
   if (crafted && judgment) judgment.effects = judgment.effects.filter((e) => e !== crafted)
   const moneyBefore = report.changes.money_cc ?? 0
+  const partsBefore = report.changes.money_parts?.length ?? 0
   const mechanical = applyMechanics(state, report, p, degree, crafted as Extract<RewardEffect, { type: 'gear' }> | undefined, judgment?.invention ?? judgment?.perk)
   // 機制結算過金錢（工資、消費、雇用費……）而 AI 也給了金錢時，以 AI 的金額為準，取代機制那筆，不重複計算
   const mechanicalMoney = (report.changes.money_cc ?? 0) - moneyBefore
@@ -751,6 +752,7 @@ export function resolveAction(state: GameState, judgment: Judgment | null): Repo
   if (replaced) {
     if (moneyBefore) report.changes.money_cc = moneyBefore
     else delete report.changes.money_cc
+    report.changes.money_parts?.splice(partsBefore)
   }
   const notes = judgment ? applyEffects(state, report, judgment.effects) : defaultEffects(state, report, p, degree)
   if (judgment?.notes?.length) notes.push(...judgment.notes)

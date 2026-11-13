@@ -11,6 +11,7 @@ import {
   armorDef, attrName, className, raceName, damageTypeName, damageTypes, DUNGEON_LAYER_IDS, dungeonEncounters, enemies, equipment, geography, itemDef, itemRules, lewdRules, weaponDef, wildEncounters, mulResist,
   type AffinityMap, type AttrId, type BindKind, type EncounterGroup, type LockGrade, type Mods,
 } from './data'
+import { itemKey, itemLabel, sameShape } from './itemKey'
 import { bindTip } from './bindRulesMods'
 import { describeEffects } from './perks'
 import { Rng } from './rng'
@@ -1049,29 +1050,28 @@ function sameSpec(a?: GearSpec, b?: GearSpec): boolean {
 }
 
 /**
- * 登錄一件打造或事件生成的裝備，回傳物品名稱。制式品直接用目錄的名稱；
- * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」或「精製＋制式名稱」），和現有的物品撞名時加上編號。
+ * 登錄一件打造或事件生成的裝備，回傳物品的鍵。制式品直接用目錄的名稱；
+ * 其他的用 AI 取的名字（沒有時是「稀有度＋制式名稱」或「精製＋制式名稱」）接上看不見的屬性雜湊（itemKey.ts）：
+ * 屬性一樣的是同一個鍵、在行囊裡疊在一起，屬性不同的名字看起來一樣、鍵不同
  */
 export function registerGear(state: Pick<GameState, 'customItems'>, spec: GearSpec, name?: string, desc?: string): string {
   if (!gearKnown(spec)) throw new Error('這件裝備的底材或材料不存在')
   const standard = gearName(spec)
+  const label = itemLabel(name ?? '').trim().slice(0, 20)
   // 制式品：目錄裡真的有同名、同組成的物品才直接用（底材或材料改過名、目錄物品被改掉時另外登錄）
-  if (isStandard(spec) && !name && sameSpec(itemDef(standard)?.gear, spec)) return standard
+  if (isStandard(spec) && sameSpec(itemDef(label || standard)?.gear, spec)) return label || standard
   // 預設名稱：稀有度比材料高時加上稀有度（優良鐵長劍），只是有附魔時是「精製」（精製秘銀長劍）
-  const want = name?.trim().slice(0, 20) || (isStandard(spec) ? standard : `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`)
-  const taken = (n: string) => {
-    if (itemDef(n)) return !sameSpec(itemDef(n)!.gear, spec) || !isStandard(spec)
-    const c = state.customItems?.[n]
-    return !!c && !sameSpec(c.gear, spec)
+  const want = label || (isStandard(spec) ? standard : `${spec.rarity ? rarityName(spec.rarity) : '精製'}${standard}`)
+  // 雜湊撞到屬性不同的另一件（幾乎不會）：換一個
+  let key = itemKey(want, spec)
+  for (let salt = 1; state.customItems?.[key] && !sameShape(state.customItems[key]!.gear, spec); salt++) key = itemKey(want, spec, salt)
+  if (!state.customItems?.[key]) {
+    ;(state.customItems ??= {})[key] = {
+      category: 'equipment', price_cc: gearPrice(spec), gear: spec,
+      ...(desc?.trim() ? { desc: desc.trim().slice(0, 80) } : {}),
+    }
   }
-  let final = want
-  for (let i = 2; taken(final); i++) final = `${want}（${i}）`
-  if (itemDef(final)) return final
-  ;(state.customItems ??= {})[final] = {
-    category: 'equipment', price_cc: gearPrice(spec), gear: spec,
-    ...(desc?.trim() ? { desc: desc.trim().slice(0, 80) } : {}),
-  }
-  return final
+  return key
 }
 
 const ENCHANT_POOL: Record<string, { mods?: (keyof Mods)[]; resist?: boolean; offense?: boolean }> = {

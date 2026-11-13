@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { stripItemKeys } from '@/engine/itemKey'
 import { computed, onMounted, ref, shallowRef, watch } from 'vue'
 import PromptSetBar from './PromptSetBar.vue'
 import type { Composed } from '@/narrator/compose'
@@ -226,7 +227,7 @@ async function copyPreview() {
   const p = preview.value?.prompt
   if (!p) return
   try {
-    await navigator.clipboard.writeText(`[system]\n${p.system}\n\n[user]\n${p.user}`)
+    await navigator.clipboard.writeText(stripItemKeys(`[system]\n${p.system}\n\n[user]\n${p.user}`))
     game.flash('已複製提示詞')
   } catch {
     game.flash('瀏覽器不允許複製')

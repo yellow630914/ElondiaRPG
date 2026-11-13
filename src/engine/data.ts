@@ -1344,6 +1344,8 @@ export interface TownQuestTemplate {
   qty?: number
   encounter?: EncounterGroup
   encounter_chance?: number
+  /** 要活捉的委託（抓扒手）：遭遇戰打倒的敵人是被制伏，不是死亡 */
+  capture?: boolean
   reward_cc: [number, number]
   /** 交付時的額外報酬（報酬模板，見 effects.ts） */
   rewards?: RewardEffect[]
@@ -1428,6 +1430,8 @@ export const companionRules = companionsJson as unknown as {
   /** 離隊的人留在那座城鎮的酒館幾天（之後照自己的活動範圍走動） */
   leave_stay_days: number
   leave_threshold: number
+  /** 戰鬥給的親密度最多推到這裡（再往上要靠經營關係的行動） */
+  combat_affinity_cap: number
   initial_affinity: Record<Bond, number>
   tavern: {
     asking: { a: number; b: number; c: number }; asking_variance: number

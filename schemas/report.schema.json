@@ -132,6 +132,16 @@
       "description": "這次報告造成的所有狀態變化。AI 必須在敘事中如實反映，不能增減。",
       "properties": {
         "money_cc": { "type": "integer" },
+        "money_parts": {
+          "type": "array",
+          "description": "金錢的明細：同一份報告有兩筆以上的金錢時，日誌分開列出（合計是 money_cc 加上 master_share_cc）。",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["amount"],
+            "properties": { "amount": { "type": "integer" }, "label": { "type": "string" } }
+          }
+        },
         "xp": { "type": "array", "items": { "$ref": "#/$defs/actor_delta" } },
         "level_up": { "type": "array", "items": { "$ref": "#/$defs/actor_delta" } },
         "skills_gained": {

@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest'
+import { itemLabel } from '@/engine/itemKey'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
 import { finishCombat, startCombat } from '@/engine/combat'
@@ -108,8 +109,10 @@ describe('save schema', () => {
     custom.customItems = { '優良鐵鐵靴（2）': { category: 'equipment', price_cc: 100, gear: { base: 'sabatons', material: 'iron', rarity: 'fine' } as never } }
     custom.inventory.push({ name: '優良鐵鐵靴（2）', qty: 1 }, { name: '精製秘銀鐵腰帶', qty: 1 })
     const fixed = migrate(custom)
-    expect(Object.keys(fixed.customItems ?? {})).toEqual(['優良鐵戰靴（2）'])
-    expect(fixed.inventory.map((i) => i.name)).toEqual(expect.arrayContaining(['優良鐵戰靴（2）', '精製秘銀護腰']))
+    // 之後（格式 12）自訂裝備的鍵換成名字＋屬性雜湊，撞名的編號拿掉
+    expect(Object.keys(fixed.customItems ?? {}).map(itemLabel)).toEqual(['優良鐵戰靴'])
+    expect(fixed.inventory.map((i) => itemLabel(i.name))).toEqual(expect.arrayContaining(['優良鐵戰靴', '精製秘銀護腰']))
+    expect(fixed.inventory.find((i) => itemLabel(i.name) === '優良鐵戰靴')!.name).toBe(Object.keys(fixed.customItems!)[0])
 
     // 特殊任務的獨特裝備改名：行囊與身上的舊名稱跟著改
     const uniq = JSON.parse(JSON.stringify(state)) as GameState

@@ -311,12 +311,12 @@ export function doTownQuest(state: GameState, questId: string, intent?: string):
   const scene = questScene(quest)
 
   if (tpl.kind === 'pest' || tpl.kind === 'hunt') {
-    return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(intent ? { intent } : {}) })
+    return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(tpl.capture ? { capture: true } : {}), ...(intent ? { intent } : {}) })
   }
   const ambushed = tpl.encounter && withRng(state, (rng) => rng.chance(tpl.encounter_chance ?? 0))
   if (ambushed) {
     // 遭遇戰打贏就算完成委託（找到東西、趕跑了搗亂的人）；打輸可以再試一次
-    return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(intent ? { intent } : {}) })
+    return startCombat(state, tpl.encounter, { questId: quest.id, scene, ...(tpl.capture ? { capture: true } : {}), ...(intent ? { intent } : {}) })
   }
 
   const report = baseReport(state, 'quest', tpl.hours)

@@ -14,6 +14,8 @@
   "$comment_leave_stay": "離隊的人（遣散、親密度太低離開……）留在這座城鎮的酒館等幾天，之後才照自己的活動範圍走動；在冒險區域離隊時是最近的聚落。",
   "leave_stay_days": 7,
   "leave_threshold": -20,
+  "$comment_combat_affinity": "戰鬥給的親密度（並肩作戰獲勝 +2、主角在戰鬥中替他治療 +1，治療每場只算一次）最多把親密度推到 combat_affinity_cap（39 是「友好/好感」的上緣）；再往上要靠聊天、送禮、自由行動、長休的互動這些經營關係的行動。扣的不受影響。",
+  "combat_affinity_cap": 39,
   "initial_affinity": { "hired": 0, "voluntary": 10, "slave": -10, "leader": 5, "ally": 0, "guest": 5 },
 
   "tavern": {
