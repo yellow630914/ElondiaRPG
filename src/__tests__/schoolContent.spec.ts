@@ -9,6 +9,7 @@ import { schoolAbilities } from '@/engine/schools'
 import { newGame } from '@/engine/state'
 import { condMet } from '@/engine/storyFlags'
 import { sanitizeTravelEvent } from '@/engine/travelEventMods'
+import { sanitizeAbility } from '@/engine/mods'
 import type { GameState } from '@/engine/types'
 
 function game(): GameState {
@@ -111,5 +112,13 @@ describe('禁慾派的清淨技能', () => {
     expect(down.hp).toBe(60)
     expect(me.lust).toBe(Math.round(effectiveLustMax(me) * 0.8))
     expect(unusableReason(combat, me, 'school_abst_return')).not.toBeNull()
+  })
+})
+
+describe('內容編輯器保留清淨與復活', () => {
+  it('sanitizeAbility 留著 purity、revive，數值夾在範圍內', () => {
+    const a = sanitizeAbility('school_abst_return', { ...abilityDef('school_abst_return'), purity: { max: 0.1, backlash: 0.8, bonus: 9 } }, false)
+    expect(a.purity).toEqual({ max: 0.1, backlash: 0.8, bonus: 3 })
+    expect(a.revive).toBe(0.3)
   })
 })

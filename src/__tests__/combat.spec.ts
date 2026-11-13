@@ -315,8 +315,8 @@ describe('combat rules', () => {
       pc.slots = [9, 9, 9, 9, 9, 9, 9, 9, 9]
       pc.slotMax = [9, 9, 9, 9, 9, 9, 9, 9, 9]
       if (a.recover_slot) pc.slots[0] = 0
-      // 慾望戰鬥：要消耗或依靠慾望的能力，先給一些慾望
-      if (pc.lustMax) pc.lust = Math.round(pc.lustMax * 0.6)
+      // 慾望戰鬥：要消耗或依靠慾望的能力，先給一些慾望（禁慾派的清淨技能要慾望低）
+      if (pc.lustMax) pc.lust = a.purity ? 0 : Math.round(pc.lustMax * 0.6)
       for (const e of state.combat!.combatants) if (e.side === 'enemy') e.hp = e.maxHp = 500
       const reason = unusableReason(state.combat!, pc, a.id)
       expect(reason, a.id).toBeNull()
