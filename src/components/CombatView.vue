@@ -2,7 +2,7 @@
 import { useSummary } from '@/engine/inventory'
 import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import {
-  abilityApCost, castCircle, combatItems, currentActor, defenseMult, effectiveLustMax, isActive, itemNeedsTarget, itemTargets, multLabel, struggleDc, struggleTargets, threatMultOf, threatShares, unusableReason, validTargets,
+  abilityApCost, castCircle, combatItems, currentActor, defenseMult, effectiveLustMax, isActive, lustFloor, itemNeedsTarget, itemTargets, multLabel, struggleDc, struggleTargets, threatMultOf, threatShares, unusableReason, validTargets,
   type Combatant,
 } from '@/engine/combat'
 import { luckyThreshold } from '@/engine/character'
@@ -205,7 +205,8 @@ const heldHp = reactive<Record<string, number>>({})
 const shownHp = (c: Combatant) => Math.max(0, Math.min(c.maxHp, c.hp + (hpDelta.value[c.id] ?? 0) + (heldHp[c.id] ?? 0)))
 const lustDelta = computed(() => unplayedLustDelta(combat.value.timeline.slice(played.value)))
 /** 畫面上的慾望（還沒播到的先不算）；慾望戰鬥關閉時沒有慾望條 */
-const shownLust = (c: Combatant) => Math.max(0, Math.min(effectiveLustMax(c), (c.lust ?? 0) - (lustDelta.value[c.id] ?? 0)))
+// 禁慾派（清心寡慾）可以壓到零以下：數字照實寫負的，條是空的
+const shownLust = (c: Combatant) => Math.max(Math.min(0, lustFloor(c)), Math.min(effectiveLustMax(c), (c.lust ?? 0) - (lustDelta.value[c.id] ?? 0)))
 /** 有慾望條：慾望戰鬥開著，而且不是免疫魅惑的敵人 */
 const hasLustBar = (c: Combatant) => c.lustMax !== undefined && !(c.side === 'enemy' && defenseMult(c, 'lust') === 0 && !c.lust)
 /** 畫面上倒下了嗎（致命的那一下還沒播到時先不算） */
@@ -630,7 +631,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
             </div>
             <!-- 法術環另起一行：高等級的施法者有六、七個環，和生命值、行動點擠在同一行會把生命條壓扁 -->
             <div v-if="c.slotMax.length" class="l2 slots small muted" :title="slotsText(c)">環 {{ slotsShort(c) }}</div>
-            <div v-if="hasLustBar(c)" class="l2 lust" :title="`慾望 ${c.lust ?? 0}/${effectiveLustMax(c)}：滿了會高潮`">
+            <div v-if="hasLustBar(c)" class="l2 lust" :title="`慾望 ${c.lust ?? 0}/${effectiveLustMax(c)}：滿了會高潮${lustFloor(c) ? `（下限 ${lustFloor(c)}）` : ''}`">
               <span class="hpbar"><span class="bar lust"><span class="fill" :style="{ width: pct(shownLust(c), effectiveLustMax(c)) }" /></span>
                 <span class="num">♥ {{ shownLust(c) }}/{{ effectiveLustMax(c) }}</span></span>
             </div>
@@ -678,7 +679,7 @@ const showResult = computed(() => combat.value.status !== 'ongoing' && played.va
               </span>
               <span class="tag">{{ damageTypeName(c.weapon.type) }}攻擊</span>
             </div>
-            <div v-if="hasLustBar(c)" class="l2 lust" :title="`慾望 ${c.lust ?? 0}/${effectiveLustMax(c)}：滿了會高潮`">
+            <div v-if="hasLustBar(c)" class="l2 lust" :title="`慾望 ${c.lust ?? 0}/${effectiveLustMax(c)}：滿了會高潮${lustFloor(c) ? `（下限 ${lustFloor(c)}）` : ''}`">
               <span class="hpbar"><span class="bar lust"><span class="fill" :style="{ width: pct(shownLust(c), effectiveLustMax(c)) }" /></span>
                 <span class="num">♥ {{ shownLust(c) }}/{{ effectiveLustMax(c) }}</span></span>
             </div>

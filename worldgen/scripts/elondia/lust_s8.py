@@ -150,11 +150,11 @@ LEWD_TATTOOS = {
 
 PARASITE_ABILITIES = [
     {"id": "para_lingerie_bind", "name": "魔導衣的纏縛", "type": "skill", "classes": ["lewd"], "unlock": 1, "ap": 2, "attr": "cha", "target": "enemy", "resolve": "attack",
-     "damage": [{"dice": "2d6", "type": "lust", "scale": {"dice": "1d6", "per": 4}, "mod": True}], "apply": [{"status": "restrained", "turns": 1, "on": "hit"}], "uses": {"per_rest": 1},
-     "desc": "（獸蟲派・馴服的魔導衣）黑色的蕾絲從身上延伸出去，把敵人纏住：2d6 + 魅力調整值慾望（每 4 級再 +1d6），命中後束縛 1 回合。每次長休一次。"},
+     "damage": [{"dice": "2d6", "type": "lust", "scale": {"dice": "1d6", "per": 4}, "mod": True}], "apply": [{"status": "restrained", "turns": 1, "on": "hit"}], "uses": {"per_combat": 1},
+     "desc": "（獸蟲派・馴服的魔導衣）黑色的蕾絲從身上延伸出去，把敵人纏住：2d6 + 魅力調整值慾望（每 4 級再 +1d6），命中後束縛 1 回合。每場戰鬥一次。"},
     {"id": "para_mark_surge", "name": "主宰之紋・解放", "type": "skill", "classes": ["lewd"], "unlock": 1, "ap": 2, "attr": "cha", "target": "all_enemies", "resolve": "save", "save": "fai",
-     "damage": [{"dice": "2d6", "type": "lust", "scale": {"dice": "1d6", "per": 3}, "mod": True}], "apply": [{"status": "sensitized", "turns": 2}], "uses": {"per_rest": 1},
-     "desc": "（獸蟲派・主宰之紋）點亮小腹上的紋樣，熱流一口氣放出去：所有敵人信仰豁免，2d6 + 魅力調整值慾望（每 3 級再 +1d6，成功減半），失敗敏感 2 回合。每次長休一次。"},
+     "damage": [{"dice": "2d6", "type": "lust", "scale": {"dice": "1d6", "per": 3}, "mod": True}], "apply": [{"status": "sensitized", "turns": 2}], "uses": {"per_combat": 1},
+     "desc": "（獸蟲派・主宰之紋）點亮小腹上的紋樣，熱流一口氣放出去：所有敵人信仰豁免，2d6 + 魅力調整值慾望（每 3 級再 +1d6，成功減半），失敗敏感 2 回合。每場戰鬥一次。"},
 ]
 PARASITE_PATCH = {
     "hungry_lingerie": {"tamed_ability": "para_lingerie_bind"},

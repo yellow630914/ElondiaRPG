@@ -137,7 +137,7 @@ function setExclusive(v: string, on: boolean) {
 const LUST_NUMS: [keyof LustPerk, string, number][] = [
   ['max', '慾望上限 +', 1], ['taken', '受到的慾望倍率 ±', 0.05], ['self', '自己增加的慾望倍率 +', 0.05], ['convert', '傷害轉成慾望的比例 +', 0.05],
   ['burst', '引爆的傷害倍率 +', 0.05], ['relief', '消退慾望的倍率 +', 0.05], ['crit_convert', '受到幸運一擊時改成慾望的比例', 0.05],
-  ['regen', '慾望一半以上時每回合回復生命', 1], ['calm', '每回合多消退慾望上限的比例', 0.01], ['climax_heal', '高潮時回復最大生命的比例', 0.05], ['exposure', '曝露名聲的魅惑傷害倍率 +', 0.25],
+  ['regen', '慾望一半以上時每回合回復生命', 1], ['calm', '每回合多消退慾望上限的比例', 0.01], ['floor', '戰鬥中慾望的下限（上限的比例；負數可以壓到零以下）', 0.05], ['climax_heal', '高潮時回復最大生命的比例', 0.05], ['exposure', '曝露名聲的魅惑傷害倍率 +', 0.25],
   ['exposure_level', '曝露度每 1 點的魅惑傷害', 1], ['endurance_max', '忍耐每 20 點的慾望上限', 1], ['sensitivity_bonus', '敏感每 25 點的魅惑傷害', 1],
   ['bound_max', '有上鎖的拘束具時慾望上限 +', 1],
 ]

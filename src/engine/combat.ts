@@ -153,6 +153,8 @@ export interface Combatant {
     burst?: number; relief?: number; critConvert?: number; regen?: number; climaxHeal?: number; wounded?: Mods
     /** 靜心（禁慾派）：每回合開始時多消退慾望上限的這個比例 */
     calm?: number
+    /** 慾望的下限（上限的比例；流派特質的 floor） */
+    floor?: number
     /** 懷孕後期的雙面效應：有隊友倒下時的戰鬥修正（docs/FAMILY.md 第 4.3 節；allyDown 每回合開始時更新） */
     allyDown?: Mods
     /** 分擔慾望的效率：主角記 pc，隊友記對主角的親密度（lewd.json 的 combat.bond_step） */
@@ -509,6 +511,7 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     if (t.crit_convert) f.lustMods.critConvert = t.crit_convert
     if (t.regen) f.lustMods.regen = t.regen
     if (t.calm) f.lustMods.calm = t.calm
+    if (t.floor) f.lustMods.floor = t.floor
     if (t.climax_heal) f.lustMods.climaxHeal = t.climax_heal
     if (Object.keys(t.wounded).length) f.lustMods.wounded = t.wounded
     const addMods = (m: Mods) => { for (const [k, x] of Object.entries(m)) f.baseMods[k as keyof Mods] = (f.baseMods[k as keyof Mods] ?? 0) + (x ?? 0) }
@@ -551,6 +554,8 @@ function initLust(state: GameState, fighters: Combatant[], mult: number) {
     // 寄生物失控：高的階段帶著慾望開戰
     f.lust += Math.round(f.lustMax * parasiteStartLust(ch))
     f.lust = Math.min(f.lust, f.lustMax - 1)
+    // 縱欲派（慾焰）：帶著下限的慾望上場
+    f.lust = Math.max(f.lust, Math.min(f.lustMax - 1, Math.max(0, lustFloor(f))))
   }
 }
 
@@ -592,9 +597,18 @@ function gainLust(combat: CombatState, target: Combatant, amount: number, effect
   return gained
 }
 
-/** 消退慾望 */
+/**
+ * 慾望的下限（點數）：流派特質的 floor × 慾望上限。禁慾派（清心寡慾）是負的，消退慾望可以壓到零以下；
+ * 縱欲派（慾焰）是正的，消退、引爆、高潮之後都不會低於這裡
+ */
+export function lustFloor(c: Combatant): number {
+  const r = c.lustMods?.floor ?? 0
+  return r && c.lustMax !== undefined ? Math.round(effectiveLustMax(c) * r) : 0
+}
+
+/** 消退慾望（最多消到下限） */
 function relieveLust(target: Combatant, amount: number, effects: Effect[]): number {
-  const cut = Math.min(target.lust ?? 0, Math.max(0, Math.round(amount)))
+  const cut = Math.min((target.lust ?? 0) - lustFloor(target), Math.max(0, Math.round(amount)))
   if (cut <= 0) return 0
   target.lust = (target.lust ?? 0) - cut
   effects.push({ type: 'lust', target: target.id, amount: -cut })
@@ -626,7 +640,7 @@ function fireReleases(combat: CombatState, rng: Rng) {
 
 function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
   const r = lustRules()
-  target.lust = 0
+  target.lust = Math.max(0, lustFloor(target))
   if (target.side === 'enemy' && !combat.lustOnly) {
     const ratio = climaxRatio(combat, target)
     const dmg = ratio > 0 ? Math.max(1, Math.round(target.maxHp * ratio)) : 0
@@ -897,7 +911,8 @@ export function unusableReason(combat: CombatState, actor: Combatant, abilityId:
     if (a.lust_cost && lust < a.lust_cost) return '慾望不足'
     if (a.requires_lust && lust < max * a.requires_lust) return '慾望不足'
     if (a.purity && lust > max * a.purity.max) return `慾望太高（要在 ${Math.round(a.purity.max * 100)}% 以下）`
-    if (a.burst && (lust <= 0 || lust < max * (a.burst.min_ratio ?? 0))) return '慾望不足'
+    // 縱欲派剛好在下限時不能引爆（引爆之後馬上回到下限，等於白放）
+    if (a.burst && (lust - Math.max(0, lustFloor(actor)) <= 0 || lust < max * (a.burst.min_ratio ?? 0))) return '慾望不足'
     if (a.lust_transfer?.mode === 'spread' && lust <= 0) return '沒有慾望可以分'
   }
   if ((a.target === 'enemy' || a.target === 'all_enemies' || a.target === 'random_enemies') && foesOf(combat, actor).length === 0) return '沒有目標'
@@ -1834,7 +1849,8 @@ function applyStatuses(
 export function purityPotency(actor: Combatant, a: AbilityDef): number {
   if (!a.purity || actor.lustMax === undefined) return 1
   const gate = effectiveLustMax(actor) * a.purity.max
-  const left = gate > 0 ? Math.max(0, 1 - (actor.lust ?? 0) / gate) : 0
+  // 慾望壓到零以下（禁慾派）也照零算：效力最多 1 + bonus
+  const left = gate > 0 ? Math.min(1, Math.max(0, 1 - (actor.lust ?? 0) / gate)) : 0
   return Math.round((1 + (a.purity.bonus ?? 1) * left) * 100) / 100
 }
 
@@ -1880,7 +1896,8 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
     relieveLust(actor, a.lust_cost, effects)
     push(combat, { actor: actor.id, action: `${a.name}・消耗慾望`, result: 'none', effects })
   }
-  const spent = a.burst ? actor.lust ?? 0 : 0
+  // 引爆把全部的慾望放出去；縱欲派的下限之後回來（relieveLust 只消到下限）
+  const spent = a.burst ? Math.max(0, actor.lust ?? 0) : 0
   if (a.burst) {
     const effects: Effect[] = []
     relieveLust(actor, spent, effects)
@@ -2173,8 +2190,10 @@ function startTurn(combat: CombatState, rng: Rng, actor: Combatant): boolean {
     push(combat, { actor: actor.id, action: '回味', result: 'none', effects })
   }
   // 慾望戰鬥：每回合消退一點（有不會消退的狀態時不消退）
-  if (lustOn(combat) && (actor.lust ?? 0) > 0 && !actor.statuses.some((s) => statusDef(s.id).lust_hold)) {
-    actor.lust = Math.max(0, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * (lustRules().decay * (actor.lustMods?.decay ?? 1) + (actor.lustMods?.calm ?? 0)))))
+  // 消退不會低於零，也不會低於縱欲派的下限（壓到零以下要靠技能）
+  const decayFloor = Math.max(0, lustFloor(actor))
+  if (lustOn(combat) && (actor.lust ?? 0) > decayFloor && !actor.statuses.some((s) => statusDef(s.id).lust_hold)) {
+    actor.lust = Math.max(decayFloor, (actor.lust ?? 0) - Math.max(1, Math.round(effectiveLustMax(actor) * (lustRules().decay * (actor.lustMods?.decay ?? 1) + (actor.lustMods?.calm ?? 0)))))
   }
   // 這回合開始時才中的暈眩類狀態（媚毒、每回合增加的慾望讓人高潮）：這回合就不能行動，並且算用掉了
   const before = new Set(actor.statuses)
@@ -2318,6 +2337,15 @@ export function chooseAction(combat: CombatState, rng: Rng, actor: Combatant, ta
     // 靜心這類只消退自己慾望的：慾望高了才用
     if (a.target === 'self' && a.lust_relief && !a.heal && !a.apply?.length) {
       if (lustRatio(actor) >= 0.3) options.push({ ability: a, score: 1.5 + lustRatio(actor) * 2 })
+      continue
+    }
+    // 替隊友消退慾望（清心、淨念、鵲橋相會）：有隊友的慾望到一半以上時，給最高的那位；全體的看有幾位
+    // （禁慾派的清淨技能另外照增益、淨化處理；帶治療的照治療）
+    if (a.lust_relief && !a.heal && !a.purity && (a.target === 'ally' || a.target === 'all_allies')) {
+      const lusty = allies.filter((x) => x.lustMax !== undefined && lustRatio(x) >= 0.5).sort((x, y) => lustRatio(y) - lustRatio(x))
+      if (!lusty.length) continue
+      const score = a.target === 'all_allies' ? 2 + 0.8 * lusty.length - limited : 2.5 + lustRatio(lusty[0]!) * 2
+      options.push({ ability: a, ...(a.target === 'ally' ? { target: lusty[0]!.id } : {}), score })
       continue
     }
     // 治療：只在有人受傷時，給最需要的人
@@ -2645,7 +2673,7 @@ function settleLust(state: GameState, combat: CombatState, report: Report) {
   if (!lustOn(combat)) return
   const r = lustRules()
   // 園區：剩下的慾望記成魅氣，帶到下一場
-  saveParkLust(state, Object.fromEntries(combat.combatants.filter((c) => c.side === 'party' && !c.ally && c.lustMax).map((c) => [c.id, (c.lust ?? 0) / c.lustMax!])))
+  saveParkLust(state, Object.fromEntries(combat.combatants.filter((c) => c.side === 'party' && !c.ally && c.lustMax).map((c) => [c.id, Math.max(0, c.lust ?? 0) / c.lustMax!])))
   const climaxed: string[] = []
   for (const member of state.party) {
     const f = combat.combatants.find((c) => c.id === member.id)

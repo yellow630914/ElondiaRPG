@@ -43,7 +43,7 @@ describe('寄生物', () => {
     expect(pc.lewd!.sensitivity).toBe(before.sensitivity + 2)
   })
 
-  it('魅魔的契紋：共生給魅惑之吻、支配再給傾國一笑並失控；馴服後獸蟲派得到每次長休一次的技能', () => {
+  it('魅魔的契紋：共生給魅惑之吻、支配再給傾國一笑並失控；馴服後獸蟲派得到每場戰鬥一次的技能', () => {
     const state = game()
     const pc = pcOf(state)
     attachParasite(pc, 'succubus_mark', state.time)

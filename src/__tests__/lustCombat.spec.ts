@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it } from 'vitest'
-import { act, currentActor, defenseMult, effectiveLustMax, finishCombat, lustMaxFor, startCombat, unusableReason, type Combatant } from '@/engine/combat'
+import { act, chooseAction, currentActor, defenseMult, effectiveLustMax, finishCombat, lustFloor, lustMaxFor, purityPotency, startCombat, unusableReason, type Combatant } from '@/engine/combat'
+import { Rng } from '@/engine/rng'
 import { setContentFilters } from '@/engine/content'
-import { enemies } from '@/engine/data'
+import { abilityDef, enemies } from '@/engine/data'
 import { useItem } from '@/engine/inventory'
 import { pcOf } from '@/engine/party'
 import { addItem, newGame } from '@/engine/state'
@@ -350,5 +351,91 @@ describe('任務戰鬥的慾望勝利', () => {
     const report = finishCombat(state)
     expect(npcRecord(state, id)?.dead).toBeFalsy()
     expect(report.others?.find((o) => o.name === foe.name)?.status).toContain('在高潮中屈服、被制伏')
+  })
+})
+
+describe('慾望的下限（流派特質的 floor）', () => {
+  /** 主角修了指定的特質、會指定的技能，打一隻史萊姆；回合輪到主角 */
+  function setup(perks: string[], abilities: string[] = [], level = 10) {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'cleric', seed: 21 })
+    const pc = pcOf(state)
+    pc.level = level
+    pc.hp = pc.maxHp = 300
+    pc.perks = [...(pc.perks ?? []), ...perks]
+    pc.abilities.push(...abilities)
+    const combat = startCombat(state, [['goblin', 1]])
+    const me = combat.combatants.find((c) => c.id === pc.id)!
+    combat.combatants.find((c) => c.side === 'enemy')!.hp = 9999
+    myTurn(state, me)
+    return { state, combat, me }
+  }
+
+  it('縱欲派（慾焰）：帶著上限 20% 上場；消退停在下限，引爆放出全部後回到下限', () => {
+    const { state, combat, me } = setup(['school_indulgence', 'wanton_blaze'], ['burst_flame'])
+    const floor = lustFloor(me)
+    expect(floor).toBe(Math.round(effectiveLustMax(me) * 0.2))
+    expect(me.lust).toBeGreaterThanOrEqual(floor)
+    me.lust = floor
+    expect(unusableReason(combat, me, 'burst_flame')).toBe('慾望不足')
+    // 回合開始的消退不會低於下限
+    act(state, { type: 'end_turn' })
+    myTurn(state, me)
+    expect(me.lust).toBeGreaterThanOrEqual(floor)
+    // 引爆放出全部的慾望，之後回到下限
+    me.lust = effectiveLustMax(me) - 1
+    me.ap = me.apMax
+    const foe = combat.combatants.find((c) => c.side === 'enemy')!
+    act(state, { type: 'ability', ability: 'burst_flame', target: foe.id })
+    expect(me.lust).toBe(floor)
+  })
+
+  it('禁慾派（清心寡慾）：靜心可以壓到零以下（最低上限的 −30%），自然消退不會；效力照零算', () => {
+    const { state, combat, me } = setup(['school_abstinence', 'pure_heart'])
+    const floor = lustFloor(me)
+    expect(floor).toBe(Math.round(effectiveLustMax(me) * -0.3))
+    me.lust = 0
+    for (let i = 0; i < 4; i++) {
+      me.ap = me.apMax
+      me.usedTurn = {}
+      act(state, { type: 'ability', ability: 'school_abst_calm' })
+    }
+    expect(me.lust).toBe(floor)
+    expect(purityPotency(me, abilityDef('school_abst_mend'))).toBe(2)
+    // 用了清淨技能：反噬從負的開始算，還在門檻以下可以再放一次
+    me.ap = me.apMax
+    act(state, { type: 'ability', ability: 'school_abst_mend', target: me.id })
+    expect(me.lust).toBe(floor + Math.round(effectiveLustMax(me) * 0.3))
+    expect(unusableReason(combat, me, 'school_abst_mend')).toBeNull()
+    // 回合開始的消退停在零，不會自己往下
+    me.lust = 5
+    act(state, { type: 'end_turn' })
+    myTurn(state, me)
+    expect(me.lust).toBe(0)
+  })
+
+  it('沒修這兩個進階的人慾望照舊停在零', () => {
+    const { state, me } = setup(['school_abstinence'])
+    expect(lustFloor(me)).toBe(0)
+    me.lust = 3
+    me.ap = me.apMax
+    act(state, { type: 'ability', ability: 'school_abst_calm' })
+    expect(me.lust).toBe(0)
+  })
+})
+
+describe('隊友的 AI 會替別人消退慾望', () => {
+  it('清心給慾望最高、到一半以上的隊友；沒有人到一半時不用', () => {
+    const state = newGame({ name: '莉雅', race: 'human', classId: 'cleric', seed: 22 })
+    const pc = pcOf(state)
+    pc.abilities = ['lust_calm']
+    const combat = startCombat(state, [['goblin', 1]])
+    const me = combat.combatants.find((c) => c.id === pc.id)!
+    const foe = combat.combatants.find((c) => c.side === 'enemy')!
+    me.ap = me.apMax
+    expect(chooseAction(combat, new Rng(1), me, foe, false)?.ability.id).not.toBe('lust_calm')
+    me.lust = Math.round(effectiveLustMax(me) * 0.9)
+    const picks = Array.from({ length: 20 }, (_, i) => chooseAction(combat, new Rng(i), me, foe, false))
+    expect(picks.filter((p) => p?.ability.id === 'lust_calm').length).toBeGreaterThan(10)
+    expect(picks.find((p) => p?.ability.id === 'lust_calm')?.target).toBe(me.id)
   })
 })

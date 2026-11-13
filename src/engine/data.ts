@@ -2548,6 +2548,8 @@ export interface LustPerk {
   max?: number; taken?: number; self?: number; convert?: number; burst?: number; relief?: number; crit_convert?: number; regen?: number
   /** 靜心：每回合開始時多消退慾望上限的這個比例（禁慾派） */
   calm?: number
+  /** 戰鬥中慾望的下限（上限的比例）：負數讓消退慾望的技能可以壓到零以下（禁慾派），正數讓慾望不會低於這裡（縱欲派） */
+  floor?: number
   climax_heal?: number; exposure?: number; exposure_level?: number; endurance_max?: number; sensitivity_bonus?: number
   growth?: Partial<Record<'lewdness' | 'sensitivity' | 'endurance' | 'submission', number>>
   wounded?: Mods; master?: Mods; bound?: Mods; bound_max?: number

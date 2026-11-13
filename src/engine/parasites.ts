@@ -60,7 +60,7 @@ export interface ParasiteDef {
     text: string
     /** 主動觸發之後得到的非戰鬥狀態（companions.json 的 conditions） */
     buff?: string
-    /** 獸蟲派：馴服之後變成這個戰鬥技能（每次長休一次） */
+    /** 獸蟲派：馴服之後變成這個戰鬥技能（每場戰鬥一次） */
     ability?: string
   }
 }
@@ -175,7 +175,7 @@ export function corruptionGrowth(c: Character, before: number, after: number) {
 
 /**
  * 寄生物給的戰鬥技能（不佔攜帶上限）：還沒馴服的依階段（魅魔的契紋：共生是魅惑之吻、支配再加傾國一笑），
- * 修了獸蟲派的人，馴服的寄生物變成每次長休一次的技能
+ * 修了獸蟲派的人，馴服的寄生物變成每場戰鬥一次的技能
  */
 export function parasiteAbilities(c: Character): string[] {
   const out: string[] = []

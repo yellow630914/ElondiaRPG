@@ -335,7 +335,7 @@ function setFertility(k: 'min' | 'mult', v: number) {
         <div class="grid">
           <label v-if="draft.kind === 'gear'">馴服後的物品 <select v-model="draft.tamed.item"><option :value="undefined">（照原本的物品）</option><option v-for="n in tamedItems" :key="n" :value="n">{{ n }}</option></select></label>
           <label>主動觸發後得到 <select v-model="draft.tamed.buff"><option :value="undefined">（沒有）</option><option v-for="c in conditionList" :key="c.id" :value="c.id">{{ c.name }}</option></select></label>
-          <label><span>獸蟲派的技能 <Hint text="修了獸蟲派的人，馴服之後變成這個技能（每次長休一次）。" /></span><select v-model="draft.tamed.ability"><option :value="undefined">（沒有）</option><option v-for="a in abilityList" :key="a.id" :value="a.id">{{ a.name }}</option></select></label>
+          <label><span>獸蟲派的技能 <Hint text="修了獸蟲派的人，馴服之後變成這個技能（每場戰鬥一次）。" /></span><select v-model="draft.tamed.ability"><option :value="undefined">（沒有）</option><option v-for="a in abilityList" :key="a.id" :value="a.id">{{ a.name }}</option></select></label>
         </div>
         <template v-if="draft.kind === 'mark'">
           <div class="grid">
