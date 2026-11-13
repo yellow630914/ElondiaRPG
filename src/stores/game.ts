@@ -1568,7 +1568,7 @@ export const useGame = defineStore('game', () => {
     setAbilityCarried: (member: string, ability: string, on: boolean) => run((s) => town.setAbilityCarried(s, member, ability, on)),
     /** 多出來的經驗換特質的機會、屬性點或技能三選一（xpSinks.ts） */
     spendXp: (member: string, kind: XpSink) =>
-      run((s) => withRng(s, (rng) => spendXp(s.party.find((m) => m.id === member)!, kind, rng))),
+      run((s) => withRng(s, (rng) => spendXp(s.party.find((m) => m.id === member)!, kind, rng, s))),
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),

@@ -35,6 +35,18 @@ describe('經驗的用途', () => {
     expect(pc.xp).toBe(1_000_000 - r.attr.base - r.attr.base * r.attr.mult)
   })
 
+  it('起始花費與倍率照存檔規則', () => {
+    const state = game()
+    const pc = pcOf(state)
+    Object.assign(state.options as object, { xpAttrBase: 1000, xpAttrMult: 3 })
+    expect(xpSinkCost(pc, 'attr', state)).toBe(1000)
+    withRng(state, (rng) => spendXp(pc, 'attr', rng, state))
+    expect(xpSinkCost(pc, 'attr', state)).toBe(3000)
+    expect(pc.xp).toBe(1_000_000 - 1000)
+    // 沒改的照預設
+    expect(xpSinkCost(pc, 'perk', state)).toBe(r.perk.base)
+  })
+
   it('苦練屬性要 20 級；屬性都到上限時不行', () => {
     const state = game(19)
     const pc = pcOf(state)

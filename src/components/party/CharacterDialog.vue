@@ -182,7 +182,7 @@ let popTimer: ReturnType<typeof setTimeout> | undefined
 // 多出來的經驗的用途（xpSinks.ts）：鑽研特質、苦練屬性（20 級以上）、鑽研技能；花費各自翻倍
 const XP_SINK_HINT = (() => {
   const r = progression.xp_sinks
-  return `多出來的經驗可以換：${r.perk.name}（一次學特質的機會，三選一或寫說法交給 AI）、${r.attr.name}（${r.attr.min_level} 級以上，一點屬性點）、${r.ability.name}（多學一個技能，三選一）。花費從 ${r.perk.base}、${r.attr.base}、${r.ability.base} 起，每換一次那一種就 ×${r.perk.mult}，三種各算各的。經驗從目前的進度扣，還沒滿級時會延後升級。`
+  return `多出來的經驗可以換：${r.perk.name}（一次學特質的機會，三選一或寫說法交給 AI）、${r.attr.name}（${r.attr.min_level} 級以上，一點屬性點）、${r.ability.name}（多學一個技能，三選一）。每換一次，那一種的花費就乘上倍率，三種各算各的；起始花費與倍率在設定的遊戲規則（成長）調整。經驗從目前的進度扣，還沒滿級時會延後升級。`
 })()
 function spend(attr: string) {
   game.spendAttr(m.value.id, attr as Parameters<typeof game.spendAttr>[1])
@@ -263,9 +263,9 @@ function saveTags() {
             <div v-if="!isNoncombatant(m)" class="xp-sinks">
               <span class="small muted">經驗的用途 <Hint :text="XP_SINK_HINT" /></span>
               <button
-                v-for="k in XP_SINKS" :key="k" class="small" :disabled="inCombat || !!xpSinkBlocked(m, k) || game.judging"
-                :title="xpSinkBlocked(m, k) ?? `花 ${xpSinkCost(m, k)} 經驗`" @click="game.spendXp(m.id, k)"
-              >{{ xpSinkName(k) }}<span class="cost">{{ xpSinkCost(m, k) }}</span></button>
+                v-for="k in XP_SINKS" :key="k" class="small" :disabled="inCombat || !!xpSinkBlocked(m, k, s) || game.judging"
+                :title="xpSinkBlocked(m, k, s) ?? `花 ${xpSinkCost(m, k, s)} 經驗`" @click="game.spendXp(m.id, k)"
+              >{{ xpSinkName(k) }}<span class="cost">{{ xpSinkCost(m, k, s) }}</span></button>
             </div>
             <table class="attrs">
               <thead><tr><th>屬性</th><th>數值</th><th>修正</th><th>來源</th><th /></tr></thead>

@@ -941,6 +941,13 @@ export interface GameOptions {
   exposureDecay?: number
   submissionDecay?: number
   lewdnessDecay?: number
+  /** 多出來的經驗的用途：第一次的花費與每次的倍率（xpSinks.ts） */
+  xpPerkBase?: number
+  xpPerkMult?: number
+  xpAttrBase?: number
+  xpAttrMult?: number
+  xpAbilityBase?: number
+  xpAbilityMult?: number
   sensitivityDecay?: number
   lustMult?: number
   /** 拘束具雙面效應的全身上限（docs/LEWD_STATS.md 第 7 節）：命中、迴避、豁免、傷害、減傷各一項；行動點回復；先攻 */

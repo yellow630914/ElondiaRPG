@@ -11,6 +11,9 @@ import parasitesJson from '@data/rules/parasites.json'
 import lewdJson from '@data/rules/lewd.json'
 import familyJson from '@data/rules/family.json'
 import gearJson from '@data/rules/gear.json'
+import progressionJson from '@data/rules/progression.json'
+
+const sinks = (progressionJson as unknown as { xp_sinks: Record<'perk' | 'attr' | 'ability', { base: number; mult: number; min_level: number }> }).xp_sinks
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
 export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'customDifficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
@@ -44,7 +47,14 @@ export interface RuleDef {
 }
 
 export const RULE_DEFS: Record<NumericRule, RuleDef> = {
-  xpMult: { group: 'growth', label: '經驗值倍率', hint: '所有經驗值（戰鬥、委託、事件）乘上這個倍率。', default: 1, min: 0.1, max: 5, step: 0.05, unit: '倍' },
+  xpMult: { group: 'growth', label: '經驗值倍率', hint: '所有經驗值（戰鬥、委託、事件）乘上這個倍率（預設 0.5；2026-11 以前是 1）。', default: 0.5, min: 0.1, max: 5, step: 0.05, unit: '倍' },
+  // 多出來的經驗的用途（xpSinks.ts）：第一次的花費與每次的倍率，三種各算各的
+  xpPerkBase: { group: 'growth', label: '鑽研特質的起始花費', hint: `用經驗換一次學特質的機會，第一次要多少經驗（預設 ${sinks.perk.base}）；之後每換一次乘上下面的倍率。`, default: sinks.perk.base, min: 100, max: 100000, step: 100, unit: '經驗' },
+  xpPerkMult: { group: 'growth', label: '鑽研特質的花費倍率', hint: `每鑽研一次特質，下一次的花費乘上這個倍率（預設 ${sinks.perk.mult}）。1 表示每次一樣。`, default: sinks.perk.mult, min: 1, max: 5, step: 0.1, unit: '倍' },
+  xpAttrBase: { group: 'growth', label: '苦練屬性的起始花費', hint: `${sinks.attr.min_level} 級以上用經驗換一點屬性點，第一次要多少經驗（預設 ${sinks.attr.base}）；之後每換一次乘上下面的倍率。`, default: sinks.attr.base, min: 100, max: 100000, step: 100, unit: '經驗' },
+  xpAttrMult: { group: 'growth', label: '苦練屬性的花費倍率', hint: `每苦練一次屬性，下一次的花費乘上這個倍率（預設 ${sinks.attr.mult}）。1 表示每次一樣。`, default: sinks.attr.mult, min: 1, max: 5, step: 0.1, unit: '倍' },
+  xpAbilityBase: { group: 'growth', label: '鑽研技能的起始花費', hint: `用經驗多學一個技能（三選一），第一次要多少經驗（預設 ${sinks.ability.base}）；之後每換一次乘上下面的倍率。`, default: sinks.ability.base, min: 100, max: 100000, step: 100, unit: '經驗' },
+  xpAbilityMult: { group: 'growth', label: '鑽研技能的花費倍率', hint: `每鑽研一次技能，下一次的花費乘上這個倍率（預設 ${sinks.ability.mult}）。1 表示每次一樣。`, default: sinks.ability.mult, min: 1, max: 5, step: 0.1, unit: '倍' },
   moneyMult: { group: 'growth', label: '報酬與戰利品的錢', hint: '委託報酬、特殊任務與事件給的錢、戰鬥與寶箱撿到的錢乘上這個倍率；賣東西與打工的收入、物價不變。', default: 1, min: 0.25, max: 5, step: 0.25, unit: '倍' },
   ambushMult: { group: 'time', label: '休息時被襲擊的機率', hint: `在野外、地下城、旅途上休息時被魔物襲擊的機率乘上這個倍率（預設：近郊 ${pct(companionRules.rest.ambush.wild)}、冒險區域 ${pct(companionRules.rest.ambush.dungeon)}、旅途 ${pct(companionRules.rest.ambush.road)}）。0 表示不會被襲擊；安全房與城裡一直是 0。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會被襲擊' },
   travelEventMult: { group: 'adventure', label: '旅途事件的頻率', hint: '旅途上每天發生事件的機率乘上這個倍率（預設依路況 25%～55%，最高 100%）。0 表示一路平安。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '一路平安' },

@@ -1,3 +1,4 @@
+import { gameRule } from '@/engine/gameRules'
 import { describe, expect, it } from 'vitest'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -220,8 +221,8 @@ describe('quests', () => {
       expect(quest.status, kind).toBe('ready')
       const done = turnInQuest(state, quest.id)
       expectValid(done)
-      // 不用打怪的委託交付時給經驗：20 × F 級的等級下限 1
-      expect(done.changes.xp?.map((x) => x.amount), kind).toEqual(state.party.map(() => 20))
+      // 不用打怪的委託交付時給經驗：20 × F 級的等級下限 1，再乘存檔規則的經驗值倍率（預設 0.5）
+      expect(done.changes.xp?.map((x) => x.amount), kind).toEqual(state.party.map(() => Math.round(20 * gameRule(state, 'xpMult'))))
       if (kind === 'gather') expect(state.inventory.find((i) => i.name === '藥草')).toBeUndefined()
     }
   })
