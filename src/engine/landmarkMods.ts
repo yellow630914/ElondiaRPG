@@ -179,6 +179,7 @@ export function sanitizeLandmarkMod(id: string, raw: Partial<LandmarkMod>, pack?
   // 內部：同一個聚落的固定特殊地圖
   const inner = typeof raw.interior === 'string' ? mapOf(raw.interior, pack) : undefined
   if (inner?.grid?.length && inner.location === location) out.interior = raw.interior
+  if (out.interior && raw.interior_story) out.interior_story = true
   // 拍賣會（成人向，auction.ts）、黑市（slavery.json 的 markets）、淫鬥場（成人向，arena.ts）
   if (raw.auction) out.auction = true
   if (raw.black_market) out.black_market = true

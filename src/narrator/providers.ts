@@ -133,19 +133,37 @@ async function* streamOpenAI(provider: ProviderId, config: ProviderConfig, promp
   const client = await openAIClient(provider, config)
   // 思考參數與自訂參數：各家的欄位不同，直接放進請求內容
   const extra = openAIReasoningBody(provider, config)
+  // 不串流：設定關掉，或自訂參數寫了 "stream": false（之前會被後面的 stream: true 蓋掉）
+  const noStream = config.stream === false || extra.stream === false
+  delete extra.stream
+  const body = {
+    ...extra,
+    model: config.model,
+    messages: openAIMessages(provider, config, prompt),
+    ...(config.maxTokens
+      ? provider === 'openai'
+        ? { max_completion_tokens: config.maxTokens }
+        : { max_tokens: config.maxTokens }
+      : {}),
+  }
+  if (noStream) {
+    const res = await client.chat.completions.create({ ...body, stream: false }, { signal })
+    if (res.usage) onUsage?.({ input: res.usage.prompt_tokens, output: res.usage.completion_tokens, cached: res.usage.prompt_tokens_details?.cached_tokens ?? 0 })
+    const choice = res.choices[0]
+    const msg = choice?.message as { content?: string | null; reasoning_content?: string; reasoning?: string } | undefined
+    const thought = msg?.reasoning_content ?? msg?.reasoning
+    if (thought) onThinking?.(thought)
+    if (choice?.finish_reason === 'content_filter' && !msg?.content) throw new NarrationRefusedError('content_filter')
+    if (msg?.content) yield msg.content
+    if (choice?.finish_reason === 'content_filter') throw new NarrationRefusedError('content_filter')
+    return
+  }
   const stream = await client.chat.completions.create(
     {
-      ...extra,
-      model: config.model,
-      messages: openAIMessages(provider, config, prompt),
+      ...body,
       stream: true,
       // OpenAI 要明確要求才會在最後一段回報用量；相容服務不一定支援這個參數，有回報時才記錄
       ...(provider === 'openai' ? { stream_options: { include_usage: true } } : {}),
-      ...(config.maxTokens
-        ? provider === 'openai'
-          ? { max_completion_tokens: config.maxTokens }
-          : { max_tokens: config.maxTokens }
-        : {}),
     },
     { signal },
   )
@@ -186,7 +204,7 @@ async function* streamGemini(provider: 'gemini' | 'vertex', config: ProviderConf
   // Vertex AI 的服務帳戶 JSON（和 SillyTavern 的完整模式一樣）：SDK 的瀏覽器版只收 API key，改打 REST
   const sa = provider === 'vertex' ? parseServiceAccount(config.apiKey) : undefined
   const ai = sa ? undefined : await geminiClient(provider, config)
-  const stream = sa ? streamVertexService(sa, config, vertexBody(config, prompt.system, prompt.user, thinkingConfig), signal) : await ai!.models.generateContentStream({
+  const request = {
     model: config.model,
     contents: prompt.user,
     config: {
@@ -195,7 +213,11 @@ async function* streamGemini(provider: 'gemini' | 'vertex', config: ProviderConf
       ...(config.maxTokens ? { maxOutputTokens: config.maxTokens } : {}),
       ...(signal ? { abortSignal: signal } : {}),
     },
-  })
+  }
+  // 不串流（API key 才有；服務帳戶照樣串流）：整段收下，當成只有一段的串流處理
+  async function* once() { yield await ai!.models.generateContent(request) }
+  const stream = sa ? streamVertexService(sa, config, vertexBody(config, prompt.system, prompt.user, thinkingConfig), signal)
+    : config.stream === false ? once() : await ai!.models.generateContentStream(request)
   let usage: TokenUsage | undefined
   for await (const chunk of stream) {
     // 每一段都帶著累計的用量，取最後一段

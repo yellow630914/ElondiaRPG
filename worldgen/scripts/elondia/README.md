@@ -55,7 +55,7 @@
 其他腳本是當初做資料轉換、平衡調整、合併分支用的，已經套用在目前的資料上。多半不能直接重跑（會重複套用、或依賴當時的檔案狀態），要參考做法時再讀：
 
 - 角色與 NPC：`gen_npcs.py`、`gen_stories.py`（elondia-plus 世界包的草稿）、`merge_npcs.py`（併進內建 npcs.json，`npcs.before.json` 是當時的底）、`npc_stages_b1.py`、`add_part2.py`、`npcfmt.py`、`rooms23.py`、`npc_noattack24.py`
-- 地標與特殊地圖：`landmarks23.py`、`interiors23.py`（`special_maps.base.json` 是當時的底）、`lm.py`、`links.py`
+- 地標與特殊地圖：`landmarks23.py`、`interiors23.py`（`special_maps.base.json` 是當時的底）、`lm.py`、`links.py`、`tent_entry55.py`（金帳地標接到金帳的內帳，只在有任務點在裡面時開放；要排在 `landmarks23.py` 之後）
 - 怪物與平衡：`abyss.py`、`abyss_items.py`、`build_abyss.py`、`doc_abyss.py`、`mkboss23.py`（`boss23.json`）、`story_enemies.py`、`boss_rounds.py`、`bossedit.py`、`tune*.py`、`assign_ult.py`、`levels.py`、`add_skills.py`
 - 合併分支：`port_p209_gear.py`、`port_p209_text.py`
 - 其他：`events.py`（主人事件）、`lore_update.py`、`wb.py`（世界書）、`ed*.py`、`e1.py`、`fsum.py`、`msum.py`、`ml.py`、`short.py`、`story_groups.json`

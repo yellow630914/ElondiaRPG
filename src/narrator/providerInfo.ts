@@ -30,6 +30,11 @@ export interface ProviderConfig {
   extraBody?: string
   /** OpenAI 相容格式：在 system 訊息標上快取斷點（cache_control）；沒有設定時自動判斷 */
   cacheMark?: CacheMark
+  /**
+   * false：不用串流傳輸，等整段回答完成才一次收下（OpenAI、相容格式、Gemini 與 Vertex 的 API key；Claude 與 Vertex 服務帳戶照樣串流）。
+   * 有些中轉服務會在串流途中審查、把成人內容截斷，整段收比較不會被切掉。預設串流
+   */
+  stream?: boolean
 }
 
 /**

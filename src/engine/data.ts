@@ -503,6 +503,8 @@ export interface LandmarkDef {
   scenes?: LandmarkScene[]
   /** 內部：一張特殊地圖（固定地圖、同一個聚落）。地標格變成入口，場景可以指定在裡面的哪一格 */
   interior?: string
+  /** 內部只在有進行中的特殊任務點在裡面時進得去（例如金帳的內帳：被召見才進得去，離開了也能回去把事辦完） */
+  interior_story?: boolean
   /** 拍賣會（成人向，auction.ts；規則在 lewd.json 的 auction） */
   auction?: boolean
   /** 黑市：這座聚落不公開的奴隸買賣與今天的珍品（slavery.json 的 markets[地點].black） */
@@ -883,6 +885,8 @@ export const combatRules = combatJson as unknown as {
   /** 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） */
   lust: {
     max_base: number; max_per_level: number; decay: number; burst_cap?: number; convert_cap?: number
+    /** 打全體或隨機敵人的能力：魅惑傷害的固定加值只算這個比例（沒寫是 1） */
+    aoe_bonus?: number
     party_climax_hp: number; afterglow_turns: number; down_after: number; enemy_climax_hp: number; boss_climax_hp: number
     aroused_start: number; rut_start: number; aroused_after: number
     kind_resist: Record<string, number>

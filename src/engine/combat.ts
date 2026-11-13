@@ -1508,7 +1508,7 @@ function rollParts(rng: Rng, actor: Combatant, a: AbilityDef | undefined, parts:
  */
 function dealDamage(
   combat: CombatState, rng: Rng, attacker: Combatant | null, target: Combatant, rolls: DamageRoll[],
-  effects: Effect[], opts: { mult?: number; half?: boolean; dot?: boolean; crit?: boolean } = {},
+  effects: Effect[], opts: { mult?: number; half?: boolean; dot?: boolean; crit?: boolean; aoe?: boolean } = {},
 ): number {
   // 被侍奉：敵人的攻擊（和投擲的道具）由施加者代為承受，承受的傷害一部分改成慾望；持續傷害不算
   let guardConvert = 0
@@ -1535,9 +1535,10 @@ function dealDamage(
     const off = attacker ? offenseMult(attacker, r.type) : 1
     // 魔導刺激：魅惑傷害對免疫的目標也至少 ×0.5
     const def = r.pierce && r.type === 'lust' ? Math.max(0.5, defenseMult(target, r.type)) : defenseMult(target, r.type)
-    // 曝露名聲：在有名的地方，造成的魅惑傷害多一點
-    const flat = r.type === 'lust' ? attacker?.lustMods?.bonus ?? 0 : 0
-    let amount = Math.max(0, Math.floor((r.amount + flat) * (opts.mult ?? 1) * off * def * diff))
+    // 魅惑傷害的固定加值（曝露名聲、眾目睽睽、敏感、淫紋、淫服……）：打全體或隨機敵人的技能只算 lust.aoe_bonus（預設一半）；
+    // 攻擊加成（寬衣、蟲巢共生……）只乘骰子，減弱（破慾）照樣乘在加值上
+    const flat = r.type === 'lust' ? Math.floor((attacker?.lustMods?.bonus ?? 0) * (opts.aoe ? lustRules().aoe_bonus ?? 1 : 1)) : 0
+    let amount = Math.max(0, Math.floor((r.amount * off + flat * Math.min(1, off)) * (opts.mult ?? 1) * def * diff))
     if (opts.half) amount = Math.floor(amount / 2)
     // 攻擊加成與目標的受傷倍率分開寫，標籤才不會把攻擊方的倍率說成目標的抵抗
     const round2 = (x: number) => Math.round(x * 100) / 100
@@ -1854,6 +1855,9 @@ export function purityPotency(actor: Combatant, a: AbilityDef): number {
   return Math.round((1 + (a.purity.bonus ?? 1) * left) * 100) / 100
 }
 
+/** 打全體或隨機敵人的能力（魅惑傷害的固定加值只算一部分） */
+const isAoe = (a: AbilityDef) => a.target === 'all_enemies' || a.target === 'random_enemies'
+
 /** 驅奴術這類能力對身上有奴隸印記的人的傷害倍率 */
 function slaveMult(a: AbilityDef, target: Combatant): number {
   return a.vs_slave && target.slave ? a.vs_slave : 1
@@ -1925,7 +1929,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
           if (a.damage?.length) {
             const rolls = rollParts(rng, actor, a, a.damage, r.lucky)
             if (a.damage.some((p) => p.weapon)) rolls.push(...onHitExtras(actor, target, rng, effects))
-            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target) * pot, crit: r.lucky })
+            dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target) * pot, crit: r.lucky, aoe: isAoe(a) })
           }
           applyStatuses(combat, rng, actor, a, target, 'hit', effects, statusDice)
           implantBrood(actor, a, target, effects)
@@ -1936,7 +1940,7 @@ function useAbility(combat: CombatState, rng: Rng, actor: Combatant, base: Abili
         result = s.success ? 'fail' : 'success'
         if (a.damage?.length && !(s.success && a.on_save === 'none')) {
           const rolls = rollParts(rng, actor, a, a.damage, false)
-          dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target) * pot, half: s.success })
+          dealt += dealDamage(combat, rng, actor, target, rolls, effects, { mult: (a.mult ?? 1) * slaveMult(a, target) * pot, half: s.success, aoe: isAoe(a) })
         }
         if (!s.success) applyStatuses(combat, rng, actor, a, target, 'fail', effects, statusDice)
       } else {
@@ -2006,7 +2010,7 @@ function resolveAuto(combat: CombatState, rng: Rng, actor: Combatant, a: Ability
   const revived = !!a.revive && target.hp <= 0 && target.side === actor.side
   if (revived) heal(target, Math.max(1, Math.round(target.maxHp * a.revive! * pot)), effects)
   if (a.damage?.length) {
-    dealDamage(combat, rng, actor, target, rollParts(rng, actor, a, a.damage, false), effects, { mult: (a.mult ?? 1) * pot })
+    dealDamage(combat, rng, actor, target, rollParts(rng, actor, a, a.damage, false), effects, { mult: (a.mult ?? 1) * pot, aoe: isAoe(a) })
   }
   resolveLust(combat, rng, actor, a, target, effects, spent)
   if (a.heal && !revived) {

@@ -88,6 +88,13 @@ const reasoning = computed({
     else delete cfg.value.reasoning
   },
 })
+const streaming = computed({
+  get: () => cfg.value.stream !== false,
+  set: (v: boolean) => {
+    if (v) delete cfg.value.stream
+    else cfg.value.stream = false
+  },
+})
 const showThinking = computed({
   get: () => cfg.value.showThinking !== false,
   set: (v: boolean) => {
@@ -204,6 +211,11 @@ function copyFrom(e: Event) {
     <label>
       <span class="lab">最大輸出 tokens（選填） <Hint text="留空用服務的預設值。" /></span>
       <input type="number" min="0" :value="cfg.maxTokens ?? ''" style="width: 140px" @input="onMaxTokens" />
+    </label>
+
+    <label v-if="source.provider !== 'anthropic'" class="check">
+      <input v-model="streaming" type="checkbox" /> 串流傳輸（邊產生邊顯示）
+      <Hint :width="320" text="關掉後等整段回答完成才一次顯示。有些中轉服務會在串流途中審查、把成人內容截斷，關掉串流比較不會被切掉；代價是要等比較久才看到文字。Vertex AI 用服務帳戶 JSON 時照樣串流。自訂請求參數寫 &quot;stream&quot;: false 也一樣。" />
     </label>
 
     <fieldset class="reasoning">
