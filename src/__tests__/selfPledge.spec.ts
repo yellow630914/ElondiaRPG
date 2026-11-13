@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import PledgeSelfPanel from '@/components/PledgeSelfPanel.vue'
+import TattooShop from '@/components/place/TattooShop.vue'
+import { nextTick } from 'vue'
 import { useGame } from '@/stores/game'
 import Ajv2020 from 'ajv/dist/2020'
 import schema from '../../schemas/report.schema.json'
@@ -135,5 +137,28 @@ describe('主動認主的畫面', () => {
     vi.unstubAllGlobals()
     expect(contractOf(pcOf(store.state!))?.master).toBe(master.id)
     expect(w.emitted('done')).toHaveLength(1)
+  })
+})
+
+describe('刻印師的選單', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    setActivePinia(createPinia())
+  })
+
+  it('自由身時有「請人收下自己」一列（寫出現在會答應的人數），刻了印記之後就沒有', async () => {
+    const state = game()
+    const master = companion(state, 'voluntary')
+    companion(state, 'hired', 5)
+    const store = useGame()
+    store.state = state
+    const w = mount(TattooShop, { props: { shop: 'carver' } })
+    const row = () => w.findAll('button').find((b) => b.text().includes('請人收下自己'))
+    expect(row()?.text()).toContain('1')
+    pledgeSelf(state, master.id, slaveryRules.roles.default)
+    store.state = { ...state }
+    await nextTick()
+    expect(row()).toBeUndefined()
+    expect(w.findAll('button').some((b) => b.text().includes('自願為奴'))).toBe(true)
   })
 })
