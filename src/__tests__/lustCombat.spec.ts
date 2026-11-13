@@ -352,3 +352,36 @@ describe('任務戰鬥的慾望勝利', () => {
     expect(report.others?.find((o) => o.name === foe.name)?.status).toContain('在高潮中屈服、被制伏')
   })
 })
+
+describe('魅惑傷害的固定加值', () => {
+  /** 主角的固定加值設成 100，對一隻慾望條很長的怪用能力，回傳怪增加的慾望 */
+  function hit(ability: string, disrobe = false): { gained: number; def: number } {
+    const { state, me, foe } = fight([ability, 'lust_disrobe'], [['goblin', 1]])
+    myTurn(state, me)
+    me.lustMods = { ...me.lustMods!, bonus: 100 }
+    me.ap = 10
+    foe.lustMax = 10000
+    foe.lust = 0
+    if (disrobe) act(state, { type: 'ability', ability: 'lust_disrobe' })
+    act(state, { type: 'ability', ability, ...(ability === 'lust_whisper' ? { target: foe.id } : {}) })
+    return { gained: foe.lust ?? 0, def: defenseMult(foe, 'lust') }
+  }
+
+  it('單體技能全額；打全體的只算一半（lust.aoe_bonus）', () => {
+    const one = hit('lust_whisper')
+    expect(one.def).toBeGreaterThan(0.5)
+    // 1d4 + 100
+    expect(one.gained).toBeGreaterThanOrEqual(Math.floor(101 * one.def) - 1)
+    expect(one.gained).toBeLessThanOrEqual(Math.ceil(104 * one.def) + 1)
+    const all = hit('lust_bridal_chamber')
+    // 1d4 + 魅力調整值 + 50
+    expect(all.gained).toBeLessThan(Math.ceil(80 * all.def))
+    expect(all.gained).toBeGreaterThanOrEqual(Math.floor(50 * all.def))
+  })
+
+  it('寬衣的 ×1.5 只乘骰子，不乘固定加值', () => {
+    const r = hit('lust_whisper', true)
+    // 1d4 × 1.5 + 100，不是 (1d4 + 100) × 1.5
+    expect(r.gained).toBeLessThanOrEqual(Math.ceil(106 * r.def) + 1)
+  })
+})

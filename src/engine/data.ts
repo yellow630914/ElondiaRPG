@@ -885,6 +885,8 @@ export const combatRules = combatJson as unknown as {
   /** 慾望戰鬥（docs/COMBAT_SYSTEM.md 第 8.5 節） */
   lust: {
     max_base: number; max_per_level: number; decay: number; burst_cap?: number; convert_cap?: number
+    /** 打全體或隨機敵人的能力：魅惑傷害的固定加值只算這個比例（沒寫是 1） */
+    aoe_bonus?: number
     party_climax_hp: number; afterglow_turns: number; down_after: number; enemy_climax_hp: number; boss_climax_hp: number
     aroused_start: number; rut_start: number; aroused_after: number
     kind_resist: Record<string, number>
