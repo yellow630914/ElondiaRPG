@@ -1,5 +1,5 @@
 {
-  "$comment": "F 級委託範本：地點在城內 (town) 或城鎮近郊 (outskirts)，不需要旅行。城內委託要走到 spot 指定的設施格子（tavern / shop / gate / inn / guild）執行；近郊委託會在近郊地圖上標出委託地點。{town} 會換成城鎮名稱。kind：pest / hunt = 戰鬥；search / gather / patrol = 檢定（1d20 + 熟練加值 ≥ dc；最多失敗一次，第二次一定成功）；delivery = 花時間即可完成。encounter_chance 為檢定前遭遇敵人的機率，遭遇時改為戰鬥，打贏就算完成委託（採集委託一併拿到 item），打輸委託維持進行中。報酬依世界書 F 級 3-5 銀幣（30-50 白鸛幣）。rewards 為交付時的額外報酬（報酬模板），例如有機率領悟新能力（type: ability）。",
+  "$comment": "F 級委託範本：地點在城內 (town) 或城鎮近郊 (outskirts)，不需要旅行。城內委託要走到 spot 指定的設施格子（tavern / shop / gate / inn / guild）執行；近郊委託會在近郊地圖上標出委託地點。{town} 會換成城鎮名稱。kind：pest / hunt = 戰鬥；search / gather / patrol = 檢定（1d20 + 熟練加值 ≥ dc；最多失敗一次，第二次一定成功）；delivery = 花時間即可完成。encounter_chance 為檢定前遭遇敵人的機率，遭遇時改為戰鬥，打贏就算完成委託（採集委託一併拿到 item），打輸委託維持進行中；capture: true 是要活捉的委託（抓扒手），遭遇戰打倒的敵人寫成被制伏，不是死亡。報酬依世界書 F 級 3-5 銀幣（30-50 白鸛幣）。rewards 為交付時的額外報酬（報酬模板），例如有機率領悟新能力（type: ability）。",
   "version": 1,
   "per_town": 4,
   "refresh_days": 1,
@@ -84,7 +84,7 @@
     { "id": "lm_unload", "landmark": ["harbor", "market"], "kind": "delivery", "area": "town", "title": "在{landmark}幫忙卸貨", "scene": "{town}・{landmark}",
       "hours": 4, "reward_cc": [30, 40] },
     { "id": "lm_pickpocket", "landmark": ["market"], "kind": "search", "area": "town", "title": "揪出在{landmark}出沒的扒手", "scene": "{town}・人潮擁擠的{landmark}",
-      "hours": 3, "dc": 12, "encounter_chance": 0.3, "encounter": [["bandit", 1]], "reward_cc": [35, 50] },
+      "hours": 3, "dc": 12, "encounter_chance": 0.3, "encounter": [["bandit", 1]], "capture": true, "reward_cc": [35, 50] },
     { "id": "lm_ore_delivery", "landmark": ["workshop"], "kind": "delivery", "area": "town", "title": "替{landmark}搬運礦石與燃料", "scene": "{town}・{landmark}",
       "hours": 3, "reward_cc": [30, 40] },
     { "id": "lm_ceremony_guard", "landmark": ["holy", "official"], "kind": "patrol", "area": "town", "title": "維持{landmark}儀式的秩序", "scene": "{town}・{landmark}",

@@ -3,7 +3,7 @@
 
 import { abilities, attrName, className, companionRules, conditionName, geography, raceName, regionById, statuses, type LewdKey } from '@/engine/data'
 import { lewdName } from '@/engine/lewd'
-import { formatMoney } from '@/engine/money'
+import { formatMoney, moneyPartsShown } from '@/engine/money'
 import { formatTime } from '@/engine/state'
 import { sumParts } from '@/engine/rollParts'
 import type { Effect, Report, RollPart, TimelineEntry, TimelineRoll } from '@/engine/types'
@@ -107,7 +107,9 @@ export function describeChanges(report: Report): string[] {
   const c = report.changes
   const names = actorNames(report)
   const lines: string[] = []
-  if (c.money_cc) lines.push(`金錢 ${c.money_cc > 0 ? '+' : ''}${formatMoney(c.money_cc)}`)
+  // 好幾筆金錢（例如付了錢又被扒走）分開列，有來由的寫在後面
+  if (moneyPartsShown(c)) for (const p of c.money_parts!) lines.push(`金錢 ${p.amount > 0 ? '+' : ''}${formatMoney(p.amount)}${p.label ? `（${p.label}）` : ''}`)
+  else if (c.money_cc) lines.push(`金錢 ${c.money_cc > 0 ? '+' : ''}${formatMoney(c.money_cc)}`)
   for (const x of c.xp ?? []) lines.push(`${names[x.actor] ?? x.actor} 經驗值 +${x.amount}`)
   for (const l of c.level_up ?? []) lines.push(`${names[l.actor] ?? l.actor} 升級！Lv.${l.from} → Lv.${l.to}`)
   for (const s of c.skills_gained ?? []) lines.push(`${names[s.actor] ?? s.actor} 習得技能【${s.skill}】`)

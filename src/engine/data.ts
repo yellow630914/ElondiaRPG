@@ -1344,6 +1344,8 @@ export interface TownQuestTemplate {
   qty?: number
   encounter?: EncounterGroup
   encounter_chance?: number
+  /** 要活捉的委託（抓扒手）：遭遇戰打倒的敵人是被制伏，不是死亡 */
+  capture?: boolean
   reward_cc: [number, number]
   /** 交付時的額外報酬（報酬模板，見 effects.ts） */
   rewards?: RewardEffect[]

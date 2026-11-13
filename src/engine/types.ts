@@ -107,6 +107,8 @@ export interface ItemDelta {
 
 export interface Changes {
   money_cc?: number
+  /** 金錢的明細（兩筆以上才留著）：日誌分開列出；label 是這筆的來由 */
+  money_parts?: { amount: number; label?: string }[]
   xp?: ActorDelta[]
   level_up?: ActorDelta[]
   skills_gained?: { actor: string; skill: string; quality: SkillQuality; source: SkillSource }[]

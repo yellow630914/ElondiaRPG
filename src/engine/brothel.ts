@@ -71,7 +71,7 @@ export function applyPatron(state: GameState, report: Report, target: string | u
   const rec = target ? npcRecord(state, target) : undefined
   const price = patronPrice(state, target)
   const cost = Math.min(state.money_cc, Math.round(price * (degree === 'critical' ? 1 - r.discount : degree === 'fail' ? 1 + r.overcharge : 1)))
-  applyEffects(state, report, [{ type: 'money', amount: -cost }])
+  applyEffects(state, report, [{ type: 'money', amount: -cost, label: '消費' }])
   const lines = [`付了 ${formatMoney(cost)}。`]
   if (degree === 'critical' || degree === 'success') {
     addCondition(pcOf(state), 'relaxed', report)
@@ -80,7 +80,7 @@ export function applyPatron(state: GameState, report: Report, target: string | u
   if (degree === 'fumble') {
     const lost = Math.min(state.money_cc - cost, Math.floor((state.money_cc - cost) * r.pickpocket_ratio))
     if (lost > 0) {
-      applyEffects(state, report, [{ type: 'money', amount: -lost }])
+      applyEffects(state, report, [{ type: 'money', amount: -lost, label: '被扒走' }])
       lines.push(`出門才發現錢袋少了 ${formatMoney(lost)}。`)
     }
   }

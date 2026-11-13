@@ -15,6 +15,7 @@ import { Rng } from './rng'
 import type { Character, ContractRef, EquippedGear, GameOptions, GameState, GameTime, InventoryItem, MarkTerms, Report } from './types'
 import { contractOf, setContract } from './tattoos'
 import { gameRule } from './gameRules'
+import { moneyPartsShown } from './money'
 import { backfillLewdSkills, lewdDaily, noteAdultScene } from './lewd'
 import { familyTick } from './pregnancy'
 import { pcTagStartItems, sanitizePcTags } from './pcTags'
@@ -633,6 +634,8 @@ export function commitReport(state: GameState, report: Report): Report {
     }
   }
   if (c.money_cc) state.money_cc += c.money_cc
+  // 金錢的明細只在兩筆以上、而且和合計對得上時留著（有的地方直接改 money_cc，就只寫合計）
+  if (c.money_parts && !moneyPartsShown(c)) delete c.money_parts
   for (const item of c.items_gained ?? []) addItem(state.inventory, item.name, item.qty, item.quality)
   for (const item of c.items_lost ?? []) removeItem(state.inventory, item.name, item.qty)
   for (const a of c.affinity ?? []) setAffinity(state, a.npc, a.after)

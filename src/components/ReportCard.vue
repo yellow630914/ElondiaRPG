@@ -306,7 +306,7 @@ async function copyPrompt() {
       </div>
     </details>
     <div v-if="changes.length" ref="changesEl" class="row small changes" :class="{ crafting }">
-      <span v-for="(c, i) in chips" :key="c.text" class="tag" :class="c.cls" :style="{ '--i': i }">{{ c.text }}</span>
+      <span v-for="(c, i) in chips" :key="`${i}:${c.text}`" class="tag" :class="c.cls" :style="{ '--i': i }">{{ c.text }}</span>
     </div>
 
     <!-- 寫出經過、生成插圖：放在日誌底下（讀完正文不用捲回最上面），插圖也掛在這下面 -->

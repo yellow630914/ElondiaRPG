@@ -221,6 +221,8 @@ export interface CombatState {
   questId?: string
   /** 特殊任務的戰鬥任務點：結束時依勝負套用結果（story.ts） */
   story?: { id: string; node: string }
+  /** 要活捉的戰鬥（抓扒手這類委託）：打贏時倒下的敵人是被制伏，不是死亡 */
+  capture?: boolean
   /** 細部場景，例如「索里耶爾近郊的農田」 */
   scene?: string
   /** 由格子觸發的戰鬥：獲勝時清除這一格 */
@@ -247,6 +249,8 @@ export interface CombatOptions {
   intent?: string
   questId?: string
   story?: CombatState['story']
+  /** 要活捉的戰鬥：打贏時倒下的敵人是被制伏 */
+  capture?: boolean
   /** 特殊任務的戰鬥：「只在野外發情」（rut: field）的怪物也可以擲到發情（任務點寫了 rut） */
   fieldRut?: boolean
   scene?: string
@@ -362,6 +366,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       ...(opts.intent ? { intent: opts.intent } : {}),
       ...(opts.questId ? { questId: opts.questId } : {}),
       ...(opts.story ? { story: opts.story } : {}),
+      ...(opts.capture ? { capture: true } : {}),
       ...(opts.scene ? { scene: opts.scene } : {}),
       ...(opts.cell ? { cell: opts.cell } : {}),
       ...(opts.dark ? { dark: true } : {}),
@@ -2373,8 +2378,11 @@ export function finishCombat(state: GameState): Report {
     id: f.id, name: f.name, level: f.level,
     ...(f.defId && !f.npcId ? { monster: f.defId } : {}),
     hp: [combat.startHp[f.id] ?? f.maxHp, f.hp, f.maxHp],
-    status: f.hp === 0 ? [capturing && f.npcId ? '被制伏' : f.lustDefeated ? (f.npcId ? '在高潮中屈服、被制伏' : '在高潮中屈服') : '死亡'] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
+    status: f.hp === 0 ? [downStatus(combat, f, victory, capturing)] : f.fled ? ['逃走'] : f.statuses.map((s) => statusDef(s.id).name),
   }))]
+  // 倒下卻沒死的敵人（被制伏、高潮屈服、特殊任務照結果寫的）：戰鬥紀錄的「死亡」改成「倒下」，AI 才不會照紀錄寫成殺死
+  const alive = new Set(foes.filter((f) => f.hp === 0 && downStatus(combat, f, victory, capturing) !== '死亡').map((f) => f.id))
+  const subdued = foes.filter((f) => f.hp === 0 && downStatus(combat, f, victory, capturing) === '被制伏')
 
   let money = 0
   const items: ItemDelta[] = []
@@ -2474,7 +2482,7 @@ export function finishCombat(state: GameState): Report {
     party,
     others,
     ...(quest ? { quest } : {}),
-    timeline: combat.timeline,
+    timeline: alive.size ? downNotDead(combat.timeline, alive) : combat.timeline,
     outcome: {
       result: combat.status,
       summary: `在${scene}與${foes.map((f) => f.name).join('、')}交戰，${resultName}（${combat.round} 回合）。${fates.map((x) => x.rescue
@@ -2494,6 +2502,7 @@ export function finishCombat(state: GameState): Report {
     narration: {
       pov: 'second_person', length: 'medium',
       ...(combat.intent ? { player_intent: combat.intent } : {}),
+      ...(subdued.length ? { focus: [subduedNote(combat, subdued)] } : {}),
     },
     lore_keys: [loc.name, regionById(loc.region).name, ...new Set(foes.map((f) => enemies[f.defId!]?.name ?? f.name))],
   }
@@ -2654,6 +2663,33 @@ function settleNpcFoes(state: GameState, combat: CombatState, foes: Combatant[],
       day: state.time.day,
     }
   }
+}
+
+/**
+ * 倒下的敵人在戰報上的狀態：打贏冒險者是被制伏（等主角處置）、慾望勝利是高潮屈服、
+ * 要活捉的戰鬥是被制伏、特殊任務的怪物是倒下（死活照任務的結果寫），其他是死亡
+ */
+function downStatus(combat: CombatState, f: Combatant, victory: boolean, capturing: boolean): string {
+  if (capturing && f.npcId) return '被制伏'
+  if (f.lustDefeated) return f.npcId ? '在高潮中屈服、被制伏' : '在高潮中屈服'
+  if (victory && combat.capture) return '被制伏'
+  if (combat.story && !f.npcId) return '倒下'
+  return '死亡'
+}
+
+/** 給寫手：被制伏的人還活著（打贏冒險者時要等主角處置；要活捉的戰鬥是抓到了） */
+function subduedNote(combat: CombatState, subdued: Combatant[]): string {
+  const names = [...new Set(subdued.map((f) => f.name))].join('、')
+  return subdued.some((f) => f.npcId) && !combat.capture
+    ? `${names}被打倒、制伏了，但還活著：倒在地上任主角處置，放過、收為奴隸或處決之後由主角另外決定。只寫到制伏為止，不要寫成殺死、死去、被放走或逃走`
+    : `這場戰鬥是要活捉${names}：被打倒時沒有死，是被制伏、綁了起來。不要寫成殺死或死去`
+}
+
+/** 戰鬥紀錄的副本：這些人的「死亡」改成「倒下」（戰鬥中的動畫照原本的紀錄，不受影響） */
+function downNotDead(timeline: TimelineEntry[], ids: Set<string>): TimelineEntry[] {
+  return timeline.map((t) => (t.effects?.some((e) => e.type === 'status_add' && e.status === '死亡' && !!e.target && ids.has(e.target))
+    ? { ...t, effects: t.effects.map((e) => (e.type === 'status_add' && e.status === '死亡' && !!e.target && ids.has(e.target) ? { ...e, status: '倒下' } : e)) }
+    : t))
 }
 
 function tagsFor(combat: CombatState): string[] {

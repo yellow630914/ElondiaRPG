@@ -44,7 +44,7 @@ import { addLewd, lewdName } from './lewd'
 export type NpcRef = string | NpcSpec
 
 export type RewardEffect =
-  | { type: 'money'; amount: number }
+  | { type: 'money'; amount: number; /** 日誌的金錢明細寫的來由（例如「被扒走」） */ label?: string }
   | { type: 'item'; name: string; qty: number; quality?: string }
   | { type: 'affinity'; npc: string; delta: number; reason?: string }
   | { type: 'reputation'; faction: string; delta: number }
@@ -206,11 +206,15 @@ export function applyEffects(state: GameState, report: Report, effects: RewardEf
   const c = report.changes
   for (const e of effects) {
     switch (e.type) {
-      case 'money':
+      case 'money': {
         if (!e.amount) break
         // 事件與任務給的錢照存檔規則的倍率（付出去的不變）
-        c.money_cc = (c.money_cc ?? 0) + rewardMoney(state, Math.round(e.amount))
+        const amount = rewardMoney(state, Math.round(e.amount))
+        c.money_cc = (c.money_cc ?? 0) + amount
+        // 明細：同一份報告有好幾筆時，日誌分開列出（commitReport 只留兩筆以上的）
+        ;(c.money_parts ??= []).push({ amount, ...(e.label ? { label: e.label } : {}) })
         break
+      }
       case 'item':
         if (e.qty > 0) (c.items_gained ??= []).push({ name: e.name, qty: e.qty, ...(e.quality ? { quality: e.quality } : {}), owner: 'pc' })
         else if (e.qty < 0) (c.items_lost ??= []).push({ name: e.name, qty: -e.qty })
