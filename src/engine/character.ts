@@ -496,9 +496,30 @@ export function setCarried(c: Character, id: string, on: boolean, cap: number) {
 }
 
 /** 加經驗值並處理升級；回傳升了幾級。會直接修改角色。 */
+/**
+ * 還沒處理的技能三選一、屬性點裡，用經驗換來的有幾個（其餘是升級給的）。
+ * 記的數字可能比實際多（玩家已經選掉了）：一律夾在實際的數量以內
+ */
+export function sinkPending(c: Character): { ability: number; attr: number } {
+  return {
+    ability: Math.min(c.xpSinkPending?.ability ?? 0, c.pendingAbilityChoices?.length ?? 0),
+    attr: Math.min(c.xpSinkPending?.attr ?? 0, Math.max(0, c.attrPoints)),
+  }
+}
+
+/** 把記的數字夾回實際的數量（升級、再換一次之前呼叫，免得已經選掉的還被算成經驗換來的） */
+export function settleSinkPending(c: Character) {
+  if (!c.xpSinkPending) return
+  const now = sinkPending(c)
+  if (!now.ability && !now.attr) delete c.xpSinkPending
+  else c.xpSinkPending = { ...(now.ability ? { ability: now.ability } : {}), ...(now.attr ? { attr: now.attr } : {}) }
+}
+
 export function gainXp(c: Character, amount: number, rng: Rng): number {
   c.xp += amount
   let gained = 0
+  // 用經驗換來、還沒選的技能與屬性點：先夾回實際的數量，升級給的才不會被算成經驗換來的
+  if (c.level < 20 && c.xp >= xpToNext(c.level)) settleSinkPending(c)
   while (c.level < 20 && c.xp >= xpToNext(c.level)) {
     c.xp -= xpToNext(c.level)
     c.level += 1

@@ -3,6 +3,7 @@
 // - 可以晚點處理的（AI 提議的關係變化、升級、取得特質的機會）：可以按「稍後」
 // 有新的事件時事件視窗自動打開；關掉之後畫面上方顯示「🔔 N 件待處理」。
 
+import { sinkPending } from '@/engine/xpSinks'
 import { ref } from 'vue'
 import { roadTemplate } from '@/engine/road'
 import { blockingNode } from '@/engine/story'
@@ -102,7 +103,10 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     const choices = m.pendingAbilityChoices?.length ?? 0
     if (!choices && !(m.attrPoints > 0)) continue
     const what = [choices ? `選擇 ${choices} 項能力` : '', m.attrPoints > 0 ? `分配 ${m.attrPoints} 點屬性` : ''].filter(Boolean).join('、')
-    out.push({ id: `levelup:${m.id}:${m.level}:${choices}:${m.attrPoints}`, kind: 'levelup', icon: '⬆️', title: `${m.name}升級了：${what}`, blocking: false, ref: m.id })
+    // 全部是用經驗換來的（鑽研技能、苦練屬性）時不寫成升級
+    const sink = sinkPending(m)
+    const fromLevel = choices > sink.ability || m.attrPoints > sink.attr
+    out.push({ id: `levelup:${m.id}:${m.level}:${choices}:${m.attrPoints}`, kind: 'levelup', icon: '⬆️', title: fromLevel ? `${m.name}升級了：${what}` : `${m.name}用經驗換來的成長：${what}`, blocking: false, ref: m.id })
   }
   for (const m of state.party) {
     for (const o of m.perkOffers ?? []) {

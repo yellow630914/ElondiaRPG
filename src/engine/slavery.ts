@@ -512,7 +512,8 @@ export function maybeMasterEvent(state: GameState, chance: number): PendingMaste
   // 主僕關係（bondStyle.ts）：依關係調整權重，0 的不發生
   const style = pcBond(state)
   const weight = (e: MasterEventDef) => bondWeight(e, style)
-  const events = ev.events.filter((e) => adultAllowed(e, unwilling) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e) && (e.overdue || bondWeight(e, style, 1) > 0))
+  const male = maleMasterBlocked(state, master.id)
+  const events = ev.events.filter((e) => adultAllowed(e, unwilling, male) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e) && (e.overdue || bondWeight(e, style, 1) > 0))
   // 離家太久：主人想回家（逾期越久越容易），先擲
   const overdue = events.filter((e) => e.overdue)
   const home = overdueChance(state)
@@ -544,9 +545,20 @@ export function eventFits(state: GameState, master: Pick<NpcRecord, 'id' | 'tags
   return true
 }
 
-/** 成人向的事件要「主角非自願」打開；主僕關係的專屬事件是兩情相悅，不受這個篩選 */
-function adultAllowed(e: MasterEventDef, unwilling: boolean): boolean {
+/**
+ * 成人向的事件要「主角非自願」打開；主僕關係的專屬事件是兩情相悅，不受這個篩選。
+ * 主人是男性、內容篩選關掉「男性對象」時，成人向的一律不發生（maleBlocked；和奴隸那邊 slaveEvents.ts 一樣）
+ */
+function adultAllowed(e: MasterEventDef, unwilling: boolean, maleBlocked = false): boolean {
+  if (e.adult && maleBlocked) return false
   return !e.adult || unwilling || !!e.bonds?.length
+}
+
+/** 主人是男性、內容篩選關掉「男性對象」：成人向的主人事件不發生 */
+function maleMasterBlocked(state: GameState, masterId: string): boolean {
+  if (tagsAllowed(['male_partner'])) return false
+  const m = state.party.find((x) => x.id === masterId)
+  return (m?.gender ?? npcRecord(state, masterId)?.gender) === 'male'
 }
 
 export function startMasterEvent(state: GameState, e: MasterEventDef, lead = ''): PendingMasterEvent {
@@ -589,9 +601,10 @@ export function askableEvents(state: GameState): MasterAskOption[] {
   const unwilling = tagsAllowed(['pc_unwilling'])
   const home = atMasterHome(state)
   const style = pcBond(state)
+  const male = maleMasterBlocked(state, c.master)
   const out: MasterAskOption[] = []
   for (const e of slaveryRules.master_events.events) {
-    if (!e.ask || !adultAllowed(e, unwilling)) continue
+    if (!e.ask || !adultAllowed(e, unwilling, male)) continue
     // 主僕關係：專屬事件只在那種關係列出，這種關係不會發生的（權重 0）不列
     if (bondWeight(e, style, 1) <= 0) continue
     if (e.tags?.length && !e.tags.some((t) => tags.includes(t))) continue

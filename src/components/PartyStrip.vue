@@ -67,14 +67,14 @@ const ring = (v: number, max: number) => (max > 0 ? Math.max(0, Math.min(100, (v
         <div class="name">
           <b :style="{ color: genderDef(m.gender)?.color }">{{ m.name }}</b>
           <small>{{ raceName(m.race) }}・{{ className(m.class) }}<template v-if="isNoncombatant(m)"> Lv.<span :key="m.level" class="lv">{{ m.level }}</span></template></small>
-          <span v-if="!isNoncombatant(m)" class="lvring" :title="`Lv.${m.level}・EXP ${m.xp} / ${xpToNext(m.level)}`">
+          <span v-if="!isNoncombatant(m)" class="lvring" :title="m.level >= 20 ? `Lv.${m.level}・EXP ${m.xp}（滿級）` : `Lv.${m.level}・EXP ${m.xp} / ${xpToNext(m.level)}`">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle class="track" cx="12" cy="12" r="10" />
               <circle class="fill" cx="12" cy="12" r="10" pathLength="100" :stroke-dasharray="`${ring(m.xp, xpToNext(m.level))} 100`" />
             </svg>
             <span :key="m.level" class="lv">{{ m.level }}</span>
           </span>
-          <small v-if="!isNoncombatant(m)" class="xpnum">{{ m.xp }}/{{ xpToNext(m.level) }}</small>
+          <small v-if="!isNoncombatant(m)" class="xpnum">{{ m.level >= 20 ? `${m.xp}（滿級）` : `${m.xp}/${xpToNext(m.level)}` }}</small>
           <span v-if="hpOf(m).down" class="tag bad state">{{ hpOf(m).fled ? '撤離' : '倒下' }}</span>
         </div>
         <div class="hp" :title="`HP ${hpOf(m).hp} / ${hpOf(m).max}${hpOf(m).temp ? `（臨時生命 ${hpOf(m).temp}${fighter(m.id) ? '' : '，下一場戰鬥帶著，長休後消失'}）` : ''}`">

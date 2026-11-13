@@ -86,7 +86,7 @@ function canDismiss(m: Character) {
           </h3>
           <div class="meta"><template v-if="m.gender">{{ genderName(m.gender) }}・</template>{{ raceName(m.race) }}・{{ className(m.class) }}・Lv.{{ m.level }}</div>
           <div class="vital"><span class="label">HP</span><div class="bar hp"><span :style="{ width: pct(m.hp, m.maxHp) }" /></div><span class="num" :title="m.tempHp ? `臨時生命 ${m.tempHp}：下一場戰鬥帶著，長休後消失` : undefined">{{ m.hp }} / {{ m.maxHp }}<template v-if="m.tempHp"> +{{ m.tempHp }}</template></span></div>
-          <div class="vital"><span class="label">EXP</span><div class="bar xp"><span :style="{ width: xpFrom[m.id] ?? pct(m.xp, xpToNext(m.level)) }" /></div><span class="num">{{ m.xp }} / {{ xpToNext(m.level) }}</span></div>
+          <div class="vital"><span class="label">EXP</span><div class="bar xp"><span :style="{ width: xpFrom[m.id] ?? pct(m.xp, xpToNext(m.level)) }" /></div><span class="num">{{ m.level >= 20 ? `${m.xp}（滿級）` : `${m.xp} / ${xpToNext(m.level)}` }}</span></div>
           <div class="attr5">
             <button
               v-for="a in attributeRules.attributes" :key="a.id" class="ghost" :class="{ boost: attrNote(m, a.id) }"

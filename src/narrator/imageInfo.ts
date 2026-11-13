@@ -1,6 +1,7 @@
 // 插圖生成：服務的模板（ChatGPT、NovelAI、ComfyUI）、角色形象插圖的提示詞、生圖提示詞的預處理（交給大語言模型改寫）。
 // 送出請求的程式在 imageProviders.ts；設定存在瀏覽器（stores/image.ts），見 docs/PORTRAITS.md。
 
+import { itemLabel } from '@/engine/itemKey'
 import { bodyImageNotes } from '@/engine/pregnancy'
 import { className, genderName, lewdRules, raceImageName } from '@/engine/data'
 import { currentRegion, exposureAt, lewdOf, npcLewd, vacuumSides } from '@/engine/lewd'
@@ -195,7 +196,8 @@ export function portraitSubject(state: GameState, id: string): PortraitSubject |
     appearance: [appearanceOf(id, m?.appearance ?? rec?.appearance), ...bodyImageNotes(state, id)].filter(Boolean).join('；'),
     personality: m?.personality ?? rec?.personality ?? '',
     background: m?.background ?? rec?.background ?? '',
-    gear: [...gear, ...defGear],
+    // 自訂裝備的鍵帶著看不見的雜湊（engine/itemKey.ts）：生圖的描述只用顯示的名字（ChatGPT 生圖預設不預處理，描述會原樣送出）
+    gear: [...gear, ...defGear].map(itemLabel),
     tattoos: tattoos.map((t) => {
       const name = tattooName(t)
       const desc = tattooDesc(t).slice(0, 60)

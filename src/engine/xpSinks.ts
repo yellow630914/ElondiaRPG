@@ -3,7 +3,8 @@
 // 花費 = 起始花費 × 倍率 ^ 已經換過幾次（存檔規則 xpPerkBase、xpPerkMult……，預設在 xp_sinks），三種各算各的（Character.xpSinks）；從目前的經驗扣，還沒滿級時會延後升級。
 
 import { attributeRules, progression } from './data'
-import { abilityChoices, learnable } from './character'
+import { abilityChoices, learnable, settleSinkPending } from './character'
+export { sinkPending, settleSinkPending } from './character'
 import { learnablePerks, offerPerks } from './perks'
 import type { Rng } from './rng'
 import { gameRule, type NumericRule } from './gameRules'
@@ -63,9 +64,13 @@ export function spendXp(c: Character, kind: XpSink, rng: Rng, state?: Pick<GameS
     while (picks.length < 3 && pool.length) picks.push(pool.splice(rng.int(0, pool.length - 1), 1)[0]!.id)
     if (!offerPerks(c, `${r.name}（第 ${n} 次）`, picks)) throw new Error('沒有還能學的特質')
   } else if (kind === 'attr') {
+    settleSinkPending(c)
     c.attrPoints += 1
+    c.xpSinkPending = { ...c.xpSinkPending, attr: (c.xpSinkPending?.attr ?? 0) + 1 }
   } else {
+    settleSinkPending(c)
     c.pendingAbilityChoices = [...(c.pendingAbilityChoices ?? []), abilityChoices(c, rng)]
+    c.xpSinkPending = { ...c.xpSinkPending, ability: (c.xpSinkPending?.ability ?? 0) + 1 }
   }
   c.xp -= cost
   ;(c.xpSinks ??= {})[kind] = n
