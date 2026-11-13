@@ -471,4 +471,21 @@ describe('魅惑傷害的固定加值', () => {
     // 1d4 × 1.5 + 100，不是 (1d4 + 100) × 1.5
     expect(r.gained).toBeLessThanOrEqual(Math.ceil(106 * r.def) + 1)
   })
+
+  it('媚毒每回合的發作也只算一半（媚藥瓶一次上給全體）', () => {
+    const { state, me, foe } = fight([], [['goblin', 1]])
+    myTurn(state, me)
+    me.lustMods = { ...me.lustMods!, bonus: 100 }
+    foe.lustMax = 10000
+    foe.lust = 0
+    foe.statuses.push({ id: 'aphrodisiac', turns: 3, source: me.id })
+    act(state, { type: 'end_turn' })
+    const ticks = state.combat!.timeline.filter((t) => t.action === '媚毒發作' && t.actor === foe.id)
+    expect(ticks.length).toBeGreaterThan(0)
+    const amount = (ticks[0]!.effects![0] as { amount: number }).amount
+    // 1d6 + 50，不是 1d6 + 100
+    const def = defenseMult(foe, 'lust')
+    expect(amount).toBeLessThanOrEqual(Math.ceil(56 * def) + 1)
+    expect(amount).toBeGreaterThanOrEqual(Math.floor(51 * def) - 1)
+  })
 })

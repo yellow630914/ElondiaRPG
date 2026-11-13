@@ -1537,7 +1537,8 @@ function dealDamage(
     const def = r.pierce && r.type === 'lust' ? Math.max(0.5, defenseMult(target, r.type)) : defenseMult(target, r.type)
     // 魅惑傷害的固定加值（曝露名聲、眾目睽睽、敏感、淫紋、淫服……）：打全體或隨機敵人的技能只算 lust.aoe_bonus（預設一半）；
     // 攻擊加成（寬衣、蟲巢共生……）只乘骰子，減弱（破慾）照樣乘在加值上
-    const flat = r.type === 'lust' ? Math.floor((attacker?.lustMods?.bonus ?? 0) * (opts.aoe ? lustRules().aoe_bonus ?? 1 : 1)) : 0
+    // 持續傷害（媚毒每回合發作）也只算一部分：不然媚藥瓶、蜂群這類一次上給全體的媚毒，每回合每隻都吃全額
+    const flat = r.type === 'lust' ? Math.floor((attacker?.lustMods?.bonus ?? 0) * (opts.aoe || opts.dot ? lustRules().aoe_bonus ?? 1 : 1)) : 0
     let amount = Math.max(0, Math.floor((r.amount * off + flat * Math.min(1, off)) * (opts.mult ?? 1) * def * diff))
     if (opts.half) amount = Math.floor(amount / 2)
     // 攻擊加成與目標的受傷倍率分開寫，標籤才不會把攻擊方的倍率說成目標的抵抗
