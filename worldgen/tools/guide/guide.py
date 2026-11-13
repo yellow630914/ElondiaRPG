@@ -454,6 +454,51 @@ def quest_of_flag(f):
 
 
 UNDERWORLD = json.load(open('data/world/special_maps.json'))['maps']
+# 聚落地圖的區塊名稱（「索里耶爾/朝聖者區」→「外環・朝聖者區」）
+BLOCK_NAME = {f"{lid}/{b['id']}": b['name'] for lid, m in MAPS['maps'].items() for b in m.get('blocks', [])}
+BODY_NAME = {'fem': '女性形象', 'andro': '中性', 'masc': '男性形象'}
+
+
+def wear_name(w):
+    """限定穿著：裝備底材的 id 或物品名稱"""
+    b = GEAR['bases'].get(w)
+    return b['name'] if b else w
+
+
+def story_req(st):
+    """特殊任務接得到的條件（等級、公會階級、體型、親密度、要先完成的任務）"""
+    s0 = st['start']
+    q = next((x for l in F.out for x in l['quests'] if x['id'] == st['id']), None)
+    req = list(q['startReq']) if q else []
+    if s0.get('min_affinity') and s0.get('npc'): req = [r if not r.startswith('好感') else f"{npc(s0['npc'])}好感 ≥ {s0['min_affinity']}" for r in req]
+    pre = {'need': '要先完成', 'any': '', 'none': ''}
+    for k, t in F.cond(s0.get('requires'), st, {}):
+        t = re.sub(r'（[a-z0-9_]+）', '', t)
+        req.append((pre.get(k, '') + t) if k != 'any' else '完成' + t)
+    return [r for r in req if not r.startswith('接下時拿到')]
+
+
+def scene_req(s):
+    """地標場景出現的條件與要付的代價"""
+    out = []
+    rq = s.get('requires') or {}
+    if rq.get('flags'): out.append('要先完成' + '、'.join(quest_of_flag(f) for f in rq['flags']))
+    if rq.get('flags_any'): out.append('完成任一個：' + '、'.join(quest_of_flag(f) for f in rq['flags_any']))
+    if rq.get('flags_none'): out.append('還沒做過：' + '、'.join(quest_of_flag(f) for f in rq['flags_none']))
+    if s.get('pc_body'): out.append('只給' + '、'.join(BODY_NAME.get(b, b) for b in s['pc_body']) + '的主角')
+    r = s.get('role')
+    if r:
+        bits = []
+        if r.get('wear'): bits.append('穿上' + '、'.join(wear_name(w) for w in r['wear']))
+        if r.get('body'): bits.append('體型' + '、'.join(BODY_NAME.get(b, b) for b in r['body']))
+        if r.get('exposure'): bits.append(f"曝露度 {r['exposure']} 以上")
+        if r.get('can_lactate'): bits.append('能泌乳')
+        out.append(f"身分「{r['name']}」" + (f"（{'、'.join(bits)}）" if bits else ''))
+    if s.get('wear'): out.append('要穿著' + '、'.join(wear_name(w) for w in s['wear']))
+    if s.get('money_cc'): out.append(f"{s['money_cc']} 白鸛")
+    cd = s.get('cooldown_days', 3)
+    out.append(f"{s.get('hours', 1)} 小時・隔 {cd} 天才能再來" + ('（自己算）' if s.get('own_cooldown') else ''))
+    return out
 
 
 def landmarks_page():
@@ -478,6 +523,9 @@ def landmarks_page():
             if l['at']['area'].startswith('sm/'):
                 sm = UNDERWORLD.get(l['at']['area'][3:])
                 out.append(f"- **位置**：{sm['name'] if sm else '特殊地圖'}" + ('（地下街：在酒館「打聽地下街」之後從酒館進去）' if sm and sm.get('underworld') else ''))
+            else:
+                out.append(f"- **位置**：{loc(lid)}的「{BLOCK_NAME.get(l['at']['area'], l['at']['area'])}」")
+            if o.get('adult'): out.append('- **成人向**：設定的內容篩選打開成人內容時才會出現')
             if l.get('black_market'): out.append('- **黑市**：不公開的奴隸買賣、今天的珍品')
             if l.get('arena'): out.append('- **淫鬥場**：淫物場、拘束戰鬥場、性戰場')
             if l.get('visit'): out.append(f"- **參訪**：{l['visit']['title']}" + (f"（{l['visit']['money_cc']} 白鸛）" if l['visit'].get('money_cc') else '') + (f" → {fx_text(gfx(l['visit']))}" if l['visit'].get('effects') else ''))
@@ -488,6 +536,21 @@ def landmarks_page():
                 w = l['work']
                 out.append(f"- **工作**：{w['desc']}（{F.ATTR.get(w['attr'], w['attr'])} DC {w['dc']}，時薪 {w['rate_cc']} 白鸛）")
             if l.get('interior'): out.append('- 有內部地圖可以進去')
+            # 在這裡的固定 NPC 與他們給的特殊任務（接得到的條件）
+            people = [n for n in NPCS if n.get('landmark') == l['id']]
+            for n in people:
+                sts = [st for st in F.S if st['start'].get('kind') == 'npc' and st['start'].get('npc') == n['id']]
+                who = f"{RACE.get(n['race'], n['race'])}{CLASS.get(n['class']) or n.get('occupation', '')}・Lv.{n['level']}"
+                out.append(f"- **在這裡的人**：{n['name']}（{who}）" + ('' if sts else '：沒有特殊任務'))
+                for st in sts:
+                    req = story_req(st)
+                    out.append(f"  - 特殊任務「{st['title']}」" + (f"：{'、'.join(req)}" if req else ''))
+            if l.get('enter', {}).get('role'):
+                r = l['enter']['role']
+                out.append('- **走進內部**：' + '、'.join(scene_req({'role': r, 'cooldown_days': 0})[:-1]))
+            for s in l.get('scenes', []):
+                req = scene_req(s)
+                out.append(f"- **場景**「{s['title']}」：" + '；'.join(req))
             out.append('')
     return '\n'.join(out)
 

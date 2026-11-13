@@ -52,6 +52,8 @@ for st in S:
         for _, o, _ in outs(n):
             for f in o.get('set_flags', []): producers[f].add(st['id'])
 TITLE = {st['id']: st['title'] for st in S}
+# 公會階級由低到高（progression.json 的 guild_ranks）
+RANKS = [r['rank'] for r in ld('data/rules/progression.json')['guild_ranks']]
 
 
 def where(at):
@@ -173,6 +175,12 @@ def quest(st):
            'informant': '情報商', 'travel': '旅途上', 'manual': '由其他事件開啟', 'auto': '條件成立時自動開始'}.get(s0['kind'], s0['kind'])
     sreq = []
     if s0.get('min_level'): sreq.append(f"Lv.{s0['min_level']}")
+    # 建議的公會階級：同級或更高才接得到，組隊（2 人以上）時可以低一級（story.ts 的 storyRankOk）
+    rk = st.get('rank')
+    if rk in RANKS:
+        lower = RANKS[RANKS.index(rk) - 1] if RANKS.index(rk) > 0 else None
+        sreq.append(f"公會 {rk} 級以上" + (f"（組隊時 {lower} 級也行）" if lower else ''))
+    if s0.get('pc_body'): sreq.append('只給' + '、'.join({'fem': '女性形象', 'andro': '中性', 'masc': '男性形象'}.get(b, b) for b in s0['pc_body']) + '的主角')
     if s0.get('min_affinity'): sreq.append(f"好感 {s0['min_affinity']}")
     if s0.get('price'): sreq.append(f"情報費 {s0['price']} 白鸛")
     if s0.get('chance'): sreq.append(f"機率 {int(s0['chance'] * 100)}%")
