@@ -13,7 +13,7 @@ import { characterBody } from './look'
 import { pcOf } from './party'
 import { parasiteOf, parasiteRules, stageOf } from './parasites'
 import { checkModifiers, modifierNote } from './perks'
-import { applyPendingMove, applyRoadOutcome, sceneOn, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate } from './road'
+import { applyPendingMove, applyRoadOutcome, sceneOn, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate, assertOption } from './road'
 import { commitReport, newReportId, withRng } from './state'
 import { condMet } from './storyFlags'
 import { dayPartOk } from './timeOfDay'
@@ -234,6 +234,7 @@ export function resolvePcOption(state: GameState, report: Report, t: RoadTemplat
 export function answerDungeonEvent(state: GameState, index: number): Report {
   const t = pendingDungeonEvent(state)
   const o = t?.options?.[index]
+  assertOption(state, o)
   if (!t || !o) throw new Error('沒有這個選項')
   const report = pcEventReport(state, t.title, '地下城事件')
   resolvePcOption(state, report, t, o, '地下城事件')

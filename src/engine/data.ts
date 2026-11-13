@@ -210,6 +210,8 @@ export interface StoryCond {
   wearing?: WearingCond
   /** 主角至少有其中一個身分標籤（npc_tags.json 的 id；docs/NPC_SYSTEM.md 4.1 節） */
   pc_tags?: string[]
+  /** 主角至少修了其中一個慾望流派（lewd.json 的 schools；docs/LEWD_STATS.md 第 6 節） */
+  schools?: string[]
   /** 主角是其中一個種族（races 的 id；例如燁婉寧的線看主角是不是人馬族，EAST_CONTENT_PLAN 11.12 節） */
   pc_races?: string[]
   /** 主角不是其中任何一個種族（例如燁婉寧的 NTR 線只給不是人馬族的主角） */
@@ -2515,7 +2517,9 @@ export const CURSE_LOCK = 'curse:'
 /** 不是主人鎖上、和契約無關的鎖：陷阱鎖、詛咒 */
 export const lockedByThing = (locked?: string) => !!locked && (locked.startsWith(TRAP_LOCK) || locked.startsWith(CURSE_LOCK))
 /** 慾望流派（lewd.json 的 schools） */
-export interface LewdSchool { name: string; group: string; role: string; pitch?: string; entry: string; advanced: string; fit: BindKind[] }
+/** 流派給的戰鬥技能（不佔攜帶上限）：advanced 要有進階特質、level 到這個等級 */
+export interface SchoolAbility { id: string; advanced?: boolean; level?: number }
+export interface LewdSchool { abilities?: SchoolAbility[]; name: string; group: string; role: string; pitch?: string; entry: string; advanced: string; fit: BindKind[] }
 /**
  * 流派特質的慾望效果（PerkDef.lust；慾望戰鬥關閉時不生效）。數值都是加在基本值上的：
  * max 慾望上限、taken 受到的慾望倍率、self 自己增加的慾望倍率、convert 傷害轉成慾望的比例（有轉換的狀態時）、

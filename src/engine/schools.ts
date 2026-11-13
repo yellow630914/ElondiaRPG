@@ -37,6 +37,21 @@ export function hasSchool(c: Pick<Character, 'perks' | 'customPerks' | 'race'>, 
   return schoolsOf(c).includes(id)
 }
 
+/** 流派給的戰鬥技能（lewd.json 的 schools.*.abilities；不佔攜帶上限）：進階的要有進階特質，有等級的要到那個等級 */
+export function schoolAbilities(c: Character): string[] {
+  const own = new Set(perksOf(c).map((p) => p.id))
+  const out: string[] = []
+  for (const id of schoolsOf(c)) {
+    const d = schoolDef(id)!
+    for (const a of d.abilities ?? []) {
+      if (a.advanced && !own.has(d.advanced)) continue
+      if (a.level && c.level < a.level) continue
+      out.push(a.id)
+    }
+  }
+  return [...new Set(out)].filter((x) => !c.abilities.includes(x))
+}
+
 /** 有主人（奴隸契約上有主人；認主） */
 export function hasMaster(c: Character): boolean {
   return !!contractOf(c)?.master

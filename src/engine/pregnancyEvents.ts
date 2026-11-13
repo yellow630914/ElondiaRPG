@@ -21,7 +21,7 @@ import { isLactating } from './lactation'
 import { inSettlementArea } from './grid'
 import { parasiteDef, parasiteOf, stageName as parasiteStageName, stageOf as parasiteStage } from './parasites'
 import { pcOf } from './party'
-import { applyPendingMove, travelEvents, type RoadTemplate } from './road'
+import { applyPendingMove, travelEvents, type RoadTemplate, assertOption } from './road'
 import { commitReport, withRng } from './state'
 import { condMet } from './storyFlags'
 import { dayPartOk } from './timeOfDay'
@@ -266,6 +266,7 @@ export function answerPregnancyEvent(state: GameState, index: number): Report {
   const ev = state.pregnancyEvent
   const t = pendingPregnancyEvent(state)
   const o = t?.options?.[index]
+  assertOption(state, o)
   if (!ev || !t || !o) throw new Error('沒有這個選項')
   const tag = t.scope === 'lactation' ? '泌乳' : t.scope === 'brood' ? '苗床' : TAG
   const report = pcEventReport(state, t.title, tag)

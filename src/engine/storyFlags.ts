@@ -3,6 +3,7 @@
 // 作者寫的旗標名稱（例如 met_elder）存在 GameState.flags 的 story:<名稱>，和程式自己用的旗標分開。
 // 名稱以 ai: 開頭時直接讀 AI 判定寫下的旗標（例如 ai:答應幫忙），讓劇情可以接上 AI 的判定。
 
+import { schoolsOf } from './schools'
 import { lactatingNow, pregnancyCondMet } from './pregMarks'
 import { charmLevel } from './charm'
 import { locationById, PARK_STAMP_PREFIX, storyCounters, lockedByThing, type StoryCond } from './data'
@@ -54,6 +55,7 @@ export function condMet(state: GameState, cond: StoryCond | undefined): boolean 
     && (!cond.charm || inRange(charmLevel(state.location), cond.charm))
     && wearingMet(state, cond.wearing)
     && (!cond.pc_tags?.length || !!state.party.find((m) => m.isPlayer)?.tags?.some((t) => cond.pc_tags!.includes(t)))
+    && (!cond.schools?.length || schoolsOf(state.party.find((m) => m.isPlayer) ?? { perks: [], race: '' }).some((x) => cond.schools!.includes(x)))
     && (!cond.pc_races?.length || cond.pc_races.includes(state.party.find((m) => m.isPlayer)?.race ?? ''))
     && (!cond.pc_races_none?.length || !cond.pc_races_none.includes(state.party.find((m) => m.isPlayer)?.race ?? ''))
     && afterMet(state, cond.after)

@@ -21,7 +21,7 @@ import {
 } from './parasites'
 import { addCondition, pcOf, setHp } from './party'
 import { checkModifiers, modifierNote } from './perks'
-import { applyPendingMove, travelEvents, type RoadTemplate } from './road'
+import { applyPendingMove, travelEvents, type RoadTemplate, assertOption } from './road'
 import { roll as diceRoll, withBonus } from './rng'
 import { abandonStory } from './story'
 import { broodOf, broodTick } from './brood'
@@ -124,6 +124,7 @@ export function pruneParasiteEvent(state: GameState) {
 export function answerParasiteEvent(state: GameState, index: number): Report {
   const t = pendingParasiteEvent(state)
   const o = t?.options?.[index]
+  assertOption(state, o)
   if (!t || !o) throw new Error('沒有這個選項')
   const report = pcEventReport(state, t.title, TAG)
   resolvePcOption(state, report, t, o, TAG)

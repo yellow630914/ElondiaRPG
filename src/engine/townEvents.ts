@@ -12,7 +12,7 @@ import { sceneOn } from './dungeonEvents'
 import { currentArea, position, type Area } from './grid'
 import { characterBody } from './look'
 import { pcOf } from './party'
-import { applyPendingMove, applyRoadOutcome, roll, travelEvents, type RoadTemplate } from './road'
+import { applyPendingMove, applyRoadOutcome, roll, travelEvents, type RoadTemplate, assertOption } from './road'
 import { commitReport, newReportId, withRng } from './state'
 import { condMet } from './storyFlags'
 import { exposureAt } from './lewd'
@@ -150,6 +150,7 @@ export function pendingTownEvent(state: GameState): RoadTemplate | undefined {
 export function answerTownEvent(state: GameState, index: number): Report {
   const t = pendingTownEvent(state)
   const o = t?.options?.[index]
+  assertOption(state, o)
   if (!t || !o) throw new Error('沒有這個選項')
   const report = townReport(state, t.title)
   let ok = true

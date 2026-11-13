@@ -6,6 +6,7 @@ import { charmRules } from '@/engine/charm'
 import { LEWD_KEYS, lewdName } from '@/engine/lewd'
 import { pcTagChoices } from '@/engine/pcTags'
 import { parasiteRules } from '@/engine/parasites'
+import { schoolIds, schoolName } from '@/engine/schools'
 import { useContent } from '@/stores/content'
 import FlagInput from './FlagInput.vue'
 
@@ -30,6 +31,7 @@ function put(next: Partial<StoryCond>) {
   if (!out.wearing || !Object.keys(out.wearing).length) delete out.wearing
   if (!out.pc_tags?.length) delete out.pc_tags
   if (!out.pc_races?.length) delete out.pc_races
+  if (!out.schools?.length) delete out.schools
   if (!out.pc_races_none?.length) delete out.pc_races_none
   if (!out.after) delete out.after
   if (!out.pregnancy) delete out.pregnancy
@@ -134,6 +136,12 @@ function togglePcTag(id: string, on: boolean) {
 }
 // 主角的種族：勾的裡面其中一個
 const raceList = Object.entries(attributeRules.races)
+function toggleSchool(id: string, on: boolean) {
+  const list = new Set(cond.value.schools ?? [])
+  if (on) list.add(id)
+  else list.delete(id)
+  put({ schools: [...list] })
+}
 function togglePcRace(key: 'pc_races' | 'pc_races_none', id: string, on: boolean) {
   const next = new Set(cond.value[key] ?? [])
   if (on) next.add(id)
@@ -212,6 +220,10 @@ function setTamed(id: string, r: ParasiteRange, v: string) {
   <div class="row small">
     主角的身分標籤（至少一個）
     <label v-for="[id, t] in pcTagList" :key="id" class="check"><input type="checkbox" :checked="cond.pc_tags?.includes(id)" @change="togglePcTag(id, ($event.target as HTMLInputElement).checked)" /> {{ t.name }}</label>
+  </div>
+  <div class="row small">
+    主角的慾望流派（至少一個）
+    <label v-for="id in schoolIds()" :key="'s' + id" class="check"><input type="checkbox" :checked="cond.schools?.includes(id)" @change="toggleSchool(id, ($event.target as HTMLInputElement).checked)" /> {{ schoolName(id) }}</label>
   </div>
   <div class="row small">
     主角的種族（其中一個）

@@ -16,7 +16,7 @@ import { canLive, NEWS_KEEP, npcLifeOn } from './npcLife'
 import { askingPrice, npcRecord } from './npcs'
 import { pcOf } from './party'
 import { generateResident } from './population'
-import { applyPendingMove, travelEvents, type RoadTemplate } from './road'
+import { applyPendingMove, travelEvents, type RoadTemplate, assertOption } from './road'
 import type { Rng } from './rng'
 import { commitReport } from './state'
 import { condMet, locationOpen } from './storyFlags'
@@ -225,6 +225,7 @@ export function answerLeadEvent(state: GameState, index: number): Report {
   const ev = state.leadEvent
   const t = pendingLeadEvent(state)
   const o = t?.options?.[index]
+  assertOption(state, o)
   if (!ev || !t || !o) throw new Error('沒有這個選項')
   const src = sourceOf(state, ev.lead)
   // 認不認識要在套用選項之前看（好感效果會建立人際關係）

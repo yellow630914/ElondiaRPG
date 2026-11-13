@@ -1315,7 +1315,7 @@ function settlementIds(): string[] {
 /** 劇情旗標的條件：名稱整理過、去掉重複 */
 function cond(v: unknown): NpcDef['requires'] {
   if (!v || typeof v !== 'object') return undefined
-  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; pc_races?: unknown; pc_races_none?: unknown; after?: unknown; pregnancy?: unknown; lactating?: unknown; children?: unknown }
+  const r = v as { flags?: unknown; flags_none?: unknown; flags_any?: unknown; counters?: unknown; affinity?: unknown; parasites?: unknown; stats?: unknown; charm?: unknown; wearing?: unknown; pc_tags?: unknown; schools?: unknown; pc_races?: unknown; pc_races_none?: unknown; after?: unknown; pregnancy?: unknown; lactating?: unknown; children?: unknown }
   const list = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).map(cleanFlag).filter(Boolean))]
   const flags = list(r.flags)
   const none = list(r.flags_none)
@@ -1371,6 +1371,8 @@ function cond(v: unknown): NpcDef['requires'] {
   const hasWear = Object.keys(wearing).length > 0
   // 主角的身分標籤（至少一個）：只收存在的標籤
   const pcTags = [...new Set((Array.isArray(r.pc_tags) ? r.pc_tags : []).filter((t): t is string => typeof t === 'string' && !!npcTags.tags[t]))]
+  // 主角的慾望流派（至少一個）：只收存在的流派
+  const schools = [...new Set((Array.isArray(r.schools) ? r.schools : []).filter((t): t is string => typeof t === 'string' && !!lewdRules.schools[t] && !t.startsWith('$')))]
   // 主角的種族（其中一個）：只收存在的種族
   const raceList = (x: unknown) => [...new Set((Array.isArray(x) ? x : []).filter((t): t is string => typeof t === 'string' && !!attributeRules.races[t]))]
   const pcRaces = raceList(r.pc_races)
@@ -1395,8 +1397,8 @@ function cond(v: unknown): NpcDef['requires'] {
   const children = { ...(kn(ko.min) !== undefined ? { min: kn(ko.min) } : {}), ...(kn(ko.max) !== undefined ? { max: kn(ko.max) } : {}) }
   const hasKids = Object.keys(children).length > 0
   const hasFamily = !!pregnancy || lactating !== undefined || hasKids
-  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || pcRaces.length || pcRacesNone.length || after || hasFamily
-    ? { ...(pregnancy ? { pregnancy } : {}), ...(lactating !== undefined ? { lactating } : {}), ...(hasKids ? { children } : {}), ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(pcRaces.length ? { pc_races: pcRaces } : {}), ...(pcRacesNone.length ? { pc_races_none: pcRacesNone } : {}), ...(after ? { after } : {}) }
+  return flags.length || none.length || any.length || hasCount || hasAff || hasPar || hasStats || hasCharm || hasWear || pcTags.length || schools.length || pcRaces.length || pcRacesNone.length || after || hasFamily
+    ? { ...(pregnancy ? { pregnancy } : {}), ...(lactating !== undefined ? { lactating } : {}), ...(hasKids ? { children } : {}), ...(flags.length ? { flags } : {}), ...(none.length ? { flags_none: none } : {}), ...(any.length ? { flags_any: any } : {}), ...(hasCount ? { counters } : {}), ...(hasAff ? { affinity } : {}), ...(hasPar ? { parasites } : {}), ...(hasStats ? { stats } : {}), ...(hasCharm ? { charm } : {}), ...(hasWear ? { wearing } : {}), ...(pcTags.length ? { pc_tags: pcTags } : {}), ...(schools.length ? { schools } : {}), ...(pcRaces.length ? { pc_races: pcRaces } : {}), ...(pcRacesNone.length ? { pc_races_none: pcRacesNone } : {}), ...(after ? { after } : {}) }
     : undefined
 }
 export { cond as sanitizeCond }

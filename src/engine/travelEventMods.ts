@@ -230,6 +230,8 @@ export function sanitizeTravelEvent(id: string, raw: Partial<TravelEventMod>, cu
       if (out.scene && (o?.adult_scene === 'always' || (c && (o?.adult_scene === 'success' || o?.adult_scene === 'fail')))) opt.adult_scene = o.adult_scene
       // 懷孕的事件：察覺（察覺事件才有）、這次生產的 DC 減多少
       if (scope === 'pregnancy' && !out.known && (o?.reveal === 'always' || (c && o?.reveal === 'success'))) opt.reveal = o.reveal
+      const req = sanitizeCond(o?.requires)
+      if (req) opt.requires = req
       if (scope === 'pregnancy' && o?.birth_bonus) {
         const b = Math.round(num(o.birth_bonus, 0, 5, 0))
         if (b) opt.birth_bonus = b

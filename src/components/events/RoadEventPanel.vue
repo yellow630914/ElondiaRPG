@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { attrName } from '@/engine/data'
-import { roadTemplate } from '@/engine/road'
+import { optionBlocked, roadTemplate } from '@/engine/road'
 import { pendingTownEvent } from '@/engine/townEvents'
 import { eventDc, pendingDungeonEvent } from '@/engine/dungeonEvents'
 import { pendingParasiteEvent } from '@/engine/parasiteEvents'
@@ -13,6 +13,8 @@ import GameIcon from '../ui/GameIcon.vue'
 // 旅途上的事件（出發時就擲好放在格子上）、城鎮事件（走上設施時遇到）、地下城事件（陷阱、寶箱、採集、長休）、線索事件（線索池的事件點）、寄生物的發作或懷孕的察覺：選一個應付的方式
 const props = defineProps<{ town?: boolean; dungeon?: boolean; parasite?: boolean; pregnancy?: boolean; lead?: boolean }>()
 const game = useGame()
+// 有條件的選項（例如只有修了某個慾望流派才能選）：不符合時灰掉，寫出原因
+const blocked = (o: Parameters<typeof optionBlocked>[1]) => (game.state ? optionBlocked(game.state, o) : undefined)
 const pending = computed(() => {
   const s = game.state
   if (!s) return undefined
@@ -38,8 +40,11 @@ function answer(i: number) {
     <h3 class="title"><GameIcon :name="props.town ? 'home' : props.lead ? 'search' : props.dungeon || props.parasite ? 'warning' : props.pregnancy ? 'heart' : 'compass'" :size="16" />{{ pending.title }}</h3>
     <p class="small">{{ pending.text }}</p>
     <div class="row">
-      <button v-for="(o, i) in pending.options ?? []" :key="i" class="small" :disabled="game.judging" @click="answer(i)">
-        {{ o.label }}<template v-if="o.check">（{{ attrName(o.check.attr) }}・DC {{ game.state ? eventDc(game.state, pending, o.check.dc) : o.check.dc }}）</template>
+      <button
+        v-for="(o, i) in pending.options ?? []" :key="i" class="small" :disabled="game.judging || !!blocked(o)"
+        :title="blocked(o) ?? ''" @click="answer(i)"
+      >
+        {{ o.label }}<template v-if="o.check">（{{ attrName(o.check.attr) }}・DC {{ game.state ? eventDc(game.state, pending, o.check.dc) : o.check.dc }}）</template><template v-if="blocked(o)">（{{ blocked(o) }}）</template>
       </button>
     </div>
   </section>

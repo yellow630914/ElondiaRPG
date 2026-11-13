@@ -5,6 +5,7 @@ import { cellName, type CellKind } from '@/engine/grid'
 import { travelEvents, type RoadOption } from '@/engine/road'
 import { MODE_NAME } from '@/engine/travel'
 import { parasiteRules } from '@/engine/parasites'
+import { schoolIds, schoolName } from '@/engine/schools'
 import { BROOD_KIND_NAME } from '@/engine/brood'
 import { builtinTravelEvent, DUNGEON_TRIGGERS, EVENT_LAYERS, FATHER_FILTERS, PARASITE_MOMENTS, PREG_STAGE_IDS, PREG_STAGE_NAME, LOCATION_TYPE_NAME, ROUTE_MODES, townEventCells, travelEventWarnings, type TravelEventMod } from '@/engine/travelEventMods'
 import { attributeRules } from '@/engine/data'
@@ -185,6 +186,17 @@ function remove() {
   } catch (e) {
     game.error = e instanceof Error ? e.message : String(e)
   }
+}
+
+// 選項的流派條件（RoadOption.requires.schools）：至少修了其中一個才能選
+function toggleOptionSchool(o: RoadOption, id: string, on: boolean) {
+  const list = new Set(o.requires?.schools ?? [])
+  if (on) list.add(id)
+  else list.delete(id)
+  const { schools: _drop, ...rest } = o.requires ?? {}
+  void _drop
+  o.requires = list.size ? { ...rest, schools: [...list] } : Object.keys(rest).length ? rest : undefined
+  if (!o.requires) delete o.requires
 }
 </script>
 
@@ -459,6 +471,11 @@ function remove() {
           </select>
           <label v-if="pregnancy" class="small" title="這次生產的 DC 減多少（例如產婆的叮囑）；有檢定時成功才算">生產 DC − <input v-model.number="o.birth_bonus" type="number" min="0" max="5" class="num" /></label>
           <button class="small" @click="draft.options!.splice(i, 1)" title="移除">✕</button>
+        </div>
+        <div class="row small">
+          只有修了這些流派的人能選
+          <label v-for="id in schoolIds()" :key="id" class="check"><input type="checkbox" :checked="o.requires?.schools?.includes(id)" @change="toggleOptionSchool(o, id, ($event.target as HTMLInputElement).checked)" /> {{ schoolName(id) }}</label>
+          <Hint text="勾了之後，主角至少要修其中一個流派才能選這個選項；沒修的人看得到，但選項灰掉、寫出要哪一派。" />
         </div>
         <OutcomeEditor v-model="o.success" :label="o.check ? '成功' : '結果'" optional event />
         <OutcomeEditor v-if="o.check" v-model="o.fail" label="失敗" optional event />

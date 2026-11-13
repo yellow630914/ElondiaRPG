@@ -53,7 +53,7 @@ import { contractOf, tattooLust } from './tattoos'
 import { tagsAllowed } from './content'
 import { flagKey, hasFlag } from './storyFlags'
 import { addLewd, exposureAt, exposureLevel, growLewd, lewdPowerOf } from './lewd'
-import { bindsOf, lockedBound, lustTotals, outfitCombat, twoFaceCombat } from './schools'
+import { bindsOf, lockedBound, lustTotals, outfitCombat, schoolAbilities, twoFaceCombat } from './schools'
 import { DIFFICULTY_DEFS, difficultyFor, difficultyOf, difficultyRule, gameRule, rewardMoney, RULE_DEFS, type DifficultyDef } from './gameRules'
 import { rollBreakdown, sumParts } from './rollParts'
 
@@ -705,7 +705,7 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
     // 技能攜帶上限：只帶攜帶中的技能與法術（戲法全帶）
     // 寄生物給的技能不佔攜帶上限（parasites.ts）
-    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c), ...lactationAbilities(c)],
+    abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c), ...schoolAbilities(c), ...lactationAbilities(c)],
     weapon: weaponFor(c), armorEvade: armor.evade, armorDr: armor.dr + gearDr,
     resist: gear.resist, offense: gear.offense, baseMods: mods,
     castingAttr: castingAttr(c.class),

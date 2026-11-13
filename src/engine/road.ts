@@ -24,6 +24,7 @@ import { addHours, advanceTime, commitReport, newReportId, withRng } from './sta
 import { applyTimeJump, type DayPart } from './timeOfDay'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
 import { addCounters, condMet, flagKey, openFor } from './storyFlags'
+import { schoolName } from './schools'
 import { gateCheck } from './security'
 import { arrive, daysToHours, EVENTS, MODE_NAME, legFare, ROAD_DAILY_CC, rollLegDays } from './travel'
 import type { GameState, PregnancyStage, Report, RollPart, RoadState, TimelineEntry } from './types'
@@ -48,6 +49,8 @@ export interface RoadOption {
   reveal?: 'always' | 'success'
   /** 懷孕的事件：這次生產的 DC 減多少（產婆的叮囑；記在懷孕記錄的 birth_dc） */
   birth_bonus?: number
+  /** 這個選項的條件（例如只有修了某個慾望流派才能選；不符合時選項灰掉，寫出原因） */
+  requires?: StoryCond
 }
 /** 事件發生的地方：旅途上（預設）、城鎮的設施上（townEvents.ts）、地下城與近郊（dungeonEvents.ts）、寄生物的發作（parasiteEvents.ts），或線索池的事件點（leadEvents.ts） */
 export type EventScope = 'road' | 'town' | 'dungeon' | 'parasite' | 'lead' | 'pregnancy' | 'lactation' | 'brood'
@@ -540,6 +543,20 @@ export function roadEventFits(state: GameState, t: RoadTemplate, mode: RouteMode
 }
 
 /** 這個選項會不會進入親密場景（旅途、城鎮、地下城事件共用） */
+/** 選項不能選的原因（可以選時 undefined）：慾望流派寫出要哪一派，其他條件寫「條件不符」 */
+export function optionBlocked(state: GameState, o: Pick<RoadOption, 'requires'>): string | undefined {
+  if (!o.requires || condMet(state, o.requires)) return undefined
+  const schools = o.requires.schools
+  if (schools?.length && !condMet(state, { schools })) return `要修${schools.map((x) => schoolName(x)).join('或')}`
+  return '條件不符'
+}
+
+/** 回應事件時檢查：不能選的選項丟出原因 */
+export function assertOption(state: GameState, o: Pick<RoadOption, 'requires'> | undefined) {
+  const why = o && optionBlocked(state, o)
+  if (why) throw new Error(`這個選項現在不能選：${why}`)
+}
+
 export function sceneOn(o: RoadOption, ok: boolean): boolean {
   if (!o.adult_scene) return false
   return o.adult_scene === 'always' || (!!o.check && o.adult_scene === (ok ? 'success' : 'fail'))
@@ -550,6 +567,7 @@ export function answerRoadEvent(state: GameState, index: number): Report {
   const ev = state.roadEvent
   const tpl = ev && roadTemplate(ev.template)
   const o = tpl?.options?.[index]
+  assertOption(state, o)
   if (!ev || !tpl || !o) throw new Error('沒有這個選項')
   const report = eventReport(state, tpl.title)
   let ok = true
