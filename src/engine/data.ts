@@ -503,6 +503,8 @@ export interface LandmarkDef {
   scenes?: LandmarkScene[]
   /** 內部：一張特殊地圖（固定地圖、同一個聚落）。地標格變成入口，場景可以指定在裡面的哪一格 */
   interior?: string
+  /** 內部只在有進行中的特殊任務點在裡面時進得去（例如金帳的內帳：被召見才進得去，離開了也能回去把事辦完） */
+  interior_story?: boolean
   /** 拍賣會（成人向，auction.ts；規則在 lewd.json 的 auction） */
   auction?: boolean
   /** 黑市：這座聚落不公開的奴隸買賣與今天的珍品（slavery.json 的 markets[地點].black） */

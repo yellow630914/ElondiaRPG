@@ -322,7 +322,7 @@ function lustOf(rec: NpcRecord): { lewdness: number; submission: number } {
 }
 
 /** 和主角夠親密的人（設定的門檻，預設 60）不和別人發生關係，只會自慰 */
-function devoted(state: GameState, id: string): boolean {
+export function devoted(state: GameState, id: string): boolean {
   return (state.relationships?.[id]?.affinity ?? 0) >= (loyalAffinity ?? defaultLoyalAffinity())
 }
 

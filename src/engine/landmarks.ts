@@ -4,7 +4,7 @@
 import { landmarkDef, landmarks, locationById, npcs as namedNpcs, specialMaps, type Degree, type LandmarkDef, type LandmarkScene, type SceneRole } from './data'
 import { pcBodyAllowed, tagsAllowed } from './content'
 import { characterBody } from './look'
-import { npcFree } from './story'
+import { activeNodes, npcFree } from './story'
 import { npcRecord } from './npcs'
 import { applyEffects, type RewardEffect } from './effects'
 import { currentArea, currentCell, position } from './grid'
@@ -44,10 +44,17 @@ export function insideLandmark(state: GameState, l: LandmarkDef): boolean {
 }
 
 /** 為什麼現在不能走進地標的內部（可以時是 undefined） */
+/** 有沒有進行中的特殊任務點在這張特殊地圖裡 */
+export function storyInside(state: GameState, map: string): boolean {
+  return activeNodes(state).some((n) => n.node.at.where === 'special' && n.node.at.special_map === map)
+}
+
 export function interiorBlocked(state: GameState): string | undefined {
   const l = landmarkHere(state)
   if (!l?.interior || !specialMaps[l.interior]) return '這裡沒有可以進去的地方'
   if (insideLandmark(state, l)) return '已經在裡面了'
+  // 只在特殊任務的任務點在裡面時開放（金帳的內帳：被召見才進得去）
+  if (l.interior_story && !storyInside(state, l.interior)) return `沒有事要辦時進不去${specialMaps[l.interior]!.name}`
   return landmarkClosed(state, l) ?? (l.enter?.role ? roleNote(state, l.enter.role) : undefined)
 }
 

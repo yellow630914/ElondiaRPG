@@ -14,7 +14,7 @@ import { startCombat, type CombatState } from './combat'
 import { playerRank, storyMerit } from './guild'
 import { RANK_ORDER } from './materialQuests'
 import {
-  contentRevision, landmarkDef, locationById, npcs as namedNpcs, regionById, specialMaps, stories, storyById, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
+  contentRevision, landmarkDef, landmarks, locationById, npcs as namedNpcs, regionById, specialMaps, stories, storyById, type Degree, type DungeonLayerId, type StoryAffinity, type StoryCheck, type StoryDef, type StoryNode, type StoryOutcome, DUNGEON_LAYER_NAME,
 } from './data'
 import { applyEffects, type RewardEffect } from './effects'
 import { blockKeys, cellName, currentArea, currentCell, DUNGEON_LAYERS, getArea, position, type Area, type CellKind } from './grid'
@@ -406,7 +406,12 @@ function placeName(n: StoryNode, state?: GameState): string {
     case 'dungeon': return `${loc}・${LAYER[at.layer ?? 'outskirts']}（⭐）`
     case 'road': return '旅途上'
     case 'side': return '臨時地圖裡（⭐）'
-    case 'special': return `${specialMaps[at.special_map ?? '']?.name ?? '特殊地圖'}（⭐）`
+    case 'special': {
+      // 地標的內部：寫出從哪裡進去（金帳的內帳 → 金帳王庭的金帳）
+      const map = specialMaps[at.special_map ?? '']
+      const door = Object.values(landmarks).find((l) => l.interior === at.special_map)
+      return `${map?.name ?? '特殊地圖'}（⭐${door ? `，從${locationById(door.location).name}的${door.name}進去` : ''}）`
+    }
   }
   return loc
 }

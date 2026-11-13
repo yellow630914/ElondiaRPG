@@ -86,6 +86,8 @@ F 的模型來源也用來整理日誌插圖的分鏡（[PORTRAITS](PORTRAITS.md
 
 OpenAI 相容格式另外可以填**自訂請求參數**（JSON 物件），直接加進請求，用來補上服務要求的其他欄位。
 
+**串流傳輸**（`ProviderConfig.stream`，預設開）：關掉後整段回答完成才一次收下（OpenAI、相容格式、Gemini 與 Vertex AI 的 API key；Claude 與 Vertex 服務帳戶照樣串流）。有些中轉服務會在串流途中審查、把成人內容截斷，關掉比較不會被切掉。自訂請求參數寫 `"stream": false` 也算。
+
 服務有回傳思考過程時，日誌卡片上會多一個摺疊的「💭 思考過程」，判定與敘事分開顯示（存在進行中遊戲的日誌敘事 `narrations` 的 `thinking` 與 `judgeThinking`，見 [SAVES](SAVES.md) 第 1 節）。
 
 ## 2. 排列順序與快取

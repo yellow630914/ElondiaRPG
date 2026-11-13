@@ -226,6 +226,7 @@ const wearOptions = computed(() => wearChoices())
           <option v-for="m in interiors" :key="m.id" :value="m.id">{{ m.name }}</option>
         </select>
       </label>
+      <label v-if="draft.interior" class="check small"><input v-model="draft.interior_story" type="checkbox" /> 只在有特殊任務的任務點在裡面時進得去 <Hint text="例如金帳的內帳：平常進不去，有進行中的任務點擺在內部（任務點的地點選這張特殊地圖）時才開放，離開了也能回去把事辦完。" /></label>
       <template v-if="draft.interior && draft.enter">
         <SceneRoleEditor v-model="draft.enter.role" label="走進內部的身分：隊伍裡要有人符合才進得去" hint="例如淫植花園只讓穿得夠少的人進去：符合的人走進去時各得到效果（例如沾上花粉而發情），寫一則日誌。" />
         <label v-if="draft.enter.role" class="block"><span>走進去時的日誌（選填） <Hint text="{role} 換成符合的人；沒寫時是「某某走進了（內部的名稱）」。" /></span><input v-model="draft.enter.text" :maxlength="LANDMARK_LIMITS.enter_text_chars" /></label>

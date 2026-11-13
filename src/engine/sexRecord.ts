@@ -5,7 +5,9 @@
 
 import { tagsAllowed } from './content'
 import { genderName, lewdRules, namedNpcById, stories, type NpcSexSeed, type SexSeedRule, type StoryDef } from './data'
+import { canPair, devoted } from './npcLife'
 import { npcRecord } from './npcs'
+import { toSimplifiedText } from './script'
 import { maybeConceive } from './pregnancy'
 import type { Character, GameState, LewdStat, Report, SexEncounter, SexRecord } from './types'
 
@@ -340,7 +342,43 @@ export function addEncounter(state: GameState, id: string, e: EncounterInput): b
  * 套用 AI 回傳的性經歷（驗證後加進記錄）：只收 candidates 裡的人；次數、對象有上限；
  * 第一次性交時記下初體驗，有角色資料的人照 experience.first_time 成長。回傳更新了誰
  */
-export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: Report; candidates: string[] }): string[] {
+/**
+ * 這段經過的主角：派去接客的人、戰敗被圍住的隊友、特殊任務那條線的 NPC 與任務點帶著的同伴（劇情本來就寫他們和別人發生關係）
+ */
+function sceneFocus(report: Report): Set<string> {
+  const ids = new Set<string>()
+  for (const id of [report.narration?.adult_actor, report.narration?.defeat_victim]) if (id) ids.add(id)
+  const def = report.story ? stories.find((d) => d.id === report.story!.id) : undefined
+  if (def?.start.npc) ids.add(def.start.npc)
+  for (const id of def?.nodes.find((n) => n.id === report.story?.node)?.allies ?? []) ids.add(id)
+  return ids
+}
+
+/**
+ * AI 記的這一筆要不要收（主角、這段的主角、對象都是主角或隊友的一律收）：
+ * - 和隊伍以外的人（或只有自慰）、名字卻沒出現在經過裡的 NPC 不收：AI 把別人的經歷套到在場的旁人身上（例如同族的隊友）
+ * - 專情（和主角夠親密）或人際關係裡沒打開「可以和別人發生關係」的 NPC，不是被強迫、不是這段的主角、主角也沒點名要他這樣做時，
+ *   和隊伍以外的人的性經歷不收（只留和主角、隊友的）
+ */
+function acceptUpdate(state: GameState, id: string, u: SexUpdate, partners: EncounterPartner[], ctx: { report: Report; narrative?: string }): EncounterPartner[] | null {
+  if (id === 'pc') return partners
+  if (sceneFocus(ctx.report).has(id)) return partners
+  const inside = (p: EncounterPartner) => !!p.id && (p.id === 'pc' || state.party.some((m) => m.id === p.id))
+  // 對象都是主角或隊友：照收（主角那一邊也會記到）
+  if (partners.length && partners.every(inside)) return partners
+  const name = nameFor(state, id)
+  // 經過可能是簡體輸出：名字用繁簡兩種寫法找
+  const names = [...new Set([name, toSimplifiedText(name)])]
+  const has = (t: string) => names.some((n) => t.includes(n))
+  const scene = [ctx.report.narration?.adult_scene, ctx.narrative, ctx.report.outcome.summary].filter(Boolean).join('\n')
+  const intent = ctx.report.narration?.player_intent ?? ''
+  if (!has(scene) && !has(intent)) return null
+  if (u.forced === true || has(intent) || (canPair(state, id) && !devoted(state, id))) return partners
+  const kept = partners.filter(inside)
+  return kept.length || !partners.length ? kept : null
+}
+
+export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: Report; candidates: string[]; narrative?: string }): string[] {
   const caps = rules().caps
   const list = Array.isArray(raw) ? (raw as SexUpdate[]) : []
   const updated: string[] = []
@@ -353,7 +391,7 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
     const service = nonNeg(u.service, caps.times) ?? 0
     const solo = nonNeg(u.solo, caps.times) ?? 0
     if (!sex && !service && !solo) continue
-    const partners = (Array.isArray(u.with) ? u.with : [])
+    const all = (Array.isArray(u.with) ? u.with : [])
       .filter((w) => w && typeof w === 'object')
       .map((w) => {
         const wid = typeof w.id === 'string' && w.id && w.id !== id ? (w.id === state.party.find((m) => m.isPlayer)?.id ? 'pc' : w.id) : undefined
@@ -368,6 +406,11 @@ export function applySexUpdates(state: GameState, raw: unknown, ctx: { report: R
       })
       .filter((w): w is EncounterPartner => !!w)
       .slice(0, caps.partners)
+    const accepted = acceptUpdate(state, id, u, all, ctx)
+    if (!accepted) continue
+    const partners = accepted
+    // 只剩和主角、隊友的：沒有對象的性交不算（自慰照記）
+    if ((sex || service) && all.length && !partners.length && !solo) continue
     addEncounter(state, id, {
       day, with: sex || service ? partners : [], sex, service, solo, forced: u.forced === true,
       summary: text(u.summary, 120) || ctx.report.narration?.adult_scene?.slice(0, 120) || '',
