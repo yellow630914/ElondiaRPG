@@ -3,7 +3,7 @@
 // 內建的事件可以改、不能刪；自建的事件隨時可以刪（等待回應中的事件作廢）。id 在所有事件庫裡不能重複。
 
 import {
-  abilities, ATTR_IDS, SKILL_IDS, type SkillId, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterAskGroup, type MasterEventDef, type MasterEventOption, type MasterEventPool,
+  abilities, ATTR_IDS, BOND_STYLES, type BondStyle, SKILL_IDS, type SkillId, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, masterEventPool, slaveryRules, type AttrId, type MasterAskGroup, type MasterEventDef, type MasterEventOption, type MasterEventPool,
 } from './data'
 import { sanitizeEffects } from './storyMods'
 
@@ -130,6 +130,17 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
   if (course && pool === 'owner') out.course = course
   if (has(raw.rank_min) && (pool === 'brothel_work' || pool === 'brothel_train')) out.rank_min = Math.round(num(raw.rank_min, 0, 10, 0))
   if (has(raw.progress) && pool === 'owner') out.progress = Math.round(num(raw.progress, 1, 10, 3))
+  // 主僕關係（bondStyle.ts）：只在主人的突發事件與調教事件；名實相符不能當專屬事件的條件
+  if (pool === 'master' || pool === 'owner') {
+    const bonds = [...new Set((raw.bonds ?? []).filter((b) => BOND_STYLES.includes(b) && b !== 'strict'))]
+    if (bonds.length) out.bonds = bonds
+    const w: Partial<Record<BondStyle, number>> = {}
+    for (const b of BOND_STYLES) {
+      const v = raw.bond_weights?.[b]
+      if (has(v) && Number(v) !== 1) w[b] = num(v, 0, 5, 1)
+    }
+    if (Object.keys(w).length) out.bond_weights = w
+  }
   if (custom) out.custom = true
   return out
 }
@@ -167,6 +178,7 @@ export function masterEventWarnings(m: MasterEventMod): string[] {
   if (!m.text) out.push('沒有描述')
   if (!m.weight && !m.cell && !m.overdue) out.push('權重是 0：不會被抽到')
   if (m.options.some((o) => o.adult_scene) && !m.adult) out.push('有親密場景的回應，事件最好勾「成人向」（主角非自願關掉時不發生）')
+  if (m.bonds?.length && m.bonds.every((b) => m.bond_weights?.[b] === 0)) out.push('專屬的主僕關係權重都是 0：不會被抽到')
   if ((m.pool === 'brothel_work' || m.pool === 'brothel_train') && !m.teaches?.length) out.push('娼館的事件沒有掛技能')
   if (m.pool === 'owner' && !m.course) out.push('調教事件沒有選課程：不會被抽到')
   else if (m.pool === 'owner' && !lewdRules.training.courses[m.course!]) out.push(`沒有「${m.course}」這個課程：不會被抽到`)

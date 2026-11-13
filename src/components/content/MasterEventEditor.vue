@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
+import { abilities, BOND_STYLES, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, slaveryRules, tagDef, type BondStyle, type MasterEventOption, type MasterEventPool } from '@/engine/data'
 import { builtinMasterEvent, masterEventById, masterEventWarnings, MASTER_EVENT_LIMITS, POOL_IDS, type MasterEventMod } from '@/engine/masterEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -76,6 +76,23 @@ function setHome(v: string) {
   if (v === 'home') draft.value.at_home = true
   else if (v === 'out') draft.value.at_home = false
   else delete draft.value.at_home
+}
+// 主僕關係（bondStyle.ts）：專屬事件（只在這些關係發生）與各關係的權重倍率
+const hasBond = computed(() => draft.value.pool === 'master' || draft.value.pool === 'owner')
+const bondStyles = BOND_STYLES.map((id) => ({ id, name: slaveryRules.bond_styles.styles[id].name }))
+function toggleBond(b: BondStyle, on: boolean) {
+  const set = new Set(draft.value.bonds ?? [])
+  if (on) set.add(b)
+  else set.delete(b)
+  if (set.size) draft.value.bonds = BOND_STYLES.filter((x) => set.has(x))
+  else delete draft.value.bonds
+}
+function setBondWeight(b: BondStyle, raw: string) {
+  const w = { ...(draft.value.bond_weights ?? {}) }
+  if (raw === '' || Number(raw) === 1) delete w[b]
+  else w[b] = Number(raw)
+  if (Object.keys(w).length) draft.value.bond_weights = w
+  else delete draft.value.bond_weights
 }
 function setPool(v: string) {
   draft.value.pool = v as MasterEventPool
@@ -212,6 +229,20 @@ function remove() {
           </span>
         </div>
       </template>
+    </FoldSet>
+
+    <FoldSet v-if="hasBond">
+      <template #legend>主僕關係 <Hint :text="`主人與奴隸親密度 ${slaveryRules.bond_styles.unlock_affinity} 以上時，兩人可以選真正的關係（主人的突發事件看主角和主人；調教看主角和那位奴隸）。勾了「只在這些關係」就是專屬事件：其他關係不會發生，而且算兩情相悅，不受「主角非自願」的篩選。倍率乘在權重上（經過娼館的事件乘在機率上），空著是 1，0 是這種關係不發生。`" /></template>
+      <div class="row small"><b>只在這些關係發生</b>
+        <label v-for="b in bondStyles.filter((x) => x.id !== 'strict')" :key="b.id" class="check">
+          <input type="checkbox" :checked="draft.bonds?.includes(b.id)" @change="toggleBond(b.id, ($event.target as HTMLInputElement).checked)" /> {{ b.name }}
+        </label>
+      </div>
+      <div class="row small"><b>權重倍率</b>
+        <label v-for="b in bondStyles" :key="b.id">{{ b.name }}
+          <input type="number" min="0" max="5" step="0.1" class="num" placeholder="1" :value="draft.bond_weights?.[b.id] ?? ''" @change="setBondWeight(b.id, ($event.target as HTMLInputElement).value)" />
+        </label>
+      </div>
     </FoldSet>
 
     <FoldSet>

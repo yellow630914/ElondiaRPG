@@ -19,6 +19,7 @@ import { submissionDc } from '@/engine/companions'
 import { locationById } from '@/engine/data'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
+import BondStylePicker from './BondStylePicker.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import type { IconName } from './ui/iconPaths'
@@ -250,6 +251,8 @@ function act(kind: 'negotiate' | 'escape' | PermitAct | 'master_return' | 'seek_
           <button :disabled="!transferTo || game.judging" @click="transfer">換主人</button>
         </div>
       </div>
+
+      <BondStylePicker v-if="contract.master" :npc="contract.master" :name="contract.masterName" @done="emit('close')" />
 
       <h4>
         <GameIcon name="link" :size="14" /> 找主人做點什麼

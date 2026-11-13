@@ -33,6 +33,7 @@ import { learnCraft } from '@/engine/craftLessons'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
 import * as masterTool from '@/engine/masterTool'
+import * as bondStyle from '@/engine/bondStyle'
 import * as ownerTraining from '@/engine/ownerTraining'
 import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
@@ -59,7 +60,7 @@ import * as story from '@/engine/story'
 import * as npcLife from '@/engine/npcLife'
 import * as sexRecord from '@/engine/sexRecord'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
-import type { Attrs, AttrId } from '@/engine/data'
+import type { Attrs, AttrId, BondStyle } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import * as tattooShop from '@/engine/tattooShop'
@@ -1472,6 +1473,8 @@ export const useGame = defineStore('game', () => {
     // 主人是工具人：親密度夠高時直接解約、換主人
     masterRelease: () => run((s) => masterTool.masterRelease(s)),
     masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),
+    // 主僕關係：主角和主人、或和自己的奴隸說開兩人之間真正的關係（bondStyle.ts）
+    setBond: (npc: string, style: BondStyle) => run((s) => bondStyle.setBond(s, npc, style)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
     travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent), { onMap: true }),

@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, Degree, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, BondStyle, CraftId, DealCost, Degree, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { BestiaryEntry } from './bestiary'
@@ -451,6 +451,8 @@ export interface ContractRef {
   permit?: { due: GameTime; hours: number; exit?: boolean; refused?: number }
   /** 嚴加看管：逃亡被找到、逾期被帶回家時加重，讓出門與出城更難；since 起每隔幾天減一點 */
   strict?: { points: number; since: GameTime }
+  /** 主僕關係（bondStyle.ts）：親密度夠高時兩人選的相處方式；沒有時是名實相符。換主人時清掉 */
+  style?: Exclude<BondStyle, 'strict'>
 }
 
 export type TattooPlace = 'neck' | 'left_arm' | 'right_arm' | 'chest' | 'back' | 'belly' | 'hips' | 'left_thigh' | 'right_thigh' | 'left_calf' | 'right_calf'
