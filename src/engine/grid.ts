@@ -1501,6 +1501,13 @@ function pickLockAt(state: GameState, area: Area, cell: Cell, method: LockMethod
   cell.done = true
   if (cell.intel) finishIntel(state, cell.intel)
   advanceTime(state, 10 / 60)
+  // 寶箱的地下城事件：和沒上鎖的寶箱一樣（原本開鎖之後不會發生，深層的寶箱大多上鎖）；成人向的取代寶箱
+  if (!cell.intel && maybeDungeonEvent(state, 'chest') && pendingDungeonEvent(state)?.tags?.includes('adult')) {
+    report.timeline = [entry]
+    report.outcome = { result: 'success', summary: `${picker.name}${how.success}。`, tags: ['寶箱', '上鎖'] }
+    report.lore_keys!.push(loc.name)
+    return commitReport(state, report)
+  }
   const opened = openChest(state, area, cell.level ?? 1, isRelic(state, cell.intel))
   opened.timeline = [entry, ...(opened.timeline ?? [])]
   opened.outcome.summary = `${picker.name}${how.success}。${opened.outcome.summary ?? ''}`

@@ -19,12 +19,37 @@
     "fumble_alert": 1
   },
   "steal": {
-    "$comment": "偷到的錢 = 一般人生活費 × loot_days[對方的財富等級] × (0.5～1.5)；大成功加倍，商人身上可能改成偷到一件商品。DC = base + 2 × 生命層級差 + wary（財富等級 ≥ 2 的人比較警覺）- floor(親密度 / 25)。",
+    "$comment": "偷到的錢 = 一般人生活費 × loot_days[對方的財富等級] × (0.5～1.5)；大成功加倍，另外偷到的物品見 items。DC = base + 2 × 生命層級差 + wary（財富等級 ≥ 2 的人比較警覺）- floor(親密度 / 25)。",
     "base": 12,
     "wary": 2,
     "loot_days": [0.2, 1, 4, 15, 50],
     "fail": { "affinity": -5, "alert": 1, "reputation": -1 },
-    "fumble": { "affinity": -10, "alert": 2, "reputation": -2 }
+    "fumble": { "affinity": -10, "alert": 2, "reputation": -2 },
+    "items": {
+      "$comment": "偷到的物品（docs/NPC_SYSTEM.md 第 8 節）：大成功時錢加一件物品；成功時有 success_chance 的機率改成偷到一件物品（不拿錢）。物品照對方的身分挑：標籤（tags）、冒險者的職業（classes）各對到幾個池子（pools），都沒有時用 default。池子：categories 物品類別、shops 哪間店賣的（物品的 tags）、names 指定名稱，三者是「且」（有寫的才算）；裝備、情報、家具、獨特物品不會偷到，成人用品店的東西只有池子的 shops 寫了 adult_shop 才算。價值上限 = 偷到的錢的上限 × value_mult × (1 + 對方等級 × per_level)（大成功再 × 2）；優先挑價格在上限 min_ratio 以上的，沒有就挑上限以下最貴的幾件之一。便宜的（價格不到上限的 1/4）一次 1～3 個。",
+      "success_chance": 0.35, "value_mult": 3, "per_level": 0.1, "min_ratio": 0.15,
+      "pools": {
+        "pocket": {"categories": ["food", "gear", "material"], "shops": ["general", "tavern"]},
+        "potions": {"categories": ["consumable"], "shops": ["general", "temple"]},
+        "luxury": {"names": ["天青瓷盞", "雲錦", "北珠", "萍江繡帕", "松煙墨錠", "樺樹皮畫", "金錠", "銀錠", "天青釉", "陳年果酒", "精緻甜點", "龍團茶餅"]},
+        "holy": {"shops": ["temple"], "categories": ["consumable", "material", "gear"]},
+        "arcane": {"shops": ["magic"], "categories": ["consumable", "scroll", "material", "gear"]},
+        "trade_goods": {"shops": ["general"], "categories": ["consumable", "gear", "material"]},
+        "smith": {"shops": ["smith"], "categories": ["material", "gear"]},
+        "tailor": {"shops": ["tailor"], "categories": ["material", "gear"]},
+        "jewels": {"shops": ["jeweler"], "categories": ["material", "gear"]},
+        "kitchen": {"categories": ["food"]},
+        "farm": {"names": ["藥草種子", "乳香草種子", "莓果苗", "魔乳果苗", "菇菌孢子", "藥草", "生肉", "風乾肉", "黑麵包"]},
+        "travel": {"names": ["乾糧", "水袋", "麻繩（50 呎）", "火把（10 根）", "指南針", "偏遠地區簡易地圖", "油燈", "燈油", "止血繃帶"]},
+        "rogue": {"names": ["撬鎖工具組", "火焰瓶", "冰霜瓶", "止血繃帶", "瑔州香料", "白鐵鑰匙", "藍鋼鑰匙"]},
+        "fighter": {"names": ["磨刀石", "止血繃帶", "巨力藥劑", "鐵膚藥劑", "微弱治療藥劑", "治療藥劑"]},
+        "music": {"names": ["馬頭琴", "萍江繡帕", "麥酒", "陳年果酒", "茶點"]},
+        "brothel": {"shops": ["adult_shop", "tavern"], "categories": ["consumable", "food"]}
+      },
+      "tags": {"traveler": ["travel", "pocket"], "merchant": ["trade_goods", "luxury"], "commoner": ["pocket"], "slave": ["pocket"], "noble": ["luxury", "jewels"], "royal": ["luxury", "jewels"], "priest": ["holy"], "bishop": ["holy", "luxury"], "prostitute": ["brothel"], "hunter": ["travel", "farm"], "farmer": ["farm", "kitchen"], "fisher": ["kitchen", "travel"], "sailor": ["travel", "kitchen"], "mercenary": ["fighter", "potions"], "scholar": ["arcane", "luxury"], "performer": ["music"], "blacksmith": ["smith"], "carpenter": ["smith"], "leatherworker": ["tailor"], "jeweler": ["jewels"], "alchemist": ["arcane", "holy"], "cook": ["kitchen", "farm"], "thief": ["rogue"], "smuggler": ["rogue", "trade_goods"]},
+      "classes": {"fighter": ["fighter", "potions"], "barbarian": ["fighter", "travel"], "paladin": ["fighter", "holy"], "ranger": ["travel", "potions"], "rogue": ["rogue", "potions"], "monk": ["potions", "travel"], "bard": ["music", "potions"], "cleric": ["holy"], "druid": ["farm", "holy"], "wizard": ["arcane"], "wufu": ["fighter", "potions"], "xianshi": ["arcane", "holy"]},
+      "default": ["pocket"]
+    }
   },
   "attack": {
     "$comment": "偷襲（靈巧）：DC = base + floor(對方等級 / 2)。成功先手開戰、沒有目擊者；部分成功沒有先手、沒有目擊者；失敗被目擊；大失敗被目擊而且對方先手。被目擊時：對方敵對，現在的地點警戒 + alert_here、聲望 reputation_here；對方每個活躍地點（聚落）警戒 + alert_haunts、所屬勢力聲望 reputation_haunts。",

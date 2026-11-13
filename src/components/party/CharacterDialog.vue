@@ -15,7 +15,7 @@ import { lactationLine, milkBlock } from '@/engine/lactation'
 import { postpartumMaxHp, pregnancyTwoFace } from '@/engine/pregCombat'
 import { pregnancyStageName } from '@/engine/pregMarks'
 import { lactationSensitivity } from '@/engine/lewd'
-import { bindLabel, bindsOf, hasMaster, lockName, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
+import { bindLabel, bindsOf, hasMaster, lockName, schoolDef, schoolName, schoolsOf, twoFaceCombat } from '@/engine/schools'
 import { isOwnSlave } from '@/engine/ownedSlaves'
 import { MOD_NAME } from '@/engine/gear'
 import { gameRule } from '@/engine/gameRules'
@@ -130,7 +130,9 @@ const lewdItems = computed<StatItem[]>(() => {
   items.push({ label: lewdName('exposure'), value: exp, note: `${bandName('exposure', exp)}・身上的曝露度 ${exposureLevel(x)}${vacNote}` })
   // 流派與雙面效應（docs/LEWD_STATS.md 第 6、7 節）
   const schools = schoolsOf(x)
-  items.push({ label: '流派', value: schools.length ? schools.map(schoolName).join('、') : '沒有', note: schools.includes('servitude') ? (hasMaster(x) ? '有主人：隸從派全效' : '沒有主人：隸從派一半效果') : '' })
+  const pitch = schools.map((id) => `${schoolName(id)}：${schoolDef(id)?.pitch ?? ''}`).join(' ')
+  const servant = schools.includes('servitude') ? (hasMaster(x) ? '（有主人：隸從派全效）' : '（沒有主人：隸從派一半效果）') : ''
+  items.push({ label: '流派', value: schools.length ? schools.map(schoolName).join('、') : '沒有', note: schools.length ? `${pitch}${servant}` : '向各流派的老師學，或讀秘法書', wide: schools.length > 0 })
   const binds = bindsOf(x)
   if (binds.length) {
     const tf = twoFaceCombat(x, s.value)
@@ -281,7 +283,7 @@ function saveTags() {
             </table>
             <p v-if="m.attrPoints > 0" class="points">可分配屬性點：<b>{{ m.attrPoints }}</b></p>
             <!-- 慾望指標放在五維屬性底下；右欄是戰鬥數值與性經歷 -->
-            <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派從受訓學（娼館、神殿、裁縫店……）；拘束具平常是檢定減值，修了流派又上了鎖，戰鬥中反轉成增益。" /></h4>
+            <h4 class="lewd-title">慾望指標 <Hint text="成人向。淫亂、敏感、忍耐、順從會隨經歷慢慢改變，影響慾望戰鬥（慾望上限、受到的慾望、初始慾望……）與 AI 的描寫；曝露名聲依地區記，在城鎮裡穿著曝露的服裝會累積，每天淡掉一點。括號是裝備給的加減。流派是慾望戰鬥的打法，向各流派的老師學或讀秘法書，每一派的玩法寫在「流派」那一行。拘束具平常讓檢定變差；修了任何一個流派、又用鎖鎖上時，戰鬥中反過來給增益（束縛派、刑罰派這類契合的流派給更多）。" /></h4>
             <StatGrid :items="lewdItems" />
             <p v-if="pregLine" class="small preg">🍼 {{ pregLine }}</p>
             <p v-if="lactLine" class="small preg">💧 {{ lactLine }}（敏感 +{{ lactationSensitivity() }}）

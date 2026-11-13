@@ -12,6 +12,13 @@ import { gameRule } from './gameRules'
 import { pcTagEffect } from './pcTags'
 import { checkParts, rollBreakdown, sumParts } from './rollParts'
 
+/** 偷竊偷到的物品：池子、身分對池子（security.json 的 steal.items） */
+export interface StealPool { categories?: string[]; shops?: string[]; names?: string[] }
+export interface StealItems {
+  success_chance: number; value_mult: number; per_level: number; min_ratio: number
+  pools: Record<string, StealPool>; tags: Record<string, string[]>; classes: Record<string, string[]>; default: string[]
+}
+
 export const securityRules = securityJson as unknown as {
   alert: { max: number; decay_days: number; gate_dc_base: number; gate_dc_per_level: number }
   fines: { alert_days: number; wanted_days: number }
@@ -22,6 +29,7 @@ export const securityRules = securityJson as unknown as {
     base: number; wary: number; loot_days: number[]
     fail: { affinity: number; alert: number; reputation: number }
     fumble: { affinity: number; alert: number; reputation: number }
+    items: StealItems
   }
   attack: { base: number; alert_here: number; reputation_here: number; alert_haunts: number; reputation_haunts: number }
 }

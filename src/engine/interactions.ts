@@ -16,6 +16,7 @@ import { consequences, securityRules } from './security'
 import { ensureRelationship } from './social'
 import { withRng } from './state'
 import type { Character, GameState, NpcRecord, Report } from './types'
+import type { ItemDef } from './data'
 
 export type InteractionKind = 'chat' | 'gift' | 'flatter' | 'seduce' | 'steal' | 'attack'
 export const INTERACTIONS: InteractionKind[] = ['chat', 'gift', 'flatter', 'seduce', 'steal', 'attack']
@@ -174,6 +175,15 @@ function lootRange(rec: NpcRecord): [number, number] {
   return [Math.max(1, Math.round(base * 0.5)), Math.max(1, Math.round(base * 1.5))]
 }
 
+/** 結果預覽：對方身上大概有什麼（池子的名字） */
+function stealHint(rec: NpcRecord): string {
+  const NAMES: Record<string, string> = {
+    pocket: '隨身的小東西', potions: '藥劑', luxury: '值錢的珍品', holy: '神殿的用品', arcane: '卷軸或魔法材料', trade_goods: '商品', smith: '鍛造材料或工具',
+    tailor: '布料、皮革或工具', jewels: '貴金屬或寶石', kitchen: '吃的喝的', farm: '種子或農產', travel: '旅行用品', rogue: '撬鎖工具之類的', fighter: '戰鬥用的藥劑', music: '樂器或酒', brothel: '娼館的小玩意',
+  }
+  return `${[...new Set(stealPools(rec).map((p) => NAMES[p] ?? '物品'))].join('或')}`
+}
+
 function setupSteal(state: GameState, rec: NpcRecord): InteractionSetup {
   const r = securityRules.steal
   const pc = pcOf(state)
@@ -185,13 +195,57 @@ function setupSteal(state: GameState, rec: NpcRecord): InteractionSetup {
   return {
     dc, targetName: rec.name, situational: [], scene: `${currentArea(state).name}・${npcTitle(rec)}${rec.name}`,
     outcomes: {
-      critical: `神不知鬼不覺，偷到 ${formatMoney(lo * 2)}～${formatMoney(hi * 2)}（商人身上可能是一件商品）`,
-      success: `偷到 ${formatMoney(lo)}～${formatMoney(hi)}`,
+      critical: `神不知鬼不覺，偷到 ${formatMoney(lo * 2)}～${formatMoney(hi * 2)}，還有一件${stealHint(rec)}`,
+      success: `偷到 ${formatMoney(lo)}～${formatMoney(hi)}（${Math.round(r.items.success_chance * 100)}% 改成一件${stealHint(rec)}）`,
       partial: `只摸到一點零錢（${formatMoney(Math.round(lo / 2))}～${formatMoney(Math.round(hi / 2))}），差點被發現`,
       fail: `被發覺：親密度 ${r.fail.affinity}${witnesses} +${r.fail.alert}、聲望 ${r.fail.reputation}`,
       fumble: `當場被抓：親密度 ${r.fumble.affinity}${witnesses} +${r.fumble.alert}、聲望 ${r.fumble.reputation}`,
     },
   }
+}
+
+/** 對方身上可能有的物品池（標籤、冒險者的職業；都沒有時用預設） */
+function stealPools(rec: NpcRecord): string[] {
+  const r = securityRules.steal.items
+  const ids = new Set<string>()
+  for (const t of rec.tags ?? []) for (const p of r.tags[t] ?? []) ids.add(p)
+  if (npcKind(rec) === 'adventurer' && rec.class) for (const p of r.classes[rec.class] ?? []) ids.add(p)
+  return ids.size ? [...ids] : r.default
+}
+
+/** 偷得到的物品：對方身分的池子裡、價值不超過上限的（裝備、情報、家具、獨特物品不算；成人用品店的只有池子寫明才算） */
+export function stealCandidates(rec: NpcRecord, cap: number): ItemDef[] {
+  const r = securityRules.steal.items
+  const pools = stealPools(rec).map((id) => r.pools[id]).filter((p): p is NonNullable<typeof p> => !!p)
+  return itemRules.items.filter((i) => {
+    if (i.price_cc <= 0 || i.price_cc > cap) return false
+    if (['equipment', 'info', 'furniture'].includes(i.category) || i.tags.includes('unique')) return false
+    return pools.some((p) => {
+      if (p.names && !p.names.includes(i.name)) return false
+      if (p.categories && !p.categories.includes(i.category)) return false
+      if (p.shops && !i.tags.some((t) => p.shops!.includes(t))) return false
+      if (i.tags.includes('adult_shop') && !i.tags.some((t) => t !== 'adult_shop' && p.shops?.includes(t)) && !p.shops?.includes('adult_shop')) return false
+      return true
+    })
+  })
+}
+
+/** 偷到的物品的價值上限：偷到的錢的上限 × value_mult × (1 + 等級 × per_level) */
+export function stealItemCap(rec: NpcRecord, critical: boolean): number {
+  const r = securityRules.steal.items
+  return Math.round(lootRange(rec)[1] * r.value_mult * (1 + (rec.level ?? 1) * r.per_level) * (critical ? 2 : 1))
+}
+
+/** 挑一件：優先價格在上限 min_ratio 以上的，沒有就從最貴的幾件裡挑；便宜的一次 1～3 個 */
+function pickStolen(rng: { int(a: number, b: number): number; pick<T>(xs: T[]): T }, rec: NpcRecord, critical: boolean): { name: string; qty: number } | undefined {
+  const cap = stealItemCap(rec, critical)
+  const all = stealCandidates(rec, cap)
+  if (!all.length) return undefined
+  const good = all.filter((i) => i.price_cc >= cap * securityRules.steal.items.min_ratio)
+  const pool = good.length ? good : [...all].sort((a, b) => b.price_cc - a.price_cc).slice(0, 4)
+  const g = rng.pick(pool)
+  const qty = g.price_cc * 4 <= cap ? rng.int(1, 3) : 1
+  return { name: g.name, qty }
 }
 
 function applySteal(state: GameState, report: Report, rec: NpcRecord, degree: Degree): string {
@@ -209,17 +263,13 @@ function applySteal(state: GameState, report: Report, rec: NpcRecord, degree: De
   return withRng(state, (rng) => {
     const scale = degree === 'critical' ? 2 : degree === 'partial' ? 0.5 : 1
     const money = Math.max(1, Math.round(rng.int(lo, hi) * scale))
-    // 大成功：商人身上可能偷到一件商品（價值不超過偷到的錢的兩倍）
-    if (degree === 'critical' && rec.tags?.includes('merchant') && rng.chance(0.5)) {
-      const goods = itemRules.items.filter((i) => i.price_cc <= money * 2 && i.category !== 'equipment' && i.category !== 'info')
-      if (goods.length) {
-        const g = rng.pick(goods)
-        report.changes.items_gained = [...(report.changes.items_gained ?? []), { name: g.name, qty: 1, owner: 'pc' }]
-        return `從${rec.name}身上偷到了${g.name}。`
-      }
-    }
+    // 物品照對方的身分與等級挑：大成功錢加一件，成功時有機率改成一件
+    const item = degree === 'critical' || (degree === 'success' && rng.chance(r.items.success_chance)) ? pickStolen(rng, rec, degree === 'critical') : undefined
+    if (item) report.changes.items_gained = [...(report.changes.items_gained ?? []), { name: item.name, qty: item.qty, owner: 'pc' }]
+    const itemText = item ? `${item.name}${item.qty > 1 ? `×${item.qty}` : ''}` : ''
+    if (item && degree === 'success') return `從${rec.name}身上偷到了${itemText}。`
     report.changes.money_cc = (report.changes.money_cc ?? 0) + money
-    return `從${rec.name}身上偷到 ${formatMoney(money)}。`
+    return `從${rec.name}身上偷到 ${formatMoney(money)}${itemText ? `，還有${itemText}` : ''}。`
   })
 }
 

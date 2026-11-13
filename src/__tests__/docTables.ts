@@ -67,11 +67,11 @@ function lewdAbilities(): string {
 // ---- LEWD_STATS：流派特質、拘束具與鎖 ----
 
 function lewdSchoolTable(): string {
-  return table(['流派', '偏向', '定位', '入門', '進階', '受訓（設施、學費）'], schoolIds().map((id) => {
+  return table(['流派', '偏向', '玩法', '入門', '進階', '受訓（設施、學費）'], schoolIds().map((id) => {
     const d = schoolDef(id)!
     const p = (x: string) => perkDef(x)
     const where = (x: string) => { const d = p(x); const t = d?.train ? trainSpec(d) : undefined; return t ? `${t.cells.map((c) => cellName(c as CellKind) || c).join('、')} ${formatMoney(t.price_cc)}` : '—' }
-    return [d.name, d.group, d.role, `**${p(d.entry)?.name}**：${p(d.entry)?.desc}`, `**${p(d.advanced)?.name}**：${p(d.advanced)?.desc}`, `${where(d.entry)}／${where(d.advanced)}`]
+    return [d.name, d.group, d.pitch ?? d.role, `**${p(d.entry)?.name}**：${p(d.entry)?.desc}`, `**${p(d.advanced)?.name}**：${p(d.advanced)?.desc}`, `${where(d.entry)}／${where(d.advanced)}`]
   }))
 }
 

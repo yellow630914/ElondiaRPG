@@ -5,7 +5,8 @@ import { prepareAction, resolveAction } from '@/engine/actions'
 import { finishCombat } from '@/engine/combat'
 import { avoidFoes, checkHostiles, fightFoes, payToll } from '@/engine/encounters'
 import { captiveConsequence, resolveCaptive } from '@/engine/captives'
-import { setupInteraction } from '@/engine/interactions'
+import { setupInteraction, stealCandidates, stealItemCap } from '@/engine/interactions'
+import { itemDef } from '@/engine/data'
 import { hireAtAsking } from '@/engine/companions'
 import { blockKeys, currentArea, enterLocation, getArea, goOutskirts, move, placeAt, returnToTown, standOn } from '@/engine/grid'
 import { generateNpc, npcRecord } from '@/engine/npcs'
@@ -269,6 +270,25 @@ describe('crime and the guards', () => {
     expect(alertLevel(state)).toBe(2)
     expect(state.reputation.holy_ring).toBe(-2)
     expect(state.relationships![mark.id]!.affinity).toBeLessThan(0)
+  })
+
+  it('steals things that fit who they are and how rich they are', () => {
+    const state = game()
+    const priest = beside(state, { kind: 'commoner', tags: ['priest'], occupation: '神官' })
+    const noble = beside(state, { kind: 'commoner', tags: ['noble'], occupation: '貴族' })
+    const beggar = beside(state, { kind: 'commoner', tags: ['commoner'], occupation: '挑夫' })
+    // 神官身上是神殿的東西；貴族的上限比平民高很多；成人用品店的東西不會從一般人身上偷到
+    expect(stealCandidates(priest, stealItemCap(priest, true)).every((i) => i.tags.includes('temple'))).toBe(true)
+    expect(stealItemCap(noble, false)).toBeGreaterThan(stealItemCap(beggar, false) * 10)
+    expect(stealCandidates(beggar, 1e9).some((i) => i.tags.includes('adult_shop') && i.category === 'consumable')).toBe(false)
+    expect(stealCandidates(noble, 1e9).every((i) => i.category !== 'equipment')).toBe(true)
+    // 大成功：錢加一件物品，價值不超過上限
+    const r = act(state, { kind: 'steal', target: priest.id, text: '' }, 20)
+    const got = r.changes.items_gained?.[0]
+    expect(got).toBeDefined()
+    expect(itemDef(got!.name)!.tags).toContain('temple')
+    expect(itemDef(got!.name)!.price_cc).toBeLessThanOrEqual(stealItemCap(priest, true))
+    expect(r.changes.money_cc).toBeGreaterThan(0)
   })
 
   it('only attacks adventurers; a witnessed attack angers their haunts too', () => {

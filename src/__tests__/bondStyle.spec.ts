@@ -150,6 +150,14 @@ describe('events under each bond', () => {
     expect(bondWeight(exclusive, 'lovers')).toBe(exclusive.weight)
   })
 
+  it('has a reversed bond with its own events and less one-way discipline', () => {
+    expect(rules.styles.switch.name).toBe('反轉主奴')
+    const pool = [...masterEventPool('master'), ...masterEventPool('owner'), ...masterEventPool('slave')]
+    expect(pool.filter((e) => e.bonds?.includes('switch')).map((e) => e.id).sort()).toEqual(['bond_switch_public', 'bond_switch_turn', 'bond_switch_wager', 'own_bond_switch', 'sl_switch_offer'])
+    const rack = masterEventPool('master').find((e) => e.id === 'home_rack')!
+    expect(bondWeight(rack, 'switch')).toBeLessThan(bondWeight(rack, 'strict'))
+  })
+
   it('draws the exclusive events only under that bond', () => {
     const state = bound()
     const m = masterId(state)

@@ -1660,8 +1660,8 @@ export interface MasterEventDef {
 }
 
 /** 主僕關係：名實相符（預設）、名義主僕實為夥伴、情趣主奴、激烈主奴、戀人 */
-export type BondStyle = 'strict' | 'partner' | 'playful' | 'intense' | 'lovers'
-export const BOND_STYLES: BondStyle[] = ['strict', 'partner', 'playful', 'intense', 'lovers']
+export type BondStyle = 'strict' | 'partner' | 'playful' | 'intense' | 'lovers' | 'switch'
+export const BOND_STYLES: BondStyle[] = ['strict', 'partner', 'playful', 'intense', 'lovers', 'switch']
 
 /** 主動找主人：分類、名稱、一句說明、開頭（{master} 換成主人的名字，接在事件描述前面） */
 export interface MasterAskDef {
@@ -2515,7 +2515,7 @@ export const CURSE_LOCK = 'curse:'
 /** 不是主人鎖上、和契約無關的鎖：陷阱鎖、詛咒 */
 export const lockedByThing = (locked?: string) => !!locked && (locked.startsWith(TRAP_LOCK) || locked.startsWith(CURSE_LOCK))
 /** 慾望流派（lewd.json 的 schools） */
-export interface LewdSchool { name: string; group: string; role: string; entry: string; advanced: string; fit: BindKind[] }
+export interface LewdSchool { name: string; group: string; role: string; pitch?: string; entry: string; advanced: string; fit: BindKind[] }
 /**
  * 流派特質的慾望效果（PerkDef.lust；慾望戰鬥關閉時不生效）。數值都是加在基本值上的：
  * max 慾望上限、taken 受到的慾望倍率、self 自己增加的慾望倍率、convert 傷害轉成慾望的比例（有轉換的狀態時）、

@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { setContentFilters } from '@/engine/content'
 import { companionRules, locationById } from '@/engine/data'
 import { acceptTrapLure, answerDungeonEvent, declineTrapLure, DEFAULT_LAYER_DC, dungeonCandidates, dungeonEventWeight, eventBaseDc, FRESH_DAYS, FULL_POOL, eventDc, dungeonTemplates, maybeDungeonEvent, pendingDungeonEvent, pruneDungeonEvent } from '@/engine/dungeonEvents'
-import { cellAt, currentArea, DUNGEON_LAYERS, enterLocation, findKind, generateLayer, layerEncounters, move, placeAt, storeArea } from '@/engine/grid'
+import { cellAt, currentArea, currentCell, pickLock, DUNGEON_LAYERS, enterLocation, findKind, generateLayer, layerEncounters, move, placeAt, storeArea } from '@/engine/grid'
 import { applyContent, emptyMods } from '@/engine/mods'
 import { longRest, longRestBlocked } from '@/engine/rest'
 import { leaveSide, travelEvents } from '@/engine/road'
@@ -239,6 +239,19 @@ describe('dungeon adult events', () => {
     answerDungeonEvent(state, i)
     if (gain) expect(state.money_cc).toBeGreaterThan(money)
     else expect(state.money_cc).toBe(money)
+  })
+
+  it('rolls the chest event for a locked chest too, once the lock is open', () => {
+    always()
+    const state = inDungeon('fem')
+    currentArea(state).layer = 1
+    const [dx, dy] = besides(state, { kind: 'chest', level: 1, lock: 1 })
+    move(state, dx, dy)
+    expect(pendingDungeonEvent(state)).toBeUndefined()
+    // 擲到 1 才打不開
+    for (let n = 0; n < 6 && currentCell(state).lock; n++) pickLock(state, n % 2 ? 'int' : 'str')
+    expect(currentCell(state).lock).toBeUndefined()
+    expect(pendingDungeonEvent(state)?.triggers).toContain('chest')
   })
 
   it('opens the chest as usual before a normal chest event', () => {
