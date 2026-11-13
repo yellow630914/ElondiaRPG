@@ -3,6 +3,7 @@
 // - 機率與冷卻在 travel_events.json 的 dungeon；同一個事件隔 repeat_days 天（或 cooldown_days）才會再出現。
 // - 內建模板有成人向的（色情陷阱、擬態寶箱、花粉、觸手植物、夜襲……，內容篩選關掉「主角非自願」時非自願的不會發生）與普通的（dn_ 開頭，每個主角都會遇到）。
 // - 事件發生在主角身上：選項的檢定由主角自己擲（不是隊伍裡最擅長的人）。
+// - 會帶來寄生物的事件，主角還沒有那種寄生物時照存檔規則「寄生事件的比重」加權；黑市的引子（物品的 use.lure）在地下城裡直接引來那件事。
 
 import { gameRule } from './gameRules'
 import { snapshot } from './character'
@@ -11,7 +12,7 @@ import { locationById, regionById } from './data'
 import { currentArea, type Area } from './grid'
 import { characterBody } from './look'
 import { pcOf } from './party'
-import { parasiteOf, parasiteRules, stageOf } from './parasites'
+import { parasiteDef, parasiteOf, parasiteRules, stageOf } from './parasites'
 import { checkModifiers, modifierNote } from './perks'
 import { applyPendingMove, applyRoadOutcome, sceneOn, travelEvents, type DungeonTrigger, type RoadOption, type RoadTemplate } from './road'
 import { commitReport, newReportId, withRng } from './state'
@@ -109,8 +110,8 @@ export function maybeDungeonEvent(state: GameState, trigger: DungeonTrigger, at:
   const list = dungeonCandidates(state, area, trigger, at)
   if (!list.length) return false
   const fresh = list.map((t) => dungeonEventWeight(state, t.id))
-  const weights = list.map((t, i) => fresh[i]! * adultBoost(state, t))
-  // 採集、長休可以抽的事件少時機率照比例調低；成人向的比重（存檔規則）拉高的那一份也算進機率
+  const weights = list.map((t, i) => fresh[i]! * eventBoost(state, t))
+  // 採集、長休可以抽的事件少時機率照比例調低；成人向與寄生事件的比重（存檔規則）拉高的那一份也算進機率
   const pool = trigger === 'gather' || trigger === 'rest' ? Math.min(1, list.length / FULL_POOL) : 1
   const boost = sum(weights) / sum(fresh)
   const chance = Math.min(1, (rules.chance[trigger] ?? 0) * gameRule(state, 'dungeonEventMult') * pool * boost)
@@ -132,6 +133,28 @@ function adultBoost(state: GameState, t: RoadTemplate): number {
   return t.tags?.includes('adult') ? gameRule(state, 'adultDungeonMult') : 1
 }
 
+/** 這件事的選項會帶來哪些寄生物（效果 parasite 的 add；苗床不算，那是怪物的苗床，另有內容篩選）：照資料找，不寫死事件的 id */
+export function parasitesFrom(t: Pick<RoadTemplate, 'options'>): string[] {
+  const out = new Set<string>()
+  for (const o of t.options ?? []) {
+    for (const e of [...(o.success?.effects ?? []), ...(o.fail?.effects ?? [])]) {
+      if (e.type === 'parasite' && e.op === 'add' && parasiteDef(e.parasite)?.category !== 'brood') out.add(e.parasite)
+    }
+  }
+  return [...out]
+}
+
+/** 存檔規則「寄生事件的比重」：這件事會帶來主角還沒有的寄生物時乘上倍率，否則 1 */
+export function parasiteBoost(state: GameState, t: Pick<RoadTemplate, 'options'>): number {
+  const pc = pcOf(state)
+  return parasitesFrom(t).some((id) => !parasiteOf(pc, id)) ? gameRule(state, 'parasiteEventBoost') : 1
+}
+
+/** 抽事件時的加權：成人向的比重 × 寄生事件的比重 */
+function eventBoost(state: GameState, t: RoadTemplate): number {
+  return adultBoost(state, t) * parasiteBoost(state, t)
+}
+
 /** 照權重抽一件（r 是 0～1 的亂數） */
 function weightedPick<T>(r: number, list: T[], weights: number[]): T {
   let left = r * sum(weights)
@@ -144,6 +167,40 @@ function startDungeonEvent(state: GameState, t: RoadTemplate, trigger: DungeonTr
   log.last = hoursOf(state.time)
   log.seen[t.id] = state.time.day
   state.dungeonEvent = { template: t.id, trigger }
+}
+
+// ---- 寄生物的引子（物品的 use.lure；存檔規則 parasiteLures，docs/ADULT_EVENTS.md 第 6 節） ----
+
+/** 引子會引來的事件：清單裡第一件體型相符的（陽剛體型的版本寫在後面），沒有時第一件體型設定允許的；內容篩選擋掉的、不存在的不算 */
+export function lureTemplate(state: GameState, ids: readonly string[]): RoadTemplate | undefined {
+  const body = characterBody(pcOf(state))
+  const list = ids.map((id) => dungeonTemplates().find((t) => t.id === id)).filter((t): t is RoadTemplate => !!t && tagsAllowed(t.tags))
+  return list.find((t) => !t.pc_body?.length || t.pc_body.includes(body)) ?? list.find((t) => pcBodyAllowed(t.pc_body, body))
+}
+
+/** 引子的說明用：清單裡第一件存在的事件的名稱 */
+export function lureTitle(ids: readonly string[] | undefined): string | undefined {
+  for (const id of ids ?? []) {
+    const t = dungeonTemplates().find((x) => x.id === id)
+    if (t) return t.title
+  }
+  return undefined
+}
+
+/**
+ * 用了引子：在地下城裡立刻遇到那件事（不看機率、事件之間的冷卻、同一件事的不重複天數、地點、層數與時段）；
+ * 不在地下城、有別的事情等著回應、這位主角遇不到時丟出錯誤（引子不會用掉）。回傳遇到的事件
+ */
+export function checkLure(state: GameState, ids: readonly string[]): RoadTemplate {
+  if (currentArea(state).kind !== 'dungeon') throw new Error('要在地下城裡才能用')
+  if (busy(state)) throw new Error('先應付眼前的處境')
+  const t = lureTemplate(state, ids)
+  if (!t) throw new Error('這件事現在不會發生（內容篩選或主角的體型擋掉了）')
+  return t
+}
+
+export function startLure(state: GameState, t: RoadTemplate) {
+  startDungeonEvent(state, t, t.triggers?.[0] ?? 'chest')
 }
 
 // ---- 主動觸發察覺到的陷阱（存檔規則 trapLure） ----
@@ -163,7 +220,7 @@ export function acceptTrapLure(state: GameState): boolean {
   delete state.trapLure
   const list = dungeonCandidates(state, currentArea(state), 'trap')
   if (!list.length || busy(state)) return false
-  const weights = list.map((t) => dungeonEventWeight(state, t.id) * adultBoost(state, t))
+  const weights = list.map((t) => dungeonEventWeight(state, t.id) * eventBoost(state, t))
   startDungeonEvent(state, withRng(state, (rng) => weightedPick(rng.next(), list, weights)), 'trap')
   return true
 }

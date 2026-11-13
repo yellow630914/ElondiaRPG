@@ -863,6 +863,9 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
     }
     if (Object.keys(lewd).length) out.lewd = lewd
   }
+  // 寄生物的引子（docs/ADULT_EVENTS.md 第 6 節）：在地下城裡立刻遇到的事件（id；內容包新增的事件在套用時才有，這裡只看格式）
+  const lure = [...new Set((Array.isArray(u.lure) ? u.lure : []).filter((id): id is string => typeof id === 'string' && /^[a-z0-9_]{1,60}$/.test(id)))].slice(0, 4)
+  if (lure.length) out.lure = lure
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
   if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.lust || out.revive || out.cleanse || out.escape) {
@@ -958,8 +961,8 @@ export function sanitizeItem(name: string, raw: Partial<ItemMod>, custom: boolea
   if (raw.charm_min) out.charm_min = int(raw.charm_min, 1, 4, 3)
   // 鑰匙：打開別人鎖上的拘束具（一次性）
   if (category === 'gear' && !out.lock && raw.key && (LOCK_GRADES as string[]).includes(raw.key)) out.key = raw.key
-  // 黑市：只有獨特物品
-  if (raw.black_market && gear?.unique) out.black_market = true
+  // 黑市：獨特物品（每天的珍品），或寄生物的引子
+  if (raw.black_market && (gear?.unique || use?.lure?.length)) out.black_market = true
   if (category === 'info' && raw.intel) {
     const it = raw.intel
     const kind = (['point', 'story', 'lead'] as const).includes(it.kind) ? it.kind : 'point'

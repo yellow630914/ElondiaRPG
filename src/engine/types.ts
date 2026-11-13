@@ -937,6 +937,10 @@ export interface GameOptions {
   adultDungeonMult?: number
   /** 察覺陷阱時可以選擇主動觸發（遇到陷阱的地下城事件） */
   trapLure?: boolean
+  /** 寄生事件的比重（1～10 倍）：主角還沒有那種寄生物時，會帶來寄生物的地下城事件抽到的權重與機率乘上這個倍率（dungeonEvents.ts 的 parasiteBoost） */
+  parasiteEventBoost?: number
+  /** 黑市賣寄生物的引子（docs/ADULT_EVENTS.md 第 6 節）：沒寫（舊存檔）＝賣，false＝不賣 */
+  parasiteLures?: boolean
   /** 娼館打工事件的機率倍率（docs/LEWD_STATS.md 第 10 節） */
   brothelEventMult?: number
   eventDc?: number

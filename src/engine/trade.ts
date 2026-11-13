@@ -231,7 +231,8 @@ function rulesDeals(state: GameState, type: ShopType): Deal[] {
     if (def.random) {
       const r = def.random
       const have = new Set(deals.map((d) => d.title))
-      const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank && soldHere(i))
+      // 寄生物的引子只在黑市賣
+      const consumables = itemRules.items.filter((i) => i.category === 'consumable' && !i.use?.perks?.length && !i.use?.abilities?.length && !i.use?.lure?.length && !have.has(i.name) && locationRank(i.min_location ?? 'village') <= rank && soldHere(i))
       for (const i of pickSome(consumables, r.consumables ?? 0)) deals.push(itemDeal(state, i.name, rng.int(1, 3)))
       const cap = r.max_material_price?.[Math.min(rank, (r.max_material_price.length ?? 1) - 1)] ?? 300
       const materials = itemRules.items.filter((i) => i.category === 'material' && i.price_cc <= cap && i.price_cc >= 5 && soldHere(i) && !have.has(i.name))

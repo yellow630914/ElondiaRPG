@@ -24,6 +24,7 @@ import { startStory } from './story'
 import type { Character, EquippedGear, GameState, GearSlot, GearSpec, Report } from './types'
 import { contractOf } from './tattoos'
 import { openWithKey } from './restraints'
+import { checkLure, lureTitle, startLure } from './dungeonEvents'
 
 function itemReport(state: GameState, hours: number): Report {
   const start = { ...state.time }
@@ -118,7 +119,7 @@ export function readIntelItem(state: GameState, name: string): Report {
 
 export function canUse(name: string): boolean {
   const use = itemDef(name)?.use
-  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length || !!use.lactation || !!use.stop_lactation || hasLewdUse(use))) || !!toolDef(itemDef(name)?.tool)?.condition
+  return (!!use && !use.combat_only && (!!use.heal || !!use.slot || !!use.condition || !!use.perks?.length || !!use.abilities?.length || !!use.lactation || !!use.stop_lactation || hasLewdUse(use) || !!use.lure?.length)) || !!toolDef(itemDef(name)?.tool)?.condition
 }
 
 /** 冥想道具：有慾望指標的增減 */
@@ -140,6 +141,7 @@ export function useSummary(use?: ItemUse): string {
   if (use.lactation) parts.push(`${use.lactation} 天內泌乳`)
   if (use.stop_lactation) parts.push('停止道具與事件造成的泌乳')
   if (hasLewdUse(use)) parts.push(`冥想一小時：${lewdUseText(use.lewd!)}`)
+  if (use.lure?.length) parts.push(`在地下城裡使用：立刻遇到「${lureTitle(use.lure) ?? '（事件已經不在了）'}」`)
   if (use.heal) parts.push(`回復 ${use.heal} HP`)
   if (use.slot) parts.push(`回復 ${use.slot} 環以下的法術環`)
   if (use.cleanse) parts.push(`解除${use.cleanse.map((id) => statusDef(id).name).join('、')}`)
@@ -176,6 +178,15 @@ export function useItem(state: GameState, name: string, memberId: string): Repor
     return commitReport(state, report)
   }
   if (!def?.use) throw new Error('這個東西不能使用')
+  if (def.use.lure?.length) {
+    // 寄生物的引子（docs/ADULT_EVENTS.md 第 6 節）：在地下城裡立刻遇到那件事，發生在主角身上；不在地下城、正忙著時不會用掉
+    const t = checkLure(state, def.use.lure)
+    report.changes.items_lost = [{ name, qty: 1 }]
+    report.outcome.summary = `拿出了${name}——「${t.title}」。`
+    const committed = commitReport(state, report)
+    startLure(state, t)
+    return committed
+  }
   if (def.use.perks?.length) {
     // 書籍：讀完得到一次學特質的機會（從書裡的特質選一個，或寫說法交給 AI）
     // 只給現在學得了的：進階特質要先有入門、互斥的流派不能同修（秘法書，docs/LEWD_STATS.md 第 6.1 節）

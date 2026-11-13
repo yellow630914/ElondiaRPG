@@ -1984,6 +1984,11 @@ export interface ItemUse {
   stop_lactation?: boolean
   /** 冥想道具：慾望指標的增減（曝露名聲是目前這一帶的；docs/LEWD_STATS.md 第 4.1 節），花一個小時 */
   lewd?: Partial<Record<LewdKey, number>>
+  /**
+   * 寄生物的引子（docs/ADULT_EVENTS.md 第 6 節）：在地下城裡使用時，立刻遇到清單裡的地下城事件（travel_events.json 的 id，scope: dungeon），
+   * 不看機率、冷卻、地點與層數；有好幾件時挑第一件體型相符的（陽剛體型的版本寫在後面），內容篩選擋掉的不算
+   */
+  lure?: string[]
 }
 
 export interface ItemDef {

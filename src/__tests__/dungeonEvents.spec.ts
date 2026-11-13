@@ -62,7 +62,8 @@ describe('dungeon adult events', () => {
     expect(list.length).toBeGreaterThanOrEqual(25)
     for (const t of list) {
       expect(t.tags, t.id).toContain('adult')
-      expect(t.pc_body, t.id).toEqual(['fem', 'andro'])
+      // 帶來寄生物的四件另有陽剛體型的版本（_m）
+      expect(t.pc_body, t.id).toEqual(t.id.endsWith('_m') ? ['masc'] : ['fem', 'andro'])
       expect(t.triggers?.length, t.id).toBeGreaterThan(0)
       expect(t.scene, t.id).toBeTruthy()
       expect(t.options?.length, t.id).toBe(3)
@@ -361,7 +362,8 @@ describe('dungeon event time of day on a long rest', () => {
   it('draws rest events by the time you went to sleep, not the morning you wake up', () => {
     const state = inDungeon('fem')
     // 抽得到的事件湊滿 FULL_POOL 件，機率才不會照比例調低
-    const picks = new Set(dungeonTemplates().filter((t) => !t.triggers?.length || t.triggers.includes('rest')).slice(0, FULL_POOL).map((t) => t.id))
+    // （陽剛體型的版本不算：主角是陰柔體型）
+    const picks = new Set(dungeonTemplates().filter((t) => (!t.triggers?.length || t.triggers.includes('rest')) && (!t.pc_body?.length || t.pc_body.includes('fem'))).slice(0, FULL_POOL).map((t) => t.id))
     const mods = emptyMods()
     const r = builtinEventRules()
     mods.eventRules.rules = { ...r, dungeon: { ...r.dungeon, chance: { trap: 1, chest: 1, gather: 1, rest: 1 }, cooldown_hours: 0 } }

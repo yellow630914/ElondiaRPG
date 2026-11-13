@@ -16,7 +16,7 @@ import progressionJson from '@data/rules/progression.json'
 const sinks = (progressionJson as unknown as { xp_sinks: Record<'perk' | 'attr' | 'ability', { base: number; mult: number; min_level: number }> }).xp_sinks
 
 /** 數值類的存檔規則（戰敗掉落與難度不是數值，各自有自己的選單） */
-export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'customDifficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons'>
+export type NumericRule = Exclude<keyof GameOptions, 'defeatLoot' | 'difficulty' | 'customDifficulty' | 'tagChange' | 'trapLure' | 'naturalCrit' | 'classWeapons' | 'parasiteLures'>
 
 /** 存檔規則的分類（設定與開新遊戲依這個分組顯示） */
 export type RuleGroup = 'combat' | 'growth' | 'time' | 'adventure' | 'town' | 'lust' | 'adult_events' | 'lewd'
@@ -70,6 +70,7 @@ export const RULE_DEFS: Record<NumericRule, RuleDef> = {
   parasiteMult: { group: 'adult_events', label: '寄生發作的機率', hint: `身上的寄生物（寄生裝備、淫紋、寄生種子）發作的機率乘上這個倍率（預設：走動每一步 ${pct(parasitesJson.step_chance)}、旅途每天 ${pct(parasitesJson.travel_chance)}、長休之後 ${pct(parasitesJson.rest_chance)}；支配階段加倍）。0 表示不會發作。成人向內容。`, default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發作' },
   dungeonEventMult: { group: 'adventure', label: '地下城事件的機率', hint: '地下城與近郊的事件（觸發陷阱、打開寶箱、採集、安全房長休）的機率乘上這個倍率，普通與成人向的事件都算。0 表示不會發生。', default: 1, min: 0, max: 3, step: 0.25, unit: '倍', zero: '不會發生' },
   adultDungeonMult: { group: 'adult_events', label: '成人地下城事件的比重', hint: '地下城與近郊的成人向事件（色情陷阱、擬態寶箱、花粉、夜襲……）比普通的事件更容易遇到：抽事件時的權重，以及遇到事件的機率裡成人向的那一份，乘上這個倍率。1 表示和普通事件一樣。成人向內容。', default: 1, min: 1, max: 8, step: 0.5, unit: '倍' },
+  parasiteEventBoost: { group: 'adult_events', label: '寄生事件的比重', hint: '會帶來寄生物的地下城事件（寶箱裡的黑色內衣、魅魔之箱、夢魔的夜訪、寄生植物的種子……），在主角還沒有那種寄生物時比較容易遇到：抽事件時的權重，以及遇到事件的機率裡那一份，乘上這個倍率（和「成人地下城事件的比重」相乘）。已經有那種寄生物時照常。1 表示不另外加權。成人向內容。', default: 3, min: 1, max: 10, step: 0.5, unit: '倍' },
   exposureDecay: { group: 'lewd', label: '曝露名聲每天淡掉多少', hint: `曝露名聲每天、每個地區淡掉幾點（預設 ${lewdJson.daily.exposure_decay}）。每天一次的頻率不變；0 表示不會淡掉。在城裡穿著曝露的服裝累積、相鄰地區的傳播照舊。成人向內容。`, default: lewdJson.daily.exposure_decay, min: 0, max: 10, step: 1, unit: '點', zero: '不會淡掉' },
   submissionDecay: { group: 'lewd', label: '順從每次回落多少', hint: `沒有奴隸契約時，順從每 ${lewdJson.daily.free_submission_every} 天回落一次，每次幾點（預設 1）。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
   lewdnessDecay: { group: 'lewd', label: '淫亂每次回落多少', hint: `${lewdJson.daily.idle_days} 天以上沒有親密場景時，淫亂每天回落一次，每次幾點（預設 1），降到預設為止。頻率不變；0 表示不會回落。成人向內容。`, default: 1, min: 0, max: 10, step: 1, unit: '點', zero: '不會回落' },
@@ -200,6 +201,11 @@ export function difficultySummary(def: DifficultyDef): string {
   const same = MINION_TIERS.every((t) => m[t].hp === def.hp && m[t].damage === def.damage && m[t].lust === def.lust)
   if (same) return `怪物${f(def)}`
   return `頭目${f(def)}；小怪 郊外${f(m.wild)}・周邊${f(m.outskirts)}・淺層${f(m.shallow)}・中層以下${f(m.deep)}`
+}
+
+/** 存檔規則「黑市賣寄生物的引子」：預設賣（舊存檔沒有這一項也算賣），只有明確關掉才不賣 */
+export function parasiteLuresOn(state: Pick<GameState, 'options'> | null | undefined): boolean {
+  return state?.options?.parasiteLures !== false
 }
 
 /** 讀一項存檔規則（沒有設定、不是數字時用預設，超出範圍的夾回來） */

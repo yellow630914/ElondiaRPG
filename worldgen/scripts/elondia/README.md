@@ -11,7 +11,7 @@
 | `story_batch1.py` | `data/rules/stories.json` | 所有特殊任務：匯入 `story_batch2`～`story_batch31`，再套用 `epic_places.place_epics`（史詩頭目戰的特殊地圖）、`uniq23.place_gear`（任務的獨特裝備）、`adult_scenes26.place_scenes`（親密場景）、`lust_skills_s6.place_skills`（打工線的獨特技能，接在結局的獎勵物品後面），最後接上 `lust_park_s7.PARK_STORIES`（緋夢樂園的集章任務）。以 git 的 `2fa8ee9` 版的 stories.json 為底，後面接上這些批次。**現在不要重跑**：之後炎華之地的任務（`east_*`）、角色線（`char_lines38.py`）直接寫進 stories.json，內建任務的時段（R13）也是直接改的，重跑會把這些都蓋掉 |
 | `epic_guide41.py` | `data/rules/stories.json` | 「史詩的指引」：接了任何一條政治（結果會動到 `human_stance`、`demon_stance` 的故事線）或巨龍相關（巨龍史詩的結局會看的五條線）的任務就自動開始（`start.kind = auto`），指引到河谷鎮公會的政治史詩，政治史詩落幕後指引到巨龍史詩。觸發的旗標從 stories.json 算出來，可以重跑 |
 | `uniq23.py` | `data/rules/items.json` | 任務的獨特裝備 149 件 |
-| `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態 |
+| `dungeon_events24.py` | `data/rules/travel_events.json`、`companions.json` | 地下城的色情事件與它們的非戰鬥狀態。**現在不能直接重跑**：後來的腳本加了別的地下城事件（結尾的件數檢查會失敗），也改過其中五件的選項（太真實的夢、鑽進睡袋的史萊姆……），重跑會蓋掉；帶來寄生物的四件的陽剛體型版本在 `parasite_lures51.py` |
 | `lust_gather34.py` | `data/rules/travel_events.json` | 成人向的採集事件 12 件（不限地下城 8 件、地區限定 4 件；接在「遺落的春宮書」後面）。可以重跑 |
 | `dungeon_events33.py` | `data/rules/travel_events.json` | 普通（非成人向）的地下城與近郊事件 54 件：採集 19、陷阱 13、寶箱 11、安全房長休 11（接在成人向的「遺落的春宮書」後面）。可以重跑 |
 | `sex_seeds42.py` | `data/world/npcs.json` | 固定 NPC 的初始性經歷（`sex`，[LEWD_STATS](../../../docs/LEWD_STATS.md) 第 29 節）：設定寫得清楚的 40 位成人向角色（還是處女、人妻、寡婦、當過奴隸、花魁、老師……）。只改每個人 id 那一行的 `sex`。可以重跑 |
@@ -42,12 +42,13 @@
 | `outfits47.py` | `data/rules/gear.json`、`items.json` | 42 種成人向服裝底材、126 件店貨；成人向服裝改成只在成人用品店賣；布料服裝的防禦（[ITEMS](../../../docs/ITEMS.md) 第 2 節）。要排在建立服裝底材的腳本（`lust_s9.py`、`east_p5_items.py`、`east_p6_gear.py`）與 `toys46.py` 之後；重跑那些腳本之後也要再跑這個。可以重跑 |
 | `park_experience48.py` | `data/rules/gear.json`、`items.json`、`data/world/special_maps.json`、`landmarks.json` | 緋夢樂園的主題體驗區（[LUST_PARK](../../../docs/LUST_PARK.md) 第 9 節）：入口廣場的閘門、體驗區入口、五座體驗館與它們的第二層（配種舍、著床室、飼育區、花園深處、後台）的特殊地圖、館的地標與 57 個場景（場景的身分 `role`、淫植花園的進場條件 `enter`），新底材牛尾腰飾與三件店貨。要排在 `outfits47.py`、`underworld39.py`、`club_lines42.py` 之後（它們會重寫服裝與地標）。可以重跑 |
 | `park_outfits49.py` | `data/rules/gear.json`、`items.json`、`shops.json`、`enemies.json` | 主題體驗區的五件套服裝（每館一套）、乳牛比基尼拆成上衣與下著、每館一間換衣間（`costume_<館>`）、人馬族版的下身與蹄具（`wear_as`）、各園區層主掉落套裝（[LUST_PARK](../../../docs/LUST_PARK.md) 第 9 節）；排在 `park_experience48.py` 之後 |
+| `parasite_lures51.py` | `data/rules/travel_events.json`、`items.json` | 寄生物的取得（[ADULT_EVENTS](../../../docs/ADULT_EVENTS.md) 第 6 節）：帶來寄生物的四件地下城事件各加一件陽剛體型的版本（`dg_<id>_m`，結構與效果從原本的事件複製、只換文字，接在原本的後面），黑市賣的三件寄生物引子（`use.lure`，接在「馴服的魔導衣」後面）。要排在 `dungeon_events24.py`、`parasites25.py` 之後。可以重跑 |
 | `club_lines43.py` | `data/rules/stories.json`、`data/world/landmarks.json` | 特殊區域的延伸線・第二批：卡蓮、朧（黑檀之夜），卡蜜拉、零號（榮譽洞），赤鬟、烏日娜、海蘭（野馬帳），沈知瀾、瑤汀（無面樓），各一個任務與她們的場景。要排在 `club_lines42.py` 之後（它建立無面樓）。可以重跑 |
 | `docgear24.py` | `docs/ITEMS.md` 3.1.1 節 | 任務的獨特裝備表 |
 | `../../tools/flowdoc/flowdoc.py` | `worldgen/design/ElondiaQuestFlows.html` | 任務線走向（上面任何一個改過之後都要重跑） |
 | `../../tools/guide/guide.py` | `docs/guide/` | 給玩家的遊戲攻略，同步到 wiki（`data/` 改過之後都要重跑；沒重跑時測試 `guide.spec.ts` 會失敗） |
 
-建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `bondage44.py` → `cursed45.py` → `toys46.py` → `npc_looks40.py` → `club_lines42.py` → `club_lines43.py` → `outfits47.py` → `park_experience48.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
+建議的順序：`uniq23.py` → `dungeon_events24.py` → `parasites25.py` → `town_events26.py` → `work26.py` → `npc_looks27.py` → `lust_park_s7.py` → `lust_s8.py` → `lust_s9.py` → `high_gear31.py` → `high_dungeons31.py` → `material_drops31.py` → `lust_s10.py` → `underworld39.py` → `bondage44.py` → `cursed45.py` → `toys46.py` → `npc_looks40.py` → `club_lines42.py` → `club_lines43.py` → `outfits47.py` → `park_experience48.py` → `parasite_lures51.py` → `story_batch1.py` → `yulin_body32.py` → `docgear24.py` → `flowdoc.py` → `guide.py`。
 
 ## 一次性（已經套用過，留作紀錄）
 
