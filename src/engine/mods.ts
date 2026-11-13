@@ -1960,6 +1960,12 @@ export function abilityUsage(id: string, state?: GameState | null): string[] {
   for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
     if (p.stage_abilities?.some((list) => list.includes(id))) out.push(`寄生物「${p.name ?? pid}」（還沒馴服時依階段給的）`)
     if (p.tamed?.ability === id) out.push(`寄生物「${p.name ?? pid}」（馴服之後、有獸蟲派時可以用，不分先後）`)
+    if (p.brood?.hatch === id) out.push(`苗床「${p.name ?? pid}」產卵時孵化認主（獸蟲派）`)
+  }
+  // 流派給的技能（lewd.json 的 schools.*.abilities）
+  for (const sid of Object.keys(lewdRules.schools).filter((k) => !k.startsWith('$'))) {
+    const d = lewdRules.schools[sid]!
+    for (const a of d.abilities ?? []) if (a.id === id) out.push(`流派「${d.name}」（${a.advanced ? '進階' : '入門'}${a.level ? `、${a.level} 級` : ''}）`)
   }
   if ((familyRules.lactation as { ability?: string } | undefined)?.ability === id) out.push('泌乳的時候（懷孕與泌乳設定，docs/FAMILY.md 第 10.5 節）')
   if (lewdRules.slave_room?.abilities?.includes(id)) out.push('驛站的奴房（可能學會）')

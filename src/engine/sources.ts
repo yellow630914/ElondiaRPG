@@ -197,6 +197,7 @@ function build(): Index {
     add('item', p.item, `寄生物「${p.name ?? pid}」`, 'forced')
     add('item', p.tamed?.item, `寄生物「${p.name ?? pid}」（馴服之後）`, 'forced')
     for (const y of p.brood?.yields ?? []) add('item', y.item, `苗床「${p.name ?? pid}」產下`, 'event')
+    add('item', p.brood?.offspring?.pet, `苗床「${p.name ?? pid}」產下時留一隻當蟲寵（獸蟲派）`, 'event')
   }
   {
     const milk = (familyRules.lactation as { milk?: { item: string } } | undefined)?.milk
@@ -224,6 +225,8 @@ function build(): Index {
   }
   for (const i of itemRules.items) for (const p of i.use?.perks ?? []) add('perk', p, `書籍「${i.name}」`)
   for (const p of Object.values(parasiteRules.parasites)) if (p.brood?.symbiosis) add('perk', p.brood.symbiosis, `苗床「${p.name}」產下時選共生`)
+  // 2026-11-13 以前寄生的苗床一律共生成這個特質，學過的人照舊留著
+  add('perk', 'brood_symbiote', '舊版的苗床共生（2026-11-13 以前學會的）')
   for (const n of npcs) {
     for (const p of n.mentor?.perks ?? []) add('perk', p, `老師：${n.name}（${mentorPlace(n.location, n.landmark)}）`)
   }
