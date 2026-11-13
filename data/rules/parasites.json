@@ -123,6 +123,11 @@
         "text": "你喚醒了魔導衣。它乖乖地照著你的意思動，直到你滿足為止。",
         "buff": "parasite_glow",
         "ability": "para_lingerie_bind"
+      },
+      "masc": {
+        "item": "渴求的魔導套",
+        "slot": "underwear_bottom",
+        "tamed_item": "馴服的魔導套"
       }
     },
     "succubus_mark": {

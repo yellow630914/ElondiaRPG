@@ -3,11 +3,11 @@
   "version": 1,
 
   "prices_cc": {
-    "$comment": "依生命層級與種族群組的價格區間。層級內依等級線性內插，再乘上職業與種族倍率、市場倍率與 ±variance 的浮動。第 4 層以上每層 × beyond_tier3_mult。",
+    "$comment": "依生命層級與種族群組的價格區間。層級內依等級線性內插，再乘上職業與種族倍率、市場倍率與 ±variance 的浮動。第 4 層以上每層 × beyond_tier3_mult。2026-11-13 前第 3 層是人類 40～45 萬、每層 × 5（20 級人類一千多萬，遠超過收入），改成第 3 層 4～6 萬、每層 × 1.5。",
     "1": { "human": [800, 8000], "demon": [1000, 9000], "elf": [8000, 40000] },
     "2": { "human": [20000, 25000], "demon": [22000, 28000], "elf": [250000, 280000] },
-    "3": { "human": [400000, 450000], "demon": [450000, 500000], "elf": [2000000, 2500000] },
-    "beyond_tier3_mult": 5,
+    "3": { "human": [40000, 60000], "demon": [45000, 65000], "elf": [300000, 350000] },
+    "beyond_tier3_mult": 1.5,
     "variance": 0.25,
     "race_group": { "human": "human", "catfolk": "human", "dwarf": "human", "demon": "demon", "elf": "elf", "yulin": "elf", "hualong": "human", "linghu": "human", "centaur": "human" },
     "race_mult": { "catfolk": 0.9, "dwarf": 1.2 },

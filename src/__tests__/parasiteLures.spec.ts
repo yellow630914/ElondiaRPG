@@ -1,4 +1,5 @@
 // 寄生物的取得（docs/ADULT_EVENTS.md 第 6 節）：存檔規則「寄生事件的比重」、黑市的引子、陽剛體型的版本
+import { travelEvents } from '@/engine/road'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createPinia, setActivePinia } from 'pinia'
 import { buyCurio, curioStock } from '@/engine/companions'
@@ -10,7 +11,7 @@ import { currentArea, enterLocation, standOn, type CellKind } from '@/engine/gri
 import { canUse, useItem } from '@/engine/inventory'
 import { applyContent, emptyMods, sanitizeItem } from '@/engine/mods'
 import { pcOf } from '@/engine/party'
-import { attachParasite, parasiteOf } from '@/engine/parasites'
+import { attachParasite, parasiteOf, tameParasite } from '@/engine/parasites'
 import { builtinEventRules } from '@/engine/travelEventMods'
 import { addItem, newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
@@ -231,6 +232,22 @@ describe('parasites for masculine heroes', () => {
     state.dungeonEvent = { template: 'dg_incubus_visit_m', trigger: 'rest' }
     answerDungeonEvent(state, yieldIndex('dg_incubus_visit_m'))
     expect(parasiteOf(pcOf(state), MARK)).toBeTruthy()
+  })
+
+  it('a masculine hero wears the lace sheath version, and tames it into the sheath too', () => {
+    const state = inDungeon('masc', 3)
+    addItem(state.inventory, '受詛咒的黑色內衣', 1)
+    useItem(state, '受詛咒的黑色內衣', pcOf(state).id)
+    answerDungeonEvent(state, yieldIndex('dg_cursed_lingerie_m'))
+    const pc = pcOf(state)
+    expect(pc.gear?.underwear_bottom?.name).toBe('渴求的魔導套')
+    expect(pc.gear?.underwear_top?.name).not.toBe('渴求的魔導衣')
+    tameParasite(pc, 'hungry_lingerie')
+    expect(pc.gear?.underwear_bottom?.name).toBe('馴服的魔導套')
+    // 魅魔契紋的發作：陽剛體型看陽剛的版本
+    const pe = (id: string) => travelEvents.templates.find((t) => t.id === id)!
+    expect(pe('pe_mark_other_half').pc_body).toEqual(['fem', 'andro'])
+    expect(pe('pe_mark_other_half_m').scene).toContain('肉棒')
   })
 
   it('feminine heroes still get the original events', () => {

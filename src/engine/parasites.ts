@@ -30,6 +30,8 @@ export interface ParasiteDef {
   /** 寄生裝備：寄生的物品（items.json）與鎖住的欄位 */
   item?: string
   slot?: GearSlot
+  /** 陽剛體型的主角附著的版本（渴求的魔導衣 → 裹住肉棒的魔導套）：物品、欄位、馴服之後的物品 */
+  masc?: { item: string; slot: GearSlot; tamed_item?: string }
   /** 淫紋：刻在哪個部位、印記的名稱與外觀 */
   place?: TattooPlace
   mark?: { name: string; desc: string }
@@ -246,13 +248,15 @@ export function attachParasite(c: Character, id: string, time: GameTime, by?: st
   const state: ParasiteState = { id, corruption: 0, since: { ...time }, grown: time.day }
   let removed: string | undefined
   if (def.kind === 'gear') {
-    const spec = def.item ? itemDef(def.item)?.gear : undefined
-    if (!spec || !def.slot) return { note: '' }
+    // 陽剛體型：附著陽剛的版本（例如裹住肉棒的魔導套）
+    const v = c.body === 'masc' && def.masc && itemDef(def.masc.item)?.gear ? def.masc : { item: def.item, slot: def.slot }
+    const spec = v.item ? itemDef(v.item)?.gear : undefined
+    if (!spec || !v.slot) return { note: '' }
     const gear = (c.gear ??= {})
-    const old = gear[def.slot]
+    const old = gear[v.slot]
     if (old?.locked) return { note: `${def.name}沒有地方附著（那個欄位被鎖住了）` }
     removed = old?.name
-    gear[def.slot] = { name: def.item!, spec, locked: `${PARASITE_LOCK}${id}` }
+    gear[v.slot] = { name: v.item!, spec, locked: `${PARASITE_LOCK}${id}` }
   } else if (def.kind === 'mark') {
     const place = def.place ?? 'belly'
     const there = tattooAt(c, place)
@@ -291,9 +295,10 @@ export function tameParasite(c: Character, id: string): string {
   if (!p || !def || p.tamed) return ''
   p.tamed = true
   p.corruption = 0
-  const item = def.tamed?.item
-  const spec = item ? itemDef(item)?.gear : undefined
   for (const slot of lockedSlots(c, id)) {
+    // 附著的是陽剛的版本時，馴服後也換成陽剛的版本
+    const item = def.masc && c.gear![slot]!.name === def.masc.item ? def.masc.tamed_item ?? def.tamed?.item : def.tamed?.item
+    const spec = item ? itemDef(item)?.gear : undefined
     if (spec) c.gear![slot] = { name: item!, spec }
     else delete c.gear![slot]!.locked
   }

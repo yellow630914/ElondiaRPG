@@ -196,6 +196,8 @@ function build(): Index {
   for (const [pid, p] of Object.entries(parasiteRules.parasites)) {
     add('item', p.item, `寄生物「${p.name ?? pid}」`, 'forced')
     add('item', p.tamed?.item, `寄生物「${p.name ?? pid}」（馴服之後）`, 'forced')
+    add('item', p.masc?.item, `寄生物「${p.name ?? pid}」（陽剛體型）`, 'forced')
+    add('item', p.masc?.tamed_item, `寄生物「${p.name ?? pid}」（陽剛體型，馴服之後）`, 'forced')
     for (const y of p.brood?.yields ?? []) add('item', y.item, `苗床「${p.name ?? pid}」產下`, 'event')
     add('item', p.brood?.offspring?.pet, `苗床「${p.name ?? pid}」產下時留一隻當蟲寵（獸蟲派）`, 'event')
   }

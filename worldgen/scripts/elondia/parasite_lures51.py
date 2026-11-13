@@ -11,18 +11,20 @@ import json
 import re
 
 BODY_M = ['masc']
+# 有陽剛版本的發作：原本的只給這些體型（地下城事件原本就寫了體型）
+BODY_OTHERS = {'pe_mark_other_half': ['fem', 'andro']}
 
 # 陽剛體型的版本：原本的 id → 新的標題、開頭、親密場景、各選項的文字（(選項的順序, success|fail) → 文字；label 可以換）
 MALE = {
     'dg_cursed_lingerie': {
-        'title': '寶箱裡的黑色束衣',
-        'text': '寶箱裡只有一件黑色蕾絲的貼身束衣，細細的帶子交錯成網。你剛把它拿起來，它就自己動了——像蛇一樣纏上你的手臂，往你的衣服裡鑽。',
-        'scene': '受詛咒的束衣自己穿到了主角身上，蕾絲帶子在胸膛與腰間交錯勒緊、摩擦，在最敏感的地方一下一下地動，像有一雙看不見的手。',
+        'title': '寶箱裡的黑色蕾絲套',
+        'text': '寶箱裡只有一條黑色蕾絲的丁字褲，前面縫著一只細緻的蕾絲套。你剛把它拿起來，它就自己動了——像蛇一樣纏上你的手臂，往你的褲子裡鑽。',
+        'scene': '受詛咒的蕾絲套自己穿到了主角身上，緊緊裹住主角的肉棒，一圈一圈地收緊、吮動，像有一張看不見的嘴。',
         'options': {
-            (0, 'success'): '你在它鑽進衣服之前把它甩了出去。它在地上扭了幾下，不動了。你把它收進了袋子裡——拿去賣應該值不少錢。',
-            (0, 'fail'): '慢了一步，它已經鑽進衣服裡，帶子貼著你的胸膛越勒越緊，在最敏感的地方一下一下地動。等它玩夠了，才自己鬆開，從衣領溜出去，像條黑蛇一樣鑽進了石縫——它還在這座地下城的某個地方等著下一個人。',
-            (1, 'fail'): '你研究得太入迷，沒注意到它已經爬上了你的肩膀、鑽進衣服底下。它纏著你折騰了好一陣子，吃飽了才鬆開，滑到地上溜進黑暗裡——下次打開寶箱的時候，最好小心一點。',
-            (2, 'success'): '你讓它穿上了身。蕾絲帶子在你的胸膛上交錯收緊，勒得剛剛好，動得也剛剛好——你在寶箱邊坐了很久，想把它脫下來的時候，才發現它已經脫不下來了。',
+            (0, 'success'): '你在它鑽進褲子之前把它甩了出去。它在地上扭了幾下，不動了。你把它收進了袋子裡——拿去賣應該值不少錢。',
+            (0, 'fail'): '慢了一步，它已經鑽進褲子裡，裹住你的肉棒越收越緊，一下一下地吮動。等它吃飽了，才自己鬆開，從褲腳溜出去，像條黑蛇一樣鑽進了石縫——它還在這座地下城的某個地方等著下一個人。',
+            (1, 'fail'): '你研究得太入迷，沒注意到它已經爬上了你的腿、鑽進褲子底下。它裹著你的肉棒折騰了好一陣子，吃飽了才鬆開，滑到地上溜進黑暗裡——下次打開寶箱的時候，最好小心一點。',
+            (2, 'success'): '你讓它穿上了身。蕾絲套緊緊裹住你的肉棒，收得剛剛好，動得也剛剛好——你在寶箱邊坐了很久，想把它脫下來的時候，才發現它已經脫不下來了。',
         },
     },
     'dg_succubus_box': {
@@ -38,6 +40,10 @@ MALE = {
         'options': {
             (2, 'success'): '花莖在你身體裡慢慢地攪動，直到確認種子安穩地著床才退出去。你躺在花叢裡喘了很久，小腹裡暖暖的——它會在你身體裡長大。',
         },
+    },
+    # 寄生物的發作（parasites25.py 產生）：魅魔的契紋男性主角也拿得到，幻影撫摸的地方換成肉棒；原本的改成只給陰柔、中性體型（BODY_OTHERS）
+    'pe_mark_other_half': {
+        'scene': '薇絲佩菈的幻影抱住主角，手指沒入發光的紋樣，另一隻手握住主角的肉棒慢慢撫弄；主角在幻影的懷裡一次又一次地失神。',
     },
     'dg_incubus_visit': {
         'text': '你在安全房裡睡著了，又好像沒有。有人坐在你的床邊，長髮垂到你的胸口，冰涼的手指撫過你的臉頰，慢慢往下。「別出聲，」一個很好聽的女聲說，「這只是一個夢。」',
@@ -63,6 +69,27 @@ ITEMS = [
      "desc": "長得像百合的花苞，泡在藥水裡還在慢慢地開合。在地下城的土裡種下，它會立刻長成一株找人寄生的花。",
      "use": {"lure": ["dg_seed_plant", "dg_seed_plant_m"]}},
 ]
+
+
+# 渴求的魔導衣的陽剛版本：裹住肉棒的蕾絲套（parasites.json 的 hungry_lingerie.masc；陽剛體型的主角附著的是這件、馴服後換成這件）
+GEAR = [
+    {"name": "渴求的魔導套", "category": "equipment", "price_cc": 1500, "tags": ["unique"], "adult": True,
+     "desc": "黑色蕾絲的丁字褲，前面是一只貼合肉棒的蕾絲套，蕾絲底下織著細細的魔導迴路。它是活的、會餓——穿上之後就脫不下來，時不時收緊吮動，只有解咒或馴服才能讓它鬆手。",
+     "gear": {"base": "thong", "material": "moonsilk", "rarity": "rare", "attrs": {"cha": 1}}},
+    {"name": "馴服的魔導套", "category": "equipment", "price_cc": 9000, "tags": ["unique"], "adult": True,
+     "desc": "認了主人的魔導套。蕾絲照著主人的心意收緊、放鬆，替主人擋下惡意的咒語，也讓主人的一舉一動都帶著讓人移不開眼的魅力。",
+     "gear": None},
+]
+MASC = {"hungry_lingerie": {"item": "渴求的魔導套", "slot": "underwear_bottom", "tamed_item": "馴服的魔導套"}}
+
+
+def write_parasites():
+    p = 'data/rules/parasites.json'
+    d = json.load(open(p))
+    ps = d['parasites']
+    for pid, m in MASC.items():
+        ps[pid]['masc'] = m
+    open(p, 'w').write(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
 
 
 def male(t, spec):
@@ -91,7 +118,12 @@ def write_events():
     for i, spec in MALE.items():
         m = re.search(r'\n    \{"id": "' + i + r'".*', s)
         assert m and m.group(0).endswith(','), i
-        line = '\n    ' + json.dumps(male(by_id[i], spec), ensure_ascii=False) + ','
+        orig = by_id[i]
+        if i in BODY_OTHERS and orig.get('pc_body') != BODY_OTHERS[i]:
+            orig['pc_body'] = BODY_OTHERS[i]
+            s = s[:m.start()] + '\n    ' + json.dumps(orig, ensure_ascii=False) + ',' + s[m.end():]
+            m = re.search(r'\n    \{"id": "' + i + r'".*', s)
+        line = '\n    ' + json.dumps(male(orig, spec), ensure_ascii=False) + ','
         s = s[:m.end()] + line + s[m.end():]
     d = json.loads(s)
     ids = [t['id'] for t in d['templates']]
@@ -105,11 +137,16 @@ def write_items():
     s = open(p).read()
     for i in ITEMS:
         s = re.sub(r'\n    \{ ?"name": "' + re.escape(i['name']) + r'".*', '', s)
+    for i in GEAR:
+        s = re.sub(r'\n    \{ ?"name": "' + re.escape(i['name']) + r'".*', '', s)
     m = re.search(r'\n    \{ ?"name": "馴服的魔導衣".*', s)
     assert m and m.group(0).endswith(','), '馴服的魔導衣'
-    s = s[:m.end()] + ''.join('\n    ' + json.dumps(i, ensure_ascii=False) + ',' for i in ITEMS) + s[m.end():]
+    # 馴服的魔導套的數值照馴服的魔導衣（底材換成丁字褲）
+    tamed = json.loads(m.group(0).strip().rstrip(','))
+    gear = [dict(g, gear=g['gear'] or dict(tamed['gear'], base='thong')) for g in GEAR]
+    s = s[:m.end()] + ''.join('\n    ' + json.dumps(i, ensure_ascii=False) + ',' for i in ITEMS + gear) + s[m.end():]
     names = [i['name'] for i in json.loads(s)['items']]
-    for i in ITEMS:
+    for i in ITEMS + GEAR:
         assert names.count(i['name']) == 1, i['name']
     open(p, 'w').write(s)
 
@@ -117,4 +154,5 @@ def write_items():
 if __name__ == '__main__':
     write_events()
     write_items()
+    write_parasites()
     print('male events', len(MALE), 'lure items', len(ITEMS))

@@ -119,6 +119,9 @@ export function sanitizeParasiteMod(id: string, raw: Partial<ParasiteMod>, refs:
     if (!slot || !SLOTS.includes(slot)) throw new Error('寄生裝備要選鎖住的欄位')
     out.item = item
     out.slot = slot
+    // 陽剛體型的版本（物品要存在）
+    const m = raw.masc
+    if (m && typeof m.item === 'string' && known.item(m.item) && SLOTS.includes(m.slot)) out.masc = { item: m.item, slot: m.slot, ...(typeof m.tamed_item === 'string' && known.item(m.tamed_item) ? { tamed_item: m.tamed_item } : {}) }
   } else if (kind === 'mark') {
     out.place = (isTattooPlace(raw.place) ? raw.place : 'belly') as TattooPlace
     const name = str(raw.mark?.name, L.mark_name_chars) || out.name
