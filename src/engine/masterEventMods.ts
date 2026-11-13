@@ -104,12 +104,13 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
   if (tags.length) out.tags = tags
   const none = [...new Set((raw.tags_none ?? []).filter((t) => masterTags().includes(t)))]
   if (none.length) out.tags_none = none
+  // 在哪裡：主人的突發事件看主人的家，奴隸主動找主角看主角自己的房子
+  if ((pool === MASTER_ONLY_POOL || pool === 'slave') && (raw.at_home === true || raw.at_home === false)) out.at_home = raw.at_home
   if (pool === MASTER_ONLY_POOL) {
     if (raw.cell === 'brothel') {
       out.cell = 'brothel'
       out.chance = num(raw.chance, 0, 1, 0.3)
     }
-    if (raw.at_home === true || raw.at_home === false) out.at_home = raw.at_home
     if (raw.overdue) out.overdue = true
     if (raw.free_place) out.free_place = true
     if (raw.forced_gear) out.forced_gear = true
@@ -131,7 +132,7 @@ export function sanitizeMasterEvent(id: string, raw: Partial<MasterEventMod>, cu
   if (has(raw.rank_min) && (pool === 'brothel_work' || pool === 'brothel_train')) out.rank_min = Math.round(num(raw.rank_min, 0, 10, 0))
   if (has(raw.progress) && pool === 'owner') out.progress = Math.round(num(raw.progress, 1, 10, 3))
   // 主僕關係（bondStyle.ts）：只在主人的突發事件與調教事件；名實相符不能當專屬事件的條件
-  if (pool === 'master' || pool === 'owner') {
+  if (pool === 'master' || pool === 'owner' || pool === 'slave') {
     const bonds = [...new Set((raw.bonds ?? []).filter((b) => BOND_STYLES.includes(b) && b !== 'strict'))]
     if (bonds.length) out.bonds = bonds
     const w: Partial<Record<BondStyle, number>> = {}

@@ -913,6 +913,8 @@ export interface GameOptions {
   blackMarketGear?: number
   /** 主人的突發事件、寄生物的發作、地下城事件的機率倍率 */
   masterEventMult?: number
+  /** 奴隸主動找主角的機率倍率（slaveEvents.ts） */
+  slaveEventMult?: number
   parasiteMult?: number
   /** 受孕機率的倍率（0 = 不會受孕；docs/FAMILY.md） */
   conceptionMult?: number
@@ -1167,6 +1169,8 @@ export interface GameState {
   lastMasterEvent?: number
   /** 主角最近一次主動找主人的日子（每天一次；slavery.ts 的 askMaster） */
   masterAskDay?: number
+  /** 上一次奴隸主動找主角的時間（小時數；slaveEvents.ts） */
+  lastSlaveEvent?: number
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
   standoff?: Standoff
   /** 打贏冒險者後被制伏、等主角處置的人（見 engine/captives.ts） */

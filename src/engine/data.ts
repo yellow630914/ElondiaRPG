@@ -1576,19 +1576,22 @@ export const slaveryRules = slaveryJson as unknown as {
   }
   /** 調教事件（主角對自己的奴隸；S5） */
   owner_events: { events: MasterEventDef[] }
+  /** 奴隸主動找主角（slaveEvents.ts；docs/COMPANIONS.md 2.9 節） */
+  slave_events: { step_chance: number; travel_chance: number; cooldown_hours: number; events: MasterEventDef[] }
   /** 娼館的打工與受訓事件（S5） */
   brothel_events: { work: MasterEventDef[]; train: MasterEventDef[] }
 }
 
 /** 共用主人事件格式的事件庫（內容編輯器「⛓️ 主奴與娼館」） */
-export type MasterEventPool = 'master' | 'owner' | 'brothel_work' | 'brothel_train'
-export const MASTER_EVENT_POOLS: Record<MasterEventPool, string> = { master: '主人的突發事件', owner: '調教事件', brothel_work: '娼館打工事件', brothel_train: '娼館受訓事件' }
+export type MasterEventPool = 'master' | 'owner' | 'slave' | 'brothel_work' | 'brothel_train'
+export const MASTER_EVENT_POOLS: Record<MasterEventPool, string> = { master: '主人的突發事件', owner: '調教事件', slave: '奴隸主動找你', brothel_work: '娼館打工事件', brothel_train: '娼館受訓事件' }
 
 /** 這個事件庫的事件清單（直接改這個陣列就會生效） */
 export function masterEventPool(pool: MasterEventPool): MasterEventDef[] {
-  const r = slaveryRules as unknown as { owner_events?: { events: MasterEventDef[] }; brothel_events?: { work: MasterEventDef[]; train: MasterEventDef[] } }
+  const r = slaveryRules as unknown as { owner_events?: { events: MasterEventDef[] }; slave_events?: { events: MasterEventDef[] }; brothel_events?: { work: MasterEventDef[]; train: MasterEventDef[] } }
   if (pool === 'master') return slaveryRules.master_events.events
   if (pool === 'owner') return ((r.owner_events ??= { events: [] }).events ??= [])
+  if (pool === 'slave') return ((r.slave_events ??= { events: [] } as never).events ??= [])
   const b = (r.brothel_events ??= { work: [], train: [] })
   return pool === 'brothel_work' ? (b.work ??= []) : (b.train ??= [])
 }

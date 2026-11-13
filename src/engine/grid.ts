@@ -99,7 +99,7 @@ export interface Cell {
 
 /** 旅途格子上的事件：auto 原本的旅途事件、normal 普通事件、advanced 高階事件、special 特殊任務的開頭、master 主人的事件 */
 export interface RoadEvent {
-  tier: 'auto' | 'normal' | 'advanced' | 'special' | 'master'
+  tier: 'auto' | 'normal' | 'advanced' | 'special' | 'master' | 'slave'
   /** auto：原本的旅途事件（travel.ts 的 EVENTS） */
   hazard?: { mode: string; index: number }
   /** normal / advanced：travel_events.json 的範本 */

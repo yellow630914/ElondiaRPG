@@ -368,15 +368,17 @@ function setBase(r: Row, base: string) {
       <template v-else-if="r.type === 'condition'">
         <select v-model="r.add"><option :value="true">得到</option><option :value="false">去掉</option></select>
         <select v-model="r.condition"><option v-for="[k, n] in conditionList" :key="k" :value="k">{{ n }}</option></select>
-        <Hint text="對象是主角；多半持續到下次長休。" />
+        <select v-if="master" v-model="r.target"><option value="pc">主角</option><option value="master">對方</option></select>
+        <Hint :text="master ? '對象是主角，或事件的對方（主人事件的主人；調教、奴隸找你的那位奴隸）。調教與娼館的事件裡，寫主角的會給事件的主角（被調教、接客的人）。多半持續到下次長休。' : '對象是主角；多半持續到下次長休。'" />
       </template>
       <template v-else-if="r.type === 'hp'">
         <template v-if="r.amount !== undefined">
-          <input v-model.number="r.amount" type="number" class="num" />點生命值（主角）
+          <input v-model.number="r.amount" type="number" class="num" />點生命值{{ master ? "" : "（主角）" }}
         </template>
         <template v-else>
-          <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值（主角）
+          <input type="number" class="num" :value="Math.round(Number(r.ratio ?? 0) * 100)" @input="r.ratio = Number(($event.target as HTMLInputElement).value) / 100" />% 最大生命值{{ master ? "" : "（主角）" }}
         </template>
+        <select v-if="master" v-model="r.target"><option value="pc">主角</option><option value="master">對方</option></select>
         <select v-if="master" :value="r.amount !== undefined ? 'amount' : 'ratio'" @change="($event.target as HTMLSelectElement).value === 'amount' ? (delete r.ratio, r.amount = -3) : (delete r.amount, r.ratio = -0.2)">
           <option value="ratio">比例</option>
           <option value="amount">點數</option>

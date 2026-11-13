@@ -143,7 +143,8 @@ export function bondPersonalityRule(): string {
 export function bondFocus(state: GameState, npcId: string): string | undefined {
   const style = bondOf(state, npcId)
   if (style === 'strict') return undefined
-  return `兩人的主僕關係是「${bondName(style)}」：照這段關係的語氣寫這件事（${rules().styles[style].desc}）；人物的言行仍照各自的性格`
+  // 只指向人際關係裡的那一行（中性的引導，不給具體的例子）
+  return `兩人的主僕關係是「${bondName(style)}」：照人際關係裡這段關係的基調寫這件事，人物的言行仍以各自的性格為準`
 }
 
 /** 這件事在這種關係下的權重（只在某些關係發生的，其他關係是 0） */
