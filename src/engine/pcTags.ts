@@ -3,7 +3,7 @@
 // 標籤的效果寫在 npc_tags.json 的 pc_effects（docs/NPC_SYSTEM.md 4.1 節）：不看聲望（security.ts 的 meetsReputation）、
 // 檢定的加減（perks.ts 的 checkModifiers）、商店與神殿的價格（trade.ts、slavery.ts、tattooShop.ts）、
 // 曝露名聲的累積（lewd.ts）、被賣時的身價（companions.ts）、戰鬥中的慾望抗性（combat.ts），以及給 AI 的身分說明。
-import { craftRules, CRAFT_IDS, npcTags, skillName, tagsExclusive, type CraftId, type NpcTagDef, type PcTagEffects } from './data'
+import { attrName, craftRules, CRAFT_IDS, npcTags, skillName, tagsExclusive, type CraftId, type NpcTagDef, type PcTagEffects } from './data'
 import { CRAFTER_START_LEVEL } from './crafting'
 import { matches, type CheckCtx } from './perks'
 import type { Character } from './types'
@@ -76,7 +76,8 @@ export function pcTagEffectLines(id: string): string[] {
   const out: string[] = []
   if (e.bypass_reputation) out.push('不必聲望也能進入王城、地標與神殿的服務')
   for (const k of e.checks ?? []) {
-    const what = [...(k.check.skills ?? []).map((x) => `${skillName(x)}檢定`), ...(k.check.kinds ?? []).map((x) => KIND_NAME[x] ?? x), ...(k.check.contexts ?? []).map((x) => CONTEXT_NAME[x] ?? x)].join('、')
+    // 屬性（學者的智力檢定）、檢定分類、行動、情境；什麼都沒寫時是所有檢定
+    const what = [...(k.check.attrs ?? []).map((x) => `${attrName(x)}檢定`), ...(k.check.skills ?? []).map((x) => `${skillName(x)}檢定`), ...(k.check.kinds ?? []).map((x) => KIND_NAME[x] ?? x), ...(k.check.contexts ?? []).map((x) => CONTEXT_NAME[x] ?? x)].join('、') || '所有檢定'
     const vs = k.check.vs_tags?.length ? `（對${k.check.vs_tags.map((t) => npcTags.tags[t]?.name ?? t).join('、')}）` : ''
     out.push(`${what}${vs} ${k.bonus > 0 ? '+' : ''}${k.bonus}`)
   }

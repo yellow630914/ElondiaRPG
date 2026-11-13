@@ -35,6 +35,11 @@ describe('新的身分標籤（R20 C3）', () => {
     expect(pcTagModifiers({ isPlayer: false, tags: ['hunter'] }, { context: 'travel' })).toEqual([])
   })
 
+  it('每個身分的效果說明都寫得出檢定的對象（學者的智力檢定不會只剩「+1」）', () => {
+    expect(pcTagEffectLines('scholar')).toContain('智力檢定 +1')
+    for (const [id] of pcTagChoices()) for (const line of pcTagEffectLines(id)) expect(line, id).not.toMatch(/^[\s（]/)
+  })
+
   it('makes the sea cheaper for a sailor', () => {
     expect(pcTagMult({ isPlayer: true, tags: ['sailor'] }, 'fare_mult')).toBe(0.8)
     expect(pcTagMult({ isPlayer: true, tags: ['hunter'] }, 'fare_mult')).toBe(1)
