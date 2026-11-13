@@ -8,6 +8,7 @@ import { joinParty, pcOf } from '@/engine/party'
 import { masterCandidates, startAsSlave } from '@/engine/slavery'
 import { newGame, withRng } from '@/engine/state'
 import { contractOf } from '@/engine/tattoos'
+import { dismiss } from '@/engine/town'
 import type { GameState } from '@/engine/types'
 import { takeVoluntarySlave, volunteerBlocked, volunteerCandidates } from '@/engine/voluntarySlave'
 
@@ -73,5 +74,29 @@ describe('自願為奴', () => {
     startAsSlave(state, { master: { type: 'candidate', rec: rec! }, mark: 'labor' })
     const master = state.party.find((m) => !m.isPlayer)!
     expect(volunteerBlocked(state, master.id)).toContain('奴隸印記')
+  })
+
+  it('戰敗走散的同伴不能問；原本對主角的看法留著', () => {
+    const { state, id } = game()
+    const m = state.party.find((x) => x.id === id)!
+    m.status.push('away')
+    expect(volunteerBlocked(state, id)).toContain('暫時離隊')
+    m.status = m.status.filter((x) => x !== 'away')
+    state.relationships![id]!.toPlayer = '一起出生入死的夥伴。'
+    takeVoluntarySlave(state, id, slaveryRules.roles.default, 'partner')
+    expect(state.relationships![id]!.toPlayer).toMatch(/^一起出生入死的夥伴。自願成為主角的奴隸/)
+  })
+
+  it('小隊成員成為奴隸就離開小隊：遣散隊長不會把奴隸帶走', () => {
+    const { state, id: leader } = game()
+    const rec = withRng(state, (rng) => generateNpc(state, rng, { kind: 'adventurer', level: 3, location: 'albena' }, 'vs2'))
+    registerNpc(state, rec)
+    state.party.find((x) => x.id === leader)!.squad = leader
+    joinParty(state, rec, 'voluntary').squad = leader
+    state.relationships![rec.id]!.affinity = r.min_affinity
+    takeVoluntarySlave(state, rec.id, slaveryRules.roles.default, 'strict')
+    expect(state.party.find((x) => x.id === rec.id)!.squad).toBeUndefined()
+    dismiss(state, leader)
+    expect(state.party.find((x) => x.id === rec.id)?.bond).toBe('slave')
   })
 })

@@ -25,6 +25,11 @@ export function volunteerCandidates(state: GameState): Character[] {
   return state.party.filter((m) => !m.isPlayer && rules().bonds.includes(m.bond ?? 'hired') && !contractOf(m))
 }
 
+/** 暫時離隊（戰敗時走散）的同伴：人不在身邊，不能刻印 */
+function awayFrom(m: Character): boolean {
+  return m.status.includes('away')
+}
+
 const affinityOf = (state: GameState, id: string) => state.relationships?.[id]?.affinity ?? 0
 
 /** 不能問的原因（可以時是 undefined） */
@@ -35,6 +40,7 @@ export function volunteerBlocked(state: GameState, memberId: string): string | u
   if (!atVolunteerPlace(state)) return '要在刻印師那裡才能刻奴隸印記'
   if (state.combat || state.pendingAction) return '現在不能這麼做'
   if (!volunteerCandidates(state).includes(m)) return `${m.name}不是自願同行或雇傭的同伴`
+  if (awayFrom(m)) return `${m.name}暫時離隊，不在身邊`
   const need = rules().min_affinity
   const aff = affinityOf(state, m.id)
   if (aff < need) return `${m.name}還不夠信任你（親密度 ${need} 以上才會答應，現在 ${aff}）`
@@ -56,8 +62,11 @@ export function takeVoluntarySlave(state: GameState, memberId: string, mark: Mar
   if (!m.status.includes('slave_mark')) m.status.push('slave_mark')
   const before = m.bond
   m.bond = 'slave'
+  // 整隊入隊的小隊：成為奴隸就離開小隊，隊長離開時不會把奴隸一起帶走
+  delete m.squad
+  // 原本對主角的看法留著，接上自願為奴這件事
   const rel = state.relationships?.[m.id]
-  if (rel) rel.toPlayer = `自願成為主角的奴隸，身上刻著主角的印記（${bondName(style)}）。`
+  if (rel) rel.toPlayer = [rel.toPlayer?.trim(), `自願成為主角的奴隸，身上刻著主角的印記（${bondName(style)}）。`].filter(Boolean).join('')
   report.changes.money_cc = -rules().fee_cc
   ;(report.changes.companions ??= []).push({ npc: m.id, name: m.name, change: 'enslaved', bond: 'slave', reason: '自願為奴' })
   const terms = contract.terms

@@ -1,6 +1,7 @@
 // 奴隸主動找主角（docs/COMPANIONS.md 2.9 節；engine/slaveEvents.ts）
 import { describe, expect, it } from 'vitest'
 import { setBond } from '@/engine/bondStyle'
+import { setContentFilters } from '@/engine/content'
 import { buySlave, marketStock } from '@/engine/companions'
 import { masterEventPool, slaveryRules } from '@/engine/data'
 import { enterLocation } from '@/engine/grid'
@@ -100,5 +101,21 @@ describe('a slave comes to you', () => {
     expect(pool).toBe('slave')
     expect(saved).toEqual(meal)
     expect(slaveryRules.slave_events.events.length).toBeGreaterThan(10)
+  })
+
+  it('keeps adult visits from male slaves when male partners are filtered out', () => {
+    const { state, slave } = owner()
+    const m = state.party.find((x) => x.id === slave)!
+    m.gender = 'male'
+    const visit = slaveryRules.slave_events.events.find((e) => e.id === 'sl_night_visit')!
+    setAffinity(state, slave, 50)
+    expect(slaveEventFits(state, m, visit)).toBe(true)
+    setContentFilters({ male_partner: false })
+    try {
+      expect(slaveEventFits(state, m, visit)).toBe(false)
+      expect(slaveEventFits(state, m, slaveryRules.slave_events.events.find((e) => e.id === 'sl_meal')!)).toBe(true)
+    } finally {
+      setContentFilters({ male_partner: true })
+    }
   })
 })

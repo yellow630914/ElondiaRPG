@@ -2,9 +2,11 @@
 // 「找主人做點什麼」的反向版本——主角帶著自己的奴隸時，走動與旅行之後，隊伍裡的一位奴隸可能主動來找主角
 // （送吃的、求休息、說起往事、夜裡鑽進被窩……）。事件用主人事件的格式（事件庫 slave），主角從回應裡選一個：
 // {actor} 是那位奴隸；親密度看奴隸對主角；主僕關係（bondStyle.ts）調整權重、有專屬事件。
+// 成人向的事件不受「主角非自願」篩選，但「男性對象」關掉時男性的奴隸不會來。
 
 import { slaveryRules, type MasterEventDef } from './data'
 import { bondOf, bondWeight } from './bondStyle'
+import { tagsAllowed } from './content'
 import { gameRule } from './gameRules'
 import { currentArea } from './grid'
 import { ownHomeOfArea } from './homes'
@@ -35,6 +37,8 @@ export function slaveEventFits(state: GameState, slave: Character, e: MasterEven
   if (e.tags?.length && !e.tags.some((t) => tags.includes(t))) return false
   if (e.tags_none?.some((t) => tags.includes(t))) return false
   if (e.at_home !== undefined && e.at_home !== !!ownHomeOfArea(state, currentArea(state))) return false
+  // 成人向的事件：內容篩選關掉男性對象時，男性的奴隸不會來
+  if (e.adult && !tagsAllowed(['male_partner']) && (slave.gender ?? npcRecord(state, slave.id)?.gender) === 'male') return false
   return bondWeight(e, bondOf(state, slave.id)) > 0
 }
 

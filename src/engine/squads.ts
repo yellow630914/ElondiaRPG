@@ -101,9 +101,9 @@ export function squadMissing(state: GameState, s: Squad): string[] {
   }).map((id) => npcRecord(state, id)?.name ?? id)
 }
 
-/** 隊伍裡同一支小隊的人（整隊邀請入隊的） */
+/** 隊伍裡同一支小隊的人（整隊邀請入隊的）；奴隸不算（不會跟著小隊離開） */
 export function squadMates(state: GameState, member: Pick<Character, 'squad'>): Character[] {
-  return member.squad ? state.party.filter((m) => m.squad === member.squad) : []
+  return member.squad ? state.party.filter((m) => m.squad === member.squad && m.bond !== 'slave') : []
 }
 
 // ---- 請小隊帶主角同行 ----

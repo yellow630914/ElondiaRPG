@@ -96,7 +96,7 @@ describe('adult scenes', () => {
 
   it('follows the answer to the master: accepting the proposition or failing to refuse the brothel', () => {
     const yes = answer(slave(), 'proposition', 0)
-    expect(yes.narration?.adult_scene).toMatch(/^陪.+過夜$/)
+    expect(yes.narration?.adult_scene).toMatch(/^陪.+共度$/)
     expect(composeNarration(null, yes, options()).prompt.system).toContain('<adult_scene>')
     // 拒絕的回應：不論成敗都沒有場景
     expect(answer(slave(), 'proposition', 2).narration?.adult_scene).toBeUndefined()
