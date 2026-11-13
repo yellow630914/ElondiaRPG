@@ -62,7 +62,7 @@ exports[`world editor round trip > bases: opening and saving without changes kee
 
 exports[`world editor round trip > bindRules: opening and saving without changes keeps the data 1`] = `
 {
-  "bindRules": "45640b779bda",
+  "bindRules": "615ebd973fa1",
 }
 `;
 

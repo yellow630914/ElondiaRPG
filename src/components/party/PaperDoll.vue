@@ -106,8 +106,13 @@ const keyBlock = computed(() => (current.value ? keyAway(s.value, current.value)
 const keepers = computed(() => keyKeepers(s.value, m.value))
 const keeperPick = ref('')
 const KEY_HINT = (() => {
+  // 數字可以在內容編輯器的「⚙️ 雙面效應設定」改：同伴、主人分開寫，行動點不是 0 時才寫
   const r = lewdRules.locks.key_custody
-  return `上鎖時鑰匙在自己身上，隨時可以打開鎖（鎖放回行囊）。鑰匙交給同伴或主人保管：打開前要請對方還回來（對方要在隊伍裡；主人的親密度要 ${r.master_affinity} 以上才肯還），戰鬥中這個人拘束具增益的全身上限：命中、迴避、豁免、傷害、減傷每項 +${r.companion.stat}、先攻 +${r.companion.init}，每天順從也會成長；修了隸從派、鑰匙在自己的主人手上時每項再 +${r.servitude_master.stat}。丟掉鑰匙：每項 +${r.discarded.stat}、先攻 +${r.discarded.init}，之後只能脫縛、用一次性的鑰匙或找鐵匠剪鎖（鎖會壞掉）。每個人只算最好的一件，不會每件疊加。`
+  const caps = (x: { stat: number; init: number; ap: number }) => `命中、迴避、豁免、傷害、減傷每項 +${x.stat}、先攻 +${x.init}${x.ap ? `、行動點回復 +${x.ap}` : ''}`
+  const same = r.companion.stat === r.master.stat && r.companion.init === r.master.init && r.companion.ap === r.master.ap
+  const held = same ? caps(r.companion) : `交給同伴：${caps(r.companion)}；交給主人：${caps(r.master)}`
+  const extra = [r.servitude_master.stat ? `每項再 +${r.servitude_master.stat}` : '', r.servitude_master.init ? `先攻再 +${r.servitude_master.init}` : '', r.servitude_master.ap ? `行動點回復再 +${r.servitude_master.ap}` : ''].filter(Boolean).join('、')
+  return `上鎖時鑰匙在自己身上，隨時可以打開鎖（鎖放回行囊）。鑰匙交給同伴或主人保管：打開前要請對方還回來（對方要在隊伍裡；主人的親密度要 ${r.master_affinity} 以上才肯還），戰鬥中這個人拘束具增益的全身上限：${held}，每天順從也會成長${extra ? `；修了隸從派、鑰匙在自己的主人手上時${extra}` : ''}。丟掉鑰匙：${caps(r.discarded)}，之後只能脫縛、用一次性的鑰匙或找鐵匠剪鎖（鎖會壞掉）。每個人只算最好的一件，不會每件疊加。`
 })()
 function giveKeyTo() {
   if (!keeperPick.value) return

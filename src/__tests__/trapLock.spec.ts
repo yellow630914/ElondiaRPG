@@ -5,13 +5,14 @@ import { setContentFilters } from '@/engine/content'
 import { lewdRules } from '@/engine/data'
 import { applyEffects } from '@/engine/effects'
 import { forceEquip, restrainPc } from '@/engine/forcedGear'
+import { gearName } from '@/engine/gear'
 import { enterLocation, standOn } from '@/engine/grid'
 import { equipItem, unequipItem, useKey } from '@/engine/inventory'
 import { lewdOf } from '@/engine/lewd'
 import { sanitizeCond, sanitizeGearSpecLoose } from '@/engine/mods'
 import { freePlayer, pcOf } from '@/engine/party'
 import { cutLock, cutLockFee, stuckRestraint } from '@/engine/restraints'
-import { bindModifiers, bindsOf } from '@/engine/schools'
+import { bindModifiers, bindsOf, custodyCaps } from '@/engine/schools'
 import { masterCandidates, startAsSlave } from '@/engine/slavery'
 import { addItem, newGame } from '@/engine/state'
 import { condMet } from '@/engine/storyFlags'
@@ -205,6 +206,34 @@ describe('拘束程度與雙面效應設定', () => {
     expect(lewdRules.locks.grades.gold.mult).toBe(2)
     restoreBindRules()
     expect(currentBindRules()).toEqual(builtinBindRules())
+  })
+
+  it('鑰匙保管的上限加成：整理、套用後 custodyCaps 用新的數字；恢復預設還原', () => {
+    const state = game()
+    const pc = pcOf(state)
+    const spec = { base: 'blindfold', material: 'leather' }
+    pc.gear = { ...pc.gear, head: { name: gearName(spec), spec, lock: 'white', keyHolder: 'discarded' } }
+    const before = { ...lewdRules.locks.key_custody.discarded }
+    expect(custodyCaps(pc)).toMatchObject(before)
+    const draft = currentBindRules()
+    draft.key_custody.discarded = { stat: 4, init: 99, ap: 7 }
+    draft.key_custody.master_affinity = -500
+    delete (draft.key_custody as Partial<typeof draft.key_custody>).companion
+    const r = sanitizeBindRules(draft)
+    expect(r.key_custody.discarded).toEqual({ stat: 4, init: 10, ap: 3 })
+    expect(r.key_custody.master_affinity).toBe(-100)
+    // 缺的保留內建的
+    expect(r.key_custody.companion).toEqual(builtinBindRules().key_custody.companion)
+    applyBindRules(r)
+    expect(lewdRules.locks.key_custody.master_affinity).toBe(-100)
+    expect(custodyCaps(pc)).toMatchObject({ stat: 4, init: 10, ap: 3, from: { custody: 'discarded' } })
+    // 舊世界的自訂內容沒有這一段：用內建的
+    const old = currentBindRules() as Partial<ReturnType<typeof currentBindRules>>
+    delete old.key_custody
+    expect(sanitizeBindRules(old).key_custody).toEqual(builtinBindRules().key_custody)
+    restoreBindRules()
+    expect(currentBindRules()).toEqual(builtinBindRules())
+    expect(custodyCaps(pc)).toMatchObject(before)
   })
 
   it('整理：數字夾在範圍內，不存在的狀態與情境拿掉', () => {
