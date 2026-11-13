@@ -7,13 +7,17 @@ import { formatMoney } from '@/engine/money'
 import { producedQty, produceTarget, recipeItems, recipePlan } from '@/engine/recipes'
 import { shopTypeForCell } from '@/engine/trade'
 import { parseUse, useGame } from '@/stores/game'
-import AbilityPicker from './AbilityPicker.vue'
+import { inventCategories } from '@/engine/invention'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
+import ItemIcon from './items/ItemIcon.vue'
+import InventPanel from './InventPanel.vue'
+import CraftCard, { type CardOutcome, type CardReq } from './craft/CraftCard.vue'
 import { itemEffect, itemText } from './items/itemInfo'
 
-// 依配方製作（物品的 recipe，crafts.json 的 recipe；docs/CRAFTING.md 第 6 節）：藥劑、料理、家具、工具。
-// 工藝 → 類別 → 配方卡片；做的人擲工藝的屬性檢定加工藝等級；不夠的材料可以向站的這間店當場補買
+// 製作物品：依配方製作（物品的 recipe，crafts.json 的 recipe；docs/CRAFTING.md 第 6 節）與自創配方（第 7 節）。
+// 工藝 → 類別 → 配方卡片（最後一張是自創）；做的人擲工藝的屬性檢定加工藝等級；不夠的材料可以向站的這間店當場補買
+const props = withDefaults(defineProps<{ crafterId?: string }>(), { crafterId: 'pc' })
 const emit = defineEmits<{ started: [] }>()
 const game = useGame()
 const s = computed(() => game.state!)
@@ -24,9 +28,7 @@ onMounted(() => {
   if (type) game.shopState(type)
 })
 
-const who = computed(() => crafters(s.value))
-const crafterId = ref('pc')
-const crafter = computed(() => who.value.find((w) => w.member.id === crafterId.value && !w.refusal)?.member ?? s.value.party.find((m) => m.isPlayer)!)
+const crafter = computed(() => crafters(s.value).find((w) => w.member.id === props.crafterId && !w.refusal)?.member ?? s.value.party.find((m) => m.isPlayer)!)
 
 const CATEGORY_NAME: Record<string, string> = { consumable: '藥劑與消耗品', food: '料理', furniture: '家具', gear: '工具', material: '材料' }
 const categoryOf = (name: string) => itemDef(name)?.category ?? s.value.customItems?.[name]?.category ?? 'consumable'
@@ -79,11 +81,44 @@ function status(r: (typeof all.value)[number]): { ok: boolean; text: string } {
   return { ok: true, text: r.plan.buyCost ? `要補買 ${formatMoney(r.plan.buyCost)}` : '做得出來' }
 }
 
+// 自創配方：配方清單最後一張卡片（這種工藝能自創時；搜尋時不列）
+const INVENT = '\u0000invent'
+const canInvent = computed(() => !query.value.trim() && inventCategories(craft.value).length > 0)
 const picked = ref('')
-const name = computed(() => (rows.value.some((r) => r.name === picked.value) ? picked.value : (rows.value.find((r) => !r.plan.blocked) ?? rows.value[0])?.name ?? ''))
+const inventing = computed(() => canInvent.value && (picked.value === INVENT || !rows.value.length))
+const name = computed(() => (inventing.value ? '' : rows.value.some((r) => r.name === picked.value) ? picked.value : (rows.value.find((r) => !r.plan.blocked) ?? rows.value[0])?.name ?? ''))
 const plan = computed(() => (name.value ? recipePlan(s.value, name.value, batches.value, crafter.value, { buy: buy.value }) : undefined))
 const skill = computed(() => (plan.value ? craftRules.skills[plan.value.recipe.craft] : undefined))
 const sold = computed(() => plan.value?.inputs.some((x) => x.offer) ?? false)
+
+// ---- 成品卡 ----
+const outcomes = computed<CardOutcome[]>(() => {
+  const p = plan.value
+  if (!p) return []
+  const paid = p.fee ? '，花費照付' : ''
+  return [
+    { degree: 'critical', text: `${producedQty(p.qty, 'critical')} 份` },
+    { degree: 'success', text: `${p.qty} 份` },
+    { degree: 'partial', text: `${producedQty(p.qty, 'partial')} 份` },
+    { degree: 'fail', text: `沒做成，材料損失一半${paid}` },
+    { degree: 'fumble', text: `搞砸了，材料全部損失${paid}` },
+  ]
+})
+const reqs = computed<CardReq[]>(() => {
+  const p = plan.value
+  if (!p || !skill.value) return []
+  const need = toolTierFor(p.recipe.level)
+  const missing = p.inputs.some((x) => x.have + x.buy < x.need)
+  const buying = p.inputs.some((x) => x.buy > 0)
+  const cost = p.fee + p.buyCost
+  return [
+    { state: p.level >= p.recipe.level ? 'ok' : 'no', label: '工藝', text: `${crafter.value.name} ${skill.value.name} Lv.${p.level}（要 Lv.${p.recipe.level}）` },
+    { state: p.tool.tier >= need ? 'ok' : 'no', label: '工具', text: `要${toolTierName(need)}・現在 ${p.tool.source}` },
+    { state: missing ? 'no' : buying ? 'warn' : 'ok', label: '材料', text: !p.inputs.length ? '不需要' : missing ? '不夠' : buying ? '缺的當場補買' : '夠用' },
+    { state: s.value.money_cc >= cost ? 'ok' : 'no', label: '錢', text: `要 ${formatMoney(cost)}・持有 ${formatMoney(s.value.money_cc)}` },
+  ]
+})
+const costs = computed<[string, number][]>(() => (plan.value ? [['花費', plan.value.cost], ['工坊租金', plan.value.rent], ['補買', plan.value.buyCost]] : []))
 const text = ref('')
 const use = ref('')
 
@@ -112,16 +147,6 @@ function produce() {
 
 <template>
   <div class="recipes small">
-    <p class="muted intro">
-      依配方製作
-      <Hint text="依配方做藥劑、料理、家具與工具：材料從行囊扣，不夠的材料站在有賣的店裡可以當場補買；另外的花費（瓶子、溶劑、基本食材）照地點物價付。做的人擲屬性檢定，加上工藝等級；工具階級依配方等級。做的人得到工藝經驗：配方等級 × 批數 × 成功程度（大成功 3、成功 2、部分成功與失敗 1）。" />
-    </p>
-    <div class="step">
-      <span class="lab">誰來做</span>
-      <select v-model="crafterId">
-        <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
-      </select>
-    </div>
     <div class="step">
       <span class="lab">搜尋</span>
       <input v-model="query" class="search" placeholder="找配方或成品，例如「藥劑」「床」" />
@@ -146,81 +171,69 @@ function produce() {
     </template>
     <div class="step">
       <span class="lab">配方</span>
-      <div v-if="rows.length" class="cards">
+      <div v-if="rows.length || canInvent" class="cards">
         <button v-for="r in rows" :key="r.name" class="card" :class="{ on: name === r.name, no: !!r.plan.blocked }" @click="picked = r.name">
           <b>{{ r.invented ? '★ ' : '' }}{{ r.name }}{{ (r.recipe.qty ?? 1) > 1 ? ` ×${r.recipe.qty}` : '' }}</b>
           <span class="muted">{{ query.trim() ? `${craftRules.skills[r.recipe.craft].name}・` : '' }}Lv.{{ r.recipe.level }}・<span :class="status(r).ok ? 'ok' : 'bad'">{{ status(r).text }}</span></span>
           <span class="muted">{{ r.plan.inputs.map((x) => `${x.name} ${Math.min(x.have, x.need)}/${x.need}`).join('、') || '不需要材料' }}</span>
         </button>
+        <button v-if="canInvent" class="card new" :class="{ on: inventing }" @click="picked = INVENT">
+          <b><GameIcon name="lightbulb" :size="13" /> 自創{{ craftRules.skills[craft].name }}配方</b>
+          <span class="muted">寫下做法，放進材料試做</span>
+          <span class="muted">做出來就記成新配方</span>
+        </button>
       </div>
       <p v-else class="muted">{{ onlyReady ? '沒有現在做得出來的配方。' : '沒有符合的配方。' }}</p>
     </div>
 
-    <div v-if="plan && skill" class="detail">
-      <div class="head">
-        <b class="name">{{ plan.name }}</b>
-        <span class="muted">{{ skill.name }} Lv.{{ plan.recipe.level }}・{{ catName(categoryOf(plan.name)) }}</span>
-        <template v-if="s.inventions?.[plan.name]"><span class="tag"><GameIcon name="lightbulb" :size="12" />自創</span> <button class="small" @click="rename"><GameIcon name="edit" :size="13" /> 改名</button> <button class="small" @click="forget">忘記這個配方</button></template>
-      </div>
-      <p v-if="itemText(s, plan.name)" class="desc">{{ itemText(s, plan.name) }}</p>
-      <p v-if="itemEffect(s, plan.name)">效果：{{ itemEffect(s, plan.name) }}</p>
-      <div class="kv">
-        批數
-        <button v-for="n in craftRules.recipe.max_batches" :key="n" class="small" :class="{ primary: plan.batches === n }" @click="batches = n">{{ n }}</button>
-        <span class="muted">材料、花費、時間與經驗乘批數，只擲一次</span>
-      </div>
-      <table v-if="plan.inputs.length" class="mats">
-        <thead><tr><th>材料</th><th>需要</th><th>持有</th><th>這裡賣</th><th>當場買</th></tr></thead>
-        <tbody>
-          <tr v-for="x in plan.inputs" :key="x.name">
-            <td>{{ x.name }}</td>
-            <td>{{ x.need }}</td>
-            <td :class="{ short: x.have < x.need }">{{ x.have }}</td>
-            <td>{{ x.offer ? `${formatMoney(x.offer.price)}（剩 ${x.offer.stock}）` : '—' }}</td>
-            <td>
-              <span v-if="x.buy" class="ok">{{ x.buy }} 份・{{ formatMoney(x.buy * x.offer!.price) }}</span>
-              <span v-else-if="x.have < x.need" class="short">缺 {{ x.need - x.have }}</span>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-      <p v-else class="muted">不需要材料。</p>
-      <label v-if="sold" class="check"><input v-model="buy" type="checkbox" /> 不夠的當場補買（照這間店的售價）</label>
-      <table class="outcomes">
-        <tbody>
-        <tr><th>大成功</th><th>成功</th><th>部分成功</th><th>失敗</th><th>大失敗</th></tr>
-        <tr>
-          <td>{{ producedQty(plan.qty, 'critical') }} 份</td>
-          <td>{{ plan.qty }} 份</td>
-          <td>{{ producedQty(plan.qty, 'partial') }} 份</td>
-          <td>材料損失一半</td>
-          <td>材料全部損失<span class="muted">（花費照付）</span></td>
-        </tr>
-        </tbody>
-      </table>
-      <div class="kv">
-        <span>{{ skill.name }} <b>{{ crafter.name }} Lv.{{ plan.level }}</b><span class="muted">（這個配方要 Lv.{{ plan.recipe.level }}）</span></span>
-        <span>檢定 <b>工藝 +{{ plan.level * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}・DC {{ plan.dc }}</b></span>
-        <span>時間 <b>約 {{ plan.hours }} 小時</b></span>
-        <span>工具 <b>要{{ toolTierName(toolTierFor(plan.recipe.level)) }}</b> <Hint :text="toolWhere(plan.recipe.craft, toolTierFor(plan.recipe.level))" /><span class="muted">・現在 {{ plan.tool.source }}</span></span>
-        <span v-if="plan.fee || plan.buyCost">花費 <b>{{ formatMoney(plan.fee) }}</b><span v-if="plan.rent" class="muted">（含工坊租金 {{ formatMoney(plan.rent) }}）</span><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
-      </div>
-      <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
-      <template v-else>
-        <input v-model="text" placeholder="想怎麼做（選填）：例如加一點蜂蜜讓藥比較好入口" />
-        <AbilityPicker v-model="use" />
-        <div class="go">
-          <button class="primary" :disabled="game.judging || !!s.pendingAction" @click="produce"><GameIcon name="scroll" :size="14" /> {{ crafter.isPlayer ? '動手製作' : `請${crafter.name}製作` }}（{{ plan.qty }} 份）</button>
-        </div>
+    <InventPanel v-if="inventing" :craft="craft" :category-hint="cat" :crafter-id="crafter.id" @started="emit('started')" />
+    <CraftCard
+      v-else-if="plan && skill"
+      v-model:count="batches" v-model:wish="text" v-model:use="use"
+      :title="plan.name" :tags="[{ text: `${skill.name} Lv.${plan.recipe.level}` }, { text: catName(categoryOf(plan.name)) }, ...(s.inventions?.[plan.name] ? [{ text: '自創', hot: true }] : [])]"
+      :outcomes="outcomes" :check="`d20 + 工藝 ${plan.level * craftRules.level_bonus} + ${attrName(skill.attr)}調整值 ÷${craftRules.attr_div}・DC ${plan.dc}`" :reqs="reqs"
+      count-label="批數" :count-max="craftRules.recipe.max_batches" count-hint="材料、花費、時間與經驗乘批數，只擲一次。"
+      :hours="plan.hours" :costs="costs" :blockers="plan.blockers" :busy="game.judging || !!s.pendingAction"
+      :action="`${crafter.isPlayer ? '動手製作' : `請${crafter.name}製作`}（${plan.qty} 份）`" action-icon="scroll"
+      wish-placeholder="想怎麼做：例如加一點蜂蜜讓藥比較好入口"
+      @go="produce"
+    >
+      <template #icon><ItemIcon :name="plan.name" :size="30" /></template>
+      <template v-if="s.inventions?.[plan.name]" #head-extra>
+        <button class="small" @click="rename"><GameIcon name="edit" :size="13" /> 改名</button>
+        <button class="small" @click="forget">忘記</button>
       </template>
-    </div>
+      <template #result>
+        <p v-if="itemEffect(s, plan.name)" class="effect">{{ itemEffect(s, plan.name) }}</p>
+        <p v-if="itemText(s, plan.name)" class="desc">{{ itemText(s, plan.name) }}</p>
+      </template>
+      <template #needs>
+        <table v-if="plan.inputs.length" class="mats">
+          <thead><tr><th>材料</th><th class="num">需要</th><th class="num">持有</th><th class="num">這裡賣</th><th class="num">當場買</th></tr></thead>
+          <tbody>
+            <tr v-for="x in plan.inputs" :key="x.name">
+              <td>{{ x.name }}</td>
+              <td class="num">{{ x.need }}</td>
+              <td class="num" :class="{ short: x.have < x.need }">{{ x.have }}</td>
+              <td class="num">{{ x.offer ? `${formatMoney(x.offer.price)}（剩 ${x.offer.stock}）` : '—' }}</td>
+              <td class="num">
+                <span v-if="x.buy" class="ok">{{ x.buy }} 份</span>
+                <span v-else-if="x.have < x.need" class="short">缺 {{ x.need - x.have }}</span>
+                <template v-else>—</template>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <label v-if="sold" class="check"><input v-model="buy" type="checkbox" /> 不夠的當場補買（照這間店的售價）</label>
+        <p class="muted small-note">工具要{{ toolTierName(toolTierFor(plan.recipe.level)) }} <Hint :text="toolWhere(plan.recipe.craft, toolTierFor(plan.recipe.level))" /></p>
+      </template>
+    </CraftCard>
   </div>
 </template>
 
 <style scoped>
 .recipes { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .recipes p { margin: 0; }
-.intro { display: flex; align-items: center; gap: 4px; }
 .step { display: grid; grid-template-columns: 72px minmax(0, 1fr); gap: 10px; align-items: start; }
 .step > .lab { color: var(--muted); font-weight: 600; padding-top: 4px; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -230,25 +243,19 @@ function produce() {
 .card { text-align: left; display: grid; gap: 2px; padding: 6px 9px; }
 .card.on { outline: 2px solid var(--accent); outline-offset: -1px; }
 .card.no { opacity: 0.6; }
+.card.new { border-style: dashed; background: transparent; color: var(--accent); }
+.card.new b { display: flex; gap: 4px; align-items: center; }
 .card .muted { font-size: var(--fs-xs); }
 .ok { color: var(--good); }
-.bad, .short, .warn { color: var(--danger); }
-.detail { border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; display: grid; gap: 8px; }
-.detail input:not([type]) { width: 100%; }
-.head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
-.name { font-size: 1.05rem; }
+.bad, .short { color: var(--danger); }
+.effect { color: var(--good); font-weight: 600; }
 .desc { color: var(--muted); font-family: var(--font-story); }
+.small-note { font-size: var(--fs-xs); display: flex; gap: 4px; align-items: center; }
 table { width: 100%; border-collapse: collapse; }
-.mats th { text-align: left; font-weight: 600; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--border); }
-.mats td { padding: 4px 6px; border-bottom: 1px dashed color-mix(in srgb, currentColor 15%, transparent); }
+.mats th { text-align: left; font-weight: 600; color: var(--muted); padding: 3px 4px; border-bottom: 1px solid var(--border); }
+.mats td { padding: 3px 4px; border-bottom: 1px dashed color-mix(in srgb, currentColor 15%, transparent); }
+.mats .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .check { display: flex; gap: 6px; align-items: center; }
-.outcomes { text-align: center; font-size: var(--fs-xs); }
-.outcomes th { font-weight: 600; color: var(--muted); padding: 4px; border-bottom: 1px solid var(--border); }
-.outcomes td { padding: 4px; }
-.kv { display: flex; flex-wrap: wrap; gap: 4px 16px; align-items: center; }
-.blockers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.blockers li { display: flex; gap: 4px; align-items: baseline; }
-.go { display: flex; justify-content: flex-end; }
 @media (max-width: 640px) {
   .step { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .step > .lab { padding-top: 0; }

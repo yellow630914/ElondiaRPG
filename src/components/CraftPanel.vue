@@ -5,7 +5,7 @@ import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
 import { canCraftHere, commissionHere, craftMaxCount, craftPlan, craftRarity, craftTarget, forgeOf, isAdultCraft, makeTarget, outfitCommission, selfFeeName, selfLewdBonus, type AuxItem } from '@/engine/craft'
 import { lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
-import { craftForKind, crafters, skillOf, toolTierFor, toolTierName, toolWhere } from '@/engine/crafting'
+import { craftForKind, crafters, skillOf, toolTierFor, toolTierName } from '@/engine/crafting'
 import {
   baseShown, baseSlotName, baseType, CRAFT_SLOT_ORDER, gearName, gearRules, gearSummary, gearSummaryParts, MATERIAL_KIND_NAME, rarityName, rarityPoints, sortBaseTypes, type BaseSlot,
 } from '@/engine/gear'
@@ -13,17 +13,18 @@ import { formatMoney } from '@/engine/money'
 import { shopTypeForCell } from '@/engine/trade'
 import { currentCell } from '@/engine/grid'
 import { parseUse, useGame } from '@/stores/game'
-import AbilityPicker from './AbilityPicker.vue'
 import EffectLine from './items/EffectLine.vue'
 import AppDialog from './AppDialog.vue'
 import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
-import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import ContentIcon from './icons/ContentIcon.vue'
+import ItemIcon from './items/ItemIcon.vue'
+import CraftCard, { type CardOutcome, type CardReq, type CardTag } from './craft/CraftCard.vue'
+import type { GearSpec } from '@/engine/types'
 
 // 打造裝備（data/rules/gear.json 的 craft；docs/CRAFTING.md）：部位 → 類型 → 底材 → 材料，可以描述想要的樣子。
 // commission：在鐵匠鋪、裁縫店、珠寶店委託店主；make：主角或肯幫忙的夥伴自己動手（crafts.json）
-const props = withDefaults(defineProps<{ mode?: 'commission' | 'make' }>(), { mode: 'commission' })
+const props = withDefaults(defineProps<{ mode?: 'commission' | 'make'; crafterId?: string }>(), { mode: 'commission', crafterId: 'pc' })
 const make = computed(() => props.mode === 'make')
 // 店裡的委託打造是選單的一列，點了打開對話框；工藝對話框裡直接顯示
 const menuItem = computed<MenuItem>(() => ({
@@ -42,10 +43,8 @@ onMounted(() => {
   if (type) game.shopState(type)
 })
 
-// 自己動手：誰來做（不肯幫忙的列出原因）
-const who = computed(() => crafters(s.value))
-const crafterId = ref('pc')
-const crafter = computed(() => who.value.find((w) => w.member.id === crafterId.value && !w.refusal)?.member ?? s.value.party.find((m) => m.isPlayer)!)
+// 自己動手：誰來做（工藝對話框上方選；不肯幫忙的人換回主角）
+const crafter = computed(() => crafters(s.value).find((w) => w.member.id === props.crafterId && !w.refusal)?.member ?? s.value.party.find((m) => m.isPlayer)!)
 
 // ---- 部位 → 類型 → 底材 ----
 // 委託：只列這間店做得出來的底材（鐵匠鋪：金屬、木材；裁縫店：皮革、布料；珠寶店：寶石；成人向服裝只在成人用品店）；自己動手：全部
@@ -169,7 +168,53 @@ const lineParts = computed(() => {
 const line = computed(() => lineParts.value.map((p) => p.text).join('・'))
 /** 這個材料做不出加成時：換哪一種才有 */
 const better = computed(() => (line.value ? undefined : materials.value.find((m) => statsOf(base.value, m.id))))
-const DEGREES = [['critical', '大成功'], ['success', '成功'], ['partial', '部分成功']] as const
+const feeName = computed(() => (make.value ? selfFeeName(plan.value) : '工錢'))
+
+// ---- 成品卡 ----
+const tags = computed<CardTag[]>(() => [
+  { text: slotLabel(gearRules.bases[base.value]!.slot) }, { text: type.value },
+  { text: `${skill.value.name}・第 ${plan.value.tier} 級材料` },
+  ...(gearRules.bases[base.value]!.restraint ? [{ text: '拘束具', hot: true }] : isAdultCraft(base.value) ? [{ text: '成人向', hot: true }] : []),
+])
+const outcomes = computed<CardOutcome[]>(() => {
+  const p = plan.value
+  const paid = p.fee ? `，${feeName.value}照付` : ''
+  const lost = Math.ceil(p.units * gearRules.craft.lost_on_fail)
+  const rar = (d: 'critical' | 'success' | 'partial') => rarityName(craftRarity(mat.value, d)!)
+  return [
+    { degree: 'critical', text: `${rar('critical')}・${p.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(mat.value, 'critical')!)} 點` },
+    { degree: 'success', text: `${rar('success')}・${p.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(mat.value, 'success')!)} 點` },
+    { degree: 'partial', text: `${rar('partial')}・沒有附魔` },
+    { degree: 'fail', text: `沒做成${lost ? `，損失 ${lost} 份材料` : ''}${paid}` },
+    { degree: 'fumble', text: `搞砸了${p.units ? `，損失全部 ${p.units} 份材料` : ''}${paid}` },
+  ]
+})
+const check = computed(() => (make.value
+  ? `d20 + 工藝 ${plan.value.level * craftRules.level_bonus} + ${attrName(skill.value.attr)}調整值 ÷${craftRules.attr_div}・DC ${plan.value.dc}`
+  : `店主擲 d20 + 手藝 ${plan.value.level * craftRules.level_bonus}・DC ${plan.value.dc}`))
+const reqs = computed<CardReq[]>(() => {
+  const p = plan.value
+  const out: CardReq[] = [{
+    state: p.level >= p.tier ? 'ok' : 'no', label: '工藝',
+    text: `${make.value ? crafter.value.name : '工匠'} ${skill.value.name} Lv.${p.level}（要 Lv.${p.tier}）`,
+  }]
+  if (make.value && p.tool) {
+    const need = toolTierFor(p.tier)
+    out.push({ state: p.tool.tier >= need ? 'ok' : 'no', label: '工具', text: `要${toolTierName(need)}・現在 ${p.tool.source}` })
+  }
+  if (make.value) out.push({ state: p.blueprint ? 'ok' : 'warn', label: '圖紙', text: p.blueprint ? `有${blueprintName(p.base)}` : `沒有（DC +${blueprintRules().dc_without}）` })
+  const short = p.units - p.have
+  out.push(!p.units ? { state: 'ok', label: '材料', text: '工匠提供' }
+    : short <= 0 ? { state: 'ok', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` }
+    : p.buys.length && p.buys.reduce((n, b) => n + b.qty, 0) >= short ? { state: 'warn', label: '材料', text: `缺 ${short} 份，當場補買` }
+    : { state: 'no', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` })
+  const cost = p.fee + p.buyCost
+  out.push({ state: s.value.money_cc >= cost ? 'ok' : 'no', label: '錢', text: `要 ${formatMoney(cost)}・持有 ${formatMoney(s.value.money_cc)}` })
+  return out
+})
+const sourceRows = computed(() => plan.value.sources.filter((x) => x.have > 0 || x.price !== undefined))
+const costs = computed<[string, number][]>(() => [[feeName.value, plan.value.fee], ['補買', plan.value.buyCost]])
+const hours = computed(() => (make.value ? craftRules.self.hours : gearRules.craft.hours) * plan.value.count)
 
 function craft() {
   const u = parseUse(use.value)
@@ -198,18 +243,6 @@ function craft() {
       選部位、類型、底材，再選材料
       <Hint text="第一級材料由工匠提供；第二級以上要用行囊裡的打造材料（不夠時，這間店有賣就能當場補買）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
     </p>
-    <p v-else class="muted intro">
-      自己打造
-      <Hint text="每件裝備要用幾份打造材料；行囊裡不夠的，站在有賣的店裡可以當場補買。做的人擲屬性檢定，加上工藝等級；做的人得到工藝經驗：材料等級 × 用了幾份材料 × 成功程度（大成功 3、成功 2、部分成功與失敗 1），大件的經驗比小件多。" />
-    </p>
-
-    <div v-if="make" class="step">
-      <span class="lab">誰來做</span>
-      <select v-model="crafterId">
-        <option v-for="w in who" :key="w.member.id" :value="w.member.id" :disabled="!!w.refusal">{{ w.member.name }}{{ w.refusal ? `（${w.refusal}）` : '' }}</option>
-      </select>
-    </div>
-
     <div class="step">
       <span class="lab">搜尋</span>
       <div>
@@ -271,106 +304,85 @@ function craft() {
       </div>
     </div>
 
-    <!-- 打造材料的來源 -->
-    <div v-if="plan.units" class="step">
-      <span class="lab">打造材料</span>
-      <div class="source">
-        <div :class="{ short: plan.have < plan.units && !plan.buys.length }">
-          需要 {{ plan.units }} 份能做成{{ gearRules.materials[mat]!.name }}的材料，持有 {{ plan.have }} 份
-          <span v-if="plan.uses.length" class="muted">（用掉 {{ plan.uses.map((u) => `${u.name}×${u.qty}`).join('、') }}）</span>
+    <!-- 成品卡（components/craft/CraftCard.vue） -->
+    <CraftCard
+      v-model:count="count" v-model:wish="text" v-model:use="use"
+      :title="`${name}${plan.count > 1 ? ` ×${plan.count}` : ''}`" :tags="tags" :outcomes="outcomes" :check="check" :reqs="reqs"
+      count-label="件數" :count-max="craftMaxCount()" :count-hint="COUNT_HINT" :hours="hours" :costs="costs"
+      :blockers="plan.blockers" :busy="game.judging || !!s.pendingAction"
+      :action="`${make ? `${crafter.isPlayer ? '親手' : `請${crafter.name}`}打造` : '委託打造'}${plan.count > 1 ? `（${plan.count} 件）` : ''}`"
+      wish-placeholder="想要的樣子：例如刻上家紋、劍身帶著火焰紋路、取名「破曉」"
+      @go="craft"
+    >
+      <template #icon><ItemIcon :spec="{ base, material: mat } as GearSpec" :size="30" /></template>
+      <template #result>
+        <div :class="line ? 'stat' : 'muted'">
+          <EffectLine v-if="line" :parts="lineParts" /><template v-else>這個材料做出來沒有加成</template><template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>
         </div>
-        <label v-if="plan.sources.filter((x) => x.have > 0 || x.price !== undefined).length > 1" class="row">
-          優先用
-          <select v-model="usePick">
-            <option value="">最便宜的</option>
-            <option v-for="x in plan.sources.filter((y) => y.have > 0 || y.price !== undefined)" :key="x.name" :value="x.name">
-              {{ x.name }}（持有 {{ x.have }}{{ x.price !== undefined ? `・這裡賣 ${formatMoney(x.price)}` : '' }}）
-            </option>
-          </select>
-        </label>
-        <label v-if="soldHere.length && (needBuy || buy)" class="row check">
-          <input v-model="buy" type="checkbox" /> 不夠的當場補買
-          <span class="muted">（這裡有賣：{{ soldHere.map((x) => `${x.name} ${formatMoney(x.price!)}／份，剩 ${x.stock}`).join('、') }}）</span>
-        </label>
-        <div v-if="plan.buys.length" class="muted">當場買 {{ plan.buys.map((b) => `${b.name}×${b.qty}`).join('、') }}：{{ formatMoney(plan.buyCost) }}</div>
-        <div v-else-if="needBuy && !soldHere.length" class="muted">這裡沒有賣；可以到{{ kind === 'metal' || kind === 'wood' ? '鐵匠鋪或雜貨店' : kind === 'jewel' ? '珠寶店' : '裁縫店或雜貨店' }}買，或打怪、開寶箱取得。</div>
-      </div>
-    </div>
-
-    <!-- 成品 -->
-    <div class="result">
-      <h3>{{ name }} <span class="muted">{{ slotLabel(gearRules.bases[base]!.slot) }}・{{ type }}</span></h3>
-      <div v-if="lewdStats.length" class="lewd-row">
-        <label>慾望指標
+        <label v-if="lewdStats.length" class="lewd-row">慾望指標
           <select v-model="lewdPick">
             <option value="">不加</option>
             <option v-for="x in lewdStats" :key="x.st" :value="x.st" :disabled="!x.bonus">{{ lewdName(x.st) }} +{{ x.bonus }}</option>
           </select>
+          <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：（委託的加成 + 1～2）× 做的人自己那一項的基本值 ÷ 100：指標 100 時第 1、2、3、4 級以上分別是 +5、+7、+10、+12，比成人用品店委託（+4、+6、+8、+10）多一點。" />
         </label>
-        <Hint text="自己打造成人向服裝、拘束具時可以加一項慾望指標：（委託的加成 + 1～2）× 做的人自己那一項的基本值 ÷ 100：指標 100 時第 1、2、3、4 級以上分別是 +5、+7、+10、+12，比成人用品店委託（+4、+6、+8、+10）多一點。" />
-      </div>
-      <div class="count-row">
-        件數
-        <button v-for="n in craftMaxCount()" :key="n" class="small" :class="{ primary: plan.count === n }" @click="count = n">{{ n }}</button>
-        <Hint :text="COUNT_HINT" />
-      </div>
-      <div :class="line ? 'stat' : 'muted'">
-        數值：<EffectLine v-if="line" :parts="lineParts" /><template v-else>這個材料做出來沒有加成</template><template v-if="better">（換成{{ better.name }}：{{ statsOf(base, better.id) }}）</template>
-      </div>
-      <table class="outcomes">
-        <tbody>
-        <tr><th v-for="[, n] in DEGREES" :key="n">{{ n }}</th><th>失敗</th></tr>
-        <tr>
-          <td v-for="[d] in DEGREES" :key="d">
-            {{ rarityName(craftRarity(mat, d)!) }}
-            <div class="muted">{{ d === 'partial' ? '沒有附魔' : `附魔 ${rarityPoints(craftRarity(mat, d)!)} 點（隨機）` }}</div>
-          </td>
-          <td>材料損失一半</td>
-        </tr>
-        </tbody>
-      </table>
-      <div class="kv">
-        <span>{{ skill.name }} <b>{{ make ? `${crafter.name} Lv.${skillOf(crafter, plan.craft).level}` : `工匠 Lv.${plan.level}` }}</b><span class="muted">（這個材料要 Lv.{{ plan.tier }}）</span></span>
-        <span>檢定 <b><template v-if="make">工藝 +{{ plan.level * craftRules.level_bonus }}、{{ attrName(skill.attr) }}調整值 ÷{{ craftRules.attr_div }}</template><template v-else>店主擲：手藝 +{{ plan.level * craftRules.level_bonus }}</template>・DC {{ plan.dc }}</b></span>
-        <span v-if="make">圖紙 <b :class="plan.blueprint ? '' : 'warn-text'">{{ plan.blueprint ? `有${blueprintName(plan.base)}` : `沒有（DC +${blueprintRules().dc_without}）` }}</b> <Hint text="每個底材一張圖紙，不會用掉、任何材料都適用。鐵匠鋪、裁縫店、珠寶店有賣，寶箱與人形的敵人身上也可能找到。委託店家打造不需要。" /></span>
-        <span>時間 <b>約 {{ (make ? craftRules.self.hours : gearRules.craft.hours) * plan.count }} 小時</b></span>
-        <span v-if="make">工具 <b>要{{ toolTierName(toolTierFor(plan.tier)) }}</b> <Hint :text="toolWhere(plan.craft, toolTierFor(plan.tier))" /><span class="muted">・現在 {{ plan.tool?.source }}</span></span>
-        <span>{{ make ? selfFeeName(plan) : '工錢' }} <b>{{ formatMoney(plan.fee) }}</b><Hint v-if="plan.materialCost" text="第 1 級材料：材料費照底材的價格算（底材價格的一半，乘這裡的物價），用掉的打造材料抵掉它們的價值。" /><template v-if="plan.buyCost">＋補買 <b>{{ formatMoney(plan.buyCost) }}</b></template></span>
-      </div>
-      <div class="aux-row">
-        <span>輔料 <Hint :text="`選填，最多 ${auxRules.max_kinds} 種；不論結果都會用掉。價值越高越可能讓稀有度再高一級（部分成功時照成功做）；名稱與描述決定附魔偏向的屬性。`" /></span>
-        <span v-for="(a, i) in aux" :key="a.name" class="tag">
-          {{ a.name }} ×<input v-model.number="a.qty" type="number" min="1" :max="auxRules.max_qty" class="qty" />
-          <button class="x" @click="aux.splice(i, 1)">×</button>
-        </span>
-        <template v-if="aux.length < auxRules.max_kinds && auxOptions.length">
-          <select v-model="auxPick">
-            <option value="">加入材料…</option>
-            <option v-for="i in auxOptions" :key="i.name" :value="i.name">{{ i.name }}（持有 {{ i.qty }}）</option>
-          </select>
-          <button class="small" :disabled="!auxPick" @click="addAux">＋</button>
-        </template>
-        <span v-else-if="!aux.length" class="muted">行囊裡沒有材料。</span>
-        <span v-if="aux.length" class="muted">
-          {{ Math.round(plan.auxChance * 100) }}% 機率稀有度再高一級<template v-if="plan.elements.length">・附魔偏向 {{ plan.elements.map((e) => damageTypeName(e)).join('、') }}</template>
-        </span>
-      </div>
-      <ul v-if="plan.blocked" class="warn blockers"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
-      <template v-else>
-        <input v-model="text" placeholder="想要的樣子（選填）：例如刻上家紋、劍身帶著火焰紋路、取名「破曉」" />
-        <AbilityPicker v-model="use" />
-        <div class="go">
-          <button class="primary" :disabled="game.judging || !!s.pendingAction" @click="craft"><GameIcon name="tools" :size="14" /> {{ make ? `${crafter.isPlayer ? '親手' : `請${crafter.name}`}打造` : '委託打造' }}</button>
+      </template>
+      <template #result-after>
+        <p class="muted note">{{ plan.count > 1 ? '每件的附魔各自擲；' : '' }}數值由材料決定，成功程度只影響稀有度與附魔。</p>
+      </template>
+      <template #needs>
+        <div v-if="plan.units" class="lst">
+          <table class="need">
+            <thead><tr><th>能做成{{ gearRules.materials[mat]!.name }}的材料</th><th class="num">持有</th><th class="num">這裡賣</th><th class="num">用掉</th></tr></thead>
+            <tbody>
+              <tr v-for="x in sourceRows" :key="x.name">
+                <td>{{ x.name }}</td>
+                <td class="num">{{ x.have }}</td>
+                <td class="num">{{ x.price !== undefined ? `${formatMoney(x.price)}（剩 ${x.stock}）` : '—' }}</td>
+                <td class="num">
+                  <template v-if="plan.uses.find((u) => u.name === x.name)">{{ plan.uses.find((u) => u.name === x.name)!.qty }}</template><template v-else>—</template>
+                  <span v-if="plan.buys.find((b) => b.name === x.name)" class="ok">（買 {{ plan.buys.find((b) => b.name === x.name)!.qty }}）</span>
+                </td>
+              </tr>
+              <tr v-if="!sourceRows.length"><td colspan="4" class="muted">行囊裡沒有，這裡也沒有賣</td></tr>
+            </tbody>
+          </table>
+          <div class="opts">
+            <label v-if="sourceRows.length > 1" class="row">優先用
+              <select v-model="usePick">
+                <option value="">最便宜的</option>
+                <option v-for="x in sourceRows" :key="x.name" :value="x.name">{{ x.name }}</option>
+              </select>
+            </label>
+            <label v-if="soldHere.length && (needBuy || buy)" class="row"><input v-model="buy" type="checkbox" /> 不夠的當場補買</label>
+          </div>
+          <p v-if="needBuy && !soldHere.length" class="muted note">這裡沒有賣；可以到{{ kind === 'metal' || kind === 'wood' ? '鐵匠鋪或雜貨店' : kind === 'jewel' ? '珠寶店' : '裁縫店或雜貨店' }}買，或打怪、開寶箱取得。</p>
+        </div>
+        <div class="aux-row">
+          <span class="muted">輔料 <Hint :text="`選填，最多 ${auxRules.max_kinds} 種；不論結果都會用掉。價值越高越可能讓稀有度再高一級（部分成功時照成功做）；名稱與描述決定附魔偏向的屬性。`" /></span>
+          <span v-for="(a, i) in aux" :key="a.name" class="tag">
+            {{ a.name }} ×<input v-model.number="a.qty" type="number" min="1" :max="auxRules.max_qty" class="qty" />
+            <button class="x" @click="aux.splice(i, 1)">×</button>
+          </span>
+          <template v-if="aux.length < auxRules.max_kinds && auxOptions.length">
+            <select v-model="auxPick">
+              <option value="">加入材料…</option>
+              <option v-for="i in auxOptions" :key="i.name" :value="i.name">{{ i.name }}（持有 {{ i.qty }}）</option>
+            </select>
+            <button class="small" :disabled="!auxPick" @click="addAux">＋</button>
+          </template>
+          <span v-else-if="!aux.length" class="muted">行囊裡沒有材料。</span>
+          <span v-if="aux.length" class="muted">
+            {{ Math.round(plan.auxChance * 100) }}% 機率稀有度再高一級<template v-if="plan.elements.length">・附魔偏向 {{ plan.elements.map((e) => damageTypeName(e)).join('、') }}</template>
+          </span>
         </div>
       </template>
-    </div>
+    </CraftCard>
   </div>
   </component>
 </template>
 
 <style scoped>
-.count-row { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
-.warn-text { color: var(--danger); }
 .craft { display: grid; gap: 10px; grid-template-columns: minmax(0, 1fr); }
 .craft p { margin: 0; }
 .intro { display: flex; align-items: center; gap: 4px; }
@@ -385,35 +397,26 @@ function craft() {
 .base.on { outline: 2px solid var(--accent); outline-offset: -1px; }
 .base .muted { font-size: var(--fs-xs); }
 table { width: 100%; border-collapse: collapse; }
-.mats th { text-align: left; font-weight: 600; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--border); }
-.mats td { padding: 4px 6px; border-bottom: 1px dashed color-mix(in srgb, currentColor 15%, transparent); vertical-align: top; }
+.mats th, .need th { text-align: left; font-weight: 600; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--border); }
+.mats td, .need td { padding: 4px 6px; border-bottom: 1px dashed color-mix(in srgb, currentColor 15%, transparent); vertical-align: top; }
+.need th, .need td { padding: 3px 4px; }
+.need .num { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .mats .mrow { cursor: pointer; }
 .mats .mrow:hover td { background: color-mix(in srgb, var(--accent) 10%, transparent); }
 .mats .mrow.on td { background: color-mix(in srgb, var(--accent) 22%, transparent); font-weight: 600; }
 .mats .mrow.locked td { opacity: 0.55; }
 .mats .nm { display: flex; gap: 4px; align-items: center; white-space: nowrap; }
 .mats .nw { white-space: nowrap; }
-.stat { color: var(--good); }
-.note { margin-top: 4px; font-size: var(--fs-xs); }
-.source { display: grid; gap: 4px; }
-.source .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-.short { color: var(--danger); }
-.result { border: 1px solid var(--border); border-radius: 4px; padding: 10px 12px; display: grid; gap: 8px; }
-.result h3 { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; }
-.result h3 .muted { font-weight: 400; font-size: var(--fs-sm); }
-.result input:not([type]) { width: 100%; }
-.outcomes { text-align: center; font-size: var(--fs-xs); }
-.outcomes th { font-weight: 600; color: var(--muted); padding: 4px; border-bottom: 1px solid var(--border); }
-.outcomes td { padding: 4px; vertical-align: top; }
-.kv { display: flex; flex-wrap: wrap; gap: 4px 16px; }
+.stat { color: var(--good); font-weight: 600; }
+.ok { color: var(--good); }
+.note { margin: 0; font-size: var(--fs-xs); }
+.lst { display: grid; gap: 4px; }
+.opts { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; }
+.row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .aux-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .aux-row .qty { width: 46px; }
-.lewd-row { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
 .aux-row .x { padding: 0 4px; }
-.warn { color: var(--danger); }
-.blockers { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.blockers li { display: flex; gap: 4px; align-items: baseline; }
-.go { display: flex; justify-content: flex-end; }
+.lewd-row { display: flex; gap: 6px; align-items: center; }
 @media (max-width: 640px) {
   .step { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .step > .lab { padding-top: 0; }
