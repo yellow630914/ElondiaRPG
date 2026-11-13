@@ -345,6 +345,11 @@ export function changeMaster(state: GameState, master: NpcRecord | null, report?
   delete c.homeAt
   delete c.permit
   delete c.strict
+  // 前一位主人「今天不准」的紀錄（出城、出門）與舊存檔當天的同意也一起清掉
+  delete state.masterRefuse
+  delete state.masterHouseRefuse
+  delete state.masterPass
+  delete state.masterHousePass
   Object.assign(c, { master: master?.id ?? '', masterName: master?.name ?? '', since: { ...state.time } })
   if (master && !state.npcs?.[master.id]) registerNpc(state, master)
   if (master) {

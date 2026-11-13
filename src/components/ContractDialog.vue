@@ -84,7 +84,7 @@ const master = computed(() => {
 /** 親密度在 -100～100 的條上的位置（%） */
 const affPos = (n: number) => `${Math.max(0, Math.min(100, (n + 100) / 2))}%`
 const safe = computed(() => atSafeSpot(s.value))
-// 在聚落裡、主人今天還沒同意出城：可以請求
+// 在聚落裡、主人的出城許可沒有或到期了：可以請求
 const inTown = computed(() => game.area.kind === 'settlement')
 const permitted = computed(() => masterAllows(s.value))
 const refused = computed(() => masterRefusedToday(s.value))
@@ -137,15 +137,15 @@ const permits = computed<Permit[]>(() => {
     : { id: 'leave', icon: 'door', label: '出門', hint: '在主人的家裡時，出門要先請主人同意。', state: 'na', status: '不在家裡' })
   const exitDc = contract.value?.def.exit_dc
   out.push(inTown.value
-    ? { id: 'exit', icon: 'road', label: '出城', hint: `要離開城市（近郊、旅行），要先請主人同意：${attrName(slaveryRules.master_permit.attr)}檢定${exitDc ? `，參考 DC ${exitDc}` : ''}，印記越重越難。同意之後 ${days} 天內可以自由出入任何城市（部分成功只有一半），回城不會重新算；也順帶延長出門的期限。`, state: permitted.value ? 'ok' : refused.value ? 'no' : 'ask', status: permitted.value ? leftText.value : refused.value ? '今天不准' : '要先請求', ...(permitted.value || refused.value ? {} : { act: 'master_permit' as const }) }
+    ? { id: 'exit', icon: 'road', label: '出城', hint: `要離開城市（近郊、旅行），要先請主人同意：${attrName(slaveryRules.master_permit.attr)}檢定${exitDc ? `，參考 DC ${exitDc}` : ''}，印記越重越難。同意之後 ${days} 天內可以自由出入任何城市（部分成功只有一半），回城不會重新算；也順帶延長出門的期限（手上的出門許可比較長時，出城跟著到那一天）。延長或出城被拒的那天，兩個都不能再問。`, state: permitted.value ? 'ok' : refused.value ? 'no' : 'ask', status: permitted.value ? leftText.value : refused.value ? '今天不准' : '要先請求', ...(permitted.value || refused.value ? {} : { act: 'master_permit' as const }) }
     : { id: 'exit', icon: 'road', label: '出城', hint: '在城裡時，離開城市要先請主人同意。現在跟著主人走：談判要在安全的地方，逃離隨時都可以。', state: 'na', status: '不在城裡' })
   const h = home.value
   const w = window_.value
-  const hint = `${h ? `${contract.value?.masterName}的家在${h.where}；` : ''}主人准的出門、出城共用這個期限（允許離家約 ${days} 天）。剩不到 1/4 時可以申請延長（檢定照出城）${h ? '；人在外面逾期，主人隨時會要你回去' : ''}。`
+  const hint = `${h ? `${contract.value?.masterName}的家在${h.where}；` : ''}主人准的出門、出城共用這個期限（允許離家約 ${days} 天）。剩不到 1/4 時可以申請延長（檢定照出城；延長或出城被拒的那天，兩個都不能再問）${h ? '；人在外面逾期，主人隨時會要你回去' : ''}。`
   const ext = extendable.value ? { act: 'master_extend' as const, btn: '延長' } : {}
   if (!w) out.push({ id: 'home', icon: 'hourglass', label: '期限', hint, state: 'na', status: h?.atHome ? '在家裡' : '還沒有許可' })
   else if (w.hoursLeft <= 0) out.push(h && !h.atHome
-    ? { id: 'home', icon: 'hourglass', label: '期限', hint, state: 'no', status: `逾期 ${daysText(-w.hoursLeft)}`, meter: 0, ...ext }
+    ? { id: 'home', icon: 'hourglass', label: '期限', hint, state: 'no', status: `逾期 ${daysText(-w.hoursLeft)}${extendRefused.value ? '・今天不准延長' : ''}`, meter: 0, ...ext }
     : { id: 'home', icon: 'hourglass', label: '期限', hint, state: 'na', status: '已到期', meter: 0 })
   else out.push({ id: 'home', icon: 'hourglass', label: '期限', hint, state: extendable.value || extendRefused.value ? 'no' : 'ok', status: `還剩 ${daysText(w.hoursLeft)}${extendRefused.value ? '・今天不准延長' : ''}`, meter: w.hours ? w.hoursLeft / w.hours : 1, ...ext })
   out.push({ id: 'strict', icon: 'eye', label: '看管', hint: '嚴加看管的點數會讓出門、出城與延長的 DC 提高；犯錯、逃跑被抓回來會增加。', state: strict.value ? 'no' : 'ok', status: strict.value ? `嚴加看管 +${strict.value}` : '寬鬆' })
@@ -202,7 +202,7 @@ function act(kind: 'negotiate' | 'escape' | PermitAct | 'master_return' | 'seek_
       </details>
     </div>
     <template v-if="bound">
-      <h4><GameIcon name="heart" :size="14" /> 主人與今天的許可</h4>
+      <h4><GameIcon name="heart" :size="14" /> 主人與許可</h4>
       <div class="card">
         <div v-if="master" class="master">
           <div class="avatar" aria-hidden="true">{{ master.initial }}</div>
@@ -369,7 +369,7 @@ textarea { width: 100%; margin: 6px 0; }
 .aff .legend { display: flex; justify-content: space-between; align-items: center; margin-top: 3px; }
 .aff .legend > span { display: inline-flex; align-items: center; gap: 4px; }
 .need { color: var(--accent-2); }
-/* 今天的許可：一格一項 */
+/* 主人的許可：一格一項 */
 .permits { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
 .permit { display: grid; justify-items: center; align-content: start; gap: 3px; padding: 7px 4px 6px; border: 1px solid color-mix(in srgb, currentColor 20%, transparent); border-radius: 4px; text-align: center; }
 .permit .lbl { display: inline-flex; align-items: center; gap: 3px; font-weight: 700; font-size: var(--fs-sm); }

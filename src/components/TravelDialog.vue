@@ -10,6 +10,7 @@ import { openFor } from '@/engine/storyFlags'
 import { useGame } from '@/stores/game'
 import { pcTagMult } from '@/engine/pcTags'
 import { pcOf } from '@/engine/party'
+import { homeDeadline } from '@/engine/masterHome'
 import { RANK_COLOR } from './ui/cellIcons'
 
 const emit = defineEmits<{ close: [] }>()
@@ -26,6 +27,20 @@ const groups = computed(() => {
 // 預設打開所在的地區
 const picked = ref(here.value.region)
 const current = computed(() => groups.value.find((g) => g.region.id === picked.value) ?? groups.value[0])
+
+// 奴隸被主人帶著、主人有家時：路程比許可剩下的期限長，標出會逾期（只提醒，不擋）
+const deadline = computed(() => {
+  const d = homeDeadline(s.value)
+  return d && !d.atHome ? d : undefined
+})
+const leftDays = computed(() => (deadline.value ? deadline.value.hoursLeft / 24 : Infinity))
+function overdueMark(days: [number, number]): '' | 'will' | 'may' {
+  // 已經逾期：最上面寫了，各列不再重複標
+  if (!deadline.value || leftDays.value <= 0) return ''
+  if (days[0] > leftDays.value) return 'will'
+  return days[1] > leftDays.value ? 'may' : ''
+}
+const oneDecimal = (n: number) => Math.round(n * 10) / 10
 
 function daysText(days: [number, number]) {
   return days[0] === days[1] ? `${days[0]} 天` : `${days[0]}～${days[1]} 天`
@@ -61,6 +76,9 @@ function go(id: string) {
       </button>
     </nav>
     <p class="small muted">從{{ here.name }}出發。行動備註會帶進旅途的敘事；一格一天，路上的事件出發時就決定好了。</p>
+    <p v-if="deadline" class="small permit" :class="{ over: leftDays <= 0 }">
+      {{ leftDays > 0 ? `主人的許可還剩 ${oneDecimal(leftDays)} 天` : `已經離家超過期限 ${oneDecimal(-leftDays)} 天` }}：路上逾期的話，主人隨時會要你回家。{{ leftDays > 0 ? '標「會逾期」的地方，還沒到就會過期限。' : '' }}
+    </p>
     <table v-if="current" class="dest">
       <thead>
         <tr><th>目的地</th><th>路線</th><th class="num">天數</th><th class="num">船資（每人）</th><th /></tr>
@@ -74,7 +92,7 @@ function go(id: string) {
             </span>
           </td>
           <td class="route">{{ modesText(d.path) }}<span v-if="viaText(d.path)" class="muted">・經{{ viaText(d.path) }}</span></td>
-          <td class="num">{{ daysText(d.path.days) }}</td>
+          <td class="num">{{ daysText(d.path.days) }}<span v-if="overdueMark(d.path.days)" class="late" :class="overdueMark(d.path.days)">{{ overdueMark(d.path.days) === 'will' ? '會逾期' : '可能逾期' }}</span></td>
           <td class="num">{{ fareOf(d.path) > 0 ? formatMoney(fareOf(d.path)) : '—' }}</td>
           <td class="go"><button class="small primary" @click="go(d.id)">前往</button></td>
         </tr>
@@ -96,6 +114,11 @@ function go(id: string) {
 .dest .num { white-space: nowrap; text-align: right; }
 .dest .go { width: 1%; text-align: right; }
 .dest .go button { white-space: nowrap; }
+.permit { padding: 4px 8px; border-left: 3px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.permit.over { border-left-color: var(--danger); background: color-mix(in srgb, var(--danger) 8%, transparent); }
+.late { display: block; font-size: var(--fs-xs); font-weight: 700; line-height: 1.2; }
+.late.will { color: var(--danger); }
+.late.may { color: var(--accent); }
 .tiers { display: inline-flex; gap: 2px; margin-left: 4px; vertical-align: 1px; }
 .tiers i { font-style: normal; font-size: 10px; width: 15px; line-height: 15px; text-align: center; font-weight: 700; color: #111; }
 @media (max-width: 640px) {
