@@ -643,6 +643,8 @@ export interface RoadState {
   hours: number
   /** 累計的花費（抵達時寫進旅行報告） */
   money: number
+  /** 出發時已經付清的船資（不算在 money 裡；舊存檔沒有這個欄位，船資照舊算在 money、抵達時結算） */
+  fare?: number
   /** 官道上盤纏不夠、在路邊露宿的天數（不付食宿） */
   rough?: number
   timeline: TimelineEntry[]

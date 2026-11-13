@@ -186,4 +186,24 @@ describe('旅費不會讓錢變成負的', () => {
     expect(r2.outcome.summary).not.toContain('露宿')
     expect(r2.changes.money_cc).toBeLessThan(0)
   })
+
+  it('船資在出發時付清：船上的事件只能花剩下的錢，到港不會變便宜也不寫露宿', () => {
+    const state = game()
+    state.location = 'tidehaven'
+    enterLocation(state)
+    standOn(state, 'gate')
+    state.guild!.rank = 'F'
+    state.money_cc = 49
+    expect(() => startJourney(state, 'coral_bay')).toThrow('錢不夠')
+    state.money_cc = 90
+    expect(startJourney(state, 'coral_bay')).toBeUndefined()
+    expect(state.money_cc).toBe(40)
+    expect(state.road!.fare).toBe(50)
+    // 船上把剩下的錢花光
+    state.money_cc = 0
+    const r = walk(state)
+    expect(state.money_cc).toBe(0)
+    expect(r.outcome.summary).not.toContain('露宿')
+    expect(r.outcome.summary).toContain('船資')
+  })
 })
