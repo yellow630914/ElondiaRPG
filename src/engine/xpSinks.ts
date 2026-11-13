@@ -44,11 +44,40 @@ export function xpSinkBlocked(c: Character, kind: XpSink, state?: Pick<GameState
   if (kind === 'perk' && c.perkOffers?.some((o) => o.source.startsWith(r.name))) return '先處理上一次鑽研特質的機會'
   if (kind === 'perk' && !perkPool(c).length) return '沒有還能學的特質'
   if (kind === 'attr' && attributeRules.attributes.every((a) => c.attrs[a.id] >= attributeRules.score.max)) return '屬性都到上限了'
+  if (kind === 'attr' && c.attrPoints >= attrRoom(c)) return `手上的 ${c.attrPoints} 點屬性已經夠把屬性加滿了`
   if (kind === 'ability' && c.pendingAbilityChoices?.length) return '先選完還沒選的技能'
   if (kind === 'ability' && !learnable(c).length) return '沒有還能學的技能'
   const cost = xpSinkCost(c, kind, state)
   if (c.xp < cost) return `經驗不夠（要 ${cost}，現在 ${c.xp}）`
   return undefined
+}
+
+/** 屬性還能加幾點：每個屬性離上限還差多少的總和 */
+export function attrRoom(c: Pick<Character, 'attrs'>): number {
+  return attributeRules.attributes.reduce((n, a) => n + Math.max(0, attributeRules.score.max - c.attrs[a.id]), 0)
+}
+
+/**
+ * 加不上去的屬性點（屬性都快滿了，手上的點數比還能加的多）：用經驗換來的退回經驗（照當時的花費，最後換的先退），
+ * 升級給的直接收回。回傳退回的經驗（沒有多的時是 0）。分配完、讀檔時呼叫，免得「待處理」卡著消不掉。
+ */
+export function refundSpareAttrPoints(c: Character, state?: Pick<GameState, 'options'> | null): number {
+  const spare = c.attrPoints - attrRoom(c)
+  if (spare <= 0) return 0
+  settleSinkPending(c)
+  const bought = Math.min(spare, c.xpSinkPending?.attr ?? 0)
+  let xp = 0
+  for (let i = 0; i < bought; i++) {
+    const n = xpSinkCount(c, 'attr')
+    if (n <= 0) break
+    ;(c.xpSinks ??= {}).attr = n - 1
+    xp += xpSinkCost(c, 'attr', state)
+  }
+  c.xp += xp
+  c.attrPoints -= spare
+  if (c.xpSinkPending?.attr) c.xpSinkPending = { ...c.xpSinkPending, attr: c.xpSinkPending.attr - bought }
+  settleSinkPending(c)
+  return xp
 }
 
 /** 用經驗換：扣經驗、記一次，給特質的機會、屬性點或技能三選一。回傳一句說明 */

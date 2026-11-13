@@ -5,7 +5,8 @@ import { enterLocation } from '@/engine/grid'
 import { pcOf } from '@/engine/party'
 import { newGame, withRng } from '@/engine/state'
 import type { GameState } from '@/engine/types'
-import { spendXp, xpSinkBlocked, xpSinkCost } from '@/engine/xpSinks'
+import { attrRoom, refundSpareAttrPoints, spendXp, xpSinkBlocked, xpSinkCost } from '@/engine/xpSinks'
+import { migrate } from '@/engine/state'
 
 const r = progression.xp_sinks
 
@@ -55,6 +56,38 @@ describe('經驗的用途', () => {
     expect(xpSinkBlocked(pc, 'attr')).toBeUndefined()
     for (const a of attributeRules.attributes) pc.attrs[a.id] = attributeRules.score.max
     expect(xpSinkBlocked(pc, 'attr')).toContain('上限')
+  })
+
+  it('手上的屬性點夠把屬性加滿時不能再苦練；多出來的退回經驗', () => {
+    const state = game()
+    const pc = pcOf(state)
+    for (const a of attributeRules.attributes) pc.attrs[a.id] = attributeRules.score.max
+    pc.attrs.str = attributeRules.score.max - 2
+    expect(attrRoom(pc)).toBe(2)
+    spend(state, 'attr')
+    spend(state, 'attr')
+    expect(xpSinkBlocked(pc, 'attr')).toContain('加滿')
+    // 舊版沒擋：多換了 3 點，屬性只剩 2 點可以加
+    const xp = pc.xp
+    pc.attrPoints += 3
+    pc.xpSinkPending = { attr: 5 }
+    pc.xpSinks = { attr: 5 }
+    const back = refundSpareAttrPoints(pc)
+    expect(pc.attrPoints).toBe(2)
+    expect(pc.xpSinks.attr).toBe(2)
+    expect(back).toBe(r.attr.base * (r.attr.mult ** 2 + r.attr.mult ** 3 + r.attr.mult ** 4))
+    expect(pc.xp).toBe(xp + back)
+  })
+
+  it('讀檔時把加不上去的屬性點收回，升級給的不退經驗', () => {
+    const state = game()
+    const pc = pcOf(state)
+    for (const a of attributeRules.attributes) pc.attrs[a.id] = attributeRules.score.max
+    pc.attrPoints = 4
+    const xp = pc.xp
+    migrate(state)
+    expect(pc.attrPoints).toBe(0)
+    expect(pc.xp).toBe(xp)
   })
 
   it('鑽研特質給一次機會（三選一），處理完才能再換；鑽研技能給一組三選一', () => {

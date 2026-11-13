@@ -1,5 +1,6 @@
 // 遊戲狀態、時間與報告提交。
 
+import { refundSpareAttrPoints } from './xpSinks'
 import { fitCreationPerks, sanitizePerk } from './perks'
 import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './character'
 import { pruneSpecialMaps } from './specialMaps'
@@ -509,6 +510,8 @@ export function migrate(state: GameState): GameState {
   refreshParasiteMarks(state.party)
   // 這個世界沒有的自建地下城：人在裡面時送回聚落（格子位置清掉，load 會重新進入地點）
   pruneLocations(state)
+  // 屬性都加滿了還剩的屬性點（舊版可以一直苦練屬性）：用經驗換來的退回經驗，其餘收回，免得「待處理」消不掉
+  for (const c of state.party) refundSpareAttrPoints(c, state)
   return state
 }
 

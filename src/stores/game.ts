@@ -40,7 +40,7 @@ import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type CraftId, type LewdKey, type ShopType } from '@/engine/data'
 import { templePurify } from '@/engine/purify'
-import { spendXp, type XpSink } from '@/engine/xpSinks'
+import { refundSpareAttrPoints, spendXp, type XpSink } from '@/engine/xpSinks'
 import { takeVoluntarySlave } from '@/engine/voluntarySlave'
 import { pledgeSelf } from '@/engine/selfPledge'
 import { syncGear } from '@/engine/gear'
@@ -1573,7 +1573,13 @@ export const useGame = defineStore('game', () => {
     spendXp: (member: string, kind: XpSink) =>
       run((s) => withRng(s, (rng) => spendXp(s.party.find((m) => m.id === member)!, kind, rng, s))),
     spendAttr: (member: string, attr: AttrId) =>
-      run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
+      run((s) => {
+        const c = s.party.find((m) => m.id === member)!
+        spendAttrPoint(c, attr)
+        // 屬性都加滿了還剩點數：用經驗換來的退回經驗，其餘收回
+        const back = refundSpareAttrPoints(c, s)
+        if (back) flash(`${c.name}的屬性都加滿了，多的屬性點退回 ${back} 經驗`)
+      }),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),
     // 特殊任務：接下、進行沒有檢定的任務點（劇情、選項、戰鬥）、放棄；有檢定的走 perform({ kind: 'story' })
     startStory: (id: string) => run((s) => story.startStory(s, id)),
