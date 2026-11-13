@@ -1,8 +1,9 @@
 // 雙面效應的設定（docs/LEWD_STATS.md 第 7 節；內容頁籤「🗡️ 裝備底材」的「⚙️ 雙面效應設定」）：
-// lewd.json 的 two_face（各種拘束的檢定減值、受影響的檢定、戰鬥增益、免疫的狀態，忍耐與流派的倍率）與 locks.grades（鎖的倍率）。
+// lewd.json 的 two_face（各種拘束的檢定減值、受影響的檢定、戰鬥增益、免疫的狀態，忍耐與流派的倍率）、locks.grades（鎖的倍率）
+// 與 locks.key_custody（鑰匙交給別人或丟掉時，全身上限提高的點數、主人歸還鑰匙要的親密度）。
 // 存在世界的自訂內容（bindRules.rules 一筆），跟著世界匯出匯入；恢復預設時還原成內建的。
 
-import { ATTR_IDS, attrName, BIND_KINDS, lewdRules, LOCK_GRADES, skillName, statuses, type AttrId, type BindKind, type CheckContext, type CheckFilter, type LockGrade, type Mods } from './data'
+import { ATTR_IDS, attrName, BIND_KINDS, lewdRules, LOCK_GRADES, skillName, statuses, type AttrId, type BindKind, type CheckContext, type CheckFilter, type KeyCustodyCaps, type LockGrade, type Mods } from './data'
 
 /** 戰鬥增益可以寫的項目（initiative 是先攻，其他是戰鬥修正） */
 export const BIND_COMBAT_KEYS = ['initiative', 'hit', 'evade', 'save', 'damage', 'dr', 'ap_regen'] as const
@@ -28,7 +29,19 @@ export interface BindRulesMod {
   servitude_master: number
   kinds: Record<BindKind, BindKindRule>
   locks: Record<LockGrade, { name: string; mult: number }>
+  /** 鑰匙保管：提高的是全身上限（存檔規則 bindCapStat、bindCapInit、bindCapAp），不是倍率 */
+  key_custody: KeyCustodyRules
 }
+
+/** 鑰匙保管的四種（servitude_master 是隸從派、鑰匙在自己的主人手上時額外加的） */
+export const KEY_CUSTODY_KINDS = ['companion', 'master', 'servitude_master', 'discarded'] as const
+export type KeyCustodyKind = (typeof KEY_CUSTODY_KINDS)[number]
+export const KEY_CUSTODY_KIND_NAME: Record<KeyCustodyKind, string> = { companion: '交給同伴', master: '交給主人', servitude_master: '隸從派交給自己的主人（額外）', discarded: '丟掉鑰匙' }
+/** 上限加成的三項與範圍（行動點很強，範圍比較小） */
+export const KEY_CUSTODY_CAPS = ['stat', 'init', 'ap'] as const
+export const KEY_CUSTODY_CAP_NAME: Record<keyof KeyCustodyCaps, string> = { stat: '命中等五項的上限加成', init: '先攻上限加成', ap: '行動點上限加成' }
+export const KEY_CUSTODY_CAP_MAX: Record<keyof KeyCustodyCaps, number> = { stat: 10, init: 10, ap: 3 }
+export type KeyCustodyRules = Record<KeyCustodyKind, KeyCustodyCaps> & { master_affinity: number }
 
 const clone = <T>(v: T): T => JSON.parse(JSON.stringify(v)) as T
 const num = (v: unknown, lo: number, hi: number, d: number, digits = 2) => {
@@ -41,7 +54,13 @@ const str = (v: unknown, n: number, d: string) => (typeof v === 'string' && v.tr
 
 export function currentBindRules(): BindRulesMod {
   const t = lewdRules.two_face
-  return clone({ endurance_per: t.endurance_per, fit: t.fit, servitude_master: t.servitude_master, kinds: t.kinds, locks: lewdRules.locks.grades })
+  const k = lewdRules.locks.key_custody
+  // 只拿數字，不帶 $comment
+  const key_custody = {
+    ...Object.fromEntries(KEY_CUSTODY_KINDS.map((c) => [c, { stat: k[c]?.stat ?? 0, init: k[c]?.init ?? 0, ap: k[c]?.ap ?? 0 }])),
+    master_affinity: k.master_affinity,
+  } as KeyCustodyRules
+  return clone({ endurance_per: t.endurance_per, fit: t.fit, servitude_master: t.servitude_master, kinds: t.kinds, locks: lewdRules.locks.grades, key_custody })
 }
 
 /** 內建的設定（模組載入時的快照） */
@@ -85,12 +104,22 @@ export function sanitizeBindRules(raw: Partial<BindRulesMod>, base: BindRulesMod
     const r = raw.locks?.[g]
     locks[g] = { name: str(r?.name, 12, b.name), mult: num(r?.mult, 0, 5, b.mult) }
   }
+  // 鑰匙保管：缺的欄位用 base 的（舊世界的自訂內容沒有這一段）
+  const kb = base.key_custody
+  const kr = (raw.key_custody ?? {}) as Partial<KeyCustodyRules>
+  const key_custody = { master_affinity: Math.round(num(kr.master_affinity, -100, 100, kb?.master_affinity ?? 20)) } as KeyCustodyRules
+  for (const c of KEY_CUSTODY_KINDS) {
+    const b = kb?.[c] ?? { stat: 0, init: 0, ap: 0 }
+    const r = (kr[c] ?? {}) as Partial<KeyCustodyCaps>
+    key_custody[c] = Object.fromEntries(KEY_CUSTODY_CAPS.map((x) => [x, Math.round(num(r[x], 0, KEY_CUSTODY_CAP_MAX[x], b[x] ?? 0))])) as unknown as KeyCustodyCaps
+  }
   return {
     endurance_per: Math.round(num(raw.endurance_per, 1, 100, base.endurance_per)),
     fit: num(raw.fit, 0, 5, base.fit),
     servitude_master: num(raw.servitude_master, 0, 5, base.servitude_master),
     kinds,
     locks,
+    key_custody,
   }
 }
 
@@ -101,6 +130,7 @@ export function applyBindRules(r: BindRulesMod) {
   t.servitude_master = r.servitude_master
   t.kinds = clone(r.kinds)
   lewdRules.locks.grades = clone(r.locks)
+  if (r.key_custody) lewdRules.locks.key_custody = clone(r.key_custody)
 }
 
 export function restoreBindRules() {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { ATTR_IDS, attrName, BIND_KINDS, LOCK_GRADES, statuses, type AttrId, type BindKind, type CheckContext, type CheckFilter } from '@/engine/data'
-import { BIND_COMBAT_KEYS, BIND_COMBAT_NAME, BIND_CONTEXT_NAME, BIND_CONTEXTS, currentBindRules, type BindCombatKey, type BindRulesMod } from '@/engine/bindRulesMods'
+import { BIND_COMBAT_KEYS, BIND_COMBAT_NAME, BIND_CONTEXT_NAME, BIND_CONTEXTS, currentBindRules, KEY_CUSTODY_CAP_MAX, KEY_CUSTODY_CAP_NAME, KEY_CUSTODY_CAPS, KEY_CUSTODY_KIND_NAME, KEY_CUSTODY_KINDS, type BindCombatKey, type BindRulesMod } from '@/engine/bindRulesMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
 import Hint from '../ui/Hint.vue'
@@ -9,7 +9,7 @@ import EditorHeader from './EditorHeader.vue'
 import FoldSet from './FoldSet.vue'
 import HelpText from './HelpText.vue'
 
-// 雙面效應設定（docs/LEWD_STATS.md 第 7 節）：各種拘束的平常減值、受影響的檢定、戰鬥增益、免疫的狀態；忍耐、流派與鎖的倍率
+// 雙面效應設定（docs/LEWD_STATS.md 第 7 節）：各種拘束的平常減值、受影響的檢定、戰鬥增益、免疫的狀態；忍耐、流派與鎖的倍率；鑰匙保管提高的上限
 const content = useContent()
 const game = useGame()
 
@@ -95,6 +95,22 @@ const filterText = (f: CheckFilter) => {
           <span>{{ g }}</span>
           <span class="pair"><input v-model="draft.locks[g].name" maxlength="12" /> × <input v-model.number="draft.locks[g].mult" type="number" min="0" max="5" step="0.05" /></span>
         </label>
+      </div>
+    </FoldSet>
+    <FoldSet>
+      <template #legend>鑰匙保管 <Hint text="自己鎖上的拘束具，鑰匙交給別人或丟掉時的獎勵：提高的是這個人全身加總的上限（存檔規則的 bindCapStat、bindCapInit、bindCapAp），不是倍率；每個人只算最好的一件。存檔規則把某一項的上限設成 0 時，那一項照樣沒有增益。行動點很強，最好維持 0 或 1。" /></template>
+      <table class="small bind-table">
+        <thead><tr><th>鑰匙在哪</th><th v-for="x in KEY_CUSTODY_CAPS" :key="x">{{ KEY_CUSTODY_CAP_NAME[x] }}</th></tr></thead>
+        <tbody>
+          <tr v-for="c in KEY_CUSTODY_KINDS" :key="c">
+            <td>{{ KEY_CUSTODY_KIND_NAME[c] }}</td>
+            <td v-for="x in KEY_CUSTODY_CAPS" :key="x"><input v-model.number="draft.key_custody[c][x]" type="number" class="num" min="0" :max="KEY_CUSTODY_CAP_MAX[x]" /></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="small muted">提高的是全身上限，不是倍率；行動點很強，建議維持 0 或 1。</div>
+      <div class="grid">
+        <label><span>主人歸還鑰匙要的親密度 <Hint text="鑰匙在主人手上時，主人的親密度要到這個數才肯還（-100～100）。" /></span><input v-model.number="draft.key_custody.master_affinity" type="number" min="-100" max="100" class="num" /></label>
       </div>
     </FoldSet>
     <FoldSet v-for="k in BIND_KINDS" :key="k">
