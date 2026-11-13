@@ -589,7 +589,7 @@ export const useGame = defineStore('game', () => {
       clearTimeout(idle)
       // 等 AI 的時候讀了別的檔、或回退掉這則日誌：不要寫進去
       if (state.value !== s || !s.reports.some((r) => r.report_id === report.report_id) || sexRecord.sexLogged(s, report.report_id)) return
-      const updated = sexRecord.applySexUpdates(s, raw.records, { report, candidates: built.candidates, narrative: text })
+      const updated = sexRecord.applySexUpdates(s, raw.records, { report, candidates: built.candidates })
       sexRecord.markSexLogged(s, report.report_id)
       save()
       if (updated.length) flash(`📒 記下性經歷：${updated.map((id) => social.nameOf(s, id)).join('、')}`)

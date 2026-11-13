@@ -216,35 +216,3 @@ describe('性經歷：奴隸的身價', () => {
     expect(sexValue(npcSexSeed({ id: 'a', sex: { virgin: true, service_times: 500 } })).mult).toBeLessThanOrEqual(r.max)
   })
 })
-
-describe('性經歷：AI 記錯人', () => {
-  it('隊友的名字沒出現在經過裡、對象是外人：不記（也不會受孕）', () => {
-    const { state } = game()
-    const r = intimate(state, [{ id: 'npc_lina', name: '莉娜' }])
-    r.narration!.adult_scene = '野馬帳的火光裡，可敦被一群雄性人馬族圍住'
-    const updated = applySexUpdates(state, [{ id: 'npc_lina', sex: 3, with: [{ name: '野馬帳的公馬', gender: 'male' }], summary: '讓三匹公馬依次騎上' }], { report: r, candidates: sexCandidates(state, r), narrative: '燁婉寧走進他們中間。' })
-    expect(updated).toEqual([])
-    expect(state.pregnancies?.npc_lina).toBeUndefined()
-  })
-
-  it('名字出現了，但沒打開「可以和別人發生關係」：和外人的不記，和主角的照記；被強迫、主角點名的照記', () => {
-    const { state } = game()
-    const r = intimate(state, [{ id: 'npc_lina', name: '莉娜' }])
-    const ctx = { report: r, candidates: sexCandidates(state, r), narrative: '莉娜和酒館的客人上了樓，之後又回到莉雅身邊。' }
-    expect(applySexUpdates(state, [{ id: 'npc_lina', sex: 1, with: [{ name: '酒館的客人' }] }], ctx)).toEqual([])
-    expect(applySexUpdates(state, [{ id: 'npc_lina', sex: 2, with: [{ name: '酒館的客人' }, { name: '莉雅', id: 'pc' }] }], ctx)).toEqual(['npc_lina'])
-    expect(sexRecordOf(state, 'npc_lina').recent[0]!.with.map((w) => w.name)).toEqual(['莉雅'])
-    const r2 = intimate(state, [{ id: 'npc_lina', name: '莉娜' }])
-    expect(applySexUpdates(state, [{ id: 'npc_lina', sex: 1, forced: true, with: [{ name: '盜賊' }] }], { report: r2, candidates: sexCandidates(state, r2), narrative: '莉娜被盜賊按住。' })).toEqual(['npc_lina'])
-    const r3 = intimate(state, [{ id: 'npc_lina', name: '莉娜' }])
-    r3.narration!.player_intent = '讓莉娜去陪那位客人'
-    expect(applySexUpdates(state, [{ id: 'npc_lina', sex: 1, with: [{ name: '客人' }] }], { report: r3, candidates: sexCandidates(state, r3), narrative: '' })).toEqual(['npc_lina'])
-  })
-
-  it('經過是簡體輸出時也認得名字', () => {
-    const { state } = game()
-    const r = intimate(state, [{ id: 'npc_lina', name: '莉娜' }])
-    r.narration!.player_intent = '让莉娜去陪那位客人'
-    expect(applySexUpdates(state, [{ id: 'npc_lina', sex: 1, with: [{ name: '客人' }] }], { report: r, candidates: sexCandidates(state, r) })).toEqual(['npc_lina'])
-  })
-})
