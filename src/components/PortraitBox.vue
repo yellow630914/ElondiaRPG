@@ -75,9 +75,11 @@ async function onFile(e: Event) {
     game.error = err instanceof Error ? err.message : String(err)
   }
 }
+// 刪掉這一版，換成前一版（沒有前一版時換後一版）；只剩這一版時沒有形象圖（固定 NPC 換回內建形象圖）
 function remove() {
-  const back = builtinPortrait(props.id) ? '，會換回內建形象圖' : ''
-  if (confirm(`刪除這張形象圖？（生成過的其他版還留在「進階」裡${back}）`)) void portraits.remove(key.value)
+  const others = versions.value.length - (index.value >= 0 ? 1 : 0)
+  const after = others > 0 ? `會換成${index.value > 0 ? '前一版' : '下一版'}（還剩 ${others} 版）` : builtinPortrait(props.id) ? '這是最後一版，會換回內建形象圖' : '這是最後一版，刪掉之後就沒有形象圖了'
+  if (confirm(`刪除這一版形象圖？${after}。`)) void portraits.removeCurrent(key.value).catch((e) => (game.error = String(e instanceof Error ? e.message : e)))
 }
 const STAGE = { tags: '預處理提示詞中…', image: '生成圖片中…', error: '' }
 const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
@@ -109,7 +111,7 @@ const name = computed(() => portraitSubject(s.value, props.id)?.name ?? '')
             <GameIcon name="wand" :size="13" /> 微調
           </button>
           <button class="small" title="上傳自己的圖片" @click="fileInput?.click()"><GameIcon name="upload" :size="13" /> 上傳</button>
-          <button v-if="record" class="small" title="刪除形象圖" aria-label="刪除形象圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
+          <button v-if="record" class="small" title="刪除這一版形象圖（換成前一版）" aria-label="刪除這一版形象圖" @click="remove"><GameIcon name="trash" :size="13" /></button>
           <button v-if="large && canDescribe" class="small ghost" title="進階：自己改描述或提示詞重送、調以圖生圖的強度、塗遮罩局部重繪" @click="studio = true">
             <GameIcon name="sliders" :size="13" /> 進階
           </button>

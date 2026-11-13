@@ -311,6 +311,25 @@ export const usePortraits = defineStore('portraits', () => {
     await loadVersions(key)
   }
 
+  /**
+   * 刪掉目前的形象圖那一版，換成相鄰的一版（先找前一版，沒有時找後一版）；只剩這一版時就沒有形象圖了。
+   * 回傳換上的那一版（沒有時 undefined）
+   */
+  async function removeCurrent(key: string): Promise<PortraitVersion | undefined> {
+    const list = await loadVersions(key)
+    const time = records.value[key]?.time
+    const i = list.findIndex((v) => v.time === time)
+    const next = i < 0 ? list.at(-1) : list[i - 1] ?? list[i + 1]
+    if (next) await useVersion(key, next.vkey)
+    else await remove(key)
+    if (i >= 0) {
+      await idbDelete(list[i]!.vkey)
+      dropUrl(list[i]!.vkey)
+    }
+    await loadVersions(key)
+    return next
+  }
+
   /** 一版的圖片 */
   async function versionBlob(vkey: string): Promise<Blob> {
     const rec = await idbGet<PortraitRecord>(vkey)
@@ -588,7 +607,7 @@ export const usePortraits = defineStore('portraits', () => {
   return {
     urls, records, jobs, versions, versionUrls, descs, imported,
     load, upload, remove, describe, baseDescription, setDescription, generate, autoPortraits, retire, tweak, preprocessOnly, studioGenerate,
-    loadVersions, useVersion, removeVersion, versionBlob, preprocess, render, withJob,
+    loadVersions, useVersion, removeVersion, removeCurrent, versionBlob, preprocess, render, withJob,
     cancel, clearError, countFor, exportFor, importFor, pruneExcept,
   }
 })

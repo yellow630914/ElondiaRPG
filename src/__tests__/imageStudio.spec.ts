@@ -231,6 +231,36 @@ describe('portrait versions', () => {
     expect(await portraits.countFor(state.seed)).toBe(1)
   })
 
+  it('刪掉目前的形象圖：那一版刪掉，換成前一版；只剩一版時就沒有形象圖', async () => {
+    openai()
+    const state = game()
+    const id = state.party[0]!.id
+    const key = portraitKey(state, id)
+    const portraits = usePortraits()
+    for (let i = 0; i < 3; i++) {
+      await new Promise((r) => setTimeout(r, 2))
+      await portraits.generate(state, id)
+    }
+    let list = await portraits.loadVersions(key)
+    expect(list).toHaveLength(3)
+    // 目前是第 3 版：刪掉後換成第 2 版
+    const [v1, v2, v3] = list
+    expect(portraits.records[key]!.time).toBe(v3!.time)
+    await portraits.removeCurrent(key)
+    list = portraits.versions[key]!
+    expect(list.map((v) => v.time)).toEqual([v1!.time, v2!.time])
+    expect(portraits.records[key]!.time).toBe(v2!.time)
+    // 目前是第 1 版：沒有前一版，換成後一版
+    await portraits.useVersion(key, v1!.vkey)
+    await portraits.removeCurrent(key)
+    expect(portraits.versions[key]!.map((v) => v.time)).toEqual([v2!.time])
+    expect(portraits.records[key]!.time).toBe(v2!.time)
+    // 最後一版：刪掉之後沒有形象圖
+    await portraits.removeCurrent(key)
+    expect(portraits.versions[key]).toEqual([])
+    expect(portraits.records[key]).toBeUndefined()
+  })
+
   it('keeps two versions made in the same millisecond (B14)', async () => {
     openai()
     const state = game()
