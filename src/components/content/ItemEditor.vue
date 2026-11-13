@@ -109,6 +109,14 @@ const materials = computed(() => {
 
 // ---- 欄位 ----
 const use = computed(() => (draft.value.use ??= {}) as ItemUse)
+// 冥想道具：慾望指標的增減（docs/LEWD_STATS.md 第 4.1 節）
+const LEWD_USE_KEYS = [...LEWD_STATS, 'exposure'] as const
+function setUseLewd(k: (typeof LEWD_USE_KEYS)[number], v: number) {
+  const l = { ...(use.value.lewd ?? {}) }
+  if (v) l[k] = Math.max(-20, Math.min(20, Math.round(v)))
+  else delete l[k]
+  use.value.lewd = Object.keys(l).length ? l : undefined
+}
 // 內容標籤（商店照內容篩選上架）
 function toggleContentTag(t: string, on: boolean) {
   const set = new Set(draft.value.content_tags ?? [])
@@ -523,6 +531,10 @@ function setFuel(v: string) {
       <div class="row small">
         <label title="內容篩選打開「泌乳」、身體會泌乳的人才能用；給自由的夥伴要先說服">泌乳幾天 <input v-model.number="use.lactation" type="number" min="0" max="60" class="num" /></label>
         <label class="check"><input type="checkbox" :checked="!!use.stop_lactation" @change="use.stop_lactation = ($event.target as HTMLInputElement).checked || undefined" /> 斷乳（拿掉道具與事件造成的泌乳）</label>
+      </div>
+      <div class="row small">
+        <span>冥想 <Hint text="用了花一個小時，慾望指標增減幾點（負數是降低；曝露名聲是用的地方那一帶的）。神殿的清心香、淨念香、自持經、隱名符就是這種。每項 −20～+20。" /></span>
+        <label v-for="k in LEWD_USE_KEYS" :key="k">{{ lewdName(k) }} <input type="number" min="-20" max="20" class="num" :value="use.lewd?.[k] ?? 0" @change="setUseLewd(k, Number(($event.target as HTMLInputElement).value))" /></label>
       </div>
       <label class="check small"><input v-model="use.combat_only" type="checkbox" /> 只能在戰鬥中使用 <Hint text="回復生命、法術環以外的效果一律只能在戰鬥中用。" /></label>
     </FoldSet>

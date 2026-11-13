@@ -194,7 +194,9 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   if (input.kind === 'free' && !text) throw new Error('請描述你要做什麼')
   // 同行的對象只有自由行動有
   const others = input.kind === 'free' ? (input.with ?? []).filter(Boolean) : []
-  input = { ...input, ...(others.length ? { with: others } : {}) }
+  // 回應主人：對象一定是主人（判定看得到主人的身分與性格，主人的標籤也算進情境修正，和三選一的回應一樣）
+  const master = input.kind === 'master_event' ? contractOf(pcOf(state))?.master : undefined
+  input = { ...input, ...(others.length ? { with: others } : {}), ...(master ? { target: master } : {}) }
   if (!others.length) delete input.with
   const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item, others)
   // 擲檢定的人：通常是主角；夥伴動手製作時是那位夥伴

@@ -19,6 +19,7 @@ import { pcTagMult } from './pcTags'
 import { spawnVisitors } from './population'
 import type { Rng } from './rng'
 import { assertMasterAllows, maybeMasterEvent } from './slavery'
+import { maybeSlaveEvent, slaveTravelChance } from './slaveEvents'
 import { addHours, advanceTime, commitReport, newReportId, withRng } from './state'
 import { applyTimeJump, type DayPart } from './timeOfDay'
 import { abandonStory, canStart, ensureStoryMarkers, sideNodesOpen, startStory } from './story'
@@ -289,6 +290,16 @@ function buildRoad(state: GameState, from: string, to: string, legs: { from: str
       cells[i] = { kind: 'event', road: cells[i]!.road!, event: { tier: 'master' } }
     }
   }
+  // 帶著自己的奴隸：奴隸主動來找你
+  // 沒有奴隸時不擲（不動到亂數的順序）
+  const slaveChance = slaveTravelChance(state)
+  if (slaveChance > 0 && dayCells.length && rng.chance(slaveChance)) {
+    const free = dayCells.filter((i) => !cells[i]!.event)
+    if (free.length) {
+      const i = rng.pick(free)
+      cells[i] = { kind: 'event', road: cells[i]!.road!, event: { tier: 'slave' } }
+    }
+  }
   return {
     key: ROAD_KEY, location: from, name: `前往${locationById(to).name}的旅途`, kind: 'road',
     width: cells.length, height: 1, cells, revealed: [],
@@ -398,6 +409,11 @@ function triggerEvent(state: GameState, road: RoadState, area: Area, x: number, 
   if (ev.tier === 'master') {
     cell.done = true
     maybeMasterEvent(state, 1)
+    return {}
+  }
+  if (ev.tier === 'slave') {
+    cell.done = true
+    maybeSlaveEvent(state, 1)
     return {}
   }
   if (ev.tier === 'special') {

@@ -1,6 +1,6 @@
 import type { ActionPending } from './actions'
 import type { CombatState } from './combat'
-import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, CraftId, DealCost, Degree, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
+import type { CheckFilter, AffinityMap, AttrId, Attrs, Bond, BondStyle, CraftId, DealCost, Degree, DungeonLayerId, HomeDistrict, ItemDef, LockGrade, MasterEventPool, Mods, NpcDef, PerkDef } from './data'
 import type { RewardEffect } from './effects'
 import type { Area, Position } from './grid'
 import type { BestiaryEntry } from './bestiary'
@@ -283,6 +283,10 @@ export type LewdStat = 'lewdness' | 'sensitivity' | 'endurance' | 'submission'
 export interface LewdStats extends Record<LewdStat, number> {
   /** 最近一次親密場景是第幾天（淫亂太久沒有親密場景會慢慢降） */
   lastScene?: number
+  /** 最近一次在戰鬥中高潮是第幾天（敏感太久沒有親密場景、也沒高潮會慢慢降） */
+  lastClimax?: number
+  /** 最近一次在神殿淨身是第幾天（每人每天一次） */
+  purified?: number
   /** 成長減慢時（流派特質）還沒滿一點的零頭 */
   carry?: Partial<Record<LewdStat, number>>
 }
@@ -449,6 +453,8 @@ export interface ContractRef {
   permit?: { due: GameTime; hours: number; exit?: boolean; refused?: number }
   /** 嚴加看管：逃亡被找到、逾期被帶回家時加重，讓出門與出城更難；since 起每隔幾天減一點 */
   strict?: { points: number; since: GameTime }
+  /** 主僕關係（bondStyle.ts）：親密度夠高時兩人選的相處方式；沒有時是名實相符。換主人時清掉 */
+  style?: Exclude<BondStyle, 'strict'>
 }
 
 export type TattooPlace = 'neck' | 'left_arm' | 'right_arm' | 'chest' | 'back' | 'belly' | 'hips' | 'left_thigh' | 'right_thigh' | 'left_calf' | 'right_calf'
@@ -909,6 +915,8 @@ export interface GameOptions {
   blackMarketGear?: number
   /** 主人的突發事件、寄生物的發作、地下城事件的機率倍率 */
   masterEventMult?: number
+  /** 奴隸主動找主角的機率倍率（slaveEvents.ts） */
+  slaveEventMult?: number
   parasiteMult?: number
   /** 受孕機率的倍率（0 = 不會受孕；docs/FAMILY.md） */
   conceptionMult?: number
@@ -931,6 +939,7 @@ export interface GameOptions {
   exposureDecay?: number
   submissionDecay?: number
   lewdnessDecay?: number
+  sensitivityDecay?: number
   lustMult?: number
   /** 拘束具雙面效應的全身上限（docs/LEWD_STATS.md 第 7 節）：命中、迴避、豁免、傷害、減傷各一項；行動點回復；先攻 */
   bindCapStat?: number
@@ -1162,6 +1171,8 @@ export interface GameState {
   lastMasterEvent?: number
   /** 主角最近一次主動找主人的日子（每天一次；slavery.ts 的 askMaster） */
   masterAskDay?: number
+  /** 上一次奴隸主動找主角的時間（小時數；slaveEvents.ts） */
+  lastSlaveEvent?: number
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
   standoff?: Standoff
   /** 打贏冒險者後被制伏、等主角處置的人（見 engine/captives.ts） */

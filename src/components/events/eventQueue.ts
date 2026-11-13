@@ -59,9 +59,9 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     if (state.pendingMasterEvent) {
       const pm = state.pendingMasterEvent
       const actor = state.party.find((m) => m.id === pm.actor)?.name
-      const title = pm.pool === 'owner' ? `調教${actor ?? ''}` : pm.pool === 'brothel_work' ? `${actor ?? ''}在娼館接客` : pm.pool === 'brothel_train' ? `${actor ?? ''}在娼館受訓`
+      const title = pm.pool === 'owner' ? `調教${actor ?? ''}` : pm.pool === 'slave' ? `${actor ?? '奴隸'}來找你` : pm.pool === 'brothel_work' ? `${actor ?? ''}在娼館接客` : pm.pool === 'brothel_train' ? `${actor ?? ''}在娼館受訓`
         : `${contractOf(state.party.find((m) => m.isPlayer))?.masterName || '主人'}的要求`
-      out.push({ id: `master:${hash(pm)}`, kind: 'master', icon: pm.pool?.startsWith('brothel') ? '🌹' : '⛓️', title, blocking: true })
+      out.push({ id: `master:${hash(pm)}`, kind: 'master', icon: pm.pool?.startsWith('brothel') ? '🌹' : pm.pool === 'slave' ? '💞' : '⛓️', title, blocking: true })
     }
     if (state.dungeonEvent) out.push({ id: `dungeon:${state.dungeonEvent.template}:${state.dungeonEvents?.last ?? 0}`, kind: 'dungeon', icon: '⚠️', title: pendingDungeonEvent(state)?.title ?? '眼前的處境', blocking: true })
     if (state.leadEvent) out.push({ id: `lead:${state.leadEvent.lead}`, kind: 'lead', icon: '🔎', title: pendingLeadEvent(state)?.title ?? '線索', blocking: true })

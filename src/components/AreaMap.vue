@@ -23,7 +23,7 @@ const linkTo = computed(() => (game.state!.combat ? null : linkTargetName(game.s
 
 const ICON = CELL_ICON
 
-const EVENT_ICON = { special: '⭐', master: '⛓️', advanced: '✨' }
+const EVENT_ICON = { special: '⭐', master: '⛓️', slave: '💞', advanced: '✨' }
 
 function icon(cell: Cell): string {
   // 房子：家具、樓梯、門；城裡買下的房子

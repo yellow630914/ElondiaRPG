@@ -24,12 +24,13 @@ import {
   addAffinity, changeMaster, enslavePlayer, freePlayer, isBound, isEnslaved, isFugitive, pcOf, punish, recapturePlayer, setHp,
 } from './party'
 import { areaOf, isHostile, nearbyPeople, presentHere } from './population'
-import { addStrict, allowedDays, atMasterHome, extendDeadline, extendRefusedToday, grantPermit, mayExtend, overdueChance, permitWindow, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
+import { addStrict, allowedDays, atMasterHome, extendDeadline, extendRefusedToday, grantPermit, mayExtend, overdueChance, permitRefusedToday, permitWindow, sendToMasterHome, strictPoints, syncMasterHome } from './masterHome'
 import { ensureRelationship } from './social'
 import { roll, withBonus, type Rng } from './rng'
 import { addHours, commitReport, newGame, newReportId, withRng } from './state'
 import { growLewd, addLewd, lewdPowerOf } from './lewd'
 import { blackMarketHere } from './underworld'
+import { bondFocus, bondName, bondWeight, pcBond } from './bondStyle'
 import type { Character, ContractRef, GameState, GameTime, MarkTerms, NpcRecord, PendingMasterEvent, Report, Tattoo, TattooPlace } from './types'
 import type { Degree, NpcKind } from './data'
 import { gameRule } from './gameRules'
@@ -275,8 +276,9 @@ export function masterAllows(state: GameState): boolean {
   return (!!w?.exit && w.hoursLeft > 0) || state.masterPass?.[state.location] === state.time.day
 }
 
+/** 主人今天不准出城：出城或延長被拒都算（同一天任一個被拒，另一個也不能問） */
 export function masterRefusedToday(state: GameState): boolean {
-  return state.masterRefuse?.[state.location] === state.time.day
+  return permitRefusedToday(state)
 }
 
 /** 出城前檢查：需要主人同意時丟出說明 */
@@ -286,6 +288,12 @@ export function assertMasterAllows(state: GameState) {
   if (masterRefusedToday(state)) throw new Error(`${name}今天不准你離開這座城。`)
   throw new Error(`身為奴隸，出城前要先請求${name}同意（工具列的「契約」→「請求主人同意出城」）。`)
 }
+
+/** 目前許可還剩幾天（沒有或已到期是 0） */
+function currentLeft(state: GameState): number {
+  return Math.max(0, (permitWindow(state)?.hoursLeft ?? 0) / 24)
+}
+const round1 = (n: number) => Math.round(n * 10) / 10
 
 export function permitDc(state: GameState): number {
   const c = contractOf(pcOf(state))!
@@ -300,10 +308,13 @@ export function setupPermit(state: GameState) {
   if (masterRefusedToday(state)) throw new Error('主人今天已經拒絕了，明天再問')
   const c = contractOf(pcOf(state))!
   const days = allowedDays(state)
+  // 手上的出門許可比較長時，出城跟著到同一天
+  const left = currentLeft(state)
+  const span = (d: number) => (left > d ? `跟出門的許可一樣，還有 ${round1(left)} 天` : `${d} 天內`)
   return {
     dc: permitDc(state), targetName: c.masterName, situational: [], scene: `${locationById(state.location).name}・向主人請求出城`,
     outcomes: {
-      critical: `主人爽快答應，${days} 天內可以自由出入城市（親密度 +2）`, success: `主人同意，${days} 天內可以自由出入城市`, partial: `主人勉強同意，只給 ${days / 2} 天`,
+      critical: `主人爽快答應，${span(days)}可以自由出入城市（親密度 +2）`, success: `主人同意，${span(days)}可以自由出入城市`, partial: left > days / 2 ? `主人勉強同意，${span(days / 2)}可以出入城市` : `主人勉強同意，只給 ${days / 2} 天`,
       fail: '主人不准，今天不能出城', fumble: '主人不准，還覺得你想逃（輕度懲罰）',
     } as Partial<Record<Degree, string>>,
   }
@@ -317,6 +328,9 @@ export function applyPermit(state: GameState, report: Report, degree: Degree): s
     const days = allowedDays(state) / (degree === 'partial' ? 2 : 1)
     grantPermit(state, days * 24, true)
     if (degree === 'critical') addAffinity(state, report, c.master, 2, '主人心情不錯')
+    // 結果照實際的期限寫：手上的出門許可比較長時，出城跟著到那一天
+    const left = currentLeft(state)
+    if (left > days + 0.05) return `${c.masterName}${degree === 'partial' ? '勉強點了頭' : '同意了'}，出城的許可跟出門一樣，還有 ${round1(left)} 天可以自由出入城市。`
     return degree === 'partial' ? `${c.masterName}勉強點了頭，只給你 ${days} 天。` : `${c.masterName}同意了，${days} 天內可以自由出入城市。`
   }
   ;(state.masterRefuse ??= {})[state.location] = day
@@ -493,9 +507,12 @@ export function maybeMasterEvent(state: GameState, chance: number): PendingMaste
   syncMasterHome(state)
   // 主人的標籤在 NPC 登錄裡
   const rec = npcRecord(state, master.id) ?? { id: master.id }
-  // 主人的性邀約與被推進娼館接客都算「主角非自願」：設定裡關掉時不發生
+  // 主人的性邀約與被推進娼館接客都算「主角非自願」：設定裡關掉時不發生（主僕關係的專屬事件是兩情相悅，不算）
   const unwilling = tagsAllowed(['pc_unwilling'])
-  const events = ev.events.filter((e) => (!e.adult || unwilling) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e))
+  // 主僕關係（bondStyle.ts）：依關係調整權重，0 的不發生
+  const style = pcBond(state)
+  const weight = (e: MasterEventDef) => bondWeight(e, style)
+  const events = ev.events.filter((e) => adultAllowed(e, unwilling) && (e.cell !== 'brothel' || unwilling) && eventFits(state, rec, e) && (e.overdue || bondWeight(e, style, 1) > 0))
   // 離家太久：主人想回家（逾期越久越容易），先擲
   const overdue = events.filter((e) => e.overdue)
   const home = overdueChance(state)
@@ -503,8 +520,8 @@ export function maybeMasterEvent(state: GameState, chance: number): PendingMaste
   const local = events.filter((e) => e.cell === 'brothel' && nearBrothel(state))
   const general = events.filter((e) => !e.cell && !e.overdue)
   const picked = withRng(state, (rng) => (overdue.length && rng.chance(home) ? pickEvent(rng, overdue) : undefined)
-    ?? local.find((e) => rng.chance(e.chance ?? 0))
-    ?? (general.length && rng.chance(Math.min(1, chance * gameRule(state, 'masterEventMult'))) ? pickEvent(rng, general) : undefined))
+    ?? local.find((e) => rng.chance(Math.min(1, (e.chance ?? 0) * bondWeight(e, style, 1))))
+    ?? (general.length && rng.chance(Math.min(1, chance * gameRule(state, 'masterEventMult'))) ? pickEvent(rng, general, weight) : undefined))
   if (!picked) return undefined
   return startMasterEvent(state, picked)
 }
@@ -522,7 +539,14 @@ export function eventFits(state: GameState, master: Pick<NpcRecord, 'id' | 'tags
   if (e.free_place && !freePlaces(pcOf(state)).length) return false
   // 主人強制裝備：要有這位主人會用、主角還能戴上的東西
   if (e.forced_gear && !forcedGearPool(state, tags).length) return false
+  // 主僕關係的專屬事件
+  if (e.bonds?.length && !e.bonds.includes(pcBond(state))) return false
   return true
+}
+
+/** 成人向的事件要「主角非自願」打開；主僕關係的專屬事件是兩情相悅，不受這個篩選 */
+function adultAllowed(e: MasterEventDef, unwilling: boolean): boolean {
+  return !e.adult || unwilling || !!e.bonds?.length
 }
 
 export function startMasterEvent(state: GameState, e: MasterEventDef, lead = ''): PendingMasterEvent {
@@ -564,9 +588,12 @@ export function askableEvents(state: GameState): MasterAskOption[] {
   const aff = state.relationships?.[c.master]?.affinity ?? 0
   const unwilling = tagsAllowed(['pc_unwilling'])
   const home = atMasterHome(state)
+  const style = pcBond(state)
   const out: MasterAskOption[] = []
   for (const e of slaveryRules.master_events.events) {
-    if (!e.ask || (e.adult && !unwilling)) continue
+    if (!e.ask || !adultAllowed(e, unwilling)) continue
+    // 主僕關係：專屬事件只在那種關係列出，這種關係不會發生的（權重 0）不列
+    if (bondWeight(e, style, 1) <= 0) continue
     if (e.tags?.length && !e.tags.some((t) => tags.includes(t))) continue
     if (e.tags_none?.some((t) => tags.includes(t))) continue
     let blocked: string | undefined
@@ -603,10 +630,10 @@ export function eventChoices(state: GameState): { option: MasterEventOption; ind
   return shown.length ? shown : all
 }
 
-function pickEvent(rng: Rng, list: MasterEventDef[]): MasterEventDef {
-  let r = rng.next() * list.reduce((s, e) => s + e.weight, 0)
+function pickEvent(rng: Rng, list: MasterEventDef[], weight: (e: MasterEventDef) => number = (e) => e.weight): MasterEventDef {
+  let r = rng.next() * list.reduce((s, e) => s + weight(e), 0)
   for (const e of list) {
-    r -= e.weight
+    r -= weight(e)
     if (r < 0) return e
   }
   return list[list.length - 1]!
@@ -674,10 +701,11 @@ export function eventRoles(state: GameState): EventRoles {
   const pc = pcOf(state)
   const pool = pendingPool(state)
   const member = (id?: string) => (id ? state.party.find((m) => m.id === id) : undefined)
-  if (pool === 'owner') {
+  if (pool === 'owner' || pool === 'slave') {
+    // 調教、奴隸主動找主角：主角擲骰，事件的主角與對方都是那位奴隸
     const slave = member(pm?.actor)
-    if (!slave) throw new Error('要調教的奴隸不在隊伍裡')
-    return { roller: pc, subject: slave, other: { id: slave.id, name: slave.name }, otherTitle: slave.name, tags: npcRecord(state, slave.id)?.tags ?? [], dcMods: trainingDcMods(state, slave) }
+    if (!slave) throw new Error(pool === 'owner' ? '要調教的奴隸不在隊伍裡' : '那位奴隸不在隊伍裡')
+    return { roller: pc, subject: slave, other: { id: slave.id, name: slave.name }, otherTitle: slave.name, tags: npcRecord(state, slave.id)?.tags ?? [], dcMods: pool === 'owner' ? trainingDcMods(state, slave) : [] }
   }
   if (pool === 'brothel_work' || pool === 'brothel_train') {
     const who = member(pm?.actor) ?? pc
@@ -696,9 +724,12 @@ export function eventText(roles: EventRoles, s: string): string {
   return s.split('{master}').join(roles.other?.name ?? roles.otherTitle).split('{actor}').join(roles.subject.name)
 }
 
-/** 效果裡的 master 換成對方；事件的主角不是主角本人時，指標、技能、生命、狀態給事件的主角 */
+/**
+ * 效果裡的 master 換成對方；事件的主角不是主角本人時，指標、技能、生命、狀態給事件的主角。
+ * keepPc（奴隸主動找主角）：明寫 target: pc 的照樣給主角，只有沒寫 target 的給奴隸
+ */
 const SUBJECT_EFFECTS = new Set(['lewd', 'ability_pool', 'ability', 'hp', 'condition'])
-function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Character): RewardEffect[] {
+function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Character, keepPc = false): RewardEffect[] {
   const out: RewardEffect[] = []
   for (const e of effects ?? []) {
     let x = e as RewardEffect & { target?: string; npc?: string }
@@ -707,7 +738,12 @@ function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Ch
       if (!roles.other) continue
       x = { ...x, npc: roles.other.id }
     }
-    if (roles.subject !== pc && SUBJECT_EFFECTS.has(x.type) && (!x.target || x.target === 'pc')) x = { ...x, target: roles.subject.id }
+    // 對象寫 master：給事件的對方（主人、被調教或來找主角的奴隸）
+    if (x.target === 'master') {
+      if (!roles.other) continue
+      x = { ...x, target: roles.other.id }
+    }
+    if (roles.subject !== pc && SUBJECT_EFFECTS.has(x.type) && (!x.target || (x.target === 'pc' && !keepPc))) x = { ...x, target: roles.subject.id }
     out.push(x as RewardEffect)
   }
   return out
@@ -720,7 +756,7 @@ function learnFromEvent(state: GameState, report: Report, who: Character, e: Mas
   return teachAbility(state, report, who, withRng(state, (rng) => rng.pick(open)))
 }
 
-const POOL_TAG: Record<MasterEventPool, string> = { master: '主人', owner: '調教', brothel_work: '娼館', brothel_train: '娼館受訓' }
+const POOL_TAG: Record<MasterEventPool, string> = { master: '主人', owner: '調教', slave: '奴隸', brothel_work: '娼館', brothel_train: '娼館受訓' }
 
 /** 從回應裡選一個：有檢定的依規則擲骰 */
 export function answerMasterEvent(state: GameState, index: number): Report {
@@ -738,6 +774,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   const who = roles.subject === pc ? '主角' : roles.subject.name
   const focus = pool === 'master' ? [`${roles.other?.name ?? '主人'}的突發要求`, `主角的回應：${o.label}`]
     : pool === 'owner' ? [`主角調教${roles.subject.name}`, `主角的做法：${o.label}`]
+    : pool === 'slave' ? [`主角的奴隸${roles.subject.name}主動來找主角`, `主角的回應：${o.label}`]
     : [`${who}在娼館${pool === 'brothel_train' ? '受訓' : '接客'}`, `${who}的應對：${o.label}`]
   const report: Report = {
     schema_version: '0.1',
@@ -746,12 +783,16 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' || roles.subject === pc ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
+    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' || pool === 'slave' || roles.subject === pc ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
     changes: {},
     narration: { pov: 'second_person', length: 'short', focus },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
-  let effects = forEvent(o.effects, roles, pc)
+  // 主僕關係（主人的突發事件：主角和主人；調教：主角和奴隸）：照這段關係的語氣寫
+  const bond = pool === 'master' || pool === 'owner' || pool === 'slave' ? roles.other && bondFocus(state, roles.other.id) : undefined
+  if (bond) focus.push(bond)
+  const keepPc = pool === 'slave'
+  let effects = forEvent(o.effects, roles, pc, keepPc)
   let ok = !o.check
   if (o.check) {
     // 非戰鬥狀態與特質（對方的標籤也算）、屈服或抵抗、調教的修正
@@ -765,7 +806,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     const r = withRng(state, (rng) => roll(rng, dice))
     ok = r.total >= o.check.dc
     report.timeline = [{ seq: 1, time: start, actor: r0.id, action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }]
-    effects = [...effects, ...forEvent(ok ? o.effects_success : o.fail_effects, roles, pc)]
+    effects = [...effects, ...forEvent(ok ? o.effects_success : o.fail_effects, roles, pc, keepPc)]
     report.outcome.result = ok ? 'success' : 'failure'
     const after = ok ? o.success : o.fail
     if (after) report.outcome.summary += eventText(roles, after)
@@ -809,7 +850,7 @@ export function setupMasterEvent(state: GameState) {
     // 可能進入親密場景的事件：自己描述的回應由 AI 判定是否進入
     ...(e.scene ? adultScene(withMaster(state, e.scene), []) : {}),
     dc: e.free_dc ?? slaveryRules.master_events.free_dc, targetName: c.masterName, situational: [],
-    scene: `${currentArea(state).name}・${state.pendingMasterEvent!.text}`,
+    scene: `${currentArea(state).name}・${state.pendingMasterEvent!.text}${pcBond(state) !== 'strict' ? `（兩人的主僕關係：${bondName(pcBond(state))}）` : ''}`,
     outcomes: {
       critical: '主人很滿意（親密度 +3）', success: '應付過去（親密度 +1）', partial: '勉強過關',
       fail: '惹主人不快（親密度 -2）', fumble: '觸怒主人（親密度 -4，挨打）',

@@ -22,6 +22,8 @@ import { sideNodesOpen, storyDef } from '@/engine/story'
 import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import UncursePanel from './UncursePanel.vue'
+import PurifyPanel from './PurifyPanel.vue'
+import VolunteerSlavePanel from './VolunteerSlavePanel.vue'
 import { cursedGearOf } from '@/engine/restraints'
 import AdultShopMenu from './adult/AdultShopMenu.vue'
 import GuardStatus from './GuardStatus.vue'
@@ -212,13 +214,16 @@ const banner = computed(() => {
   return null
 })
 // 神殿、雜貨店選單的其他項目（交易與折扣以外）
-const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | 'uncurse' | null>(null)
+const showVolunteer = ref(false)
+const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | 'uncurse' | 'purify' | null>(null)
 const templeMenu = computed<MenuItem[]>(() => [
   {
     id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
     badge: templeCost(s.value) ? formatMoney(templeCost(s.value)) : '不需要', disabled: templeCost(s.value) === 0 || s.value.money_cc < templeCost(s.value),
   },
   { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
+  // 淨身（docs/LEWD_STATS.md 第 4.1 節）：降一項慾望指標
+  { id: 'purify', icon: 'sparkles', label: '淨身', detail: '付錢靜坐、聽神官誦經，把淫亂、敏感、順從、曝露名聲這類慾望指標降幾點' },
   // 詛咒具（docs/LEWD_STATS.md 第 7.2 節）：隊上有人戴著時才顯示
   ...(cursedGearOf(s.value).length ? [{
     id: 'uncurse', icon: 'unlock', label: '解開詛咒具', detail: '請神官解開隊上的詛咒具（解開後詛咒具會碎掉）',
@@ -239,7 +244,7 @@ const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'mar
 function onExtra(id: string) {
   if (id === 'heal') game.templeHeal()
   else if (id === 'checkup') game.templeCheckup()
-  else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood' || id === 'uncurse') extraOpen.value = id
+  else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood' || id === 'uncurse' || id === 'purify') extraOpen.value = id
 }
 // 公會的選單：委託板在對話框裡
 const showBoard = ref(false)
@@ -333,6 +338,9 @@ const shopDesc = computed(() => {
           <AppDialog :open="extraOpen === 'uncurse'" title="解開詛咒具" icon="unlock" width="560px" @close="extraOpen = null">
             <UncursePanel />
           </AppDialog>
+          <AppDialog :open="extraOpen === 'purify'" title="淨身" icon="sparkles" width="520px" @close="extraOpen = null">
+            <PurifyPanel />
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'tattoo'">
@@ -343,6 +351,13 @@ const shopDesc = computed(() => {
         <template v-else-if="cell.kind === 'carver'">
           <p class="muted small">刻誓約印記，也洗刺青 <Hint text="誓約印記讓屬性有加有減；這裡也洗普通刺青與誓約印記。身上有奴隸印記時，可以付高價請刻印師燒掉（見主動行動的解除印記）。" /></p>
           <TattooShop shop="carver" />
+          <div class="row volunteer-row">
+            <button class="small" :disabled="game.judging" @click="showVolunteer = true">問同伴願不願意自願為奴</button>
+            <Hint text="自願同行或雇傭的同伴，親密度 60 以上才會答應；可以選要刻的印記與兩人說好的主僕關係。" />
+          </div>
+          <AppDialog :open="showVolunteer" title="自願為奴" icon="link" width="720px" @close="showVolunteer = false">
+            <VolunteerSlavePanel @done="showVolunteer = false" />
+          </AppDialog>
         </template>
 
         <template v-else-if="cell.kind === 'shop'">

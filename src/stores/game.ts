@@ -33,10 +33,14 @@ import { learnCraft } from '@/engine/craftLessons'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
 import * as masterTool from '@/engine/masterTool'
+import * as bondStyle from '@/engine/bondStyle'
+import * as slaveEvents from '@/engine/slaveEvents'
 import * as ownerTraining from '@/engine/ownerTraining'
 import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
-import { classes, shopRules, slaveryRules, type CraftId, type ShopType } from '@/engine/data'
+import { classes, shopRules, slaveryRules, type CraftId, type LewdKey, type ShopType } from '@/engine/data'
+import { templePurify } from '@/engine/purify'
+import { takeVoluntarySlave } from '@/engine/voluntarySlave'
 import { syncGear } from '@/engine/gear'
 import { migrate, newGame, player } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
@@ -58,7 +62,7 @@ import * as story from '@/engine/story'
 import * as npcLife from '@/engine/npcLife'
 import * as sexRecord from '@/engine/sexRecord'
 import { editProfile, spendAttrPoint, type ProfilePatch } from '@/engine/character'
-import type { Attrs, AttrId } from '@/engine/data'
+import type { Attrs, AttrId, BondStyle } from '@/engine/data'
 import type { NewGameOptions } from '@/engine/state'
 import * as town from '@/engine/town'
 import * as tattooShop from '@/engine/tattooShop'
@@ -194,6 +198,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (back) return { report: back }
   // 旅途上主人的事件出發時就放在格子上了
   if (!s.road || s.side) slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
+  // 帶著自己的奴隸：奴隸可能主動來找你（旅途上的出發時就放在格子上了）
+  if (!s.road || s.side) slaveEvents.maybeSlaveEvent(s, slaveryRules.slave_events.step_chance)
   // 城鎮事件（事件導演）：走上設施時可能遇到一件事
   const town = townEvents.maybeTownEvent(s)
   if (town.report) return { report: town.report }
@@ -1471,6 +1477,10 @@ export const useGame = defineStore('game', () => {
     // 主人是工具人：親密度夠高時直接解約、換主人
     masterRelease: () => run((s) => masterTool.masterRelease(s)),
     masterTransfer: (npc: string) => run((s) => masterTool.masterTransfer(s, npc)),
+    // 主僕關係：主角和主人、或和自己的奴隸說開兩人之間真正的關係（bondStyle.ts）
+    setBond: (npc: string, style: BondStyle) => run((s) => bondStyle.setBond(s, npc, style)),
+    /** 自願為奴：在刻印師那裡，同伴答應成為主角的奴隸（voluntarySlave.ts） */
+    takeVoluntarySlave: (npc: string, mark: slavery.MarkChoice, style: BondStyle) => run((s) => takeVoluntarySlave(s, npc, mark, style)),
     editProfile: (patch: ProfilePatch) => run((s) => editProfile(player(s), patch)),
     // 旅行：畫出旅途的單行道，一格一天往前走（road.ts）
     travel: (to: string, intent?: string) => run((s) => road.startJourney(s, to, intent), { onMap: true }),
@@ -1535,6 +1545,8 @@ export const useGame = defineStore('game', () => {
     acceptQuest: (id: string) => run((s) => town.acceptQuest(s, id)),
     turnInQuest: (id: string, count?: number) => run((s) => town.turnInQuest(s, id, count)),
     templeHeal: () => run(town.templeHeal),
+    /** 神殿的淨身：降一位隊員的一項慾望指標（purify.ts） */
+    templePurify: (memberId: string, key: LewdKey, points: number) => run((s) => templePurify(s, memberId, key, points)),
     /** 參訪站著的地標 */
     visitLandmark: () => run(visitLandmark),
     /** 走進站著的地標的內部（特殊地圖） */

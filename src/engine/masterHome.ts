@@ -313,7 +313,8 @@ export function grantPermit(state: GameState, hours: number, exit: boolean) {
   const w = permitWindow(state)
   const fresh = addHours(state.time, hours)
   const keep = w && w.hoursLeft > 0 && hoursOf(w.due) > hoursOf(fresh)
-  c.permit = { due: keep ? w.due : fresh, hours, exit: exit || (!!w?.exit && w.hoursLeft > 0) }
+  // 留著比較晚的期限時，長度也照原本的（剩不到 1/4 才能延長的門檻照那一張算）
+  c.permit = { due: keep ? w.due : fresh, hours: keep ? Math.max(hours, w.hours) : hours, exit: exit || (!!w?.exit && w.hoursLeft > 0) }
   delete c.homeAt
 }
 
@@ -389,8 +390,17 @@ export function mayExtend(state: GameState): boolean {
   return !extendRefusedToday(state)
 }
 
+/**
+ * 主人今天已經拒絕了延長或出城：兩個共用一個「今天不准」（任一個被拒，當天另一個也不能問）。
+ * 延長被拒記在許可上（permit.refused），出城被拒記在這座城（masterRefuse）
+ */
+export function permitRefusedToday(state: GameState): boolean {
+  const day = state.time.day
+  return pcContract(state)?.permit?.refused === day || state.masterRefuse?.[state.location] === day
+}
+
 export function extendRefusedToday(state: GameState): boolean {
-  return pcContract(state)?.permit?.refused === state.time.day
+  return permitRefusedToday(state)
 }
 
 // ---- 嚴加看管 ----

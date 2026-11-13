@@ -854,6 +854,15 @@ function sanitizeUse(u: ItemUse | undefined): ItemUse | undefined {
   // 泌乳（docs/FAMILY.md 第 10 節）：幾天、斷乳
   if (u.lactation) out.lactation = int(u.lactation, 1, 60, 3)
   if (u.stop_lactation) out.stop_lactation = true
+  // 冥想道具（docs/LEWD_STATS.md 第 4.1 節）：慾望指標的增減，每項 ±20
+  if (u.lewd && typeof u.lewd === 'object') {
+    const lewd: NonNullable<ItemUse['lewd']> = {}
+    for (const k of ['lewdness', 'sensitivity', 'endurance', 'submission', 'exposure'] as const) {
+      const v = int((u.lewd as Record<string, unknown>)[k], -20, 20, 0)
+      if (v) lewd[k] = v
+    }
+    if (Object.keys(lewd).length) out.lewd = lewd
+  }
   if ((out.damage || out.apply) && u.area === 'all') out.area = 'all'
   else if (out.damage || out.apply) out.area = 'one'
   if (u.combat_only || out.damage || out.apply || out.status || out.temp_hp || out.ap || out.lust || out.revive || out.cleanse || out.escape) {

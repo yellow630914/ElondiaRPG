@@ -12,6 +12,7 @@ import { jobHere, workers } from '@/engine/work'
 import { useGame } from '@/stores/game'
 import { contractFor } from './party/memberInfo'
 import Avatar from './ui/Avatar.vue'
+import BondStylePicker from './BondStylePicker.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 
@@ -112,6 +113,8 @@ function release() {
         </div>
       </details>
     </div>
+
+    <BondStylePicker :npc="m.id" :name="m.name" @done="emit('close')" />
 
     <h4><GameIcon name="link" :size="14" /> 調教 <Hint text="成人向（docs/LEWD_STATS.md 第 9 節）。選一個課程，抽一件調教事件，由你選做法、擲檢定；奴隸越順從越容易，親密度很低時變難。成功時指標成長，同一課程成功幾次保證學會一個技能；親密度很低時失敗會留下怨恨。" /></h4>
     <div class="courses" :class="{ off: !cur?.inParty }">

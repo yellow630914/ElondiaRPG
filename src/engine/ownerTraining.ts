@@ -12,6 +12,7 @@ import { addAffinity, addCondition, pcOf } from './party'
 import { addMemory } from './social'
 import { teachAbility } from './effects'
 import { withRng } from './state'
+import { bondOf, bondWeight } from './bondStyle'
 import { contractOf } from './tattoos'
 import type { Character, GameState, PendingMasterEvent, Report } from './types'
 
@@ -54,10 +55,14 @@ export function startTraining(state: GameState, slaveId: string, course: string)
   const slave = state.party.find((m) => m.id === slaveId)
   const why = trainingBlocked(state, slave, course)
   if (why) throw new Error(why)
-  const list = courseEvents(course)
+  // 主僕關係（bondStyle.ts）：依兩人的關係調整權重，專屬事件只在那種關係抽得到
+  const style = bondOf(state, slaveId)
+  const weighted = courseEvents(course).map((x) => ({ x, w: bondWeight(x, style) })).filter((y) => y.w > 0)
+  const list = weighted.length ? weighted : courseEvents(course).filter((x) => !x.bonds?.length).map((x) => ({ x, w: x.weight }))
+  if (!list.length) throw new Error(`「${courseName(course)}」沒有可以進行的調教事件`)
   const e = withRng(state, (rng) => {
-    let r = rng.next() * list.reduce((s, x) => s + x.weight, 0)
-    return list.find((x) => (r -= x.weight) < 0) ?? list[list.length - 1]!
+    let r = rng.next() * list.reduce((s, y) => s + y.w, 0)
+    return (list.find((y) => (r -= y.w) < 0) ?? list[list.length - 1]!).x
   })
   state.pendingMasterEvent = { id: e.id, pool: 'owner', actor: slave!.id, text: e.text.split('{actor}').join(slave!.name).split('{master}').join(slave!.name) }
   return state.pendingMasterEvent

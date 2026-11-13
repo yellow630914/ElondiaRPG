@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
-import { abilities, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, slaveryRules, tagDef, type MasterEventOption, type MasterEventPool } from '@/engine/data'
+import { abilities, BOND_STYLES, lewdRules, MASTER_ASK_GROUPS, MASTER_EVENT_POOLS, slaveryRules, tagDef, type BondStyle, type MasterEventOption, type MasterEventPool } from '@/engine/data'
 import { builtinMasterEvent, masterEventById, masterEventWarnings, MASTER_EVENT_LIMITS, POOL_IDS, type MasterEventMod } from '@/engine/masterEventMods'
 import { useContent } from '@/stores/content'
 import { useGame } from '@/stores/game'
@@ -35,6 +35,8 @@ const builtin = computed(() => !!builtinMasterEvent(props.id))
 const edited = computed(() => builtin.value && !!content.mods.masterEvents?.[props.id])
 const warnings = computed(() => masterEventWarnings(draft.value))
 const isMaster = computed(() => draft.value.pool === 'master')
+/** 條件看誰：調教與奴隸主動找你看那位奴隸，其他看主人（娼館是老鴇） */
+const who = computed(() => (draft.value.pool === 'owner' || draft.value.pool === 'slave' ? '奴隸' : draft.value.pool === 'master' ? '主人' : '老鴇'))
 const isBrothel = computed(() => draft.value.pool === 'brothel_work' || draft.value.pool === 'brothel_train')
 const masterTags = Object.keys(slaveryRules.master_tags.tags)
 const lewdAbilities = computed(() => {
@@ -46,6 +48,7 @@ const courses = Object.entries(lewdRules.training.courses).map(([id, c]) => ({ i
 /** 上方的說明依事件庫換 */
 const POOL_HELP: Record<MasterEventPool, string> = {
   master: '主人的突發事件：主角被主人帶著時，走動與旅行後依權重抽一件（經過娼館、離家逾期的事件另外擲）。玩家從回應裡選一個，或自己輸入回應交給 AI 判定。文字裡的 {master} 會換成主人的名字；效果的親密度選「主人」就是主角的主人。',
+  slave: '奴隸主動找你：主角帶著自己的奴隸時，走動與旅行後，隊伍裡的一位奴隸可能主動來找主角，依權重抽一件符合條件的。玩家選主角的回應，檢定由主角擲。文字裡的 {actor} 和 {master} 都是那位奴隸；條件的親密度與標籤看奴隸，「在哪裡」看主角是不是在自己的房子裡。效果的親密度選「主人」是奴隸；指標、狀態、生命沒寫對象時給奴隸，寫「主角」給主角。',
   owner: '調教事件：主角在有調教家具的房子調教自己的奴隸時，從選的課程的事件裡依權重抽一件。玩家選主角的做法，檢定由主角擲。文字裡的 {actor} 和 {master} 都是被調教的奴隸；效果的指標、技能給奴隸，親密度選「主人」也是奴隸。',
   brothel_work: '娼館打工事件：在娼館接客結束時依權重抽一件（主角或隊員都可能）。文字裡的 {actor} 是接客的人，{master} 是老鴇；效果的指標、技能給接客的人。',
   brothel_train: '娼館受訓事件：在娼館受訓時依權重抽一件，一定學會掛的其中一個技能。文字裡的 {actor} 是受訓的人，{master} 是老鴇；效果的指標、技能給受訓的人。',
@@ -76,6 +79,23 @@ function setHome(v: string) {
   if (v === 'home') draft.value.at_home = true
   else if (v === 'out') draft.value.at_home = false
   else delete draft.value.at_home
+}
+// 主僕關係（bondStyle.ts）：專屬事件（只在這些關係發生）與各關係的權重倍率
+const hasBond = computed(() => draft.value.pool === 'master' || draft.value.pool === 'owner' || draft.value.pool === 'slave')
+const bondStyles = BOND_STYLES.map((id) => ({ id, name: slaveryRules.bond_styles.styles[id].name }))
+function toggleBond(b: BondStyle, on: boolean) {
+  const set = new Set(draft.value.bonds ?? [])
+  if (on) set.add(b)
+  else set.delete(b)
+  if (set.size) draft.value.bonds = BOND_STYLES.filter((x) => set.has(x))
+  else delete draft.value.bonds
+}
+function setBondWeight(b: BondStyle, raw: string) {
+  const w = { ...(draft.value.bond_weights ?? {}) }
+  if (raw === '' || Number(raw) === 1) delete w[b]
+  else w[b] = Number(raw)
+  if (Object.keys(w).length) draft.value.bond_weights = w
+  else delete draft.value.bond_weights
 }
 function setPool(v: string) {
   draft.value.pool = v as MasterEventPool
@@ -168,17 +188,26 @@ function remove() {
     <FoldSet>
       <template #legend>條件 <Hint text="沒填、沒勾時不限。" /></template>
       <div class="row small">
-        主人的親密度 <input v-model.number="draft.affinity_min" type="number" min="-100" max="100" class="num" placeholder="下限" />
+        {{ who }}的親密度 <input v-model.number="draft.affinity_min" type="number" min="-100" max="100" class="num" placeholder="下限" />
         ～ <input v-model.number="draft.affinity_max" type="number" min="-100" max="100" class="num" placeholder="上限" />
       </div>
-      <div class="row small"><b>主人有其中一個標籤</b>
+      <div class="row small"><b>{{ who }}有其中一個標籤</b>
         <label v-for="t in masterTags" :key="t" class="check">
           <input type="checkbox" :checked="draft.tags?.includes(t)" @change="toggle('tags', t, ($event.target as HTMLInputElement).checked)" /> {{ tagDef(t)?.name ?? t }}
         </label>
       </div>
-      <div class="row small"><b>主人有這些標籤時不發生</b>
+      <div class="row small"><b>{{ who }}有這些標籤時不發生</b>
         <label v-for="t in masterTags" :key="t" class="check">
           <input type="checkbox" :checked="draft.tags_none?.includes(t)" @change="toggle('tags_none', t, ($event.target as HTMLInputElement).checked)" /> {{ tagDef(t)?.name ?? t }}
+        </label>
+      </div>
+      <div v-if="draft.pool === 'slave'" class="row small">
+        <label>在哪裡
+          <select :value="draft.at_home === true ? 'home' : draft.at_home === false ? 'out' : ''" @change="setHome(($event.target as HTMLSelectElement).value)">
+            <option value="">不限</option>
+            <option value="home">只在主角自己的房子裡</option>
+            <option value="out">只在外面</option>
+          </select>
         </label>
       </div>
       <template v-if="isMaster">
@@ -212,6 +241,20 @@ function remove() {
           </span>
         </div>
       </template>
+    </FoldSet>
+
+    <FoldSet v-if="hasBond">
+      <template #legend>主僕關係 <Hint :text="`主人與奴隸親密度 ${slaveryRules.bond_styles.unlock_affinity} 以上時，兩人可以選真正的關係（主人的突發事件看主角和主人；調教看主角和那位奴隸）。勾了「只在這些關係」就是專屬事件：其他關係不會發生，而且算兩情相悅，不受「主角非自願」的篩選。倍率乘在權重上（經過娼館的事件乘在機率上），空著是 1，0 是這種關係不發生。`" /></template>
+      <div class="row small"><b>只在這些關係發生</b>
+        <label v-for="b in bondStyles.filter((x) => x.id !== 'strict')" :key="b.id" class="check">
+          <input type="checkbox" :checked="draft.bonds?.includes(b.id)" @change="toggleBond(b.id, ($event.target as HTMLInputElement).checked)" /> {{ b.name }}
+        </label>
+      </div>
+      <div class="row small"><b>權重倍率</b>
+        <label v-for="b in bondStyles" :key="b.id">{{ b.name }}
+          <input type="number" min="0" max="5" step="0.1" class="num" placeholder="1" :value="draft.bond_weights?.[b.id] ?? ''" @change="setBondWeight(b.id, ($event.target as HTMLInputElement).value)" />
+        </label>
+      </div>
     </FoldSet>
 
     <FoldSet>

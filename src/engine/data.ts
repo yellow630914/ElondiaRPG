@@ -1526,6 +1526,8 @@ export const slaveryRules = slaveryJson as unknown as {
     fugitive: { inn_mult: number; inn_recapture_mult: number }
   }
   release_affinity: number
+  /** 自願為奴（voluntarySlave.ts） */
+  voluntary: { min_affinity: number; fee_cc: number; hours: number; cells: string[]; bonds: Bond[] }
   custom_mark: Record<'income_share' | 'negotiate_dc' | 'escape_dc' | 'exit_dc' | 'recapture_chance' | 'escape_hp_ratio' | 'obedience_penalty', [number, number]> & {
     name_chars: number; mark_chars: number; side_effect_chars: number; side_effects: number
   }
@@ -1563,6 +1565,14 @@ export const slaveryRules = slaveryJson as unknown as {
   unmark: { hours: number; fee_ratio: Record<Degree, number>; services: Record<'temple' | 'carver' | 'mage', UnmarkServiceDef> }
   safe_spots: string[]
   marking: { attr: AttrId; base: number; severity: string[] }
+  /** 主僕關係（docs/COMPANIONS.md 2.8 節；bondStyle.ts） */
+  bond_styles: {
+    unlock_affinity: number
+    keep_affinity: number
+    hours: number
+    personality_rule: string
+    styles: Record<BondStyle, { name: string; desc: string; prompt: string }>
+  }
   master_events: {
     step_chance: number; travel_chance: number; cooldown_hours: number
     free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
@@ -1570,19 +1580,22 @@ export const slaveryRules = slaveryJson as unknown as {
   }
   /** 調教事件（主角對自己的奴隸；S5） */
   owner_events: { events: MasterEventDef[] }
+  /** 奴隸主動找主角（slaveEvents.ts；docs/COMPANIONS.md 2.9 節） */
+  slave_events: { step_chance: number; travel_chance: number; cooldown_hours: number; events: MasterEventDef[] }
   /** 娼館的打工與受訓事件（S5） */
   brothel_events: { work: MasterEventDef[]; train: MasterEventDef[] }
 }
 
 /** 共用主人事件格式的事件庫（內容編輯器「⛓️ 主奴與娼館」） */
-export type MasterEventPool = 'master' | 'owner' | 'brothel_work' | 'brothel_train'
-export const MASTER_EVENT_POOLS: Record<MasterEventPool, string> = { master: '主人的突發事件', owner: '調教事件', brothel_work: '娼館打工事件', brothel_train: '娼館受訓事件' }
+export type MasterEventPool = 'master' | 'owner' | 'slave' | 'brothel_work' | 'brothel_train'
+export const MASTER_EVENT_POOLS: Record<MasterEventPool, string> = { master: '主人的突發事件', owner: '調教事件', slave: '奴隸主動找你', brothel_work: '娼館打工事件', brothel_train: '娼館受訓事件' }
 
 /** 這個事件庫的事件清單（直接改這個陣列就會生效） */
 export function masterEventPool(pool: MasterEventPool): MasterEventDef[] {
-  const r = slaveryRules as unknown as { owner_events?: { events: MasterEventDef[] }; brothel_events?: { work: MasterEventDef[]; train: MasterEventDef[] } }
+  const r = slaveryRules as unknown as { owner_events?: { events: MasterEventDef[] }; slave_events?: { events: MasterEventDef[] }; brothel_events?: { work: MasterEventDef[]; train: MasterEventDef[] } }
   if (pool === 'master') return slaveryRules.master_events.events
   if (pool === 'owner') return ((r.owner_events ??= { events: [] }).events ??= [])
+  if (pool === 'slave') return ((r.slave_events ??= { events: [] } as never).events ??= [])
   const b = (r.brothel_events ??= { work: [], train: [] })
   return pool === 'brothel_work' ? (b.work ??= []) : (b.train ??= [])
 }
@@ -1638,7 +1651,15 @@ export interface MasterEventDef {
   progress?: number
   /** 主角可以主動找主人觸發這件事（slavery.ts 的 askableEvents；只在主人的突發事件） */
   ask?: MasterAskDef
+  /** 只在主僕關係是這幾種時發生（兩情相悅的專屬事件：不受「主角非自願」的篩選；bondStyle.ts） */
+  bonds?: BondStyle[]
+  /** 各種主僕關係下的權重倍率（沒寫的是 1，0 不發生；經過娼館的事件乘在機率上） */
+  bond_weights?: Partial<Record<BondStyle, number>>
 }
+
+/** 主僕關係：名實相符（預設）、名義主僕實為夥伴、情趣主奴、激烈主奴、戀人 */
+export type BondStyle = 'strict' | 'partner' | 'playful' | 'intense' | 'lovers'
+export const BOND_STYLES: BondStyle[] = ['strict', 'partner', 'playful', 'intense', 'lovers']
 
 /** 主動找主人：分類、名稱、一句說明、開頭（{master} 換成主人的名字，接在事件描述前面） */
 export interface MasterAskDef {
@@ -1959,6 +1980,8 @@ export interface ItemUse {
   lactation?: number
   /** 拿掉道具與事件造成的泌乳（懷孕的不行） */
   stop_lactation?: boolean
+  /** 冥想道具：慾望指標的增減（曝露名聲是目前這一帶的；docs/LEWD_STATS.md 第 4.1 節），花一個小時 */
+  lewd?: Partial<Record<LewdKey, number>>
 }
 
 export interface ItemDef {
@@ -2622,7 +2645,7 @@ export const lewdRules = lewdJson as unknown as {
     adult_outfit: LewdBonus; restraint: LewdBonus; locked: LewdBonus
     /** 在聚落裡真空（外衣底下沒穿內衣褲、會走光）的日子 */
     vacuum?: LewdBonus
-    free_submission_every: number; idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
+    free_submission_every: number; idle_days: number; sensitivity_idle_days: number; exposure_decay: number; exposure_per_level: number; settlements: string[]
   }
   park: ParkRules
   /** 慾望勝利的「征服」掉落：打倒的怪物在高潮中屈服時，有 chance 的機率依種類多掉一件 */
@@ -2640,6 +2663,8 @@ export const lewdRules = lewdJson as unknown as {
   npc_schools: { tags: Record<string, { chance: number; schools: string[] }> }
   portrait: Partial<Record<'lewdness' | 'exposure', [number, string][]>>
   fusion: { shops: string[]; fee_cc: number; days: number; tiers: [number, number][]; penalty_mult: number }
+  /** 神殿的淨身（docs/LEWD_STATS.md 第 4.1 節） */
+  purify: { stats: LewdKey[]; per_point_cc: number; below_default_mult: number; max_points: number; hours: number }
   slave_room: {
     charm_min: number; cost_ratio: number; submission: number; learn_chance: number; abilities: string[]; condition: string; scene: string
   }

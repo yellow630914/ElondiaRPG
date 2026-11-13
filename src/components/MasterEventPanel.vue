@@ -7,7 +7,7 @@ import AbilityPicker from './AbilityPicker.vue'
 import GameIcon from './ui/GameIcon.vue'
 import { contractOf } from '@/engine/tattoos'
 
-// 主人的突發事件：三選一，或自己輸入回應（見 docs/COMPANIONS.md 2.4）
+// 主人的突發事件：三選一，或自己輸入回應（見 docs/COMPANIONS.md 2.4）；調教、奴隸主動找你、娼館的事件只有選項
 const game = useGame()
 const s = computed(() => game.state!)
 const ev = computed(() => s.value.pendingMasterEvent!)
@@ -23,6 +23,7 @@ const roles = computed(() => (exists.value ? eventRoles(s.value) : undefined))
 const title = computed(() => {
   const r = roles.value
   if (pool.value === 'owner') return `調教${r?.subject.name ?? ''}`
+  if (pool.value === 'slave') return `${r?.subject.name ?? '奴隸'}來找你`
   if (pool.value === 'brothel_work') return `${r?.subject.isPlayer ? '' : r?.subject.name ?? ''}在娼館接客`
   if (pool.value === 'brothel_train') return `${r?.subject.isPlayer ? '' : r?.subject.name ?? ''}在娼館受訓`
   return `${master.value}的要求`
@@ -49,7 +50,7 @@ function respond() {
 <template>
   <section class="panel master-event">
     <div class="row head">
-      <h3 class="title"><GameIcon name="lock" :size="16" />{{ title }}</h3>
+      <h3 class="title"><GameIcon :name="pool === 'slave' ? 'heart' : 'lock'" :size="16" />{{ title }}</h3>
     </div>
     <p>{{ ev.text }}</p>
     <template v-if="!exists">

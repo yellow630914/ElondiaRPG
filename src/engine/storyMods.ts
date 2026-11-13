@@ -159,15 +159,17 @@ export function sanitizeEffects(v: unknown): RewardEffect[] {
         break
       }
       case 'condition': {
-        if (typeof x.condition === 'string' && EFFECT_CONDITIONS().includes(x.condition)) out.push({ type: 'condition', target: 'pc', condition: x.condition, add: x.add !== false })
+        // target：主角，或主人事件格式的「對方」（master：主人、被調教或來找主角的奴隸）
+        if (typeof x.condition === 'string' && EFFECT_CONDITIONS().includes(x.condition)) out.push({ type: 'condition', target: x.target === 'master' ? 'master' : 'pc', condition: x.condition, add: x.add !== false })
         break
       }
       case 'hp': {
         // 比例（最大生命值）或固定的點數（主人事件用）
         const ratio = Math.round(num(x.ratio, -0.9, 1, 0) * 100) / 100
         const amount = x.ratio === undefined ? int(x.amount, -999, 999, 0) : 0
-        if (ratio) out.push({ type: 'hp', target: 'pc', ratio })
-        else if (amount) out.push({ type: 'hp', target: 'pc', amount })
+        const who = x.target === 'master' ? 'master' : 'pc'
+        if (ratio) out.push({ type: 'hp', target: who, ratio })
+        else if (amount) out.push({ type: 'hp', target: who, amount })
         break
       }
       case 'start_story': {
