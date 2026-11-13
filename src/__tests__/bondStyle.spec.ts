@@ -102,6 +102,12 @@ describe('choosing the bond', () => {
 })
 
 describe('what the AI is told', () => {
+  it('keeps the guidance neutral, with no concrete examples for the AI to copy', () => {
+    for (const text of [rules.personality_rule, ...Object.values(rules.styles).map((x) => x.prompt)]) {
+      expect(text).not.toMatch(/例如|比如|像是|（/)
+    }
+  })
+
   it('adds the bond and the personality reminder to the relationships, and a tag in the party', () => {
     const state = bound()
     const m = masterId(state)

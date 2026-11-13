@@ -688,10 +688,11 @@ export function eventRoles(state: GameState): EventRoles {
   const pc = pcOf(state)
   const pool = pendingPool(state)
   const member = (id?: string) => (id ? state.party.find((m) => m.id === id) : undefined)
-  if (pool === 'owner') {
+  if (pool === 'owner' || pool === 'slave') {
+    // 調教、奴隸主動找主角：主角擲骰，事件的主角與對方都是那位奴隸
     const slave = member(pm?.actor)
-    if (!slave) throw new Error('要調教的奴隸不在隊伍裡')
-    return { roller: pc, subject: slave, other: { id: slave.id, name: slave.name }, otherTitle: slave.name, tags: npcRecord(state, slave.id)?.tags ?? [], dcMods: trainingDcMods(state, slave) }
+    if (!slave) throw new Error(pool === 'owner' ? '要調教的奴隸不在隊伍裡' : '那位奴隸不在隊伍裡')
+    return { roller: pc, subject: slave, other: { id: slave.id, name: slave.name }, otherTitle: slave.name, tags: npcRecord(state, slave.id)?.tags ?? [], dcMods: pool === 'owner' ? trainingDcMods(state, slave) : [] }
   }
   if (pool === 'brothel_work' || pool === 'brothel_train') {
     const who = member(pm?.actor) ?? pc
@@ -710,9 +711,12 @@ export function eventText(roles: EventRoles, s: string): string {
   return s.split('{master}').join(roles.other?.name ?? roles.otherTitle).split('{actor}').join(roles.subject.name)
 }
 
-/** 效果裡的 master 換成對方；事件的主角不是主角本人時，指標、技能、生命、狀態給事件的主角 */
+/**
+ * 效果裡的 master 換成對方；事件的主角不是主角本人時，指標、技能、生命、狀態給事件的主角。
+ * keepPc（奴隸主動找主角）：明寫 target: pc 的照樣給主角，只有沒寫 target 的給奴隸
+ */
 const SUBJECT_EFFECTS = new Set(['lewd', 'ability_pool', 'ability', 'hp', 'condition'])
-function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Character): RewardEffect[] {
+function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Character, keepPc = false): RewardEffect[] {
   const out: RewardEffect[] = []
   for (const e of effects ?? []) {
     let x = e as RewardEffect & { target?: string; npc?: string }
@@ -721,7 +725,12 @@ function forEvent(effects: RewardEffect[] | undefined, roles: EventRoles, pc: Ch
       if (!roles.other) continue
       x = { ...x, npc: roles.other.id }
     }
-    if (roles.subject !== pc && SUBJECT_EFFECTS.has(x.type) && (!x.target || x.target === 'pc')) x = { ...x, target: roles.subject.id }
+    // 對象寫 master：給事件的對方（主人、被調教或來找主角的奴隸）
+    if (x.target === 'master') {
+      if (!roles.other) continue
+      x = { ...x, target: roles.other.id }
+    }
+    if (roles.subject !== pc && SUBJECT_EFFECTS.has(x.type) && (!x.target || (x.target === 'pc' && !keepPc))) x = { ...x, target: roles.subject.id }
     out.push(x as RewardEffect)
   }
   return out
@@ -734,7 +743,7 @@ function learnFromEvent(state: GameState, report: Report, who: Character, e: Mas
   return teachAbility(state, report, who, withRng(state, (rng) => rng.pick(open)))
 }
 
-const POOL_TAG: Record<MasterEventPool, string> = { master: '主人', owner: '調教', brothel_work: '娼館', brothel_train: '娼館受訓' }
+const POOL_TAG: Record<MasterEventPool, string> = { master: '主人', owner: '調教', slave: '奴隸', brothel_work: '娼館', brothel_train: '娼館受訓' }
 
 /** 從回應裡選一個：有檢定的依規則擲骰 */
 export function answerMasterEvent(state: GameState, index: number): Report {
@@ -752,6 +761,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
   const who = roles.subject === pc ? '主角' : roles.subject.name
   const focus = pool === 'master' ? [`${roles.other?.name ?? '主人'}的突發要求`, `主角的回應：${o.label}`]
     : pool === 'owner' ? [`主角調教${roles.subject.name}`, `主角的做法：${o.label}`]
+    : pool === 'slave' ? [`主角的奴隸${roles.subject.name}主動來找主角`, `主角的回應：${o.label}`]
     : [`${who}在娼館${pool === 'brothel_train' ? '受訓' : '接客'}`, `${who}的應對：${o.label}`]
   const report: Report = {
     schema_version: '0.1',
@@ -760,15 +770,16 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     time: { start, end: addHours(start, o.hours ?? e.hours) },
     location: { at: area.location, region: loc.region, scene: area.name },
     party: state.party.map((m) => snapshot(m, undefined, pc)),
-    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' || roles.subject === pc ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
+    outcome: { result: 'neutral', summary: `${pm.text}${pool === 'master' || pool === 'owner' || pool === 'slave' || roles.subject === pc ? '你' : who}選擇${o.label}。`, tags: [POOL_TAG[pool]] },
     changes: {},
     narration: { pov: 'second_person', length: 'short', focus },
     lore_keys: [loc.name, regionById(loc.region).name],
   }
   // 主僕關係（主人的突發事件：主角和主人；調教：主角和奴隸）：照這段關係的語氣寫
-  const bond = pool === 'master' || pool === 'owner' ? roles.other && bondFocus(state, roles.other.id) : undefined
+  const bond = pool === 'master' || pool === 'owner' || pool === 'slave' ? roles.other && bondFocus(state, roles.other.id) : undefined
   if (bond) focus.push(bond)
-  let effects = forEvent(o.effects, roles, pc)
+  const keepPc = pool === 'slave'
+  let effects = forEvent(o.effects, roles, pc, keepPc)
   let ok = !o.check
   if (o.check) {
     // 非戰鬥狀態與特質（對方的標籤也算）、屈服或抵抗、調教的修正
@@ -782,7 +793,7 @@ export function answerMasterEvent(state: GameState, index: number): Report {
     const r = withRng(state, (rng) => roll(rng, dice))
     ok = r.total >= o.check.dc
     report.timeline = [{ seq: 1, time: start, actor: r0.id, action: `${o.label}${modifierNote(extra)}`, roll: { dice, value: r.total, dc: o.check.dc, ...rollBreakdown(r.rolls[0]!, parts) }, result: ok ? 'success' : 'fail' }]
-    effects = [...effects, ...forEvent(ok ? o.effects_success : o.fail_effects, roles, pc)]
+    effects = [...effects, ...forEvent(ok ? o.effects_success : o.fail_effects, roles, pc, keepPc)]
     report.outcome.result = ok ? 'success' : 'failure'
     const after = ok ? o.success : o.fail
     if (after) report.outcome.summary += eventText(roles, after)

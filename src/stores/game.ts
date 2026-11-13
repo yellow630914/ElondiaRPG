@@ -34,6 +34,7 @@ import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
 import * as masterTool from '@/engine/masterTool'
 import * as bondStyle from '@/engine/bondStyle'
+import * as slaveEvents from '@/engine/slaveEvents'
 import * as ownerTraining from '@/engine/ownerTraining'
 import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
@@ -195,6 +196,8 @@ function afterMove(s: GameState, r: grid.StepResult): grid.StepResult {
   if (back) return { report: back }
   // 旅途上主人的事件出發時就放在格子上了
   if (!s.road || s.side) slavery.maybeMasterEvent(s, slaveryRules.master_events.step_chance)
+  // 帶著自己的奴隸：奴隸可能主動來找你（旅途上的出發時就放在格子上了）
+  if (!s.road || s.side) slaveEvents.maybeSlaveEvent(s, slaveryRules.slave_events.step_chance)
   // 城鎮事件（事件導演）：走上設施時可能遇到一件事
   const town = townEvents.maybeTownEvent(s)
   if (town.report) return { report: town.report }

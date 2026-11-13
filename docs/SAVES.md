@@ -135,6 +135,7 @@
 | 休息時被襲擊的機率 | `ambushMult` | 1 | 0～3 | 野外、地下城、旅途上休息的襲擊機率（最高 100%）；0 = 不會被襲擊 |
 | 旅途事件的頻率 | `travelEventMult` | 1 | 0～3 | 出發時擲旅途事件的機率（最高 100%）；0 = 一路平安 |
 | 主人事件的機率 | `masterEventMult` | 1 | 0～3 | 主人的突發事件（走動時）與旅途上的主人格子；0 = 不會發生 |
+| 奴隸主動找你的機率 | `slaveEventMult` | 1 | 0～3 | 帶著自己的奴隸時，奴隸主動來找你（走動時）與旅途上的 💞 格子（[COMPANIONS](COMPANIONS.md) 2.9 節）；0 = 不會發生 |
 | 寄生發作的機率 | `parasiteMult` | 1 | 0～3 | 寄生物的發作（[ADULT_EVENTS](ADULT_EVENTS.md) 第 6.2 節）；0 = 不會發作 |
 | 地下城事件的機率 | `dungeonEventMult` | 1 | 0～3 | 地下城與近郊的事件（普通與成人向）；0 = 不會發生 |
 | 成人地下城事件的比重 | `adultDungeonMult` | 1 | 1～8 | 成人向地下城事件抽到的權重與機率（[ADULT_EVENTS](ADULT_EVENTS.md) 第 1 節） |
