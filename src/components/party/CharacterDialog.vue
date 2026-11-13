@@ -3,7 +3,8 @@ import { computed, reactive, ref, watch } from 'vue'
 import {
   abilityQuality, apMaxFor, apRegenFor, attrsOf, carriedAbilities, castingAttr, combatBonuses, countsForLoadout, evadeFloor, gearAffinities, hasRerollPool, luckyThreshold, mod, proficiency, rerollsLeft, weaponFor, xpToNext,
 } from '@/engine/character'
-import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, genderName, locationById, slaveryRules, statusDef, tagDef } from '@/engine/data'
+import { abilityDef, armorDef, attributeRules, attrName, classDef, damageTypeName, genderName, locationById, progression, slaveryRules, statusDef, tagDef } from '@/engine/data'
+import { XP_SINKS, xpSinkBlocked, xpSinkCost, xpSinkName } from '@/engine/xpSinks'
 import PcTagPicker from '../PcTagPicker.vue'
 import { isNoncombatant } from '@/engine/party'
 import { perksOf } from '@/engine/perks'
@@ -178,6 +179,11 @@ function twoFaceText(tf: ReturnType<typeof twoFaceCombat>): string {
 // ── 特效：加屬性點時數字彈一下；選中的能力卡發光、在能力清單裡翻面出現；新學會的特質卡翻過來
 const popped = ref('')
 let popTimer: ReturnType<typeof setTimeout> | undefined
+// 多出來的經驗的用途（xpSinks.ts）：鑽研特質、苦練屬性（20 級以上）、鑽研技能；花費各自翻倍
+const XP_SINK_HINT = (() => {
+  const r = progression.xp_sinks
+  return `多出來的經驗可以換：${r.perk.name}（一次學特質的機會，三選一或寫說法交給 AI）、${r.attr.name}（${r.attr.min_level} 級以上，一點屬性點）、${r.ability.name}（多學一個技能，三選一）。花費從 ${r.perk.base}、${r.attr.base}、${r.ability.base} 起，每換一次那一種就 ×${r.perk.mult}，三種各算各的。經驗從目前的進度扣，還沒滿級時會延後升級。`
+})()
 function spend(attr: string) {
   game.spendAttr(m.value.id, attr as Parameters<typeof game.spendAttr>[1])
   popped.value = ''
@@ -251,8 +257,15 @@ function saveTags() {
           <div>
             <div v-if="!isNoncombatant(m)" class="level">
               <b>Lv.{{ m.level }}</b>
-              <div class="bar xp"><span :style="{ width: `${Math.min(100, (m.xp / xpToNext(m.level)) * 100)}%` }" /></div>
-              <span class="num">EXP {{ m.xp }} / {{ xpToNext(m.level) }}</span>
+              <div class="bar xp"><span :style="{ width: `${m.level >= 20 ? 100 : Math.min(100, (m.xp / xpToNext(m.level)) * 100)}%` }" /></div>
+              <span class="num">{{ m.level >= 20 ? `EXP ${m.xp}（滿級）` : `EXP ${m.xp} / ${xpToNext(m.level)}` }}</span>
+            </div>
+            <div v-if="!isNoncombatant(m)" class="xp-sinks">
+              <span class="small muted">經驗的用途 <Hint :text="XP_SINK_HINT" /></span>
+              <button
+                v-for="k in XP_SINKS" :key="k" class="small" :disabled="inCombat || !!xpSinkBlocked(m, k) || game.judging"
+                :title="xpSinkBlocked(m, k) ?? `花 ${xpSinkCost(m, k)} 經驗`" @click="game.spendXp(m.id, k)"
+              >{{ xpSinkName(k) }}<span class="cost">{{ xpSinkCost(m, k) }}</span></button>
             </div>
             <table class="attrs">
               <thead><tr><th>屬性</th><th>數值</th><th>修正</th><th>來源</th><th /></tr></thead>
@@ -459,6 +472,8 @@ function saveTags() {
 .level b { font-size: 1.1rem; font-weight: 900; }
 .level .bar { height: 7px; }
 .level .num { font-size: var(--fs-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
+.xp-sinks { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -2px 0 8px; }
+.xp-sinks .cost { margin-left: 4px; font-variant-numeric: tabular-nums; opacity: .7; font-size: var(--fs-xs); }
 .attrs { width: 100%; border-collapse: collapse; }
 .attrs th { text-align: left; font-weight: 600; padding: 6px 4px; font-size: var(--fs-sm); color: var(--muted); border-bottom: 2px solid #4b3420; }
 .attrs td { padding: 7px 4px; border-bottom: 1px dotted var(--border); font-variant-numeric: tabular-nums; }

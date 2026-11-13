@@ -380,6 +380,8 @@ export interface Character {
   pendingAbilityChoices?: string[][]
   /** 目前這組選項已經重抽的次數 */
   abilityRerollsUsed?: number
+  /** 用經驗換過幾次（鑽研特質、苦練屬性、鑽研技能，各算各的；xpSinks.ts） */
+  xpSinks?: Partial<Record<'perk' | 'attr' | 'ability', number>>
   /** 只有 NPC 隊友有；-100 ~ 100。來源是人際關係條目，這裡是同步副本 */
   affinity?: number
   isPlayer?: boolean

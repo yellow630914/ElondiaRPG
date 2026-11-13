@@ -98,6 +98,7 @@
     { "id": "linghu", "name": "靈狐族", "home": "yanhua_south" },
     { "id": "centaur", "name": "人馬族", "home": "yanhua_north" }
   ],
+  "xp_sinks": {"$comment": "多出來的經驗的用途（docs/GROWTH.md 或 docs/PERKS.md 4.3 節）：鑽研特質（perk，一次學特質的機會：三選一或寫說法交給 AI）、苦練屬性（attr，一點屬性點，min_level 級以上）、鑽研技能（ability，多學一個技能：三選一）。花費 = base × mult ^ 已經換過幾次，三種各算各的；從目前的經驗扣（還沒滿級時會延後升級）。", "perk": {"name": "鑽研特質", "base": 3000, "mult": 2, "min_level": 1}, "attr": {"name": "苦練屬性", "base": 3000, "mult": 2, "min_level": 20}, "ability": {"name": "鑽研技能", "base": 2000, "mult": 2, "min_level": 1}},
   "ability_rerolls": 3,
   "$comment_ability_rerolls": "升級時的能力三選一，每組可以重抽的次數。",
   "affinity": {

@@ -40,9 +40,10 @@ import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type CraftId, type LewdKey, type ShopType } from '@/engine/data'
 import { templePurify } from '@/engine/purify'
+import { spendXp, type XpSink } from '@/engine/xpSinks'
 import { takeVoluntarySlave } from '@/engine/voluntarySlave'
 import { syncGear } from '@/engine/gear'
-import { migrate, newGame, player } from '@/engine/state'
+import { migrate, newGame, player, withRng } from '@/engine/state'
 import { takeLocationNotice } from '@/engine/pruneLocations'
 import { askAround } from '@/engine/askAround'
 import { swapNpcGender } from '@/engine/genderSwap'
@@ -1565,6 +1566,9 @@ export const useGame = defineStore('game', () => {
     rerollAbility: (member: string) => run((s) => town.rerollAbility(s, member, useSettings().rerollLimit())),
     // 技能攜帶上限：把學會的技能帶上或放回技能庫
     setAbilityCarried: (member: string, ability: string, on: boolean) => run((s) => town.setAbilityCarried(s, member, ability, on)),
+    /** 多出來的經驗換特質的機會、屬性點或技能三選一（xpSinks.ts） */
+    spendXp: (member: string, kind: XpSink) =>
+      run((s) => withRng(s, (rng) => spendXp(s.party.find((m) => m.id === member)!, kind, rng))),
     spendAttr: (member: string, attr: AttrId) =>
       run((s) => spendAttrPoint(s.party.find((m) => m.id === member)!, attr)),
     doTownQuest: (id: string, intent?: string) => run((s) => town.doTownQuest(s, id, intent)),

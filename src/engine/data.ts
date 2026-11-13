@@ -712,6 +712,8 @@ export const progression = progressionJson as unknown as {
   affinity: { min: number; max: number; initial: number; stages: { range: [number, number]; name: string }[] }
   power_gap_attitude: { by_diff: Record<string, string>; clamp: [number, number] }
   ability_rerolls: number
+  /** 多出來的經驗的用途（xpSinks.ts） */
+  xp_sinks: Record<'perk' | 'attr' | 'ability', { name: string; base: number; mult: number; min_level: number }>
 }
 /** 一個公會階級的委託報酬（economy.json 的 quest_rewards_cc） */
 export interface QuestReward {
