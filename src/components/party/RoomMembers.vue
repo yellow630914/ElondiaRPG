@@ -4,7 +4,9 @@ import { craftRules } from '@/engine/data'
 import { homeLabel, homesHere, lodgeRefusal, sendHomeRefusal } from '@/engine/away'
 import type { Character } from '@/engine/types'
 import { useGame } from '@/stores/game'
+import { rosterMaster } from '@/engine/masterRoster'
 import NameTag from '../NameTag.vue'
+import MasterRosterPropose from './MasterRosterPropose.vue'
 
 // 騰出位子：隊員一個一個送回房子、寄放在酒館或請離隊伍（騰出位子的對話框與等你決定的入隊共用）
 const game = useGame()
@@ -13,6 +15,9 @@ const members = computed(() => s.value.party.filter((m) => !m.isPlayer && m.bond
 const homes = computed(() => homesHere(s.value))
 const pick = reactive<Record<string, string>>({})
 const homeFor = (id: string) => pick[id] || homes.value[0]?.id || ''
+// 主人帶著主角時：主人的隊員要向主人提議（masterRoster.ts）
+const master = computed(() => rosterMaster(s.value))
+const mastersMember = (m: Character) => !!master.value && m.group === master.value.id && m.id !== master.value.id
 
 /** 不能請離隊伍的原因 */
 function dismissRefusal(m: Character): string | undefined {
@@ -47,7 +52,8 @@ function dismiss(m: Character) {
   <ul class="plain room-members">
     <li v-for="m in members" :key="m.id" class="member">
       <NameTag :id="m.id" />
-      <div class="acts">
+      <MasterRosterPropose v-if="mastersMember(m)" :member="m" class="acts" />
+      <div v-else-if="m.id !== master?.id" class="acts">
         <template v-if="!sendHomeRefusal(s, m)">
           <select v-if="homes.length > 1" :id="`room-home-${m.id}`" :value="homeFor(m.id)" :aria-label="`${m.name}要回哪一棟房子`" @change="pick[m.id] = ($event.target as HTMLSelectElement).value">
             <option v-for="h in homes" :key="h.id" :value="h.id">{{ homeLabel(h) }}</option>
@@ -57,7 +63,8 @@ function dismiss(m: Character) {
         <button v-if="!lodgeRefusal(s, m)" class="small" @click="game.lodgeAtTavern(m.id)">寄放在酒館</button>
         <button v-if="!dismissRefusal(m)" class="small danger" @click="dismiss(m)">請離隊伍</button>
       </div>
-      <p v-if="why(m)" class="why small muted">{{ why(m) }}</p>
+      <p v-if="m.id === master?.id" class="why small muted">帶著你的主人</p>
+      <p v-else-if="!mastersMember(m) && why(m)" class="why small muted">{{ why(m) }}</p>
     </li>
     <li v-if="!members.length" class="muted">隊伍裡只有你自己。</li>
   </ul>

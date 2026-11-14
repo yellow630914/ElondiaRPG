@@ -12,6 +12,7 @@
 import { pcTagMult } from './pcTags'
 import { setupPitch, setupTrain } from './perkActions'
 import { setupLeave } from './masterHome'
+import { applyRosterProposal, rosterBlocked, rosterDc, rosterOutcomes, rosterScene, ROSTER_KINDS, type RosterKind } from './masterRoster'
 import type { AdultScene } from './content'
 import { setupCraft, setupMake } from './craft'
 import { setupProduce } from './recipes'
@@ -773,13 +774,17 @@ export function releaseSlave(state: GameState, npcId: string): Report {
 // ---- 6. 被主人帶著時，向主人提議雇人、買奴隸 ----
 // 主人出錢；入隊後是主人的隊員（ally，跟著主人的隊伍），買下的奴隸契約屬於主人。見 docs/COMPANIONS.md 第 2.4 節
 
-export type ProposalTarget = { kind: 'hire'; npc: string } | { kind: 'buy'; market: MarketKind; npc: string } | { kind: 'underworld' }
-type PersonProposal = Exclude<ProposalTarget, { kind: 'underworld' }>
+export type ProposalTarget = { kind: 'hire'; npc: string } | { kind: 'buy'; market: MarketKind; npc: string } | { kind: 'underworld' } | { kind: RosterKind; npc: string }
+type PersonProposal = Extract<ProposalTarget, { kind: 'hire' | 'buy' }>
 
-/** target：hire:<npc id>、buy:<public|black>:<npc id>，或 underworld（請主人帶你去這座城的地下街） */
+/**
+ * target：hire:<npc id>、buy:<public|black>:<npc id>，或 underworld（請主人帶你去這座城的地下街）；
+ * 安排隊伍（masterRoster.ts）：dismiss / lodge / home / take:<npc id>
+ */
 export function parseProposal(target: string | undefined): ProposalTarget {
   if (target === 'underworld') return { kind: 'underworld' }
   const [k, a, b] = (target ?? '').split(':')
+  if (a && ROSTER_KINDS.includes(k as RosterKind)) return { kind: k as RosterKind, npc: a }
   if (k === 'hire' && a) return { kind: 'hire', npc: a }
   if (k === 'buy' && (a === 'public' || a === 'black') && b) return { kind: 'buy', market: a, npc: b }
   throw new Error('要向主人提議雇誰、買誰？')
@@ -795,7 +800,7 @@ function masterOf(state: GameState): { member: Character; rec?: NpcRecord } {
 
 /** 提議的花費：雇用照要價，買奴隸照市價；去地下街不花錢 */
 export function proposalCost(state: GameState, t: ProposalTarget): number {
-  if (t.kind === 'underworld') return 0
+  if (t.kind !== 'hire' && t.kind !== 'buy') return 0
   return t.kind === 'hire' ? askingFor(candidate(state, t.npc)) : listing(state, t.market, t.npc).price_cc
 }
 
@@ -809,6 +814,7 @@ export function masterBudget(state: GameState): number {
 
 /** 向主人提議的參考 DC：主人親密度高比較容易；花費相對主人的財力越高越難；主人的身分（好人不愛買奴隸、惡人愛） */
 export function proposeDc(state: GameState, t: ProposalTarget): number {
+  if (t.kind !== 'hire' && t.kind !== 'buy' && t.kind !== 'underworld') return rosterDc(state, t.kind)
   const p = slaveryRules.propose
   const { member, rec } = masterOf(state)
   const affinity = state.relationships?.[member.id]?.affinity ?? 0
@@ -870,6 +876,7 @@ export function applyProposal(state: GameState, report: Report, target: string, 
   const p = slaveryRules.propose
   const t = parseProposal(target)
   if (t.kind === 'underworld') return applyUnderworldProposal(state, report, degree)
+  if (t.kind !== 'hire' && t.kind !== 'buy') return applyRosterProposal(state, report, t.kind, t.npc, degree)
   const rec = validateProposal(state, t)
   const { member: master } = masterOf(state)
   const cost = proposalCost(state, t)
@@ -1041,6 +1048,16 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
             fail: '主人不答應，今天不再提這件事',
             fumble: `主人覺得奴隸不該打聽那種地方（親密度 ${slaveryRules.propose.fumble_affinity}）`,
           },
+        }
+      }
+      if (t.kind !== 'hire' && t.kind !== 'buy') {
+        const why = rosterBlocked(state, t.kind, t.npc)
+        if (why) throw new Error(why)
+        return {
+          attr: slaveryRules.propose.attr,
+          dc: rosterDc(state, t.kind), targetName: masterOf(state).member.name, situational: [{ label: '契約的服從懲罰', value: -obediencePenalty(state) }],
+          scene: rosterScene(state, t.kind, t.npc),
+          outcomes: rosterOutcomes(state, t.kind, t.npc),
         }
       }
       const rec = validateProposal(state, t)

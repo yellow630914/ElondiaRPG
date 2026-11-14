@@ -25,6 +25,8 @@ import ShopDialog from './items/ShopDialog.vue'
 import BuildingMenu, { type MenuItem } from './place/BuildingMenu.vue'
 import Avatar from './ui/Avatar.vue'
 import GameIcon from './ui/GameIcon.vue'
+import MasterWaiting from './party/MasterWaiting.vue'
+import { rosterWaiting } from '@/engine/masterRoster'
 import Hint from './ui/Hint.vue'
 import { useSettings } from '@/stores/settings'
 
@@ -143,6 +145,8 @@ function squadJoin(leaderId: string) {
 
 // ---- 寄放在酒館的夥伴（不算離隊、不收錢，奴隸不能寄放） ----
 const lodgers = computed(() => lodgersHere(s.value))
+// 主人留在這間酒館的隊員（被主人帶著時，masterRoster.ts）
+const masterLodgers = computed(() => (bound.value ? rosterWaiting(s.value).filter((w) => w.place === 'tavern') : []))
 const companions = computed(() => s.value.party.filter((m) => !m.isPlayer && m.bond !== 'guest'))
 
 // ---- 地下街（underworld.ts）：沒打聽到之前打聽，打聽到之後從這裡走進去 ----
@@ -179,6 +183,7 @@ const menuItems = computed<MenuItem[]>(() => {
   ]
   if (bound.value) {
     items.push({ id: 'recruit', icon: 'users', label: '向主人提議雇人', detail: partyFull.value ? `隊伍已滿（${maxParty.value} 人）` : visible.value.length ? `請${master.value?.name ?? '主人'}出錢雇用今天城裡的冒險者（${visible.value.length} 位）` : '今天城裡沒有可以雇用的冒險者', badge: visible.value.length || '', tone: 'gold' })
+    if (masterLodgers.value.length) items.push({ id: 'lodge', icon: 'home', label: '主人留在這裡的隊員', detail: `${masterLodgers.value.map((w) => w.character.name).join('、')}在這裡等主人`, badge: masterLodgers.value.length })
     if (underworld.value) {
       items.push(escorted.value
         ? { id: 'enter_underworld', icon: 'door', label: `跟著${master.value?.name ?? '主人'}走進${underworld.value.name}`, disabled: !!enterWhy.value, detail: enterWhy.value ?? `主人今天答應帶你去${underworldIn.value.length ? `・裡面有${underworldIn.value.join('、')}` : ''}` }
@@ -376,6 +381,10 @@ const TITLES: Record<Section, string> = { meals: '用餐', recruit: '招募冒�
       </template>
 
       <!-- 寄放夥伴 -->
+      <template v-else-if="section === 'lodge' && bound">
+        <p class="small muted">主人留在這間酒館的隊員。想讓他們回到隊伍，要向{{ master?.name ?? '主人' }}提議（魅力檢定，失敗今天不能再提這個人）。</p>
+        <MasterWaiting place="tavern" />
+      </template>
       <template v-else-if="section === 'lodge'">
         <p class="small muted">寄放的同伴不算離隊：羈絆、契約、親密度都保留，不佔隊伍人數，會一直在這間酒館等你回來帶。不收錢；奴隸只能留在你的房子。</p>
         <h4 class="sub">在這裡等你的人</h4>

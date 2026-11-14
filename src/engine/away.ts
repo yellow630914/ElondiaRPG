@@ -64,10 +64,10 @@ export function awayCompanions(state: GameState): AwayCompanion[] {
   return out.sort((a, b) => b.days - a.days)
 }
 
-/** 寄放在這座城鎮酒館的夥伴 */
+/** 寄放在這座城鎮酒館的夥伴（主人留在這裡的隊員不算，見 masterRoster.ts） */
 export function lodgersHere(state: GameState): Character[] {
   const key = tavernKey(state.location)
-  return Object.values(state.npcs ?? {}).filter((r) => r.staying === key && r.character).map((r) => r.character!)
+  return Object.values(state.npcs ?? {}).filter((r) => r.staying === key && r.character && !r.character.group).map((r) => r.character!)
 }
 
 // ---- 騰出位子：送回房子、寄放酒館 ----
@@ -125,6 +125,8 @@ export function lodgeAtTavern(state: GameState, memberId: string): Report {
 export function takeLodger(state: GameState, id: string): Report {
   const rec = state.npcs?.[id]
   if (!rec || rec.staying !== tavernKey(state.location)) throw new Error(`${rec?.name ?? '這個人'}沒有寄放在這裡`)
+  // 主人留在這裡的隊員（masterRoster.ts）：要向主人提議帶上
+  if (rec.character?.group) throw new Error(`${rec.name}是主人留在這裡的隊員，要向主人提議帶上`)
   const stowed: string[] = []
   const m = unparkMember(state, id, stowed)
   const town = locationById(state.location).name

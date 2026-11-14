@@ -13,6 +13,7 @@ import { awayCompanions, awayLabel } from '@/engine/away'
 import { childrenOf, owedFee, placeText } from '@/engine/children'
 import { formatMoney } from '@/engine/money'
 import NameTag from '../NameTag.vue'
+import MasterRosterPropose from './MasterRosterPropose.vue'
 import { perksOf } from '@/engine/perks'
 import { placeName, tattooName, tattoosOf } from '@/engine/tattoos'
 import { parasiteDef, parasitesOf, stageName } from '@/engine/parasites'
@@ -173,6 +174,9 @@ function canDismiss(m: Character) {
 
       <div v-if="canDismiss(m)" class="foot">
         <button class="small danger" :disabled="inCombat" @click="game.dismiss(m.id)">請離隊伍</button>
+      </div>
+      <div v-else-if="bound && leader && m.group === leader.id && m.id !== leader.id" class="foot">
+        <MasterRosterPropose :member="m" />
       </div>
     </article>
   </div>

@@ -1576,8 +1576,12 @@ export const slaveryRules = slaveryJson as unknown as {
   /** 被主人帶著時向主人提議雇人、買奴隸（companions.ts 的 proposeDc） */
   propose: {
     attr: AttrId; base: number; affinity_step: number; budget_per_level: number; cost_dc: number; cost_dc_max: number
-    wealth: Record<string, number>; tag_dc: Record<'hire' | 'buy' | 'underworld', Record<string, number>>
+    wealth: Record<string, number>
+    /** 主人身分的 DC 修正：雇人、買奴隸、去地下街，以及安排隊伍（dismiss 請離、lodge 留在酒館、home 留在家裡、take 帶上） */
+    tag_dc: Record<'hire' | 'buy' | 'underworld', Record<string, number>> & Partial<Record<'dismiss' | 'lodge' | 'home' | 'take', Record<string, number>>>
     partial_share: number; critical_affinity: number; fumble_affinity: number
+    /** 安排隊伍的提議部分成功時，主人的親密度變化 */
+    partial_affinity: number
   }
   master_tags: {
     kinds: Record<'adventurer' | 'commoner', { dc: number; market: number }>

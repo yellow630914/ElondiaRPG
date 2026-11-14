@@ -155,6 +155,17 @@ export function leaveParty(state: GameState, id: string, report?: Report, reason
     ...(at ? { at: { ...at, until: state.time.day + companionRules.leave_stay_days } } : {}),
   })
   recordChange(report, { npc: id, name: member.name, change: 'left', ...(member.bond ? { bond: member.bond } : {}), ...(reason ? { reason } : {}) })
+  // 隊長（主人）離開：留在酒館、主人家裡等他的隊員不再等（masterRoster.ts），回到各自的生活
+  if (member.bond === 'leader') {
+    for (const r of Object.values(state.npcs ?? {})) {
+      if (!r.staying || r.character?.group !== id) continue
+      delete r.staying
+      delete r.stayingSince
+      delete r.at
+      delete r.character.bond
+      delete r.character.group
+    }
+  }
   return member
 }
 

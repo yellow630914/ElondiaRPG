@@ -11,6 +11,8 @@ import { useGame } from '@/stores/game'
 import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
 import GameIcon from './ui/GameIcon.vue'
+import MasterWaiting from './party/MasterWaiting.vue'
+import { rosterWaiting } from '@/engine/masterRoster'
 import Hint from './ui/Hint.vue'
 
 // 房子（docs/HOMES.md）：站在待售的空地上可以買；在自己的房子裡擺家具、讓夥伴留守或帶上
@@ -35,6 +37,8 @@ const masterHome = computed(() => {
   const h = homeOfArea(s.value, area.value)
   return h?.master ? h : undefined
 })
+// 主人留在家裡的隊員：向主人提議帶上（masterRoster.ts）
+const masterWaiting = computed(() => (masterHome.value ? rosterWaiting(s.value).filter((w) => w.place === 'home') : []))
 
 // ---- 自己的房子 ----
 const home = computed(() => ownHomeOfArea(s.value, area.value))
@@ -104,6 +108,10 @@ function rename() {
       <Hint text="這是主人的家：可以在這裡長休（睡在下人房），也可以和主人談判；不能擺家具或讓人留下。出門前要主人同意（主動行動）。" />
     </h3>
     <p class="muted">{{ area.name.split('・').at(-1) }}・{{ describeHome(masterHome) }}。</p>
+    <template v-if="masterWaiting.length">
+      <h4 class="sub">主人留在家裡的隊員</h4>
+      <MasterWaiting place="home" />
+    </template>
   </section>
 
   <section v-else-if="home" class="panel home small">
