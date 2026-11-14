@@ -109,7 +109,7 @@ export function composeNarration(state: GameState | null, report: Report, o: Com
     lengthScale: o.config.lengthScale,
     customLength: o.config.customLength,
     pov: o.config.pov,
-    ...(state && narrations && o.config.continuity ? { continuity: continuityForReport(state, narrations, report) } : {}),
+    ...(state && narrations && o.config.continuity ? { continuity: continuityForReport(state, narrations, report, o.config.continuityCount) } : {}),
     ...(o.config.variety ? { variety: varietyHint(report.report_id, report.narration?.mode === 'defeat_cliffhanger') } : {}),
     ...(extra.continuation ? { continuation: extra.continuation } : {}),
   })
@@ -142,7 +142,7 @@ export function composeJudge(state: GameState, p: ActionPending, o: ComposeOptio
     lengthScale: o.config.lengthScale,
     customLength: o.config.customLength,
     pov: o.config.pov,
-    ...(narrations && o.config.continuity ? { continuity: continuityBefore(state, narrations, state.reports.length, p.time, adult) } : {}),
+    ...(narrations && o.config.continuity ? { continuity: continuityBefore(state, narrations, state.reports.length, p.time, adult, o.config.continuityCount) } : {}),
     ...(o.config.variety && !o.splitNarrative ? { variety: varietyHint(p.id) } : {}),
   })
   return { prompt: toOutputScript(prompt, o.language), ...(lore ? { lore } : {}) }

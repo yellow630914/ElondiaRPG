@@ -13,14 +13,21 @@ export interface NarrationLike {
 }
 
 export interface Continuity {
+  /** 更早的幾段正文（由舊到新，各一則：時間、地點、摘要與結尾）；前文只要一段時沒有 */
+  earlier?: string[]
   /** 上一段正文的結尾 */
   previous?: string
   /** 上一段正文之後、這次事件之前發生的事（一行一件） */
   interlude: string[]
 }
 
-/** 往回找上一段正文時最多看幾則日誌 */
+/** 往回找上一段正文時最多看幾則日誌（前文要好幾段時，每多一段多看 LOOKBACK_PER） */
 const LOOKBACK = 20
+const LOOKBACK_PER = 10
+/** 前文最多幾段（提示詞設定的 continuityCount） */
+export const MAX_CONTINUITY = 10
+/** 前文不只一段時，最近一段送長一點的結尾 */
+const LATEST_CHARS = 1000
 /** 幕間最多列幾則日誌（取最近的） */
 const MAX_INTERLUDE = 8
 /** 上一段正文的結尾取多少字 */
@@ -58,17 +65,31 @@ export function tailOf(text: string, chars = TAIL_CHARS): string {
  * index：這次事件在 state.reports 的位置（還沒成為日誌時是 reports.length）；now：這次事件開始的時間。
  * 幕間依時間排列：沒有正文的日誌各一行，中間走過的地方（state.trail）合成一行「移動：來到 A，再到 B」。
  * adult：這次是送往「成人場景」的請求；不是時，成人場景的正文結尾與摘要換成一句中性的說明（ADULT_PLACEHOLDER）。
+ * count：前文要幾段（提示詞設定的「前文段數」）。1 段時只有上一段的結尾（約 300 字）；
+ * 2 段以上時上一段送長一點的結尾（約 1000 字），更早的幾段放在 earlier（各自的時間、地點、摘要與約 300 字的結尾）。
  */
-export function continuityBefore(state: GameState, narrations: Record<string, NarrationLike>, index: number, now: GameTime, adult = false): Continuity {
+export function continuityBefore(state: GameState, narrations: Record<string, NarrationLike>, index: number, now: GameTime, adult = false, count = 1): Continuity {
   const reports = state.reports
+  const want = Math.max(1, Math.min(MAX_CONTINUITY, Math.round(count)))
   const skipped: Report[] = []
   let prev: Report | undefined
-  for (let i = index - 1; i >= 0 && i >= index - LOOKBACK; i--) {
-    const r = reports[i]!
+  const older: Report[] = []
+  const written = (r: Report) => {
     const n = narrations[r.report_id]
-    if (n?.status === 'done' && !n.placeholder && n.text.trim()) {
+    return n?.status === 'done' && !n.placeholder && !!n.text.trim()
+  }
+  const lookback = LOOKBACK + LOOKBACK_PER * (want - 1)
+  for (let i = index - 1; i >= 0 && i >= index - lookback; i--) {
+    const r = reports[i]!
+    if (prev) {
+      if (older.length >= want - 1) break
+      if (written(r)) older.unshift(r)
+      continue
+    }
+    if (written(r)) {
       prev = r
-      break
+      if (want === 1) break
+      continue
     }
     skipped.unshift(r)
   }
@@ -113,12 +134,20 @@ export function continuityBefore(state: GameState, narrations: Record<string, Na
     const hours = Math.floor((until - minutesOf(prev.time.end)) / 60)
     if (hours >= 1) interlude.push(`（從上一段正文結束到這次事件，大約過了 ${hours} 小時）`)
   }
-  const previous = prev ? (!adult && isAdult(prev) ? ADULT_PLACEHOLDER : tailOf(narrations[prev.report_id]!.text)) : undefined
-  return { ...(previous ? { previous } : {}), interlude }
+  const previous = prev ? (!adult && isAdult(prev) ? ADULT_PLACEHOLDER : tailOf(narrations[prev.report_id]!.text, want > 1 ? LATEST_CHARS : TAIL_CHARS)) : undefined
+  // 更早的幾段：時間、地點、摘要與結尾（成人場景的照樣換成中性的說明）
+  const earlier = older.map((r) => {
+    const town = locationName(r.location.at)
+    const head = `${formatTime(r.time.start)}｜${town}`
+    if (!adult && isAdult(r)) return `${head}\n${ADULT_PLACEHOLDER}`
+    const summary = (r.outcome.summary ?? '').trim().slice(0, SUMMARY_CHARS)
+    return `${head}${summary ? `｜${summary}` : ''}\n${tailOf(narrations[r.report_id]!.text)}`
+  })
+  return { ...(earlier.length ? { earlier } : {}), ...(previous ? { previous } : {}), interlude }
 }
 
 /** 已經是日誌的事件 */
-export function continuityForReport(state: GameState, narrations: Record<string, NarrationLike>, report: Report): Continuity {
+export function continuityForReport(state: GameState, narrations: Record<string, NarrationLike>, report: Report, count = 1): Continuity {
   const index = state.reports.findIndex((r) => r.report_id === report.report_id)
-  return continuityBefore(state, narrations, index < 0 ? state.reports.length : index, report.time.start, isAdult(report))
+  return continuityBefore(state, narrations, index < 0 ? state.reports.length : index, report.time.start, isAdult(report), count)
 }

@@ -5,6 +5,7 @@ import PromptSetBar from './PromptSetBar.vue'
 import type { Composed } from '@/narrator/compose'
 import { LORE_STATUS_NAME, type LoreItem, type LoreMode, type LoreSelection } from '@/narrator/lore'
 import { estimateTokens } from '@/narrator/promptConfig'
+import { MAX_CONTINUITY } from '@/narrator/continuity'
 import { CUSTOM_LENGTH_MAX, CUSTOM_LENGTH_MIN, DEFAULT_DEFEAT_RULES, DEFAULT_NARRATION_RULES, DEFAULT_SCENE_RULES, LENGTH_NAME, LENGTH_SCALE_NAME, LENGTH_SCALES, LENGTHS, POV_NAME, POVS, type PromptSection } from '@/narrator/prompt'
 import { sanitizeCustomLength } from '@/narrator/promptConfig'
 import { useGame } from '@/stores/game'
@@ -307,7 +308,10 @@ function resetAll() {
         </label>
         <Hint text="寫在每次請求最後的「本次要求」，正文、續寫與判定時順便寫的經過都照這個。依日誌：和以前一樣，通常是第二人稱（「你」）。第三人稱用主角的名字；第一人稱用「我」。文風或其他提示詞寫的視角會被本次要求蓋過，要改視角請改這裡。" />
         <label class="check"><input v-model="prompts.config.continuity" type="checkbox" /> 前後銜接</label>
-        <Hint text="敘事與判定帶上一段正文的結尾（約 300 字），以及之後沒有寫成正文的事（移動、交易、沒有寫經過的日誌），要 AI 在開頭自然帶過、接著寫。放在後段，不影響快取，每次多送幾百字。" />
+        <label v-if="prompts.config.continuity">前文
+          <input v-model.number="prompts.config.continuityCount" type="number" min="1" :max="MAX_CONTINUITY" step="1" class="num" @change="prompts.config.continuityCount = Math.max(1, Math.min(MAX_CONTINUITY, Math.round(prompts.config.continuityCount || 1)))" /> 段
+        </label>
+        <Hint :text="`敘事與判定帶前面的正文，以及之後沒有寫成正文的事（移動、交易、沒有寫經過的日誌），要 AI 在開頭自然帶過、接著寫。前文 1 段只帶上一段的結尾（約 300 字）；2 段以上時上一段帶約 1000 字，更早的每段帶時間、地點、摘要與約 300 字的結尾（最多 ${MAX_CONTINUITY} 段），比較不會和前文對不上。放在後段，不影響快取；預設 3 段，每次大約多送 2000 字，段數越多 token 越多。`" />
         <label class="check"><input v-model="prompts.config.variety" type="checkbox" /> 變化正文的寫法</label>
         <Hint text="每次在「本次要求」指定不同的開場與收尾（從對白開場、從動作中途切入、停在一個畫面上……），連續兩則不會一樣，避免每次結構都相同。文風已經規定結構時可以關掉。" />
       </div>

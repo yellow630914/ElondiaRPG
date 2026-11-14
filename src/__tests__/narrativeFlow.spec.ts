@@ -225,6 +225,50 @@ describe('continuity between narrations', () => {
   })
 })
 
+describe('several earlier narrations', () => {
+  it('sends the last few passages: the latest longer, the earlier ones as summary and ending, oldest first', () => {
+    const state = game()
+    const texts = ['第一段：你在城門口遇見了老騎士羅蘭，他答應明天教你劍術。', '第二段：你把羅蘭給的護符掛在脖子上。', '第三段：酒館老闆說羅蘭其實是退役的近衛隊長。']
+    const narrations: Record<string, { text: string; status: string; placeholder?: boolean }> = {}
+    const done = texts.map((t, i) => {
+      const r = act(state, `第 ${i + 1} 件事`)
+      narrations[r.report_id] = { text: `${'鋪陳的句子。'.repeat(60)}\n${t}`, status: 'done' }
+      return r
+    })
+    const now = act(state, '去找羅蘭')
+    const one = continuityForReport(state, narrations, now)
+    expect(one.earlier).toBeUndefined()
+    expect(one.previous).toBe(tailOf(narrations[done[2]!.report_id]!.text))
+    const three = continuityForReport(state, narrations, now, 3)
+    expect(three.earlier).toHaveLength(2)
+    expect(three.earlier![0]).toContain('第一段')
+    expect(three.earlier![1]).toContain('第二段')
+    expect(three.earlier![0]).toContain(done[0]!.outcome.summary!.slice(0, 10))
+    expect(three.previous!.length).toBeGreaterThan(one.previous!.length)
+    expect(three.previous).toContain('第三段')
+    // 要的段數比寫過的多：有幾段給幾段
+    expect(continuityForReport(state, narrations, now, 10).earlier).toHaveLength(2)
+    // 提示詞：<earlier> 放在 <previous> 前面，設定的段數照用
+    const user = composeNarration(state, now, options({ continuityCount: 3 }), narrations).prompt.user
+    expect(user.indexOf('<earlier>')).toBeGreaterThan(-1)
+    expect(user.indexOf('<earlier>')).toBeLessThan(user.indexOf('<previous>'))
+    expect(user).toContain('不要重寫、摘要或複述它')
+    expect(composeNarration(state, now, options({ continuityCount: 1 }), narrations).prompt.user).not.toContain('<earlier>')
+  })
+
+  it('keeps earlier adult passages out of general requests', () => {
+    const state = game()
+    const scene = act(state, '和她回房間')
+    scene.narration!.adult_scene = '娼館的親密場景'
+    const plain = act(state, '下樓吃早餐')
+    const narrations = { [scene.report_id]: { text: '（露骨描寫）', status: 'done' }, [plain.report_id]: { text: '你吃了早餐。', status: 'done' } }
+    const now = act(state, '出門')
+    const c = continuityForReport(state, narrations, now, 3)
+    expect(c.earlier!.join('')).toContain(ADULT_PLACEHOLDER)
+    expect(c.earlier!.join('')).not.toContain('露骨描寫')
+  })
+})
+
 describe('varying the structure', () => {
   it('rotates the opening and the ending between consecutive reports', () => {
     expect(varietyHint('r-000010')).not.toBe(varietyHint('r-000011'))

@@ -1,6 +1,7 @@
 // 玩家可以調整的提示詞設定：文風條目、其他提示詞條目、世界書覆寫。
 // 跟著瀏覽器走（所有存檔共用），存在 localStorage（見 src/stores/prompts.ts）。
 
+import { MAX_CONTINUITY } from './continuity'
 import type { LoreItem, LoreOverride } from './lore'
 import { defaultRegexRules, normalizeRegexRules, type RegexRule } from './regex'
 import { CUSTOM_LENGTH_MAX, CUSTOM_LENGTH_MIN, DEFAULT_CUSTOM_LENGTH, LENGTH_SCALES, LENGTHS, POVS, type CustomLength, type LengthScale, type Pov } from './prompt'
@@ -19,6 +20,9 @@ export const PROMPT_TARGETS: PromptTarget[] = ['narration', 'adult', 'judge']
  *   end    後段：放在每次請求的最後（本次要求之前），適合「每次都提醒一次」的指示，但不會被快取
  */
 export type PromptPosition = 'system' | 'end'
+
+/** 前文預設送幾段（玩家回報：只看上一段的結尾，常和很近的前文對不上） */
+export const DEFAULT_CONTINUITY_COUNT = 3
 
 export interface PromptEntry {
   id: string
@@ -53,6 +57,8 @@ export interface PromptConfig {
   pov: Pov
   /** 前後銜接：敘事與判定帶上一段正文的結尾，以及之後沒有寫成正文的事（幕間） */
   continuity: boolean
+  /** 前文送幾段（1～10）：1 段只有上一段的結尾；更多時最近一段送長一點，更早的送摘要與結尾（continuity.ts） */
+  continuityCount: number
   /** 變化正文的寫法：每次在本次要求指定不同的切入方式與收尾 */
   variety: boolean
   /** 玩家修改過的敘事規則；沒有時用預設（DEFAULT_NARRATION_RULES） */
@@ -275,6 +281,7 @@ export function defaultPromptConfig(): PromptConfig {
     customLength: cloneLength(DEFAULT_CUSTOM_LENGTH),
     pov: 'auto',
     continuity: true,
+    continuityCount: DEFAULT_CONTINUITY_COUNT,
     variety: true,
     regex: defaultRegexRules(),
   }
@@ -333,6 +340,7 @@ export function normalizeConfig(raw: unknown): PromptConfig {
     pov: POVS.includes(r.pov as Pov) ? (r.pov as Pov) : base.pov,
     // 舊的設定沒有這兩項：開啟
     continuity: r.continuity !== false,
+    continuityCount: typeof r.continuityCount === 'number' && Number.isFinite(r.continuityCount) ? Math.max(1, Math.min(MAX_CONTINUITY, Math.round(r.continuityCount))) : DEFAULT_CONTINUITY_COUNT,
     variety: r.variety !== false,
     ...(typeof r.narrationRules === 'string' && r.narrationRules.trim() ? { narrationRules: r.narrationRules } : {}),
     ...(typeof r.defeatRules === 'string' && r.defeatRules.trim() ? { defeatRules: r.defeatRules } : {}),

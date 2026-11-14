@@ -146,17 +146,20 @@ export function varietyHint(id: string, cliffhanger = false): string {
 export function continuitySections(c?: Continuity): { sections: PromptSection[]; narrationNote: string; judgeNote: string } {
   const previous = c?.previous?.trim() ?? ''
   const interlude = c?.interlude ?? []
+  const earlier = c?.earlier ?? []
   const notes = [
+    earlier.length ? '- <earlier> 是更早的幾段正文（由舊到新，只有摘要與結尾）：用來記住之前發生過的事、人物說過的話與彼此的關係，寫的時候不要和它矛盾；不要重寫、摘要或複述它' : '',
     previous ? '- <previous> 是上一段正文的結尾：這次從它之後接著寫，不要重寫或摘要它，開場與收尾也不要用和它一樣的句式' : '',
     interlude.length ? '- <interlude> 是上一段正文之後、這次事件之前發生而沒有寫成正文的事：開頭用一兩句自然帶過、銜接到這次事件，不要逐條複述，也不要改寫其中的結果' : '',
   ].filter(Boolean)
   return {
     sections: [
+      { key: 'earlier', title: '更早的正文', part: 'user', text: earlier.length ? `<earlier>\n${earlier.join('\n\n')}\n</earlier>` : '' },
       { key: 'previous', title: '上一段正文的結尾', part: 'user', text: previous ? `<previous>\n${previous}\n</previous>` : '' },
       { key: 'interlude', title: '幕間（上一段正文之後發生的事）', part: 'user', text: interlude.length ? `<interlude>\n${interlude.join('\n')}\n</interlude>` : '' },
     ],
     narrationNote: notes.length ? `\n${notes.join('\n')}` : '',
-    judgeNote: previous || interlude.length ? '\n- <previous>、<interlude> 是這次行動之前剛發生的事（主角人在哪裡、剛做了什麼），判定時可以參考；narrative 有寫時也從那裡接著寫' : '',
+    judgeNote: previous || interlude.length ? `\n- ${earlier.length ? '<earlier>、' : ''}<previous>、<interlude> 是這次行動之前剛發生的事（主角人在哪裡、剛做了什麼），判定時可以參考；narrative 有寫時也從那裡接著寫` : '',
   }
 }
 
