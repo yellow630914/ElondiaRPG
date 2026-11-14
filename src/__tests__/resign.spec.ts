@@ -108,4 +108,25 @@ describe('說服主人重簽契約', () => {
     const { state } = slave()
     expect(() => prepareAction(state, { kind: 'resign', text: '', terms: {} })).toThrow('和現在的一樣')
   })
+
+  it('部分成功至少往目標移一格', () => {
+    const { state } = slave(60)
+    const now = contractOf(pcOf(state))!.terms
+    const half = halfwayTerms(now, resignTerms(state, { negotiate_dc: now.negotiate_dc - 1, income_share: now.income_share - 0.01, exit_dc: now.exit_dc }))
+    expect(half.negotiate_dc).toBe(now.negotiate_dc - 1)
+    expect(half.income_share).toBe(Math.round((now.income_share - 0.01) * 100) / 100)
+    expect(half.exit_dc).toBe(now.exit_dc)
+  })
+
+  it('和「找主人做點什麼」一樣：主人不在身邊、眼前有事要處理時不能提', () => {
+    const { state, master } = slave()
+    const m = state.party.find((x) => x.id === master)!
+    m.status.push('away')
+    expect(resignBlocked(state)).toBe('主人不在身邊')
+    m.status = m.status.filter((x) => x !== 'away')
+    state.standoff = {} as never
+    expect(resignBlocked(state)).toBe('現在不能這麼做')
+    delete state.standoff
+    expect(resignBlocked(state)).toBeUndefined()
+  })
 })

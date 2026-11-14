@@ -8,7 +8,7 @@
 
 import { checkModifiers, modifierNote } from './perks'
 import { condMet } from './storyFlags'
-import { sceneShown } from './landmarks'
+import { sceneShown, summonedInto } from './landmarks'
 import mapsJson from '@data/world/maps.json'
 import { attrOf, snapshot } from './character'
 import { startCombat, type CombatState } from './combat'
@@ -1183,7 +1183,7 @@ function linkTarget(state: GameState): Area | undefined {
 /** 腳下的路口通往的區域被衛兵擋著時的原因（貴族區、王城；畫面顯示用） */
 export function linkEntryBlock(state: GameState): { reason: string; zone: string } | null {
   const target = linkTarget(state)
-  const reason = target && zoneEntryBlock(state, target.zone)
+  const reason = target && zoneEntryBlock(state, target.zone, !!summonedInto(state, target.key))
   return reason ? { reason, zone: target.zone! } : null
 }
 
@@ -1218,7 +1218,7 @@ export function crossLink(state: GameState): StepResult {
   }
   const target = getArea(state, cell.link.area)
   // 貴族區與王城有衛兵把守
-  const blocked = zoneEntryBlock(state, target.zone)
+  const blocked = zoneEntryBlock(state, target.zone, !!summonedInto(state, target.key))
   if (blocked) throw new Error(blocked)
   // 主人的家：走出大門前要主人同意
   if (cell.dir === 'out' && atMasterHome(state, area)) assertMayLeaveHouse(state)

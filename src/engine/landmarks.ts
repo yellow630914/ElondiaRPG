@@ -49,13 +49,22 @@ export function storyInside(state: GameState, map: string): boolean {
   return activeNodes(state).some((n) => n.node.at.where === 'special' && n.node.at.special_map === map)
 }
 
+/**
+ * 被召見：這一區有地標的內部（interior_story）擺著進行中的特殊任務點，例如宣德樓的城樓、金帳的內帳。
+ * 王城的衛兵照樣放行（不用聲望、許可或說服），見 grid.ts 的 crossLink
+ */
+export function summonedInto(state: GameState, areaKey: string): LandmarkDef | undefined {
+  return Object.values(landmarks).find((l) => l.at.area === areaKey && l.interior_story && l.interior && storyInside(state, l.interior))
+}
+
 export function interiorBlocked(state: GameState): string | undefined {
   const l = landmarkHere(state)
   if (!l?.interior || !specialMaps[l.interior]) return '這裡沒有可以進去的地方'
   if (insideLandmark(state, l)) return '已經在裡面了'
   // 只在特殊任務的任務點在裡面時開放（金帳的內帳：被召見才進得去）
   if (l.interior_story && !storyInside(state, l.interior)) return `沒有事要辦時進不去${specialMaps[l.interior]!.name}`
-  return landmarkClosed(state, l) ?? (l.enter?.role ? roleNote(state, l.enter.role) : undefined)
+  // 被召見（任務點在裡面）：官方機構不因為逃亡奴隸的身分擋人
+  return landmarkClosed(state, l, { summoned: !!l.interior_story }) ?? (l.enter?.role ? roleNote(state, l.enter.role) : undefined)
 }
 
 /**
@@ -95,14 +104,14 @@ export function withLandmark(state: GameState, scene: string): string {
 // ---- 開放條件 ----
 
 /** 地標現在不開放的原因（開放時是 undefined） */
-export function landmarkClosed(state: GameState, l: LandmarkDef): string | undefined {
+export function landmarkClosed(state: GameState, l: LandmarkDef, opts: { summoned?: boolean } = {}): string | undefined {
   const o = l.open
   if (!o) return undefined
   if (o.hours === 'day' && isNight(state.time)) return `${l.name}只在白天開放`
   if (o.hours === 'night' && !isNight(state.time)) return `${l.name}只在夜裡開放`
   if (!condMet(state, { ...(o.flags ? { flags: o.flags } : {}), ...(o.flags_none ? { flags_none: o.flags_none } : {}) })) return `${l.name}現在不開放`
   if (o.min_reputation && !meetsReputation(state, locationById(l.location).faction, o.min_reputation)) return `要在這裡的勢力有 ${o.min_reputation} 點聲望，${l.name}才讓你進去`
-  if (o.official && isFugitive(state)) return `${l.name}的人認出了你身上的契約印記，不讓你進去`
+  if (o.official && isFugitive(state) && !opts.summoned) return `${l.name}的人認出了你身上的契約印記，不讓你進去`
   return undefined
 }
 

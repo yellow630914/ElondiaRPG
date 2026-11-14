@@ -4,8 +4,8 @@
 
 import { slaveryRules, type Degree } from './data'
 import { negotiateDc } from './companions'
-import { addAffinity, isBound, pcOf } from './party'
-import { contractTerms, sanitizeTerms } from './slavery'
+import { addAffinity, pcOf } from './party'
+import { contractTerms, masterBusyBlocked, sanitizeTerms } from './slavery'
 import { contractOf } from './tattoos'
 import type { GameState, MarkTerms, Report } from './types'
 
@@ -26,12 +26,13 @@ function masterAffinity(state: GameState): number {
 /** 不能提重簽的原因（可以時是 undefined） */
 export function resignBlocked(state: GameState): string | undefined {
   const c = contractOf(pcOf(state))
-  if (!c || !isBound(state)) return '你沒有被主人帶著'
+  // 和「找主人做點什麼」一樣：主人要在身邊、眼前沒有要先處理的事（主人事件、對峙、刻印……）
+  const busy = masterBusyBlocked(state)
+  if (!c || busy) return busy ?? '你沒有被主人帶著'
   const need = rules().min_affinity
   const aff = masterAffinity(state)
   if (aff < need) return `${c.masterName}還不夠信任你（親密度 ${need} 以上才肯談，現在 ${aff}）`
   if (state.flags[refusedFlag] === state.time.day) return `${c.masterName}今天不想再聽你提契約的事`
-  if (state.combat || state.pendingAction) return '現在不能這麼做'
   return undefined
 }
 
@@ -49,12 +50,17 @@ export function resignTerms(state: GameState, raw: Partial<MarkTerms> = {}): Mar
   return t
 }
 
-/** 部分成功：數值各往提出的方向改一半，名稱與描述不變 */
+/** 部分成功：數值各往提出的方向改一半（至少一格：DC 1 點、比例 1%），名稱與描述不變 */
 export function halfwayTerms(now: MarkTerms, wanted: MarkTerms): MarkTerms {
   const out: Partial<MarkTerms> = { ...now }
   for (const k of RESIGN_FIELDS) {
-    const mid = (now[k] + wanted[k]) / 2
-    out[k] = RATIO.includes(k) ? Math.round(mid * 100) / 100 : Math.round(mid)
+    if (wanted[k] === now[k]) continue
+    // 以格計算（比例 1% 一格）：取中間四捨五入，和現在一樣時往目標移一格
+    const unit = RATIO.includes(k) ? 100 : 1
+    const a = Math.round(now[k] * unit)
+    const b = Math.round(wanted[k] * unit)
+    const m = Math.round((a + b) / 2)
+    out[k] = (m === a ? a + Math.sign(b - a) : m) / unit
   }
   return sanitizeTerms(out, now)
 }

@@ -2,8 +2,9 @@
 // 之前金帳的內帳、宣德樓的城樓、赤鬟的走私船艙只能從任務傳送進去，離開之後或任務本身沒有傳送的就卡住了
 import { describe, expect, it } from 'vitest'
 import { landmarks, specialMaps, stories } from '@/engine/data'
-import { currentArea, enterLocation, standOn, type CellKind } from '@/engine/grid'
-import { enterLandmark, interiorBlocked } from '@/engine/landmarks'
+import { blockKeys, crossLink, currentArea, enterLocation, getArea, linkEntryBlock, standOn, type CellKind } from '@/engine/grid'
+import { enterLandmark, interiorBlocked, landmarkClosed } from '@/engine/landmarks'
+import { pcOf } from '@/engine/party'
 import { newGame } from '@/engine/state'
 import { activeNodes, nodesHere, placeText, startStory } from '@/engine/story'
 import { setFlag } from '@/engine/storyFlags'
@@ -56,5 +57,40 @@ describe('有任務點的特殊地圖都進得去', () => {
     expect(i, 'marker').toBeGreaterThanOrEqual(0)
     state.position = { area: area.key, x: i % area.width, y: Math.floor(i / area.width) }
     expect(nodesHere(state).map((n) => n.node.id)).toContain(nodeId)
+  })
+})
+
+// 宣德樓、金帳在王城裡：任務點在裡面時王城的衛兵放行（被召見），逃亡奴隸也進得去；沒有事要辦時照舊要聲望或說服
+describe('被召見時王城的衛兵放行', () => {
+  const palace = doors.filter((l) => l.at.area.endsWith('/palace'))
+  const pick = (map: string) => stories.flatMap((d) => d.nodes.filter((n) => n.at.where === 'special' && n.at.special_map === map).map((n) => ({ d, n })))[0]!
+
+  /** 站到通往地標那一區的路口 */
+  function atGate(state: GameState, area: string) {
+    for (const key of blockKeys(state.location)) {
+      const a = getArea(state, key)
+      const i = a.cells.findIndex((c) => c.kind === 'link' && c.link?.area === area)
+      if (i >= 0) return void (state.position = { area: a.key, x: i % a.width, y: Math.floor(i / a.width) })
+    }
+    throw new Error(`no gate to ${area}`)
+  }
+
+  it.each(palace.map((l) => [l.name, l] as const))('%s', (_, l) => {
+    const { d, n } = pick(l.interior!)
+    const state = atDoor(l.id, l.location)
+    atGate(state, l.at.area)
+    expect(linkEntryBlock(state)?.zone).toBe('palace')
+    startStory(state, d.id)
+    for (const f of n.requires?.flags ?? []) setFlag(state, f)
+    if (n.hours === 'night') state.time.hour = 21
+    expect(linkEntryBlock(state)).toBeNull()
+    crossLink(state)
+    expect(currentArea(state).key).toBe(l.at.area)
+    // 逃亡奴隸：官方機構照樣讓被召見的人進去
+    standOn(state, l.id as CellKind)
+    pcOf(state).status.push('fugitive')
+    expect(interiorBlocked(state)).toBeUndefined()
+    // 沒有事要辦時：逃亡奴隸照舊被官方機構擋下
+    expect(landmarkClosed(state, l)).toContain('契約印記')
   })
 })
