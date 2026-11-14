@@ -4007,7 +4007,9 @@
    "scene": "重簷的城樓下，禁軍持戟肅立；樓上的天青琉璃瓦在日光下泛著淡淡的青光。",
    "open": {
     "official": true
-   }
+   },
+   "interior": "sm_yh_xuande_tower",
+   "interior_story": true
   },
   {
    "id": "lm_yh_shangqin",
@@ -5969,7 +5971,9 @@
       "breast_band"
      ]
     }
-   ]
+   ],
+   "interior": "sm_yh_chihuan_hold",
+   "interior_story": true
   },
   {
    "id": "lm_yh_big_kang",
