@@ -52,7 +52,9 @@ describe('tattoo data', () => {
     // 順從累積（submission）：模板寫了 submission_every 的才有（慾望戰鬥 S8）
     expect(termsFromTemplate('labor').functions).toEqual(['identity', 'obedience', 'income', 'tracking', 'submission'])
     expect(termsFromTemplate('combat').functions).toEqual(['identity', 'obedience', 'income', 'tracking', 'tether', 'submission'])
-    expect(termsFromTemplate('arcane').functions).toContain('spell_seal')
+    // 魔導束縛契約不再封印法術（2026-11）；有法術環上限的印記才有魔力封印
+    expect(termsFromTemplate('arcane').functions).not.toContain('spell_seal')
+    expect(deriveFunctions({ ...termsFromTemplate('arcane'), spell_cap: 1 })).toContain('spell_seal')
     expect(deriveFunctions({ ...termsFromTemplate('labor'), income_share: 0, recapture_chance: 0, submission_every: undefined })).toEqual(['identity', 'obedience'])
   })
 

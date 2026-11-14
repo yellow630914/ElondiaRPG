@@ -498,7 +498,7 @@ describe('the player as a slave', () => {
     expect(contractOf(pc)!.obedience).toBe(contractDef(contractOf(pc)!.kind).obedience_penalty + 1)
   })
 
-  it('seals spells above the contract cap in combat', () => {
+  it('does not seal spells under the arcane contract any more', () => {
     const state = game(13, { classId: 'wizard' })
     const pc = state.party[0]!
     pc.level = 5
@@ -506,7 +506,8 @@ describe('the player as a slave', () => {
     applyEffects(state, blankReport(state), [{ type: 'enslave_player', master: master.id, contract: 'arcane' }])
     startCombat(state, [['giant_rat', 1]])
     const me = state.combat!.combatants.find((c) => c.id === 'pc')!
-    expect(me.slots).toHaveLength(1)
+    // 魔導束縛契約以前封印到 1 環（2026-11 拿掉）
+    expect(me.slots.length).toBeGreaterThan(1)
   })
 })
 

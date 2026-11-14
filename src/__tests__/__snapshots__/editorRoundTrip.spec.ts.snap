@@ -197,7 +197,7 @@ exports[`world editor round trip > markRules: opening and saving without changes
 
 exports[`world editor round trip > marks: opening and saving without changes keeps the data 1`] = `
 {
-  "arcane": "25fef5b1d424",
+  "arcane": "253601e80196",
   "brothel": "e6e5dc789ec1",
   "combat": "e4021181a963",
   "labor": "8b4f30f9f7ae",

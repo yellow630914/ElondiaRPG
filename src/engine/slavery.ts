@@ -1093,7 +1093,8 @@ export function unmarkOffers(state: GameState): UnmarkOffer[] {
   const cell = currentCell(state).kind
   if (contract && !isBound(state) && !state.pendingMark) {
     const strength = markStrength(contract)
-    const sealed = contractTerms(contract).functions.includes('spell_seal')
+    // 法師解構：魔力封印、魔導束縛契約（法陣做的印記）比較好拆
+    const sealed = contractTerms(contract).functions.includes('spell_seal') || contract.kind === 'arcane'
     for (const [id, def] of Object.entries(u.services) as [UnmarkServiceId, UnmarkServiceDef][]) {
       const base = { service: id, name: def.name, desc: def.desc, attr: def.attr }
       const dc = strength - def.dc_offset + (isFugitive(state) ? def.fugitive_dc ?? 0 : 0) - (sealed ? def.arcane_bonus ?? 0 : 0)

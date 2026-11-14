@@ -6,7 +6,7 @@ import { baseAttrs, createPlayer, gainXp, guildRankFor, recalc } from './charact
 import { pruneSpecialMaps } from './specialMaps'
 import { pruneParasites, refreshParasiteMarks } from './parasites'
 import { pruneLocations } from './pruneLocations'
-import { abilities, attributeRules, classDef, classes, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
+import { abilities, attributeRules, classDef, classes, contractDef, companionRules, findLocation, isChoosablePerk, itemDef, locationById, perkDef, setSaveItems, specialMapOfKey, statuses, type Attrs, type PerkDef } from './data'
 import { noteLoot } from './expedition'
 import { creationGear, gearRules, setExtraSlotCount, syncGear, wearDefaultUnderwear, type CreationGear } from './gear'
 import { addMerit, applyRankUp } from './guild'
@@ -192,8 +192,9 @@ function migrateJewelry(gear: Record<string, EquippedGear | undefined> | undefin
  *     行囊、裝備、商店……裡的舊名字跟著改；屬性一樣的合成一疊
  * 13：自己鎖上的拘束具有了鑰匙（EquippedGear.keyHolder，docs/LEWD_STATS.md 第 7 節）：已經自己鎖上的（有鎖、不是別人鎖上的）
  *     鑰匙算在自己身上（self）；正在淫鬥場打的那件（打完就拿掉）不算
+ * 14：魔導束縛契約不再封印法術：存檔裡照模板刻的魔導束縛（kind arcane）拿掉法術環上限、魔力封印的功能與那一項副作用（自訂印記不動）
  */
-export const SAVE_SCHEMA = 13
+export const SAVE_SCHEMA = 14
 
 const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
   [2, (s) => {
@@ -263,7 +264,29 @@ const SCHEMA_STEPS: [number, (state: GameState) => void][] = [
       }
     }
   }],
+  [14, (s) => {
+    unsealArcane(s)
+  }],
 ]
+
+/**
+ * 存檔格式 14：魔導束縛契約不再封印法術。契約的條款是刻印時複製進存檔的（隊伍、NPC、留在房子裡的奴隸身上都有），
+ * 照模板刻的（kind arcane）拿掉法術環上限、魔力封印的功能，副作用裡的那一項換成現在模板的寫法
+ */
+function unsealArcane(node: unknown) {
+  if (!node || typeof node !== 'object') return
+  const obj = node as Record<string, unknown>
+  const terms = obj.terms as Partial<MarkTerms> | undefined
+  if (obj.kind === 'arcane' && terms && typeof terms === 'object' && 'spell_cap' in terms) {
+    delete terms.spell_cap
+    if (Array.isArray(terms.functions)) terms.functions = terms.functions.filter((f) => f !== 'spell_seal')
+    if (Array.isArray(terms.side_effects)) {
+      const now = contractDef('arcane').side_effects[0]
+      terms.side_effects = terms.side_effects.map((x) => (x.startsWith('法陣抽取魔力') && now ? now : x))
+    }
+  }
+  for (const v of Object.values(obj)) unsealArcane(v)
+}
 
 /**
  * 存檔格式 12：自訂裝備的舊名字 → 新的鍵（名字＋屬性雜湊）。撞名時加的編號（「（2）」）拿掉；
