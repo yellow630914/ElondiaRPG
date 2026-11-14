@@ -98,6 +98,19 @@ describe('recipe plans', () => {
     expect(recipePlan(state, '微弱治療藥劑', 1, pc(state)).blocked).toContain('費用不夠')
   })
 
+  it('scales the consumable fee by the save rule (0 = free)', () => {
+    const state = game()
+    addItem(state.inventory, '煉金工具組', 1)
+    addItem(state.inventory, '藥草', 9)
+    state.options!.recipeCostMult = 2
+    expect(recipePlan(state, '微弱治療藥劑', 1, pc(state)).cost).toBe(Math.round(140 * locationMult(state) * 2))
+    state.options!.recipeCostMult = 0
+    const plan = recipePlan(state, '微弱治療藥劑', 1, pc(state))
+    expect(plan.cost).toBe(0)
+    state.money_cc = 0
+    expect(recipePlan(state, '微弱治療藥劑', 1, pc(state)).blocked).toBeUndefined()
+  })
+
   it('rents the shop workshop for middle-tier recipes', () => {
     const state = game()
     pc(state).crafts = { alchemy: { level: 3, xp: 0 } }

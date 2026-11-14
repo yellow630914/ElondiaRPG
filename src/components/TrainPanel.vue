@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { attrName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
-import { trainOptions } from '@/engine/perkActions'
+import { trainees, trainOptions } from '@/engine/perkActions'
 import { trainDays } from '@/engine/perks'
 import { craftLessons } from '@/engine/craftLessons'
 import { craftRules } from '@/engine/data'
@@ -14,15 +14,24 @@ import Hint from './ui/Hint.vue'
 const game = useGame()
 const s = computed(() => game.state!)
 // 身上的缺陷可以在這裡克服的，排在前面；老師會教的接在後面
+// 誰來學：主角或隊伍裡的夥伴（學工藝、學特質、克服缺陷都看這個人；夥伴第一次入隊時工藝都是 0 級）
+const learner = ref('')
+const learnerId = computed(() => (s.value.party.some((m) => m.id === learner.value) ? learner.value : (s.value.party.find((m) => m.isPlayer) ?? s.value.party[0]!).id))
+const learnerChar = computed(() => s.value.party.find((m) => m.id === learnerId.value)!)
+/** 這個人能不能受訓學特質（任務同行、跟著別人的隊伍不行） */
+const canTrain = computed(() => trainees(s.value).some((m) => m.id === learnerId.value))
 const list = computed(() => {
   void game.cell
   void s.value.time.minute
-  return trainOptions(s.value)
+  return canTrain.value ? trainOptions(s.value, learnerChar.value.isPlayer ? undefined : learnerId.value) : []
+})
+// 隊伍裡有人能在這裡學特質或克服缺陷（換人學的時候選單還在）
+const anyTrain = computed(() => {
+  void game.cell
+  void s.value.time.minute
+  return trainees(s.value).some((m) => trainOptions(s.value, m.isPlayer ? undefined : m.id).length > 0)
 })
 // 學工藝（R21）：這間店教的工藝，店裡最多教到 Lv.2
-// 誰來學：主角或隊伍裡的夥伴（夥伴第一次入隊時工藝都是 0 級）
-const learner = ref('')
-const learnerId = computed(() => (s.value.party.some((m) => m.id === learner.value) ? learner.value : (s.value.party.find((m) => m.isPlayer) ?? s.value.party[0]!).id))
 const lessons = computed(() => {
   void game.cell
   void s.value.time.minute
@@ -37,15 +46,15 @@ const teaches = computed(() => {
 const text = ref('')
 
 function train(id: string) {
-  void game.train(id, text.value)
+  void game.train(learnerChar.value.isPlayer ? id : `${id}@${learnerId.value}`, text.value)
   text.value = ''
 }
 </script>
 
 <template>
-  <FoldMenu v-if="list.length || teaches" id="place.train" class="train" icon="book" label="受訓" :detail="teaches ? '學工藝、學特質或克服缺陷' : '花錢、花時間學特質或克服缺陷'" :badge="list.length + lessons.length">
-    <p class="muted small intro">花錢、花時間受訓 <Hint text="成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。身邊有老師時，也可以向老師學他會教的特質（好感夠才肯教，學費比較便宜、比較好學）。學費、時間、難度照特質的強度算，強的特質要角色等級夠、和老師或店主夠熟才肯教；每天練 8 小時。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
-    <label v-if="teaches && s.party.length > 1" class="row small who">誰來學工藝
+  <FoldMenu v-if="anyTrain || teaches" id="place.train" class="train" icon="book" label="受訓" :detail="teaches ? '學工藝、學特質或克服缺陷' : '花錢、花時間學特質或克服缺陷'" :badge="list.length + lessons.length">
+    <p class="muted small intro">花錢、花時間受訓 <Hint text="主角或自己的夥伴都可以受訓（選誰來學）：能學什麼、等級門檻、檢定都看那個人，學費從隊伍的錢付。成功時有機會學會（也可以改寫說法爭取別的）；身上的缺陷成功就克服。身邊有老師時，也可以向老師學他會教的特質（好感夠才肯教，學費比較便宜、比較好學）。學費、時間、難度照特質的強度算，強的特質要角色等級夠、和老師或店主夠熟才肯教；每天練 8 小時。大成功學費打對折；失敗收一半；大失敗照收。" /></p>
+    <label v-if="s.party.length > 1" class="row small who">誰來學
       <select v-model="learner">
         <option v-for="m in s.party" :key="m.id" :value="m.isPlayer ? '' : m.id">{{ m.name }}</option>
       </select>
@@ -62,6 +71,8 @@ function train(id: string) {
         <button class="small" :disabled="game.judging || !!s.pendingAction || !!l.blocked" @click="game.learnCraft(l.craft, learnerId)">學</button>
       </li>
     </ul>
+    <p v-if="anyTrain && !canTrain" class="muted small">{{ learnerChar.name }}不是自己的夥伴（任務同行、跟著別人的隊伍），不能在這裡學特質。</p>
+    <p v-else-if="anyTrain && !list.length" class="muted small">{{ learnerChar.name }}在這裡沒有可以學的特質或可以克服的缺陷。</p>
     <input v-if="list.length" v-model="text" placeholder="怎麼學（選填，會寫進日誌）：例如每天天沒亮就跟著教官練" />
     <ul v-if="list.length" class="plain small">
       <li v-for="o in list" :key="o.def.id" class="row">

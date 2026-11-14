@@ -940,6 +940,8 @@ export interface GameOptions {
   escapeDc?: number
   /** 黑市每天刷新幾件珍品（獨特裝備） */
   blackMarketGear?: number
+  /** 配方的耗材費倍率（engine/recipes.ts 的 recipePlan） */
+  recipeCostMult?: number
   /** 主人的突發事件、寄生物的發作、地下城事件的機率倍率 */
   masterEventMult?: number
   /** 奴隸主動找主角的機率倍率（slaveEvents.ts） */

@@ -8,6 +8,7 @@ import { crafterRefusal, craftName, craftXpFor, gainCraftXp, skillOf, toolAccess
 import { applyEffects, type RewardEffect } from './effects'
 import { buyHere, shopOfferHere } from './craft'
 import { currentArea } from './grid'
+import { gameRule } from './gameRules'
 import { memberOrResident } from './homes'
 import { formatMoney } from './money'
 import { locationMult } from './trade'
@@ -71,7 +72,7 @@ export function recipePlan(state: GameState, name: string, batches: number, craf
   const hours = (recipe.hours ?? 2) * n
   const needTier = toolTierFor(recipe.level)
   const tool = toolAccess(state, recipe.craft, needTier)
-  const cost = Math.round((recipe.cost_cc ?? 0) * n * locationMult(state))
+  const cost = Math.round((recipe.cost_cc ?? 0) * n * locationMult(state) * gameRule(state, 'recipeCostMult'))
   const rent = tool.rentPerHour && tool.tier >= needTier ? tool.rentPerHour * hours : 0
   const level = skillOf(crafter, recipe.craft).level
   // 做不了的原因全部列出來，不用改一項才發現下一項
@@ -164,7 +165,7 @@ export function applyProduce(state: GameState, report: Report, target: string, d
   const made = producedQty(plan.qty, degree)
   if (made) effects.push({ type: 'item', name, qty: made })
   applyEffects(state, report, effects)
-  const paid = plan.fee ? `花了 ${formatMoney(plan.fee)}（${[plan.cost ? '材料費' : '', plan.rent ? '工坊租金' : ''].filter(Boolean).join('、')}），` : ''
+  const paid = plan.fee ? `花了 ${formatMoney(plan.fee)}（${[plan.cost ? '耗材費' : '', plan.rent ? '工坊租金' : ''].filter(Boolean).join('、')}），` : ''
   let text = made ? `${paid}做出 ${made} 份${name}。` : `${paid}${degree === 'fail' ? '沒做成，損失了一半的材料' : '搞砸了，材料全部損失'}。`
   // 經驗乘批數：一次做 N 批和分開做 N 次的經驗一樣（批量製作不吃虧）
   const xp = craftXpFor(plan.recipe.level, degree) * plan.batches

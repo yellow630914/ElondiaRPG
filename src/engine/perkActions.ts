@@ -1,6 +1,7 @@
 // 特質的主動行動（見 docs/PERKS.md）：
 // - train：在公會、神殿、酒館等設施，或向身邊的老師（固定 NPC 的 mentor）花錢花時間受訓；成功時得到一次學這個特質的機會（也可以改寫說法交給 AI）。
 //   身上的缺陷有 train 時，受訓是克服它：成功就拿掉這個缺陷。
+//   受訓的人可以是主角或自己的夥伴（target = 特質 id，夥伴時接 @<id>）：能學什麼、等級門檻、檢定都看那個人；學費從隊伍的錢付。
 // - perk_pitch：在取得特質的機會上（升級、事件、特殊任務、訓練、物品），不選提供的特質，寫一段說法擲骰交給 AI；
 //   AI 依說法合不合理決定成功程度並設計特質（perk 欄位），程式依成功程度把強度夾在提供的特質附近。只有這些場合可以用。
 
@@ -55,8 +56,27 @@ function gateBlock(level: number, t: TrainSpec, who?: { name: string; affinity: 
  * 學費、時數、DC 照特質強度算（trainSpec）；同一個特質設施和老師都能學時，用老師的（比較便宜、比較簡單）；
  * 好感、等級不夠時照樣列出、標上原因
  */
-export function trainOptions(state: GameState): TrainOption[] {
-  const pc = pcOf(state)
+/** 可以受訓的人：主角，與自己的夥伴（任務同行、跟著別人的隊伍、主人與他的隊員不算） */
+export function trainees(state: GameState): Character[] {
+  return state.party.filter((m) => m.isPlayer || (m.bond !== 'guest' && m.bond !== 'leader' && !m.group))
+}
+
+/** 受訓的人（沒指定時是主角） */
+function traineeOf(state: GameState, memberId?: string): Character {
+  if (!memberId) return pcOf(state)
+  const m = trainees(state).find((x) => x.id === memberId)
+  if (!m) throw new Error('這個人不能在這裡受訓')
+  return m
+}
+
+/** target：特質 id，夥伴受訓時接 @<夥伴 id> */
+export function parseTrainTarget(target?: string): { perk?: string; member?: string } {
+  const [perk, member] = (target ?? '').split('@')
+  return { ...(perk ? { perk } : {}), ...(member ? { member } : {}) }
+}
+
+export function trainOptions(state: GameState, memberId?: string): TrainOption[] {
+  const pc = traineeOf(state, memberId)
   const cell = currentCell(state).kind
   const keeper = keeperHere(state, cell)
   const out: TrainOption[] = closedHere(state) ? [] : [...overcomablePerks(pc, cell), ...trainablePerks(pc, cell)].map((def) => {
@@ -89,27 +109,31 @@ export function trainOptions(state: GameState): TrainOption[] {
   return out
 }
 
-function trainDef(state: GameState, perkId?: string) {
-  const opt = trainOptions(state).find((o) => o.def.id === perkId)
+function trainDef(state: GameState, target?: string) {
+  const { perk: perkId, member } = parseTrainTarget(target)
+  const who = traineeOf(state, member)
+  const opt = trainOptions(state, member).find((o) => o.def.id === perkId)
   if (!opt) {
     const closed = closedHere(state)
     if (closed) throw new Error(closed)
     throw new Error(perkId && perkDef(perkId)?.flaw ? '這裡沒辦法克服這個缺陷' : '這裡學不到這個特質')
   }
   if (opt.blocked) throw new Error(opt.blocked)
-  return { ...opt, cell: currentCell(state).kind }
+  return { ...opt, who, cell: currentCell(state).kind }
 }
 
 export function setupTrain(state: GameState, target?: string) {
-  const { def, train, cell, mentor } = trainDef(state, target)
+  const { def, train, cell, mentor, who } = trainDef(state, target)
   if (state.money_cc < train.price_cc) throw new Error(`錢不夠（受訓要 ${formatMoney(train.price_cc)}）`)
+  const by = who.isPlayer ? '' : `${who.name}`
   const fee = (d: Degree) => formatMoney(trainingFee(train.price_cc, d))
   const where = mentor ? `跟著${mentor.name}` : `${locationById(state.location).name}的${cellName(cell)}`
   // 每天練 session_hours 小時，練完要幾天（中間照常吃睡）
   const { days, elapsed } = trainDays(train.hours)
   return {
     attr: train.attr, dc: train.dc, hours: elapsed, situational: [],
-    scene: `${where}・${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}（練 ${train.hours} 小時${days > 1 ? `，分 ${days} 天` : ''}）`,
+    ...(who.isPlayer ? {} : { actor: who.id }),
+    scene: `${where}・${by}${def.flaw ? `克服缺陷【${def.name}】` : `學習特質【${def.name}】`}（練 ${train.hours} 小時${days > 1 ? `，分 ${days} 天` : ''}）`,
     outcomes: def.flaw ? {
       critical: `克服了缺陷（學費打對折：${fee('critical')}）`, success: `克服了缺陷（學費 ${fee('success')}）`, partial: `克服了缺陷（學費 ${fee('partial')}）`,
       fail: `還是改不掉（學費收一半：${fee('fail')}）`, fumble: `還是改不掉（學費照收：${fee('fumble')}）`,
@@ -121,18 +145,19 @@ export function setupTrain(state: GameState, target?: string) {
 }
 
 export function applyTrain(state: GameState, report: Report, target: string, degree: Degree): string {
-  const { def, train, mentor } = trainDef(state, target)
+  const { def, train, mentor, who } = trainDef(state, target)
   const fee = Math.min(state.money_cc, trainingFee(train.price_cc, degree))
   report.changes.money_cc = (report.changes.money_cc ?? 0) - fee
+  const by = who.isPlayer ? '' : who.name
   if (def.flaw) {
-    if (degree === 'fail' || degree === 'fumble') return `花了 ${formatMoney(fee)}，【${def.name}】的毛病還是改不掉。`
-    losePerk(pcOf(state), def.id, report)
-    return `花了 ${formatMoney(fee)}，克服了缺陷【${def.name}】。`
+    if (degree === 'fail' || degree === 'fumble') return `花了 ${formatMoney(fee)}，${by}【${def.name}】的毛病還是改不掉。`
+    losePerk(who, def.id, report)
+    return `花了 ${formatMoney(fee)}，${by}克服了缺陷【${def.name}】。`
   }
-  if (degree === 'fail' || degree === 'fumble') return `花了 ${formatMoney(fee)}，還是沒抓到【${def.name}】的訣竅。`
+  if (degree === 'fail' || degree === 'fumble') return `花了 ${formatMoney(fee)}，${by}還是沒抓到【${def.name}】的訣竅。`
   // 學會的機會：可以直接學，也可以改寫說法交給 AI
-  offerPerks(pcOf(state), mentor ? `跟著${mentor.name}受訓` : `在${currentArea(state).name}受訓`, [def.id])
-  return `花了 ${formatMoney(fee)}，${mentor ? `在${mentor.name}的指導下` : ''}掌握了【${def.name}】的訣竅（在事件視窗選擇學會）。`
+  offerPerks(who, mentor ? `跟著${mentor.name}受訓` : `在${currentArea(state).name}受訓`, [def.id])
+  return `花了 ${formatMoney(fee)}，${by}${mentor ? `在${mentor.name}的指導下` : ''}掌握了【${def.name}】的訣竅（在事件視窗選擇學會）。`
 }
 
 // ---- 說法 ----

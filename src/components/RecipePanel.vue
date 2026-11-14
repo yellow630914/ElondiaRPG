@@ -125,7 +125,7 @@ const reqs = computed<CardReq[]>(() => {
     { state: s.value.money_cc >= cost ? 'ok' : 'no', label: '錢', text: `要 ${formatMoney(cost)}・持有 ${formatMoney(s.value.money_cc)}` },
   ]
 })
-const costs = computed<[string, number][]>(() => (plan.value ? [['花費', plan.value.cost], ['工坊租金', plan.value.rent], ['補買', plan.value.buyCost]] : []))
+const costs = computed<[string, number][]>(() => (plan.value ? [['耗材費（瓶子、溶劑等）', plan.value.cost], ['工坊租金', plan.value.rent], ['補買', plan.value.buyCost]] : []))
 const text = ref('')
 const use = ref('')
 
