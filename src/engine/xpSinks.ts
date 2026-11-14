@@ -75,6 +75,8 @@ export function refundSpareAttrPoints(c: Character, state?: Pick<GameState, 'opt
   }
   c.xp += xp
   c.attrPoints -= spare
+  if (c.respecPoints) c.respecPoints = Math.min(c.respecPoints, c.attrPoints)
+  if (!c.respecPoints) delete c.respecPoints
   if (c.xpSinkPending?.attr) c.xpSinkPending = { ...c.xpSinkPending, attr: c.xpSinkPending.attr - bought }
   settleSinkPending(c)
   return xp

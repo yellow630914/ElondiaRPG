@@ -351,6 +351,8 @@ export interface Character {
   attrs: Attrs
   /** 尚未分配的屬性點 */
   attrPoints: number
+  /** 未分配的屬性點裡，有幾點是神殿洗點退回來的（提醒寫成洗點，不寫成升級；respec.ts） */
+  respecPoints?: number
   hp: number
   /** 由等級與屬性推導，見 character.ts 的 recalc */
   maxHp: number

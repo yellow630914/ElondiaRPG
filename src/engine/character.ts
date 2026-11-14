@@ -540,6 +540,9 @@ export function spendAttrPoint(c: Character, attr: AttrId): void {
   if (c.attrs[attr] >= attributeRules.score.max) throw new Error('屬性已達上限')
   c.attrs[attr] += 1
   c.attrPoints -= 1
+  // 先算成洗點退回來的點用掉
+  if (c.respecPoints) c.respecPoints = Math.min(c.respecPoints - 1, c.attrPoints)
+  if (!c.respecPoints) delete c.respecPoints
   recalc(c)
 }
 

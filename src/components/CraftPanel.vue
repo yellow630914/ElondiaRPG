@@ -2,7 +2,7 @@
 import { blueprintName, blueprintRules } from '@/engine/blueprints'
 import { computed, onMounted, ref, watch } from 'vue'
 import { attrName, craftRules, damageTypeName, itemDef } from '@/engine/data'
-import { canCraftHere, commissionHere, craftMaxCount, craftPlan, craftRarity, craftTarget, forgeOf, isAdultCraft, makeTarget, outfitCommission, selfFeeName, selfLewdBonus, type AuxItem } from '@/engine/craft'
+import { canCraftHere, commissionHere, craftMaxCount, craftPlan, craftRarity, craftTarget, forgeOf, isAdultCraft, makeTarget, outfitCommission, selfFeeName, selfLewdBonus, supplyMaxTier, type AuxItem } from '@/engine/craft'
 import { lewdName } from '@/engine/lewd'
 import type { LewdStat } from '@/engine/types'
 import { craftForKind, crafters, skillOf, toolTierFor, toolTierName } from '@/engine/crafting'
@@ -128,6 +128,8 @@ const ownedOf = (m: string) => s.value.inventory.filter((i) => forgeOf(i.name).i
 // ---- 打造材料的來源：選用哪一種、不夠時當場補買 ----
 const usePick = ref('')
 const buy = ref(true)
+// 委託：全部由工匠代備，不用行囊裡的打造材料
+const supplyAll = ref(false)
 // 輔料：行囊裡的任何材料（最多三種），不論結果都會用掉
 const aux = ref<AuxItem[]>([])
 const auxPick = ref('')
@@ -147,7 +149,7 @@ const lewdStats = computed(() => (make.value && isAdultCraft(base.value)
 const count = ref(1)
 const COUNT_HINT = '一次做好幾件：打造材料、工錢（自己動手的材料費與工坊租金）、時間與工藝經驗乘件數，只擲一次，每件品質一樣、附魔各自擲。輔料照填的數量用一次，提高品質的機率照總價值算。'
 const opts = computed(() => ({
-  ...(usePick.value ? { use: usePick.value } : {}), ...(buy.value ? { buy: true } : {}), ...(count.value > 1 ? { count: count.value } : {}),
+  ...(usePick.value ? { use: usePick.value } : {}), ...(buy.value ? { buy: true } : {}), ...(!make.value && supplyAll.value ? { supplyAll: true } : {}), ...(count.value > 1 ? { count: count.value } : {}),
   ...(lewdPick.value && lewdStats.value.some((x) => x.st === lewdPick.value && x.bonus > 0) ? { lewd: lewdPick.value } : {}),
 }))
 const plan = computed(() => craftPlan(s.value, base.value, mat.value, aux.value, make.value ? crafter.value : undefined, opts.value))
@@ -210,7 +212,8 @@ const reqs = computed<CardReq[]>(() => {
   }
   if (make.value) out.push({ state: p.blueprint ? 'ok' : 'warn', label: '圖紙', text: p.blueprint ? `有${blueprintName(p.base)}` : `沒有（DC +${blueprintRules().dc_without}）` })
   const short = p.units - p.have
-  out.push(short <= 0 ? { state: 'ok', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` }
+  out.push(p.supplyAll ? { state: 'ok', label: '材料', text: `${p.units} 份全部由工匠代備（每份 ${formatMoney(p.supplyUnit)}）` }
+    : short <= 0 ? { state: 'ok', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` }
     // 委託：不夠的由工匠代備，照份數收材料費
     : p.supplied >= short ? { state: 'warn', label: '材料', text: `缺 ${short} 份，工匠代備（每份 ${formatMoney(p.supplyUnit)}）` }
     : p.buys.length && p.buys.reduce((n, b) => n + b.qty, 0) >= short ? { state: 'warn', label: '材料', text: `缺 ${short} 份，當場補買` }
@@ -248,7 +251,7 @@ function craft() {
   <div class="craft small">
     <p v-if="!make" class="muted intro">
       選部位、類型、底材，再選材料
-      <Hint text="先用行囊裡的打造材料；不夠的份數由工匠代備，照最便宜的那種材料的價格另外收錢（自己帶夠就不收）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
+      <Hint text="先用行囊裡的打造材料；不夠的份數由工匠代備（只代備第 2 級以下的材料），照最便宜的那種材料的價格另外收錢（自己帶夠就不收；也可以勾「全部由工匠代備」不用自己的）。第 3 級以上要自己帶，這間店有賣時可以當場補買。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
     </p>
     <div class="step">
       <span class="lab">搜尋</span>
@@ -361,9 +364,11 @@ function craft() {
                 <option v-for="x in sourceRows" :key="x.name" :value="x.name">{{ x.name }}</option>
               </select>
             </label>
-            <label v-if="make && soldHere.length && (needBuy || buy)" class="row"><input v-model="buy" type="checkbox" /> 不夠的當場補買</label>
+            <label v-if="(make || plan.tier > supplyMaxTier()) && soldHere.length && (needBuy || buy)" class="row"><input v-model="buy" type="checkbox" /> 不夠的當場補買</label>
+            <label v-if="!make && plan.tier <= supplyMaxTier() && plan.have > 0" class="row"><input v-model="supplyAll" type="checkbox" /> 全部由工匠代備（不用行囊裡的）</label>
           </div>
-          <p v-if="!make && plan.supplied" class="muted note">不夠的 {{ plan.supplied }} 份由工匠代備：每份 {{ formatMoney(plan.supplyUnit) }}，共 {{ formatMoney(plan.supplyCost) }}（照最便宜的那種材料的價格）。自己帶夠就不收。</p>
+          <p v-if="!make && plan.supplied" class="muted note">{{ plan.supplyAll ? '全部' : '不夠的' }} {{ plan.supplied }} 份由工匠代備：每份 {{ formatMoney(plan.supplyUnit) }}，共 {{ formatMoney(plan.supplyCost) }}（照最便宜的那種材料的價格）。{{ plan.supplyAll ? '' : '自己帶夠就不收。' }}</p>
+          <p v-else-if="!make && plan.units > plan.have && plan.tier > supplyMaxTier()" class="muted note">工匠只代備第 {{ supplyMaxTier() }} 級以下的材料；第 {{ plan.tier }} 級的材料要自己帶{{ soldHere.length ? '，或在這間店當場補買' : '（打怪、開寶箱取得）' }}。</p>
           <p v-else-if="make && needBuy && !soldHere.length" class="muted note">這裡沒有賣；可以到{{ kind === 'metal' || kind === 'wood' ? '鐵匠鋪或雜貨店' : kind === 'jewel' ? '珠寶店' : '裁縫店或雜貨店' }}買，或打怪、開寶箱取得。</p>
         </div>
         <div class="aux-row">

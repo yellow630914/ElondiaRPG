@@ -47,6 +47,8 @@ export interface CraftPlan {
   supplyUnit: number
   /** 工匠代備的材料費（supplied × supplyUnit） */
   supplyCost: number
+  /** 委託時選了全部由工匠代備（行囊裡的不用） */
+  supplyAll?: boolean
   /** 委託：工錢；自己動手：工坊租金（不含當場補買與代備的材料費） */
   fee: number
   dc: number
@@ -128,6 +130,8 @@ export interface AuxItem { name: string; qty: number }
 
 /** 打造的選項：優先用哪一種打造材料、不夠時向這間店當場補買 */
 export interface CraftOptions { use?: string; buy?: boolean
+  /** 委託：全部由工匠代備，不用行囊裡的打造材料（只在工匠代備得了的等級） */
+  supplyAll?: boolean
   /** 委託成人向服裝時加的慾望指標（docs/LEWD_STATS.md 第 25 節） */
   lewd?: LewdStat
   /** 一次做幾件（1～gear.json 的 craft.max_count） */
@@ -147,6 +151,7 @@ export function parseCraftTarget(target?: string): { base: string; material: str
   const opts: CraftOptions = {}
   for (const x of segs) {
     if (x === '!buy') opts.buy = true
+    else if (x === '!supply') opts.supplyAll = true
     else if (x.startsWith('!use=') && x.length > 5) opts.use = x.slice(5)
     else if (x.startsWith('!lewd=') && outfitCommission().stats.includes(x.slice(6) as LewdStat)) opts.lewd = x.slice(6) as LewdStat
     else if (x.startsWith('!n=') && craftCount(Number(x.slice(3))) > 1) opts.count = craftCount(Number(x.slice(3)))
@@ -167,7 +172,7 @@ export function parseCraftTarget(target?: string): { base: string; material: str
 export function craftTarget(base: string, material: string, aux: AuxItem[] = [], opts: CraftOptions = {}): string {
   return [
     `${base}:${material}`, ...aux.filter((a) => a.qty > 0).map((a) => `${a.name}*${a.qty}`),
-    ...(opts.use ? [`!use=${opts.use}`] : []), ...(opts.buy ? ['!buy'] : []), ...(opts.lewd ? [`!lewd=${opts.lewd}`] : []),
+    ...(opts.use ? [`!use=${opts.use}`] : []), ...(opts.buy ? ['!buy'] : []), ...(opts.supplyAll ? ['!supply'] : []), ...(opts.lewd ? [`!lewd=${opts.lewd}`] : []),
     ...(craftCount(opts.count) > 1 ? [`!n=${craftCount(opts.count)}`] : []),
   ].join('|')
 }
@@ -199,6 +204,11 @@ function unitsFor(base: string): number {
  * 打造的花費與材料（不檢查站的位置）。沒有 crafter 是委託店主；有 crafter 是這位隊員自己動手：
  * 不付工錢，第一級材料要買（材料費），工具不夠中階時在店裡租工坊
  */
+/** 委託時工匠代備的材料最高到第幾級（crafts.json 的 supply.max_tier） */
+export function supplyMaxTier(): number {
+  return craftSkillRules.supply?.max_tier ?? 2
+}
+
 export function craftPlan(state: GameState, base: string, material: string, aux: AuxItem[] = [], crafter?: Character, opts: CraftOptions = {}): CraftPlan {
   const r = craftRules()
   const m = gearRules.materials[material]!
@@ -213,9 +223,12 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   const first = (a: string, b: string) => (a === opts.use ? -1 : b === opts.use ? 1 : 0) || price(a) - price(b)
   const owned = state.inventory.filter((i) => forgeOf(i.name).includes(material)).sort((a, b) => first(a.name, b.name))
   const have = owned.reduce((s, i) => s + i.qty, 0)
+  // 委託時工匠代備得了的等級：可以選全部由工匠代備，不用行囊裡的（想留著自己用、或代備比較便宜時）
+  const canSupply = !crafter && tier <= supplyMaxTier()
+  const supplyAll = canSupply && !!opts.supplyAll
   const uses: { name: string; qty: number }[] = []
   let need = units
-  for (const i of owned) {
+  for (const i of supplyAll ? [] : owned) {
     if (need <= 0) break
     const q = Math.min(i.qty, need)
     uses.push({ name: i.name, qty: q })
@@ -226,9 +239,10 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
     const offer = shopOfferHere(state, name)
     return { name, have: owned.filter((i) => i.name === name).reduce((s, i) => s + i.qty, 0), ...(offer ? { price: offer.price, stock: offer.stock } : {}) }
   })
-  // 當場補買：不夠的份數向這間店買（選定的那種優先，其餘從便宜的開始）
+  // 當場補買：不夠的份數向這間店買（選定的那種優先，其餘從便宜的開始）；
+  // 自己動手，或委託工匠代備不了的等級（第 3 級以上，例如珠寶店的金錠）
   const buys: { name: string; qty: number; price: number }[] = []
-  if (crafter && opts.buy && need > 0) {
+  if ((crafter || !canSupply) && opts.buy && need > 0) {
     for (const s of sources.filter((x) => x.price !== undefined).sort((a, b) => first(a.name, b.name) || a.price! - b.price!)) {
       if (need <= 0) break
       const q = Math.min(s.stock!, need)
@@ -242,9 +256,10 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   const bought = buys.reduce((s, b) => s + b.qty, 0)
   const buyCost = buys.reduce((s, b) => s + b.qty * b.price, 0)
   const mult = locationMult(state)
-  // 委託：不夠的份數由工匠代備，照最便宜的打造材料的價格 × 聚落物價（算不出價格的材料工匠也找不到）
+  // 委託：不夠的份數由工匠代備，照最便宜的打造材料的價格 × 聚落物價（算不出價格的材料工匠也找不到）；
+  // 只代備 crafts.json supply.max_tier 級以下（市場買得到的），更高級的要自己帶，免得有錢就能做高等裝備轉賣
   const unitPrice = forgeUnitPrice(material)
-  const supplyUnit = !crafter && unitPrice !== undefined ? Math.max(1, Math.round(unitPrice * mult)) : 0
+  const supplyUnit = canSupply && unitPrice !== undefined ? Math.max(1, Math.round(unitPrice * mult)) : 0
   const supplied = supplyUnit && need > 0 ? need : 0
   const supplyCost = supplied * supplyUnit
   const loc = locationById(state.location)
@@ -276,9 +291,11 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
       : `${loc.name}的工匠（${craftName(craft)} Lv.${level}）處理不了${m.name}（要 Lv.${tier}）`)
   }
   if (self && self.tool.tier < toolTierFor(tier)) blockers.push(`${m.name}${toolBlocker(craft, toolTierFor(tier), self.tool)}`)
-  if (have + bought + supplied < units) {
+  if (need - supplied > 0) {
     const sold = sources.reduce((s, x) => s + (x.stock ?? 0), 0)
-    const hint = !crafter ? '；工匠也找不到這種材料' : !opts.buy && sold ? '；這間店有賣，可以當場補買' : opts.buy && sold ? `；這間店只剩 ${sold} 份` : ''
+    const hint = canSupply ? '；工匠也找不到這種材料'
+      : !opts.buy && sold ? '；這間店有賣，可以當場補買' : opts.buy && sold ? `；這間店只剩 ${sold} 份`
+      : !crafter ? `；工匠只代備第 ${supplyMaxTier()} 級以下的材料，第 ${tier} 級要自己帶` : ''
     blockers.push(`打造材料不夠（需要 ${units} 份能做成${m.name}的材料，持有 ${have} 份${hint}）`)
   }
   const feeName = crafter ? (self?.rent ? '工坊租金' : '費用') : '工錢'
@@ -286,7 +303,7 @@ export function craftPlan(state: GameState, base: string, material: string, aux:
   if (state.money_cc < fee + buyCost + supplyCost) blockers.push(`錢不夠：${feeName}${extra}要 ${formatMoney(fee + buyCost + supplyCost)}`)
   blockers.push(...auxBlocked)
   return {
-    base, material, tier, units, uses, have, sources, ...(opts.use ? { use: opts.use } : {}), buys, buyCost, supplied, supplyUnit, supplyCost,
+    base, material, tier, units, uses, have, sources, ...(opts.use ? { use: opts.use } : {}), buys, buyCost, supplied, supplyUnit, supplyCost, ...(supplyAll ? { supplyAll } : {}),
     // 自己動手打造時沒有這個底材的圖紙：DC + 5（委託店家不受影響，docs/CRAFTING.md 2.2 節）
     fee, dc: r.dc[tier - 1]! + (crafter && !hasBlueprint(state, base) ? blueprintRules().dc_without : 0), aux, auxValue, auxChance, elements: auxElements(aux),
     ...(crafter ? { blueprint: hasBlueprint(state, base) } : {}),

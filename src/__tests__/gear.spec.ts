@@ -99,11 +99,19 @@ describe('crafting', () => {
     expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('要到鐵匠鋪')
     standOn(state, 'smithy')
     expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:leather', text: '' })).toThrow('不能')
-    // 委託：材料不夠不會擋住，改成工匠代備（另外收材料費）
-    expect(craftPlan(state, 'longsword', 'mithril').blocked ?? '').not.toContain('材料不夠')
+    // 委託：第 2 級以下材料不夠不會擋住，改成工匠代備（另外收材料費）；第 3 級以上要自己帶
+    expect(craftPlan(state, 'longsword', 'steel').blocked ?? '').not.toContain('材料不夠')
+    expect(craftPlan(state, 'longsword', 'steel').supplied).toBe(2)
+    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('工匠只代備第 2 級以下的材料')
+    expect(craftPlan(state, 'longsword', 'mithril').supplied).toBe(0)
     state.money_cc = 5000
     state.inventory.push({ name: '秘銀礦石', qty: 1 }, { name: '精鋼錠', qty: 2 })
-    expect(craftPlan(state, 'longsword', 'mithril').supplied).toBe(1)
+    expect(craftPlan(state, 'longsword', 'mithril').supplied).toBe(0)
+    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('持有 1 份')
+    state.inventory.push({ name: '秘銀礦石', qty: 1 })
+    expect(craftPlan(state, 'longsword', 'mithril').blocked).toBeUndefined()
+    // 高等材料不能用錢代備（玩家 Lv.1 在首都委託第 7 級裝備轉賣）
+    expect(craftPlan(state, 'longsword', 'chronicle_steel').supplied).toBe(0)
     const steel = craftPlan(state, 'longsword', 'steel')
     expect(steel.blocked).toBeUndefined()
     expect(steel.supplied).toBe(0)

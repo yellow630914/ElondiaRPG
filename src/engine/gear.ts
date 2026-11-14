@@ -406,7 +406,7 @@ export function forgeUnitPrice(material: string): number | undefined {
 
 /**
  * 一件裝備的成本：照委託打造算，工錢（底材價格 × craft.fee）＋打造材料（份數 × 最便宜的打造材料）。
- * 第一級材料由工匠提供，只算工錢。底材或材料不在目錄時回傳 undefined（不封頂）。
+ * 第一級材料便宜，只算工錢（委託時工匠代備的材料費忽略不計）。底材或材料不在目錄時回傳 undefined（不封頂）。
  */
 export function gearCost(spec: Pick<GearSpec, 'base' | 'material'>): number | undefined {
   const base = gearRules.bases[spec.base]

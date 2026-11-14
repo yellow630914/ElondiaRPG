@@ -105,8 +105,11 @@ export function pendingEvents(state: GameState | null): GameEvent[] {
     const what = [choices ? `選擇 ${choices} 項能力` : '', m.attrPoints > 0 ? `分配 ${m.attrPoints} 點屬性` : ''].filter(Boolean).join('、')
     // 全部是用經驗換來的（鑽研技能、苦練屬性）時不寫成升級
     const sink = sinkPending(m)
-    const fromLevel = choices > sink.ability || m.attrPoints > sink.attr
-    out.push({ id: `levelup:${m.id}:${m.level}:${choices}:${m.attrPoints}`, kind: 'levelup', icon: '⬆️', title: fromLevel ? `${m.name}升級了：${what}` : `${m.name}用經驗換來的成長：${what}`, blocking: false, ref: m.id })
+    // 神殿洗點退回來的點（respec.ts）不寫成升級
+    const respec = Math.min(m.respecPoints ?? 0, Math.max(0, m.attrPoints - sink.attr))
+    const fromLevel = choices > sink.ability || m.attrPoints > sink.attr + respec
+    const title = fromLevel ? `${m.name}升級了：${what}` : respec ? `${m.name}在神殿洗點：${what}` : `${m.name}用經驗換來的成長：${what}`
+    out.push({ id: `levelup:${m.id}:${m.level}:${choices}:${m.attrPoints}`, kind: 'levelup', icon: '⬆️', title, blocking: false, ref: m.id })
   }
   for (const m of state.party) {
     for (const o of m.perkOffers ?? []) {

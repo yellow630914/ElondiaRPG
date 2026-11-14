@@ -2384,6 +2384,8 @@ export const craftRules = craftsJson as unknown as {
   tool_tier_names: string[]
   safe_points: string[]
   workshop_rent: { per_hour_cc: number }
+  /** 委託時工匠代備打造材料：只代備 max_tier 級以下的材料 */
+  supply: { max_tier: number }
   self: { hours: number }
   shop_levels: Record<string, [number, number]>
   companion: { min_affinity: number }

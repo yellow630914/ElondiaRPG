@@ -23,7 +23,8 @@ import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import UncursePanel from './UncursePanel.vue'
 import PurifyPanel from './PurifyPanel.vue'
-import { respecBlocked, respecCost, respecPoints } from '@/engine/respec'
+import { respecMembers } from '@/engine/respec'
+import RespecPanel from './RespecPanel.vue'
 import { cursedGearOf } from '@/engine/restraints'
 import AdultShopMenu from './adult/AdultShopMenu.vue'
 import GuardStatus from './GuardStatus.vue'
@@ -214,7 +215,7 @@ const banner = computed(() => {
   return null
 })
 // 神殿、雜貨店選單的其他項目（交易與折扣以外）
-const extraOpen = ref<'wash' | 'market' | 'nursery' | 'brood' | 'uncurse' | 'purify' | null>(null)
+const extraOpen = ref<'respec' | 'wash' | 'market' | 'nursery' | 'brood' | 'uncurse' | 'purify' | null>(null)
 const templeMenu = computed<MenuItem[]>(() => [
   {
     id: 'heal', icon: 'heart', label: '神殿治療', detail: '受傷的隊員 HP 回滿（不回復法術環）',
@@ -223,11 +224,10 @@ const templeMenu = computed<MenuItem[]>(() => [
   { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
   // 淨身（docs/LEWD_STATS.md 第 4.1 節）：降一項慾望指標
   { id: 'purify', icon: 'sparkles', label: '淨身', detail: '付錢靜坐、聽神官誦經，把淫亂、敏感、順從、曝露名聲這類慾望指標降幾點' },
-  // 洗點（respec.ts）：主角的屬性退回基本值，點數重新分配
+  // 洗點（respec.ts）：主角與夥伴的屬性退回基本值，點數重新分配
   {
     id: 'respec', icon: 'refresh', label: '重新分配屬性點',
-    detail: respecBlocked(s.value) ?? `屬性退回職業與種族的基本值，${respecPoints(s.value)} 點變回未分配的屬性點，再自己重新分配`,
-    badge: formatMoney(respecCost(s.value)), disabled: !!respecBlocked(s.value),
+    detail: `主角${respecMembers(s.value).length > 1 ? '或夥伴' : ''}的屬性退回職業與種族的基本值，點數變回未分配的屬性點，再自己重新分配（每級 ${attributeRules.respec.cost_per_level} 白鸛）`,
   },
   // 詛咒具（docs/LEWD_STATS.md 第 7.2 節）：隊上有人戴著時才顯示
   ...(cursedGearOf(s.value).length ? [{
@@ -249,10 +249,7 @@ const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'mar
 function onExtra(id: string) {
   if (id === 'heal') game.templeHeal()
   else if (id === 'checkup') game.templeCheckup()
-  else if (id === 'respec') {
-    if (confirm(`在神殿洗點？屬性退回職業與種族的基本值，${respecPoints(s.value)} 點屬性點重新分配（奉獻 ${formatMoney(respecCost(s.value))}，花 ${attributeRules.respec.hours} 小時）。之後到角色詳情分配。`)) game.templeRespec()
-  }
-  else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood' || id === 'uncurse' || id === 'purify') extraOpen.value = id
+  else if (id === 'wash' || id === 'respec' || id === 'market' || id === 'nursery' || id === 'brood' || id === 'uncurse' || id === 'purify') extraOpen.value = id
 }
 // 公會的選單：委託板在對話框裡
 const showBoard = ref(false)
@@ -345,6 +342,9 @@ const shopDesc = computed(() => {
           </AppDialog>
           <AppDialog :open="extraOpen === 'uncurse'" title="解開詛咒具" icon="unlock" width="560px" @close="extraOpen = null">
             <UncursePanel />
+          </AppDialog>
+          <AppDialog :open="extraOpen === 'respec'" title="重新分配屬性點" icon="refresh" width="560px" @close="extraOpen = null">
+            <RespecPanel @done="extraOpen = null" />
           </AppDialog>
           <AppDialog :open="extraOpen === 'purify'" title="淨身" icon="sparkles" width="520px" @close="extraOpen = null">
             <PurifyPanel />

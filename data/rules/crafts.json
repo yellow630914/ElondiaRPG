@@ -23,6 +23,7 @@
   "tool_tier_names": ["低階（隨身工具組）", "中階（工坊）", "高階（房子的工作台）"],
   "safe_points": ["inn", "safe"],
   "workshop_rent": { "per_hour_cc": 6 },
+  "supply": { "$comment": "委託時工匠代備打造材料：只代備 max_tier 級以下的材料（市場買得到的）；更高級的要自己帶。", "max_tier": 2 },
   "self": { "hours": 8 },
   "shop_levels": { "village": [1, 2], "outpost": [1, 2], "fortress": [2, 2], "town": [2, 3], "port": [2, 3], "city": [3, 4], "capital": [4, 7] },
   "invention": {

@@ -13,17 +13,20 @@ const m = computed(() => game.state?.party.find((x) => x.id === props.id))
 // 用經驗換來的（鑽研技能、苦練屬性）和升級給的分開寫
 const sink = computed(() => (m.value ? sinkPending(m.value) : { ability: 0, attr: 0 }))
 const lvAbility = computed(() => (m.value?.pendingAbilityChoices?.length ?? 0) - sink.value.ability)
-const lvAttr = computed(() => Math.max(0, m.value?.attrPoints ?? 0) - sink.value.attr)
+// 神殿洗點退回來的點（respec.ts）分開寫，不寫成升級
+const respec = computed(() => Math.min(m.value?.respecPoints ?? 0, Math.max(0, (m.value?.attrPoints ?? 0) - sink.value.attr)))
+const lvAttr = computed(() => Math.max(0, m.value?.attrPoints ?? 0) - sink.value.attr - respec.value)
 const fromLevel = computed(() => lvAbility.value > 0 || lvAttr.value > 0)
 const names = progression.xp_sinks
 </script>
 
 <template>
   <section v-if="m" class="panel level-up">
-    <h3 class="title"><GameIcon name="sparkles" :size="16" />{{ fromLevel ? `${m.name}升到 Lv.${m.level}` : `${m.name}用經驗換來的成長` }}</h3>
+    <h3 class="title"><GameIcon name="sparkles" :size="16" />{{ fromLevel ? `${m.name}升到 Lv.${m.level}` : respec > 0 ? `${m.name}在神殿洗點` : `${m.name}用經驗換來的成長` }}</h3>
     <p class="small">
       <template v-if="lvAbility > 0">有 {{ lvAbility }} 項能力要從三個選項裡挑一個。</template>
       <template v-if="lvAttr > 0">還有 {{ lvAttr }} 點屬性可以分配。</template>
+      <template v-if="respec > 0">{{ m.name }}在神殿洗點，還有 {{ respec }} 點屬性可以分配。</template>
       <template v-if="sink.ability">{{ names.ability.name }}：有 {{ sink.ability }} 項新技能要從三個選項裡挑一個。</template>
       <template v-if="sink.attr">{{ names.attr.name }}：有 {{ sink.attr }} 點屬性可以分配。</template>
     </p>

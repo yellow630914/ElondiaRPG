@@ -164,4 +164,39 @@ describe('打造材料：第 1 級也是物品，來源可以選、可以當場�
     expect(state.inventory.some((i) => i.name === '微弱治療藥劑')).toBe(true)
     expect(deal.stock).toBe(4)
   })
+
+  it('commission: tier 3+ is not supplied (bring it or buy it here); tier 1-2 can be fully supplied without using your own', () => {
+    const state = game()
+    standOn(state, 'smithy')
+    state.money_cc = 1e6
+    addItem(state.inventory, '鐵礦石', 3)
+    const own = craftPlan(state, 'plate', 'iron')
+    expect(own.supplied).toBe(0)
+    expect(own.uses).toEqual([{ name: '鐵礦石', qty: 3 }])
+    const all = craftPlan(state, 'plate', 'iron', [], undefined, { supplyAll: true })
+    expect(all.uses).toEqual([])
+    expect(all.supplied).toBe(3)
+    expect(all.supplyAll).toBe(true)
+    expect(all.blocked).toBeUndefined()
+    expect(parseCraftTarget(craftTarget('plate', 'iron', [], { supplyAll: true })).opts.supplyAll).toBe(true)
+    // 第 3 級以上：全部代備也不行
+    expect(craftPlan(state, 'longsword', 'mithril', [], undefined, { supplyAll: true }).supplied).toBe(0)
+    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('第 2 級以下')
+  })
+
+  it('commission: tier 3+ materials the shop sells can be bought on the spot (gold at the jeweler)', () => {
+    const state = game()
+    standOn(state, 'jeweler')
+    state.money_cc = 1e6
+    shopState(state, 'jeweler')
+    const base = Object.entries(gearRules.bases).find(([, b]) => b.kind === 'jewel')![0]
+    const noBuy = craftPlan(state, base, 'gold')
+    const offer = noBuy.sources.find((x) => x.price !== undefined)
+    expect(offer, '珠寶店有賣金錠').toBeTruthy()
+    expect(noBuy.blocked).toContain('可以當場補買')
+    const plan = craftPlan(state, base, 'gold', [], undefined, { buy: true })
+    expect(plan.buys.length).toBeGreaterThan(0)
+    expect(plan.supplied).toBe(0)
+    expect(plan.blocked).toBeUndefined()
+  })
 })
