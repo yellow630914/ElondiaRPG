@@ -15,6 +15,7 @@
     "max_score": 18
   },
   "level_up_points": 1,
+  "respec": { "$comment": "神殿的洗點（重新分配屬性點）：主角的屬性退回職業與種族的基本值，建角時加的點、升級與經驗換來的點全部變回未分配的屬性點，再自己重新分配。費用 cost_per_level × 主角等級，花 hours 小時。", "cost_per_level": 50, "hours": 2 },
   "races": {
     "human": {
       "name": "人類", "emoji": "🧑", "bonus": { "str": 1, "dex": 1, "int": 1, "fai": 1, "cha": 1 }

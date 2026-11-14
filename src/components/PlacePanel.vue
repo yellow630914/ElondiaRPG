@@ -4,7 +4,7 @@ import { deadlineText, questDeadlineDays } from '@/engine/deadlines'
 import HomePanel from './HomePanel.vue'
 import { computed, ref, watch } from 'vue'
 import { attrOf, mod } from '@/engine/character'
-import { COSTUME_SHOPS, attrName, isCustomShopId, landmarkDef, locationById, parkPlaza, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
+import { COSTUME_SHOPS, attrName, attributeRules, isCustomShopId, landmarkDef, locationById, parkPlaza, shopRules, specialMapOfKey, specialMaps, type ShopType } from '@/engine/data'
 import { canTravelHere, CELL_ICON, CELL_NAME, cellName, currentArea, currentCell, DUNGEON_LAYERS, position, linkEntryBlock, linkTargetName, LOCK_METHODS, lockPicker, questRunnableHere, type CellKind, type LockMethod } from '@/engine/grid'
 import { formatMoney } from '@/engine/money'
 import { marketsHere } from '@/engine/companions'
@@ -23,6 +23,7 @@ import { useContent } from '@/stores/content'
 import BrothelPanel from './BrothelPanel.vue'
 import UncursePanel from './UncursePanel.vue'
 import PurifyPanel from './PurifyPanel.vue'
+import { respecBlocked, respecCost, respecPoints } from '@/engine/respec'
 import { cursedGearOf } from '@/engine/restraints'
 import AdultShopMenu from './adult/AdultShopMenu.vue'
 import GuardStatus from './GuardStatus.vue'
@@ -222,6 +223,12 @@ const templeMenu = computed<MenuItem[]>(() => [
   { id: 'wash', icon: 'feather', label: '洗刺青', detail: '要有聲望；奴隸印記要解除契約才能去掉' },
   // 淨身（docs/LEWD_STATS.md 第 4.1 節）：降一項慾望指標
   { id: 'purify', icon: 'sparkles', label: '淨身', detail: '付錢靜坐、聽神官誦經，把淫亂、敏感、順從、曝露名聲這類慾望指標降幾點' },
+  // 洗點（respec.ts）：主角的屬性退回基本值，點數重新分配
+  {
+    id: 'respec', icon: 'refresh', label: '重新分配屬性點',
+    detail: respecBlocked(s.value) ?? `屬性退回職業與種族的基本值，${respecPoints(s.value)} 點變回未分配的屬性點，再自己重新分配`,
+    badge: formatMoney(respecCost(s.value)), disabled: !!respecBlocked(s.value),
+  },
   // 詛咒具（docs/LEWD_STATS.md 第 7.2 節）：隊上有人戴著時才顯示
   ...(cursedGearOf(s.value).length ? [{
     id: 'uncurse', icon: 'unlock', label: '解開詛咒具', detail: '請神官解開隊上的詛咒具（解開後詛咒具會碎掉）',
@@ -242,6 +249,9 @@ const generalMenu = computed<MenuItem[]>(() => (publicMarket.value ? [{ id: 'mar
 function onExtra(id: string) {
   if (id === 'heal') game.templeHeal()
   else if (id === 'checkup') game.templeCheckup()
+  else if (id === 'respec') {
+    if (confirm(`在神殿洗點？屬性退回職業與種族的基本值，${respecPoints(s.value)} 點屬性點重新分配（奉獻 ${formatMoney(respecCost(s.value))}，花 ${attributeRules.respec.hours} 小時）。之後到角色詳情分配。`)) game.templeRespec()
+  }
   else if (id === 'wash' || id === 'market' || id === 'nursery' || id === 'brood' || id === 'uncurse' || id === 'purify') extraOpen.value = id
 }
 // 公會的選單：委託板在對話框裡

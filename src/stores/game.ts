@@ -40,6 +40,7 @@ import * as brothelLife from '@/engine/brothelLife'
 import * as meals from '@/engine/meals'
 import { classes, shopRules, slaveryRules, type CraftId, type LewdKey, type ShopType } from '@/engine/data'
 import { templePurify } from '@/engine/purify'
+import { templeRespec } from '@/engine/respec'
 import { refundSpareAttrPoints, spendXp, type XpSink } from '@/engine/xpSinks'
 import { takeVoluntarySlave } from '@/engine/voluntarySlave'
 import { pledgeSelf } from '@/engine/selfPledge'
@@ -1555,6 +1556,8 @@ export const useGame = defineStore('game', () => {
     templeHeal: () => run(town.templeHeal),
     /** 神殿的淨身：降一位隊員的一項慾望指標（purify.ts） */
     templePurify: (memberId: string, key: LewdKey, points: number) => run((s) => templePurify(s, memberId, key, points)),
+    /** 神殿的洗點：主角的屬性退回基本值，點數重新分配（respec.ts） */
+    templeRespec: () => run(templeRespec),
     /** 參訪站著的地標 */
     visitLandmark: () => run(visitLandmark),
     /** 走進站著的地標的內部（特殊地圖） */
