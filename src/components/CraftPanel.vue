@@ -182,15 +182,17 @@ const tags = computed<CardTag[]>(() => {
 })
 const outcomes = computed<CardOutcome[]>(() => {
   const p = plan.value
-  const paid = p.fee ? `，${feeName.value}照付` : ''
-  const lost = Math.ceil(p.units * gearRules.craft.lost_on_fail)
+  const paid = p.fee || p.supplyCost ? `，${feeName.value}${p.supplyCost ? '與代備的材料費' : ''}照付` : ''
+  // 損失的是自己帶來的材料（工匠代備的照樣用掉、照樣付錢）
+  const own = p.units - p.supplied
+  const lost = Math.ceil(own * gearRules.craft.lost_on_fail)
   const rar = (d: 'critical' | 'success' | 'partial') => rarityName(craftRarity(mat.value, d)!)
   return [
     { degree: 'critical', text: `${rar('critical')}・${p.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(mat.value, 'critical')!)} 點` },
     { degree: 'success', text: `${rar('success')}・${p.count > 1 ? '每件' : ''}附魔 ${rarityPoints(craftRarity(mat.value, 'success')!)} 點` },
     { degree: 'partial', text: `${rar('partial')}・沒有附魔` },
     { degree: 'fail', text: `沒做成${lost ? `，損失 ${lost} 份材料` : ''}${paid}` },
-    { degree: 'fumble', text: `搞砸了${p.units ? `，損失全部 ${p.units} 份材料` : ''}${paid}` },
+    { degree: 'fumble', text: `搞砸了${own ? `，損失全部 ${own} 份材料` : ''}${paid}` },
   ]
 })
 const check = computed(() => (make.value
@@ -208,16 +210,17 @@ const reqs = computed<CardReq[]>(() => {
   }
   if (make.value) out.push({ state: p.blueprint ? 'ok' : 'warn', label: '圖紙', text: p.blueprint ? `有${blueprintName(p.base)}` : `沒有（DC +${blueprintRules().dc_without}）` })
   const short = p.units - p.have
-  out.push(!p.units ? { state: 'ok', label: '材料', text: '工匠提供' }
-    : short <= 0 ? { state: 'ok', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` }
+  out.push(short <= 0 ? { state: 'ok', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` }
+    // 委託：不夠的由工匠代備，照份數收材料費
+    : p.supplied >= short ? { state: 'warn', label: '材料', text: `缺 ${short} 份，工匠代備（每份 ${formatMoney(p.supplyUnit)}）` }
     : p.buys.length && p.buys.reduce((n, b) => n + b.qty, 0) >= short ? { state: 'warn', label: '材料', text: `缺 ${short} 份，當場補買` }
     : { state: 'no', label: '材料', text: `需要 ${p.units} 份，持有 ${p.have} 份` })
-  const cost = p.fee + p.buyCost
+  const cost = p.fee + p.buyCost + p.supplyCost
   out.push({ state: s.value.money_cc >= cost ? 'ok' : 'no', label: '錢', text: `要 ${formatMoney(cost)}・持有 ${formatMoney(s.value.money_cc)}` })
   return out
 })
 const sourceRows = computed(() => plan.value.sources.filter((x) => x.have > 0 || x.price !== undefined))
-const costs = computed<[string, number][]>(() => [[feeName.value, plan.value.fee], ['補買', plan.value.buyCost]])
+const costs = computed<[string, number][]>(() => [[feeName.value, plan.value.fee], ['補買', plan.value.buyCost], ['工匠代備的材料', plan.value.supplyCost]])
 const hours = computed(() => (make.value ? craftRules.self.hours : gearRules.craft.hours) * plan.value.count)
 
 function craft() {
@@ -245,7 +248,7 @@ function craft() {
   <div class="craft small">
     <p v-if="!make" class="muted intro">
       選部位、類型、底材，再選材料
-      <Hint text="第一級材料由工匠提供；第二級以上要用行囊裡的打造材料（不夠時，這間店有賣就能當場補買）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
+      <Hint text="先用行囊裡的打造材料；不夠的份數由工匠代備，照最便宜的那種材料的價格另外收錢（自己帶夠就不收）。店主的工藝等級要達到材料等級，比需要的高時做得更好。" />
     </p>
     <div class="step">
       <span class="lab">搜尋</span>
@@ -296,7 +299,7 @@ function craft() {
               <td class="nm"><ContentIcon kind="material" :id="m.id" :size="18" /> {{ m.name }}</td>
               <td class="nw">第 {{ m.tier }} 級<template v-if="!canDo(m.tier)"> 🔒</template></td>
               <td class="nw wide">建議 Lv.{{ m.level }}</td>
-              <td class="nw">{{ m.tier === 1 && !make ? '工匠提供' : `${ownedOf(m.id)} 份` }}</td>
+              <td class="nw">{{ `${ownedOf(m.id)} 份` }}</td>
               <td :class="statsOf(base, m.id) ? 'stat' : 'muted'">{{ statsOf(base, m.id) || '沒有加成' }}</td>
             </tr>
           </tbody>
@@ -358,9 +361,10 @@ function craft() {
                 <option v-for="x in sourceRows" :key="x.name" :value="x.name">{{ x.name }}</option>
               </select>
             </label>
-            <label v-if="soldHere.length && (needBuy || buy)" class="row"><input v-model="buy" type="checkbox" /> 不夠的當場補買</label>
+            <label v-if="make && soldHere.length && (needBuy || buy)" class="row"><input v-model="buy" type="checkbox" /> 不夠的當場補買</label>
           </div>
-          <p v-if="needBuy && !soldHere.length" class="muted note">這裡沒有賣；可以到{{ kind === 'metal' || kind === 'wood' ? '鐵匠鋪或雜貨店' : kind === 'jewel' ? '珠寶店' : '裁縫店或雜貨店' }}買，或打怪、開寶箱取得。</p>
+          <p v-if="!make && plan.supplied" class="muted note">不夠的 {{ plan.supplied }} 份由工匠代備：每份 {{ formatMoney(plan.supplyUnit) }}，共 {{ formatMoney(plan.supplyCost) }}（照最便宜的那種材料的價格）。自己帶夠就不收。</p>
+          <p v-else-if="make && needBuy && !soldHere.length" class="muted note">這裡沒有賣；可以到{{ kind === 'metal' || kind === 'wood' ? '鐵匠鋪或雜貨店' : kind === 'jewel' ? '珠寶店' : '裁縫店或雜貨店' }}買，或打怪、開寶箱取得。</p>
         </div>
         <div class="aux-row">
           <span class="muted">輔料 <Hint :text="`選填，最多 ${auxRules.max_kinds} 種；不論結果都會用掉。價值越高越可能讓稀有度再高一級（部分成功時照成功做）；名稱與描述決定附魔偏向的屬性。`" /></span>

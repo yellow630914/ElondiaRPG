@@ -23,7 +23,7 @@
   "tool_tier_names": ["低階（隨身工具組）", "中階（工坊）", "高階（房子的工作台）"],
   "safe_points": ["inn", "safe"],
   "workshop_rent": { "per_hour_cc": 6 },
-  "self": { "hours": 8, "tier1_cost_ratio": 0.5 },
+  "self": { "hours": 8 },
   "shop_levels": { "village": [1, 2], "outpost": [1, 2], "fortress": [2, 2], "town": [2, 3], "port": [2, 3], "city": [3, 4], "capital": [4, 7] },
   "invention": {
     "$comment": "自創配方（見 docs/CRAFTING.md 第 7 節）：選工藝、等級（不超過做的人的工藝等級）、類別與材料，描述想做的東西，AI 設計成品。效果的種類與強度不超過同一種工藝高一級的現成配方（家具的舒適度與床看所有工藝的家具配方）；價格照同級的現成配方，材料價值不到價格 × 收購比例的部分當作另外的花費。DC = 配方的 DC + dc_bonus；categories：每種工藝能做的類別；max_effects：效果最多幾種。",

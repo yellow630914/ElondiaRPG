@@ -69,11 +69,13 @@ describe('打造件數：一次做好幾件', () => {
     const one = craftPlan(state, 'longsword', 'iron')
     const two = craftPlan(state, 'longsword', 'iron', [], undefined, { count: 2 })
     expect(two.fee).toBe(one.fee * 2)
+    // 沒帶材料：工匠代備的份數也乘件數
+    expect(two.supplied).toBe(one.supplied * 2)
     const money = state.money_cc
     prepareAction(state, { kind: 'craft', target: craftTarget('longsword', 'iron', [], { count: 2 }), text: '' })
     state.pendingAction!.natural = 20
     resolveAction(state, null)
-    expect(state.money_cc).toBe(money - two.fee)
+    expect(state.money_cc).toBe(money - two.fee - two.supplyCost)
     expect(madeCount(state, state.inventory)).toBe(2)
   })
 })

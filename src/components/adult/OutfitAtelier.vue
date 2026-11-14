@@ -88,7 +88,7 @@ const lockReason = computed(() => {
 const matPick = ref('')
 const mat = computed(() => {
   if (materials.value.some((m) => m.id === matPick.value && canDo(m.tier))) return matPick.value
-  // 預設：做得了、打造材料也夠的最高一級；都不夠就用最低一級（工匠提供）
+  // 預設：做得了、打造材料也夠的最高一級；都不夠就用最低一級（不夠的由工匠代備）
   const ok = materials.value.filter((m) => canDo(m.tier))
   const enough = (id: string) => ownedOf(id) >= craftPlan(s.value, base.value, id).units
   return ([...ok].reverse().find((m) => ownedOf(m.id) > 0 && enough(m.id)) ?? ok[0] ?? materials.value[0]!).id
@@ -181,9 +181,8 @@ function order() {
             <dt>時間</dt><dd>約 {{ gearRules.craft.hours * plan.count }} 小時</dd>
             <dt>材料</dt>
             <dd>
-              <template v-if="!plan.units">工匠提供</template>
-              <template v-else>需要 {{ plan.units }} 份，持有 {{ plan.have }} 份<span v-if="plan.uses.length" class="muted">（用掉 {{ plan.uses.map((u) => `${u.name}×${u.qty}`).join('、') }}）</span></template>
-              <label v-if="soldHere.length && plan.units > plan.have" class="check small"><input v-model="buy" type="checkbox" /> 不夠的當場補買<span v-if="plan.buyCost">（{{ formatMoney(plan.buyCost) }}）</span></label>
+              需要 {{ plan.units }} 份，持有 {{ plan.have }} 份<span v-if="plan.uses.length" class="muted">（用掉 {{ plan.uses.map((u) => `${u.name}×${u.qty}`).join('、') }}）</span>
+              <span v-if="plan.supplied" class="muted">：不夠的 {{ plan.supplied }} 份由工匠代備，每份 {{ formatMoney(plan.supplyUnit) }}（{{ formatMoney(plan.supplyCost) }}）</span>
             </dd>
           </dl>
           <table>
@@ -198,7 +197,7 @@ function order() {
           <ul v-if="plan.blocked" class="warn small"><li v-for="b in plan.blockers" :key="b"><GameIcon name="warning" :size="13" /> {{ b }}</li></ul>
           <input v-else v-model="text" class="wish" placeholder="想要的樣子（選填）：例如繡上家紋、裙襬綴滿小鈴鐺" />
           <div class="total">
-            <span>工錢 <b>{{ formatMoney(plan.fee + plan.buyCost) }}</b></span>
+            <span>{{ plan.supplyCost ? '工錢與材料費' : '工錢' }} <b>{{ formatMoney(plan.fee + plan.buyCost + plan.supplyCost) }}</b></span>
             <button class="order-btn" :disabled="!!plan.blocked || game.judging || !!s.pendingAction" @click="order">下單訂製</button>
           </div>
         </section>

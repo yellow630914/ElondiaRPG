@@ -92,19 +92,24 @@ describe('crafting', () => {
     return r
   }
 
-  it('only works at the matching shop and needs forge materials beyond the first tier', () => {
+  it('only works at the matching shop; missing forge materials are supplied by the smith', () => {
     const state = game()
     expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('鐵匠鋪')
     standOn(state, 'tailor')
     expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:iron', text: '' })).toThrow('要到鐵匠鋪')
     standOn(state, 'smithy')
     expect(() => prepareAction(state, { kind: 'craft', target: 'longsword:leather', text: '' })).toThrow('不能')
-    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('材料不夠')
+    // 委託：材料不夠不會擋住，改成工匠代備（另外收材料費）
+    expect(craftPlan(state, 'longsword', 'mithril').blocked ?? '').not.toContain('材料不夠')
     state.money_cc = 5000
     state.inventory.push({ name: '秘銀礦石', qty: 1 }, { name: '精鋼錠', qty: 2 })
-    expect(craftPlan(state, 'longsword', 'mithril').blocked).toContain('材料不夠')
-    expect(craftPlan(state, 'longsword', 'steel').blocked).toBeUndefined()
-    expect(craftPlan(state, 'dagger', 'iron').units).toBe(0)
+    expect(craftPlan(state, 'longsword', 'mithril').supplied).toBe(1)
+    const steel = craftPlan(state, 'longsword', 'steel')
+    expect(steel.blocked).toBeUndefined()
+    expect(steel.supplied).toBe(0)
+    // 第一級的委託也照份數用材料（和自己動手一樣）
+    expect(craftPlan(state, 'dagger', 'iron').units).toBe(craftPlan(state, 'dagger', 'iron', [], state.party[0]).units)
+    expect(craftPlan(state, 'dagger', 'iron').units).toBeGreaterThan(0)
   })
 
   it('makes an enchanted piece on success and spends fee and materials', () => {

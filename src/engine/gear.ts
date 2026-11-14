@@ -394,7 +394,8 @@ export function gearPrice(spec: GearSpec): number {
 export const SELL_COST_CAP = 10
 
 /** 一份打造材料最便宜的價格（items.json 有 forge 的物品）；沒有物品做得成這種材料時是 undefined */
-function forgeUnitPrice(material: string): number | undefined {
+/** 這種打造材料最便宜的一份（目錄價）：裝備的成本、委託時工匠代備的材料費 */
+export function forgeUnitPrice(material: string): number | undefined {
   let best: number | undefined
   for (const i of itemRules.items) {
     if (!i.forge?.materials.includes(material) || !i.price_cc) continue

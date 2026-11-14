@@ -31,18 +31,58 @@ describe('打造材料：第 1 級也是物品，來源可以選、可以當場�
     }
   })
 
-  it('still charges a material fee for tier 1 by the base price, so a plate is not nearly free', () => {
+  it('self-crafting with your own materials charges no material fee, iron or steel (only the workshop rent)', () => {
     const state = game()
     standOn(state, 'smithy')
     addItem(state.inventory, '鐵礦石', 3)
-    const plan = craftPlan(state, 'plate', 'iron', [], pc(state))
-    const full = Math.round(gearRules.bases.plate!.price * craftRules.self.tier1_cost_ratio * locationMult(state))
-    expect(plan.materialCost).toBe(full - itemDef('鐵礦石')!.price_cc * 3)
-    expect(plan.fee).toBe((plan.rent ?? 0) + plan.materialCost!)
-    // 做出來的普通鐵板甲賣不回成本
-    expect(sellPrice(state, shopKey(state, 'smithy'), '鐵板甲')!).toBeLessThan(plan.fee + 1)
-    // 委託不收材料費（工錢已經照底材價格）
-    expect(craftPlan(state, 'plate', 'iron').materialCost).toBeUndefined()
+    const iron = craftPlan(state, 'plate', 'iron', [], pc(state))
+    expect(iron.uses).toEqual([{ name: '鐵礦石', qty: 3 }])
+    expect(iron.fee).toBe(iron.rent ?? 0)
+    expect(iron.supplied).toBe(0)
+    expect(iron.supplyCost).toBe(0)
+  })
+
+  it('a commission uses your materials first; the craftsman supplies only the missing units, for every tier', () => {
+    const state = game()
+    standOn(state, 'smithy')
+    const wages = (m: string) => Math.round(gearRules.bases.plate!.price * gearRules.craft.fee[gearRules.materials[m]!.tier - 1]! * locationMult(state))
+    const unit = Math.round(itemDef('鐵礦石')!.price_cc * locationMult(state))
+    // 什麼都沒帶：3 份都由工匠代備
+    const none = craftPlan(state, 'plate', 'iron')
+    expect(none.units).toBe(3)
+    expect(none.supplied).toBe(3)
+    expect(none.supplyUnit).toBe(unit)
+    expect(none.supplyCost).toBe(3 * unit)
+    expect(none.fee).toBe(wages('iron'))
+    // 帶了 2 份：只代備 1 份
+    addItem(state.inventory, '鐵礦石', 2)
+    const some = craftPlan(state, 'plate', 'iron')
+    expect(some.uses).toEqual([{ name: '鐵礦石', qty: 2 }])
+    expect(some.supplied).toBe(1)
+    expect(some.supplyCost).toBe(unit)
+    // 帶夠了：不收材料費
+    addItem(state.inventory, '鐵礦石', 1)
+    expect(craftPlan(state, 'plate', 'iron').supplyCost).toBe(0)
+    // 第 2 級一樣：不再因為材料不夠擋住，改成代備
+    const steel = craftPlan(state, 'plate', 'steel')
+    expect(steel.supplied).toBe(3)
+    expect(steel.blockers.some((b) => b.includes('打造材料不夠'))).toBe(false)
+  })
+
+  it('charges the supplied materials, and a failed commission loses only half of your own materials', () => {
+    const state = game()
+    standOn(state, 'smithy')
+    state.money_cc = 1e6
+    addItem(state.inventory, '鐵礦石', 2)
+    const plan = craftPlan(state, 'plate', 'iron')
+    prepareAction(state, { kind: 'craft', target: craftTarget('plate', 'iron'), text: '' })
+    state.pendingAction!.natural = 1
+    const r = resolveAction(state, null)
+    expect(['fail', 'fumble']).toContain(r.check?.degree)
+    expect(r.changes.money_cc).toBe(-(plan.fee + plan.supplyCost))
+    const lost = r.changes.items_lost?.find((i) => i.name === '鐵礦石')?.qty ?? 0
+    expect(lost).toBe(r.check?.degree === 'fail' ? 1 : 2)
+    expect(r.outcome.summary).toContain('工匠代備 1 份材料')
   })
 
   it('keeps the options in the target and reads old targets', () => {
@@ -61,11 +101,12 @@ describe('打造材料：第 1 級也是物品，來源可以選、可以當場�
     expect(craftPlan(state, 'longsword', 'steel', [], pc(state), { use: '精鋼錠' }).uses).toEqual([{ name: '精鋼錠', qty: 2 }])
   })
 
-  it('commissions still get tier-1 material from the smith', () => {
+  it('a commission with no materials is not blocked: the smith supplies them for a fee', () => {
     const state = game()
     standOn(state, 'smithy')
     const plan = craftPlan(state, 'longsword', 'iron')
-    expect(plan.units).toBe(0)
+    expect(plan.units).toBe(2)
+    expect(plan.supplied).toBe(2)
     expect(plan.blocked).toBeUndefined()
   })
 

@@ -91,10 +91,9 @@ describe('making it yourself', () => {
     expect(iron.blocked).toBeUndefined()
     expect(iron.units).toBe(2)
     expect(iron.uses).toEqual([{ name: '鐵礦石', qty: 2 }])
-    // 第一級：材料費照底材價格的一半，扣掉用掉的鐵礦石的價值；沒有租金
+    // 材料自己準備：不收材料費；帶著工具也沒有租金
     expect(iron.rent ?? 0).toBe(0)
-    expect(iron.fee).toBe(iron.materialCost)
-    expect(iron.fee).toBeGreaterThan(0)
+    expect(iron.fee).toBe(0)
     expect(craftPlan(state, 'longsword', 'steel', [], pc(state)).blocked).toContain('只有 Lv.1')
     pc(state).crafts = { smithing: { level: 3, xp: 0 } }
     addItem(state.inventory, '精鋼錠', 2)
