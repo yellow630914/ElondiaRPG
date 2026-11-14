@@ -59,8 +59,11 @@ function overwrite() {
 }
 function remove() {
   if (!confirm(`刪除套裝「${picked.value!.name}」？`)) return
-  if (pending.value === pick.value) pending.value = null
-  game.deleteGearSet(m.value.id, pick.value)
+  const i = pick.value
+  game.deleteGearSet(m.value.id, i)
+  // 正在看的預覽跟著原本那一套（刪掉的是它就關掉）
+  if (pending.value === i) pending.value = null
+  else if (pending.value !== null && pending.value > i) pending.value--
 }
 </script>
 

@@ -99,12 +99,55 @@ describe('套裝', () => {
     state.inventory = state.inventory.filter((i) => i.name !== gearName(RING_A))
     const rows = planGearSet(state, pc.id, 0)
     expect(Object.fromEntries(rows.map((x) => [x.slot, x.reason ?? x.status]))).toEqual({
-      main_hand: '在塞拉斯身上', body: '這件裝備已經不存在', legs: `${gearName(legs)}鎖著`, ring_1: '行囊裡沒有了',
+      main_hand: '在塞拉斯身上', body: '這件裝備已經不存在', legs: `${gearName(legs)}上了鎖，鑰匙已經丟掉了`, ring_1: '行囊裡沒有了',
     })
     const r = applyGearSet(state, pc.id, 0)
     expect(pc.gear!.main_hand!.name).toBe(gearName(LONG))
     expect(pc.gear!.legs).toBeTruthy()
     expect(r.outcome.summary).toContain('沒換：')
     expect(r.outcome.summary).toContain('在塞拉斯身上')
+  })
+
+  it('鎖住的原因分開寫：主人強制、詛咒、陷阱、鑰匙在誰身上', () => {
+    const state = game()
+    const pc = pcOf(state)
+    state.party.push({ ...pc, id: 'buddy', name: '塞拉斯', isPlayer: false, gear: {} } as never)
+    const wear = (slot: 'head' | 'wrists' | 'leg_accessory' | 'accessory', base: string, extra: object) => {
+      const spec = { base, material: 'iron' }
+      ;(pc.gear as Record<string, unknown>)[slot] = { name: gearName(spec), spec, ...extra }
+      return gearName(spec)
+    }
+    const head = wear('head', 'blindfold', { lock: 'white', keyHolder: 'buddy' })
+    const wrists = wear('wrists', 'manacles', { locked: 'curse:x' })
+    const legs = wear('leg_accessory', 'shackles', { locked: 'trap:x' })
+    pc.gearSets = [{ name: '試', slots: { head: { off: true }, wrists: { off: true }, leg_accessory: { off: true } } }]
+    expect(Object.fromEntries(planGearSet(state, pc.id, 0).map((x) => [x.slot, x.reason]))).toEqual({
+      head: `${head}上了鎖，鑰匙在塞拉斯身上`, wrists: `${wrists}被詛咒鎖住`, leg_accessory: `${legs}被陷阱鎖住`,
+    })
+  })
+
+  it('不動也記得原本那件；預設名字不重複；拿著雙手武器時副手預覽就寫換不了', () => {
+    const state = game()
+    const pc = pcOf(state)
+    saveGearSet(state, pc.id)
+    setGearSetSlot(state, pc.id, 0, 'main_hand', 'keep')
+    expect(planGearSet(state, pc.id, 0)).toEqual([])
+    setGearSetSlot(state, pc.id, 0, 'main_hand', 'put')
+    expect(pc.gearSets![0]!.slots.main_hand).toEqual({ item: gearName(LONG) })
+    saveGearSet(state, pc.id)
+    saveGearSet(state, pc.id)
+    deleteGearSet(state, pc.id, 1)
+    saveGearSet(state, pc.id)
+    expect(pc.gearSets!.map((x) => x.name)).toEqual(['套裝 1', '套裝 3', '套裝 4'])
+    // 雙手武器：主手不動、套裝只寫副手
+    const GREAT: GearSpec = { base: 'greatsword', material: 'steel' }
+    const SHIELD: GearSpec = { base: 'shield', material: 'iron' }
+    for (const x of [GREAT, SHIELD]) state.inventory.push({ name: gearName(x), qty: 1 })
+    equipItem(state, gearName(SHIELD), pc.id, 'off_hand')
+    pc.gearSets = [{ name: '盾', slots: { off_hand: { item: gearName(SHIELD) } } }, { name: '雙手加盾', slots: { main_hand: { item: gearName(GREAT) }, off_hand: { item: gearName(SHIELD) } } }]
+    equipItem(state, gearName(GREAT), pc.id, 'main_hand')
+    expect(planGearSet(state, pc.id, 0)).toMatchObject([{ slot: 'off_hand', status: 'skip', reason: `${gearName(GREAT)}要用雙手，副手空不出來` }])
+    equipItem(state, gearName(LONG), pc.id, 'main_hand')
+    expect(planGearSet(state, pc.id, 1).map((x) => x.status)).toEqual(['put', 'skip'])
   })
 })

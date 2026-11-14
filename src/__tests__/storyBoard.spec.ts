@@ -79,4 +79,33 @@ describe('可以接的特殊任務', () => {
     for (const e of guild) expect(!e.def.start.location || e.def.start.location === 'soriel').toBe(true)
     expect(guild.every((e) => e.where.endsWith('冒險者公會'))).toBe(true)
   })
+
+  it('去過的城離開後照樣列；敵對、被制伏的人不列；搜尋用的簡介', () => {
+    const state = game()
+    const has = (where: string) => storyBoard(state, 'soon').some((e) => e.where === where)
+    expect(has('萊茵堡的冒險者公會')).toBe(false)
+    state.location = 'rhineburg'
+    enterLocation(state)
+    expect(state.visitedTowns).toEqual(['soriel', 'rhineburg'])
+    state.location = 'soriel'
+    enterLocation(state)
+    expect(has('萊茵堡的冒險者公會')).toBe(true)
+    // 舊存檔：沒有 visitedTowns，日誌裡有在那座城的事也算
+    delete state.visitedTowns
+    expect(has('萊茵堡的冒險者公會')).toBe(false)
+    state.reports.push({ location: { at: 'rhineburg' } } as never)
+    expect(has('萊茵堡的冒險者公會')).toBe(true)
+
+    ensureRelationship(state, npcRecord(state, 'npc_lucia')!)
+    const first = byTitle('練習對象')
+    const listed = () => storyBoard(state, 'soon').some((e) => e.def.id === first.id)
+    const lineNow = () => npcLine(state, 'npc_lucia', 'soon')!.find((x) => x.def.id === first.id)!.status
+    npcRecord(state, 'npc_lucia')!.hostile = true
+    expect([listed(), lineNow()]).toEqual([false, 'locked'])
+    npcRecord(state, 'npc_lucia')!.hostile = false
+    state.captives = { npcs: ['npc_lucia'] } as never
+    expect([listed(), lineNow()]).toEqual([false, 'locked'])
+    delete state.captives
+    expect([listed(), lineNow()]).toEqual([true, 'now'])
+  })
 })

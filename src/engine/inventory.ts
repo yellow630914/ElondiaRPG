@@ -276,6 +276,22 @@ export function wearLocks(m: Character, wear: string[] | undefined): string[] {
   return [...new Set(out)]
 }
 
+/**
+ * 拿不下來的原因（短句，套裝的預覽與日誌用）：鑰匙在誰身上、寄生、詛咒、陷阱、主人強制。
+ * state 給了時寫出拿著鑰匙的人的名字
+ */
+export function lockReason(state: GameState | undefined, g: EquippedGear): string {
+  if (g.lock && !g.locked) {
+    if (g.keyHolder === 'discarded') return `${g.name}上了鎖，鑰匙已經丟掉了`
+    const who = state?.party.find((x) => x.id === g.keyHolder)?.name ?? (state && g.keyHolder ? npcRecord(state, g.keyHolder)?.name : undefined)
+    return `${g.name}上了鎖，鑰匙${who ? `在${who}身上` : '不在自己身上'}`
+  }
+  if (g.locked?.startsWith(PARASITE_LOCK)) return `${g.name}是寄生裝備，脫不下來`
+  if (g.locked?.startsWith(CURSE_LOCK)) return `${g.name}被詛咒鎖住`
+  if (g.locked?.startsWith(TRAP_LOCK)) return `${g.name}被陷阱鎖住`
+  return `${g.name}是主人強制戴上的`
+}
+
 function assertUnlocked(m: Character, slot: GearSlot) {
   const g = lockedGear(m, slot)
   if (g && !g.locked) throw new Error(`${g.name}上了鎖，${g.keyHolder === 'discarded' ? '鑰匙已經丟掉了' : '鑰匙不在自己身上'}（要拿回鑰匙、脫縛、用一次性的鑰匙或找鐵匠剪鎖）`)

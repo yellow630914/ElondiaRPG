@@ -239,8 +239,11 @@ export interface Report {
 export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'ring_1' | 'ring_2'
   | 'piercing_1' | 'piercing_2' | 'leg_accessory' | 'underwear_top' | 'underwear_bottom' | 'extra_1' | 'extra_2' | 'extra_3' | 'extra_4' | 'extra_5' | 'extra_6' | 'extra_7' | 'extra_8'
 
-/** 套裝的一格：item 是要換上的物品（行囊裡的名字）；off 是這一格要脫掉（item 留著，改回「換成這件」時用）。沒寫的格子換套裝時不動 */
-export interface GearSetSlot { item?: string; off?: boolean }
+/**
+ * 套裝的一格：item 是要換上的物品（行囊裡的名字）；off 是這一格要脫掉、keep 是不動（兩者 item 都留著，改回「換成這件」時用）。
+ * 沒寫的格子換套裝時也不動
+ */
+export interface GearSetSlot { item?: string; off?: boolean; keep?: boolean }
 /** 存起來的一套裝備（engine/gearSets.ts） */
 export interface GearSet { name: string; slots: Partial<Record<GearSlot, GearSetSlot>> }
 
@@ -1059,6 +1062,8 @@ export interface GameState {
   trail?: { time: GameTime; location: string; spot: string }[]
   /** 隨機生成的區域（近郊、冒險區域各層） */
   areas?: Record<string, Area>
+  /** 去過的城鎮（進過城門的地點 id；冒險筆記「可以接」用，engine/storyBoard.ts） */
+  visitedTowns?: string[]
   /** 人際關係：角色 id → 條目 */
   relationships?: Record<string, Relationship>
   /** 共同記憶 */

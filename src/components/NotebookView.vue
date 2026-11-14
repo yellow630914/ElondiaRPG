@@ -99,8 +99,8 @@ const board = computed(() => {
   void s.value.flags
   return storyBoard(s.value, settings.storyBoard)
 })
-const boardNow = computed(() => board.value.filter((e) => e.state === 'now' && matches(search.stories, e.def.title, e.where, e.line?.name, e.def.rank)))
-const boardSoon = computed(() => board.value.filter((e) => e.state === 'soon' && matches(search.stories, e.def.title, e.where, e.line?.name, e.def.rank)))
+const boardNow = computed(() => board.value.filter((e) => e.state === 'now' && matches(search.stories, e.def.title, e.def.summary, e.where, e.line?.name, e.def.rank)))
+const boardSoon = computed(() => board.value.filter((e) => e.state === 'soon' && matches(search.stories, e.def.title, e.def.summary, e.where, e.line?.name, e.def.rank)))
 const storyViews = computed(() => (['active', 'available', 'completed', 'failed'] as const).map((id) => ({
   id, label: { active: '進行中', available: '可以接', completed: '完成', failed: '失敗' }[id],
   n: id === 'available' ? board.value.length : myStories.value.filter((x) => x.p.status === id).length,

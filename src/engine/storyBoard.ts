@@ -12,7 +12,7 @@ import { RANK_ORDER } from './materialQuests'
 import { formatMoney } from './money'
 import { npcRecord } from './npcs'
 import { pcOf } from './party'
-import { canStart, neededNpcs, storyWearUnfit } from './story'
+import { canStart, isCaptive, neededNpcs, storyWearUnfit } from './story'
 import { condMet } from './storyFlags'
 import type { GameState } from './types'
 
@@ -40,11 +40,18 @@ function metNpc(state: GameState, id: string): boolean {
   return !!state.relationships?.[id] || state.party.some((m) => m.id === id)
 }
 
-/** 去過這座城：現在在這裡，或存檔裡有這座城的區塊 */
-function visited(state: GameState, location: string): boolean {
-  if (state.location === location) return true
-  const prefix = `${location}/`
-  return Object.keys(state.areas ?? {}).some((k) => k.startsWith(prefix))
+/**
+ * 去過這座城：現在在這裡、進過這座城（visitedTowns，進城時記下），
+ * 或日誌裡有在這裡發生的事（記下去過的城之前的舊存檔）
+ */
+export function visitedTown(state: GameState, location: string): boolean {
+  if (state.location === location || state.visitedTowns?.includes(location)) return true
+  return state.reports.some((r) => r.location.at === location || r.location.to === location)
+}
+
+/** 這個人現在會發任務：不是敵對、沒有被制伏（和 storyOffersHere 的 npcFree 一樣） */
+function npcAvailable(state: GameState, id: string): boolean {
+  return !npcRecord(state, id)?.hostile && !isCaptive(state, id)
 }
 
 /** 固定 NPC 開頭的任務依 NPC 分組（照任務清單的順序） */
@@ -98,16 +105,16 @@ function whereOf(state: GameState, def: StoryDef): string | undefined {
   if (st.kind === 'npc' && st.npc) {
     if (!metNpc(state, st.npc)) return undefined
     const rec = npcRecord(state, st.npc)
-    if (rec?.hostile) return undefined
+    if (!npcAvailable(state, st.npc)) return undefined
     if (state.party.some((m) => m.id === st.npc)) return `找${npcName(state, st.npc)}（在隊伍裡）`
     return `找${npcName(state, st.npc)}${rec?.location ? `（${locationById(rec.location).name}）` : ''}`
   }
   if (st.kind === 'guild') {
-    if (st.location && !visited(state, st.location)) return undefined
+    if (st.location && !visitedTown(state, st.location)) return undefined
     return st.location ? `${locationById(st.location).name}的冒險者公會` : '任何一座城的冒險者公會'
   }
   if (st.kind === 'informant') {
-    if (st.location && !visited(state, st.location)) return undefined
+    if (st.location && !visitedTown(state, st.location)) return undefined
     return `${st.location ? `${locationById(st.location).name}的` : ''}情報商打聽（約 ${formatMoney(st.price ?? 100)}）`
   }
   return undefined
@@ -146,7 +153,8 @@ export function npcLine(state: GameState, npc: string, mode: StoryBoardMode): Li
   return list.map((def) => {
     const p = state.stories?.[def.id]
     if (p) return { def, status: p.status === 'completed' ? 'done' : p.status === 'failed' ? 'failed' : 'active', needs: [] }
-    const r = storyReadiness(state, def)
+    // 敵對、被制伏的人不會發任務：還沒接的段落都算「之後」
+    const r = npcAvailable(state, npc) ? storyReadiness(state, def) : null
     if (r?.state === 'now') return { def, status: 'now', needs: [] }
     if (r?.state === 'soon' && mode === 'soon') return { def, status: 'soon', needs: r.needs }
     return { def, status: 'locked', needs: [] }

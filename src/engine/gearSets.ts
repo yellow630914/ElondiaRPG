@@ -6,9 +6,9 @@
 // - 先把要換的格子全部脫下來，再一件一件穿上（戒指、耳環在兩格之間交換、雙手武器都照順序處理）；穿不上的格子換回原本的那件。
 
 import { classDef } from './data'
-import { classWeaponBlock, gearSpecOf, slotNameFor, syncGear } from './gear'
+import { classWeaponBlock, gearKnown, gearSpecOf, gearStats, slotNameFor, syncGear } from './gear'
 import { recalc } from './character'
-import { itemReport, lockedGear, lockItemName, putOn } from './inventory'
+import { itemReport, lockedGear, lockItemName, lockReason, putOn } from './inventory'
 import { commitReport } from './state'
 import type { Character, GameState, GearSet, GearSetSlot, GearSlot, Report } from './types'
 
@@ -24,7 +24,7 @@ export const GEAR_SET_SLOTS: GearSlot[] = [
 
 export type GearSetMode = 'put' | 'off' | 'keep'
 export function slotMode(e: GearSetSlot | undefined): GearSetMode {
-  if (!e) return 'keep'
+  if (!e || e.keep) return 'keep'
   return e.off || !e.item ? 'off' : 'put'
 }
 
@@ -55,7 +55,7 @@ export function saveGearSet(state: GameState, memberId: string, name?: string): 
   const m = member(state, memberId)
   const sets = (m.gearSets ??= [])
   if (sets.length >= GEAR_SET_MAX) throw new Error(`每人最多 ${GEAR_SET_MAX} 套`)
-  sets.push({ name: cleanName(name) || `套裝 ${sets.length + 1}`, slots: currentSlots(m) })
+  sets.push({ name: cleanName(name) || defaultName(sets), slots: currentSlots(m) })
   return sets.length - 1
 }
 
@@ -66,6 +66,14 @@ export function overwriteGearSet(state: GameState, memberId: string, index: numb
 }
 
 const cleanName = (s: string | undefined) => (s ?? '').trim().slice(0, 12)
+
+/** 預設名字：「套裝 N」，N 從目前套數＋1 起，跳過已經有人用的名字 */
+function defaultName(sets: GearSet[]): string {
+  const used = new Set(sets.map((x) => x.name))
+  let n = sets.length + 1
+  while (used.has(`套裝 ${n}`)) n++
+  return `套裝 ${n}`
+}
 
 export function renameGearSet(state: GameState, memberId: string, index: number, name: string) {
   const n = cleanName(name)
@@ -80,11 +88,14 @@ export function deleteGearSet(state: GameState, memberId: string, index: number)
   if (!m.gearSets!.length) delete m.gearSets
 }
 
-/** 改一格：換成這件（只在記得是哪一件時）、脫掉、不動 */
+/** 改一格：換成這件（只在記得是哪一件時）、脫掉、不動（脫掉、不動都記著原本那一件） */
 export function setGearSetSlot(state: GameState, memberId: string, index: number, slot: GearSlot, mode: GearSetMode) {
   const set = setAt(member(state, memberId), index)
   const e = set.slots[slot]
-  if (mode === 'keep') delete set.slots[slot]
+  if (mode === 'keep') {
+    if (e?.item) set.slots[slot] = { item: e.item, keep: true }
+    else delete set.slots[slot]
+  }
   else if (mode === 'off') set.slots[slot] = { ...(e?.item ? { item: e.item } : {}), off: true }
   else {
     if (!e?.item) throw new Error('這一格沒有記下要換上哪一件')
@@ -120,25 +131,25 @@ export function planGearSet(state: GameState, memberId: string, index: number): 
   for (const slot of GEAR_SET_SLOTS) {
     const e = set.slots[slot]
     const g = m.gear?.[slot]
-    if (!e || !g || lockedGear(m, slot)) continue
-    if (slotMode(e) === 'off' || e.item !== g.name) freed.add(g.name)
+    if (slotMode(e) === 'keep' || !g || lockedGear(m, slot)) continue
+    if (slotMode(e) === 'off' || e!.item !== g.name) freed.add(g.name)
   }
   const inBag = (name: string) => state.inventory.some((i) => i.name === name && i.qty > 0)
   for (const slot of GEAR_SET_SLOTS) {
     const e = set.slots[slot]
-    if (!e) continue
+    if (slotMode(e) === 'keep') continue
     const label = slotNameFor(slot, m.race)
     const g = m.gear?.[slot]
     const lock = lockedGear(m, slot)
     const base = { slot, label, ...(g ? { now: g.name } : {}) }
     if (slotMode(e) === 'off') {
       if (!g) continue
-      rows.push(lock ? { ...base, want: null, status: 'skip', reason: `${g.name}鎖著` } : { ...base, want: null, status: 'off' })
+      rows.push(lock ? { ...base, want: null, status: 'skip', reason: lockReason(state, lock) } : { ...base, want: null, status: 'off' })
       continue
     }
-    const item = e.item!
+    const item = e!.item!
     if (g?.name === item) { rows.push({ ...base, want: item, status: 'same' }); continue }
-    if (lock) { rows.push({ ...base, want: item, status: 'skip', reason: `${g!.name}鎖著` }); continue }
+    if (lock) { rows.push({ ...base, want: item, status: 'skip', reason: lockReason(state, lock) }); continue }
     const spec = gearSpecOf(state, item)
     if (!spec) { rows.push({ ...base, want: item, status: 'skip', reason: '這件裝備已經不存在' }); continue }
     const block = state.options?.classWeapons && slot === 'main_hand' ? classWeaponBlock(m.class, spec) : null
@@ -148,6 +159,16 @@ export function planGearSet(state: GameState, memberId: string, index: number): 
       rows.push({ ...base, want: item, status: 'skip', reason: other ? `在${other.name}身上` : '行囊裡沒有了' })
       continue
     }
+    // 副手：主手最後拿的是雙手武器（套裝換上的、或不動的那一把）就空不出來
+    if (slot === 'off_hand') {
+      const mr = rows.find((x) => x.slot === 'main_hand')
+      const main = !mr ? m.gear?.main_hand?.name : mr.status === 'put' || mr.status === 'same' ? mr.want ?? undefined : mr.status === 'skip' ? mr.now : undefined
+      const mspec = main ? (mr && mr.status !== 'skip' ? gearSpecOf(state, main) : m.gear?.main_hand?.spec) : undefined
+      if (main && mspec && gearKnown(mspec) && gearStats(mspec).two_handed) {
+        rows.push({ ...base, want: item, status: 'skip', reason: `${main}要用雙手，副手空不出來` })
+        continue
+      }
+    }
     rows.push({ ...base, want: item, status: 'put' })
   }
   return rows
@@ -155,10 +176,13 @@ export function planGearSet(state: GameState, memberId: string, index: number): 
 
 /** 身上現在穿的和哪一套一樣（套裝寫了的格子都符合）；都不是時 -1 */
 export function wornGearSet(m: Character): number {
-  return (m.gearSets ?? []).findIndex((set) => Object.entries(set.slots).every(([slot, e]) => {
-    const g = m.gear?.[slot as GearSlot]
-    return slotMode(e) === 'off' ? !g : g?.name === e!.item
-  }) && Object.keys(set.slots).length > 0)
+  return (m.gearSets ?? []).findIndex((set) => {
+    const used = Object.entries(set.slots).filter(([, e]) => slotMode(e) !== 'keep')
+    return used.length > 0 && used.every(([slot, e]) => {
+      const g = m.gear?.[slot as GearSlot]
+      return slotMode(e) === 'off' ? !g : g?.name === e!.item
+    })
+  })
 }
 
 /** 換上這一套：一則日誌，約 15 分鐘 */

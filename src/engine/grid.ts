@@ -627,6 +627,8 @@ export function enterLocation(state: GameState) {
     return
   }
   delete state.expedition
+  // 去過的城鎮（冒險筆記「可以接」只列去過的城的公會與情報商；engine/storyBoard.ts）
+  if (!(state.visitedTowns ??= []).includes(loc.id)) state.visitedTowns.push(loc.id)
   const blocks = blocksFor(loc)
   const gateBlock = blocks.find((b) => b.grid.some((row) => row.includes('E'))) ?? blocks[0]!
   const area = buildBlock(loc, gateBlock)
