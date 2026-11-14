@@ -1216,3 +1216,16 @@ export function applyUnmark(state: GameState, report: Report, target: string, de
 export function atSafeSpot(state: GameState): boolean {
   return slaveryRules.safe_spots.includes(currentCell(state).kind) || atMasterHome(state)
 }
+
+/**
+ * 魔力封印下最多能施放幾環（沒有封印時是 9）：印記寫的環數，加上主人與奴隸的親密度每 spell_seal.affinity_step 點 1 環。
+ * 主角是奴隸時看主角對主人的親密度；主角的奴隸（契約的主人是主角）看他對主角的親密度；別人的奴隸照印記寫的。
+ */
+export function spellCapFor(state: Pick<GameState, 'relationships'>, c: Character): number {
+  const contract = contractOf(c)
+  const base = contract ? contractTerms(contract).spell_cap : undefined
+  if (base === undefined) return 9
+  const other = c.isPlayer ? contract!.master : contract!.master === 'pc' ? c.id : undefined
+  const affinity = other ? state.relationships?.[other]?.affinity ?? 0 : 0
+  return Math.min(9, base + Math.max(0, Math.floor(affinity / slaveryRules.spell_seal.affinity_step)))
+}

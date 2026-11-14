@@ -35,7 +35,7 @@ import { charmRutMult } from './charm'
 import { upcastAbility, upcastLevels, upcastStatusDice } from './upcast'
 import { parasiteAbilities, parasiteStartLust, parasiteTwoFace } from './parasites'
 import { addCondition, isNoncombatant, pcOf } from './party'
-import { contractTerms } from './slavery'
+import { contractTerms, spellCapFor } from './slavery'
 import { advanceBossHunts, clearCounts, LAYER_IDS } from './materialQuests'
 import { bossMerit } from './guild'
 import { lightingRules } from './light'
@@ -300,7 +300,7 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
     const enemyGroup = (group ?? (npcs.length ? [] : encounterFor(state.location, rng))).filter(([id]) => !!enemies[id])
     const cap = gameRule(state, 'skillLoadout')
     // 無法戰鬥的隊員（普通人）不上場
-    const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng, cap))
+    const fighters: Combatant[] = state.party.filter((c) => c.hp > 0 && !isNoncombatant(c)).map((c) => fromCharacter(c, rng, cap, spellCapFor(state, c)))
     if (fighters.length === 0) throw new Error('隊伍沒有能戰鬥的成員')
     // 淫器：戰鬥時展開成合煉的武器（穿夠天數才行；docs/LEWD_STATS.md 第 22 節）
     for (const f of fighters) {
@@ -336,13 +336,15 @@ export function startCombat(state: GameState, group?: EncounterGroup, opts: Comb
       }
     })
     for (const rec of npcs) {
-      fighters.push({ ...fromCharacter(characterFor(state, rec), rng, cap), side: 'enemy', npcId: rec.id })
+      const ch = characterFor(state, rec)
+      fighters.push({ ...fromCharacter(ch, rng, cap, spellCapFor(state, ch)), side: 'enemy', npcId: rec.id })
     }
     // 在場的友方：和隊伍一起行動（由玩家操作），戰後不留下狀態
     for (const id of opts.allies ?? []) {
       const rec = npcRecord(state, id)
       if (!rec || rec.dead || state.party.some((m) => m.id === id)) continue
-      fighters.push({ ...fromCharacter(characterFor(state, rec), rng, cap), side: 'party', npcId: rec.id, ally: true })
+      const ch = characterFor(state, rec)
+      fighters.push({ ...fromCharacter(ch, rng, cap, spellCapFor(state, ch)), side: 'party', npcId: rec.id, ally: true })
     }
     const lustMult = gameRule(state, 'lustMult')
     initLust(state, fighters, lustMult)
@@ -686,13 +688,8 @@ function climax(combat: CombatState, target: Combatant, effects: Effect[]) {
   addStatus(target, { id: 'afterglow_combat', turns: r.afterglow_turns, source: target.id })
 }
 
-function spellCap(c: Character): number {
-  const contract = contractOf(c)
-  const cap = contract ? contractTerms(contract).spell_cap : undefined
-  return cap ?? 9
-}
-
-function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
+/** circles：魔力封印下最多能施放幾環（slavery.ts 的 spellCapFor，和主人越親近越鬆） */
+function fromCharacter(c: Character, rng: Rng, loadoutCap: number, circles = 9): Combatant {
   const gear = gearAffinities(c)
   const armor = armorDef(c.armor)
   const apMax = apMaxFor(c.level, attrsOf(c))
@@ -721,9 +718,9 @@ function fromCharacter(c: Character, rng: Rng, loadoutCap: number): Combatant {
     // 產後虛弱：戰鬥中生命上限變低（docs/FAMILY.md 第 6 節）
     hp: Math.min(c.hp, Math.round(c.maxHp * postpartumMaxHp(c))), maxHp: Math.round(c.maxHp * postpartumMaxHp(c)), tempHp,
     ap: apMax, apMax, apRegen: apRegenFor(c.level),
-    // 魔導束縛契約：只能施放 spell_cap 環以下的法術
-    slots: slotsLeft(c).slice(0, spellCap(c)),
-    slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, spellCap(c)),
+    // 魔導束縛契約：只能施放封印允許的環數以下的法術
+    slots: slotsLeft(c).slice(0, circles),
+    slotMax: slotMaxFor(c.class, c.level, attrsOf(c)).slice(0, circles),
     // 技能攜帶上限：只帶攜帶中的技能與法術（戲法全帶）
     // 寄生物給的技能不佔攜帶上限（parasites.ts）
     abilities: [...carriedAbilities(c, loadoutCap), ...parasiteAbilities(c), ...schoolAbilities(c), ...lactationAbilities(c)],

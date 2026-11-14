@@ -787,6 +787,8 @@ export const attributeRules = attributesJson as unknown as {
   score: { min: number; max: number }
   creation: { array: number[]; bonus_points: number; max_score: number }
   level_up_points: number
+  /** 神殿的洗點（respec.ts） */
+  respec: { cost_per_level: number; hours: number }
   races: Record<string, RaceDef>
 }
 
@@ -1520,6 +1522,8 @@ export const slaveryRules = slaveryJson as unknown as {
   }
   black_market_only: string[]
   markets: Record<string, { public?: MarketDef; black?: MarketDef }>
+  /** 魔力封印：主人與奴隸的親密度每 affinity_step 點，能施放的法術多 1 環 */
+  spell_seal: { affinity_step: number }
   black_market_search: { attr: AttrId; dc: number; hours: number }
   /** 黑市每天刷新的珍品（獨特裝備） */
   curios: { price_mult: number }

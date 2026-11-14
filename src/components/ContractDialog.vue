@@ -8,7 +8,7 @@ import { npcRecord, npcTitle } from '@/engine/npcs'
 import { isHostile } from '@/engine/population'
 import { isBound, isEnslaved, isFugitive, masterBumped } from '@/engine/party'
 import {
-  askableEvents, askMasterBlocked, atSafeSpot, contractTerms, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, unmarkOffers,
+  askableEvents, askMasterBlocked, atSafeSpot, contractTerms, masterAllows, masterNearby, masterRefusedToday, masterWhereabouts, seekMasterDc, spellCapFor, unmarkOffers,
 } from '@/engine/slavery'
 import {
   allowedDays, atMasterHome, currentMasterHome, extendRefusedToday, homeDeadline, householdOf, houseRefusedToday, leaveDc, mayExtend, mayLeaveHouse, permitWindow, strictPoints,
@@ -57,9 +57,15 @@ const terms = computed(() => {
     { k: '逃亡時被找到', v: pct(t.recapture_chance), note: '每次休息' },
     { k: '逃離反噬', v: `${pct(t.escape_hp_ratio)} 生命值`, note: '' },
     { k: '服從懲罰', v: `−${c.obedience}`, note: '對主人的檢定' },
-    ...(t.spell_cap !== undefined ? [{ k: '魔力封印', v: `最多 ${t.spell_cap} 環`, note: '' }] : []),
+    ...(t.spell_cap !== undefined ? [sealRow(t.spell_cap)] : []),
   ]
 })
+/** 魔力封印：印記寫的環數，和主人越親近越鬆（slavery.ts 的 spellCapFor） */
+function sealRow(base: number) {
+  const now = spellCapFor(s.value, s.value.party.find((m) => m.isPlayer)!)
+  const step = slaveryRules.spell_seal.affinity_step
+  return { k: '魔力封印', v: `最多 ${now} 環`, note: now > base ? `印記 ${base} 環，和主人親近放寬了 ${now - base} 環` : `和主人的親密度每 ${step} 多 1 環` }
+}
 // 契約細節（條款與副作用）預設摺起來；摘要列出最重要的幾個數字
 const detailsOpen = ref(false)
 const summary = computed(() => terms.value.filter((t) => ['收益歸主人', '談判解除', '逃離', '服從懲罰'].includes(t.k)).map((t) => ({ k: t.k.replace('歸主人', '').replace('解除', ''), v: t.v })))

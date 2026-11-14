@@ -116,7 +116,7 @@
       "recapture_chance": 0.35,
       "exit_dc": 16,
       "submission_every": 2,
-      "side_effects": ["法陣抽取魔力，最多只能施放 1 環法術", "主人能感知印記的位置"],
+      "side_effects": ["法陣抽取魔力，最多只能施放 1 環法術（和主人越親近越鬆：親密度每 20 多 1 環）", "主人能感知印記的位置"],
       "escape_effects": { "hp_ratio": 0.4 }
     },
     "brothel": {
@@ -158,6 +158,7 @@
     "fugitive": { "inn_mult": 2, "inn_recapture_mult": 1.5 }
   },
 
+  "$comment_spell_seal": "魔力封印（印記的 spell_cap，例如魔導束縛契約）：主人與奴隸越親近，封印越鬆。兩人的親密度每 affinity_step 點，能施放的法術多 1 環（最多到 9 環）；親密度 0 以下照印記寫的。主角是奴隸時看主角對主人的親密度，主角的奴隸看他對主角的親密度。", "spell_seal": { "affinity_step": 20 },
   "release_affinity": 15,
   "voluntary": {"$comment": "自願為奴（docs/COMPANIONS.md 2.3.1 節）：在刻印師那裡，自願同行或雇傭的同伴親密度 min_affinity 以上時，可以問他願不願意成為主角的奴隸；答應就刻上主角選的印記（模板或自訂），入隊方式改成奴隸，並預先說好兩人的主僕關係（bond_styles）。刻印費 fee_cc，花 hours 小時。親密度照舊。", "min_affinity": 60, "fee_cc": 200, "hours": 1, "cells": ["carver"], "bonds": ["voluntary", "hired"], "$comment_self": "反過來：自由身的主角請人收下自己（主動認主）。可以問 self_bonds 的同伴（自願同行、雇傭、帶著主角的隊長）與身邊認識的人，親密度一樣要 min_affinity 以上；主角選印記與主僕關係，刻印費一樣由主角付。身上已經有印記、自己擁有奴隸時不能。", "self_bonds": ["voluntary", "hired", "leader"]},
 
