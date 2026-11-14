@@ -41,6 +41,7 @@ import {
 } from './party'
 import { negotiationSetup } from './negotiation'
 import { setupPatron } from './brothel'
+import { setupResign } from './resign'
 import { setupWork } from './work'
 import { setupExplore } from './landmarks'
 import { currentArea, currentCell, palaceGateName } from './grid'
@@ -48,7 +49,7 @@ import { assertMayPersuadePalace, palacePersuadeDc, settlePalacePersuasion } fro
 import { ensureRelationship } from './social'
 import { bargainSetup } from './trade'
 import { addHours, commitReport, masterTake, newReportId, withRng } from './state'
-import type { Character, CurioListing, GameState, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
+import type { Character, CurioListing, GameState, MarkTerms, NpcRecord, PartyOffer, Report, SlaveListing, TavernCandidate } from './types'
 import { contractOf, placeName } from './tattoos'
 import { lewdPowerOf, npcLewd, slaveValueMult, slaveValueOf } from './lewd'
 import { sexValueOf } from './sexRecord'
@@ -928,7 +929,7 @@ export interface ActionSetup {
   context?: CheckContext
 }
 
-export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string, others: string[] = []): ActionSetup {
+export function setupFor(state: GameState, kind: ActionKind, target?: string, offer?: number, item?: string, others: string[] = [], terms?: Partial<MarkTerms>): ActionSetup {
   const pc = pcOf(state)
   switch (kind) {
     case 'chat':
@@ -1088,6 +1089,7 @@ export function setupFor(state: GameState, kind: ActionKind, target?: string, of
       return setupStoryCheck(state, target)
     case 'defeat_event':
       return setupDefeatEvent(state, target)
+    case 'resign': return setupResign(state, terms)
     case 'negotiate': {
       if (isFugitive(state)) {
         // 逃亡奴隸找到了主人：當面談判，不必在安全的地方，但 DC 較高

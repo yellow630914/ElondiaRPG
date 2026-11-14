@@ -20,6 +20,7 @@ import { locationById } from '@/engine/data'
 import { parseUse, useGame } from '@/stores/game'
 import AbilityPicker from './AbilityPicker.vue'
 import BondStylePicker from './BondStylePicker.vue'
+import ResignPanel from './ResignPanel.vue'
 import GameIcon from './ui/GameIcon.vue'
 import Hint from './ui/Hint.vue'
 import type { IconName } from './ui/iconPaths'
@@ -286,6 +287,8 @@ function act(kind: 'negotiate' | 'escape' | PermitAct | 'master_return' | 'seek_
         </div>
       </template>
       <p v-else class="small muted">主人現在沒有可以主動找他做的事。</p>
+
+      <ResignPanel @done="emit('close')" />
 
       <details class="box">
         <summary>

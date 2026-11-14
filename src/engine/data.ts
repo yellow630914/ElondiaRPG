@@ -1524,6 +1524,8 @@ export const slaveryRules = slaveryJson as unknown as {
   markets: Record<string, { public?: MarketDef; black?: MarketDef }>
   /** 魔力封印：主人與奴隸的親密度每 affinity_step 點，能施放的法術多 1 環 */
   spell_seal: { affinity_step: number }
+  /** 說服主人重簽契約（resign.ts） */
+  resign: { min_affinity: number; dc_discount: number; critical_affinity: number; fumble_affinity: number }
   black_market_search: { attr: AttrId; dc: number; hours: number }
   /** 黑市每天刷新的珍品（獨特裝備） */
   curios: { price_mult: number }
@@ -1744,7 +1746,7 @@ export function contractDef(id: string): ContractDef {
 export type ActionKind = 'free' | 'hire' | 'haggle' | 'invite' | 'squad_join' | 'black_market' | 'negotiate' | 'escape' | 'bargain' | 'negotiation' | 'rest_talk'
   | 'chat' | 'gift' | 'flatter' | 'seduce' | 'bluff' | 'intimidate' | 'steal' | 'attack' | 'master_permit' | 'master_leave' | 'master_extend' | 'marking' | 'master_event'
   | 'master_return' | 'seek_master' | 'unmark' | 'unbind' | 'work' | 'patron' | 'craft' | 'make' | 'produce' | 'invent' | 'defeat_event' | 'story' | 'propose'
-  | 'train' | 'perk_pitch' | 'explore' | 'palace_gate'
+  | 'train' | 'perk_pitch' | 'explore' | 'palace_gate' | 'resign'
 export type EffectKind = 'affinity' | 'relationship_text' | 'flag' | 'reputation' | 'money' | 'item' | 'xp' | 'meet' | 'ability' | 'hp' | 'mark'
   | 'release' | 'change_master' | 'gear' | 'join' | 'lewd' | 'rumor'
 export const actionRules = actionsJson as unknown as {
