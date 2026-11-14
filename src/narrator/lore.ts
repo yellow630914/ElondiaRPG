@@ -12,6 +12,7 @@
 // 變體寫在世界書檔案條目的 extensions.elondia.variants（SillyTavern 會忽略），見 docs/PROMPTS.md。
 
 import { Converter } from 'opencc-js/t2cn'
+import { fixChainChar } from '@/engine/chainChar'
 import type { Report } from '@/engine/types'
 
 export interface WorldbookEntry {
@@ -98,7 +99,8 @@ const DRAGON_KEYS = ['巨龍', '巨龙', '真龍', '真龙', '之龍', '之龙',
 /** 玩家新增的條目 uid 從這裡開始，避免和世界書檔案衝突 */
 export const CUSTOM_LORE_UID = 100000
 
-const toSimplified = Converter({ from: 'tw', to: 'cn' })
+const toSimplifiedRaw = Converter({ from: 'tw', to: 'cn' })
+const toSimplified = (t: string) => toSimplifiedRaw(fixChainChar(t))
 
 let cached: Promise<Worldbook> | null = null
 

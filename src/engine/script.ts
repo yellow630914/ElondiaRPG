@@ -2,13 +2,14 @@
 // 只逐字轉換（OpenCC 台灣字形 → 大陸簡體），不換用語。
 
 import { Converter } from 'opencc-js/t2cn'
+import { fixChainChar } from './chainChar'
 import { itemLabel } from './itemKey'
 
 const toHans = Converter({ from: 'tw', to: 'cn' })
 
 /** 逐字轉成簡體（提示詞與名字比對共用） */
 export function toSimplifiedText(text: string): string {
-  return /[㐀-鿿豈-﫿]/.test(text) ? toHans(text) : text
+  return /[㐀-鿿豈-﫿]/.test(text) ? toHans(fixChainChar(text)) : text
 }
 
 /**

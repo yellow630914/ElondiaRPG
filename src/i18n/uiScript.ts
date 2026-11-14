@@ -8,6 +8,7 @@
 // 切回繁體時，還在畫面上、沒有被程式改過的文字換回原文。
 
 import { ConverterFactory, Locale } from 'opencc-js/t2cn'
+import { fixChainChar } from '@/engine/chainChar'
 
 export type UiLanguage = 'zh-Hant' | 'zh-Hans'
 
@@ -59,7 +60,7 @@ const UI_TERMS: [string, string][] = [
 const toHans = ConverterFactory(Locale.from.tw!, Locale.to.cn!, [UI_TERMS])
 /** 一段文字轉成簡體（沒有中文時原樣傳回，省得每次都轉） */
 export function toSimplifiedUi(text: string): string {
-  return /[\u3400-\u9fff\uf900-\ufaff]/.test(text) ? toHans(text) : text
+  return /[\u3400-\u9fff\uf900-\ufaff]/.test(text) ? toHans(fixChainChar(text)) : text
 }
 
 const ATTRS = ['title', 'placeholder', 'aria-label', 'alt'] as const
