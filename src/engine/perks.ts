@@ -625,7 +625,7 @@ const SKILL_CATEGORY: Record<SkillId, string> = {
   stealth: 'explore', sleight: 'explore', perception: 'explore', survival: 'explore',
   craft: 'craft', labor: 'craft', service: 'bond', escape: 'bond',
 }
-const BOND_KINDS = ['escape', 'negotiate', 'marking', 'master_permit', 'master_leave', 'master_extend', 'master_event', 'unmark']
+const BOND_KINDS = ['escape', 'negotiate', 'resign', 'marking', 'master_permit', 'master_leave', 'master_extend', 'master_event', 'unmark']
 const CRAFT_KINDS = ['craft', 'make', 'produce', 'invent', 'work']
 
 /** 特質的分類：寫了就用，否則依第一個效果推斷（戰鬥修正→戰鬥、抗性與增傷→體質、檢定看屬性、情境與行動） */

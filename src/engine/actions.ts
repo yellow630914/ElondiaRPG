@@ -52,7 +52,8 @@ import { addHours, commitReport, newReportId, withRng } from './state'
 import { useAbilityOutOfCombat, type AbilityUse } from './resources'
 import { applyFieldEffects, fieldCastable, prepareFieldCast, type FieldEffect } from './fieldCast'
 import { formatMoney } from './money'
-import type { Character, CheckInfo, GameState, GameTime, GearSpec, Report, ResourceChange, RollPart } from './types'
+import type { Character, CheckInfo, GameState, GameTime, GearSpec, MarkTerms, Report, ResourceChange, RollPart } from './types'
+import { applyResign } from './resign'
 import { rollBreakdown } from './rollParts'
 import { contractOf } from './tattoos'
 import { canonicalName } from './script'
@@ -74,6 +75,8 @@ export interface ActionInput {
   use?: { member: string; ability: string }
   /** 送禮：送出的物品名稱 */
   item?: string
+  /** 說服主人重簽契約：提出的新條款（resign.ts） */
+  terms?: Partial<MarkTerms>
 }
 
 export interface ActionPending extends ActionInput {
@@ -198,7 +201,7 @@ export function prepareAction(state: GameState, input: ActionInput): ActionPendi
   const master = input.kind === 'master_event' ? contractOf(pcOf(state))?.master : undefined
   input = { ...input, ...(others.length ? { with: others } : {}), ...(master ? { target: master } : {}) }
   if (!others.length) delete input.with
-  const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item, others)
+  const setup = setupFor(state, input.kind, input.target, input.offer_cc, input.item, others, input.terms)
   // 擲檢定的人：通常是主角；夥伴動手製作時是那位夥伴
   const pc = (setup.actor && memberOrResident(state, currentArea(state), setup.actor)) || pcOf(state)
   // 情境修正：這次行動的特殊情況，加上非戰鬥狀態與特質（對象的標籤也算，例如「對貴族 +1」）
@@ -803,6 +806,7 @@ function applyMechanics(state: GameState, report: Report, p: ActionPending, degr
     case 'black_market': return applyBlackMarket(state, report, degree)
     case 'palace_gate': return applyPalaceGate(state, degree)
     case 'negotiate': return applyNegotiate(state, report, degree)
+    case 'resign': return applyResign(state, report, degree, p.terms)
     case 'escape': return applyEscape(state, report, degree)
     case 'bargain': return applyBargain(state, report, p.target!, degree, p.offer_cc)
     case 'negotiation': return applyNegotiationOutcome(state, report, p.target!, degree)

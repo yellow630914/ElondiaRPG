@@ -73,6 +73,7 @@
     "squad_join": { "name": "請小隊帶你同行", "attr": "cha", "skill": "persuade", "hours": 0.5, "effects": ["affinity", "relationship_text", "flag"],
       "$comment": "請固定 NPC 的小隊（NpcDef.squad）帶主角同行：成功時隊長成為主角跟著的隊長、隊員是同隊的隊員（DC 見 companions.json 的 squad.join）" },
     "black_market": { "name": "打聽地下街", "attr": "cha", "skill": "trade", "hours": 2, "effects": ["flag", "reputation", "money", "hp"] },
+    "resign": { "name": "說服主人重簽契約", "attr": "cha", "skill": "persuade", "hours": 1, "effects": ["affinity", "relationship_text", "flag"], "$comment": "被主人帶著、對主人親密度 40 以上時提出新的契約條款（resign.ts；數值在 slavery.json 的 resign）" },
     "negotiate": { "name": "談判解除契約", "attr": "cha", "skill": "persuade", "hours": 1, "effects": ["affinity", "relationship_text", "flag"] },
     "escape": { "name": "逃離主人", "attr": "dex", "skill": "escape", "hours": 2, "effects": ["affinity", "relationship_text", "flag", "hp"] },
     "bargain": { "name": "交涉價格", "attr": "cha", "skill": "trade", "hours": 0.25, "effects": ["affinity", "relationship_text", "flag"] },
