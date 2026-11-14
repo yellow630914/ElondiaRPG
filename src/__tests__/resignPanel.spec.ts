@@ -50,4 +50,12 @@ describe('重簽契約的畫面', () => {
     expect(last.check?.action).toContain('說服主人重簽契約')
     expect(w.emitted('done')).toHaveLength(1)
   })
+
+  it('清空的欄位＝不改', async () => {
+    useGame().state = slave(60)
+    const w = mount(ResignPanel)
+    await w.findAll('input[type="number"]')[0]!.setValue('')
+    expect(w.text()).toContain('還沒有改任何條款')
+    expect(w.find('.actions button').attributes('disabled')).toBeDefined()
+  })
 })

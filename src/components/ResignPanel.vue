@@ -39,10 +39,15 @@ const text = ref('')
 const lo = (k: (typeof RESIGN_FIELDS)[number]) => shown(k, range[k][0])
 const hi = (k: (typeof RESIGN_FIELDS)[number]) => shown(k, range[k][1])
 
-/** 提出的條款（數值換回比例） */
+/** 提出的條款（數值換回比例）；清空的欄位＝不改 */
 const wanted = computed<Partial<MarkTerms>>(() => ({
   name: name.value, mark: mark.value,
-  ...Object.fromEntries(RESIGN_FIELDS.map((k) => [k, PCT.has(k) ? (Number(draft[k]) || 0) / 100 : Number(draft[k]) || 0])),
+  ...Object.fromEntries(RESIGN_FIELDS.flatMap((k) => {
+    const raw = draft[k] as unknown
+    const v = Number(raw)
+    if (raw === '' || raw === null || raw === undefined || !Number.isFinite(v)) return []
+    return [[k, PCT.has(k) ? v / 100 : v]]
+  })),
 }))
 const changes = computed(() => termChanges(now.value, resignTerms(s.value, wanted.value)))
 

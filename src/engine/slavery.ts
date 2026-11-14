@@ -581,11 +581,15 @@ export interface MasterAskOption {
 
 /** 現在能不能主動找主人（不能時是原因） */
 export function askMasterBlocked(state: GameState): string | undefined {
+  return masterBusyBlocked(state) ?? (state.masterAskDay === state.time.day ? '今天已經主動找過主人了' : undefined)
+}
+
+/** 現在能不能當面找主人（主動找主人、說服主人重簽契約共用）：被主人帶著、主人在身邊、眼前沒有要先處理的事 */
+export function masterBusyBlocked(state: GameState): string | undefined {
   if (!isBound(state)) return '你沒有被主人帶著'
   const master = state.party.find((m) => m.id === contractOf(pcOf(state))!.master)
   if (!master || master.status.includes('away')) return '主人不在身邊'
   if (state.combat || state.pendingAction || state.standoff || state.pendingMark || state.pendingMasterEvent || state.dungeonEvent || state.parasiteEvent || state.leadEvent) return '現在不能這麼做'
-  if (state.masterAskDay === state.time.day) return '今天已經主動找過主人了'
   return undefined
 }
 

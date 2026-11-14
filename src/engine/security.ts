@@ -223,11 +223,12 @@ export function gateCheck(state: GameState, locId = state.location): GateResult 
 }
 
 /** 貴族區與王城：通緝中不能進入；王城需要聲望、許可、皇族的身分，或當天說服了衛兵 */
-export function zoneEntryBlock(state: GameState, zone: string | undefined): string | null {
+export function zoneEntryBlock(state: GameState, zone: string | undefined, summoned = false): string | null {
   if (zone !== 'noble' && zone !== 'palace') return null
   const loc = locationById(state.location)
   if (isWanted(state, loc.faction)) return `你被${factionName(loc.faction!)}通緝，衛兵不讓你進入${zone === 'palace' ? '王城' : '貴族區'}。`
-  if (zone === 'palace' && palaceNeedsPersuading(state)) {
+  // 被召見（任務點在王城的地標裡）：衛兵放行
+  if (zone === 'palace' && !summoned && palaceNeedsPersuading(state)) {
     return state.palaceBlock?.[loc.id] === state.time.day
       ? '王城的衛兵今天不會再聽你說了。'
       : `王城的衛兵擋住了你：需要${loc.faction ? factionName(loc.faction) : '這裡'}的聲望達到 ${securityRules.palace_reputation}，或是得到許可；也可以試著說服衛兵。`
