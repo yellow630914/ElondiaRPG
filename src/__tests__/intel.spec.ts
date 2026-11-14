@@ -134,3 +134,22 @@ describe('informant intel', () => {
     expect(state.inventory.some((i) => i.name === '褪色的密信')).toBe(false)
   })
 })
+
+describe('story intel in the notebook', () => {
+  it('is archived once the special quest is completed or failed', async () => {
+    const { expireIntel } = await import('@/engine/intel')
+    const state = game()
+    const [a, b, c] = stories
+    for (const d of [a!, b!, c!]) addIntel(state, { kind: 'story', story: d.id, title: d.title, text: '' })
+    state.stories = {
+      [a!.id]: { id: a!.id, status: 'completed', done: [], log: [] },
+      [b!.id]: { id: b!.id, status: 'failed', done: [], log: [] },
+      [c!.id]: { id: c!.id, status: 'active', done: [], log: [] },
+    } as unknown as GameState['stories']
+    expireIntel(state)
+    const st = (id: string) => state.intel!.find((it) => it.story === id)!.status
+    expect(st(a!.id)).toBe('done')
+    expect(st(b!.id)).toBe('expired')
+    expect(st(c!.id)).toBe('active')
+  })
+})

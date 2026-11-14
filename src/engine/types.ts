@@ -1215,6 +1215,8 @@ export interface GameState {
   masterAskDay?: number
   /** 上一次奴隸主動找主角的時間（小時數；slaveEvents.ts） */
   lastSlaveEvent?: number
+  /** 隨機事件最近一次發生的日子（「事件庫:事件 id」→ 第幾天；eventRecent.ts，避免一直重複） */
+  eventSeen?: Record<string, number>
   /** 和敵對冒險者的對峙（見 engine/encounters.ts） */
   standoff?: Standoff
   /** 打贏冒險者後被制伏、等主角處置的人（見 engine/captives.ts） */

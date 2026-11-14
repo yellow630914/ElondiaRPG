@@ -13,6 +13,7 @@ import { ownHomeOfArea } from './homes'
 import { npcRecord } from './npcs'
 import { trainees } from './ownerTraining'
 import { withRng } from './state'
+import { freshFirst, markSeen } from './eventRecent'
 import type { Character, GameState, PendingMasterEvent } from './types'
 
 const rules = () => slaveryRules.slave_events
@@ -50,7 +51,8 @@ export function maybeSlaveEvent(state: GameState, chance: number): PendingMaster
   const now = hoursOf(state)
   if (state.lastSlaveEvent !== undefined && now - state.lastSlaveEvent < rules().cooldown_hours) return undefined
   const events = rules().events
-  const options = slaves.map((s) => ({ s, list: events.filter((e) => slaveEventFits(state, s, e)) })).filter((x) => x.list.length)
+  // 最近 repeat_days 天抽過的先跳過（全部都抽過時照常）
+  const options = slaves.map((s) => ({ s, list: freshFirst(state, events.filter((e) => slaveEventFits(state, s, e)), (e) => `slave:${e.id}`, rules().repeat_days ?? 4) })).filter((x) => x.list.length)
   if (!options.length) return undefined
   const picked = withRng(state, (rng) => {
     if (!rng.chance(Math.min(1, chance * gameRule(state, 'slaveEventMult')))) return undefined
@@ -67,6 +69,7 @@ export function maybeSlaveEvent(state: GameState, chance: number): PendingMaster
 /** 開始一件奴隸主動找主角的事件 */
 export function startSlaveEvent(state: GameState, slave: Character, e: MasterEventDef): PendingMasterEvent {
   state.lastSlaveEvent = hoursOf(state)
+  markSeen(state, `slave:${e.id}`)
   state.pendingMasterEvent = { id: e.id, pool: 'slave', actor: slave.id, text: e.text.split('{actor}').join(slave.name).split('{master}').join(slave.name) }
   return state.pendingMasterEvent
 }

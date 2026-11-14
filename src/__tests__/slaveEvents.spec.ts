@@ -119,3 +119,25 @@ describe('a slave comes to you', () => {
     }
   })
 })
+
+describe('slave events do not keep repeating', () => {
+  it('skips events seen in the last few days until every fitting one has come up', () => {
+    const { state, slave } = owner()
+    setAffinity(state, slave, 50)
+    const m = state.party.find((x) => x.id === slave)!
+    const fitting = slaveryRules.slave_events.events.filter((e) => slaveEventFits(state, m, e)).length
+    const got: string[] = []
+    for (let i = 0; i < fitting; i++) {
+      delete state.pendingMasterEvent
+      delete state.lastSlaveEvent
+      state.rngState = 1000 + i
+      const e = maybeSlaveEvent(state, 1)
+      if (e) got.push(e.id)
+    }
+    // 同一天裡抽到的都不重複（全部抽過之前）
+    expect(new Set(got).size).toBe(got.length)
+    // 過了 repeat_days 天就又可能抽到
+    state.time.day += (slaveryRules.slave_events.repeat_days ?? 4)
+    expect(state.eventSeen && Object.values(state.eventSeen).every((d) => state.time.day - d >= 4)).toBe(true)
+  })
+})

@@ -5,6 +5,7 @@
 // - 主角身為奴隸：出城、旅行前要主人同意（檢定依印記的 exit_dc）；成為奴隸時有刻印檢定，結果決定能選哪些印記；
 //   移動與旅行時可能遇到主人的突發事件：主角從三種回應選一個，或自己輸入回應交給 AI 判定。
 
+import { freshFirst, markSeen } from './eventRecent'
 import { pcTagMult } from './pcTags'
 import { checkModifiers, modifierNote } from './perks'
 import { lifeTier, snapshot } from './character'
@@ -519,7 +520,8 @@ export function maybeMasterEvent(state: GameState, chance: number): PendingMaste
   const home = overdueChance(state)
   // 經過特定設施（娼館）時的事件：有自己的機率，先擲；沒發生才擲一般的事件
   const local = events.filter((e) => e.cell === 'brothel' && nearBrothel(state))
-  const general = events.filter((e) => !e.cell && !e.overdue)
+  // 一般的突發事件：最近 repeat_days 天抽過的先跳過（全部都抽過時照常）
+  const general = freshFirst(state, events.filter((e) => !e.cell && !e.overdue), (e) => `master:${e.id}`, ev.repeat_days ?? 4)
   const picked = withRng(state, (rng) => (overdue.length && rng.chance(home) ? pickEvent(rng, overdue) : undefined)
     ?? local.find((e) => rng.chance(Math.min(1, (e.chance ?? 0) * bondWeight(e, style, 1))))
     ?? (general.length && rng.chance(Math.min(1, chance * gameRule(state, 'masterEventMult'))) ? pickEvent(rng, general, weight) : undefined))
@@ -563,6 +565,7 @@ function maleMasterBlocked(state: GameState, masterId: string): boolean {
 
 export function startMasterEvent(state: GameState, e: MasterEventDef, lead = ''): PendingMasterEvent {
   state.lastMasterEvent = hoursOf(state.time)
+  markSeen(state, `master:${e.id}`)
   state.pendingMasterEvent = { id: e.id, text: withMaster(state, lead + e.text) }
   return state.pendingMasterEvent
 }

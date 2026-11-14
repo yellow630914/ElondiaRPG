@@ -51,7 +51,14 @@ export function pruneIntel(state: GameState) {
 
 /** 過期的事件點 */
 export function expireIntel(state: GameState) {
-  for (const it of state.intel ?? []) if (it.status === 'active' && it.until !== undefined && state.time.day > it.until) it.status = 'expired'
+  for (const it of state.intel ?? []) {
+    if (it.status !== 'active') continue
+    if (it.until !== undefined && state.time.day > it.until) it.status = 'expired'
+    // 特殊任務的消息：任務完成了算「已完成」，失敗或放棄算「已過期」（舊存檔打開筆記時也會歸檔）
+    const story = it.kind === 'story' && it.story ? state.stories?.[it.story]?.status : undefined
+    if (story === 'completed') it.status = 'done'
+    else if (story === 'failed') it.status = 'expired'
+  }
   pruneIntel(state)
 }
 

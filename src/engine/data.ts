@@ -1600,13 +1600,15 @@ export const slaveryRules = slaveryJson as unknown as {
   }
   master_events: {
     step_chance: number; travel_chance: number; cooldown_hours: number
+    /** 同一件突發事件隔幾天才會再抽到（全部都抽過時照常；eventRecent.ts） */
+    repeat_days?: number
     free_dc: number; free_outcomes: Record<Degree, RewardEffect[]>
     events: MasterEventDef[]
   }
   /** 調教事件（主角對自己的奴隸；S5） */
   owner_events: { events: MasterEventDef[] }
   /** 奴隸主動找主角（slaveEvents.ts；docs/COMPANIONS.md 2.9 節） */
-  slave_events: { step_chance: number; travel_chance: number; cooldown_hours: number; events: MasterEventDef[] }
+  slave_events: { step_chance: number; travel_chance: number; cooldown_hours: number; repeat_days?: number; events: MasterEventDef[] }
   /** 娼館的打工與受訓事件（S5） */
   brothel_events: { work: MasterEventDef[]; train: MasterEventDef[] }
 }

@@ -324,10 +324,10 @@
     }
   },
   "master_events": {
-    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。adult：成人向事件，設定開啟「成人向」時才會發生。cell：只在經過這種設施（同一格或相鄰）時以 chance 的機率發生（例如被迫在娼館工作；關閉成人向時顯示為按摩店），收入依印記歸主人。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。事件的條件：affinity_min / affinity_max 主人的親密度範圍、tags 主人有其中一個標籤（例如 good 好人、villain 惡人、noble 貴族）、tags_none 主人有這些標籤時不發生、at_home 只在主人的家裡（或 false 只在外面）。overdue：離家逾期時的「主人要回家」事件（機率見 master_home.overdue，不在一般事件裡）。效果另外可以用 master_home（帶回主人的家）、strict（嚴加看管 ±）、home_extend（離家期限延長幾小時）。option 的 stance：submit 屈服、resist 抵抗；有檢定時，順從（慾望指標）每 lewd.json 的 stance_per 點，屈服 +1、抵抗 -1。ask：主角可以主動找主人觸發這件事（被主人帶著時，契約視窗的「找主人做點什麼」，每天一次）：group 分類（serve 服侍、close 親近、discipline 管教）、name 名稱、desc 一句說明、lead 主動找主人的開頭（{master} 換成主人的名字，接在 text 前面）；事件的條件照舊。事件另外可以寫 teaches（掛的色情技能，ability_pool 效果從這裡抽）、course（調教課程）、rank_min（頭牌等級）、progress（調教進度）；owner_events（調教事件）、brothel_events（娼館的 work 打工、train 受訓事件）用同一個格式，內容編輯器的「⛓️ 主奴與娼館」可以改。",
+    "$comment": "主角被主人帶著時，移動與旅行可能發生的突發事件。移動時每一步 step_chance、旅行時每趟 travel_chance，而且距離上次至少 cooldown_hours 小時；同一件事隔 repeat_days 天才會再抽到（全部都抽過時照常）。事件發生後，玩家從三個 options 選一個回應，或自己輸入回應（主動行動 master_event，參考 DC 依事件的 free，沒有時用 free_dc）。option：沒有 check 時直接套用 effects；有 check 時檢定，成功套用 effects_success、失敗套用 fail_effects（effects 兩者都套用）。adult：成人向事件，設定開啟「成人向」時才會發生。cell：只在經過這種設施（同一格或相鄰）時以 chance 的機率發生（例如被迫在娼館工作；關閉成人向時顯示為按摩店），收入依印記歸主人。effects 用報酬模板，npc 寫 master 代表主人。free_outcomes：自己輸入的回應沒有 AI 判定時，依成功程度套用的效果。事件的條件：affinity_min / affinity_max 主人的親密度範圍、tags 主人有其中一個標籤（例如 good 好人、villain 惡人、noble 貴族）、tags_none 主人有這些標籤時不發生、at_home 只在主人的家裡（或 false 只在外面）。overdue：離家逾期時的「主人要回家」事件（機率見 master_home.overdue，不在一般事件裡）。效果另外可以用 master_home（帶回主人的家）、strict（嚴加看管 ±）、home_extend（離家期限延長幾小時）。option 的 stance：submit 屈服、resist 抵抗；有檢定時，順從（慾望指標）每 lewd.json 的 stance_per 點，屈服 +1、抵抗 -1。ask：主角可以主動找主人觸發這件事（被主人帶著時，契約視窗的「找主人做點什麼」，每天一次）：group 分類（serve 服侍、close 親近、discipline 管教）、name 名稱、desc 一句說明、lead 主動找主人的開頭（{master} 換成主人的名字，接在 text 前面）；事件的條件照舊。事件另外可以寫 teaches（掛的色情技能，ability_pool 效果從這裡抽）、course（調教課程）、rank_min（頭牌等級）、progress（調教進度）；owner_events（調教事件）、brothel_events（娼館的 work 打工、train 受訓事件）用同一個格式，內容編輯器的「⛓️ 主奴與娼館」可以改。",
     "step_chance": 0.02,
     "travel_chance": 0.35,
-    "cooldown_hours": 6,
+    "cooldown_hours": 6, "repeat_days": 4,
     "free_dc": 13,
     "free_outcomes": {
       "critical": [{ "type": "affinity", "npc": "master", "delta": 3, "reason": "應對得體" }],
@@ -771,10 +771,10 @@
     ]
   },
   "slave_events": {
-    "$comment": "奴隸主動找主角（docs/COMPANIONS.md 2.9 節；engine/slaveEvents.ts）：主角帶著自己的奴隸時，走動每一步 step_chance、旅行每趟 travel_chance（旅途地圖上的一格），距離上次至少 cooldown_hours 小時。從隊伍裡的奴隸挑一位，抽一件符合他的條件的事件。格式同 master_events 的事件：{actor} 與 {master} 都換成奴隸的名字；affinity 的 master 是奴隸；指標、狀態、生命沒寫 target 時給奴隸，寫 target: pc 給主角。條件：affinity_min / affinity_max 是奴隸對主角的親密度、tags / tags_none 是奴隸的標籤、at_home（true 只在主角自己的房子裡、false 只在外面）、bonds 與 bond_weights 看主角和這位奴隸的主僕關係。adult 的事件照樣發生（不是主角非自願）。",
+    "$comment": "奴隸主動找主角（docs/COMPANIONS.md 2.9 節；engine/slaveEvents.ts）：主角帶著自己的奴隸時，走動每一步 step_chance、旅行每趟 travel_chance（旅途地圖上的一格），距離上次至少 cooldown_hours 小時；同一件事隔 repeat_days 天才會再抽到（全部都抽過時照常）。從隊伍裡的奴隸挑一位，抽一件符合他的條件的事件。格式同 master_events 的事件：{actor} 與 {master} 都換成奴隸的名字；affinity 的 master 是奴隸；指標、狀態、生命沒寫 target 時給奴隸，寫 target: pc 給主角。條件：affinity_min / affinity_max 是奴隸對主角的親密度、tags / tags_none 是奴隸的標籤、at_home（true 只在主角自己的房子裡、false 只在外面）、bonds 與 bond_weights 看主角和這位奴隸的主僕關係。adult 的事件照樣發生（不是主角非自願）。",
     "step_chance": 0.015,
     "travel_chance": 0.25,
-    "cooldown_hours": 8,
+    "cooldown_hours": 8, "repeat_days": 4,
     "events": [
       {"id": "sl_meal", "weight": 3, "hours": 0.5, "text": "{actor}端來一碗熱騰騰的湯：「趁熱喝吧。」", "options": [
         {"label": "接過來，叫{actor}一起吃", "result": "你們並肩坐著把湯喝完，{actor}吃得很慢，像是捨不得吃完。", "effects": [{"type": "affinity", "npc": "master", "delta": 2, "reason": "一起吃飯"}, {"type": "condition", "target": "pc", "condition": "fed_well", "add": true}, {"type": "condition", "target": "master", "condition": "fed_well", "add": true}]},
