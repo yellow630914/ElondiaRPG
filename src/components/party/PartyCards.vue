@@ -183,13 +183,14 @@ function canDismiss(m: Character) {
 
   <section v-if="away.length" class="panel away">
     <h3><GameIcon name="home" :size="16" /> 不在隊上的夥伴 <span class="muted small">{{ away.length }} 人</span></h3>
-    <p class="small muted">留在房子或寄放在酒館：不算離隊，羈絆、契約、親密度都保留。要親自回到那裡才能帶上（房子在「看家的夥伴」，酒館在「寄放夥伴」）。</p>
+    <p class="small muted">留在房子或寄放在酒館：不算離隊，羈絆、契約、親密度都保留。要親自回到那裡才能帶上（房子在「看家的夥伴」，酒館在「寄放夥伴」）。<template v-if="away.some((a) => a.master)">標著「主人留下的」是主人的隊員：要回到那裡向{{ leader?.name ?? '主人' }}提議帶上（酒館的「主人留在這裡的隊員」、主人的家的「主人留在家裡的隊員」）。</template></p>
     <ul class="plain">
       <li v-for="a in away" :key="a.id" class="away-row">
         <NameTag :id="a.id" />
         <span class="small muted">Lv.{{ a.character.level }}<template v-if="a.character.bond && BOND[a.character.bond]">・{{ BOND[a.character.bond] }}</template></span>
         <span class="small where"><GameIcon :name="a.place.kind === 'home' ? 'home' : 'mug'" :size="12" /> {{ awayLabel(a.place) }}</span>
         <span class="small muted">{{ a.days ? `待了 ${a.days} 天` : '今天留下' }}</span>
+        <span v-if="a.master" class="small chip-master" :title="`主人的隊員：要向${leader?.name ?? '主人'}提議才能帶回`">主人留下的</span>
       </li>
     </ul>
   </section>
@@ -226,6 +227,7 @@ function canDismiss(m: Character) {
 .away h3, .away p { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .away p { display: block; }
 .away ul { display: grid; gap: 4px; margin: 0; }
+.chip-master { border: 1px solid var(--border); border-radius: 99px; padding: 0 6px; color: var(--accent); }
 .away-row { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .where { color: var(--accent); }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr)); gap: 16px; }

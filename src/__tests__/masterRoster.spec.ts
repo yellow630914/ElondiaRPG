@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { prepareAction, resolveAction } from '@/engine/actions'
-import { lodgersHere, takeLodger } from '@/engine/away'
+import { awayCompanions, lodgersHere, takeLodger } from '@/engine/away'
 import { marketStock, tavernCandidates } from '@/engine/companions'
 import { enterLocation } from '@/engine/grid'
 import { residents } from '@/engine/homes'
 import { currentMasterHome, syncMasterHome } from '@/engine/masterHome'
 import { rosterBlocked, rosterDc, rosterWaiting } from '@/engine/masterRoster'
-import { leaderOf, playerEscapes } from '@/engine/party'
+import { freePlayer, leaderOf, playerEscapes } from '@/engine/party'
 import { masterCandidates, startAsSlave } from '@/engine/slavery'
 import { newGame } from '@/engine/state'
 import type { GameState } from '@/engine/types'
@@ -107,5 +107,32 @@ describe('asking the master to rearrange the party', () => {
     const rec = state.npcs![hired]!
     expect(rec.staying).toBeUndefined()
     expect(rec.character?.group).toBeUndefined()
+  })
+})
+
+describe('waiting members after the slave is freed', () => {
+  it('stops waiting once the slave is freed, even though the master still leads', () => {
+    const { state, hired, bought } = withMembers()
+    act(state, `lodge:${hired}`, 20)
+    const home = currentMasterHome(state)!
+    state.location = home.location
+    act(state, `home:${bought}`, 20)
+    freePlayer(state)
+    expect(leaderOf(state)).toBeTruthy()
+    for (const id of [hired, bought]) {
+      expect(state.npcs![id]!.staying).toBeUndefined()
+      expect(state.npcs![id]!.character?.group).toBeUndefined()
+    }
+    expect(awayCompanions(state)).toEqual([])
+  })
+
+  it('marks members the master left behind in the away list, at the tavern and at the master’s home', () => {
+    const { state, hired, bought } = withMembers()
+    act(state, `lodge:${hired}`, 20)
+    state.location = currentMasterHome(state)!.location
+    act(state, `home:${bought}`, 20)
+    const master = leaderOf(state)!.id
+    const away = awayCompanions(state)
+    expect(away.map((a) => [a.id, a.place.kind, a.master]).sort()).toEqual([[bought, 'home', master], [hired, 'tavern', master]].sort())
   })
 })

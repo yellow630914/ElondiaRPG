@@ -31,7 +31,7 @@ const allies = computed(() => allyPlacements(s.value))
 function whereNow(id: string): string {
   if (s.value.party.some((m) => m.id === id)) return '在隊伍裡'
   const a = awayById.value.get(id)
-  if (a) return `${a.place.kind === 'home' ? '留在' : '寄放在'}${awayLabel(a.place)}${a.days ? `（${a.days} 天）` : ''}`
+  if (a) return `${a.master ? '主人留在' : a.place.kind === 'home' ? '留在' : '寄放在'}${awayLabel(a.place)}${a.days ? `（${a.days} 天）` : ''}`
   return whereaboutsOf(s.value, id, allies.value)
 }
 const rels = computed(() => Object.values(s.value.relationships ?? {}))

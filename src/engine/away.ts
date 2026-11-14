@@ -7,7 +7,7 @@
 
 import { locationById } from './data'
 import { settlementArea, tavernSpot } from './grid'
-import { homeReport, parkMember, stayAt, stayRefusal, unparkMember } from './homes'
+import { homeById, homeReport, parkMember, stayAt, stayRefusal, unparkMember } from './homes'
 import { npcRecord } from './npcs'
 import { followRoom, joinParty, leaderOf, partyRoom, pcOf, isBound } from './party'
 import { commitReport } from './state'
@@ -28,7 +28,8 @@ export function tavernKey(location: string): string {
 export function awayPlace(state: GameState, rec: Pick<NpcRecord, 'staying'>): AwayPlace | undefined {
   if (!rec.staying) return undefined
   if (rec.staying.startsWith('tavern:')) return { kind: 'tavern', location: rec.staying.slice('tavern:'.length) }
-  const home = state.homes?.[rec.staying]
+  // 主人的家不存進 state.homes（主人留在家裡的隊員，見 masterRoster.ts）
+  const home = homeById(state, rec.staying)
   return home ? { kind: 'home', home, location: home.location } : undefined
 }
 
@@ -46,6 +47,8 @@ export interface AwayCompanion {
   since?: GameTime
   /** 待了幾天 */
   days: number
+  /** 主人留下的隊員（被主人帶著時，masterRoster.ts）：主人的 id；要向主人提議才能帶回 */
+  master?: string
 }
 
 function hoursBetween(a: GameTime, b: GameTime): number {
@@ -59,7 +62,7 @@ export function awayCompanions(state: GameState): AwayCompanion[] {
     const place = rec.character ? awayPlace(state, rec) : undefined
     if (!place) continue
     const days = rec.stayingSince ? Math.max(0, Math.floor(hoursBetween(rec.stayingSince, state.time) / 24)) : 0
-    out.push({ id: rec.id, name: rec.character!.name, character: rec.character!, place, ...(rec.stayingSince ? { since: rec.stayingSince } : {}), days })
+    out.push({ id: rec.id, name: rec.character!.name, character: rec.character!, place, ...(rec.stayingSince ? { since: rec.stayingSince } : {}), days, ...(rec.character!.group ? { master: rec.character!.group } : {}) })
   }
   return out.sort((a, b) => b.days - a.days)
 }

@@ -105,7 +105,7 @@ function rename() {
   <section v-else-if="masterHome" class="panel home small">
     <h3 class="title">
       <GameIcon name="building" :size="16" />{{ masterHome.name }}
-      <Hint text="這是主人的家：可以在這裡長休（睡在下人房），也可以和主人談判；不能擺家具或讓人留下。出門前要主人同意（主動行動）。" />
+      <Hint text="這是主人的家：可以在這裡長休（睡在下人房），也可以和主人談判；不能擺家具，也不能自己讓人留下。主人的奴隸可以向主人提議留在家裡（隊伍卡片的「向主人提議」），之後在這裡提議帶上。出門前要主人同意（主動行動）。" />
     </h3>
     <p class="muted">{{ area.name.split('・').at(-1) }}・{{ describeHome(masterHome) }}。</p>
     <template v-if="masterWaiting.length">

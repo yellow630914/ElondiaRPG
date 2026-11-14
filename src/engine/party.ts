@@ -156,17 +156,20 @@ export function leaveParty(state: GameState, id: string, report?: Report, reason
   })
   recordChange(report, { npc: id, name: member.name, change: 'left', ...(member.bond ? { bond: member.bond } : {}), ...(reason ? { reason } : {}) })
   // 隊長（主人）離開：留在酒館、主人家裡等他的隊員不再等（masterRoster.ts），回到各自的生活
-  if (member.bond === 'leader') {
-    for (const r of Object.values(state.npcs ?? {})) {
-      if (!r.staying || r.character?.group !== id) continue
-      delete r.staying
-      delete r.stayingSince
-      delete r.at
-      delete r.character.bond
-      delete r.character.group
-    }
-  }
+  if (member.bond === 'leader') releaseWaiting(state, id)
   return member
+}
+
+/** 主人留在酒館、主人家裡等他帶上的隊員（masterRoster.ts）不再等，回到各自的生活（主人離隊、主角獲釋時） */
+export function releaseWaiting(state: GameState, master: string) {
+  for (const r of Object.values(state.npcs ?? {})) {
+    if (!r.staying || !r.character || r.character.group !== master) continue
+    delete r.staying
+    delete r.stayingSince
+    delete r.at
+    delete r.character.bond
+    delete r.character.group
+  }
 }
 
 /** 隊長和他帶來的隊員 */
@@ -274,10 +277,15 @@ export function enslavePlayer(state: GameState, master: NpcRecord | null, contra
   syncMasterHome(state)
 }
 
-/** 解除主角的契約（談判成功、事件獎勵）。主人仍在隊伍中，關係變成普通的隊長與隊員。 */
+/**
+ * 解除主角的契約（談判成功、事件獎勵）。主人仍在隊伍中，關係變成普通的隊長與隊員；
+ * 主人留在酒館、主人家裡的隊員不再等（主角不能再向主人提議帶上）。
+ */
 export function freePlayer(state: GameState, report?: Report, reason?: string) {
   const pc = pcOf(state)
+  const master = contractOf(pc)?.master
   if (!clearContract(pc)) return
+  if (master) releaseWaiting(state, master)
   // 主人強制裝上的東西：契約解除後可以拿下了
   for (const g of Object.values(pc.gear ?? {})) {
     if (!g?.locked || g.locked.startsWith(PARASITE_LOCK) || lockedByThing(g.locked)) continue
