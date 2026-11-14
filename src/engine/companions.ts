@@ -90,6 +90,8 @@ export function tavernCandidates(state: GameState): TavernCandidate[] {
   const existing = taverns[loc]?.day === today ? taverns[loc]!.candidates : []
   // 今天在城裡的冒險者（名單上的人與具名 NPC），保留今天談判過的狀態（拒絕、還價）
   const candidates = hireable(state).map((rec) => existing.find((c) => c.npc === rec.id) ?? { npc: rec.id, asking_cc: rec.hire_cc })
+  // 名單沒變就不寫回存檔：畫面算 DC 時也會呼叫這裡（向主人提議雇人的參考 DC），每次都寫一個新物件會讓畫面一直重畫、卡死
+  if (taverns[loc]?.day === today && candidates.length === existing.length && candidates.every((c, i) => c === existing[i])) return existing
   taverns[loc] = { day: today, candidates, ...(taverns[loc]?.day === today && taverns[loc]?.flavored ? { flavored: true } : {}) }
   return candidates
 }
