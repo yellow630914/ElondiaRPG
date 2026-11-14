@@ -11,6 +11,7 @@ import { canPromote } from '@/engine/promoteNpc'
 import { canLive, isFollowed, livingNpcs, newsOf, newsText } from '@/engine/npcLife'
 import { genderSwapBlock } from '@/engine/genderSwap'
 import { encounterText, sexRecordItems, sexRecordOf } from '@/engine/sexRecord'
+import { npcLine } from '@/engine/storyBoard'
 import { useGame } from '@/stores/game'
 import { useContent, VANILLA_NAME } from '@/stores/content'
 import { useSettings } from '@/stores/settings'
@@ -28,6 +29,10 @@ const emit = defineEmits<{ close: []; open: [id: string] }>()
 const game = useGame()
 const settings = useSettings()
 const content = useContent()
+// 角色線（engine/storyBoard.ts）：這個人開頭的特殊任務走到哪裡；還沒解鎖的只算數量
+const line = computed(() => (props.id && game.state ? npcLine(game.state, props.id, settings.storyBoard) : undefined))
+const lineCount = (k: string) => line.value?.filter((x) => x.status === k).length ?? 0
+const LINE_MARK: Record<string, string> = { done: '✓ 完成', failed: '✗ 失敗', active: '▶ 進行中', now: '● 可以接', soon: '○ 快要' }
 const s = computed(() => game.state!)
 const r = computed(() => (props.id ? s.value.relationships?.[props.id] : undefined))
 const rec = computed(() => (props.id ? npcRecord(s.value, props.id) : undefined))
@@ -247,6 +252,27 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
                 <button class="small" @click="game.rejectSuggestion(sg.id)">不採用</button>
               </div>
             </div>
+            <div v-if="line" class="line-box small">
+              <div class="row line-head">
+                <b>角色線</b>
+                <span>
+                  <span class="st-done">完成 {{ lineCount('done') }} 段</span>
+                  <template v-if="lineCount('active')">・<span class="st-active">進行中 {{ lineCount('active') }} 段</span></template>
+                  <template v-if="lineCount('now')">・<span class="st-now">可以接 {{ lineCount('now') }} 段</span></template>
+                  <template v-if="lineCount('soon')">・<span class="st-soon">快要能接 {{ lineCount('soon') }} 段</span></template>
+                </span>
+              </div>
+              <div class="steps" :aria-label="`角色線：${line.length} 段裡完成 ${lineCount('done')} 段`">
+                <span v-for="x in line" :key="x.def.id" :class="x.status" :title="x.status === 'locked' ? '之後' : x.def.title" />
+              </div>
+              <ul class="plain line-list">
+                <li v-for="x in line.filter((y) => y.status !== 'locked')" :key="x.def.id" :class="`st-${x.status}`">
+                  <span>{{ LINE_MARK[x.status] }}</span>
+                  <span>{{ x.def.title }}<span v-if="x.status === 'now'" class="muted">（找{{ r.name }}就會出現）</span><span v-if="x.status === 'soon'" class="muted">：{{ x.needs.filter((n) => !n.ok).map((n) => `${n.label}（${n.have}）`).join('、') }}</span></span>
+                </li>
+                <li v-if="lineCount('locked')" class="st-locked"><span>・ 之後</span><span>還有 {{ lineCount('locked') }} 段，完成前面的劇情之後才知道</span></li>
+              </ul>
+            </div>
             <dl v-if="!editing" class="small">
               <dt>外貌</dt><dd>{{ r.appearance || '—' }}</dd>
               <dt>與{{ pcName }}</dt><dd>{{ r.toPlayer || '—' }}</dd>
@@ -325,6 +351,17 @@ const showLife = computed(() => settings.sexRecords || news.value.length > 0)
 .name-line { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; font-size: var(--fs-lg); }
 .stage-line { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: center; }
 .stage-line b { font-variant-numeric: tabular-nums; }
+.line-box { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; margin-bottom: 8px; display: grid; gap: 5px; }
+.line-head { justify-content: space-between; gap: 4px 10px; }
+.steps { display: flex; flex-wrap: wrap; gap: 3px; }
+.steps span { width: 18px; height: 7px; border-radius: 2px; border: 1px solid var(--border); background: color-mix(in srgb, currentColor 6%, transparent); }
+.steps .done { background: var(--good); border-color: var(--good); }
+.steps .failed { background: var(--danger); border-color: var(--danger); }
+.steps .active, .steps .now { background: var(--accent); border-color: var(--accent); }
+.steps .soon { background: repeating-linear-gradient(45deg, var(--accent) 0 3px, transparent 3px 6px); border-color: var(--accent); }
+.line-list { display: grid; gap: 2px; }
+.line-list li { border: none; padding: 0; display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 6px; }
+.st-done { color: var(--good); } .st-failed { color: var(--danger); } .st-active, .st-now { color: var(--accent); } .st-soon { color: var(--accent); opacity: .85; } .st-locked { color: var(--muted); }
 .affinity { position: relative; height: 7px; border-radius: 4px; background: linear-gradient(90deg, var(--danger), #5a4a33 50%, var(--good)); }
 .affinity span { position: absolute; top: -3px; width: 4px; height: 13px; margin-left: -2px; background: var(--text); border-radius: 2px; }
 .facts { display: flex; flex-wrap: wrap; gap: 4px 14px; }

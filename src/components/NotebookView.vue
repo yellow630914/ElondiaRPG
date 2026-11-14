@@ -12,20 +12,23 @@ import { formatTime } from '@/engine/state'
 import { activeNodes, nodesWaitingForDays, placeText, storyHints, storyPauseReason } from '@/engine/story'
 import { questScene, questTemplate } from '@/engine/town'
 import type { Intel, Quest } from '@/engine/types'
+import { storyBoard } from '@/engine/storyBoard'
 import { useGame } from '@/stores/game'
+import { useSettings } from '@/stores/settings'
 import BestiaryPanel from './BestiaryPanel.vue'
 import FoldMenu from './ui/FoldMenu.vue'
 import GameIcon from './ui/GameIcon.vue'
 
 // 冒險筆記：一般委託、特殊任務（目前的目標與經過）、情報（買到的與打聽到的傳聞）、怪物圖鑑
 const game = useGame()
+const settings = useSettings()
 const s = computed(() => game.state!)
 type Tab = 'quests' | 'stories' | 'intel' | 'bestiary'
 const tab = ref<Tab>('quests')
 
 // ---- 每一頁的篩選：上次選的狀態記在這個瀏覽器；搜尋不記 ----
 type QuestView = 'active' | 'completed'
-type StoryView = 'active' | 'completed' | 'failed'
+type StoryView = 'active' | 'available' | 'completed' | 'failed'
 type IntelView = 'active' | 'rumor' | 'old'
 interface Views { quests: QuestView; stories: StoryView; intel: IntelView }
 const VIEW_KEY = 'elondia.notebookViews'
@@ -38,7 +41,7 @@ function readViews(): Views {
   }
   return {
     quests: v.quests === 'completed' ? 'completed' : 'active',
-    stories: v.stories === 'completed' || v.stories === 'failed' ? v.stories : 'active',
+    stories: v.stories === 'completed' || v.stories === 'failed' || v.stories === 'available' ? v.stories : 'active',
     intel: v.intel === 'rumor' || v.intel === 'old' ? v.intel : 'active',
   }
 }
@@ -89,8 +92,18 @@ const myStories = computed(() => {
     .map((p) => ({ p, def: stories.find((d) => d.id === p.id), goals: nodes.filter((n) => n.def.id === p.id), later: later.filter((n) => n.def.id === p.id) }))
     .filter((x) => x.def)
 })
-const storyViews = computed(() => (['active', 'completed', 'failed'] as const).map((id) => ({
-  id, label: { active: '進行中', completed: '完成', failed: '失敗' }[id], n: myStories.value.filter((x) => x.p.status === id).length,
+// 還沒接的（engine/storyBoard.ts）：只在打開特殊任務頁時算（要掃過全部任務）
+const board = computed(() => {
+  if (tab.value !== 'stories') return []
+  void s.value.time.minute
+  void s.value.flags
+  return storyBoard(s.value, settings.storyBoard)
+})
+const boardNow = computed(() => board.value.filter((e) => e.state === 'now' && matches(search.stories, e.def.title, e.where, e.line?.name, e.def.rank)))
+const boardSoon = computed(() => board.value.filter((e) => e.state === 'soon' && matches(search.stories, e.def.title, e.where, e.line?.name, e.def.rank)))
+const storyViews = computed(() => (['active', 'available', 'completed', 'failed'] as const).map((id) => ({
+  id, label: { active: '進行中', available: '可以接', completed: '完成', failed: '失敗' }[id],
+  n: id === 'available' ? board.value.length : myStories.value.filter((x) => x.p.status === id).length,
 })))
 const shownStories = computed(() => myStories.value.filter((x) => x.p.status === views.stories && matches(search.stories, x.def!.title, x.def!.summary, x.def!.rank)))
 function abandon(id: string, title: string) {
@@ -161,13 +174,56 @@ const counts = computed(() => ({
     </template>
 
     <template v-else-if="tab === 'stories'">
-      <div v-if="myStories.length" class="row filters">
+      <div class="row filters">
         <button v-for="o in storyViews" :key="o.id" class="small" :class="{ active: views.stories === o.id }" @click="views.stories = o.id">{{ o.label }} {{ o.n }}</button>
         <input v-model="search.stories" class="grow" type="search" placeholder="搜尋任務名稱或簡介" />
       </div>
-      <p v-if="!myStories.length" class="muted">還沒有特殊任務。固定的人物、公會、旅途上的事件或情報商都可能帶來特別的委託。</p>
+      <template v-if="views.stories === 'available'">
+        <div class="setting row small">
+          <label for="story-board-mode">冒險筆記顯示還沒接的特殊任務</label>
+          <select id="story-board-mode" v-model="settings.storyBoard">
+            <option value="off">不顯示</option>
+            <option value="now">只顯示現在能接的</option>
+            <option value="soon">也顯示快要能接的</option>
+          </select>
+        </div>
+        <p v-if="settings.storyBoard === 'off'" class="muted small">設定關掉了，這裡不顯示還沒接的特殊任務。</p>
+        <template v-else>
+          <p v-if="!boardNow.length && !boardSoon.length" class="muted small">{{ search.stories.trim() ? '沒有符合的任務。' : '現在沒有可以接的特殊任務。和更多人打交道、提高親密度或等級之後再來看看。' }}</p>
+          <template v-if="boardNow.length">
+            <div class="group-h"><b>現在就能接</b><span class="muted small">條件都符合，到那裡就會出現</span></div>
+            <div v-for="e in boardNow" :key="e.def.id" class="card board">
+              <div class="row">
+                <span v-if="e.def.rank" class="tag">{{ e.def.rank }}</span>
+                <b class="grow">{{ e.def.title }} <ContentTagChips :tags="e.def.tags" /></b>
+                <span class="tag">{{ e.line ? `${e.line.name}的角色線・第 ${e.line.index} 段` : e.def.start.kind === 'guild' ? '公會' : '情報' }}</span>
+              </div>
+              <p class="small"><span class="muted">去哪裡：</span>{{ e.where }}</p>
+            </div>
+          </template>
+          <template v-if="boardSoon.length">
+            <div class="group-h"><b>快要能接</b><span class="muted small">只差等級、親密度或冒險者階級；要先完成別的劇情的不列出</span></div>
+            <div v-for="e in boardSoon" :key="e.def.id" class="card board soon">
+              <div class="row">
+                <span v-if="e.def.rank" class="tag">{{ e.def.rank }}</span>
+                <b class="grow">{{ e.def.title }} <ContentTagChips :tags="e.def.tags" /></b>
+                <span class="tag">{{ e.line ? `${e.line.name}的角色線・第 ${e.line.index} 段` : e.def.start.kind === 'guild' ? '公會' : '情報' }}</span>
+              </div>
+              <p class="small"><span class="muted">去哪裡：</span>{{ e.where }}</p>
+              <ul class="plain needs small">
+                <li v-for="n in e.needs" :key="n.label" :class="n.ok ? 'ok' : 'no'">
+                  <span class="mk">{{ n.ok ? '✓' : '○' }}</span>
+                  <span>{{ n.label }}（{{ n.have }}）<span v-if="n.ratio !== undefined && !n.ok" class="prog"><i :style="{ width: `${Math.round(n.ratio * 100)}%` }" /></span></span>
+                </li>
+              </ul>
+            </div>
+          </template>
+          <p class="muted small note">只列見過的人、去過的城鎮。內容篩選關掉的、這個體型接不到的、委託人已經死了的不列。</p>
+        </template>
+      </template>
+      <p v-else-if="!myStories.length" class="muted">還沒有特殊任務。固定的人物、公會、旅途上的事件或情報商都可能帶來特別的委託。</p>
       <p v-else-if="!shownStories.length" class="muted small">{{ search.stories.trim() ? '沒有符合的任務。' : `沒有${storyViews.find((o) => o.id === views.stories)!.label}的特殊任務。` }}</p>
-      <div v-for="{ p, def, goals, later } in shownStories" :key="p.id" class="card" :class="p.status">
+      <div v-for="{ p, def, goals, later } in views.stories === 'available' ? [] : shownStories" :key="p.id" class="card" :class="p.status">
         <div class="row">
           <span v-if="def!.rank" class="tag">{{ def!.rank }}</span>
           <b class="grow">{{ def!.title }} <ContentTagChips :tags="def!.tags" /></b>
@@ -236,6 +292,16 @@ const counts = computed(() => ({
 .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .grow { flex: 1; min-width: 120px; }
 .card { border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 10px; display: grid; gap: 4px; }
+.card.board.soon { border-style: dashed; }
+.group-h { display: flex; flex-wrap: wrap; gap: 4px 8px; align-items: baseline; margin-top: 4px; }
+.setting { gap: 6px; padding: 4px 8px; border-radius: var(--radius); background: color-mix(in srgb, currentColor 6%, transparent); }
+.needs { display: grid; gap: 2px; }
+.needs li { border: none; padding: 0; display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 4px; }
+.needs .ok .mk { color: var(--good); }
+.needs .no .mk { color: var(--accent); }
+.needs .prog { display: block; height: 5px; border-radius: 3px; margin-top: 2px; max-width: 220px; background: color-mix(in srgb, currentColor 12%, transparent); overflow: hidden; }
+.needs .prog i { display: block; height: 100%; background: var(--accent); }
+.note { border-top: 1px dashed var(--border); padding-top: 6px; }
 .card p { margin: 0; line-height: 1.6; }
 .card.completed, .card.failed, .card.done, .card.expired { opacity: 0.65; }
 .tag.ok { border-color: var(--accent); color: var(--accent); }

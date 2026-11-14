@@ -763,7 +763,7 @@ function endQuietly(state: GameState, p: StoryProgress, text: string) {
  * 任務需要的固定 NPC：開頭的角色、任務同行，還沒結束的任務點要找、要加入的人。
  * 敵對的角色除外（本來就可能被打倒），這個任務自己寫了會死去的角色也除外（故事裡的死亡，見 storyDeath）。
  */
-function neededNpcs(def: StoryDef, p: Pick<StoryProgress, 'done' | 'guests'>): string[] {
+export function neededNpcs(def: StoryDef, p: Pick<StoryProgress, 'done' | 'guests'>): string[] {
   const outcomes = (n: StoryNode) => [n.success, n.fail, ...(n.options ?? []).flatMap((o) => [o.success, o.fail])]
   const foes = new Set([...def.nodes.flatMap((n) => n.foes ?? []), ...def.nodes.flatMap((n) => outcomes(n).flatMap((o) => o?.deaths ?? []))])
   const ids: (string | undefined)[] = [def.start.kind === 'npc' ? def.start.npc : undefined, ...(p.guests ?? [])]

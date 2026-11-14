@@ -32,6 +32,7 @@ import * as trade from '@/engine/trade'
 import { learnCraft } from '@/engine/craftLessons'
 import * as negotiation from '@/engine/negotiation'
 import * as inventory from '@/engine/inventory'
+import * as gearSets from '@/engine/gearSets'
 import * as masterTool from '@/engine/masterTool'
 import * as bondStyle from '@/engine/bondStyle'
 import * as slaveEvents from '@/engine/slaveEvents'
@@ -1468,6 +1469,13 @@ export const useGame = defineStore('game', () => {
     askAround: () => run((s) => askAround(s)),
     equipItem: (name: string, member: string, slot?: GearSlot) => run((s) => inventory.equipItem(s, name, member, slot)),
     unequipItem: (member: string, slot: GearSlot) => run((s) => inventory.unequipItem(s, member, slot)),
+    // 套裝（gearSets.ts）：存、覆蓋、改名、刪除、改一格、換上
+    saveGearSet: (member: string, name?: string) => run((s) => gearSets.saveGearSet(s, member, name)),
+    overwriteGearSet: (member: string, index: number) => run((s) => gearSets.overwriteGearSet(s, member, index)),
+    renameGearSet: (member: string, index: number, name: string) => run((s) => gearSets.renameGearSet(s, member, index, name)),
+    deleteGearSet: (member: string, index: number) => run((s) => gearSets.deleteGearSet(s, member, index)),
+    setGearSetSlot: (member: string, index: number, slot: GearSlot, mode: gearSets.GearSetMode) => run((s) => gearSets.setGearSetSlot(s, member, index, slot, mode)),
+    applyGearSet: (member: string, index: number) => run((s) => gearSets.applyGearSet(s, member, index)),
     // 拘束具的鎖（雙面效應）
     lockGear: (member: string, slot: GearSlot, lock: string) => run((s) => inventory.lockGear(s, member, slot, lock)),
     unlockGear: (member: string, slot: GearSlot) => run((s) => inventory.unlockGear(s, member, slot)),

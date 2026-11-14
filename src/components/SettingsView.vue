@@ -406,6 +406,14 @@ function doReset() {
           <option value="off">關閉</option>
         </select>
       </label>
+      <label>
+        <span class="lab">冒險筆記顯示還沒接的特殊任務 <Hint text="冒險筆記「特殊任務」的「可以接」分頁與人物的「角色線」。只列見過的人、去過的城鎮；要先完成別的劇情的不列，後面的段落只寫數量。快要能接：只差等級、親密度或冒險者階級。" /></span>
+        <select v-model="settings.storyBoard">
+          <option value="off">不顯示</option>
+          <option value="now">只顯示現在能接的</option>
+          <option value="soon">也顯示快要能接的</option>
+        </select>
+      </label>
       <label class="check"><input v-model="settings.turnBanner" type="checkbox" /> 戰鬥的回合提示 <Hint text="戰鬥中新的回合開始、輪到敵方、輪到你方的角色時，畫面中央閃過一條提示橫幅（不擋操作）。特效關閉時不顯示。" /></label>
       <label class="check"><input v-model="settings.background" type="checkbox" /> 背景圖 <Hint text="依所在的地區、城鎮或地下城換整頁背景（城鎮與地區依時段、地下城依深度，有那張圖才換）。還沒有圖的地方不顯示背景圖。" /></label>
       <label v-if="settings.background">

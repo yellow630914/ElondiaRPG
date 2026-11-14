@@ -239,6 +239,11 @@ export interface Report {
 export type GearSlot = 'main_hand' | 'off_hand' | 'head' | 'body' | 'legs' | 'wrists' | 'feet' | 'belt' | 'accessory' | 'ring_1' | 'ring_2'
   | 'piercing_1' | 'piercing_2' | 'leg_accessory' | 'underwear_top' | 'underwear_bottom' | 'extra_1' | 'extra_2' | 'extra_3' | 'extra_4' | 'extra_5' | 'extra_6' | 'extra_7' | 'extra_8'
 
+/** 套裝的一格：item 是要換上的物品（行囊裡的名字）；off 是這一格要脫掉（item 留著，改回「換成這件」時用）。沒寫的格子換套裝時不動 */
+export interface GearSetSlot { item?: string; off?: boolean }
+/** 存起來的一套裝備（engine/gearSets.ts） */
+export interface GearSet { name: string; slots: Partial<Record<GearSlot, GearSetSlot>> }
+
 /** 一件裝備的組成：底材 × 材料（＋稀有度與附魔） */
 export interface GearSpec {
   base: string
@@ -380,6 +385,8 @@ export interface Character {
   armor: string
   /** 裝備欄位 */
   gear?: Partial<Record<GearSlot, EquippedGear>>
+  /** 存起來的套裝（engine/gearSets.ts）：紙娃娃上一鍵換裝 */
+  gearSets?: GearSet[]
   status: string[]
   personality?: string
   faction?: string

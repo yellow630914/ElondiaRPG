@@ -28,7 +28,7 @@ import { npcRecord } from './npcs'
 import { openWithKey } from './restraints'
 import { checkLure, lureTitle, startLure } from './dungeonEvents'
 
-function itemReport(state: GameState, hours: number): Report {
+export function itemReport(state: GameState, hours: number): Report {
   const start = { ...state.time }
   const loc = locationById(state.location)
   const pc = pcOf(state)

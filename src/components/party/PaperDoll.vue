@@ -21,6 +21,7 @@ import GameIcon from '../ui/GameIcon.vue'
 import Hint from '../ui/Hint.vue'
 import ItemIcon from '../items/ItemIcon.vue'
 import BodyFigure from './BodyFigure.vue'
+import GearSetBar from './GearSetBar.vue'
 import SlotButton from './SlotButton.vue'
 import { signed, SLOT_ICON } from './memberInfo'
 import { specRarity } from '../items/itemInfo'
@@ -194,6 +195,7 @@ const totals = computed(() => {
 
 <template>
   <div class="equip">
+    <GearSetBar :member="m" />
     <div class="doll">
       <div class="sec-title">武器與穿著</div>
       <div class="wear">
