@@ -151,7 +151,7 @@
       "cell": "shop",
       "keeper": { "classes": ["rogue", "fighter", "bard"], "title": "店主", "tags": ["merchant"] },
       "catalog_tag": "general",
-      "buys": ["food", "gear", "material"],
+      "buys": ["food", "gear", "material", "furniture"],
       "ai_effects": ["item", "affinity", "flag", "memory"],
       "specials": [
         { "id": "haul", "title": "幫店主搬貨", "desc": "花一個小時搬貨，換一點工錢。", "gives": [{ "type": "hours", "amount": 1 }],
