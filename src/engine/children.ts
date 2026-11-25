@@ -200,7 +200,7 @@ export function cribRefusal(state: GameState, home: Home): string | undefined {
  * 把嬰兒送到別的地方：to 是 'temple'（某座城的神殿，location）或房子的 id。
  * 同一座城不用錢；別的城由神殿派人護送，費用照路程（escort_cc_per_day × 天數）。原本在育幼院欠的寄養費一起繳清
  */
-export function moveChild(state: GameState, id: string, to: { kind: 'temple'; location: string } | { kind: 'home'; home: string }): Report {
+export function moveChild(state: GameState, id: string, to: ChildDest): Report {
   const c = childById(state, id)
   if (!c) throw new Error('沒有這個孩子')
   const from = placeLocation(state, c.where)
@@ -229,6 +229,25 @@ export function moveChild(state: GameState, id: string, to: { kind: 'temple'; lo
   const fees = [owed ? `繳清寄養費 ${formatMoney(owed)}` : '', escort ? `請神殿派人護送 ${formatMoney(escort)}` : ''].filter(Boolean).join('、')
   report.outcome.summary = `把${c.name}送到${where}${fees ? `（${fees}）` : ''}。`
   return commitReport(state, report)
+}
+
+export type ChildDest = { kind: 'temple'; location: string } | { kind: 'home'; home: string }
+
+/**
+ * 可以把這個孩子送去的別的城（玩家回報：在別的城生了孩子，搬不回常住的城）：自己在別的城的房子，
+ * 以及那些城、和這座城以外的神殿育幼院（有自己房子的城）。cost 是護送費加上欠的寄養費（moveChild 收的錢）
+ */
+export function childMoveOptions(state: GameState, c: ChildRecord): { to: ChildDest; label: string; cost: number }[] {
+  const from = placeLocation(state, c.where)
+  if (!from) return []
+  const owed = owedFee(state, c)
+  const cost = (loc: string) => Math.max(1, Math.ceil(roadDays(from, loc))) * nursery().escort_cc_per_day + owed
+  const homes = ownHomes(state).filter((h) => h.location !== from)
+  const temples = [...new Set(homes.map((h) => h.location))].filter((l) => hasTemple(l))
+  return [
+    ...homes.map((h) => ({ to: { kind: 'home' as const, home: h.id }, label: placeText(state, { kind: 'home', home: h.id }), cost: cost(h.location) })),
+    ...temples.map((l) => ({ to: { kind: 'temple' as const, location: l }, label: `${locationName(l)}的神殿育幼院`, cost: cost(l) })),
+  ]
 }
 
 /** 交給 AI 的一般敘事：主角的孩子在哪裡（成人場景的提示詞不送，見 narrator/prompt.ts） */

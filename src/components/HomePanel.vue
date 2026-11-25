@@ -22,6 +22,7 @@ import { childrenAtHome, hasTemple } from '@/engine/children'
 import { useGame } from '@/stores/game'
 import FoldMenu from './ui/FoldMenu.vue'
 import NameTag from './NameTag.vue'
+import ChildMovePicker from './ChildMovePicker.vue'
 import GameIcon from './ui/GameIcon.vue'
 import MasterWaiting from './party/MasterWaiting.vue'
 import { rosterWaiting } from '@/engine/masterRoster'
@@ -419,6 +420,7 @@ function rename() {
           <span class="row">
             <button class="small" @click="game.visitChild(k.id)">抱抱</button>
             <button class="small" :disabled="!templeHere" :title="templeHere ? '' : '這座城沒有神殿'" @click="game.moveChild(k.id, { kind: 'temple', location: home.location })">送去育幼院</button>
+            <ChildMovePicker :child="k" />
           </span>
         </li>
       </ul>

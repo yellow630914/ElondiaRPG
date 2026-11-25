@@ -5,8 +5,9 @@ import { childrenAtTemple, owedFee, ownHomes, templeDebt } from '@/engine/childr
 import { familyRules } from '@/engine/pregMarks'
 import { genderName, raceName } from '@/engine/data'
 import { formatMoney } from '@/engine/money'
+import ChildMovePicker from './ChildMovePicker.vue'
 
-// 神殿的育幼院（docs/FAMILY.md 第 7.2 節）：寄在這裡的孩子、繳寄養費、探望、接回這座城自己的房子
+// 神殿的育幼院（docs/FAMILY.md 第 7.2 節）：寄在這裡的孩子、繳寄養費、探望、接回這座城自己的房子、送到別的城
 const game = useGame()
 const s = computed(() => game.state!)
 const kids = computed(() => childrenAtTemple(s.value, s.value.location))
@@ -26,6 +27,7 @@ const prepayCost = computed(() => debt.value + Math.max(0, prepay.value) * fee.v
         <span class="row">
           <button class="small" @click="game.visitChild(k.id)">探望</button>
           <button v-for="h in homesHere" :key="h.id" class="small" :disabled="s.money_cc < owedFee(s, k)" @click="game.moveChild(k.id, { kind: 'home', home: h.id })">接回「{{ h.name }}」</button>
+          <ChildMovePicker :child="k" />
         </span>
       </li>
       <li v-if="!kids.length" class="muted">這座神殿沒有寄養你的孩子。</li>
