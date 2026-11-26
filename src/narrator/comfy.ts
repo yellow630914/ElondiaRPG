@@ -5,21 +5,34 @@
 // 內建的兩種模式只用 ComfyUI 原生的節點，不需要安裝外掛。
 
 import { DEFAULT_COMFY_WORKFLOW, NEGATIVE, type ImageServiceConfig } from './imageInfo'
+import { mossLayoutJson, parseLayout } from './mossLayout'
 
-export type ComfyMode = 'checkpoint' | 'unet' | 'custom'
+export type ComfyMode = 'checkpoint' | 'unet' | 'moss' | 'custom'
 
 export const COMFY_MODES: { id: ComfyMode; name: string; note: string }[] = [
   { id: 'checkpoint', name: 'Checkpoint', note: '一個檔案就包含模型、文字編碼器與 VAE（SD1.5、SDXL、Illustrious、Pony……）' },
   { id: 'unet', name: 'UNet（分開載入）', note: '模型、文字編碼器、VAE 分開載入（Anima、Flux、Qwen-Image……）；文字編碼器的類型依模型選' },
+  { id: 'moss', name: 'MOSS-Image', note: 'MOSS-Image（UNet＋qwen 文字編碼器＋flux2 VAE）：提示詞是版面 JSON，AI 寫每個框佔畫面的百分比，程式依畫布換算座標；LoRA 只接模型' },
   { id: 'custom', name: '自訂工作流程', note: '貼上自己的工作流程（API 格式），可以用任何節點與外掛' },
 ]
 
 export interface ComfyLora {
   name: string
   strength: number
-  /** CLIP 權重；沒有時和 strength 相同 */
+  /** CLIP 權重；沒有時和 strength 相同（MOSS 模式只接模型，不看這個） */
   clip?: number
   on: boolean
+  /** 觸發詞：開著的 LoRA 的觸發詞接在固定前綴後面 */
+  trigger?: string
+}
+
+/** MOSS 的 Skip Layer Guidance（SkipLayerGuidanceDiTSimple） */
+export interface ComfySlg {
+  on: boolean
+  /** single_layers（逗號分隔的層號） */
+  layers: string
+  start: number
+  end: number
 }
 
 /** 高解析修復：latent 放大後再採樣一次 */
@@ -61,7 +74,21 @@ export interface ComfyPreset {
   workflow: string
   /** 自訂工作流程：從哪個節點拿成品圖（空白時自動挑） */
   outputNode: string
+  /** MOSS：ModelSamplingAuraFlow 的 shift（0 是不加這個節點；用 8 步蒸餾 LoRA 時通常不加） */
+  shift: number
+  /** MOSS：Skip Layer Guidance */
+  slg: ComfySlg
 }
+
+/** MOSS 的兩套參數：一般（30 步、CFG 4、shift 5）與 8 步蒸餾 LoRA（DMD2 之類，CFG 1～1.5） */
+export const MOSS_PROFILES = {
+  standard: { name: '一般（30 步）', steps: 30, cfg: 4, sampler: 'euler', scheduler: 'simple', shift: 5 },
+  turbo: { name: '8 步蒸餾 LoRA', steps: 12, cfg: 1.5, sampler: 'euler', scheduler: 'beta', shift: 0 },
+} as const
+export type MossProfile = keyof typeof MOSS_PROFILES
+
+/** MOSS 的預設負面提示詞 */
+export const MOSS_NEGATIVE = 'worst quality, low quality, bad anatomy, bad hands, extra fingers, watermark, signature, jpeg artifacts, blurry'
 
 export function newPreset(id: string, name: string, mode: ComfyMode = 'checkpoint'): ComfyPreset {
   return {
@@ -71,7 +98,29 @@ export function newPreset(id: string, name: string, mode: ComfyMode = 'checkpoin
     prefix: '', negative: NEGATIVE,
     hires: { on: false, scale: 1.5, method: 'bicubic', steps: 15, cfg: 6, denoise: 0.5 },
     workflow: DEFAULT_COMFY_WORKFLOW, outputNode: '',
+    shift: 0, slg: { on: false, layers: '22', start: 0, end: 0.5 },
+    ...(mode === 'moss' ? mossDefaults() : {}),
   }
+}
+
+/** 新的 MOSS 設定組合：照 ComfyUI 的 MOSS 範本（一般的參數），尺寸 2:3 */
+function mossDefaults(): Partial<ComfyPreset> {
+  const s = MOSS_PROFILES.standard
+  return {
+    clips: [''], clipType: 'moss_image', width: 1024, height: 1536,
+    steps: s.steps, cfg: s.cfg, sampler: s.sampler, scheduler: s.scheduler, shift: s.shift,
+    slg: { on: true, layers: '22', start: 0, end: 0.5 },
+    prefix: 'masterpiece, best quality, very aesthetic, absurdres', negative: MOSS_NEGATIVE,
+    hires: { on: false, scale: 2, method: 'bilinear', steps: 30, cfg: s.cfg, denoise: 0.65 },
+  }
+}
+
+/** 套用 MOSS 的一套參數（步數、CFG、取樣器、排程器、shift） */
+export function applyMossProfile(p: ComfyPreset, id: MossProfile) {
+  const s = MOSS_PROFILES[id]
+  Object.assign(p, { steps: s.steps, cfg: s.cfg, sampler: s.sampler, scheduler: s.scheduler, shift: s.shift })
+  p.hires.steps = s.steps
+  p.hires.cfg = s.cfg
 }
 
 const num = (v: unknown, min: number, max: number, fallback: number) => {
@@ -94,6 +143,7 @@ export function sanitizePreset(raw: Partial<ComfyPreset> & { id?: string }, fall
     clips: clips.length ? clips : [''], clipType: str(raw.clipType), vae: str(raw.vae),
     loras: (Array.isArray(raw.loras) ? raw.loras : []).filter((l) => l && typeof l.name === 'string').map((l) => ({
       name: l.name, strength: dec(l.strength, -10, 10, 1), ...(l.clip !== undefined && l.clip !== null ? { clip: dec(l.clip, -10, 10, 1) } : {}), on: l.on !== false,
+      ...(str(l.trigger).trim() ? { trigger: str(l.trigger).trim().slice(0, 300) } : {}),
     })),
     width: Math.round(num(raw.width, 64, 4096, d.width)), height: Math.round(num(raw.height, 64, 4096, d.height)),
     steps: Math.round(num(raw.steps, 1, 200, d.steps)), cfg: dec(raw.cfg, 0, 30, d.cfg),
@@ -104,6 +154,11 @@ export function sanitizePreset(raw: Partial<ComfyPreset> & { id?: string }, fall
       steps: Math.round(num(h.steps, 1, 200, d.hires.steps)), cfg: dec(h.cfg, 0, 30, d.hires.cfg), denoise: dec(h.denoise, 0, 1, d.hires.denoise),
     },
     workflow: str(raw.workflow, d.workflow), outputNode: str(raw.outputNode).trim(),
+    shift: dec(raw.shift, 0, 20, 0),
+    slg: {
+      on: !!raw.slg?.on, layers: str(raw.slg?.layers, '22').replace(/[^\d,\s]/g, '').trim() || '22',
+      start: dec(raw.slg?.start, 0, 1, 0), end: dec(raw.slg?.end, 0, 1, 0.5),
+    },
   }
 }
 
@@ -125,10 +180,10 @@ export function presetIssues(p: ComfyPreset): string[] {
     return out
   }
   if (p.mode === 'checkpoint' && !p.checkpoint.trim()) out.push('還沒選 Checkpoint')
-  if (p.mode === 'unet') {
+  if (p.mode === 'unet' || p.mode === 'moss') {
     if (!p.unet.trim()) out.push('還沒選 UNet 模型')
     if (!p.clips.some((c) => c.trim())) out.push('還沒選文字編碼器')
-    if (p.clips.filter((c) => c.trim()).length < 3 && !p.clipType.trim()) out.push('還沒選文字編碼器的類型')
+    if (p.mode === 'unet' && p.clips.filter((c) => c.trim()).length < 3 && !p.clipType.trim()) out.push('還沒選文字編碼器的類型')
     if (!p.vae.trim()) out.push('還沒選 VAE')
   }
   return out
@@ -160,9 +215,15 @@ export interface ComfyVars {
   denoise?: number
 }
 
-/** 送出的正面提示詞：固定前綴＋產生的提示詞 */
+/** 固定前綴加上開著的 LoRA 的觸發詞 */
+export function promptPrefix(p: ComfyPreset): string {
+  const tidy = (s: string) => s.trim().replace(/^[,，\s]+|[,，\s]+$/g, '')
+  return [tidy(p.prefix), ...p.loras.filter((l) => l.on && l.name.trim() && l.trigger?.trim()).map((l) => tidy(l.trigger!))].filter(Boolean).join(', ')
+}
+
+/** 送出的正面提示詞：固定前綴（含 LoRA 觸發詞）＋產生的提示詞 */
 export function fullPrompt(p: ComfyPreset, prompt: string): string {
-  const prefix = p.prefix.trim().replace(/[,，\s]+$/, '')
+  const prefix = promptPrefix(p)
   return prefix ? `${prefix}, ${prompt}` : prompt
 }
 
@@ -172,6 +233,7 @@ export function buildWorkflow(p: ComfyPreset, v: ComfyVars): ComfyWorkflow {
   const negative = v.negative ?? p.negative
   const width = v.width ?? p.width
   const height = v.height ?? p.height
+  if (p.mode === 'moss') return buildMoss(p, v, negative, width, height)
   if (p.mode === 'custom') {
     if (v.image && !p.workflow.includes('%image%')) throw new Error('這組自訂工作流程沒有 %image% 代號，不能以圖生圖（在 LoadImage 節點的圖片欄位填 %image%，KSampler 的 denoise 填 %denoise%）')
     if (v.mask && !p.workflow.includes('%mask%')) throw new Error('這組自訂工作流程沒有 %mask% 代號，不能局部重繪（遮罩用 LoadImageMask 節點，圖片欄位填 %mask%）')
@@ -239,6 +301,57 @@ export function buildWorkflow(p: ComfyPreset, v: ComfyVars): ComfyWorkflow {
 }
 
 /**
+ * MOSS-Image：UNETLoader → LoraLoaderModelOnly ×N →（ModelSamplingAuraFlow）→（SkipLayerGuidanceDiTSimple）→ KSampler；
+ * CLIPLoader（moss_image）、EmptyFlux2LatentImage、VAELoader。正面提示詞是版面 JSON：
+ * 把相對版面（v.prompt）依這一遍的畫布換算，高解析修復的第二遍用放大後的畫布再編碼一次。
+ * 負面提示詞：設定組合的（或這次指定的）接上版面裡這張圖專屬的
+ */
+function buildMoss(p: ComfyPreset, v: ComfyVars, negative: string, width: number, height: number): ComfyWorkflow {
+  const wf: ComfyWorkflow = {}
+  let n = 0
+  const add = (class_type: string, inputs: Record<string, unknown>, title?: string): string => {
+    const id = String(++n)
+    wf[id] = { class_type, inputs, ...(title ? { _meta: { title } } : {}) }
+    return id
+  }
+  const layout = parseLayout(v.prompt)
+  const prefix = promptPrefix(p)
+  let model: Link = [add('UNETLoader', { unet_name: p.unet, weight_dtype: p.weightDtype || 'default' }), 0]
+  const clip: Link = [add('CLIPLoader', { clip_name: p.clips.find((c) => c.trim()) ?? '', type: p.clipType.trim() || 'moss_image' }), 0]
+  const vae: Link = [add('VAELoader', { vae_name: p.vae }), 0]
+  for (const l of p.loras) {
+    if (!l.on || !l.name.trim()) continue
+    model = [add('LoraLoaderModelOnly', { lora_name: l.name, strength_model: l.strength, model }), 0]
+  }
+  if (p.shift > 0) model = [add('ModelSamplingAuraFlow', { shift: p.shift, model }), 0]
+  if (p.slg.on) model = [add('SkipLayerGuidanceDiTSimple', { double_layers: '', single_layers: p.slg.layers, start_percent: p.slg.start, end_percent: p.slg.end, model }, 'SLG'), 0]
+  const encode = (w: number, h: number, title: string): Link => [add('CLIPTextEncode', { text: mossLayoutJson(layout, w, h, prefix), clip }, title), 0]
+  const positive = encode(width, height, '正向（版面 JSON）')
+  const neg: Link = [add('CLIPTextEncode', { text: [negative, layout.negative].map((x) => x?.trim().replace(/[,，\s]+$/, '')).filter(Boolean).join(', '), clip }, '反向'), 0]
+  let latent: Link
+  if (v.image) {
+    const img = add('LoadImage', { image: v.image }, '底圖')
+    latent = [add('VAEEncode', { pixels: [img, 0], vae }), 0]
+    if (v.mask) {
+      const mask = add('LoadImageMask', { image: v.mask, channel: 'red' }, '遮罩')
+      latent = [add('SetLatentNoiseMask', { samples: latent, mask: [mask, 0] }), 0]
+    }
+  } else latent = [add('EmptyFlux2LatentImage', { width, height, batch_size: 1 }), 0]
+  const sampler = { seed: v.seed, sampler_name: p.sampler, scheduler: p.scheduler, model, negative: neg }
+  let samples = add('KSampler', { ...sampler, positive, steps: p.steps, cfg: p.cfg, denoise: v.image ? v.denoise ?? 0.6 : 1, latent_image: latent })
+  if (p.hires.on && !v.image) {
+    // 第二遍的畫布放大了：版面的座標照新的畫布重算（latent 是 16 的倍數）
+    const w2 = Math.round((width * p.hires.scale) / 16) * 16
+    const h2 = Math.round((height * p.hires.scale) / 16) * 16
+    const up = add('LatentUpscaleBy', { upscale_method: p.hires.method, scale_by: p.hires.scale, samples: [samples, 0] })
+    samples = add('KSampler', { ...sampler, positive: encode(w2, h2, '正向（第二遍的版面）'), steps: p.hires.steps, cfg: p.hires.cfg, denoise: p.hires.denoise, latent_image: [up, 0] }, '高解析修復')
+  }
+  const image = add('VAEDecode', { samples: [samples, 0], vae })
+  add('SaveImage', { filename_prefix: 'elondia', images: [image, 0] })
+  return wf
+}
+
+/**
  * 把工作流程裡的代號換成值：整個字串就是代號時換成原本的型別（數字就是數字），
  * 字串裡夾著代號時做文字取代。代號：%prompt% %negative% %width% %height% %seed% %steps% %scale% %sampler% %scheduler% %model%
  */
@@ -272,6 +385,8 @@ const KNOWN = new Set([
   'CheckpointLoaderSimple', 'UNETLoader', 'CLIPLoader', 'DualCLIPLoader', 'TripleCLIPLoader', 'VAELoader',
   'LoraLoader', 'LoraLoaderModelOnly', 'CLIPTextEncode', 'EmptyLatentImage', 'EmptySD3LatentImage',
   'KSampler', 'LatentUpscaleBy', 'LatentUpscale', 'VAEDecode',
+  // MOSS 模式
+  'EmptyFlux2LatentImage', 'ModelSamplingAuraFlow', 'SkipLayerGuidanceDiTSimple',
 ])
 /** 省略了也不影響畫面的節點：存圖、預覽、提示詞與文字工具、註解 */
 const HARMLESS = /prompt|string|text|primitive|note|preview|save|show|display/i
@@ -347,6 +462,8 @@ export function presetFromWorkflow(text: string, loraNames: string[] = []): Impo
   // 模型：從取樣器往回找，經過 LoRA 直到主模
   const loras: ComfyLora[] = []
   let mode: ComfyMode | undefined
+  /** 只有 MOSS 模式重現得了的節點（不是 MOSS 時列進略過的節點） */
+  const moss = new Set<string>()
   let cur = node(first.inputs.model)
   for (let guard = 0; cur && guard < 50; guard++) {
     const [id, n] = cur
@@ -376,8 +493,14 @@ export function presetFromWorkflow(text: string, loraNames: string[] = []): Impo
         const cs = num(l.clipStrength, -10, 10, s)
         return { name: l.name!, strength: s, ...(cs !== s ? { clip: cs } : {}), on: true }
       }))
+    } else if (c === 'ModelSamplingAuraFlow') {
+      p.shift = num(n.inputs.shift, 0, 20, 5)
+      moss.add(id)
+    } else if (c === 'SkipLayerGuidanceDiTSimple') {
+      p.slg = { on: true, layers: str(n.inputs.single_layers, '22') || '22', start: num(n.inputs.start_percent, 0, 1, 0), end: num(n.inputs.end_percent, 0, 1, 0.5) }
+      moss.add(id)
     } else {
-      // 不認得、但會把模型往下傳的節點（例如 ModelSamplingAuraFlow）：內建模式重現不了
+      // 不認得、但會把模型往下傳的節點：內建模式重現不了
       skipped.add(c)
     }
     cur = node(n.inputs.model)
@@ -440,6 +563,19 @@ export function presetFromWorkflow(text: string, loraNames: string[] = []): Impo
   }
   if (mode === 'unet' && !p.vae) notes.push('找不到 VAE 的載入節點，請自己選')
 
+  // MOSS-Image：文字編碼器的類型是 moss_image，或用 Flux 2 的空白 latent
+  if (mode === 'unet' && (p.clipType === 'moss_image' || latentNode?.[1].class_type === 'EmptyFlux2LatentImage')) {
+    mode = 'moss'
+    if (!p.clipType) p.clipType = 'moss_image'
+    // MOSS 的 LoRA 只接模型：沒有 CLIP 權重
+    for (const l of loras) delete l.clip
+    notes.push('MOSS 的正面提示詞由遊戲依版面組出來：工作流程裡原本的提示詞不會用到。生圖提示詞預處理記得選「MOSS 版面」')
+  } else if (moss.size) {
+    for (const id of moss) skipped.add(nodes[id]!.class_type)
+    p.shift = 0
+    p.slg = { ...p.slg, on: false }
+  }
+  if (latentNode?.[1].class_type === 'EmptyFlux2LatentImage' && mode !== 'moss') skipped.add('EmptyFlux2LatentImage')
   p.steps = Math.round(num(first.inputs.steps, 1, 200, p.steps))
   p.cfg = num(first.inputs.cfg, 0, 30, p.cfg)
   p.sampler = str(first.inputs.sampler_name, p.sampler) || p.sampler

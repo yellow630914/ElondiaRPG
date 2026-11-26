@@ -10,6 +10,7 @@ import { npcOutfit } from '@/engine/outfits'
 import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
 import type { EquippedGear, GameState, GearSlot } from '@/engine/types'
+import { layoutText, parseLayout, portraitBox, type ShotSize } from './mossLayout'
 import type { Prompt } from './prompt'
 
 export type ImageServiceId = 'openai' | 'novelai' | 'comfyui'
@@ -265,8 +266,11 @@ export function portraitPrompt(subject: PortraitSubject, template: string, style
 // 送給生圖服務之前，先請大語言模型照一份「預處理指示」改寫角色描述：轉成 Danbooru 標籤、英文句子、JSON……
 // 指示有內建的幾份，玩家也可以自己建立；output 決定怎麼整理模型的回覆。
 
-/** 模型回覆的整理方式：tags 整理成逗號分隔的標籤（去掉重複）；text 只拿掉程式碼框與前後空白，原樣送出（句子、JSON） */
-export type PreprocessOutput = 'tags' | 'text'
+/**
+ * 模型回覆的整理方式：tags 整理成逗號分隔的標籤（去掉重複）；text 只拿掉程式碼框與前後空白，原樣送出（句子、JSON）；
+ * layout 讀成相對版面（MOSS-Image：每個框佔畫面的百分比，程式修正、送出前換算座標，narrator/mossLayout.ts）
+ */
+export type PreprocessOutput = 'tags' | 'text' | 'layout'
 
 export interface ImagePreprocessor {
   id: string
@@ -289,6 +293,42 @@ export const DEFAULT_TAG_INSTRUCTIONS = [
   '5. 大約 20～40 個標籤。',
   '6. 刺青、印記與每件裝備都要保留成標籤並寫出部位（例如 butterfly tattoo, thigh tattoo）；構圖照描述的 Composition（upper body、cowboy shot、full body），讓這些部位畫得到。標成「穿在裡面」的內衣不要畫成露出來。',
   '7. 種族名稱後面括號裡的英文標籤是這個種族一定要畫出來的特徵（例如 fish tail, shark tail），原樣保留，不要省略或改寫。',
+].join('\n')
+
+/**
+ * MOSS-Image 的寫法（形象圖的預處理與日誌插圖的分鏡共用）：整理自玩家實測的經驗（docs/PORTRAITS.md 第 5.1 節）。
+ * 重點：鏡頭寫具體、配色寫主次、不要的物件不寫進正面（寫「沒有」反而畫出來，放負面）、方向一致、手與道具各一個框
+ */
+export const MOSS_WRITING_RULES = [
+  'caption 的寫法（英文）：',
+  '- 開頭一行 Danbooru 標籤：人數與性別 → 外貌 → 服裝 → 動作與姿勢 → 構圖與鏡頭 → 場景（畫質詞與畫風由程式另外接，不要寫）。',
+  '- 接著一句話總述這張圖（誰、在哪裡、在做什麼）。',
+  '- 再分段寫自然語言，每段以標題開頭：Composition & Pose:（鏡頭距離、角度、人物在畫面的位置與姿勢）、Hair & Head Accessories:、Face & Expression:、Clothing & Details:（服裝逐件寫顏色、花紋、位置；刺青與印記寫出部位）、Lighting & Color:（光從哪來；配色寫主次：主色、輔色、點綴色，誰是最暗、誰是最亮的形狀）、Background:。',
+  '- 鏡頭寫具體，例如 seen from a high angle from her left side, about 60 degrees off the front；a wide straight-on shot, horizontals level and verticals straight。不要寫 photograph（會畫成照片裡的照片）。',
+  '- 不想出現的物件不要寫進 caption，連「沒有」「without」都不要寫（寫了反而會畫出來），放進 negative。屬性可以在 caption 糾正，同時把錯的版本放進 negative，例如 caption 寫 an armband (purple, not red)、negative 放 red armband；寫 her hands are bare、negative 放 gloves；只有一邊馬尾時寫 one single side ponytail on the left; the right side has no ponytail，negative 放 twintails, two ponytails。',
+  '- 一陣風、一道光這類故事錨點要讓頭髮、衣物、落葉往同一個方向。',
+].join('\n')
+
+/** MOSS-Image 版面的框怎麼寫 */
+export const MOSS_LAYOUT_RULES = [
+  'items（框）的寫法：',
+  '- 每個框佔畫面的範圍用百分比寫：x 是 [左, 右]、y 是 [上, 下]，原點在畫面左上角，0～100。不要寫像素。',
+  '- label 只能是 character（人）、object（物件、身體部位、場景元素）、text（畫面上要出現的字，另外加 "text" 欄位寫那串字）。',
+  '- 每個人一個 character 框，caption 寫齊外貌、服裝、表情與姿勢。臉、每一隻手、手上拿的東西、帽子與鞋這類容易畫錯的部位各一個 object 框，caption 寫清楚在做什麼（例如 her right hand grips the brim of the hat, five fingers）；重要的場景元素（門、窗、桌上的道具）也可以各一個框。',
+  '- 所有框的方向、左右要一致，一處矛盾就會畫反；框的位置要符合鏡頭與構圖。',
+].join('\n')
+
+/** MOSS 版面的預處理（形象圖） */
+export const MOSS_LAYOUT_INSTRUCTIONS = [
+  '你是 MOSS-Image 生圖模型的構圖師。把使用者給的角色形象描述設計成一張版面，交給 AI 生圖。',
+  '只輸出一個 JSON 物件，不要任何說明或程式碼框：',
+  '{"caption": "整張圖的描述", "items": [{"label": "character", "caption": "這個人", "x": [20, 80], "y": [4, 100]}, {"label": "object", "caption": "她的臉……", "x": [40, 60], "y": [8, 30]}], "negative": "這張圖專屬的負面標籤，逗號分隔"}',
+  '規則：',
+  '1. 構圖照描述的 Composition：upper body 時人物從腰部以上佔滿畫面大部分，cowboy shot 到大腿，full body 整個人入鏡；只有這一個人，居中、面向觀眾。',
+  '2. 外貌照描述畫（髮色、眼睛、種族特徵、體型不要改；種族後面括號裡的英文標籤一定要原樣寫進去）；描述沒寫到的細節可以依角色設定合理補上，不要和描述衝突。刺青、印記與每件裝備都要寫進去並寫出部位，讓這些部位畫得到。標成「穿在裡面」的內衣不要寫成露出來。',
+  '3. 不要寫出角色名字或作品名稱。',
+  MOSS_WRITING_RULES,
+  MOSS_LAYOUT_RULES,
 ].join('\n')
 
 /** 內建的預處理指示 */
@@ -320,6 +360,7 @@ export const BUILTIN_PREPROCESSORS: ImagePreprocessor[] = [
       '5. 種族名稱後面括號裡的英文標籤是這個種族一定要畫出來的特徵（例如 fish tail, shark tail），原樣寫進 appearance。',
     ].join('\n'),
   },
+  { id: 'moss', name: 'MOSS 版面', output: 'layout', builtin: true, instructions: MOSS_LAYOUT_INSTRUCTIONS },
 ]
 
 /** 交給大語言模型的預處理請求 */
@@ -327,9 +368,21 @@ export function preprocessPrompt(semantic: string, instructions: string): Prompt
   return { system: instructions.trim(), user: `角色形象描述：\n${semantic}` }
 }
 
-/** 依整理方式處理模型的回覆 */
-export function cleanPreprocessed(text: string, output: PreprocessOutput): string {
+/**
+ * 依整理方式處理模型的回覆。layout：讀成相對版面並修正（框超出範圍、左右寫反、太小）；
+ * semantic 是預處理前的描述：形象圖沒有人物框時，照描述的 Composition 補一個
+ */
+export function cleanPreprocessed(text: string, output: PreprocessOutput, semantic = ''): string {
   if (output === 'tags') return cleanTags(text)
+  if (output === 'layout') {
+    const l = parseLayout(text)
+    if (!l.caption && !l.items.length) return ''
+    if (!l.items.some((it) => it.label === 'character')) {
+      const m = /Composition:\s*(upper body|cowboy shot|full body)/i.exec(semantic)
+      l.items.unshift({ label: 'character', caption: l.caption.slice(0, 600) || 'one person', ...portraitBox((m?.[1]?.toLowerCase() ?? 'upper body') as ShotSize) })
+    }
+    return layoutText(l)
+  }
   return text.replace(/```[a-z]*\n?/gi, '').replace(/```/g, '').trim()
 }
 

@@ -109,7 +109,7 @@ interface LegacyImageSettings {
   tagInstructions?: string
 }
 
-const OUTPUTS = ['tags', 'text'] as const
+const OUTPUTS = ['tags', 'text', 'layout'] as const
 
 function sanitizePreprocessor(p: Partial<ImagePreprocessor>, i: number): ImagePreprocessor {
   return {

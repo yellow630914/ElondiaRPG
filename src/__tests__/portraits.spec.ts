@@ -101,7 +101,7 @@ describe('portrait prompts', () => {
     expect(cleanPreprocessed('```\nTags: 1girl, long hair\n```', 'tags')).toBe('1girl, long hair')
     // 原樣送出：只拿掉程式碼框，JSON 保持原樣
     expect(cleanPreprocessed('```json\n{"subject": "1girl"}\n```', 'text')).toBe('{"subject": "1girl"}')
-    expect(BUILTIN_PREPROCESSORS.map((b) => b.id)).toEqual(['danbooru', 'english', 'json'])
+    expect(BUILTIN_PREPROCESSORS.map((b) => b.id)).toEqual(['danbooru', 'english', 'json', 'moss'])
   })
 })
 

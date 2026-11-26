@@ -144,8 +144,8 @@ export const useScenes = defineStore('scenes', () => {
   async function renderOne(state: GameState, key: string, service: ImageServiceId, plan: ScenePlan, spot: { after: number; anchor: string } | undefined, girls: boolean, signal: AbortSignal) {
     const image = useImageSettings()
     const portraits = usePortraits()
-    const tags = image.preprocessorFor(service)?.output === 'tags'
-    const composed = composeScene(plan, service, tags, sceneMulti(service, image.configs[service].model), image.style)
+    const format = image.preprocessorFor(service)?.output
+    const composed = composeScene(plan, service, format === 'tags', sceneMulti(service, image.configs[service].model), image.style, format === 'layout')
     const references = await referencesFor(state, service, plan)
     // 有魔物娘登場時，負面提示詞補上血腥、屍體（分鏡不寫否定句）
     const negative = girls ? [image.negativeFor(service), GIRL_SCENE_NEGATIVE].filter((x) => x?.trim()).join(', ') : undefined

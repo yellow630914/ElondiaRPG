@@ -384,7 +384,7 @@ export const usePortraits = defineStore('portraits', () => {
     const { completeText } = await import('@/narrator/providers')
     const text = await completeText(src.provider, src.config, preprocessPrompt(semantic, pre.instructions), signal, collector.onUsage)
     collector.flush(usageKey)
-    const out = cleanPreprocessed(text, pre.output)
+    const out = cleanPreprocessed(text, pre.output, semantic)
     if (!out) throw new Error(`模型沒有回傳預處理的結果（${pre.name}）`)
     return out
   }
