@@ -10,7 +10,7 @@ import { npcOutfit } from '@/engine/outfits'
 import { appearanceOf, npcRecord, npcTitle } from '@/engine/npcs'
 import { placeName, tattooDesc, tattooName, tattoosOf } from '@/engine/tattoos'
 import type { EquippedGear, GameState, GearSlot } from '@/engine/types'
-import { layoutText, parseLayout, portraitBox, type ShotSize } from './mossLayout'
+import { isLayout, layoutText, parseLayout, portraitBox, type ShotSize } from './mossLayout'
 import type { Prompt } from './prompt'
 
 export type ImageServiceId = 'openai' | 'novelai' | 'comfyui'
@@ -375,6 +375,8 @@ export function preprocessPrompt(semantic: string, instructions: string): Prompt
 export function cleanPreprocessed(text: string, output: PreprocessOutput, semantic = ''): string {
   if (output === 'tags') return cleanTags(text)
   if (output === 'layout') {
+    // 讀不到 JSON（AI 寫壞了）時當錯誤，不要把整段原文當描述送出去
+    if (!isLayout(text)) throw new Error('AI 回的 MOSS 版面不是正確的 JSON，請再試一次')
     const l = parseLayout(text)
     if (!l.caption && !l.items.length) return ''
     if (!l.items.some((it) => it.label === 'character')) {

@@ -61,7 +61,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 3. 依指示的**整理方式**處理回答：
    - **整理成標籤**：拿掉程式碼框與「Tags:」之類的說明、換行改逗號、去掉重複。
    - **原樣送出**：只拿掉程式碼框（適合英文句子、JSON）。
-   - **MOSS 版面**：讀成相對版面（每個框佔畫面的百分比），修正寫錯的框；送出前由程式換算成 MOSS 的座標（5.1 節）。形象圖沒有人物框時，照描述的 Composition 補一個。
+   - **MOSS 版面**：讀成相對版面（每個框佔畫面的百分比），修正寫錯的框；送出前由程式換算成 MOSS 的座標（5.1 節）。形象圖沒有人物框時，照描述的 Composition 補一個。AI 回的不是正確的 JSON 時當錯誤（「AI 回的 MOSS 版面不是正確的 JSON，請再試一次」），不把整段原文當描述送出。
 4. **結果直接送給生圖服務**，不再套用提示詞模板與畫風。
 
 ### 預處理指示
@@ -129,7 +129,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 - **兩套參數**（「尺寸與取樣」分頁一鍵套用，`MOSS_PROFILES`）：一般是 30 步、CFG 4、euler / simple、shift 5；8 步蒸餾 LoRA（DMD2 之類，權重 1）是 12 步、CFG 1.5、euler / beta、不加 shift。Skip Layer Guidance 預設第 22 層、0～0.5。新的 MOSS 組合是 1024 × 1536；高解析修復預設 2 倍、重繪 0.65（雙採）。
 - **寫法的要點**（`imageInfo.ts` 的 `MOSS_WRITING_RULES`、`MOSS_LAYOUT_RULES`）：開頭一行 Danbooru 標籤，再一句總述，再分段（Composition & Pose、Hair & Head Accessories、Face & Expression、Clothing & Details、Lighting & Color、Background）；鏡頭寫具體（角度、距離、水平垂直），不寫 photograph；配色寫主次與最暗、最亮的形狀；不想出現的物件不寫進正面（寫「沒有」反而畫出來），放負面，屬性可以在正面糾正但錯的版本放負面；臉、每隻手、拿的東西各一個框，方向要一致。
 - 設定組合換成 MOSS（或新增 MOSS 組合）時，ComfyUI 的提示詞寫法還不是版面的話自動改成「MOSS 版面」；寫法和設定組合對不上時「提示詞怎麼寫」會提醒。
-- **匯入**：文字編碼器的類型是 `moss_image` 或用 `EmptyFlux2LatentImage` 的工作流程讀成 MOSS 模式（shift、SLG 一起讀；LoRA 只有模型權重；工作流程裡原本的提示詞不用）。
+- **匯入**：文字編碼器的類型是 `moss_image` 或用 `EmptyFlux2LatentImage` 的工作流程讀成 MOSS 模式（shift、SLG 一起讀；LoRA 只有模型權重；工作流程裡原本的提示詞不用）；和新增 MOSS 組合一樣，ComfyUI 的提示詞寫法還不是版面的話自動改成「MOSS 版面」。
 - 還沒做：收尾的放大後重繪（4x-AnimeSharp）、臉與手的局部重繪、近景貼回全景。
 
 舊版只有一份 ComfyUI 工作流程：沒改過預設工作流程的變成 Checkpoint 模式（模型欄位就是 Checkpoint），改過的變成自訂工作流程，行為和原本一樣。
@@ -177,6 +177,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 | 修正崩壞 | 0.3 | `detailed face, detailed hands`，負面提示詞另外加 `bad hands, bad anatomy, deformed, extra fingers` |
 | 自己寫一句 | 0.55 | 有預處理時：把「這次要改的」接在描述後面重新預處理；沒有時直接接在上次的提示詞後面 |
 
+  MOSS 的提示詞是版面 JSON：加的詞接在整張圖的描述（`caption`）後面（`mossLayout.ts` 的 `appendPrompt`），不接在 JSON 後面（接在後面讀版面時會被丟掉）。
   ChatGPT 是照文字指示改圖（`/images/edits`），微調寫成「Edit this image: …. Keep the same character, face, hairstyle, outfit, art style and composition.」。
 - 底圖會縮放、裁切成目前服務的出圖尺寸（`fitImage`）。
 

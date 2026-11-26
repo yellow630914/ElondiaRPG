@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { applyMossProfile, buildWorkflow, newPreset, presetFromWorkflow, promptPrefix, sanitizePreset, type ComfyNode } from '@/narrator/comfy'
 import { BUILTIN_PREPROCESSORS, cleanPreprocessed } from '@/narrator/imageInfo'
-import { layoutText, mossLayoutJson, parseLayout, positionBox } from '@/narrator/mossLayout'
+import { appendPrompt, layoutText, mossLayoutJson, parseLayout, positionBox } from '@/narrator/mossLayout'
 import { composeScene, parseScenePlan } from '@/narrator/sceneInfo'
 
 const nodes = (wf: Record<string, ComfyNode>, type: string) => Object.values(wf).filter((n) => n.class_type === type)
@@ -127,6 +127,24 @@ describe('MOSS prompts', () => {
     expect(moss.output).toBe('layout')
     const out = parseLayout(cleanPreprocessed('{"caption": "an elf archer", "items": []}', 'layout', 'Composition: full body, facing the viewer'))
     expect(out.items[0]).toMatchObject({ label: 'character', x: [28, 72], y: [3, 97] })
+  })
+
+  it('refuses a broken layout instead of sending the raw text', () => {
+    // AI 偶爾寫出不合法的 JSON（實測 [26, 38, 0][0:2]）：當錯誤，讓玩家重試
+    expect(() => cleanPreprocessed('{"caption": "a girl", "items": [{"label": "object", "caption": "hand", "x": [26, 38, 0][0:2], "y": [52, 66]}]}', 'layout')).toThrow(/JSON/)
+    expect(() => cleanPreprocessed('1girl, solo, smile', 'layout')).toThrow(/JSON/)
+  })
+
+  it('adds tweak words to the caption of a layout, not after the JSON', () => {
+    const prompt = layoutText({ caption: 'a ranger girl', items: [{ label: 'character', caption: 'girl', x: [20, 80], y: [3, 100] }] })
+    const out = appendPrompt(prompt, 'smile, happy', '', 'blue cloak')
+    expect(parseLayout(out)).toEqual({ caption: 'a ranger girl, smile, happy, blue cloak', items: parseLayout(prompt).items })
+    // 送出的版面 JSON 也看得到
+    const p = newPreset('m', 'moss', 'moss')
+    expect(JSON.parse(nodes(buildWorkflow(p, { prompt: out, seed: 1 }), 'CLIPTextEncode')[0]!.inputs.text as string).summary.caption).toContain('smile, happy, blue cloak')
+    // 一般的提示詞照舊接在最後；沒東西要加時原樣
+    expect(appendPrompt('1girl, solo', 'smile')).toBe('1girl, solo, smile')
+    expect(appendPrompt(prompt)).toBe(prompt)
   })
 
   it('plans scene boxes and fills in missing ones from the left / right positions', () => {

@@ -106,6 +106,12 @@ function doImport() {
     const lines = [`已新增設定「${r.added.name}」：${mode} 模式，${r.added.loras.length} 個 LoRA${r.added.hires.on ? '，含高解析修復' : ''}。`]
     if (r.skipped.length) lines.push(`內建模式不包含這些節點：${r.skipped.join('、')}。需要它們的話，把這組改成「自訂工作流程」（已經放進工作流程欄位，記得把提示詞換成 %prompt%）。`)
     lines.push(...r.notes)
+    // 匯入 MOSS 時和新增 MOSS 組合一樣，ComfyUI 的提示詞寫法換成「MOSS 版面」
+    if (r.added.mode === 'moss') {
+      const before = image.preprocessorFor('comfyui')?.output === 'layout'
+      useMossLayout()
+      lines.push(before ? 'ComfyUI 的提示詞寫法已經是版面的寫法。' : 'ComfyUI 的提示詞寫法換成了「MOSS 版面」（在「提示詞怎麼寫」可以改）。')
+    }
     importResult.value = { ok: true, lines }
     importText.value = ''
     importOpen.value = false
