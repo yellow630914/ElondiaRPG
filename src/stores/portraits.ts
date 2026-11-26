@@ -19,6 +19,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { cleanPreprocessed, portraitPrompt, portraitSubject, preprocessPrompt, type ImageServiceId } from '@/narrator/imageInfo'
+import { appendPrompt } from '@/narrator/mossLayout'
 import { renderImage, type ImageInit, type ImageRequest, type ImageResult } from '@/narrator/imageProviders'
 import { fitImage } from '@/narrator/imageUtils'
 import type { GameState } from '@/engine/types'
@@ -501,9 +502,9 @@ export const usePortraits = defineStore('portraits', () => {
         semantic = `${rec?.semantic ?? describe(state, id)}\nChange in this version (must be reflected): ${change}`
         step({ stage: 'tags', semantic })
         prompt = await preprocess(semantic, service, signal)
-        if (p?.add) prompt = `${prompt}, ${p.add}`
+        prompt = appendPrompt(prompt, p?.add)
         step({ stage: 'image', tags: prompt })
-      } else prompt = [rec?.prompt ?? describe(state, id), p?.add, change].filter(Boolean).join(', ')
+      } else prompt = appendPrompt(rec?.prompt ?? describe(state, id), p?.add, change)
       const strength = change ? TWEAK_TEXT_STRENGTH : p?.strength ?? 0.4
       const negative = p?.negative ? [image.negativeFor(service), p.negative].filter(Boolean).join(', ') : undefined
       const out = await render(service, { prompt, signal, init: await initFrom(base, service, strength), ...(negative ? { negative } : {}) })

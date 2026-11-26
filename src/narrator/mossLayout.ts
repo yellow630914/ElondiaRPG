@@ -99,6 +99,24 @@ export function parseLayout(text: string): RelativeLayout {
   return { caption, items, ...(negative ? { negative } : {}) }
 }
 
+/** 這段文字是相對版面（JSON 物件，有描述或框）嗎 */
+export function isLayout(text: string): boolean {
+  const o = jsonObject(text)
+  return !!o && (typeof o.caption === 'string' || Array.isArray(o.items) || !!o.summary)
+}
+
+/**
+ * 在提示詞後面加上幾個詞（例如微調的 smile, happy）：版面的話接在整張圖的描述（caption）後面，
+ * 一般的提示詞接在最後。版面接在 JSON 後面的字讀的時候會被丟掉
+ */
+export function appendPrompt(prompt: string, ...extra: (string | undefined)[]): string {
+  const add = extra.map((x) => x?.trim()).filter(Boolean).join(', ')
+  if (!add) return prompt
+  if (!isLayout(prompt)) return [prompt.trim(), add].filter(Boolean).join(', ')
+  const l = parseLayout(prompt)
+  return layoutText({ ...l, caption: [l.caption.trim().replace(/[,，\s]+$/, ''), add].filter(Boolean).join(', ') })
+}
+
 /** 相對版面寫成文字（存在形象圖、插圖的紀錄裡，送出前再換算） */
 export function layoutText(l: RelativeLayout): string {
   return JSON.stringify({ caption: l.caption, items: l.items, ...(l.negative ? { negative: l.negative } : {}) })

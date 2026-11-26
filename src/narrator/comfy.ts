@@ -569,7 +569,7 @@ export function presetFromWorkflow(text: string, loraNames: string[] = []): Impo
     if (!p.clipType) p.clipType = 'moss_image'
     // MOSS 的 LoRA 只接模型：沒有 CLIP 權重
     for (const l of loras) delete l.clip
-    notes.push('MOSS 的正面提示詞由遊戲依版面組出來：工作流程裡原本的提示詞不會用到。生圖提示詞預處理記得選「MOSS 版面」')
+    notes.push('MOSS 的正面提示詞由遊戲依版面組出來：工作流程裡原本的提示詞不會用到')
   } else if (moss.size) {
     for (const id of moss) skipped.add(nodes[id]!.class_type)
     p.shift = 0
