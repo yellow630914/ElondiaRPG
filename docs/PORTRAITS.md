@@ -19,11 +19,18 @@
 
 API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`），請求直接從瀏覽器送往選擇的服務。每個服務各自保存設定，切換服務不會弄丟 key。
 
+畫面分成四塊（`ImageSettings.vue`、`ComfySettings.vue`、`ImagePromptSettings.vue`）：
+
+1. **用途與狀態**：形象插圖、日誌插圖、成人場景各選一個服務（日誌插圖預設和形象插圖一樣，`sceneGeneralService`；成人場景預設和日誌插圖一樣，`sceneAdultService`），旁邊寫出那個服務現在能不能畫（沒填網址或 key、ComfyUI 的設定組合還沒選好模型、連不到 ComfyUI……），點一下跳到那個服務的設定。下面寫出整理分鏡與預處理用的模型來源。以前「成人場景改用」要先把主服務切過去才能填 key；現在每個服務都有自己的分頁。
+2. **服務設定**：每個服務一個分頁（用途用到的標 ●）。ComfyUI 分成**伺服器**（網址、key、「連線並讀取清單」、進階的額外參數）與**設定組合**（第 5 節）。打開設定時用到 ComfyUI 就自動連線一次。
+3. **提示詞怎麼寫**：用到的服務各自選預處理（第 3 節）；看、複製、新增、修改指示。有服務不預處理時才顯示畫風與形象插圖的提示詞模板（預處理的結果直接送出，不套模板）；都預處理時只剩「日誌插圖的畫風」。設定組合是 MOSS 卻沒用版面的寫法（或反過來）時提醒。
+4. **自動生成**：形象插圖的自動生成、日誌插圖的自動生成與張數。
+
 | 模板 | 請求 | 預設 | 注意 |
 |---|---|---|---|
 | ChatGPT（OpenAI 圖片 API） | `POST {網址}/images/generations`，回傳 base64 或網址 | `gpt-image-1`、1024 × 1536 | 看得懂一般句子；不支援負面提示詞；也可以填相容的服務網址 |
 | NovelAI | `POST {網址}/ai/generate-image`，回傳 ZIP（裡面是 PNG） | `nai-diffusion-4-5-full`、832 × 1216、28 步、CFG 5、`k_euler_ancestral` | key 是 Persistent API Token；模型可以自己填（欄位會提示 4.5、5 的 full、curated），V4 以後的模型（名稱有 `diffusion-4`、`-5`……）都用 `v4_prompt` 的格式；只看得懂 Danbooru 標籤（預設用「Danbooru 標籤」預處理）；瀏覽器被擋（CORS）時換成自己的轉送代理 |
-| ComfyUI（自架） | `POST {網址}/prompt` 送出工作流程 → 輪詢 `/history/{id}` → `GET /view` 下載 | `http://127.0.0.1:8188`、832 × 1216 | 啟動時加 `--enable-cors-header`；模型與參數放在「設定組合」，見下方第 5 節 |
+| ComfyUI（自架） | `POST {網址}/prompt` 送出工作流程 → 輪詢 `/history/{id}` → `GET /view` 下載 | `http://127.0.0.1:8188`、832 × 1216 | 啟動時加 `--enable-cors-header`；模型與參數放在「設定組合」，見下方第 5 節（MOSS-Image 見 5.1） |
 
 - **參數**：尺寸、步數、CFG、取樣器、負面提示詞（OpenAI 以外）。**額外參數**是一個 JSON 物件，合併進請求（NovelAI 合併進 `parameters`），例如 OpenAI 的 `{"quality": "high"}`。
 - **ComfyUI**：每個主模存成一組設定（設定組合），見第 5 節。
@@ -54,6 +61,7 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 3. 依指示的**整理方式**處理回答：
    - **整理成標籤**：拿掉程式碼框與「Tags:」之類的說明、換行改逗號、去掉重複。
    - **原樣送出**：只拿掉程式碼框（適合英文句子、JSON）。
+   - **MOSS 版面**：讀成相對版面（每個框佔畫面的百分比），修正寫錯的框；送出前由程式換算成 MOSS 的座標（5.1 節）。形象圖沒有人物框時，照描述的 Composition 補一個。
 4. **結果直接送給生圖服務**，不再套用提示詞模板與畫風。
 
 ### 預處理指示
@@ -63,8 +71,9 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 | Danbooru 標籤 | 整理成標籤 | 一行英文標籤，依「人數與性別 → 外貌 → 服裝 → 表情姿勢 → 構圖 → 背景 → 畫質」排列，20～40 個 |
 | 英文自然語言描述 | 原樣送出 | 一段 60～120 字的英文描述（主體 → 外貌、服裝 → 表情姿勢 → 構圖、光線、背景），給 DALL·E、Flux、寫實模型 |
 | JSON 結構化 | 原樣送出 | 一個 JSON 物件：`subject` `appearance` `outfit` `expression` `pose` `composition` `background` `style` `quality` |
+| MOSS 版面 | MOSS 版面 | 給 ComfyUI 的 MOSS-Image：整張圖的描述（一行 Danbooru 標籤、一句總述、分段的自然語言）、每個人與臉、手、道具各一個框（百分比）、這張圖專屬的負面標籤（5.1 節） |
 
-- 內建的指示不能修改；「📋 複製成自訂」複製一份再改。「＋ 新增預處理指示」建立空白的一份。自訂的指示有名稱、整理方式與指示內容，存在 `elondia.image` 的 `preprocessors`。
+- 內建的指示不能修改；「複製」複製一份再改（原本用那一份的服務改用複製出來的）。「新增」建立空白的一份（不換掉任何服務的選擇）。自訂的指示有名稱、整理方式與指示內容，存在 `elondia.image` 的 `preprocessors`。
 - 刪除自訂的指示時，用它的服務改成不預處理。
 - 舊版的「先轉成 Danbooru 標籤」勾選自動換成「Danbooru 標籤」；改過的轉換指示變成一份自訂的「Danbooru 標籤（自訂）」。
 
@@ -94,19 +103,34 @@ API key 與參數只存在這個瀏覽器（localStorage 的 `elondia.image`）�
 
 每個主模存成一組設定，切換組合就一次換掉模型、文字編碼器、VAE、LoRA、取樣參數、前綴標籤與負面提示詞（例如 Illustrious 的 LoRA 不能用在 Anima 上，取樣器與 CFG 也不一樣）。
 
-### 三種模式
+### 四種模式
 
 | 模式 | 組出的工作流程（只用 ComfyUI 原生節點） | 要選的東西 |
 |---|---|---|
 | Checkpoint | `CheckpointLoaderSimple` →（選填 `VAELoader`）→ `LoraLoader` ×N → `CLIPTextEncode` ×2 → `EmptyLatentImage` → `KSampler` →（高解析修復：`LatentUpscaleBy` → `KSampler`）→ `VAEDecode` → `SaveImage` | Checkpoint；VAE 選填（空白用內建的） |
 | UNet | `UNETLoader` ＋ 文字編碼器（1 個 `CLIPLoader`、2 個 `DualCLIPLoader`、3 個 `TripleCLIPLoader`）＋ `VAELoader` → 之後同上 | UNet、權重精度、文字編碼器與類型、VAE |
+| MOSS-Image | `UNETLoader` → `LoraLoaderModelOnly` ×N →（`ModelSamplingAuraFlow`）→（`SkipLayerGuidanceDiTSimple`）→ `KSampler`；`CLIPLoader`（`moss_image`）、`EmptyFlux2LatentImage`、`VAELoader`；正面提示詞是版面 JSON（5.1 節） | UNet、文字編碼器、VAE |
 | 自訂工作流程 | 貼上的 API 格式 JSON，代號換成值 | 工作流程；成品圖的節點編號（選填） |
 
 - 文字編碼器的「類型」依模型而定（例如 Anima 是 `stable_diffusion`、Flux 是 `flux`、Qwen-Image 是 `qwen_image`）。程式不寫死任何類型，選項直接讀伺服器的。
-- **LoRA**：依序套用，每個可以停用、調權重；預設模型與 CLIP 用同一個權重，按「分開調 CLIP」可以各自設定。
+- **畫面**：上面一列工具列（切換組合、改名、新增〔選哪一種模式〕、複製、匯入、刪除），內容分成「模型、LoRA、尺寸與取樣、提示詞」四個分頁，底下是「檢查這一組」。
+- **LoRA**：依序套用，每個可以停用、調權重（可以是負的，例如光影滑桿）；預設模型與 CLIP 用同一個權重，按「分開調 CLIP」可以各自設定（MOSS 只接模型）。每個 LoRA 可以填**觸發詞**：開著的 LoRA 的觸發詞接在固定前綴後面（「提示詞」分頁寫出實際送出的前綴；自訂工作流程的 `%prompt%` 也接）。
 - **高解析修復**：latent 放大（倍率、放大方式）後再採樣一次（步數、CFG、重繪強度）。
 - **固定前綴標籤**：品質、畫風、LoRA 觸發詞，接在角色的提示詞前面（`前綴, 角色提示詞`）。
 - **自訂工作流程的代號**：`%prompt%`（前綴＋角色提示詞）`%negative%` `%width%` `%height%` `%seed%` `%steps%` `%scale%` `%sampler%` `%scheduler%` `%model%`（Checkpoint 或 UNet 欄位）；以圖生圖另外有 `%image%`（上傳的底圖檔名，填在 LoadImage）、`%mask%`（遮罩檔名，填在 LoadImageMask）、`%denoise%`（重繪強度；一般生圖時是 1）。整個字串就是代號時換成原本的型別（數字就是數字）。沒有 `%image%` 的自訂工作流程不能以圖生圖，沒有 `%mask%` 的不能局部重繪。
+
+### 5.1 MOSS-Image
+
+程式：`src/narrator/mossLayout.ts`（相對版面、換算座標、預設框）、`comfy.ts` 的 `buildMoss`。寫法整理自玩家實測的經驗。
+
+- **版面由 AI 排、座標由程式算**：MOSS 的正面提示詞是版面 JSON（`summary.caption` 加一組框，`bbox` 是以畫面中心為原點、單位是像素的 `[y1, x1, y2, x2]`）。大語言模型不擅長算術、也不知道畫布多大，所以 AI 只寫**相對版面**：整張圖的描述 `caption`、每個框 `x: [左, 右]`、`y: [上, 下]`（佔畫面的百分比，原點在左上）、這張圖專屬的 `negative`。程式修正寫錯的框（超出 0～100 夾回去、左右寫反對調、太小的撐到 3%、沒有範圍的丟掉、沒寫字的文字框當成物件），送出前依**這一遍的畫布**換算：形象圖是設定組合的尺寸，日誌插圖是橫的，高解析修復的第二遍用放大後的畫布再編碼一次。
+- **框從哪裡來**：形象圖由「MOSS 版面」預處理寫（沒有人物框時照描述的 Composition 補：upper body x 12–88%、cowboy shot x 20–80%、full body x 28–72%）。日誌插圖的分鏡多寫每個人的 `x`、`y`，臉、手、道具與重要的場景元素寫在 `items`，負面標籤寫在 `negative`；沒寫範圍的人依左、中、右補（`positionBox`）。
+- **描述**：固定前綴（含 LoRA 觸發詞）接在 `caption` 前面；日誌插圖的畫風接在後面。負面提示詞：設定組合的（或這次指定的）接上版面專屬的。
+- **兩套參數**（「尺寸與取樣」分頁一鍵套用，`MOSS_PROFILES`）：一般是 30 步、CFG 4、euler / simple、shift 5；8 步蒸餾 LoRA（DMD2 之類，權重 1）是 12 步、CFG 1.5、euler / beta、不加 shift。Skip Layer Guidance 預設第 22 層、0～0.5。新的 MOSS 組合是 1024 × 1536；高解析修復預設 2 倍、重繪 0.65（雙採）。
+- **寫法的要點**（`imageInfo.ts` 的 `MOSS_WRITING_RULES`、`MOSS_LAYOUT_RULES`）：開頭一行 Danbooru 標籤，再一句總述，再分段（Composition & Pose、Hair & Head Accessories、Face & Expression、Clothing & Details、Lighting & Color、Background）；鏡頭寫具體（角度、距離、水平垂直），不寫 photograph；配色寫主次與最暗、最亮的形狀；不想出現的物件不寫進正面（寫「沒有」反而畫出來），放負面，屬性可以在正面糾正但錯的版本放負面；臉、每隻手、拿的東西各一個框，方向要一致。
+- 設定組合換成 MOSS（或新增 MOSS 組合）時，ComfyUI 的提示詞寫法還不是版面的話自動改成「MOSS 版面」；寫法和設定組合對不上時「提示詞怎麼寫」會提醒。
+- **匯入**：文字編碼器的類型是 `moss_image` 或用 `EmptyFlux2LatentImage` 的工作流程讀成 MOSS 模式（shift、SLG 一起讀；LoRA 只有模型權重；工作流程裡原本的提示詞不用）。
+- 還沒做：收尾的放大後重繪（4x-AnimeSharp）、臉與手的局部重繪、近景貼回全景。
 
 舊版只有一份 ComfyUI 工作流程：沒改過預設工作流程的變成 Checkpoint 模式（模型欄位就是 Checkpoint），改過的變成自訂工作流程，行為和原本一樣。
 

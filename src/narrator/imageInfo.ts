@@ -97,7 +97,7 @@ export const IMAGE_SERVICES: ImageServiceInfo[] = [
     },
     keyOptional: true,
     preprocess: 'danbooru',
-    note: '送出工作流程到 /prompt，等算完再下載圖片。ComfyUI 啟動時要加 --enable-cors-header。每個主模存成一組設定：Checkpoint 或 UNet（模型、文字編碼器、VAE 分開載入）模式只用 ComfyUI 內建的節點，可以加多個 LoRA 與高解析修復；也可以貼上自己的工作流程。按「讀取 ComfyUI 清單」可以直接選伺服器上的檔案，「從工作流程匯入」可以把跑得動的工作流程變成一組設定。',
+    note: '自己架的 ComfyUI：啟動時要加 --enable-cors-header。先在「伺服器」連線讀取清單，再到「設定組合」選模型（Checkpoint、UNet、MOSS-Image 只用 ComfyUI 內建的節點，也可以貼上自己的工作流程）；「匯入」可以把跑得動的工作流程變成一組設定。',
     sizes: [[832, 1216], [1024, 1024], [1216, 832], [512, 768]],
   },
 ]

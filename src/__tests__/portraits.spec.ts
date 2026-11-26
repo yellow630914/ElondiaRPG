@@ -222,7 +222,9 @@ describe('image prompt preprocessing settings', () => {
     image.service = 'openai'
     const fresh = image.addPreprocessor()
     fresh.name = 'JSON for my model'
-    expect(image.preprocess.openai).toBe('c-2')
+    // 新增空白的不換掉任何服務的選擇
+    expect(image.preprocess.openai).toBe('')
+    image.preprocess.openai = fresh.id
     await new Promise((r) => setTimeout(r, 0))
     // 存起來，下次讀得回來；不認得的選擇改回預設
     const saved = JSON.parse(localStorage.getItem('elondia.image')!)

@@ -19,6 +19,7 @@ export const SCENE_AUTO = ['off', 'adult', 'all'] as const
 export type SceneAuto = (typeof SCENE_AUTO)[number]
 
 interface SavedImageSettings {
+  /** 形象插圖用的服務（也是日誌插圖沒有另外指定時用的） */
   service: ImageServiceId
   configs: Record<ImageServiceId, ImageServiceConfig>
   /** 各服務用哪一份預處理指示（空字串是不預處理；預處理後直接送出結果，不再套提示詞模板） */
@@ -32,7 +33,9 @@ interface SavedImageSettings {
   /** ComfyUI 的設定組合（每個主模一組）與目前用的那一組 */
   comfyPresets: ComfyPreset[]
   comfyActive: string
-  /** 日誌插圖：成人場景改用哪個服務（空字串是和一般場景一樣用目前的服務） */
+  /** 日誌插圖用哪個服務（空字串是和形象插圖一樣） */
+  sceneGeneralService: ImageServiceId | ''
+  /** 日誌插圖：成人場景改用哪個服務（空字串是和一般的日誌插圖一樣） */
   sceneAdultService: ImageServiceId | ''
   /** 日誌插圖的自動生成：關閉、只畫成人場景、每一則寫出正文的日誌 */
   sceneAuto: SceneAuto
@@ -56,6 +59,7 @@ function defaults(): SavedImageSettings {
     style: DEFAULT_STYLE,
     comfyPresets: [],
     comfyActive: '',
+    sceneGeneralService: '',
     sceneAdultService: '',
     sceneAuto: 'off',
     sceneCount: '1',
@@ -88,6 +92,7 @@ function load(): SavedImageSettings {
     return {
       ...base, ...saved,
       service: IMAGE_SERVICES.some((s) => s.id === saved.service) ? saved.service! : base.service,
+      sceneGeneralService: IMAGE_SERVICES.some((s) => s.id === saved.sceneGeneralService) ? saved.sceneGeneralService! : '',
       sceneAdultService: IMAGE_SERVICES.some((s) => s.id === saved.sceneAdultService) ? saved.sceneAdultService! : '',
       sceneAuto: SCENE_AUTO.includes(saved.sceneAuto as SceneAuto) ? saved.sceneAuto! : 'off',
       sceneCount: SCENE_COUNTS.includes(saved.sceneCount as SceneCount) ? saved.sceneCount! : '1',
@@ -157,6 +162,7 @@ export const useImageSettings = defineStore('image', () => {
   const style = ref(initial.style)
   const comfyPresets = ref<ComfyPreset[]>(initial.comfyPresets)
   const comfyActive = ref(initial.comfyActive)
+  const sceneGeneralService = ref<ImageServiceId | ''>(initial.sceneGeneralService)
   const sceneAdultService = ref<ImageServiceId | ''>(initial.sceneAdultService)
   const sceneAuto = ref<SceneAuto>(initial.sceneAuto)
   const sceneCount = ref<SceneCount>(initial.sceneCount)
@@ -166,11 +172,11 @@ export const useImageSettings = defineStore('image', () => {
   const comfyLoading = ref(false)
   const comfyError = ref<string | null>(null)
 
-  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive, sceneAdultService, sceneAuto, sceneCount, portraitAuto], () => {
+  watch([service, configs, preprocess, preprocessors, template, style, comfyPresets, comfyActive, sceneGeneralService, sceneAdultService, sceneAuto, sceneCount, portraitAuto], () => {
     const data: SavedImageSettings = {
       service: service.value, configs: configs.value, preprocess: preprocess.value, preprocessors: preprocessors.value,
       template: template.value, style: style.value,
-      comfyPresets: comfyPresets.value, comfyActive: comfyActive.value, sceneAdultService: sceneAdultService.value, sceneAuto: sceneAuto.value, sceneCount: sceneCount.value,
+      comfyPresets: comfyPresets.value, comfyActive: comfyActive.value, sceneGeneralService: sceneGeneralService.value, sceneAdultService: sceneAdultService.value, sceneAuto: sceneAuto.value, sceneCount: sceneCount.value,
       portraitAuto: portraitAuto.value,
     }
     try {
@@ -205,9 +211,15 @@ export const useImageSettings = defineStore('image', () => {
     return id === 'comfyui' ? preset().negative : configs.value[id].negative
   }
 
-  /** 日誌插圖用哪個服務：成人場景可以另外指定 */
+  /** 日誌插圖用哪個服務：沒有另外指定時和形象插圖一樣；成人場景可以再另外指定 */
   function sceneService(adult: boolean): ImageServiceId {
-    return adult && sceneAdultService.value ? sceneAdultService.value : service.value
+    const general = sceneGeneralService.value || service.value
+    return adult && sceneAdultService.value ? sceneAdultService.value : general
+  }
+
+  /** 用到的服務（形象插圖、日誌插圖、成人場景），不重複 */
+  function usedServices(): ImageServiceId[] {
+    return [...new Set([service.value, sceneService(false), sceneService(true)])]
   }
 
   // ---- ComfyUI 的設定組合 ----
@@ -291,7 +303,7 @@ export const useImageSettings = defineStore('image', () => {
     return pick ? allPreprocessors().find((p) => p.id === pick) : undefined
   }
 
-  /** 新增一份自訂的指示（可以從現有的複製），並讓目前的服務改用它 */
+  /** 新增一份自訂的指示；從現有的複製時，原本用那一份的服務改用複製出來的（之後改的才有作用） */
   function addPreprocessor(copyFrom?: ImagePreprocessor): ImagePreprocessor {
     let n = preprocessors.value.length + 1
     while (preprocessors.value.some((p) => p.id === `c-${n}`)) n++
@@ -302,7 +314,11 @@ export const useImageSettings = defineStore('image', () => {
       output: copyFrom?.output ?? 'text',
     }
     preprocessors.value.push(p)
-    preprocess.value[service.value] = p.id
+    if (copyFrom) {
+      for (const s of Object.keys(preprocess.value) as ImageServiceId[]) {
+        if (preprocess.value[s] === copyFrom.id) preprocess.value[s] = p.id
+      }
+    }
     return p
   }
 
@@ -316,7 +332,7 @@ export const useImageSettings = defineStore('image', () => {
 
   return {
     service, configs, preprocess, preprocessors, template, style, config, ready, resetService, sizeFor, negativeFor,
-    sceneAdultService, sceneService, sceneAuto, sceneCount, portraitAuto,
+    sceneGeneralService, sceneAdultService, sceneService, usedServices, sceneAuto, sceneCount, portraitAuto,
     allPreprocessors, preprocessorFor, addPreprocessor, removePreprocessor,
     comfyPresets, comfyActive, comfyOptions, comfyLoading, comfyError,
     preset, addPreset, duplicatePreset, removePreset, importPreset, loadComfyOptions,

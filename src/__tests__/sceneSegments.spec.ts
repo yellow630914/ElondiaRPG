@@ -119,3 +119,18 @@ describe('插圖的成人場景判斷', () => {
     expect(adultScene({ ...report, narration: { adult_scene: '親密場景' } } as Report)).toBe(true)
   })
 })
+
+describe('MOSS layout plans', () => {
+  it('asks for each figure range, other boxes and a negative, with the MOSS writing rules', async () => {
+    const { BUILTIN_PREPROCESSORS, MOSS_WRITING_RULES } = await import('@/narrator/imageInfo')
+    const { state, report, cast } = setup()
+    const moss = BUILTIN_PREPROCESSORS.find((p) => p.id === 'moss')!
+    const p = scenePrompt(state, report, cast, { multi: false, format: moss, segments: { paragraphs: narrationParagraphs(TEXT), count: 2 } })
+    expect(p.system).toContain('"x": [左, 右]')
+    expect(p.system).toContain('"items"')
+    expect(p.system).toContain('"negative"')
+    expect(p.system).toContain(MOSS_WRITING_RULES)
+    // 一般的寫法不要框
+    expect(scenePrompt(state, report, cast, { multi: false }).system).not.toContain('"x": [左, 右]')
+  })
+})
